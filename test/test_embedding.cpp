@@ -13,7 +13,7 @@
 BOOST_AUTO_TEST_SUITE(TestSuitePoint);
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGrid1d) {
-        hg::EmbeddingGrid<> e1 = {10};
+        hg::embedding_grid e1{10};
 
         BOOST_CHECK(e1.isInBound({5}));
         BOOST_CHECK(!e1.isInBound({-2}));
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
     }
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGrid2d) {
-        hg::EmbeddingGrid<> e1 = {10, 5};
+        hg::embedding_grid e1{10, 5};
 
         std::vector<long> p1 = {3, 0};
         auto p1t = e1.lin2grid(3);
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
     }
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGrid3d) {
-        hg::EmbeddingGrid<> e1 = {10, 5, 2};
+        hg::embedding_grid e1{10, 5, 2};
 
         std::vector<long> p1 = {3, 2, 1};
         auto p1t = e1.lin2grid(73);

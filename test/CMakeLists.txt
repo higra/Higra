@@ -7,7 +7,7 @@ if (DO_TEST)
             test.cpp
             test_xtensor.cpp
             test_imageio.cpp
-            test_graph.cpp test_embedding.cpp test_utils.cpp test_utils.hpp)
+            test_graph.cpp test_embedding.cpp test_utils.cpp test_utils.hpp test_neighbouring_graph.cpp)
 
 
     add_executable(test_exe ${HIGRA_TESTS_SRC})
