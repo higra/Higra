@@ -78,13 +78,6 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
         };
         vector<vector<pair<ulong, ulong>>> outListsTest;
 
-        /*for (auto v: hg::graphVertexIterator(g)) {
-            outListsTest.push_back(vector<pair<ulong, ulong>>());
-            for (auto e: hg::graphOutEdgeIterator(v, g))
-                outListsTest[v].push_back({source(e, g), target(e, g)});
-            BOOST_CHECK(vectorEqual(outListsRef[v], outListsTest[v]));
-        }*/
-
         for (size_t v = 0; v < 6; v++) {
             outListsTest.push_back({});
             for (auto e: hg::graphOutEdgeIterator(v, g))
@@ -95,15 +88,18 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
         }
 
     }
-/*
-BOOST_AUTO_TEST_CASE(inEdgeIteratorSimpleGraph) {
+
+    BOOST_AUTO_TEST_CASE(inEdgeIteratorSimpleGraph) {
 
         auto g = data.g;
 
-        vector<vector<pair<ulong, ulong>>> inListsRef{{{1, 0}, {2, 0}},
-            {{0, 1}, {2, 1}},
-            {{1, 2}, {0, 2}},
-            {}};
+        vector<vector<pair<ulong, ulong>>> inListsRef{{{1, 0}, {3, 0}},
+                                                      {{0, 1}, {2, 1}, {4, 1}},
+                                                      {{1, 2}, {5, 2}},
+                                                      {{0, 3}, {4, 3}},
+                                                      {{1, 4}, {3, 4}, {5, 4}},
+                                                      {{2, 5}, {4, 5}}
+        };
         vector<vector<pair<ulong, ulong>>> inListsTest;
 
         for (auto v: hg::graphVertexIterator(g)) {
@@ -111,9 +107,11 @@ BOOST_AUTO_TEST_CASE(inEdgeIteratorSimpleGraph) {
             for (auto e: hg::graphInEdgeIterator(v, g))
                 inListsTest[v].push_back({source(e, g), target(e, g)});
             BOOST_CHECK(vectorEqual(inListsRef[v], inListsTest[v]));
+            BOOST_CHECK(in_degree(v, g) == inListsRef[v].size());
+            BOOST_CHECK(degree(v, g) == inListsRef[v].size());
         }
-}
-*/
+    }
+
 
     BOOST_AUTO_TEST_CASE(adjacentVertexIteratorSimpleGraph) {
 

@@ -48,7 +48,7 @@ namespace hg {
             using traversal_category = regular_graph_traversal_category;
 
             // VertexListGraph associated types
-            using vertex_iterator = boost::counting_iterator<vertex_descriptor>; ///////////////////////////op
+            using vertex_iterator = boost::counting_iterator<vertex_descriptor>;
             using vertices_size_type = std::size_t;
 
             //AdjacencyGraph associated types
@@ -58,21 +58,14 @@ namespace hg {
             using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
             using iterator_transform_function = std::function<edge_descriptor(vertex_descriptor)>;
 
-            using out_edge_iterator = boost::transform_iterator<iterator_transform_function, adjacency_iterator>; //regular_graph_out_edge_iterator<embedding_t>;// boost::transform_iterator<iterator_transform_function, int*> doubling_iterator; //
+            using out_edge_iterator = boost::transform_iterator<iterator_transform_function, adjacency_iterator>;
             using degree_size_type = std::size_t;
 
-            // BidirectionalGraph associated types
-            //using in_edge_iterator = ring_incident_edge_iterator; ///////////////////////////op
+            //BidirectionalGraph associated types
+            using in_edge_iterator = out_edge_iterator;
 
 
-
-
-
-
-
-
-
-            degree_size_type num_vertices() const {
+            vertices_size_type num_vertices() const {
                 return embedding.size();
             }
 
@@ -194,30 +187,11 @@ namespace boost {
 
         using degree_size_type = typename G::degree_size_type;
 
-        using in_edge_iterator = void;
+        using in_edge_iterator = typename G::in_edge_iterator;
         using vertex_iterator = typename G::vertex_iterator;
         using vertices_size_type = typename G::vertices_size_type;
         using adjacency_iterator = typename G::adjacency_iterator;
-        using edge_iterator = void;
-        using edges_size_type = void;
     };
-
-
-    /* template <typename embedding_t>
-     typename hg::regular_graph<embedding_t>::vertex_descriptor source(
-             typename hg::regular_graph<embedding_t>::edge_descriptor & e,
-             const hg::regular_graph<embedding_t>& _) {
-         return e.first;
-     }
-
-     template <typename embedding_t>
-     typename hg::regular_graph<embedding_t>::vertex_descriptor target(
-             typename hg::regular_graph<embedding_t>::edge_descriptor & e,
-             const hg::regular_graph<embedding_t>& _) {
-         return e.second;
-     }*/
-
-
 
     template<typename embedding_t>
     std::pair<typename hg::regular_graph<embedding_t>::out_edge_iterator, typename hg::regular_graph<embedding_t>::out_edge_iterator>
@@ -244,6 +218,31 @@ namespace boost {
         );
     }
 
+    template<typename embedding_t>
+    std::pair<typename hg::regular_graph<embedding_t>::out_edge_iterator, typename hg::regular_graph<embedding_t>::out_edge_iterator>
+    in_edges(typename hg::regular_graph<embedding_t>::vertex_descriptor u, hg::regular_graph<embedding_t> &g) {
+        return std::make_pair(
+                hg::regular_graph_out_edge_iterator<embedding_t>(
+                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
+                                u,
+                                g.embedding,
+                                g.neighbours.begin(),
+                                g.neighbours.end()),
+                        [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
+                            return std::make_pair(v, u);
+                        }),
+                hg::regular_graph_out_edge_iterator<embedding_t>(
+                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
+                                u,
+                                g.embedding,
+                                g.neighbours.end(),
+                                g.neighbours.end()),
+                        [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
+                            return std::make_pair(v, u);
+                        })
+        );
+    }
+
 
     template<typename embedding_t>
     typename hg::regular_graph<embedding_t>::degree_size_type
@@ -251,7 +250,6 @@ namespace boost {
             typename hg::regular_graph<embedding_t>::vertex_descriptor &v,
             hg::regular_graph<embedding_t> &g) {
         typename hg::regular_graph<embedding_t>::degree_size_type count = 0;
-
         typename hg::regular_graph<embedding_t>::out_edge_iterator out_i, out_end;
         typename hg::regular_graph<embedding_t>::edge_descriptor e;
         for (boost::tie(out_i, out_end) = out_edges(v, g); out_i != out_end; ++out_i) {
@@ -259,6 +257,22 @@ namespace boost {
         }
 
         return count;
+    }
+
+    template<typename embedding_t>
+    typename hg::regular_graph<embedding_t>::degree_size_type
+    in_degree(
+            typename hg::regular_graph<embedding_t>::vertex_descriptor &v,
+            hg::regular_graph<embedding_t> &g) {
+        return out_degree(v, g);
+    }
+
+    template<typename embedding_t>
+    typename hg::regular_graph<embedding_t>::degree_size_type
+    degree(
+            typename hg::regular_graph<embedding_t>::vertex_descriptor &v,
+            hg::regular_graph<embedding_t> &g) {
+        return out_degree(v, g);
     }
 
     template<typename embedding_t>
