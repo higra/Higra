@@ -113,26 +113,27 @@ BOOST_AUTO_TEST_CASE(inEdgeIteratorSimpleGraph) {
             BOOST_CHECK(vectorEqual(inListsRef[v], inListsTest[v]));
         }
 }
+*/
 
-
-BOOST_AUTO_TEST_CASE(adjacentVertexIteratorSimpleGraph) {
+    BOOST_AUTO_TEST_CASE(adjacentVertexIteratorSimpleGraph) {
 
         auto g = data.g;
 
-        vector<vector<ulong>> adjListsRef{{1, 2},
-            {0, 2},
-            {1, 0},
-            {}};
+        vector<vector<ulong>> adjListsRef{{1, 3},
+                                          {0, 2, 4},
+                                          {1, 5},
+                                          {0, 4},
+                                          {1, 3, 5},
+                                          {2, 4}};
         vector<vector<ulong>> adjListsTest;
 
         for (auto v: hg::graphVertexIterator(g)) {
             adjListsTest.push_back(vector<ulong>());
-            for (auto av: hg::graphAdjacentVertexIterator(v, g))
-            {
+            for (auto av: hg::graphAdjacentVertexIterator(v, g)) {
                 adjListsTest[v].push_back(av);
             }
             BOOST_CHECK(vectorEqual(adjListsRef[v], adjListsTest[v]));
         }
-}*/
+    }
 
 BOOST_AUTO_TEST_SUITE_END();

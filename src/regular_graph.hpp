@@ -5,8 +5,10 @@
 
 #pragma once
 
+#include <functional>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/iterator/counting_iterator.hpp>
+#include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <vector>
 
@@ -18,12 +20,19 @@ namespace hg {
 
 
     namespace regular_graph_internal {
+
         using point_list_t = std::vector<xt::xarray<long>>;
         using point_list_iterator_t = point_list_t::iterator;
+
+
+
 
         //forward declaration
         template<typename embedding_t>
         struct regular_graph_out_edge_iterator;
+
+        template<typename embedding_t>
+        struct regular_graph_adjacent_vertex_iterator;
 
         struct regular_graph_traversal_category :
                 virtual public boost::incidence_graph_tag
@@ -45,20 +54,30 @@ namespace hg {
             using edge_parallel_category = boost::disallow_parallel_edge_tag;
             using traversal_category = regular_graph_traversal_category;
 
+            // VertexListGraph associated types
+            using vertex_iterator = boost::counting_iterator<vertex_descriptor>; ///////////////////////////op
+            using vertices_size_type = std::size_t;
+
+            //AdjacencyGraph associated types
+            using adjacency_iterator = regular_graph_adjacent_vertex_iterator<embedding_t>;
+
             // IncidenceGraph associated types
             using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
-            using out_edge_iterator = regular_graph_out_edge_iterator<embedding_t>;
+            //using iterator_tranform_function = std::function<edge_descriptor(vertex_descriptor)>;
+
+            using out_edge_iterator = regular_graph_out_edge_iterator<embedding_t>;// boost::transform_iterator<iterator_transform_function, int*> doubling_iterator; //
             using degree_size_type = std::size_t;
 
             // BidirectionalGraph associated types
             //using in_edge_iterator = ring_incident_edge_iterator; ///////////////////////////op
 
-            // AdjacencyGraph associated types
-            // using adjacency_iterator = ring_adjacency_iterator; ///////////////////////////op
 
-            // VertexListGraph associated types
-            using vertex_iterator = boost::counting_iterator<vertex_descriptor>; ///////////////////////////op
-            using vertices_size_type = std::size_t;
+
+
+
+
+
+
 
             degree_size_type num_vertices() const {
                 return embedding.size();
@@ -235,6 +254,10 @@ namespace hg {
     template<typename embedding_t>
     using regular_graph_out_edge_iterator = regular_graph_internal::regular_graph_out_edge_iterator<embedding_t>;
 
+    template<typename embedding_t>
+    using regular_graph_adjacent_vertex_iterator = regular_graph_internal::regular_graph_adjacent_vertex_iterator<embedding_t>;
+
+
 }
 
 
@@ -256,6 +279,7 @@ namespace boost {
         using in_edge_iterator = void;
         using vertex_iterator = typename G::vertex_iterator;
         using vertices_size_type = typename G::vertices_size_type;
+        using adjacency_iterator = typename G::adjacency_iterator;
         using edge_iterator = void;
         using edges_size_type = void;
     };
@@ -319,4 +343,13 @@ namespace boost {
                 vertex_iterator(num_vertices(g))); // The last iterator position
     }
 
+    template<typename embedding_t>
+    std::pair<typename hg::regular_graph<embedding_t>::adjacency_iterator, typename hg::regular_graph<embedding_t>::adjacency_iterator>
+    adjacent_vertices(typename hg::regular_graph<embedding_t>::vertex_descriptor u, hg::regular_graph<embedding_t> &g) {
+        return std::make_pair<typename hg::regular_graph<embedding_t>::adjacency_iterator, typename hg::regular_graph<embedding_t>::adjacency_iterator>(
+                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g.embedding, g.neighbours.begin(),
+                                                                        g.neighbours.end()),
+                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g.embedding, g.neighbours.end(),
+                                                                        g.neighbours.end()));
+    };
 }
