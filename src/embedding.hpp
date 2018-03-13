@@ -71,7 +71,7 @@ namespace hg {
             }
 
 
-            std::size_t size() {
+            std::size_t size() const {
                 return nbElement;
             }
 
@@ -120,7 +120,6 @@ namespace hg {
                 return result;
             }
         };
-
 
     }
 

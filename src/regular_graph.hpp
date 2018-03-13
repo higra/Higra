@@ -6,7 +6,7 @@
 #pragma once
 
 #include <boost/graph/graph_concepts.hpp>
-
+#include <boost/iterator/counting_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <vector>
 
@@ -57,9 +57,12 @@ namespace hg {
             // using adjacency_iterator = ring_adjacency_iterator; ///////////////////////////op
 
             // VertexListGraph associated types
-            //using vertex_iterator = boost::counting_iterator<vertex_descriptor>; ///////////////////////////op
-            //using vertices_size_type = std::size_t;
+            using vertex_iterator = boost::counting_iterator<vertex_descriptor>; ///////////////////////////op
+            using vertices_size_type = std::size_t;
 
+            degree_size_type num_vertices() const {
+                return embedding.size();
+            }
 
             embedding_t embedding;
             point_list_t neighbours;
@@ -67,6 +70,83 @@ namespace hg {
             regular_graph(embedding_t _embedding = {}, point_list_t _neighbours = {})
                     : embedding(_embedding), neighbours(_neighbours) {
             }
+
+
+        };
+
+
+        // Iterator
+        template<typename embedding_t>
+        struct regular_graph_adjacent_vertex_iterator :
+                public boost::iterator_facade<regular_graph_adjacent_vertex_iterator<embedding_t>,
+                        typename regular_graph<embedding_t>::vertex_descriptor,
+                        boost::forward_traversal_tag,
+                        typename regular_graph<embedding_t>::vertex_descriptor> {
+        public:
+            using graph_t = regular_graph<embedding_t>;
+            using graph_vertex_t = typename graph_t::vertex_descriptor;
+
+
+            regular_graph_adjacent_vertex_iterator() {}
+
+            regular_graph_adjacent_vertex_iterator(graph_vertex_t _source,
+                                                   embedding_t _embedding,
+                                                   point_list_iterator_t _point_iterator,
+                                                   point_list_iterator_t _point_iterator_end
+            )
+                    : source(_source), embedding(_embedding), point_iterator(_point_iterator),
+                      point_iterator_end(_point_iterator_end) {
+
+                source_coordinates = embedding.lin2grid(source);
+                if (point_iterator != point_iterator_end) {
+
+                    xt::xarray<long> neighbourc = source_coordinates + *point_iterator;
+                    if (!embedding.isInBound(neighbourc)) {
+                        increment();
+                    } else {
+                        neighbour = embedding.grid2lin(neighbourc);
+                    }
+
+                }
+            }
+
+        private:
+
+
+            friend class boost::iterator_core_access;
+
+            void increment() {
+                bool flag;
+                xt::xarray<long> neighbourc;
+                do {
+                    point_iterator++;
+                    if (point_iterator != point_iterator_end) {
+                        neighbourc = source_coordinates + *point_iterator;
+                        flag = embedding.isInBound(neighbourc);
+                    } else {
+                        flag = true;
+                    }
+                } while (!flag);
+                if (point_iterator != point_iterator_end) {
+                    neighbour = embedding.grid2lin(neighbourc);
+                }
+            }
+
+            bool equal(regular_graph_adjacent_vertex_iterator const &other) const {
+                return this->point_iterator == other.point_iterator;
+            }
+
+
+            graph_vertex_t dereference() const {
+                return neighbour;
+            }
+
+            graph_vertex_t source;
+            graph_vertex_t neighbour;
+            xt::xarray<long> source_coordinates;
+            embedding_t embedding;
+            point_list_iterator_t point_iterator;
+            point_list_iterator_t point_iterator_end;
 
         };
 
@@ -174,8 +254,8 @@ namespace boost {
         using degree_size_type = typename G::degree_size_type;
 
         using in_edge_iterator = void;
-        using vertex_iterator = void;
-        using vertices_size_type = void;
+        using vertex_iterator = typename G::vertex_iterator;
+        using vertices_size_type = typename G::vertices_size_type;
         using edge_iterator = void;
         using edges_size_type = void;
     };
@@ -209,7 +289,8 @@ namespace boost {
 
 
     template<typename embedding_t>
-    typename hg::regular_graph<embedding_t>::degree_size_type out_degree(
+    typename hg::regular_graph<embedding_t>::degree_size_type
+    out_degree(
             typename hg::regular_graph<embedding_t>::vertex_descriptor &v,
             hg::regular_graph<embedding_t> &g) {
         typename hg::regular_graph<embedding_t>::degree_size_type count = 0;
@@ -222,4 +303,20 @@ namespace boost {
 
         return count;
     }
+
+    template<typename embedding_t>
+    typename hg::regular_graph<embedding_t>::vertices_size_type
+    num_vertices(const hg::regular_graph<embedding_t> &g) {
+        return g.num_vertices();
+    };
+
+    template<typename embedding_t>
+    std::pair<typename hg::regular_graph<embedding_t>::vertex_iterator, typename hg::regular_graph<embedding_t>::vertex_iterator>
+    vertices(const hg::regular_graph<embedding_t> &g) {
+        using vertex_iterator = typename hg::regular_graph<embedding_t>::vertex_iterator;
+        return std::pair<vertex_iterator, vertex_iterator>(
+                vertex_iterator(0),                 // The first iterator position
+                vertex_iterator(num_vertices(g))); // The last iterator position
+    }
+
 }

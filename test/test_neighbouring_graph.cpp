@@ -27,49 +27,44 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
         }
 
     } data;
-/*
-BOOST_AUTO_TEST_CASE(sizeSimpleGraph)
-        {
-                auto g = data.g;
 
-        BOOST_CHECK(num_vertices(g)==4);
-        BOOST_CHECK(num_edges(g)==3);
-        BOOST_CHECK(out_degree(0, g)==2);
-        BOOST_CHECK(in_degree(0, g)==2);
-        BOOST_CHECK(out_degree(3, g)==0);
-        BOOST_CHECK(in_degree(3, g)==0);
+    BOOST_AUTO_TEST_CASE(sizeRegularGraph) {
+        auto g = data.g;
 
-        }
-*/
-/*
-BOOST_AUTO_TEST_CASE(vertexIteratorSimpleGraph)
-        {
+        BOOST_CHECK(num_vertices(g) == 6);
+    }
 
-                auto g = data.g;
 
-        vector<ulong> vref{0,1,2,3};
+    BOOST_AUTO_TEST_CASE(vertexIteratorSimpleGraph) {
+
+        auto g = data.g;
+
+        vector<ulong> vref{0, 1, 2, 3, 4, 5};
         vector<ulong> vtest;
 
-        for(auto v: hg::graphVertexIterator(g))
-        vtest.push_back(v);
+        for (auto v: hg::graphVertexIterator(g)) {
+            vtest.push_back(v);
+        }
 
         BOOST_CHECK(vectorEqual(vref, vtest));
 
-        }
-
-BOOST_AUTO_TEST_CASE(edgeIteratorSimpleGraph) {
+    }
+/*
+    BOOST_AUTO_TEST_CASE(edgeIteratorSimpleGraph) {
 
         auto g = data.g;
 
         vector<pair<ulong, ulong>> eref{{0, 1},
-            {1, 2},
-            {0, 2}};
+                                        {1, 2},
+                                        {0, 2}};
         vector<pair<ulong, ulong>> etest;
         for (auto e: hg::graphEdgeIterator(g))
-        etest.push_back({source(e, g), target(e, g)});
+            etest.push_back({source(e, g), target(e, g)});
         BOOST_CHECK(vectorEqual(eref, etest));
-}
-*/
+    }
+
+    */
+
     BOOST_AUTO_TEST_CASE(outEdgeIteratorNeighbouringGraph) {
 
         auto g = data.g;
