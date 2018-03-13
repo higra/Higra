@@ -24,21 +24,14 @@ namespace hg {
         using point_list_t = std::vector<xt::xarray<long>>;
         using point_list_iterator_t = point_list_t::iterator;
 
-
-
-
         //forward declaration
-        template<typename embedding_t>
-        struct regular_graph_out_edge_iterator;
-
         template<typename embedding_t>
         struct regular_graph_adjacent_vertex_iterator;
 
         struct regular_graph_traversal_category :
                 virtual public boost::incidence_graph_tag
             //, virtual public boost::bidirectional_graph_tag
-            //, virtual public boost::adjacency_graph_tag
-            //, virtual public boost::vertex_list_graph_tag
+                , virtual public boost::adjacency_graph_tag, virtual public boost::vertex_list_graph_tag
         {
         };
 
@@ -63,9 +56,9 @@ namespace hg {
 
             // IncidenceGraph associated types
             using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
-            //using iterator_tranform_function = std::function<edge_descriptor(vertex_descriptor)>;
+            using iterator_transform_function = std::function<edge_descriptor(vertex_descriptor)>;
 
-            using out_edge_iterator = regular_graph_out_edge_iterator<embedding_t>;// boost::transform_iterator<iterator_transform_function, int*> doubling_iterator; //
+            using out_edge_iterator = boost::transform_iterator<iterator_transform_function, adjacency_iterator>; //regular_graph_out_edge_iterator<embedding_t>;// boost::transform_iterator<iterator_transform_function, int*> doubling_iterator; //
             using degree_size_type = std::size_t;
 
             // BidirectionalGraph associated types
@@ -169,81 +162,6 @@ namespace hg {
 
         };
 
-
-        // Iterator
-        template<typename embedding_t>
-        struct regular_graph_out_edge_iterator :
-                public boost::iterator_facade<regular_graph_out_edge_iterator<embedding_t>,
-                        std::pair<typename regular_graph<embedding_t>::vertex_descriptor, typename regular_graph<embedding_t>::vertex_descriptor>,
-                        boost::forward_traversal_tag,
-                        std::pair<typename regular_graph<embedding_t>::vertex_descriptor, typename regular_graph<embedding_t>::vertex_descriptor> > {
-        public:
-            using graph_t = regular_graph<embedding_t>;
-            using graph_vertex_t = typename graph_t::vertex_descriptor;
-            using graph_edge_t = typename graph_t::edge_descriptor;
-
-            regular_graph_out_edge_iterator() {}
-
-            regular_graph_out_edge_iterator(graph_vertex_t _source,
-                                            embedding_t _embedding,
-                                            point_list_iterator_t _point_iterator,
-                                            point_list_iterator_t _point_iterator_end
-            )
-                    : source(_source), embedding(_embedding), point_iterator(_point_iterator),
-                      point_iterator_end(_point_iterator_end) {
-
-                source_coordinates = embedding.lin2grid(source);
-                if (point_iterator != point_iterator_end) {
-
-                    xt::xarray<long> neighbourc = source_coordinates + *point_iterator;
-                    if (!embedding.isInBound(neighbourc)) {
-                        increment();
-                    } else {
-                        neighbour = embedding.grid2lin(neighbourc);
-                    }
-
-                }
-            }
-
-        private:
-
-
-            friend class boost::iterator_core_access;
-
-            void increment() {
-                bool flag;
-                xt::xarray<long> neighbourc;
-                do {
-                    point_iterator++;
-                    if (point_iterator != point_iterator_end) {
-                        neighbourc = source_coordinates + *point_iterator;
-                        flag = embedding.isInBound(neighbourc);
-                    } else {
-                        flag = true;
-                    }
-                } while (!flag);
-                if (point_iterator != point_iterator_end) {
-                    neighbour = embedding.grid2lin(neighbourc);
-                }
-            }
-
-            bool equal(regular_graph_out_edge_iterator const &other) const {
-                return this->point_iterator == other.point_iterator;
-            }
-
-
-            graph_edge_t dereference() const {
-                return graph_edge_t(source, neighbour);
-            }
-
-            graph_vertex_t source;
-            graph_vertex_t neighbour;
-            xt::xarray<long> source_coordinates;
-            embedding_t embedding;
-            point_list_iterator_t point_iterator;
-            point_list_iterator_t point_iterator_end;
-
-        };
     }
 
     template<typename embedding_t>
@@ -252,10 +170,10 @@ namespace hg {
     using regular_grid_graph = regular_graph<hg::embedding_grid>;
 
     template<typename embedding_t>
-    using regular_graph_out_edge_iterator = regular_graph_internal::regular_graph_out_edge_iterator<embedding_t>;
+    using regular_graph_out_edge_iterator = typename regular_graph_internal::regular_graph<embedding_t>::out_edge_iterator;
 
     template<typename embedding_t>
-    using regular_graph_adjacent_vertex_iterator = regular_graph_internal::regular_graph_adjacent_vertex_iterator<embedding_t>;
+    using regular_graph_adjacent_vertex_iterator = typename regular_graph_internal::regular_graph<embedding_t>::adjacency_iterator;
 
 
 }
@@ -304,11 +222,26 @@ namespace boost {
     template<typename embedding_t>
     std::pair<typename hg::regular_graph<embedding_t>::out_edge_iterator, typename hg::regular_graph<embedding_t>::out_edge_iterator>
     out_edges(typename hg::regular_graph<embedding_t>::vertex_descriptor u, hg::regular_graph<embedding_t> &g) {
-        return std::make_pair<typename hg::regular_graph<embedding_t>::out_edge_iterator, typename hg::regular_graph<embedding_t>::out_edge_iterator>(
-                hg::regular_graph_out_edge_iterator<embedding_t>(u, g.embedding, g.neighbours.begin(),
-                                                                 g.neighbours.end()),
-                hg::regular_graph_out_edge_iterator<embedding_t>(u, g.embedding, g.neighbours.end(),
-                                                                 g.neighbours.end()));
+        return std::make_pair(
+                hg::regular_graph_out_edge_iterator<embedding_t>(
+                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
+                                u,
+                                g.embedding,
+                                g.neighbours.begin(),
+                                g.neighbours.end()),
+                        [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
+                            return std::make_pair(u, v);
+                        }),
+                hg::regular_graph_out_edge_iterator<embedding_t>(
+                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
+                                u,
+                                g.embedding,
+                                g.neighbours.end(),
+                                g.neighbours.end()),
+                        [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
+                            return std::make_pair(u, v);
+                        })
+        );
     }
 
 
