@@ -92,8 +92,10 @@ BOOST_AUTO_TEST_SUITE(boost_undirectedgraph);
 
         for (auto v: hg::graphVertexIterator(g)) {
             outListsTest.push_back(vector<pair<ulong, ulong>>());
-            for (auto e: hg::graphOutEdgeIterator(v, g))
+            for (auto e: hg::graphOutEdgeIterator(v, g)) {
+                //showTypeName<decltype(e)>("edge type : ");
                 outListsTest[v].push_back({source(e, g), target(e, g)});
+            }
             BOOST_CHECK(vectorEqual(outListsRef[v], outListsTest[v]));
         }
 
