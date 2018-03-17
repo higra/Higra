@@ -1,5 +1,5 @@
 *~
-*build*
+cmake-build*
 *.o
 dependencies
 
