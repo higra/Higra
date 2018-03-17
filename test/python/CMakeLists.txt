@@ -11,8 +11,8 @@ if (DO_TEST)
                 COMMAND ${PYTHON_EXECUTABLE}
                 ${CMAKE_CURRENT_BINARY_DIR}/${FILE}
                 )
+
     endforeach ()
 
 
-    #set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} _mortof CACHE INTERNAL "" FORCE)
 endif (DO_TEST)
