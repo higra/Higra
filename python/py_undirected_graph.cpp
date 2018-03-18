@@ -88,6 +88,23 @@ void py_init_undirected_graph(py::module &m) {
                      return py::make_iterator(it1, it2);
                  },
                  "Iterator over all edges of the graph.")
+            .def("edgeIndexes", [](graph_t &g) {
+                     auto it = hg::edge_indexes(g);
+                     return py::make_iterator(it.first, it.second);
+                 },
+                 "Iterator over all edge indexes of the graph.")
+            .def("outEdgeIndexes", [](graph_t &g, vertex_t v) {
+                     auto it = hg::out_edge_indexes(v, g);
+                     return py::make_iterator(it.first, it.second);
+                 },
+                 "Iterator over all out edge indexes of the given vertex.",
+                 py::arg("vertex"))
+            .def("inEdgeIndexes", [](graph_t &g, vertex_t v) {
+                     auto it = hg::in_edge_indexes(v, g);
+                     return py::make_iterator(it.first, it.second);
+                 },
+                 "Iterator over all in edge indexes of the given vertex.",
+                 py::arg("vertex"))
             .def("degree", [](graph_t &g, vertex_t vertex) { return boost::degree(vertex, g); },
                  "Return the degree of the given vertex (same as inDegree and outDegree)",
                  py::arg("vertex"))

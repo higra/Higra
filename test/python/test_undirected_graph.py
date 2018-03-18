@@ -117,6 +117,44 @@ class TestUndirectedGraph(unittest.TestCase):
         self.assertTrue(g.outDegree(3) == 0)
         self.assertTrue(g.inDegree(3) == 0)
 
+    def test_edge_index_iterator(self):
+        g = hg.getTestUndirectedGraph()
+        ref = [0, 1, 2]
+        test = []
+
+        for e in g.edgeIndexes():
+            test.append(e)
+
+        self.assertTrue(test == ref)
+
+    def test_out_edge_index_iterator(self):
+        g = hg.getTestUndirectedGraph()
+        ref = [[0, 2],
+               [0, 1],
+               [1, 2],
+               []]
+        test = []
+        for v in g.vertices():
+            test.append([])
+            for e in g.outEdgeIndexes(v):
+                test[v].append(e)
+
+        self.assertTrue(test == ref)
+
+    def test_in_edge_index_iterator(self):
+        g = hg.getTestUndirectedGraph()
+        ref = [[0, 2],
+               [0, 1],
+               [1, 2],
+               []]
+        test = []
+        for v in g.vertices():
+            test.append([])
+            for e in g.inEdgeIndexes(v):
+                test[v].append(e)
+
+        self.assertTrue(test == ref)
+
 
 if __name__ == '__main__':
     unittest.main()
