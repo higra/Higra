@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
         vector<ulong> vref{0, 1, 2, 3, 4, 5};
         vector<ulong> vtest;
 
-        for (auto v: hg::graphVertexIterator(g)) {
+        for (auto v: hg::vertex_iterator(g)) {
             vtest.push_back(v);
         }
 
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
                                         {1, 2},
                                         {0, 2}};
         vector<pair<ulong, ulong>> etest;
-        for (auto e: hg::graphEdgeIterator(g))
+        for (auto e: hg::edge_iterator(g))
             etest.push_back({source(e, g), target(e, g)});
         BOOST_CHECK(vectorEqual(eref, etest));
     }
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
 
         for (size_t v = 0; v < 6; v++) {
             outListsTest.push_back({});
-            for (auto e: hg::graphOutEdgeIterator(v, g))
+            for (auto e: hg::out_edge_iterator(v, g))
                 outListsTest[v].push_back({source(e, g), target(e, g)});
             BOOST_CHECK(vectorEqual(outListsRef[v], outListsTest[v]));
             BOOST_CHECK(out_degree(v, g) == outListsRef[v].size());
@@ -102,9 +102,9 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
         };
         vector<vector<pair<ulong, ulong>>> inListsTest;
 
-        for (auto v: hg::graphVertexIterator(g)) {
+        for (auto v: hg::vertex_iterator(g)) {
             inListsTest.push_back(vector<pair<ulong, ulong>>());
-            for (auto e: hg::graphInEdgeIterator(v, g))
+            for (auto e: hg::in_edge_iterator(v, g))
                 inListsTest[v].push_back({source(e, g), target(e, g)});
             BOOST_CHECK(vectorEqual(inListsRef[v], inListsTest[v]));
             BOOST_CHECK(in_degree(v, g) == inListsRef[v].size());
@@ -125,9 +125,9 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
                                           {2, 4}};
         vector<vector<ulong>> adjListsTest;
 
-        for (auto v: hg::graphVertexIterator(g)) {
+        for (auto v: hg::vertex_iterator(g)) {
             adjListsTest.push_back(vector<ulong>());
-            for (auto av: hg::graphAdjacentVertexIterator(v, g)) {
+            for (auto av: hg::adjacent_vertex_iterator(v, g)) {
                 adjListsTest[v].push_back(av);
             }
             BOOST_CHECK(vectorEqual(adjListsRef[v], adjListsTest[v]));

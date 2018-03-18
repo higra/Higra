@@ -94,6 +94,12 @@ namespace hg {
                     typename container_gen<edgeS, out_edge_t>::type::const_iterator>;
 
 
+            // custom edge index iterators
+            using edge_index_t = std::size_t;
+            using edge_index_iterator = boost::counting_iterator<edge_index_t>;
+            using out_edge_index_iterator = adjacency_iterator;
+            using in_edge_index_iterator = adjacency_iterator;
+
             undirected_graph(std::size_t num_vertices = 0) : _num_vertices(num_vertices), out_edges(num_vertices) {};
 
             vertices_size_type num_vertices() const {
@@ -153,10 +159,38 @@ namespace hg {
         };
 
     }
+
     template<typename storage_type = undirected_graph_internal::vecS>
     using undirected_graph = undirected_graph_internal::undirected_graph<storage_type>;
 
     using ugraph = undirected_graph_internal::undirected_graph<>;
+
+    template<typename T>
+    std::pair<typename undirected_graph<T>::edge_index_iterator, typename undirected_graph<T>::edge_index_iterator>
+    edge_indexes(const undirected_graph<T> &g) {
+        using it = typename hg::undirected_graph<T>::edge_index_iterator;
+        return std::make_pair(
+                it(0),
+                it(g.num_edges()));
+    }
+
+    template<typename T>
+    std::pair<typename undirected_graph<T>::out_edge_index_iterator, typename undirected_graph<T>::out_edge_index_iterator>
+    out_edge_indexes(const typename undirected_graph<T>::vertex_descriptor v, const undirected_graph<T> &g) {
+        using it = typename hg::undirected_graph<T>::out_edge_index_iterator;
+        auto fun = [](const typename hg::undirected_graph<T>::out_edge_t &oe) {
+            return oe.first;
+        };
+        return std::make_pair(
+                it(g.out_edges_cbegin(v), fun),
+                it(g.out_edges_cend(v), fun));
+    }
+
+    template<typename T>
+    std::pair<typename undirected_graph<T>::out_edge_index_iterator, typename undirected_graph<T>::out_edge_index_iterator>
+    in_edge_indexes(const typename undirected_graph<T>::vertex_descriptor v, const undirected_graph<T> &g) {
+        return out_edge_indexes(v, g);
+    }
 }
 
 
@@ -261,7 +295,7 @@ namespace boost {
     template<typename T>
     std::pair<typename hg::undirected_graph<T>::out_edge_iterator, typename hg::undirected_graph<T>::out_edge_iterator>
     out_edges(typename hg::undirected_graph<T>::vertex_descriptor v, hg::undirected_graph<T> &g) {
-        auto fun = [v](typename hg::undirected_graph<T>::out_edge_t oe) {
+        auto fun = [v](const typename hg::undirected_graph<T>::out_edge_t &oe) {
             return std::make_pair(v, oe.second);
         };
         using it = typename hg::undirected_graph<T>::out_edge_iterator;
@@ -272,8 +306,8 @@ namespace boost {
 
     template<typename T>
     std::pair<typename hg::undirected_graph<T>::out_edge_iterator, typename hg::undirected_graph<T>::out_edge_iterator>
-    in_edges(typename hg::undirected_graph<T>::vertex_descriptor v, hg::undirected_graph<T> &g) {
-        auto fun = [v](typename hg::undirected_graph<T>::out_edge_t oe) {
+    in_edges(typename hg::undirected_graph<T>::vertex_descriptor v, const hg::undirected_graph<T> &g) {
+        auto fun = [v](const typename hg::undirected_graph<T>::out_edge_t &oe) {
             return std::make_pair(oe.second, v);
         };
         using it = typename hg::undirected_graph<T>::out_edge_iterator;
@@ -284,8 +318,8 @@ namespace boost {
 
     template<typename T>
     std::pair<typename hg::undirected_graph<T>::adjacency_iterator, typename hg::undirected_graph<T>::adjacency_iterator>
-    adjacent_vertices(typename hg::undirected_graph<T>::vertex_descriptor v, hg::undirected_graph<T> &g) {
-        auto fun = [v](typename hg::undirected_graph<T>::out_edge_t oe) {
+    adjacent_vertices(typename hg::undirected_graph<T>::vertex_descriptor v, const hg::undirected_graph<T> &g) {
+        auto fun = [v](const typename hg::undirected_graph<T>::out_edge_t &oe) {
             return oe.second;
         };
         using it = typename hg::undirected_graph<T>::adjacency_iterator;
@@ -294,56 +328,4 @@ namespace boost {
                 it(g.out_edges_cend(v), fun));
     }
 
-/*
-    template<typename embedding_t>
-    std::pair<typename hg::regular_graph<embedding_t>::out_edge_iterator, typename hg::regular_graph<embedding_t>::out_edge_iterator>
-    in_edges(typename hg::regular_graph<embedding_t>::vertex_descriptor u, hg::regular_graph<embedding_t> &g) {
-        return std::make_pair(
-                hg::regular_graph_out_edge_iterator<embedding_t>(
-                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
-                                u,
-                                g.embedding,
-                                g.neighbours.begin(),
-                                g.neighbours.end()),
-                        [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
-                            return std::make_pair(v, u);
-                        }),
-                hg::regular_graph_out_edge_iterator<embedding_t>(
-                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
-                                u,
-                                g.embedding,
-                                g.neighbours.end(),
-                                g.neighbours.end()),
-                        [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
-                            return std::make_pair(v, u);
-                        })
-        );
-    }
-
-
-
-
-
-
-
-
-
-    template<typename embedding_t>
-    std::pair<typename hg::regular_graph<embedding_t>::vertex_iterator, typename hg::regular_graph<embedding_t>::vertex_iterator>
-    vertices(const hg::regular_graph<embedding_t> &g) {
-        using vertex_iterator = typename hg::regular_graph<embedding_t>::vertex_iterator;
-        return std::pair<vertex_iterator, vertex_iterator>(
-                vertex_iterator(0),                 // The first iterator position
-                vertex_iterator(num_vertices(g))); // The last iterator position
-    }
-
-    template<typename embedding_t>
-    std::pair<typename hg::regular_graph<embedding_t>::adjacency_iterator, typename hg::regular_graph<embedding_t>::adjacency_iterator>
-    adjacent_vertices(typename hg::regular_graph<embedding_t>::vertex_descriptor u, hg::regular_graph<embedding_t> &g) {
-        return std::make_pair<typename hg::regular_graph<embedding_t>::adjacency_iterator, typename hg::regular_graph<embedding_t>::adjacency_iterator>(
-                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g.embedding, g.neighbours.begin(),
-                                                                        g.neighbours.end()),
-                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g.embedding, g.neighbours.end(),
-                                                                        g.neighbours.end()));
-    };*/
 }
