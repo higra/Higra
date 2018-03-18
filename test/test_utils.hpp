@@ -12,6 +12,8 @@
 
 template <typename T>
 bool vectorEqual(std::vector<T> v1, std::vector<T> v2){
+    if (v1.size() != v2.size())
+        return false;
     return std::equal(v1.begin(), v1.end(), v2.begin());
 }
 

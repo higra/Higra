@@ -8,7 +8,7 @@
 
 BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
 
-    using namespace boost;
+    using namespace hg;
     using namespace std;
 
 

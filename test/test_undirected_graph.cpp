@@ -5,11 +5,10 @@
 #include <boost/test/unit_test.hpp>
 
 #include "graph.hpp"
-#include "xtensor/xarray.hpp"
 #include "xtensor/xio.hpp"
 
 #include "test_utils.hpp"
-using namespace std;
+
 
 /**
  * graph tests
@@ -18,19 +17,18 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(boost_undirectedgraph);
 
-    using namespace boost;
-    using namespace std;
 
+    using namespace std;
+    using namespace hg;
 
 
     struct _data {
         // 0 - 1
         // | /
         // 2   3
-        hg::undirected_graph g;
+        hg::ugraph g;
 
-        _data(){
-            g = hg::undirected_graph(4);
+        _data() : g(4) {
             add_edge(0, 1, g);
             add_edge(1, 2, g);
             add_edge(0, 2, g);
@@ -46,9 +44,10 @@ BOOST_AUTO_TEST_SUITE(boost_undirectedgraph);
         BOOST_CHECK(num_edges(g)==3);
         BOOST_CHECK(out_degree(0, g)==2);
         BOOST_CHECK(in_degree(0, g)==2);
+        BOOST_CHECK(degree(0, g) == 2);
         BOOST_CHECK(out_degree(3, g)==0);
         BOOST_CHECK(in_degree(3, g)==0);
-
+        BOOST_CHECK(degree(3, g) == 0);
     }
 
 
@@ -75,8 +74,10 @@ BOOST_AUTO_TEST_SUITE(boost_undirectedgraph);
                                         {1, 2},
                                         {0, 2}};
         vector<pair<ulong, ulong>> etest;
-        for (auto e: hg::graphEdgeIterator(g))
+        for (auto e: hg::graphEdgeIterator(g)) {
             etest.push_back({source(e, g), target(e, g)});
+        }
+
         BOOST_CHECK(vectorEqual(eref, etest));
     }
 
@@ -118,7 +119,6 @@ BOOST_AUTO_TEST_SUITE(boost_undirectedgraph);
             BOOST_CHECK(vectorEqual(inListsRef[v], inListsTest[v]));
         }
     }
-
 
     BOOST_AUTO_TEST_CASE(adjacentVertexIteratorSimpleGraph) {
 

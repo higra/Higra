@@ -3,15 +3,12 @@
 //
 
 #include "py_undirected_graph.hpp"
-#include "pybind11/pybind11.h"
-#include "undirected_graph.hpp"
+#include "graph.hpp"
 #include "pybind11/stl.h"
-#include <boost/graph/detail/edge.hpp>
-#include <boost/iterator/transform_iterator.hpp>
 
 namespace py = pybind11;
 
-using graph_t = hg::undirected_graph;
+using graph_t = hg::undirected_graph<>;
 using edge_t = typename boost::graph_traits<graph_t>::edge_descriptor;//boost::detail::edge_desc_impl<boost::undirected_tag, unsigned long>;
 using vertex_t = typename boost::graph_traits<graph_t>::vertex_descriptor;
 // for wrapping internal boost edge class to python tuple
@@ -27,9 +24,9 @@ void py_init_undirected_graph(py::module &m) {
     py::class_<graph_t>(m, "UndirectedGraph")
             .def(py::init<const std::size_t>(), "Create a new graph with no edge.",
                  py::arg("numberOfVertices") = 0)
-            .def("addEdge", [](hg::undirected_graph &g,
-                               const hg::undirected_graph::vertex_descriptor source,
-                               const hg::undirected_graph::vertex_descriptor target) {
+            .def("addEdge", [](graph_t &g,
+                               const vertex_t source,
+                               const vertex_t target) {
                      boost::add_edge(source, target, g);
                  },
                  "Add an (undirected) edge between 'vertex1' and 'vertex2'",
@@ -46,14 +43,14 @@ void py_init_undirected_graph(py::module &m) {
                  },
                  "Iterator over all vertices of the graph.")
             .def("adjacentVertices", [](graph_t &g,
-                                        const graph_t::vertex_descriptor v) {
+                                        const vertex_t v) {
                      auto it = boost::adjacent_vertices(v, g);
                      return py::make_iterator(it.first, it.second);
                  },
                  "Iterator over all vertices adjacent to the given vertex.",
                  py::arg("vertex"))
             .def("outEdges", [](graph_t &g,
-                                const graph_t::vertex_descriptor v) {
+                                const vertex_t v) {
                      auto it = boost::out_edges(v, g);
                      // wrapping out edge iterator to python friendly type
                      iterator_transform_function fun = [&g](edge_t e) -> py::tuple {
@@ -67,7 +64,7 @@ void py_init_undirected_graph(py::module &m) {
                  "Iterator over all out edges from 'vertex'. An out edge is a tuple '(vertex, adjacent_vertex)'.",
                  py::arg("vertex"))
             .def("inEdges", [](graph_t &g,
-                               const graph_t::vertex_descriptor v) {
+                               const vertex_t v) {
                      auto it = boost::in_edges(v, g);
                      // wrapping in edge iterator to python friendly type
                      iterator_transform_function fun = [&g](edge_t e) -> py::tuple {
@@ -106,10 +103,10 @@ void py_init_undirected_graph(py::module &m) {
                  "Return the number of edges in the graph");
 
     m.def("getTestUndirectedGraph", []() {
-              hg::undirected_graph g(4);
-              boost::add_edge(0, 1, g);
-              boost::add_edge(1, 2, g);
-              boost::add_edge(0, 2, g);
+              hg::undirected_graph<> g(4);
+              hg::add_edge(0, 1, g);
+              hg::add_edge(1, 2, g);
+              hg::add_edge(0, 2, g);
               return g;
           },
           "Returns a small undirected graph for testing purpose.");

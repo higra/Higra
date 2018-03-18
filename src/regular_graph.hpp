@@ -11,7 +11,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <vector>
-
+#include <utility>
 
 #include "xtensor/xarray.hpp"
 #include "embedding.hpp"
@@ -29,9 +29,10 @@ namespace hg {
         struct regular_graph_adjacent_vertex_iterator;
 
         struct regular_graph_traversal_category :
-                virtual public boost::incidence_graph_tag
-            //, virtual public boost::bidirectional_graph_tag
-                , virtual public boost::adjacency_graph_tag, virtual public boost::vertex_list_graph_tag
+                virtual public boost::incidence_graph_tag,
+                virtual public boost::bidirectional_graph_tag,
+                virtual public boost::adjacency_graph_tag,
+                virtual public boost::vertex_list_graph_tag
         {
         };
 
@@ -265,6 +266,22 @@ namespace boost {
             typename hg::regular_graph<embedding_t>::vertex_descriptor &v,
             hg::regular_graph<embedding_t> &g) {
         return out_degree(v, g);
+    }
+
+    template<typename embedding_t>
+    typename hg::regular_graph<embedding_t>::vertex_descriptor
+    source(
+            typename hg::regular_graph<embedding_t>::edge_descriptor &e,
+            hg::regular_graph<embedding_t> &) {
+        return e.first;
+    }
+
+    template<typename embedding_t>
+    typename hg::regular_graph<embedding_t>::vertex_descriptor
+    target(
+            typename hg::regular_graph<embedding_t>::edge_descriptor &e,
+            hg::regular_graph<embedding_t> &) {
+        return e.second;
     }
 
     template<typename embedding_t>

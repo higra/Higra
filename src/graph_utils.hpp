@@ -7,6 +7,7 @@
 
 namespace hg {
 
+
     template<typename iterator_t>
     struct iterator_wrapper {
         iterator_t const first;
