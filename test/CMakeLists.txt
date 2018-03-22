@@ -9,7 +9,11 @@ if (DO_TEST)
             test.cpp
             test_xtensor.cpp
             test_imageio.cpp
-            test_undirected_graph.cpp test_embedding.cpp test_utils.cpp test_utils.hpp test_regular_graph.cpp)
+            test_undirected_graph.cpp
+            test_embedding.cpp
+            test_utils.cpp
+            test_regular_graph.cpp
+            test_tree.cpp)
 
 
     add_executable(test_exe ${HIGRA_TESTS_SRC})

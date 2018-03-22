@@ -6,6 +6,7 @@
 
 #include "undirected_graph.hpp"
 #include "regular_graph.hpp"
+#include "tree_graph.hpp"
 #include "graph_utils.hpp"
 
 namespace hg{
