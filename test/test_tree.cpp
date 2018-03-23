@@ -150,5 +150,64 @@ BOOST_AUTO_TEST_SUITE(boost_treegraph);
 
     }
 
+    BOOST_AUTO_TEST_CASE(edgeIndexIteratorTreeGraph) {
+
+        auto g = data.t;
+
+        vector<ulong> ref{0, 1, 2, 3, 4, 5, 6};
+        vector<ulong> test;
+
+        for (auto v: hg::edge_index_iterator(g)) {
+            test.push_back(v);
+        }
+        BOOST_CHECK(vectorEqual(ref, test));
+    }
+
+    BOOST_AUTO_TEST_CASE(outEdgeIndexIteratorTreeGraph) {
+
+        auto g = data.t;
+
+        vector<vector<ulong>> ref{{0},
+                                  {1},
+                                  {2},
+                                  {3},
+                                  {4},
+                                  {5, 0, 1},
+                                  {6, 2, 3, 4},
+                                  {5, 6}};
+        vector<vector<ulong>> test;
+
+        for (auto v: hg::vertex_iterator(g)) {
+            test.push_back(vector<ulong>());
+            for (auto av: hg::out_edge_index_iterator(v, g)) {
+                test[v].push_back(av);
+            }
+            BOOST_CHECK(vectorEqual(ref[v], test[v]));
+        }
+    }
+
+    BOOST_AUTO_TEST_CASE(inEdgeIndexIteratorTreeGraph) {
+
+        auto g = data.t;
+
+        vector<vector<ulong>> ref{{0},
+                                  {1},
+                                  {2},
+                                  {3},
+                                  {4},
+                                  {5, 0, 1},
+                                  {6, 2, 3, 4},
+                                  {5, 6}};
+        vector<vector<ulong>> test;
+
+        for (auto v: hg::vertex_iterator(g)) {
+            test.push_back(vector<ulong>());
+            for (auto av: hg::in_edge_index_iterator(v, g)) {
+                test[v].push_back(av);
+            }
+            BOOST_CHECK(vectorEqual(ref[v], test[v]));
+        }
+    }
+
 
 BOOST_AUTO_TEST_SUITE_END();

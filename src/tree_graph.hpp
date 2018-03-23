@@ -20,6 +20,7 @@ namespace hg {
     namespace tree_internal {
 
         // forward declaration
+        template<bool edge_index_iterator>
         struct tree_graph_adjacent_vertex_iterator;
         
         struct tree_graph_traversal_category :
@@ -48,13 +49,13 @@ namespace hg {
 
             //AdjacencyGraph associated types
 
-            using adjacency_iterator = tree_graph_adjacent_vertex_iterator;
+            using adjacency_iterator = tree_graph_adjacent_vertex_iterator<false>;
 
             // custom edge index iterators
             using edge_index_t = std::size_t;
-            //using edge_index_iterator = boost::counting_iterator<edge_index_t>;
-            //using out_edge_index_iterator = adjacency_iterator;
-            //using in_edge_index_iterator = adjacency_iterator;
+            using edge_index_iterator = boost::counting_iterator<edge_index_t>;
+            using out_edge_index_iterator = tree_graph_adjacent_vertex_iterator<true>;
+            using in_edge_index_iterator = out_edge_index_iterator;
 
             // EdgeListGraph associated types
             using edges_size_type = std::size_t;
@@ -66,7 +67,7 @@ namespace hg {
             // IncidenceGraph associated types
             using out_iterator_transform_function = std::function<edge_descriptor(vertex_descriptor)>;
             using out_edge_iterator = boost::transform_iterator<out_iterator_transform_function,
-                    tree_graph_adjacent_vertex_iterator>;
+                    tree_graph_adjacent_vertex_iterator<false>>;
             using degree_size_type = std::size_t;
 
             //BidirectionalGraph associated types
@@ -147,11 +148,27 @@ namespace hg {
         };
 
 
+        // Some meta-programming to use the following iterator for adjacency and edge indices
+        template<bool b>
+        auto _deference_parent(const tree::vertex_descriptor source, const tree::vertex_descriptor parent);
+
+
+        template<>
+        inline
+        auto _deference_parent<true>(const tree::vertex_descriptor source, const tree::vertex_descriptor parent) {
+            return source;
+        }
+
+        template<>
+        inline
+        auto _deference_parent<false>(const tree::vertex_descriptor source, const tree::vertex_descriptor parent) {
+            return parent;
+        }
 
         // Iterator
-
+        template<bool edge_index_iterator = false>
         struct tree_graph_adjacent_vertex_iterator :
-                public boost::iterator_facade<tree_graph_adjacent_vertex_iterator,
+                public boost::iterator_facade<tree_graph_adjacent_vertex_iterator<edge_index_iterator>,
                         tree::vertex_descriptor,
                         boost::forward_traversal_tag,
                         tree::vertex_descriptor> {
@@ -166,7 +183,7 @@ namespace hg {
                                                 graph_vertex_t parent,
                                                 point_list_iterator_t child_iterator
             )
-                    : _parent(parent), _child_iterator(child_iterator) {
+                    : _source(source), _parent(parent), _child_iterator(child_iterator) {
 
                 if (parent == source) {
                     _iterating_on_children = true;
@@ -196,10 +213,12 @@ namespace hg {
                 if (_iterating_on_children) {
                     return *_child_iterator;
                 } else {
-                    return _parent;
+                    return _deference_parent<edge_index_iterator>(_source, _parent);
                 }
             }
 
+
+            graph_vertex_t _source;
             graph_vertex_t _parent;
 
             bool _iterating_on_children = false;
@@ -209,8 +228,33 @@ namespace hg {
 
     }
 
-
     using tree = tree_internal::tree;
+
+    inline
+    std::pair<tree::edge_index_iterator, tree::edge_index_iterator>
+    edge_indexes(const tree &g) {
+        using it = tree::edge_index_iterator;
+        return std::make_pair(
+                it(0),
+                it(g.num_edges()));
+    }
+
+    inline
+    std::pair<tree::out_edge_index_iterator, tree::out_edge_index_iterator>
+    out_edge_indexes(const tree::vertex_descriptor v, const tree &g) {
+        using it = typename hg::tree::out_edge_index_iterator;
+        auto par = g.parent(v);
+        return std::make_pair(
+                it(v, par, g.children_cbegin(v)),
+                it(par, par, g.children_cend(v)));
+    }
+
+    inline
+    std::pair<tree::out_edge_index_iterator, tree::out_edge_index_iterator>
+    in_edge_indexes(const tree::vertex_descriptor v, const tree &g) {
+        return out_edge_indexes(v, g);
+    }
+
 
 }
 
