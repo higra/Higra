@@ -81,7 +81,7 @@ namespace hg{
             cv::cvtColor(image, image, CV_BGR2RGB);
         }
 
-        auto targetType = CV_MAKETYPE(type2CVType<T>::CVType,channels);
+        int targetType = CV_MAKETYPE(type2CVType<T>::CVType, channels);
 
         cv::Mat tmp;
 
@@ -106,10 +106,10 @@ namespace hg{
 
         T * p;
         int count = 0;
-        for(int i = 0; i < nRowsImage; ++i)
+        for (std::size_t i = 0; i < nRowsImage; ++i)
         {
             p = tmp.ptr<T>(i);
-            for (int j = 0; j < nColsImage; ++j)
+            for (std::size_t j = 0; j < nColsImage; ++j)
             {
                 result(count++) = p[j];
             }

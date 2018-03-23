@@ -16,14 +16,12 @@ double scalar_func(double i, double j) {
     return std::sin(i) - std::cos(j);
 }
 
-PYBIND11_MODULE(xtensor_python_test, m
+PYBIND11_MODULE(example, m
 )
 {
 xt::import_numpy();
 
-m.
-
-doc() = "Test module for xtensor python bindings";
+//m.doc() = "Test module for xtensor python bindings";
 
 m.def("vectorized_func",
 xt::pyvectorize(scalar_func),

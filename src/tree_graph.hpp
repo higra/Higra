@@ -60,7 +60,7 @@ namespace hg {
             using edges_size_type = std::size_t;
             using _edge_iterator_transform_function = std::function<edge_descriptor(edge_index_t)>;
             using edge_iterator = boost::transform_iterator<_edge_iterator_transform_function,
-                    boost::counting_iterator<vertex_descriptor>>;;
+                    boost::counting_iterator<vertex_descriptor>>;
 
 
             // IncidenceGraph associated types

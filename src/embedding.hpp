@@ -31,7 +31,7 @@ namespace hg {
 
             void computeSumProd() {
                 sump_prod.push_back(1);
-                for (int i = 1; i < dim; ++i) {
+                for (std::size_t i = 1; i < dim; ++i) {
                     sump_prod.push_back(sump_prod[i - 1] * shape[i - 1]);
                 }
             }
@@ -96,7 +96,7 @@ namespace hg {
             bool isInBound(const T &coordinates) const {
                 std::size_t count = 0;
                 for (const auto &c: coordinates)
-                    if (c < 0 || c >= shape[count++])
+                    if (c < 0 || c >= (long) shape[count++])
                         return false;
                 return true;
             }
@@ -105,7 +105,7 @@ namespace hg {
             bool isInBound(const std::initializer_list<coordinates_t> &coordinates) const {
                 std::size_t count = 0;
                 for (const auto &c: coordinates)
-                    if (c < 0 || c >= shape[count++])
+                    if (c < 0 || c >= (long) shape[count++])
                         return false;
                 return true;
             }
