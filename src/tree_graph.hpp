@@ -37,6 +37,7 @@ namespace hg {
             // Graph associated types
             using vertex_descriptor = std::size_t;
             using children_list_t = std::vector<vertex_descriptor>;
+            using children_iterator = children_list_t::const_iterator;
             using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
             using directed_category = boost::undirected_tag;
             using edge_parallel_category = boost::disallow_parallel_edge_tag;
@@ -255,6 +256,11 @@ namespace hg {
         return out_edge_indexes(v, g);
     }
 
+    inline
+    std::pair<tree::children_iterator, tree::children_iterator>
+    children(const tree::vertex_descriptor v, const tree &g) {
+        return std::make_pair(g.children_cbegin(v), g.children_cend(v));
+    }
 
 }
 

@@ -73,4 +73,11 @@ namespace hg {
         using it_t = typename graph_t::in_edge_index_iterator;
         return iterator_wrapper<it_t>(hg::in_edge_indexes(v, g));
     }
+
+
+    template<typename graph_t>
+    auto children_iterator(typename graph_t::vertex_descriptor v, const graph_t &g) {
+        using it_t = typename graph_t::children_iterator;
+        return iterator_wrapper<it_t>(hg::children(v, g));
+    }
 }
