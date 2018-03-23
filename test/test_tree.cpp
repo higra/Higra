@@ -100,5 +100,55 @@ BOOST_AUTO_TEST_SUITE(boost_treegraph);
         }
     }
 
+    BOOST_AUTO_TEST_CASE(outEdgeIteratorTreeGraph) {
+
+        auto g = data.t;
+
+        vector<vector<pair<ulong, ulong>>> outListsRef{{{0, 5}},
+                                                       {{1, 5}},
+                                                       {{2, 6}},
+                                                       {{3, 6}},
+                                                       {{4, 6}},
+                                                       {{5, 7}, {5, 0}, {5, 1}},
+                                                       {{6, 7}, {6, 2}, {6, 3}, {6, 4}},
+                                                       {{7, 5}, {7, 6}}};
+        vector<vector<pair<ulong, ulong>>> outListsTest;
+
+        for (auto v: hg::vertex_iterator(g)) {
+            outListsTest.push_back(vector<pair<ulong, ulong>>());
+            for (auto e: hg::out_edge_iterator(v, g)) {
+                //showTypeName<decltype(e)>("edge type : ");
+                outListsTest[v].push_back({source(e, g), target(e, g)});
+            }
+            BOOST_CHECK(vectorEqual(outListsRef[v], outListsTest[v]));
+        }
+
+    }
+
+    BOOST_AUTO_TEST_CASE(inEdgeIteratorTreeGraph) {
+
+        auto g = data.t;
+
+        vector<vector<pair<ulong, ulong>>> outListsRef{{{5, 0}},
+                                                       {{5, 1}},
+                                                       {{6, 2}},
+                                                       {{6, 3}},
+                                                       {{6, 4}},
+                                                       {{7, 5}, {0, 5}, {1, 5}},
+                                                       {{7, 6}, {2, 6}, {3, 6}, {4, 6}},
+                                                       {{5, 7}, {6, 7}}};
+        vector<vector<pair<ulong, ulong>>> outListsTest;
+
+        for (auto v: hg::vertex_iterator(g)) {
+            outListsTest.push_back(vector<pair<ulong, ulong>>());
+            for (auto e: hg::in_edge_iterator(v, g)) {
+                //showTypeName<decltype(e)>("edge type : ");
+                outListsTest[v].push_back({source(e, g), target(e, g)});
+            }
+            BOOST_CHECK(vectorEqual(outListsRef[v], outListsTest[v]));
+        }
+
+    }
+
 
 BOOST_AUTO_TEST_SUITE_END();
