@@ -13,7 +13,7 @@
 #include <functional>
 #include <type_traits>
 
-#include "xtl/xsequence.hpp"
+#include <xtl/xsequence.hpp>
 
 #include "xconcepts.hpp"
 #include "xfunction.hpp"
@@ -30,28 +30,13 @@ namespace xt
      * helpers *
      ***********/
 
-    namespace detail
-    {
-        template <class T, class R>
-        struct functor_return_type
-        {
-            using type = R;
-            using simd_type = xsimd::simd_type<R>;
-        };
-
-        template <class T>
-        struct functor_return_type<T, bool>
-        {
-            using type = bool;
-            using simd_type = xsimd::simd_bool_type<T>;
-        };
-    }
-
 #define UNARY_OPERATOR_FUNCTOR_IMPL(NAME, OP, R)                                \
     template <class T>                                                          \
     struct NAME                                                                 \
     {                                                                           \
-        using return_type = xt::detail::functor_return_type<T, R>;              \
+        template <class U, class RT>                                            \
+        using frt = xt::detail::functor_return_type<U, RT>;                     \
+        using return_type = frt<T, R>;                                          \
         using argument_type = T;                                                \
         using result_type = typename return_type::type;                         \
         using simd_value_type = xsimd::simd_type<T>;                            \
@@ -60,7 +45,9 @@ namespace xt
         {                                                                       \
             return OP arg;                                                      \
         }                                                                       \
-        constexpr simd_result_type simd_apply(const simd_value_type& arg) const \
+        template <class B>                                                      \
+        constexpr typename frt<typename B::value_type, R>::simd_type            \
+        simd_apply(const B& arg) const                                          \
         {                                                                       \
             return OP arg;                                                      \
         }                                                                       \
@@ -84,7 +71,9 @@ namespace xt
     template <class T>                                                           \
     struct NAME                                                                  \
     {                                                                            \
-        using return_type = xt::detail::functor_return_type<T, R>;               \
+        template <class U, class RT>                                             \
+        using frt = xt::detail::functor_return_type<U, RT>;                      \
+        using return_type = frt<T, R>;                                           \
         using first_argument_type = T;                                           \
         using second_argument_type = T;                                          \
         using result_type = typename return_type::type;                          \
@@ -95,8 +84,9 @@ namespace xt
         {                                                                        \
             return (arg1 OP arg2);                                               \
         }                                                                        \
-        constexpr simd_result_type simd_apply(const simd_value_type& arg1,       \
-                                              const simd_value_type& arg2) const \
+        template <class B>                                                       \
+        constexpr typename frt<typename B::value_type, R>::simd_type             \
+        simd_apply(const B& arg1, const B& arg2) const                           \
         {                                                                        \
             return (arg1 OP arg2);                                               \
         }                                                                        \
@@ -127,6 +117,8 @@ namespace xt
         BINARY_OPERATOR_FUNCTOR(bitwise_and, &);
         BINARY_OPERATOR_FUNCTOR(bitwise_xor, ^);
         UNARY_OPERATOR_FUNCTOR(bitwise_not, ~);
+        BINARY_OPERATOR_FUNCTOR(left_shift, <<);
+        BINARY_OPERATOR_FUNCTOR(right_shift, >>);
         BINARY_BOOL_OPERATOR_FUNCTOR(less, <);
         BINARY_BOOL_OPERATOR_FUNCTOR(less_equal, <=);
         BINARY_BOOL_OPERATOR_FUNCTOR(greater, >);
@@ -140,14 +132,16 @@ namespace xt
             using result_type = T;
             using simd_value_type = xsimd::simd_type<T>;
             using simd_bool_type = xsimd::simd_bool_type<T>;
+            using simd_result_type = simd_value_type;
 
             constexpr result_type operator()(bool t1, const T& t2, const T& t3) const noexcept
             {
                 return t1 ? t2 : t3;
             }
-            constexpr simd_value_type simd_apply(const simd_bool_type& t1,
-                                                 const simd_value_type& t2,
-                                                 const simd_value_type& t3) const noexcept
+            template <class B>
+            constexpr B simd_apply(const typename xsimd::simd_traits<B>::batch_bool& t1,
+                                   const simd_value_type& t2,
+                                   const simd_value_type& t3) const noexcept
             {
                 return xsimd::select(t1, t2, t3);
             }
@@ -173,10 +167,12 @@ namespace xt
                 {
                     return static_cast<R>(arg);
                 }
-                constexpr simd_result_type simd_apply(const simd_value_type& arg) const
+                // SIMD conversion disabled for now since it does not make sense
+                // in most of the cases
+                /*constexpr simd_result_type simd_apply(const simd_value_type& arg) const
                 {
                     return static_cast<R>(arg);
-                }
+                }*/
                 template <class U>
                 struct rebind
                 {
@@ -246,7 +242,7 @@ namespace xt
         template <template <class...> class F, class... E>
         inline auto make_xfunction(E&&... e) noexcept
         {
-            using function_type = xfunction_type<F, E... >;
+            using function_type = xfunction_type<F, E...>;
             using functor_type = typename function_type::functor_type;
             using type = typename function_type::type;
             return type(functor_type(), std::forward<E>(e)...);
@@ -388,11 +384,11 @@ namespace xt
      */
     template <class E1, class E2>
     inline auto operator%(E1&& e1, E2&& e2) noexcept
-    -> detail::xfunction_type_t<detail::modulus, E1, E2>
+        -> detail::xfunction_type_t<detail::modulus, E1, E2>
     {
         return detail::make_xfunction<detail::modulus>(std::forward<E1>(e1), std::forward<E2>(e2));
     }
-    
+
     /**
      * @defgroup logical_operators Logical operators
      */
@@ -516,6 +512,40 @@ namespace xt
         -> detail::xfunction_type_t<detail::bitwise_not, E>
     {
         return detail::make_xfunction<detail::bitwise_not>(std::forward<E>(e));
+    }
+
+    /**
+     * @ingroup bitwise_operators
+     * @brief Bitwise left shift
+     *
+     * Returns an \ref xfunction for the element-wise bitwise left shift of e1
+     * by e2.
+     * @param e1 an \ref xexpression
+     * @param e2 an \ref xexpression
+     * @return an \ref xfunction
+     */
+    template <class E1, class E2>
+    inline auto left_shift(E1&& e1, E2&& e2) noexcept
+        -> detail::xfunction_type_t<detail::left_shift, E1, E2>
+    {
+        return detail::make_xfunction<detail::left_shift>(std::forward<E1>(e1), std::forward<E2>(e2));
+    }
+
+    /**
+     * @ingroup bitwise_operators
+     * @brief Bitwise left shift
+     *
+     * Returns an \ref xfunction for the element-wise bitwise left shift of e1
+     * by e2.
+     * @param e1 an \ref xexpression
+     * @param e2 an \ref xexpression
+     * @return an \ref xfunction
+     */
+    template <class E1, class E2>
+    inline auto right_shift(E1&& e1, E2&& e2) noexcept
+        -> detail::xfunction_type_t<detail::right_shift, E1, E2>
+    {
+        return detail::make_xfunction<detail::right_shift>(std::forward<E1>(e1), std::forward<E2>(e2));
     }
 
     /**
@@ -763,16 +793,8 @@ namespace xt
     inline bool any(E&& e)
     {
         using xtype = std::decay_t<E>;
-        if (xtype::static_layout == layout_type::row_major || xtype::static_layout == layout_type::column_major)
-        {
-            return std::any_of(e.cbegin(), e.cend(),
-                               [](const typename std::decay_t<E>::value_type& el) { return el; });
-        }
-        else
-        {
-            return std::any_of(e.begin(), e.end(),
-                               [](const typename std::decay_t<E>::value_type& el) { return el; });
-        }
+        using value_type = typename xtype::value_type;
+        return std::any_of(e.cbegin(), e.cend(), [](const value_type& el) { return el; });
     }
 
     /**
@@ -788,16 +810,8 @@ namespace xt
     inline bool all(E&& e)
     {
         using xtype = std::decay_t<E>;
-        if (xtype::static_layout == layout_type::row_major || xtype::static_layout == layout_type::column_major)
-        {
-            return std::all_of(e.cbegin(), e.cend(),
-                               [](const typename std::decay_t<E>::value_type& el) { return el; });
-        }
-        else
-        {
-            return std::all_of(e.begin(), e.end(),
-                               [](const typename std::decay_t<E>::value_type& el) { return el; });
-        }
+        using value_type = typename xtype::value_type;
+        return std::all_of(e.cbegin(), e.cend(), [](const value_type& el) { return el; });
     }
 
     /**

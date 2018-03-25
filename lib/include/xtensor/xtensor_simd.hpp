@@ -15,12 +15,15 @@
 
 #ifdef XTENSOR_USE_XSIMD
 
-#include "xsimd/xsimd.hpp"
+#include <xsimd/xsimd.hpp>
 
 #else  // XTENSOR_USE_XSIMD
 
 namespace xsimd
 {
+    template <class T, std::size_t A>
+    class aligned_allocator;
+
     struct aligned_mode
     {
     };

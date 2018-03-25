@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "xtl/xproxy_wrapper.hpp"
+#include <xtl/xproxy_wrapper.hpp>
 
 #include "xtensor/xexpression.hpp"
 #include "xtensor/xiterator.hpp"
@@ -193,7 +193,7 @@ namespace xt
         const_reference element(IT first, IT last) const;
 
         template <class S>
-        bool broadcast_shape(S& shape) const;
+        bool broadcast_shape(S& shape, bool reuse_cache = false) const;
 
         template <class S>
         bool is_trivial_broadcast(const S& strides) const;
@@ -351,7 +351,7 @@ namespace xt
 
     template <class F, class IT>
     bool operator==(const xfunctor_iterator<F, IT>& lhs,
-        const xfunctor_iterator<F, IT>& rhs);
+                    const xfunctor_iterator<F, IT>& rhs);
 
     template <class F, class IT>
     bool operator<(const xfunctor_iterator<F, IT>& lhs,
@@ -379,8 +379,10 @@ namespace xt
 
         reference operator*() const;
 
-        void step(size_type dim, size_type n = 1);
-        void step_back(size_type dim, size_type n = 1);
+        void step(size_type dim);
+        void step_back(size_type dim);
+        void step(size_type dim, size_type n);
+        void step_back(size_type dim, size_type n);
         void reset(size_type dim);
         void reset_back(size_type dim);
 
@@ -670,13 +672,14 @@ namespace xt
     /**
      * Broadcast the shape of the function to the specified parameter.
      * @param shape the result shape
+     * @param reuse_cache boolean for reusing a previously computed shape
      * @return a boolean indicating whether the broadcasting is trivial
      */
     template <class F, class CT>
     template <class S>
-    inline bool xfunctor_view<F, CT>::broadcast_shape(S& shape) const
+    inline bool xfunctor_view<F, CT>::broadcast_shape(S& shape, bool reuse_cache) const
     {
-        return m_e.broadcast_shape(shape);
+        return m_e.broadcast_shape(shape, reuse_cache);
     }
 
     /**
@@ -1239,6 +1242,18 @@ namespace xt
     auto xfunctor_stepper<F, ST>::operator*() const -> reference
     {
         return (*p_functor)(*m_stepper);
+    }
+
+    template <class F, class ST>
+    void xfunctor_stepper<F, ST>::step(size_type dim)
+    {
+        m_stepper.step(dim);
+    }
+
+    template <class F, class ST>
+    void xfunctor_stepper<F, ST>::step_back(size_type dim)
+    {
+        m_stepper.step_back(dim);
     }
 
     template <class F, class ST>

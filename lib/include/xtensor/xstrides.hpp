@@ -20,7 +20,7 @@ namespace xt
 {
 
     template <class shape_type>
-    auto compute_size(const shape_type& shape) noexcept;
+    std::size_t compute_size(const shape_type& shape) noexcept;
 
     /***************
      * data offset *
@@ -99,10 +99,10 @@ namespace xt
      ******************/
 
     template <class shape_type>
-    inline auto compute_size(const shape_type& shape) noexcept
+    inline std::size_t compute_size(const shape_type& shape) noexcept
     {
         using size_type = std::decay_t<typename shape_type::value_type>;
-        return std::accumulate(shape.cbegin(), shape.cend(), size_type(1), std::multiplies<size_type>());
+        return static_cast<std::size_t>(std::accumulate(shape.cbegin(), shape.cend(), size_type(1), std::multiplies<size_type>()));
     }
 
     namespace detail
@@ -239,31 +239,46 @@ namespace xt
         }
     }
 
+    namespace detail
+    {
+        template <class S>
+        inline S unravel_noexcept(typename S::value_type idx, const S& strides, layout_type l) noexcept
+        {
+            using value_type = typename S::value_type;
+            using size_type = typename S::size_type;
+            S result = xtl::make_sequence<S>(strides.size(), 0);
+            if (l == layout_type::row_major)
+            {
+                for (size_type i = 0; i < strides.size(); ++i)
+                {
+                    value_type str = strides[i];
+                    value_type quot = str != 0 ? idx / str : 0;
+                    idx = str != 0 ? idx % str : idx;
+                    result[i] = quot;
+                }
+            }
+            else
+            {
+                for (size_type i = strides.size(); i != 0; --i)
+                {
+                    value_type str = strides[i - 1];
+                    value_type quot = str != 0 ? idx / str : 0;
+                    idx = str != 0 ? idx % str : idx;
+                    result[i - 1] = quot;
+                }
+            }
+            return result;
+        }
+    }
+
     template <class S>
     inline S unravel_from_strides(typename S::value_type index, const S& strides, layout_type l)
     {
-        using value_type = typename S::value_type;
-        S result = xtl::make_sequence<S>(strides.size(), 0);
-        auto lambda = [&index](const value_type& str)
+        if(l != layout_type::row_major && l != layout_type::column_major)
         {
-            value_type quot = str != 0 ? index / str : 0;
-            index = str != 0 ? index % str : index;
-            return quot;
-        };
-
-        if (l == layout_type::row_major)
-        {
-            std::transform(strides.cbegin(), strides.cend(), result.begin(), lambda);
+            throw std::runtime_error("unravel_index: dynamic layout not supported");
         }
-        else if(l == layout_type::column_major)
-        {
-            std::transform(strides.crbegin(), strides.crend(), result.rbegin(), lambda);
-        }
-        else
-        {
-            throw std::runtime_error("unravel_index: dynamic layout not supported yet");
-        }
-        return result;
+        return detail::unravel_noexcept(index, strides, l);;
     }
 
     template <class S>
@@ -278,19 +293,37 @@ namespace xt
     inline bool broadcast_shape(const S1& input, S2& output)
     {
         bool trivial_broadcast = (input.size() == output.size());
-        auto input_iter = input.crbegin();
-        auto output_iter = output.rbegin();
-        for (; input_iter != input.crend(); ++input_iter, ++output_iter)
+        // Indices are faster than reverse iterators
+        std::size_t output_index = output.size();
+        std::size_t input_index = input.size();
+        for (; input_index != 0; --input_index, --output_index)
         {
-            if (*output_iter == 1)
+            // First case: output = (0, 0, ...., 0)
+            // output is a new shape that has not been through
+            // the broadcast process yet; broadcast is trivial
+            if (output[output_index - 1] == 0)
             {
-                *output_iter = *input_iter;
+                output[output_index - 1] = input[input_index - 1];
             }
-            else if ((*input_iter != 1) && (*output_iter != *input_iter))
+            // Second case: output has been initialized to 1. Broacast is trivial
+            // only if input is 1 to.
+            else if (output[output_index - 1] == 1)
             {
-                throw broadcast_error(output, input);
+                output[output_index - 1] = input[input_index - 1];
+                trivial_broadcast = trivial_broadcast && (input[input_index - 1] == 1);
             }
-            trivial_broadcast = trivial_broadcast && (*output_iter == *input_iter);
+            // Third case: output has been initialized to something different from 1.
+            // if input is 1, then the broadcast is not trivial
+            else if (input[input_index - 1] == 1)
+            {
+                trivial_broadcast = false;
+            }
+            // Last case: input and output must have the same value, else
+            // shape are not compatible and an exception is thrown
+            else if (input[input_index - 1] != output[output_index - 1])
+            {
+                throw_broadcast_error(output, input);
+            }
         }
         return trivial_broadcast;
     }

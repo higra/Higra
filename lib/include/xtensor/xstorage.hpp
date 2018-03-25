@@ -17,14 +17,15 @@
 #include <type_traits>
 
 #include "xexception.hpp"
+#include "xtensor_simd.hpp"
 #include "xutils.hpp"
 
-#ifndef XSHAPE_ALIGNMENT
+#ifndef XALIGNMENT
     #ifdef XTENSOR_USE_XSIMD
-        #include "xsimd/xsimd.hpp"
-        #define XSHAPE_ALIGNMENT XSIMD_DEFAULT_ALIGNMENT
+        #include <xsimd/xsimd.hpp>
+        #define XALIGNMENT XSIMD_DEFAULT_ALIGNMENT
     #else
-        #define XSHAPE_ALIGNMENT T
+        #define XALIGNMENT 0
     #endif
 #endif
 
@@ -539,7 +540,22 @@ namespace xt
      * svector implementation *
      **************************/
 
-    template <class T, std::size_t N, class A = std::allocator<T>, bool Init = true>
+    namespace detail
+    {
+        template <class T>
+        struct allocator_alignment
+        {
+            constexpr static std::size_t value = 0;
+        };
+
+        template <class T, std::size_t A>
+        struct allocator_alignment<xsimd::aligned_allocator<T, A>>
+        {
+            constexpr static std::size_t value = A;
+        };
+    }
+
+    template <class T, std::size_t N = 4, class A = std::allocator<T>, bool Init = true>
     class svector
     {
     public:
@@ -559,6 +575,13 @@ namespace xt
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+    #if defined(_MSC_VER) && _MSC_VER < 1910
+        constexpr static std::size_t alignment = detail::allocator_alignment<A>::value;
+    #else
+        constexpr static std::size_t alignment = detail::allocator_alignment<A>::value != 0 ?
+                                                    detail::allocator_alignment<A>::value : alignof(T);
+    #endif
+
         svector() noexcept;
         ~svector();
 
@@ -567,14 +590,21 @@ namespace xt
         svector(size_type n, const value_type& v, const allocator_type& alloc = allocator_type());
         svector(std::initializer_list<T> il, const allocator_type& alloc = allocator_type());
 
-        explicit svector(const std::vector<T>& vec);
+        svector(const std::vector<T>& vec);
 
         template <class IT, class = detail::require_input_iter<IT>>
         svector(IT begin, IT end, const allocator_type& alloc = allocator_type());
 
+        template <std::size_t N2, bool I2, class = std::enable_if_t<N != N2, void>>
+        explicit svector(const svector<T, N2, A, I2>& rhs);
+
         svector& operator=(const svector& rhs);
         svector& operator=(svector&& rhs);
-        svector& operator=(std::vector<T>& rhs);
+        svector& operator=(const std::vector<T>& rhs);
+        svector& operator=(std::initializer_list<T> il);
+
+        template <std::size_t N2, bool I2, class = std::enable_if_t<N != N2, void>>
+        svector& operator=(const svector<T, N2, A, I2>& rhs);
 
         svector(const svector& other);
         svector(svector&& other);
@@ -644,7 +674,7 @@ namespace xt
         T* m_capacity = std::end(m_data);
 
         // stack allocated memory
-        alignas(XSHAPE_ALIGNMENT) T m_data[N > 0 ? N : 1];
+        alignas(alignment) T m_data[N > 0 ? N : 1];
 
         void grow(size_type min_capacity = 0);
         void destroy_range(T* begin, T* end);
@@ -694,6 +724,14 @@ namespace xt
     }
 
     template <class T, std::size_t N, class A, bool Init>
+    template <std::size_t N2, bool I2, class>
+    inline svector<T, N, A, Init>::svector(const svector<T, N2, A, I2>& rhs)
+        : m_allocator(rhs.get_allocator())
+    {
+        assign(rhs.begin(), rhs.end());
+    }
+
+    template <class T, std::size_t N, class A, bool Init>
     inline svector<T, N, A, Init>::svector(const std::vector<T>& vec)
     {
         assign(vec.begin(), vec.end());
@@ -728,13 +766,25 @@ namespace xt
     }
 
     template <class T, std::size_t N, class A, bool Init>
-    inline svector<T, N, A, Init>& svector<T, N, A, Init>::operator=(std::vector<T>& rhs)
+    inline svector<T, N, A, Init>& svector<T, N, A, Init>::operator=(const std::vector<T>& rhs)
     {
-        if (this != &rhs)
-        {
-            m_allocator = std::allocator_traits<allocator_type>::select_on_container_copy_construction(rhs.get_allocator());
-            assign(rhs.begin(), rhs.end());
-        }
+        m_allocator = std::allocator_traits<allocator_type>::select_on_container_copy_construction(rhs.get_allocator());
+        assign(rhs.begin(), rhs.end());
+        return *this;
+    }
+
+    template <class T, std::size_t N, class A, bool Init>
+    inline svector<T, N, A, Init>& svector<T, N, A, Init>::operator=(std::initializer_list<T> il)
+    {
+        return operator=(self_type(il));
+    }
+
+    template <class T, std::size_t N, class A, bool Init>
+    template <std::size_t N2, bool I2, class>
+    inline svector<T, N, A, Init>& svector<T, N, A, Init>::operator=(const svector<T, N2, A, I2>& rhs)
+    {
+        m_allocator = std::allocator_traits<allocator_type>::select_on_container_copy_construction(rhs.get_allocator());
+        assign(rhs.begin(), rhs.end());
         return *this;
     }
 
@@ -1046,7 +1096,8 @@ namespace xt
         }
 
         // We can only avoid copying elements if neither vector is small.
-        if (!this->on_stack() && !rhs.on_stack()) {
+        if (!this->on_stack() && !rhs.on_stack())
+        {
             std::swap(this->m_begin, rhs.m_begin);
             std::swap(this->m_end, rhs.m_end);
             std::swap(this->m_capacity, rhs.m_capacity);
@@ -1089,7 +1140,7 @@ namespace xt
     inline void svector<T, N, A, Init>::grow(size_type min_capacity)
     {
         size_type current_size = size();
-        size_type new_capacity = 2 * current_size + 1; // Always grow.
+        size_type new_capacity = 2 * current_size + 1;  // Always grow.
         if (new_capacity < min_capacity)
         {
             new_capacity = min_capacity;
@@ -1169,6 +1220,121 @@ namespace xt
         lhs.swap(rhs);
     }
 
+#define SELECT_ALIGN (XALIGNMENT != 0 ? XALIGNMENT : alignof(T))
+
+    /**
+     * This array class is modeled after ``std::array`` but adds optional alignment through a template parameter.
+     *
+     * To be moved to xtl, along with the rest of xstorage.hpp
+     */
+    template <class T, std::size_t N, std::size_t Align = SELECT_ALIGN>
+    class alignas(Align) aligned_array : public std::array<T, N>
+    {
+    public:
+        // Note: this is for alignment detection. The allocator serves no other purpose than
+        //       that of a trait here.
+        using allocator_type = std::conditional_t<Align != 0,
+                                                  xsimd::aligned_allocator<T, Align>,
+                                                  std::allocator<T>>;
+    };
+
+#if defined(_MSC_VER)
+    #define CONST
+#else
+    #define CONST const
+#endif
+
+    /**
+     * A std::array like class with all member function (except reverse iterators)
+     * as constexpr. The data is immutable once set.
+     */
+    template <class T, std::size_t N>
+    struct const_array
+    {
+        using size_type = std::size_t;
+        using value_type = T;
+        using pointer = value_type*;
+        using const_pointer = const value_type*;
+        using reference = value_type&;
+        using const_reference = const value_type&;
+        using difference_type = std::ptrdiff_t;
+        using iterator = pointer;
+        using const_iterator = const_pointer;
+
+        using reverse_iterator = std::reverse_iterator<const_iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+        constexpr const_reference operator[](std::size_t idx) const
+        {
+            return m_data[idx];
+        }
+
+        constexpr const_iterator begin() const noexcept
+        {
+            return cbegin();
+        }
+
+        constexpr const_iterator end() const noexcept
+        {
+            return cend();
+        }
+
+        constexpr const_iterator cbegin() const noexcept
+        {
+            return m_data;
+        }
+
+        constexpr const_iterator cend() const noexcept
+        {
+            return m_data + N;
+        }
+
+        // TODO make constexpr once C++17 arrives
+        reverse_iterator rbegin() const noexcept
+        {
+            return crbegin();
+        }
+
+        reverse_iterator rend() const noexcept
+        {
+            return crend();
+        }
+
+        const_reverse_iterator crbegin() const noexcept
+        {
+            return const_reverse_iterator(end());
+        }
+
+        const_reverse_iterator crend() const noexcept
+        {
+            return const_reverse_iterator(begin());
+        }
+
+        constexpr const_pointer data() const noexcept
+        {
+            return m_data;
+        }
+
+        constexpr const_reference front() const noexcept
+        {
+            return m_data[0];
+        }
+
+        constexpr const_reference back() const noexcept
+        {
+            return m_data[size() - 1];
+        }
+
+        constexpr size_type size() const noexcept
+        {
+            return N;
+        }
+
+        CONST T m_data[N > 0 ? N : 1];
+    };
 }
+
+#undef XALIGNMENT
+#undef SELECT_ALIGN
 
 #endif

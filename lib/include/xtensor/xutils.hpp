@@ -20,8 +20,8 @@
 #include <utility>
 #include <vector>
 
-#include "xtl/xfunctional.hpp"
-#include "xtl/xtype_traits.hpp"
+#include <xtl/xfunctional.hpp>
+#include <xtl/xtype_traits.hpp>
 
 #include "xtensor_config.hpp"
 
@@ -543,8 +543,7 @@ namespace xt
     struct conditional_cast_functor;
 
     template <class T>
-    struct conditional_cast_functor<false, T>
-    : public xtl::identity
+    struct conditional_cast_functor<false, T> : public xtl::identity
     {
     };
 
@@ -583,6 +582,12 @@ namespace xt
      */
     template <class... T>
     struct promote_type;
+
+    template <>
+    struct promote_type<>
+    {
+        using type = void;
+    };
 
     template <class T>
     struct promote_type<T>
@@ -645,6 +650,7 @@ namespace xt
         static constexpr bool is_long_double = std::is_same<V, long double>::value;
 
     public:
+
         using type = std::conditional_t<is_arithmetic,
                         std::conditional_t<is_integral,
                             std::conditional_t<is_signed, long long, unsigned long long>,

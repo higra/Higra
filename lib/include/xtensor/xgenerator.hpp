@@ -16,7 +16,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "xtl/xsequence.hpp"
+#include <xtl/xsequence.hpp>
 
 #include "xexpression.hpp"
 #include "xiterable.hpp"
@@ -102,7 +102,7 @@ namespace xt
         const_reference element(It first, It last) const;
 
         template <class O>
-        bool broadcast_shape(O& shape) const;
+        bool broadcast_shape(O& shape, bool reuse_cache = false) const;
 
         template <class O>
         bool is_trivial_broadcast(const O& /*strides*/) const noexcept;
@@ -270,7 +270,7 @@ namespace xt
      */
     template <class F, class R, class S>
     template <class O>
-    inline bool xgenerator<F, R, S>::broadcast_shape(O& shape) const
+    inline bool xgenerator<F, R, S>::broadcast_shape(O& shape, bool) const
     {
         return xt::broadcast_shape(m_shape, shape);
     }
@@ -314,13 +314,14 @@ namespace xt
     template <std::size_t dim, class I, class... Args>
     inline void xgenerator<F, R, S>::adapt_index(I& arg, Args&... args) const
     {
-        if (sizeof...(Args)+1 > m_shape.size())
+        using value_type = typename decltype(m_shape)::value_type;
+        if (sizeof...(Args) + 1 > m_shape.size())
         {
             adapt_index<dim>(args...);
         }
         else
         {
-            if (arg >= m_shape[dim] && m_shape[dim] == 1)
+            if (static_cast<value_type>(arg) >= m_shape[dim] && m_shape[dim] == 1)
             {
                 arg = 0;
             }

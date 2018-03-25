@@ -15,8 +15,8 @@
 #include <numeric>
 #include <stdexcept>
 
-#include "xtl/xmeta_utils.hpp"
-#include "xtl/xsequence.hpp"
+#include <xtl/xmeta_utils.hpp>
+#include <xtl/xsequence.hpp>
 
 #include "xiterable.hpp"
 #include "xiterator.hpp"
@@ -79,7 +79,7 @@ namespace xt
         using container_type = typename inner_types::container_type;
         using allocator_type = allocator_type_t<std::decay_t<container_type>>;
         using value_type = typename container_type::value_type;
-        using reference = std::conditional_t<std::is_const<container_type>::value,  
+        using reference = std::conditional_t<std::is_const<container_type>::value,
                                              typename container_type::const_reference,
                                              typename container_type::reference>;
         using const_reference = typename container_type::const_reference;
@@ -153,7 +153,7 @@ namespace xt
         const size_type raw_data_offset() const noexcept;
 
         template <class S>
-        bool broadcast_shape(S& shape) const;
+        bool broadcast_shape(S& shape, bool reuse_cache = false) const;
 
         template <class S>
         bool is_trivial_broadcast(const S& strides) const noexcept;
@@ -717,7 +717,7 @@ namespace xt
      */
     template <class D>
     template <class S>
-    inline bool xcontainer<D>::broadcast_shape(S& shape) const
+    inline bool xcontainer<D>::broadcast_shape(S& shape, bool) const
     {
         return xt::broadcast_shape(this->shape(), shape);
     }

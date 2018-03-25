@@ -12,14 +12,14 @@
 #include <memory>
 #include <vector>
 
+#include <xtl/xoptional_sequence.hpp>
+
 #include "xexpression.hpp"
 #include "xlayout.hpp"
-#include "xstorage.hpp"
 #include "xshape.hpp"
+#include "xstorage.hpp"
 #include "xtensor_config.hpp"
 #include "xtensor_simd.hpp"
-
-#include "xtl/xoptional_sequence.hpp"
 
 namespace xt
 {
@@ -120,6 +120,10 @@ namespace xt
     template <std::size_t... N>
     class fixed_shape;
 
+    /**
+     * @typedef xshape
+     * Alias template for ``fixed_shape`` allows for a shorter template shape definition in ``xtensorf``.
+     */
     template <std::size_t... N>
     using xshape = fixed_shape<N...>;
 
@@ -129,6 +133,26 @@ namespace xt
     template <class EC, class FS, layout_type L = DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
     class xfixed_adaptor;
 
+    /**
+     * @typedef xtensorf
+     * Alias template on xfixed_container with default parameters for layout
+     * type. This allows to write
+     *
+     * \code{.cpp}
+     * xt::xtensorf<double, xt::xshape<2, 2>> a = {{1., 2.}, {3., 4.}};
+     * \endcode
+     *
+     * instead of the syntax
+     *
+     * \code{.cpp}
+     * xt::xfixed_container<double, xt::xshape<2, 2>, xt::layout_type::row_major> a = ...
+     * \endcode
+     *
+     * @tparam T The value type of the elements.
+     * @tparam FS A xshape template shape.
+     * @tparam L The layout_type of the tensor (default: row_major).
+     * @tparam A The allocator of the containers holding the elements.
+     */
     template <class T,
               class FS,
               layout_type L = DEFAULT_LAYOUT>
