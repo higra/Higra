@@ -17,11 +17,11 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
         hg::regular_grid_graph g;
 
         _data() {
-            hg::embedding_grid embedding{3, 2}; // 3 rows, 2 columns
-            std::vector<xt::xarray<long>> neighbours{{0,  -1},
-                                                     {-1, 0},
-                                                     {1,  0},
-                                                     {0,  1}}; // 4 adjacency
+            hg::embedding_grid embedding{2, 3}; // 2 rows, 3 columns
+            std::vector<xt::xarray<long>> neighbours{{-1, 0},
+                                                     {0,  -1},
+                                                     {0,  1},
+                                                     {1,  0}}; // 4 adjacency
 
             g = hg::regular_grid_graph(embedding, neighbours);
         }

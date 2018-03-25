@@ -2,7 +2,10 @@
 // Created by user on 3/9/18.
 //
 #include "xtensor/xarray.hpp"
-
+#include "xtensor/xreducer.hpp"
+#include "xtensor/xgenerator.hpp"
+#include "xtensor/xstrided_view.hpp"
+#include "debug.hpp"
 #pragma once
 
 namespace hg {
@@ -17,7 +20,7 @@ namespace hg {
             std::size_t dim = 0;
             std::size_t nbElement = 0;
             std::vector<std::size_t> shape;
-            std::vector<std::size_t> sump_prod;
+            xt::xarray<std::size_t> sum_prod;
 
             void computeSize() {
                 if (dim == 0)
@@ -30,9 +33,13 @@ namespace hg {
             }
 
             void computeSumProd() {
-                sump_prod.push_back(1);
-                for (std::size_t i = 1; i < dim; ++i) {
-                    sump_prod.push_back(sump_prod[i - 1] * shape[i - 1]);
+                sum_prod = xt::zeros<std::size_t>({dim});
+
+                sum_prod(dim - 1) = 1;
+
+                long dims = dim;
+                for (long i = dims - 2; i >= 0; --i) {
+                    sum_prod(i) = sum_prod(i + 1) * shape[i + 1];
                 }
             }
 
@@ -70,6 +77,9 @@ namespace hg {
                 return shape;
             }
 
+            std::size_t dims() const {
+                return dim;
+            }
 
             std::size_t size() const {
                 return nbElement;
@@ -80,15 +90,23 @@ namespace hg {
                 std::size_t result = 0;
                 std::size_t count = 0;
                 for (const auto &c: coordinates)
-                    result += c * sump_prod[count++];
+                    result += c * sum_prod(count++);
                 return result;
+            }
+
+
+            xt::xarray<std::size_t> grid2linV(const xt::xarray<coordinates_t> &coordinates) const {
+                hg_assert(coordinates.shape().back() == dims(), "Coordinates size does not match embedding dimension.");
+                auto last = coordinates.shape().size() - 1;
+                auto tmp = coordinates * sum_prod;
+                return xt::sum(tmp, {last});
             }
 
             std::size_t grid2lin(const std::initializer_list<coordinates_t> &coordinates) const {
                 std::size_t result = 0;
                 std::size_t count = 0;
                 for (const auto &c: coordinates)
-                    result += c * sump_prod[count++];
+                    result += c * sum_prod(count++);
                 return result;
             }
 
@@ -112,11 +130,34 @@ namespace hg {
 
             xt::xarray<coordinates_t> lin2grid(std::size_t index) const {
                 xt::xarray<coordinates_t> result = xt::zeros<coordinates_t>({dim});
-                for (int i = dim - 1; i >= 0; --i) {
 
-                    result[i] = index / sump_prod[i];
-                    index = index % sump_prod[i];
+                for (std::size_t i = 0; i < dim; ++i) {
+
+                    result[i] = index / sum_prod[i];
+                    index = index % sum_prod[i];
                 }
+                return result;
+            }
+
+            xt::xarray<coordinates_t> lin2grid(const xt::xarray<std::size_t> &indices) const {
+                auto size = indices.size();
+                auto shape = indices.shape();
+                shape.push_back(dim);
+
+                xt::xarray<coordinates_t> result = xt::zeros<coordinates_t>({size, dim});
+
+
+                const auto indicesLin = xt::flatten(indices);
+
+                for (std::size_t j = 0; j < size; ++j) {
+                    auto index = indicesLin(j);
+                    for (std::size_t i = 0; i < dim; ++i) {
+
+                        result(j, i) = index / sum_prod[i];
+                        index = index % sum_prod[i];
+                    }
+                }
+                result.reshape(shape);
                 return result;
             }
         };

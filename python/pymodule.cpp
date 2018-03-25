@@ -4,9 +4,11 @@
 
 #include "pybind11/pybind11.h"
 #include "py_undirected_graph.hpp"
+#include "py_embedding.hpp"
 
 #define FORCE_IMPORT_ARRAY
 
+#include "xtensor-python/pyarray.hpp"     // Numpy bindings
 
 PYBIND11_MODULE(higra, m
 ) {
@@ -34,6 +36,6 @@ m.attr("__version__") = VERSION_INFO;
 m.attr("__version__") = "dev";
 #endif
 
-py_init_undirected_graph(m);
-
+    py_init_undirected_graph(m);
+    py_init_embedding(m);
 }
