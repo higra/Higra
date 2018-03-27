@@ -107,7 +107,7 @@ namespace hg {
                 if (point_iterator != point_iterator_end) {
 
                     xt::xarray<long> neighbourc = source_coordinates + *point_iterator;
-                    if (!embedding.isInBound(neighbourc)) {
+                    if (!embedding.contains(neighbourc)) {
                         increment();
                     } else {
                         neighbour = embedding.grid2lin(neighbourc);
@@ -128,7 +128,7 @@ namespace hg {
                     point_iterator++;
                     if (point_iterator != point_iterator_end) {
                         neighbourc = source_coordinates + *point_iterator;
-                        flag = embedding.isInBound(neighbourc);
+                        flag = embedding.contains(neighbourc);
                     } else {
                         flag = true;
                     }

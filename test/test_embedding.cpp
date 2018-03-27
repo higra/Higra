@@ -16,9 +16,9 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
         BOOST_CHECK(e1.size() == 10);
         BOOST_CHECK(e1.dims() == 1);
 
-        BOOST_CHECK(e1.isInBound({5}));
-        BOOST_CHECK(!e1.isInBound({-2}));
-        BOOST_CHECK(!e1.isInBound({12}));
+        BOOST_CHECK(e1.contains({5}));
+        BOOST_CHECK(!e1.contains({-2}));
+        BOOST_CHECK(!e1.contains({12}));
 
         auto p1 = e1.lin2grid(2);
         std::vector<long> p2{2};
@@ -26,8 +26,8 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
         BOOST_CHECK(std::equal(p1.begin(), p1.end(), p2.begin()));
 
         std::vector<long> p3{15};
-        BOOST_CHECK(e1.isInBound(p1));
-        BOOST_CHECK(!e1.isInBound(p3));
+        BOOST_CHECK(e1.contains(p1));
+        BOOST_CHECK(!e1.contains(p3));
     }
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGrid2d) {
@@ -45,17 +45,17 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
         BOOST_CHECK(std::equal(p2.begin(), p2.end(), p2t.begin()));
         BOOST_CHECK(e1.grid2lin(p2) == 14);
 
-        BOOST_CHECK(e1.isInBound(p1t));
-        BOOST_CHECK(e1.isInBound(p2t));
+        BOOST_CHECK(e1.contains(p1t));
+        BOOST_CHECK(e1.contains(p2t));
 
         std::vector<long> p3 = {-1, 2};
         std::vector<long> p4 = {6, -1};
         std::vector<long> p5 = {10, 2};
         std::vector<long> p6 = {6, 5};
-        BOOST_CHECK(!e1.isInBound(p3));
-        BOOST_CHECK(!e1.isInBound(p4));
-        BOOST_CHECK(!e1.isInBound(p5));
-        BOOST_CHECK(!e1.isInBound(p6));
+        BOOST_CHECK(!e1.contains(p3));
+        BOOST_CHECK(!e1.contains(p4));
+        BOOST_CHECK(!e1.contains(p5));
+        BOOST_CHECK(!e1.contains(p6));
 
     }
 
@@ -118,8 +118,20 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
         BOOST_CHECK(res == coords);
     }
 
+    BOOST_AUTO_TEST_CASE(containsV) {
+        xt::xarray<ulong> shape = {5, 10};
+        hg::embedding_grid e1 = hg::embedding_grid::make_embedding_grid(shape);
 
+        xt::xarray<long> coords{{{0, 0}, {3, 8}, {-1, 2}},
+                                {{2, 4}, {5, 5}, {43, 44}}};
 
+        xt::xarray<bool> ref{{true, true,  false},
+                             {true, false, false}};
+
+        auto res = e1.containsV(coords);
+
+        BOOST_CHECK(res == ref);
+    }
 
 
 BOOST_AUTO_TEST_SUITE_END();

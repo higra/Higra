@@ -1,12 +1,16 @@
 //
 // Created by user on 3/9/18.
 //
-#include "xtensor/xarray.hpp"
+
+#pragma once
+
+#include "xtensor/xexpression.hpp"
 #include "xtensor/xreducer.hpp"
 #include "xtensor/xgenerator.hpp"
 #include "xtensor/xstrided_view.hpp"
+#include "xtensor/xio.hpp"
 #include "debug.hpp"
-#pragma once
+
 
 namespace hg {
 
@@ -19,7 +23,7 @@ namespace hg {
         private:
             std::size_t dim = 0;
             std::size_t nbElement = 0;
-            std::vector<std::size_t> shape;
+            xt::xarray<long> shape; // long for safer comparisons
             xt::xarray<std::size_t> sum_prod;
 
             void computeSize() {
@@ -39,7 +43,7 @@ namespace hg {
 
                 long dims = dim;
                 for (long i = dims - 2; i >= 0; --i) {
-                    sum_prod(i) = sum_prod(i + 1) * shape[i + 1];
+                    sum_prod(i) = sum_prod(i + 1) * shape(i + 1);
                 }
             }
 
@@ -49,12 +53,13 @@ namespace hg {
             template<typename T>
             static auto make_embedding_grid(T _shape) {
 
-                embedding_grid g;
-                for (auto &c: _shape) {
-                    g.shape.push_back(c);
-                }
+                embedding_grid<> g;
                 g.dim = _shape.size();
-
+                g.shape = xt::zeros<long>({g.dim});
+                std::size_t i = 0;
+                for (auto &c: _shape) {
+                    g.shape(i++) = c;
+                }
                 g.computeSumProd();
                 g.computeSize();
                 return g;
@@ -63,25 +68,21 @@ namespace hg {
             embedding_grid() {}
 
 
-            embedding_grid(const std::initializer_list<std::size_t> &_shape) {
-
-                for (auto &c: _shape)
-                    shape.push_back(c);
+            embedding_grid(const std::initializer_list<long> &_shape) : shape(_shape) {
                 dim = shape.size();
-
                 computeSumProd();
                 computeSize();
             }
 
-            std::vector<std::size_t> getShape() const {
+            const auto &getShape() const {
                 return shape;
             }
 
-            std::size_t dims() const {
+            auto dims() const {
                 return dim;
             }
 
-            std::size_t size() const {
+            auto size() const {
                 return nbElement;
             }
 
@@ -95,11 +96,15 @@ namespace hg {
             }
 
 
-            xt::xarray<std::size_t> grid2linV(const xt::xarray<coordinates_t> &coordinates) const {
-                hg_assert(coordinates.shape().back() == dims(), "Coordinates size does not match embedding dimension.");
-                auto last = coordinates.shape().size() - 1;
-                auto tmp = coordinates * sum_prod;
-                return xt::sum(tmp, {last});
+            template<typename T>
+            auto grid2linV(const xt::xexpression<T> &xcoordinates) const {
+                static_assert(std::is_integral<typename T::value_type>::value,
+                              "Coordinates must have integral value type.");
+                const auto &coordinates = xcoordinates.derived_cast();
+                hg_assert(coordinates.shape().back() == dim, "Coordinates size does not match embedding dimension.");
+
+                auto last = coordinates.dimension() - 1;
+                return xt::sum(coordinates * sum_prod, {last});
             }
 
             std::size_t grid2lin(const std::initializer_list<coordinates_t> &coordinates) const {
@@ -110,20 +115,30 @@ namespace hg {
                 return result;
             }
 
-            template<typename T>
-            bool isInBound(const T &coordinates) const {
+
+            bool contains(const std::initializer_list<coordinates_t> &coordinates) const {
                 std::size_t count = 0;
                 for (const auto &c: coordinates)
-                    if (c < 0 || c >= (long) shape[count++])
+                    if (c < 0 || c >= (long) shape(count++))
                         return false;
                 return true;
             }
 
+            template<typename T>
+            auto containsV(const xt::xexpression<T> &xcoordinates) const {
+                static_assert(std::is_integral<typename T::value_type>::value,
+                              "Coordinates must have integral value type.");
+                const auto &coordinates = xcoordinates.derived_cast();
+                hg_assert(coordinates.shape().back() == dim, "Coordinates size does not match embedding dimension.");
 
-            bool isInBound(const std::initializer_list<coordinates_t> &coordinates) const {
+                return xt::amin(coordinates >= 0 && coordinates < shape, {coordinates.dimension() - 1});
+            }
+
+            template<typename T>
+            bool contains(const T &coordinates) const {
                 std::size_t count = 0;
                 for (const auto &c: coordinates)
-                    if (c < 0 || c >= (long) shape[count++])
+                    if (c < 0 || c >= (long) shape(count++))
                         return false;
                 return true;
             }
@@ -139,7 +154,12 @@ namespace hg {
                 return result;
             }
 
-            xt::xarray<coordinates_t> lin2grid(const xt::xarray<std::size_t> &indices) const {
+            template<typename T>
+            xt::xarray<coordinates_t> lin2grid(const xt::xexpression<T> &xindices) const {
+                static_assert(std::is_integral<typename T::value_type>::value,
+                              "Indices must have integral value type.");
+                const auto indices = xindices.derived_cast();
+
                 auto size = indices.size();
                 auto shape = indices.shape();
                 shape.push_back(dim);
