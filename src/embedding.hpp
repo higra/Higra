@@ -47,29 +47,31 @@ namespace hg {
                 }
             }
 
-        public:
-
-
-            template<typename T>
-            static auto make_embedding_grid(T _shape) {
-
-                embedding_grid<> g;
-                g.dim = _shape.size();
-                g.shape = xt::zeros<long>({g.dim});
-                std::size_t i = 0;
-                for (auto &c: _shape) {
-                    g.shape(i++) = c;
+            void assert_positive_shape() {
+                for (const auto c: shape) {
+                    hg_assert(c > 0, "Axis size must be positive.");
                 }
-                g.computeSumProd();
-                g.computeSize();
-                return g;
+
             }
+
+        public:
 
             embedding_grid() {}
 
 
             embedding_grid(const std::initializer_list<long> &_shape) : shape(_shape) {
                 dim = shape.size();
+                assert_positive_shape();
+                computeSumProd();
+                computeSize();
+            }
+
+            template<typename T>
+            embedding_grid(const xt::xexpression<T> &_shape) : shape(_shape.derived_cast()) {
+                static_assert(std::is_integral<typename T::value_type>::value,
+                              "Coordinates must have integral value type.");
+                dim = shape.size();
+                assert_positive_shape();
                 computeSumProd();
                 computeSize();
             }
@@ -78,7 +80,20 @@ namespace hg {
                 return shape;
             }
 
-            auto dims() const {
+            template<typename T>
+            embedding_grid(const T &_shape) {
+                shape = xt::zeros<long>({_shape.size()});
+                std::size_t i = 0;
+                for (const auto c:_shape)
+                    shape(i++) = c;
+                dim = shape.size();
+                assert_positive_shape();
+                computeSumProd();
+                computeSize();
+            }
+
+
+            auto dimension() const {
                 return dim;
             }
 

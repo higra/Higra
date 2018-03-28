@@ -2,6 +2,7 @@
 
 #include "embedding.hpp"
 #include "xtensor/xview.hpp"
+#include "xtensor/xgenerator.hpp"
 //
 // Created by user on 3/9/18.
 //
@@ -14,7 +15,7 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGrid1d) {
         hg::embedding_grid e1{10};
         BOOST_CHECK(e1.size() == 10);
-        BOOST_CHECK(e1.dims() == 1);
+        BOOST_CHECK(e1.dimension() == 1);
 
         BOOST_CHECK(e1.contains({5}));
         BOOST_CHECK(!e1.contains({-2}));
@@ -33,7 +34,7 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGrid2d) {
         hg::embedding_grid e1{10, 5};
         BOOST_CHECK(e1.size() == 50);
-        BOOST_CHECK(e1.dims() == 2);
+        BOOST_CHECK(e1.dimension() == 2);
 
         std::vector<long> p1 = {0, 3};
         auto p1t = e1.lin2grid(3);
@@ -56,13 +57,24 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
         BOOST_CHECK(!e1.contains(p4));
         BOOST_CHECK(!e1.contains(p5));
         BOOST_CHECK(!e1.contains(p6));
-
     }
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGrid3d) {
         hg::embedding_grid e1{10, 5, 2};
         BOOST_CHECK(e1.size() == 100);
-        BOOST_CHECK(e1.dims() == 3);
+        BOOST_CHECK(e1.dimension() == 3);
+
+        std::vector<long> p1 = {3, 2, 1};
+        auto p1t = e1.lin2grid(35);
+        BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
+        BOOST_CHECK(e1.grid2lin(p1) == 35);
+    }
+
+    BOOST_AUTO_TEST_CASE(CreateEmbeddingGridFromXTensorShape) {
+        xt::xarray<int> a = xt::zeros<int>({10, 5, 2});
+        hg::embedding_grid e1(a.shape());
+        BOOST_CHECK(e1.size() == 100);
+        BOOST_CHECK(e1.dimension() == 3);
 
         std::vector<long> p1 = {3, 2, 1};
         auto p1t = e1.lin2grid(35);
@@ -72,9 +84,9 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGridFromXTensor) {
         xt::xarray<ulong> shape = {10, 5, 2};
-        hg::embedding_grid e1 = hg::embedding_grid::make_embedding_grid(shape);
+        hg::embedding_grid e1(shape);
         BOOST_CHECK(e1.size() == 100);
-        BOOST_CHECK(e1.dims() == 3);
+        BOOST_CHECK(e1.dimension() == 3);
 
         std::vector<long> p1 = {3, 2, 1};
         auto p1t = e1.lin2grid(35);
@@ -85,7 +97,7 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
 
     BOOST_AUTO_TEST_CASE(grid2LinV) {
         xt::xarray<ulong> shape = {10, 5, 2};
-        hg::embedding_grid e1 = hg::embedding_grid::make_embedding_grid(shape);
+        hg::embedding_grid e1(shape);
 
         xt::xarray<long> coord = {{0, 0, 0},
                                   {0, 0, 1},
@@ -105,22 +117,20 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
 
     BOOST_AUTO_TEST_CASE(lin2GridV) {
         xt::xarray<ulong> shape = {5, 10};
-        hg::embedding_grid e1 = hg::embedding_grid::make_embedding_grid(shape);
+        hg::embedding_grid e1(shape);
 
         xt::xarray<ulong> coordLin = {{0,  1,  2,  3},
                                       {22, 42, 43, 44}};
         xt::xarray<long> coords = {{{0, 0}, {0, 1}, {0, 2}, {0, 3}},
                                    {{2, 2}, {4, 2}, {4, 3}, {4, 4}}};
 
-
         auto res = e1.lin2grid(coordLin);
-
         BOOST_CHECK(res == coords);
     }
 
     BOOST_AUTO_TEST_CASE(containsV) {
         xt::xarray<ulong> shape = {5, 10};
-        hg::embedding_grid e1 = hg::embedding_grid::make_embedding_grid(shape);
+        hg::embedding_grid e1(shape);
 
         xt::xarray<long> coords{{{0, 0}, {3, 8}, {-1, 2}},
                                 {{2, 4}, {5, 5}, {43, 44}}};
@@ -129,7 +139,6 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
                              {true, false, false}};
 
         auto res = e1.containsV(coords);
-
         BOOST_CHECK(res == ref);
     }
 
