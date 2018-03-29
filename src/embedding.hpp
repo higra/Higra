@@ -140,17 +140,22 @@ namespace hg {
             }
 
             template<typename T>
-            auto containsV(const xt::xexpression<T> &xcoordinates) const {
+            auto contains(const xt::xexpression<T> &xcoordinates) const {
                 static_assert(std::is_integral<typename T::value_type>::value,
                               "Coordinates must have integral value type.");
+                std::cout << "in\n";
+
                 const auto &coordinates = xcoordinates.derived_cast();
                 hg_assert(coordinates.shape().back() == dim, "Coordinates size does not match embedding dimension.");
-
+                std::cout << "assert !\n";
                 return xt::amin(coordinates >= 0 && coordinates < shape, {coordinates.dimension() - 1});
             }
 
-            template<typename T>
+            template<typename T,
+                    typename = std::enable_if_t<!std::is_base_of<xt::xexpression<T>, T>::value>
+            >
             bool contains(const T &coordinates) const {
+
                 std::size_t count = 0;
                 for (const auto &c: coordinates)
                     if (c < 0 || c >= (long) shape(count++))
@@ -158,13 +163,13 @@ namespace hg {
                 return true;
             }
 
-            xt::xarray<coordinates_t> lin2grid(std::size_t index) const {
-                xt::xarray<coordinates_t> result = xt::zeros<coordinates_t>({dim});
+            auto lin2grid(std::size_t index) const {
+                std::vector<long> result(dim);
 
                 for (std::size_t i = 0; i < dim; ++i) {
 
-                    result[i] = index / sum_prod[i];
-                    index = index % sum_prod[i];
+                    result[i] = index / sum_prod(i);
+                    index = index % sum_prod(i);
                 }
                 return result;
             }

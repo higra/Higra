@@ -23,19 +23,14 @@ doc() = R"pbdoc(
            add
            subtract
     )pbdoc";
-/*
-m.def("add", &add, R"pbdoc(
-        Add two numbers
-        Some other explanation about the add function.
-    )pbdoc");
-*/
+
 
 #ifdef VERSION_INFO
 m.attr("__version__") = VERSION_INFO;
 #else
 m.attr("__version__") = "dev";
 #endif
-
+    xt::import_numpy();
     py_init_undirected_graph(m);
     py_init_embedding(m);
 }

@@ -1,5 +1,5 @@
 #include <boost/test/unit_test.hpp>
-
+#include "test_utils.hpp"
 #include "embedding.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xgenerator.hpp"
@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
         xt::xarray<bool> ref{{true, true,  false},
                              {true, false, false}};
 
-        auto res = e1.containsV(coords);
+        auto res = e1.contains(coords);
         BOOST_CHECK(res == ref);
     }
 

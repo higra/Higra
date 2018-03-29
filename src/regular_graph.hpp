@@ -104,9 +104,14 @@ namespace hg {
                       point_iterator_end(_point_iterator_end) {
 
                 source_coordinates = embedding.lin2grid(source);
+                std::vector<long> neighbourc(source_coordinates.size());
                 if (point_iterator != point_iterator_end) {
 
-                    xt::xarray<long> neighbourc = source_coordinates + *point_iterator;
+                    auto neighbour_relative = *point_iterator;
+                    for (std::size_t i = 0; i < source_coordinates.size(); ++i) {
+                        neighbourc[i] = neighbour_relative[i] + source_coordinates[i];
+                    }
+
                     if (!embedding.contains(neighbourc)) {
                         increment();
                     } else {
@@ -123,11 +128,14 @@ namespace hg {
 
             void increment() {
                 bool flag;
-                xt::xarray<long> neighbourc;
+                std::vector<long> neighbourc(source_coordinates.size());
                 do {
                     point_iterator++;
                     if (point_iterator != point_iterator_end) {
-                        neighbourc = source_coordinates + *point_iterator;
+                        auto neighbour_relative = *point_iterator;
+                        for (std::size_t i = 0; i < source_coordinates.size(); ++i) {
+                            neighbourc[i] = neighbour_relative[i] + source_coordinates[i];
+                        }
                         flag = embedding.contains(neighbourc);
                     } else {
                         flag = true;
@@ -149,7 +157,7 @@ namespace hg {
 
             graph_vertex_t source;
             graph_vertex_t neighbour;
-            xt::xarray<long> source_coordinates;
+            std::vector<long> source_coordinates;
             embedding_t embedding;
             point_list_iterator_t point_iterator;
             point_list_iterator_t point_iterator_end;

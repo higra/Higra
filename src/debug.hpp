@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <iostream>
+
 #define HG_DEBUG
 
 
