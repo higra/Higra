@@ -48,6 +48,38 @@ class TestEmbedding(unittest.TestCase):
 
         self.assertTrue(np.array_equal(ref, res))
 
+    def test_lin2grid(self):
+        e1 = hg.EmbeddingGrid((10, 5, 2))
+        p = e1.lin2grid(35)
+        self.assertTrue(p == [3, 2, 1])
+
+    def test_lin2gridV(self):
+        e1 = hg.EmbeddingGrid((5, 10))
+
+        coord = np.asarray(((0, 1, 2, 3),
+                            (22, 42, 43, 44)), dtype=np.uint64)
+        ref = np.asarray((((0, 0), (0, 1), (0, 2), (0, 3)),
+                          ((2, 2), (4, 2), (4, 3), (4, 4))), dtype=np.int64)
+
+        res = e1.lin2grid(coord)
+        self.assertTrue(np.array_equal(ref, res))
+
+    def test_grid2lin(self):
+        e1 = hg.EmbeddingGrid((10, 5, 2))
+        p = e1.grid2lin((3, 2, 1))
+        self.assertTrue(p == 35)
+
+    def test_grid2linV(self):
+        e1 = hg.EmbeddingGrid((5, 10))
+
+        coord = np.asarray((((0, 0), (0, 1), (0, 2), (0, 3)),
+                            ((2, 2), (4, 2), (4, 3), (4, 4))), dtype=np.int64)
+        ref = np.asarray(((0, 1, 2, 3),
+                          (22, 42, 43, 44)), dtype=np.uint64)
+
+        res = e1.grid2lin(coord)
+        self.assertTrue(np.array_equal(ref, res))
+
 
 if __name__ == '__main__':
     unittest.main()

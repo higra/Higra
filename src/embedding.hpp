@@ -101,7 +101,9 @@ namespace hg {
                 return nbElement;
             }
 
-            template<typename T>
+            template<typename T,
+                    typename = std::enable_if_t<!std::is_base_of<xt::xexpression<T>, T>::value>
+            >
             std::size_t grid2lin(const T &coordinates) const {
                 std::size_t result = 0;
                 std::size_t count = 0;
@@ -112,7 +114,7 @@ namespace hg {
 
 
             template<typename T>
-            auto grid2linV(const xt::xexpression<T> &xcoordinates) const {
+            auto grid2lin(const xt::xexpression<T> &xcoordinates) const {
                 static_assert(std::is_integral<typename T::value_type>::value,
                               "Coordinates must have integral value type.");
                 const auto &coordinates = xcoordinates.derived_cast();
@@ -143,11 +145,11 @@ namespace hg {
             auto contains(const xt::xexpression<T> &xcoordinates) const {
                 static_assert(std::is_integral<typename T::value_type>::value,
                               "Coordinates must have integral value type.");
-                std::cout << "in\n";
+
 
                 const auto &coordinates = xcoordinates.derived_cast();
                 hg_assert(coordinates.shape().back() == dim, "Coordinates size does not match embedding dimension.");
-                std::cout << "assert !\n";
+
                 return xt::amin(coordinates >= 0 && coordinates < shape, {coordinates.dimension() - 1});
             }
 
@@ -181,7 +183,8 @@ namespace hg {
                 const auto indices = xindices.derived_cast();
 
                 auto size = indices.size();
-                auto shape = indices.shape();
+                auto shapeO = indices.shape();
+                std::vector<std::size_t> shape(shapeO.begin(), shapeO.end());
                 shape.push_back(dim);
 
                 xt::xarray<coordinates_t> result = xt::zeros<coordinates_t>({size, dim});

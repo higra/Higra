@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
                                   {0, 0, 1},
                                   {0, 0, 2},
                                   {3, 2, 1}};
-        auto linCoord = e1.grid2linV(coord);
+        auto linCoord = e1.grid2lin(coord);
         BOOST_CHECK(linCoord.shape().size() == 1);
         BOOST_CHECK(linCoord.shape()[0] == 4);
         std::vector<ulong> resShape = {3};

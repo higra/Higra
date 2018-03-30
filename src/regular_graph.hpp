@@ -106,7 +106,7 @@ namespace hg {
                 source_coordinates = embedding.lin2grid(source);
                 std::vector<long> neighbourc(source_coordinates.size());
                 if (point_iterator != point_iterator_end) {
-
+                    // TODO: optimize computation, avoid temporary
                     auto neighbour_relative = *point_iterator;
                     for (std::size_t i = 0; i < source_coordinates.size(); ++i) {
                         neighbourc[i] = neighbour_relative[i] + source_coordinates[i];
@@ -132,6 +132,7 @@ namespace hg {
                 do {
                     point_iterator++;
                     if (point_iterator != point_iterator_end) {
+                        // TODO: optimize computation, avoid temporary
                         auto neighbour_relative = *point_iterator;
                         for (std::size_t i = 0; i < source_coordinates.size(); ++i) {
                             neighbourc[i] = neighbour_relative[i] + source_coordinates[i];
