@@ -113,3 +113,27 @@ void add_edge_list_graph_concept(pyc &c) {
     c.def("numEdges", [](graph_t &g) { return hg::num_edges(g); },
           "Return the number of edges in the graph");
 }
+
+
+template<typename graph_t, typename pyc>
+void add_edge_index_graph_concept(pyc &c) {
+    using vertex_t = typename boost::graph_traits<graph_t>::vertex_descriptor;
+
+    c.def("edgeIndexes", [](graph_t &g) {
+              auto it = hg::edge_indexes(g);
+              return pybind11::make_iterator(it.first, it.second);
+          },
+          "Iterator over all edge indexes of the graph.");
+    c.def("outEdgeIndexes", [](graph_t &g, vertex_t v) {
+              auto it = hg::out_edge_indexes(v, g);
+              return pybind11::make_iterator(it.first, it.second);
+          },
+          "Iterator over all out edge indexes of the given vertex.",
+          pybind11::arg("vertex"));
+    c.def("inEdgeIndexes", [](graph_t &g, vertex_t v) {
+              auto it = hg::in_edge_indexes(v, g);
+              return pybind11::make_iterator(it.first, it.second);
+          },
+          "Iterator over all in edge indexes of the given vertex.",
+          pybind11::arg("vertex"));
+}

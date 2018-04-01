@@ -27,7 +27,7 @@ void py_init_undirected_graph(py::module &m) {
     add_adjacency_graph_concept<graph_t, decltype(c)>(c);
     add_vertex_list_graph_concept<graph_t, decltype(c)>(c);
     add_edge_list_graph_concept<graph_t, decltype(c)>(c);
-
+    add_edge_index_graph_concept<graph_t, decltype(c)>(c);
 
     c.def("addEdge", [](graph_t &g,
                         const vertex_t source,
@@ -36,28 +36,11 @@ void py_init_undirected_graph(py::module &m) {
           },
           "Add an (undirected) edge between 'vertex1' and 'vertex2'",
           py::arg("vertex1"),
-          py::arg("vertex2"))
-            .def("addVertex", [](graph_t &g) {
-                     return boost::add_vertex(g);
-                 },
-                 "Add a vertex to the graph, the index of the new vertex is returned")
-            .def("edgeIndexes", [](graph_t &g) {
-                     auto it = hg::edge_indexes(g);
-                     return py::make_iterator(it.first, it.second);
-                 },
-                 "Iterator over all edge indexes of the graph.")
-            .def("outEdgeIndexes", [](graph_t &g, vertex_t v) {
-                     auto it = hg::out_edge_indexes(v, g);
-                     return py::make_iterator(it.first, it.second);
-                 },
-                 "Iterator over all out edge indexes of the given vertex.",
-                 py::arg("vertex"))
-            .def("inEdgeIndexes", [](graph_t &g, vertex_t v) {
-                     auto it = hg::in_edge_indexes(v, g);
-                     return py::make_iterator(it.first, it.second);
-                 },
-                 "Iterator over all in edge indexes of the given vertex.",
-                 py::arg("vertex"));
+          py::arg("vertex2"));
+    c.def("addVertex", [](graph_t &g) {
+              return boost::add_vertex(g);
+          },
+          "Add a vertex to the graph, the index of the new vertex is returned");
 
 
     m.def("getTestUndirectedGraph", []() {
