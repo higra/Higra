@@ -4,7 +4,8 @@ if (DO_TEST)
 
     set(PYTHON_TEST_FILES
             test_undirected_graph.py
-            test_embedding.py)
+            test_embedding.py
+            test_regular_graph.py)
 
     foreach (FILE ${PYTHON_TEST_FILES})
         configure_file(${FILE} ${CMAKE_CURRENT_BINARY_DIR}/${FILE})

@@ -5,6 +5,7 @@
 #include "pybind11/pybind11.h"
 #include "py_undirected_graph.hpp"
 #include "py_embedding.hpp"
+#include "py_regular_graph.hpp"
 
 #define FORCE_IMPORT_ARRAY
 
@@ -33,4 +34,5 @@ m.attr("__version__") = "dev";
     xt::import_numpy();
     py_init_undirected_graph(m);
     py_init_embedding(m);
+    py_init_regular_graph(m);
 }

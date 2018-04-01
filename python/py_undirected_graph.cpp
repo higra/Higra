@@ -4,12 +4,13 @@
 
 
 #include "py_common_graph.hpp"
-
+#include "xtensor-python/pyarray.hpp"
+#include "pybind11/stl.h"
 
 namespace py = pybind11;
 
 using graph_t = hg::undirected_graph<>;
-using edge_t = typename boost::graph_traits<graph_t>::edge_descriptor;//boost::detail::edge_desc_impl<boost::undirected_tag, unsigned long>;
+using edge_t = typename boost::graph_traits<graph_t>::edge_descriptor;
 using vertex_t = typename boost::graph_traits<graph_t>::vertex_descriptor;
 
 void py_init_undirected_graph(py::module &m) {
