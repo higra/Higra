@@ -5,6 +5,7 @@
 #pragma once
 
 #include "debug.hpp"
+#include "utils.hpp"
 #include "undirected_graph.hpp"
 #include "regular_graph.hpp"
 #include "tree_graph.hpp"

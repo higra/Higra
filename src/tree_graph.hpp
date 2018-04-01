@@ -113,6 +113,10 @@ namespace hg {
                 return (_num_vertices == 0) ? 0 : _num_vertices - 1;
             }
 
+            std::size_t num_children(const vertex_descriptor v) const {
+                return _children[v].size();
+            }
+
             vertex_descriptor root() const {
                 return _root;
             }
