@@ -75,10 +75,9 @@ namespace hg {
             using in_edge_iterator = out_edge_iterator;
 
 
-
-
-
-            tree(xt::xarray<vertex_descriptor> parents = {0}) : _parents(parents), _children(parents.size()) {
+            template<typename T>
+            tree(const xt::xexpression<T> &parents = xt::xarray<vertex_descriptor>({0})) : _parents(parents),
+                                                                                           _children(_parents.size()) {
 
                 hg_assert(_parents.shape().size() == 1, "parents must be a linear (1d) array");
                 _num_vertices = _parents.size();
