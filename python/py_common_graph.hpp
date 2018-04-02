@@ -14,12 +14,12 @@ void add_incidence_graph_concept(pyc &c) {
     using iterator_transform_function = std::function<pybind11::tuple(edge_t)>;
     using out_edge_iterator = boost::transform_iterator<iterator_transform_function, typename boost::graph_traits<graph_t>::out_edge_iterator>;
 
-    c.def("outEdges", [](graph_t &g,
+    c.def("outEdges", [](const graph_t &g,
                          const vertex_t v) {
-              auto it = boost::out_edges(v, g);
+              auto it = hg::out_edges(v, g);
               // wrapping out edge iterator to python friendly type
               iterator_transform_function fun = [&g](edge_t e) -> pybind11::tuple {
-                  return pybind11::make_tuple(boost::source(e, g), boost::target(e, g));
+                  return pybind11::make_tuple(hg::source(e, g), hg::target(e, g));
               };
               auto it1 = out_edge_iterator(it.first, fun);
               auto it2 = out_edge_iterator(it.second, fun);

@@ -13,7 +13,7 @@
 #include <utility>
 #include "debug.hpp"
 #include "xtensor/xarray.hpp"
-#include "xtensor/xio.hpp"
+
 
 namespace hg {
 
@@ -340,6 +340,7 @@ namespace boost {
                    fun)); // The last iterator position
     }
 
+    /*
     inline
     typename hg::tree::vertex_descriptor
     source(
@@ -355,7 +356,7 @@ namespace boost {
             hg::tree &) {
         return e.second;
     }
-
+*/
     inline
     std::pair<typename hg::tree::adjacency_iterator, typename hg::tree::adjacency_iterator>
     adjacent_vertices(typename hg::tree::vertex_descriptor v, const hg::tree &g) {
@@ -369,7 +370,7 @@ namespace boost {
 
     inline
     std::pair<hg::tree::out_edge_iterator, hg::tree::out_edge_iterator>
-    out_edges(hg::tree::vertex_descriptor v, hg::tree &g) {
+    out_edges(hg::tree::vertex_descriptor v, const hg::tree &g) {
         auto fun = [v](const typename hg::tree::vertex_descriptor t) {
             return std::make_pair(v, t);
         };
@@ -383,7 +384,7 @@ namespace boost {
 
     inline
     std::pair<hg::tree::out_edge_iterator, hg::tree::out_edge_iterator>
-    in_edges(hg::tree::vertex_descriptor v, hg::tree &g) {
+    in_edges(hg::tree::vertex_descriptor v, const hg::tree &g) {
         auto fun = [v](const typename hg::tree::vertex_descriptor t) {
             return std::make_pair(t, v);
         };
@@ -397,3 +398,4 @@ namespace boost {
 
 
 }
+

@@ -7,6 +7,21 @@
 
 namespace hg {
 
+    using std::source;
+    using std::target;
+    using boost::out_edges;
+    using boost::in_edges;
+    using boost::in_degree;
+    using boost::out_degree;
+    using boost::degree;
+    using boost::vertices;
+    using boost::edges;
+    using boost::add_vertex;
+    using boost::add_edge;
+    using boost::num_vertices;
+    using boost::num_edges;
+    using boost::adjacent_vertices;
+
 
     template<typename iterator_t>
     struct iterator_wrapper {

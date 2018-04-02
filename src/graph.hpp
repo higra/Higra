@@ -6,6 +6,7 @@
 
 #include "debug.hpp"
 #include "utils.hpp"
+#include <boost/graph/graph_traits.hpp>
 #include "undirected_graph.hpp"
 #include "regular_graph.hpp"
 #include "tree_graph.hpp"
@@ -13,20 +14,34 @@
 
 namespace hg{
 
-    using boost::source;
-    using boost::target;
-    using boost::out_edges;
-    using boost::in_edges;
-    using boost::in_degree;
-    using boost::out_degree;
-    using boost::degree;
-    using boost::vertices;
-    using boost::edges;
-    using boost::add_vertex;
-    using boost::add_edge;
-    using boost::num_vertices;
-    using boost::num_edges;
-    using boost::adjacent_vertices;
+    template<typename T>
+    auto copy_graph(const T &graph) {
+        static_assert(
+                std::is_base_of<boost::adjacency_graph_tag, typename boost::graph_traits<T>::traversal_category>::value,
+                "Graph must implement adjacency graph concept.");
+        static_assert(
+                std::is_base_of<boost::vertex_list_graph_tag, typename boost::graph_traits<T>::traversal_category>::value,
+                "Graph must implement vertex list graph concept.");
+
+        ugraph g(num_vertices(graph));
+        for (const auto v : vertex_iterator(graph)) {
+            for (const auto n : adjacent_vertex_iterator(v, graph)) {
+                if (n > v)
+                    g.add_edge(v, n);
+            }
+        }
+        return g;
+    };
+
+    template<>
+    inline
+    auto copy_graph(const ugraph &graph) {
+        ugraph g(num_vertices(graph));
+        for (const auto e : edge_iterator(graph)) {
+            g.add_edge(source(e, graph), target(e, graph));
+        }
+        return g;
+    };
 
 
     inline

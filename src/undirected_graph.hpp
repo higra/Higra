@@ -10,21 +10,12 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <vector>
-#include <boost/graph/adjacency_list.hpp>
+#include <list>
 
 namespace hg {
 /**
   * Undirected graph with in and out edge lists
   */
-    /*using undirected_graph = boost::adjacency_list<
-            boost::vecS, // OutEdgeList
-            boost::vecS, // VertexList
-            boost::undirectedS, // directed
-            boost::no_property, // vertex property
-            boost::no_property, // edge property
-            boost::no_property, // graph property
-            boost::listS>; // edge list*/
-
 
     namespace undirected_graph_internal {
 
@@ -33,7 +24,8 @@ namespace hg {
                 virtual public boost::incidence_graph_tag,
                 virtual public boost::bidirectional_graph_tag,
                 virtual public boost::adjacency_graph_tag,
-                virtual public boost::vertex_list_graph_tag {
+                virtual public boost::vertex_list_graph_tag,
+                virtual public boost::edge_list_graph_tag {
         };
 
 
@@ -100,7 +92,9 @@ namespace hg {
             using out_edge_index_iterator = adjacency_iterator;
             using in_edge_index_iterator = adjacency_iterator;
 
-            undirected_graph(std::size_t num_vertices = 0) : _num_vertices(num_vertices), out_edges(num_vertices) {};
+            undirected_graph(const std::size_t num_vertices = 0) : _num_vertices(num_vertices),
+                                                                   out_edges(num_vertices) {};
+
 
             vertices_size_type num_vertices() const {
                 return _num_vertices;
@@ -276,11 +270,12 @@ namespace boost {
                 g.edges_cend()); // The last iterator position
     }
 
+    /*
     template<typename T>
     typename hg::undirected_graph<T>::vertex_descriptor
     source(
             typename hg::undirected_graph<T>::edge_descriptor &e,
-            hg::undirected_graph<T> &) {
+            const hg::undirected_graph<T> &) {
         return e.first;
     }
 
@@ -288,13 +283,13 @@ namespace boost {
     typename hg::undirected_graph<T>::vertex_descriptor
     target(
             typename hg::undirected_graph<T>::edge_descriptor &e,
-            hg::undirected_graph<T> &) {
+            const hg::undirected_graph<T> &) {
         return e.second;
-    }
+    }*/
 
     template<typename T>
     std::pair<typename hg::undirected_graph<T>::out_edge_iterator, typename hg::undirected_graph<T>::out_edge_iterator>
-    out_edges(typename hg::undirected_graph<T>::vertex_descriptor v, hg::undirected_graph<T> &g) {
+    out_edges(typename hg::undirected_graph<T>::vertex_descriptor v, const hg::undirected_graph<T> &g) {
         auto fun = [v](const typename hg::undirected_graph<T>::out_edge_t &oe) {
             return std::make_pair(v, oe.second);
         };
@@ -329,3 +324,4 @@ namespace boost {
     }
 
 }
+

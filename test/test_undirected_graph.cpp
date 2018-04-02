@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_SUITE(boost_undirectedgraph);
         // 2   3
         hg::ugraph g;
 
-        _data() : g(4) {
+        _data() : g(4ul) {
             add_edge(0, 1, g);
             add_edge(1, 2, g);
             add_edge(0, 2, g);
@@ -47,6 +47,52 @@ BOOST_AUTO_TEST_SUITE(boost_undirectedgraph);
         BOOST_CHECK(out_degree(3, g) == 0);
         BOOST_CHECK(in_degree(3, g) == 0);
         BOOST_CHECK(degree(3, g) == 0);
+    }
+
+    BOOST_AUTO_TEST_CASE(copyCTR) {
+        auto g0 = data.g;
+        auto g = hg::copy_graph(g0);
+
+        vector<pair<ulong, ulong>> eref{{0, 1},
+                                        {1, 2},
+                                        {0, 2}};
+        vector<pair<ulong, ulong>> etest;
+        for (auto e: hg::edge_iterator(g)) {
+            etest.push_back({source(e, g), target(e, g)});
+        }
+        BOOST_CHECK(vectorEqual(eref, etest));
+
+    }
+
+    BOOST_AUTO_TEST_CASE(copyCTR2) {
+        hg::embedding_grid embedding{2, 3}; // 2 rows, 3 columns
+        std::vector<xt::xarray<long>> neighbours{{-1, 0},
+                                                 {0,  -1},
+                                                 {0,  1},
+                                                 {1,  0}}; // 4 adjacency
+
+        auto g0 = hg::regular_grid_graph(embedding, neighbours);
+        auto g = hg::copy_graph(g0);
+
+        vector<vector<pair<ulong, ulong>>> outListsRef{{{0, 1}, {0, 3}},
+                                                       {{1, 0}, {1, 2}, {1, 4}},
+                                                       {{2, 1}, {2, 5}},
+                                                       {{3, 0}, {3, 4}},
+                                                       {{4, 1}, {4, 3}, {4, 5}},
+                                                       {{5, 2}, {5, 4}}
+        };
+        vector<vector<pair<ulong, ulong>>> outListsTest;
+
+        for (size_t v = 0; v < 6; v++) {
+            outListsTest.push_back({});
+            for (auto e: hg::out_edge_iterator(v, g))
+                outListsTest[v].push_back({source(e, g), target(e, g)});
+            BOOST_CHECK(vectorEqual(outListsRef[v], outListsTest[v]));
+            BOOST_CHECK(out_degree(v, g) == outListsRef[v].size());
+
+        }
+
+
     }
 
 
