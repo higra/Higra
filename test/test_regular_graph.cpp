@@ -34,7 +34,6 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
         BOOST_CHECK(num_vertices(g) == 6);
     }
 
-
     BOOST_AUTO_TEST_CASE(vertexIteratorSimpleGraph) {
 
         auto g = data.g;
@@ -49,21 +48,6 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
         BOOST_CHECK(vectorEqual(vref, vtest));
 
     }
-/*
-    BOOST_AUTO_TEST_CASE(edgeIteratorSimpleGraph) {
-
-        auto g = data.g;
-
-        vector<pair<ulong, ulong>> eref{{0, 1},
-                                        {1, 2},
-                                        {0, 2}};
-        vector<pair<ulong, ulong>> etest;
-        for (auto e: hg::edge_iterator(g))
-            etest.push_back({source(e, g), target(e, g)});
-        BOOST_CHECK(vectorEqual(eref, etest));
-    }
-
-    */
 
     BOOST_AUTO_TEST_CASE(outEdgeIteratorNeighbouringGraph) {
 
