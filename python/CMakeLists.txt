@@ -12,7 +12,8 @@ set(PYMODULE_COMPONENTS
         py_undirected_graph.cpp
         py_embedding.cpp
         py_regular_graph.cpp
-        py_tree_graph.cpp)
+        py_tree_graph.cpp
+        py_graph_misc.cpp)
 
 pybind11_add_module(higra pymodule.cpp ${PYMODULE_COMPONENTS})
 set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} higra CACHE INTERNAL "" FORCE)

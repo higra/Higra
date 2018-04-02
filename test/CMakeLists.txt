@@ -13,7 +13,7 @@ if (DO_TEST)
             test_embedding.cpp
             test_utils.cpp
             test_regular_graph.cpp
-            test_tree.cpp)
+            test_tree.cpp test_graph_misc.cpp)
 
 
     add_executable(test_exe ${HIGRA_TESTS_SRC})
