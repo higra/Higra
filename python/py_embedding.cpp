@@ -43,7 +43,7 @@ void py_init_embedding(pybind11::module &m) {
             .def(py::init<const xt::pyarray<long> &>(),
                  "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
                  py::arg("shape"))
-            .def("shape", &embedding_grid::getShape,
+            .def("shape", &embedding_grid::shape,
                  "Get the shape/dimensions of the grid embedding")
             .def("size", &embedding_grid::size, "Get the total number of points contained in the embedding.")
             .def("dimension", &embedding_grid::dimension,

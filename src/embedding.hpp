@@ -23,7 +23,7 @@ namespace hg {
         private:
             std::size_t dim = 0;
             std::size_t nbElement = 0;
-            xt::xarray<long> shape; // long for safer comparisons
+            xt::xarray<long> _shape; // long for safer comparisons
             xt::xarray<std::size_t> sum_prod;
 
             void computeSize() {
@@ -31,7 +31,7 @@ namespace hg {
                     nbElement = 0;
                 else {
                     nbElement = 1;
-                    for (auto &d: shape)
+                    for (auto &d: _shape)
                         nbElement *= d;
                 }
             }
@@ -43,12 +43,12 @@ namespace hg {
 
                 long dims = dim;
                 for (long i = dims - 2; i >= 0; --i) {
-                    sum_prod(i) = sum_prod(i + 1) * shape(i + 1);
+                    sum_prod(i) = sum_prod(i + 1) * _shape(i + 1);
                 }
             }
 
             void assert_positive_shape() {
-                for (const auto c: shape) {
+                for (const auto c: _shape) {
                     hg_assert(c > 0, "Axis size must be positive.");
                 }
 
@@ -59,34 +59,34 @@ namespace hg {
             embedding_grid() {}
 
 
-            embedding_grid(const std::initializer_list<long> &_shape) : shape(_shape) {
-                dim = shape.size();
+            embedding_grid(const std::initializer_list<long> &shape) : _shape(shape) {
+                dim = _shape.size();
                 assert_positive_shape();
                 computeSumProd();
                 computeSize();
             }
 
             template<typename T>
-            embedding_grid(const xt::xexpression<T> &_shape) : shape(_shape.derived_cast()) {
+            embedding_grid(const xt::xexpression<T> &shape) : _shape(shape.derived_cast()) {
                 static_assert(std::is_integral<typename T::value_type>::value,
                               "Coordinates must have integral value type.");
-                dim = shape.size();
+                dim = _shape.size();
                 assert_positive_shape();
                 computeSumProd();
                 computeSize();
             }
 
-            const auto &getShape() const {
-                return shape;
+            const auto &shape() const {
+                return _shape;
             }
 
             template<typename T>
-            embedding_grid(const T &_shape) {
-                shape = xt::zeros<long>({_shape.size()});
+            embedding_grid(const T &shape) {
+                _shape = xt::zeros<long>({shape.size()});
                 std::size_t i = 0;
-                for (const auto c:_shape)
-                    shape(i++) = c;
-                dim = shape.size();
+                for (const auto c:shape)
+                    _shape(i++) = c;
+                dim = _shape.size();
                 assert_positive_shape();
                 computeSumProd();
                 computeSize();
@@ -136,7 +136,7 @@ namespace hg {
             bool contains(const std::initializer_list<coordinates_t> &coordinates) const {
                 std::size_t count = 0;
                 for (const auto &c: coordinates)
-                    if (c < 0 || c >= (long) shape(count++))
+                    if (c < 0 || c >= _shape(count++))
                         return false;
                 return true;
             }
@@ -150,7 +150,7 @@ namespace hg {
                 const auto &coordinates = xcoordinates.derived_cast();
                 hg_assert(coordinates.shape().back() == dim, "Coordinates size does not match embedding dimension.");
 
-                return xt::amin(coordinates >= 0 && coordinates < shape, {coordinates.dimension() - 1});
+                return xt::amin(coordinates >= 0 && coordinates < _shape, {coordinates.dimension() - 1});
             }
 
             template<typename T,
@@ -160,7 +160,7 @@ namespace hg {
 
                 std::size_t count = 0;
                 for (const auto &c: coordinates)
-                    if (c < 0 || c >= (long) shape(count++))
+                    if (c < 0 || c >= (long) _shape(count++))
                         return false;
                 return true;
             }
