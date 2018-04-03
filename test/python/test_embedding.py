@@ -51,7 +51,7 @@ class TestEmbedding(unittest.TestCase):
     def test_lin2grid(self):
         e1 = hg.EmbeddingGrid((10, 5, 2))
         p = e1.lin2grid(35)
-        self.assertTrue(p == [3, 2, 1])
+        self.assertTrue(np.all(p == [3, 2, 1]))
 
     def test_lin2gridV(self):
         e1 = hg.EmbeddingGrid((5, 10))

@@ -166,7 +166,7 @@ namespace hg {
             }
 
             auto lin2grid(std::size_t index) const {
-                std::vector<long> result(dim);
+                xt::xarray<long> result = xt::xarray<long>::from_shape({dim});
 
                 for (std::size_t i = 0; i < dim; ++i) {
 

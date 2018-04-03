@@ -3,6 +3,8 @@
 #include "embedding.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xgenerator.hpp"
+#include "xtensor/xinfo.hpp"
+#include "xtensor/xeval.hpp"
 //
 // Created by user on 3/9/18.
 //
@@ -25,10 +27,10 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
         std::vector<long> p2{2};
 
         BOOST_CHECK(std::equal(p1.begin(), p1.end(), p2.begin()));
+        xt::xarray<long> p3{15};
 
-        std::vector<long> p3{15};
-        BOOST_CHECK(e1.contains(p1));
-        BOOST_CHECK(!e1.contains(p3));
+        BOOST_CHECK((e1.contains(p1))());
+        BOOST_CHECK(!e1.contains(p3)());
     }
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGrid2d) {
@@ -36,27 +38,27 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
         BOOST_CHECK(e1.size() == 50);
         BOOST_CHECK(e1.dimension() == 2);
 
-        std::vector<long> p1 = {0, 3};
+        xt::xarray<long> p1 = {0, 3};
         auto p1t = e1.lin2grid(3);
         BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
-        BOOST_CHECK(e1.grid2lin(p1t) == 3);
+        BOOST_CHECK((e1.grid2lin(p1t))() == 3);
 
-        std::vector<long> p2 = {2, 4};
+        xt::xarray<long> p2 = {2, 4};
         auto p2t = e1.lin2grid(14);
         BOOST_CHECK(std::equal(p2.begin(), p2.end(), p2t.begin()));
-        BOOST_CHECK(e1.grid2lin(p2) == 14);
+        BOOST_CHECK(e1.grid2lin(p2)() == 14);
 
-        BOOST_CHECK(e1.contains(p1t));
-        BOOST_CHECK(e1.contains(p2t));
+        BOOST_CHECK(e1.contains(p1t)());
+        BOOST_CHECK(e1.contains(p2t)());
 
-        std::vector<long> p3 = {-1, 2};
-        std::vector<long> p4 = {6, -1};
-        std::vector<long> p5 = {10, 2};
-        std::vector<long> p6 = {6, 5};
-        BOOST_CHECK(!e1.contains(p3));
-        BOOST_CHECK(!e1.contains(p4));
-        BOOST_CHECK(!e1.contains(p5));
-        BOOST_CHECK(!e1.contains(p6));
+        xt::xarray<long> p3 = {-1, 2};
+        xt::xarray<long> p4 = {6, -1};
+        xt::xarray<long> p5 = {10, 2};
+        xt::xarray<long> p6 = {6, 5};
+        BOOST_CHECK(!e1.contains(p3)());
+        BOOST_CHECK(!e1.contains(p4)());
+        BOOST_CHECK(!e1.contains(p5)());
+        BOOST_CHECK(!e1.contains(p6)());
     }
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGrid3d) {
@@ -64,10 +66,10 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
         BOOST_CHECK(e1.size() == 100);
         BOOST_CHECK(e1.dimension() == 3);
 
-        std::vector<long> p1 = {3, 2, 1};
+        xt::xarray<long> p1 = {3, 2, 1};
         auto p1t = e1.lin2grid(35);
         BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
-        BOOST_CHECK(e1.grid2lin(p1) == 35);
+        BOOST_CHECK(e1.grid2lin(p1)() == 35);
     }
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGridFromXTensorShape) {
@@ -76,10 +78,10 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
         BOOST_CHECK(e1.size() == 100);
         BOOST_CHECK(e1.dimension() == 3);
 
-        std::vector<long> p1 = {3, 2, 1};
+        xt::xarray<long> p1 = {3, 2, 1};
         auto p1t = e1.lin2grid(35);
         BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
-        BOOST_CHECK(e1.grid2lin(p1) == 35);
+        BOOST_CHECK(e1.grid2lin(p1)() == 35);
     }
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGridFromXTensor) {
@@ -88,10 +90,10 @@ BOOST_AUTO_TEST_SUITE(TestSuitePoint);
         BOOST_CHECK(e1.size() == 100);
         BOOST_CHECK(e1.dimension() == 3);
 
-        std::vector<long> p1 = {3, 2, 1};
+        xt::xarray<long> p1 = {3, 2, 1};
         auto p1t = e1.lin2grid(35);
         BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
-        BOOST_CHECK(e1.grid2lin(p1) == 35);
+        BOOST_CHECK(e1.grid2lin(p1)() == 35);
     }
 
 

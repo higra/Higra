@@ -115,6 +115,10 @@ namespace hg {
                 return tmp;
             }
 
+            auto edge(vertex_descriptor v) const {
+                return edges[v];
+            }
+
             auto edges_cbegin() const {
                 return edges.cbegin();
             }
@@ -184,6 +188,11 @@ namespace hg {
     std::pair<typename undirected_graph<T>::out_edge_index_iterator, typename undirected_graph<T>::out_edge_index_iterator>
     in_edge_indexes(const typename undirected_graph<T>::vertex_descriptor v, const undirected_graph<T> &g) {
         return out_edge_indexes(v, g);
+    }
+
+    template<typename T>
+    auto edge(const typename undirected_graph<T>::vertex_descriptor v, const undirected_graph<T> &g) {
+        return g.edge(v);
     }
 }
 
