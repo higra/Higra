@@ -21,8 +21,11 @@ namespace hg {
 
     namespace regular_graph_internal {
 
-        using point_list_t = std::vector<xt::xarray<long>>;
-        using point_list_iterator_t = point_list_t::const_iterator;
+        template<typename value_t, int dim>
+        using point_list_t = std::vector<point<value_t, dim>>;
+
+        template<typename value_t, int dim>
+        using point_list_iterator_t = typename point_list_t<value_t, dim>::const_iterator;
 
         //forward declaration
         template<typename embedding_t>
@@ -65,15 +68,16 @@ namespace hg {
             //BidirectionalGraph associated types
             using in_edge_iterator = out_edge_iterator;
 
+            using point_type = typename embedding_t::point_type;
 
             vertices_size_type num_vertices() const {
                 return embedding.size();
             }
 
             embedding_t embedding;
-            point_list_t neighbours;
+            point_list_t<long, embedding_t::_dim> neighbours;
 
-            regular_graph(embedding_t _embedding = {}, point_list_t _neighbours = {})
+            regular_graph(embedding_t _embedding = {}, point_list_t<long, embedding_t::_dim> _neighbours = {})
                     : embedding(_embedding), neighbours(_neighbours) {
             }
 
@@ -97,21 +101,20 @@ namespace hg {
 
             regular_graph_adjacent_vertex_iterator(graph_vertex_t _source,
                                                    embedding_t _embedding,
-                                                   point_list_iterator_t _point_iterator,
-                                                   point_list_iterator_t _point_iterator_end
+                                                   point_list_iterator_t<long, embedding_t::_dim> _point_iterator,
+                                                   point_list_iterator_t<long, embedding_t::_dim> _point_iterator_end
             )
                     : source(_source), embedding(_embedding), point_iterator(_point_iterator),
                       point_iterator_end(_point_iterator_end) {
 
                 source_coordinates = embedding.lin2grid(source);
-                xt::xarray<long> neighbourc = xt::xarray<long>::from_shape({source_coordinates.size()});
                 if (point_iterator != point_iterator_end) {
-                    neighbourc = *point_iterator + source_coordinates;
+                    point_type neighbourc = *point_iterator + source_coordinates;
 
-                    if (!embedding.contains(neighbourc)()) {
+                    if (!embedding.contains(neighbourc)) {
                         increment();
                     } else {
-                        neighbour = embedding.grid2lin(neighbourc)();
+                        neighbour = embedding.grid2lin(neighbourc);
                     }
 
                 }
@@ -119,24 +122,24 @@ namespace hg {
 
         private:
 
-
+            using point_type = typename embedding_t::point_type;
             friend class boost::iterator_core_access;
 
             void increment() {
                 bool flag;
-                xt::xarray<long> neighbourc = xt::xarray<long>::from_shape({source_coordinates.size()});
+                point_type neighbourc;
                 do {
                     point_iterator++;
                     if (point_iterator != point_iterator_end) {
 
                         neighbourc = *point_iterator + source_coordinates;
-                        flag = embedding.contains(neighbourc)();
+                        flag = embedding.contains(neighbourc);
                     } else {
                         flag = true;
                     }
                 } while (!flag);
                 if (point_iterator != point_iterator_end) {
-                    neighbour = embedding.grid2lin(neighbourc)();
+                    neighbour = embedding.grid2lin(neighbourc);
                 }
             }
 
@@ -151,10 +154,10 @@ namespace hg {
 
             graph_vertex_t source;
             graph_vertex_t neighbour;
-            xt::xarray<long> source_coordinates;
+            point_type source_coordinates;
             embedding_t embedding;
-            point_list_iterator_t point_iterator;
-            point_list_iterator_t point_iterator_end;
+            point_list_iterator_t<long, embedding_t::_dim> point_iterator;
+            point_list_iterator_t<long, embedding_t::_dim> point_iterator_end;
 
         };
 
@@ -163,7 +166,10 @@ namespace hg {
     template<typename embedding_t>
     using regular_graph = regular_graph_internal::regular_graph<embedding_t>;
 
-    using regular_grid_graph = regular_graph<hg::embedding_grid>;
+    using regular_grid_graph_1d = regular_graph<hg::embedding_grid_1d>;
+    using regular_grid_graph_2d = regular_graph<hg::embedding_grid_2d>;
+    using regular_grid_graph_3d = regular_graph<hg::embedding_grid_3d>;
+    using regular_grid_graph_4d = regular_graph<hg::embedding_grid_4d>;
 
     template<typename embedding_t>
     using regular_graph_out_edge_iterator = typename regular_graph_internal::regular_graph<embedding_t>::out_edge_iterator;

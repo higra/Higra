@@ -65,13 +65,13 @@ BOOST_AUTO_TEST_SUITE(boost_undirectedgraph);
     }
 
     BOOST_AUTO_TEST_CASE(copyCTR2) {
-        hg::embedding_grid embedding{2, 3}; // 2 rows, 3 columns
-        std::vector<xt::xarray<long>> neighbours{{-1, 0},
+        hg::embedding_grid_2d embedding{2, 3}; // 2 rows, 3 columns
+        std::vector<point_2d_i> neighbours{{      -1, 0},
                                                  {0,  -1},
                                                  {0,  1},
                                                  {1,  0}}; // 4 adjacency
 
-        auto g0 = hg::regular_grid_graph(embedding, neighbours);
+        auto g0 = hg::regular_grid_graph_2d(embedding, neighbours);
         auto g = hg::copy_graph(g0);
 
         vector<vector<pair<ulong, ulong>>> outListsRef{{{0, 1}, {0, 3}},

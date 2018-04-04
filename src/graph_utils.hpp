@@ -42,31 +42,31 @@ namespace hg {
     };
 
     template<typename graph_t>
-    auto vertex_iterator(graph_t &g) {
+    auto vertex_iterator(const graph_t &g) {
         using it_t = typename boost::graph_traits<graph_t>::vertex_iterator;
         return iterator_wrapper<it_t>(boost::vertices(g));
     }
 
     template<typename graph_t>
-    auto edge_iterator(graph_t &g) {
+    auto edge_iterator(const graph_t &g) {
         using it_t = typename boost::graph_traits<graph_t>::edge_iterator;
         return iterator_wrapper<it_t>(boost::edges(g));
     }
 
     template<typename graph_t>
-    auto out_edge_iterator(typename boost::graph_traits<graph_t>::vertex_descriptor v, graph_t &g) {
+    auto out_edge_iterator(typename boost::graph_traits<graph_t>::vertex_descriptor v, const graph_t &g) {
         using it_t = typename boost::graph_traits<graph_t>::out_edge_iterator;
         return iterator_wrapper<it_t>(boost::out_edges(v, g));
     }
 
     template<typename graph_t>
-    auto in_edge_iterator(typename boost::graph_traits<graph_t>::vertex_descriptor v, graph_t &g) {
+    auto in_edge_iterator(typename boost::graph_traits<graph_t>::vertex_descriptor v, const graph_t &g) {
         using it_t = typename boost::graph_traits<graph_t>::in_edge_iterator;
         return iterator_wrapper<it_t>(boost::in_edges(v, g));
     }
 
     template<typename graph_t>
-    auto adjacent_vertex_iterator(typename boost::graph_traits<graph_t>::vertex_descriptor v, graph_t &g) {
+    auto adjacent_vertex_iterator(typename boost::graph_traits<graph_t>::vertex_descriptor v, const graph_t &g) {
         using it_t = typename boost::graph_traits<graph_t>::adjacency_iterator;
         return iterator_wrapper<it_t>(boost::adjacent_vertices(v, g));
     }

@@ -47,20 +47,18 @@ namespace hg {
 
 
     inline
-    auto get_4_adjacency_implicit_graph(const embedding_grid &embedding) {
-        hg_assert(embedding.dimension() == 2, "4 adjacency graph requires a 2d embedding");
-        std::vector<xt::xarray<long>> neighbours{{-1, 0},
+    auto get_4_adjacency_implicit_graph(const embedding_grid_2d &embedding) {
+        std::vector<point_2d_i> neighbours{{      -1, 0},
                                                  {0,  -1},
                                                  {0,  1},
                                                  {1,  0}}; // 4 adjacency
 
-        return regular_grid_graph(embedding, std::move(neighbours));
+        return regular_grid_graph_2d(embedding, std::move(neighbours));
     }
 
     inline
-    auto get_8_adjacency_implicit_graph(const embedding_grid &embedding) {
-        hg_assert(embedding.dimension() == 2, "4 adjacency graph requires a 2d embedding");
-        std::vector<xt::xarray<long>> neighbours{{-1, -1},
+    auto get_8_adjacency_implicit_graph(const embedding_grid_2d &embedding) {
+        std::vector<point_2d_i> neighbours{{      -1, -1},
                                                  {-1, 0},
                                                  {-1, 1},
                                                  {0,  -1},
@@ -69,16 +67,16 @@ namespace hg {
                                                  {1,  0},
                                                  {1,  1}}; // 8 adjacency
 
-        return regular_grid_graph(embedding, std::move(neighbours));
+        return regular_grid_graph_2d(embedding, std::move(neighbours));
     }
 
     inline
-    auto get_4_adjacency_graph(const embedding_grid &embedding) {
+    auto get_4_adjacency_graph(const embedding_grid_2d &embedding) {
         return copy_graph(get_4_adjacency_implicit_graph(embedding));
     }
 
     inline
-    auto get_8_adjacency_graph(const embedding_grid &embedding) {
+    auto get_8_adjacency_graph(const embedding_grid_2d &embedding) {
         return copy_graph(get_8_adjacency_implicit_graph(embedding));
     }
 
@@ -208,8 +206,7 @@ namespace hg {
 
     template<typename graph_t, typename T, typename result_type = typename T::value_type>
     auto
-    contour2d_2_khalimsky(const graph_t &graph, const embedding_grid &embedding, const xt::xexpression<T> &xweight) {
-        hg_assert(embedding.dimension() == 2, "Only 2d is supported!");
+    contour2d_2_khalimsky(const graph_t &graph, const embedding_grid_2d &embedding, const xt::xexpression<T> &xweight) {
         const auto &weight = xweight.derived_cast();
         hg_assert(weight.dimension() == 1, "Only scalar weights are supported!");
 
@@ -234,7 +231,7 @@ namespace hg {
             }
         }
 
-        embedding_grid res_embedding(shape * 2 - 1);
+        embedding_grid_2d res_embedding(shape * 2 - 1);
         auto adj4 = get_4_adjacency_implicit_graph(res_embedding);
         auto h = res_embedding.shape()[0];
         auto w = res_embedding.shape()[1];

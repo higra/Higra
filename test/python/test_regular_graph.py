@@ -10,20 +10,20 @@ import higra as hg
 class TestRegularGraph(unittest.TestCase):
 
     def test_create_graph(self):
-        e = hg.EmbeddingGrid((2, 3))
+        e = hg.EmbeddingGrid2d((2, 3))
         nl = ((-1, 0), (0, -1), (0, 1), (1, 0))
-        g1 = hg.RegularGraph(e, nl)
+        g1 = hg.RegularGraph2d(e, nl)
 
-        g2 = hg.RegularGraph.get4AdjacencyGraph(e)
-        g3 = hg.RegularGraph.get8AdjacencyGraph(e)
+        g2 = hg.get4AdjacencyImplicitGraph(e)
+        g3 = hg.get8AdjacencyImplicitGraph(e)
 
         for g in (g1, g2, g3):
             self.assertTrue(g.numVertices() == 6)
 
     def test_vertices_iterator(self):
-        e = hg.EmbeddingGrid((2, 3))
-        g1 = hg.RegularGraph.get4AdjacencyGraph(e)
-        g2 = hg.RegularGraph.get8AdjacencyGraph(e)
+        e = hg.EmbeddingGrid2d((2, 3))
+        g1 = hg.get4AdjacencyImplicitGraph(e)
+        g2 = hg.get8AdjacencyImplicitGraph(e)
 
         vref = [0, 1, 2, 3, 4, 5];
 
@@ -36,8 +36,8 @@ class TestRegularGraph(unittest.TestCase):
             self.assertTrue(vtest == vref)
 
     def test_out_edge_iterator4(self):
-        e = hg.EmbeddingGrid((2, 3))
-        g = hg.RegularGraph.get4AdjacencyGraph(e)
+        e = hg.EmbeddingGrid2d((2, 3))
+        g = hg.get4AdjacencyImplicitGraph(e)
 
         ref = [[(0, 1), (0, 3)],
                [(1, 0), (1, 2), (1, 4)],
@@ -54,8 +54,8 @@ class TestRegularGraph(unittest.TestCase):
             self.assertTrue(res == ref[v])
 
     def test_out_edge_iterator8(self):
-        e = hg.EmbeddingGrid((2, 3))
-        g = hg.RegularGraph.get8AdjacencyGraph(e)
+        e = hg.EmbeddingGrid2d((2, 3))
+        g = hg.get8AdjacencyImplicitGraph(e)
 
         ref = [[(0, 1), (0, 3), (0, 4)],
                [(1, 0), (1, 2), (1, 3), (1, 4), (1, 5)],

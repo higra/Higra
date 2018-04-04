@@ -4,27 +4,33 @@
 
 #include "py_regular_graph.hpp"
 #include "py_common_graph.hpp"
+#include <string>
 #include "xtensor/xgenerator.hpp"
 
 #include <vector>
 
 namespace py = pybind11;
-using embedding_t = hg::embedding_grid;
-using graph_t = hg::regular_grid_graph;
-using edge_t = typename boost::graph_traits<graph_t>::edge_descriptor;
-using vertex_t = typename boost::graph_traits<graph_t>::vertex_descriptor;
 
-void py_init_regular_graph(pybind11::module &m) {
-    auto c = py::class_<graph_t>(m, "RegularGraph");
+
+template<int dim>
+void py_init_regular_graph_impl(pybind11::module &m) {
+
+    using embedding_t = hg::embedding_grid<dim>;
+    using graph_t = hg::regular_graph<embedding_t>;
+    using point_t = typename embedding_t::point_type;
+
+
+    auto c = py::class_<graph_t>(m, ("RegularGraph" + std::to_string(dim) + "d").c_str());
 
     c.def(py::init([](const embedding_t &e, const std::vector<std::vector<long>> &pl) {
-                       std::vector<xt::xarray<long>> points;
-                       auto dim = e.dimension();
+              std::vector<point_t> points;
+
                        for (const auto &v : pl) {
-                           xt::xarray<long> pt = xt::zeros<long>({dim});
-                           for (std::size_t i = 0; i < dim; i++)
-                               pt(i) = v[i];
-                           points.push_back(pt);
+                           hg_assert(v.size() == dim, "Invalid dimension in point list.");
+                           point_t p;
+                           for (std::size_t i = 0; i < dim; ++i)
+                               p(i) = v[i];
+                           points.push_back(p);
                        }
                        return graph_t(e, points);
                    }
@@ -33,19 +39,15 @@ void py_init_regular_graph(pybind11::module &m) {
           py::arg("embedding"),
           py::arg("neighbour_list"));
 
-    c.def_static("get4AdjacencyGraph",
-                 [](const embedding_t &e) { return hg::get_4_adjacency_implicit_graph(e); },
-                 "Create a 4 adjacency 2d graph of size given by the embedding.",
-                 py::arg("embedding"));
-
-    c.def_static("get8AdjacencyGraph",
-                 [](const embedding_t &e) { return hg::get_8_adjacency_implicit_graph(e); },
-                 "Create a 8 adjacency 2d graph of size given by the embedding.",
-                 py::arg("embedding"));
-
-
     add_incidence_graph_concept<graph_t, decltype(c)>(c);
     add_bidirectionnal_graph_concept<graph_t, decltype(c)>(c);
     add_adjacency_graph_concept<graph_t, decltype(c)>(c);
     add_vertex_list_graph_concept<graph_t, decltype(c)>(c);
+}
+
+
+void py_init_regular_graph(pybind11::module &m) {
+    py_init_regular_graph_impl<2>(m);
+    py_init_regular_graph_impl<3>(m);
+    py_init_regular_graph_impl<4>(m);
 }
