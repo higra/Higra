@@ -13,6 +13,7 @@
 #include "graph_utils.hpp"
 #include "xtensor/xeval.hpp"
 
+
 namespace hg {
 
     template<typename T>
@@ -203,5 +204,53 @@ namespace hg {
         }
         throw std::runtime_error("Unknown weight function.");
 
+    };
+
+    template<typename graph_t, typename T, typename result_type = typename T::value_type>
+    auto
+    contour2d_2_khalimsky(const graph_t &graph, const embedding_grid &embedding, const xt::xexpression<T> &xweight) {
+        hg_assert(embedding.dimension() == 2, "Only 2d is supported!");
+        const auto &weight = xweight.derived_cast();
+        hg_assert(weight.dimension() == 1, "Only scalar weights are supported!");
+
+        auto &shape = embedding.shape();
+
+        auto shapew = weight.shape();
+
+        std::vector<long> res_shape = {shape[0] * 2 - 1, shape[1] * 2 - 1};
+        for (std::size_t i = 1; i < shapew.size(); ++i)
+            res_shape.push_back(shapew[i]);
+
+        xt::xarray<result_type> res = xt::zeros<result_type>(res_shape);
+
+        for (auto ei: edge_index_iterator(graph)) {
+            auto e = edge(ei, graph);
+            auto s = source(e, graph);
+            auto t = target(e, graph);
+            if (t > s) {
+                auto ti = embedding.lin2grid(t);
+                auto si = embedding.lin2grid(s);
+                res[ti + si] = weight(ei);
+            }
+        }
+
+        embedding_grid res_embedding(shape * 2 - 1);
+        auto adj4 = get_4_adjacency_implicit_graph(res_embedding);
+        auto h = res_embedding.shape()[0];
+        auto w = res_embedding.shape()[1];
+        auto flat_res = xt::flatten(res);
+
+        for (long y = 1; y < h - 1; ++y) {
+            for (long x = 1; x < w - 1; ++x) {
+                auto v = res_embedding.grid2lin({y, x});
+                result_type max_v = std::numeric_limits<result_type>::lowest();
+                for (auto av: adjacent_vertex_iterator(v, adj4)) {
+                    max_v = std::max(max_v, flat_res(av));
+                }
+                res(y, x) = max_v;
+            }
+        }
+
+        return res;
     };
 }

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <iostream>
+#include "xtensor/xio.hpp"
 
 #define HG_DEBUG
 

@@ -172,5 +172,21 @@ BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
 
     }
 
+    BOOST_AUTO_TEST_CASE(graph2d2khalimsky) {
+
+
+        auto g = get_4_adjacency_graph({2, 3});
+
+        xt::xarray<int> data{1, 0, 2, 1, 1, 1, 2};
+
+        xt::xarray<int> ref{{0, 1, 0, 2, 0},
+                            {0, 1, 1, 2, 1},
+                            {0, 1, 0, 2, 0}};
+        auto r = contour2d_2_khalimsky(g, {2, 3}, data);
+        BOOST_CHECK(xt::allclose(ref, r));
+
+    }
+
+
 
 BOOST_AUTO_TEST_SUITE_END();

@@ -10,6 +10,8 @@
 #include <string>
 #include <boost/type_index.hpp>
 
+#include "xtensor/xio.hpp"
+
 template <typename T>
 bool vectorEqual(std::vector<T> v1, std::vector<T> v2){
     if (v1.size() != v2.size())
