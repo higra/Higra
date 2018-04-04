@@ -39,6 +39,24 @@ void py_init_regular_graph_impl(pybind11::module &m) {
           py::arg("embedding"),
           py::arg("neighbour_list"));
 
+    c.def(py::init([](const std::vector<std::size_t> &shape, const std::vector<std::vector<long>> &pl) {
+                       std::vector<point_t> points;
+
+
+                       for (const auto &v : pl) {
+                           hg_assert(v.size() == dim, "Invalid dimension in point list.");
+                           point_t p;
+                           for (std::size_t i = 0; i < dim; ++i)
+                               p(i) = v[i];
+                           points.push_back(p);
+                       }
+                       return graph_t(embedding_t(shape), points);
+                   }
+          ),
+          "Create a regular implicit graph from given shape and neighbouring.",
+          py::arg("shape"),
+          py::arg("neighbour_list"));
+
     add_incidence_graph_concept<graph_t, decltype(c)>(c);
     add_bidirectionnal_graph_concept<graph_t, decltype(c)>(c);
     add_adjacency_graph_concept<graph_t, decltype(c)>(c);
