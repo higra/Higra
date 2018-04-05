@@ -15,7 +15,8 @@ if (DO_TEST)
             test_regular_graph.cpp
             test_tree.cpp
             test_point.cpp
-            test_graph_misc.cpp)
+            test_graph_misc.cpp
+            test_hierarchy_core.cpp)
 
 
     add_executable(test_exe ${HIGRA_TESTS_SRC})

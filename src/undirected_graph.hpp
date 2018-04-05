@@ -147,6 +147,10 @@ namespace hg {
                 return std::make_pair(v1, v2);
             }
 
+            edge_descriptor add_edge(edge_descriptor e) {
+                return add_edge(e.first, e.second);
+            }
+
 
         private:
 
