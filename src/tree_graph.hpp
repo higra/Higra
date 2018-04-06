@@ -13,16 +13,27 @@
 #include <utility>
 #include "debug.hpp"
 #include "xtensor/xarray.hpp"
-
+#include <boost/range/irange.hpp>
 
 namespace hg {
+
+
+    enum class leaves_it {
+        include,
+        exclude
+    };
+
+    enum class root_it {
+        include,
+        exclude
+    };
 
     namespace tree_internal {
 
         // forward declaration
         template<bool edge_index_iterator>
         struct tree_graph_adjacent_vertex_iterator;
-        
+
         struct tree_graph_traversal_category :
                 virtual public boost::incidence_graph_tag,
                 virtual public boost::bidirectional_graph_tag,
@@ -140,6 +151,21 @@ namespace hg {
 
             const auto &parents() const {
                 return _parents;
+            }
+
+
+            const auto iterate_from_leaves_to_root(leaves_it leaves_opt = leaves_it::include,
+                                                   root_it root_opt = root_it::include) {
+                vertex_descriptor start = (leaves_opt == leaves_it::include) ? 0 : num_leaves();
+                vertex_descriptor end = (root_opt == root_it::include) ? _num_vertices : _num_vertices - 1;
+                return boost::irange<long>(start, end);
+            }
+
+            const auto iterate_from_root_to_leaves(leaves_it leaves_opt = leaves_it::include,
+                                                   root_it root_opt = root_it::include) {
+                vertex_descriptor end = (leaves_opt == leaves_it::include) ? -1 : num_leaves() - 1;
+                vertex_descriptor start = (root_opt == root_it::include) ? _num_vertices - 1 : _num_vertices - 2;
+                return boost::irange<long>(start, end, -1);
             }
 
         private:
