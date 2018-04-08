@@ -39,6 +39,14 @@ namespace hg {
         iterator_t end() {
             return last;
         }
+
+        iterator_t begin() const {
+            return first;
+        }
+
+        iterator_t end() const {
+            return last;
+        }
     };
 
     template<typename graph_t>

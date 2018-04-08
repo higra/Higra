@@ -11,7 +11,7 @@
 #include "regular_graph.hpp"
 #include "tree_graph.hpp"
 #include "graph_utils.hpp"
-#include "xtensor/xeval.hpp"
+#include "array.hpp"
 
 
 namespace hg {

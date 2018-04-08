@@ -42,5 +42,14 @@ BOOST_AUTO_TEST_SUITE(boost_lcafast);
         BOOST_CHECK(lca.lca(2, 6) == 6);
     }
 
+    BOOST_AUTO_TEST_CASE(lcaV) {
+        auto g = get_4_adjacency_graph({2, 2});
+        tree t(array_1d<long> { 4, 4, 5, 5, 6, 6, 6 });
+        lca_fast lca(t);
+        auto l = lca.lca(edge_iterator(g));
+        array_1d<decltype(g)::vertex_descriptor> ref{4, 6, 6, 5};
+        BOOST_CHECK(xt::allclose(l, ref));
+    }
+
 
 BOOST_AUTO_TEST_SUITE_END();
