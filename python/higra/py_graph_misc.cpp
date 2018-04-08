@@ -5,8 +5,7 @@
 #include "py_graph_misc.hpp"
 #include "py_common_graph.hpp"
 #include "xtensor-python/pyarray.hpp"
-
-
+#include "pybind11/functional.h"
 
 namespace py = pybind11;
 
@@ -79,6 +78,22 @@ void py_init_graph_misc(pybind11::module &m) {
             weight_graph<hg::tree, type>(m);
     HG_FOREACH(DEF, (int) (long) (float) (double));
 #undef DEF
+
+    m.def("weightGraph", [](const hg::ugraph &graph, const std::function<double(std::size_t, std::size_t)> &fun) {
+              return hg::weight_graph(graph, fun);
+          },
+          "Compute the edge weights of a graph with the given weighting function. The weighting function takes the "
+                  "vertex index of the extremities of an edge and returns the weight of the edge",
+          py::arg("explicitGraph"),
+          py::arg("weightFunction"));
+
+    m.def("weightGraph", [](const hg::tree &graph, const std::function<double(std::size_t, std::size_t)> &fun) {
+              return hg::weight_graph(graph, fun);
+          },
+          "Compute the edge weights of a graph with the given weighting function. The weighting function takes the "
+                  "vertex index of the extremities of an edge and returns the weight of the edge",
+          py::arg("explicitGraph"),
+          py::arg("weightFunction"));
 
 #define DEF(rawXKCD, dataXKCD, type) \
     m.def("contour2Khalimsky", [](const hg::ugraph & graph, const hg::embedding_grid_2d & embedding, const xt::pyarray<type> & weights){\

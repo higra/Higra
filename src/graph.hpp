@@ -91,7 +91,7 @@ namespace hg {
     };
 
     template<typename graph_t, typename result_value_t=double>
-    auto weight_graph(const graph_t &graph, std::function<result_value_t(std::size_t, std::size_t)> &fun) {
+    auto weight_graph(const graph_t &graph, const std::function<result_value_t(std::size_t, std::size_t)> &fun) {
         auto result = xt::xarray<result_value_t>::from_shape({num_edges(graph)});
         std::size_t i = 0;
         for (const auto e: edge_iterator(graph)) {
