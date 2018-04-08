@@ -8,6 +8,7 @@
 #include "py_regular_graph.hpp"
 #include "py_tree_graph.hpp"
 #include "py_graph_misc.hpp"
+#include "py_lca_fast.hpp"
 
 #define FORCE_IMPORT_ARRAY
 
@@ -39,4 +40,5 @@ m.attr("__version__") = "dev";
     py_init_regular_graph(m);
     py_init_tree_graph(m);
     py_init_graph_misc(m);
+    py_init_lca_fast(m);
 }

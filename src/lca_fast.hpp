@@ -99,7 +99,7 @@ namespace hg {
                 LCApreprocess(tree);
             }
 
-            vertex_t lca(vertex_t n1, vertex_t n2) {
+            vertex_t lca(vertex_t n1, vertex_t n2) const {
                 long ii, jj, kk, k;
 
                 ii = Number[n1];
@@ -123,7 +123,7 @@ namespace hg {
             }
 
             template<typename T>
-            auto lca(const T &range) {
+            auto lca(const T &range) const {
                 std::size_t size = range.end() - range.begin();
                 auto result = array_1d<vertex_t>::from_shape({size});
 

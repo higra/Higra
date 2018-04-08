@@ -72,7 +72,7 @@ void py_init_embedding(pybind11::module &m) {
     //py_init_embedding_impl<1>(m);
     py_init_embedding_impl<2>(m);
     py_init_embedding_impl<3>(m);
-    py_init_embedding_impl<4>(m);
+    //py_init_embedding_impl<4>(m);
     //py_init_embedding_impl<5>(m);
 }
 

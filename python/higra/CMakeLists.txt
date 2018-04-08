@@ -13,7 +13,8 @@ set(PYMODULE_COMPONENTS
         py_embedding.cpp
         py_regular_graph.cpp
         py_tree_graph.cpp
-        py_graph_misc.cpp)
+        py_graph_misc.cpp
+        py_lca_fast.cpp)
 
 set(MODULE_FILES
         __init__.py)
