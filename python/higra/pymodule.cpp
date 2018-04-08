@@ -13,7 +13,7 @@
 
 #include "xtensor-python/pyarray.hpp"     // Numpy bindings
 
-PYBIND11_MODULE(higra, m
+PYBIND11_MODULE(higram, m
 ) {
 m.
 

@@ -1,6 +1,6 @@
 if (DO_TEST)
 
-    set(PYTHON_MODULE_PATH ${CMAKE_BINARY_DIR}/python)
+    set(PYTHON_MODULE_PATH ${CMAKE_BINARY_DIR}/python/)
 
     set(PYTHON_TEST_FILES
             test_undirected_graph.py

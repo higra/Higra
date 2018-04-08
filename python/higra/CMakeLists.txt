@@ -15,5 +15,13 @@ set(PYMODULE_COMPONENTS
         py_tree_graph.cpp
         py_graph_misc.cpp)
 
-pybind11_add_module(higra pymodule.cpp ${PYMODULE_COMPONENTS})
-set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} higra CACHE INTERNAL "" FORCE)
+set(MODULE_FILES
+        __init__.py)
+
+pybind11_add_module(higram pymodule.cpp ${PYMODULE_COMPONENTS})
+set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} higram CACHE INTERNAL "" FORCE)
+
+
+foreach (FILE ${MODULE_FILES})
+    configure_file(${FILE} ${CMAKE_CURRENT_BINARY_DIR}/${FILE} COPYONLY)
+endforeach ()
