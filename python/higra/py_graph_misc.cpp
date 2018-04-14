@@ -6,6 +6,7 @@
 #include "py_common_graph.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "pybind11/functional.h"
+#include "pybind11/stl.h"
 
 namespace py = pybind11;
 
@@ -100,6 +101,16 @@ void py_init_graph_misc(pybind11::module &m) {
         return hg::contour2d_2_khalimsky(graph, embedding, weights);},\
     "Create a contour image in the Khalimsky grid from a 4 adjacency edge-weighted graph (edge weights of type " HG_XSTR(type) ").",\
     py::arg("graph"),py::arg("embedding2d"),py::arg("edgeWeights"));
+
+    HG_FOREACH(DEF, HG_NUMERIC_TYPES);
+#undef DEF
+
+#define DEF(rawXKCD, dataXKCD, type) \
+    m.def("contour2Khalimsky", [](const hg::ugraph & graph, const std::vector<std::size_t> & shape, const xt::pyarray<type> & weights){\
+        hg::embedding_grid_2d embedding(shape); \
+        return hg::contour2d_2_khalimsky(graph, embedding, weights);},\
+    "Create a contour image in the Khalimsky grid from a 4 adjacency edge-weighted graph (edge weights of type " HG_XSTR(type) ").",\
+    py::arg("graph"),py::arg("shape"),py::arg("edgeWeights"));
 
     HG_FOREACH(DEF, HG_NUMERIC_TYPES);
 #undef DEF
