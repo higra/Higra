@@ -237,8 +237,8 @@ namespace hg {
         auto w = res_embedding.shape()[1];
         auto flat_res = xt::flatten(res);
 
-        for (long y = 1; y < h - 1; ++y) {
-            for (long x = 1; x < w - 1; ++x) {
+        for (long y = 1; y < h - 1; y += 2) {
+            for (long x = 1; x < w - 1; x += 2) {
                 auto v = res_embedding.grid2lin({y, x});
                 result_type max_v = std::numeric_limits<result_type>::lowest();
                 for (auto av: adjacent_vertex_iterator(v, adj4)) {
