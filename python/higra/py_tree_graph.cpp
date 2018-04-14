@@ -45,6 +45,7 @@ void py_init_tree_graph(pybind11::module &m) {
           },
           "Get an iterator on the children of the given node.",
           py::arg("node"));
+    c.def("parents", &graph_t::parents, "Get the parents array representing the tree.");
 }
 
 #undef TREE_CTR
