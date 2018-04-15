@@ -6,6 +6,8 @@
 #include "xtensor/xio.hpp"
 #include "graph.hpp"
 #include "test_utils.hpp"
+#include "accumulator.hpp"
+#include <functional>
 
 BOOST_AUTO_TEST_SUITE(boost_treegraph);
 
@@ -298,6 +300,29 @@ BOOST_AUTO_TEST_SUITE(boost_treegraph);
         }
         BOOST_CHECK(vectorEqual(ref4, t));
         t.clear();
+    }
+
+    BOOST_AUTO_TEST_CASE(treeAccumulator) {
+
+        auto tree = data.t;
+
+        xt::xtensor<ulong, 1> input{1, 1, 1, 1, 1, 1, 1, 1};
+        xt::xtensor<ulong, 1> res1{0, 0, 0, 0, 0, 0, 0, 0};
+
+        tree.accumulate_parallel(input, res1, hg::accumulator_sum<ulong>());
+        xt::xtensor<ulong, 1> ref1{0, 0, 0, 0, 0, 2, 3, 2};
+        BOOST_CHECK(xt::allclose(ref1, res1));
+
+        xt::xtensor<ulong, 1> res2{1, 1, 1, 1, 1, 0, 0, 0};
+        tree.accumulate_sequential(res2, hg::accumulator_sum<ulong>());
+        xt::xtensor<ulong, 1> ref2{1, 1, 1, 1, 1, 2, 3, 5};
+        BOOST_CHECK(xt::allclose(ref2, res2));
+
+        xt::xtensor<ulong, 1> res3{1, 1, 1, 1, 1, 1, 1, 1};
+        tree.accumulate_and_combine_sequential(input, res3, hg::accumulator_max<ulong>(), std::plus<ulong>());
+        xt::xtensor<ulong, 1> ref3{1, 1, 1, 1, 1, 2, 2, 3};
+        BOOST_CHECK(xt::allclose(ref3, res3));
+
     }
 
 BOOST_AUTO_TEST_SUITE_END();

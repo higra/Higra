@@ -168,6 +168,54 @@ namespace hg {
                 return boost::irange<long>(start, end, -1);
             }
 
+            template<typename T1, typename T2, typename accumulator_t>
+            void accumulate_parallel(const xt::xexpression<T1> &xinput, xt::xexpression<T2> &xoutput,
+                                     accumulator_t &&accumulator) {
+                auto &input = xinput.derived_cast();
+                auto &output = xoutput.derived_cast();
+
+                accumulator.reset();
+                auto v = accumulator.result();
+                for (std::size_t i = 0; i < _num_leaves; ++i)
+                    output(i) = v;
+
+                for (std::size_t i = _num_leaves; i < _num_vertices; ++i) {
+                    accumulator.reset();
+                    for (auto c : _children[i]) {
+                        accumulator.accumulate(input(c));
+                    }
+                    output(i) = accumulator.result();
+                }
+            };
+
+            template<typename T1, typename accumulator_t>
+            void accumulate_sequential(xt::xexpression<T1> &xoutput, accumulator_t &&accumulator) {
+                auto &output = xoutput.derived_cast();
+
+                for (std::size_t i = _num_leaves; i < _num_vertices; ++i) {
+                    accumulator.reset();
+                    for (auto it = children_cbegin(i); it != children_cend(i); it++) {
+                        accumulator.accumulate(output(*it));
+                    }
+                    output(i) = accumulator.result();
+                }
+            };
+
+            template<typename T1, typename T2, typename accumulator_t, typename combination_fun_t>
+            void accumulate_and_combine_sequential(const xt::xexpression<T1> &xinput, xt::xexpression<T2> &xoutput,
+                                                   accumulator_t &&accumulator, combination_fun_t combine) {
+                auto &input = xinput.derived_cast();
+                auto &output = xoutput.derived_cast();
+
+                for (std::size_t i = _num_leaves; i < _num_vertices; ++i) {
+                    accumulator.reset();
+                    for (auto it = children_cbegin(i); it != children_cend(i); it++) {
+                        accumulator.accumulate(output(*it));
+                    }
+                    output(i) = combine(accumulator.result(), input(i));
+                }
+            };
+
         private:
 
             vertex_descriptor _root;
