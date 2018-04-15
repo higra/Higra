@@ -274,11 +274,11 @@ namespace xt
     template <class S>
     inline S unravel_from_strides(typename S::value_type index, const S& strides, layout_type l)
     {
-        if(l != layout_type::row_major && l != layout_type::column_major)
+        if (l != layout_type::row_major && l != layout_type::column_major)
         {
             throw std::runtime_error("unravel_index: dynamic layout not supported");
         }
-        return detail::unravel_noexcept(index, strides, l);;
+        return detail::unravel_noexcept(index, strides, l);
     }
 
     template <class S>
@@ -329,18 +329,16 @@ namespace xt
     }
 
     template <class S1, class S2>
-    inline bool broadcastable(const S1& s1, const S2& s2)
+    inline bool broadcastable(const S1 &src_shape, const S2 &dst_shape)
     {
-        auto iter1 = s1.crbegin();
-        auto iter2 = s2.crbegin();
-        for (; iter1 != s1.crend() && iter2 != s2.crend(); ++iter1, ++iter2)
+        auto src_iter = src_shape.crbegin();
+        auto dst_iter = dst_shape.crbegin();
+        bool res = dst_shape.size() >= src_shape.size();
+        for (; src_iter != src_shape.crend() && res; ++src_iter, ++dst_iter)
         {
-            if ((*iter2 != 1) && (*iter1 != 1) && (*iter2 != *iter1))
-            {
-                return false;
-            }
+            res = (*src_iter == *dst_iter) || (*src_iter == 1);
         }
-        return true;
+        return res;
     }
 }
 

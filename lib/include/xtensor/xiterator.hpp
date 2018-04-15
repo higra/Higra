@@ -165,7 +165,7 @@ namespace xt
      * xindexed_stepper *
      ********************/
 
-    template <class E, bool is_const = true>
+    template<class E, bool is_const>
     class xindexed_stepper
     {
     public:
@@ -515,6 +515,7 @@ namespace xt
         }
         if (i == 0)
         {
+            std::copy(shape.cbegin(), shape.cend(), index.begin());
             stepper.to_end(layout_type::row_major);
         }
     }
@@ -560,6 +561,7 @@ namespace xt
         }
         if (i == 0)
         {
+            std::copy(shape.cbegin(), shape.cend(), index.begin());
             stepper.to_end(layout_type::row_major);
         }
     }
@@ -644,7 +646,7 @@ namespace xt
     template <>
     template <class S, class IT, class ST>
     void stepper_tools<layout_type::column_major>::increment_stepper(S& stepper,
-                                                                     IT& index,	
+                                                                     IT &index,
                                                                      const ST& shape)
     {
         using size_type = typename S::size_type;
@@ -670,6 +672,7 @@ namespace xt
         }
         if (i == size)
         {
+            std::copy(shape.cbegin(), shape.cend(), index.begin());
             stepper.to_end(layout_type::column_major);
         }
     }
@@ -717,6 +720,7 @@ namespace xt
         }
         if (i == size)
         {
+            std::copy(shape.cbegin(), shape.cend(), index.begin());
             stepper.to_end(layout_type::column_major);
         }
     }
@@ -724,7 +728,7 @@ namespace xt
     template <>
     template <class S, class IT, class ST>
     void stepper_tools<layout_type::column_major>::decrement_stepper(S& stepper,
-                                                                     IT& index,	
+                                                                     IT &index,
                                                                      const ST& shape)
     {
         using size_type = typename S::size_type;
@@ -949,7 +953,7 @@ namespace xt
                 std::transform(iter_begin, iter_end, iter_begin, [](const auto& v) { return v - 1; });
             }
             m_linear_index = difference_type(std::accumulate(this->shape().cbegin(), this->shape().cend(),
-                                             size_type(1), std::multiplies<size_type>()));
+                                                             size_type(1), std::multiplies<size_type>()));
         }
     }
 

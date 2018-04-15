@@ -171,8 +171,9 @@ namespace xt
         template <std::size_t I, std::size_t... X>
         struct calculate_stride_row_major
         {
-            constexpr static std::size_t value = (at<sizeof...(X) - I - 1, X...>::value == 1 ? 0 : at<sizeof...(X) - I - 1, X...>::value) * 
-                (calculate_stride_row_major<I - 1, X...>::value == 0 ? 
+            constexpr static std::size_t value =
+                    (at<sizeof...(X) - I, X...>::value == 1 ? 0 : at<sizeof...(X) - I, X...>::value) *
+                    (calculate_stride_row_major<I - 1, X...>::value == 0 ?
                     1 : calculate_stride_row_major<I - 1, X...>::value);
         };
 
@@ -333,6 +334,8 @@ namespace xt
         template <class ST>
         bool broadcast_shape(ST& s, bool reuse_cache = false) const;
 
+        constexpr layout_type layout() const noexcept;
+
     private:
 
         container_type m_data;
@@ -444,6 +447,8 @@ namespace xt
 
         template <class E>
         xfixed_adaptor& operator=(const xexpression<E>& e);
+
+        constexpr layout_type layout() const noexcept;
 
     private:
 
@@ -597,6 +602,11 @@ namespace xt
         return xt::broadcast_shape(m_shape, shape);
     }
 
+    template<class ET, class S, layout_type L, class Tag>
+    constexpr layout_type xfixed_container<ET, S, L, Tag>::layout() const noexcept {
+        return base_type::static_layout;
+    }
+
     template <class ET, class S, layout_type L, class Tag>
     inline auto xfixed_container<ET, S, L, Tag>::data_impl() noexcept -> container_type&
     {
@@ -718,6 +728,11 @@ namespace xt
     inline auto xfixed_adaptor<EC, S, L, Tag>::data_impl() const noexcept -> const container_type&
     {
         return m_data;
+    }
+
+    template<class EC, class S, layout_type L, class Tag>
+    constexpr layout_type xfixed_adaptor<EC, S, L, Tag>::layout() const noexcept {
+        return base_type::static_layout;
     }
 
     template <class EC, class S, layout_type L, class Tag>

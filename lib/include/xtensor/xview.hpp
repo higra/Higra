@@ -79,10 +79,15 @@ namespace xt
         using xexpression_type = std::decay_t<CT>;
         using semantic_base = xview_semantic<self_type>;
 
+        static constexpr bool is_const = std::is_const<std::remove_reference_t<CT>>::value;
         using value_type = typename xexpression_type::value_type;
-        using reference = typename xexpression_type::reference;
+        using reference = std::conditional_t<is_const,
+                typename xexpression_type::const_reference,
+                typename xexpression_type::reference>;
         using const_reference = typename xexpression_type::const_reference;
-        using pointer = typename xexpression_type::pointer;
+        using pointer = std::conditional_t<is_const,
+                typename xexpression_type::const_pointer,
+                typename xexpression_type::pointer>;
         using const_pointer = typename xexpression_type::const_pointer;
         using size_type = typename xexpression_type::size_type;
         using difference_type = typename xexpression_type::difference_type;
@@ -396,17 +401,7 @@ namespace xt
     template <class E>
     inline auto xview<CT, S...>::operator=(const xexpression<E>& e) -> self_type&
     {
-        bool cond = (e.derived_cast().shape().size() == dimension()) &&
-            std::equal(shape().begin(), shape().end(), e.derived_cast().shape().begin());
-        if (!cond)
-        {
-            semantic_base::operator=(broadcast(e.derived_cast(), shape()));
-        }
-        else
-        {
-            semantic_base::operator=(e);
-        }
-        return *this;
+        return semantic_base::operator=(e);
     }
     //@}
 
@@ -739,19 +734,16 @@ namespace xt
         strides_type strides = xtl::make_sequence<strides_type>(dimension(), 0);
 
         auto func = [](const auto& s) { return xt::step_size(s); };
-        size_type i = 0;
 
-        for (; i < sizeof...(S); i++)
+        for (size_type i = 0; i != dimension(); ++i)
         {
-            strides[i - integral_count_before<S...>(i)] =
-                m_e.strides()[i - newaxis_count_before<S...>(i)] *
-                apply<size_type>(i, func, m_slices);
+            size_type index = integral_skip<S...>(i);
+            strides[i] = index < sizeof...(S) ?
+                         apply<size_type>(index, func, m_slices) *
+                         m_e.strides()[index - newaxis_count_before<S...>(index)] :
+                         m_e.strides()[index - newaxis_count_before<S...>(index)];
         }
-        for (; i < strides.size(); ++i)
-        {
-            strides[i - integral_count<S...>()] =
-                m_e.strides()[i - newaxis_count<S...>()];
-        }
+
         return strides;
     }
 
@@ -849,9 +841,25 @@ namespace xt
             return I - newaxis_count_before<get_slice_type<E, S>...>(I);
         }
 
+        template<class... S>
+        struct check_slice;
+
+        template<>
+        struct check_slice<> {
+            using type = void_t<>;
+        };
+
+        template<class S, class... SL>
+        struct check_slice<S, SL...> {
+            static_assert(!std::is_same<S, xellipsis_tag>::value, "ellipsis not supported vith xview");
+            using type = typename check_slice<SL...>::type;
+        };
+
         template <class E, std::size_t... I, class... S>
         inline auto make_view_impl(E&& e, std::index_sequence<I...>, S&&... slices)
         {
+            // Checks that no ellipsis slice is used
+            using type = typename check_slice<S...>::type;
             using view_type = xview<xtl::closure_type_t<E>, get_slice_type<std::decay_t<E>, S>...>;
             return view_type(std::forward<E>(e),
                 get_slice_implementation(e, std::forward<S>(slices), get_underlying_shape_index<std::decay_t<E>, S...>(I))...
