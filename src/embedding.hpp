@@ -201,7 +201,7 @@ namespace hg {
             xt::xarray<coordinates_t> lin2grid(const xt::xexpression<T> &xindices) const {
                 static_assert(std::is_integral<typename T::value_type>::value,
                               "Indices must have integral value type.");
-                const auto indices = xindices.derived_cast();
+                const auto &indices = xindices.derived_cast();
 
                 auto size = indices.size();
                 auto shapeO = indices.shape();

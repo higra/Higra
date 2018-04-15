@@ -23,7 +23,7 @@ namespace hg {
 
     template<typename graph_t, typename T>
     auto bptCanonical(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
-        auto edge_weights = xedge_weights.derived_cast();
+        auto &edge_weights = xedge_weights.derived_cast();
 
         xt::xarray<std::size_t> sorted_edges_indices = xt::arange(num_edges(graph));
         std::stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
