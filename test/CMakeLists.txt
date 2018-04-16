@@ -18,7 +18,8 @@ if (DO_TEST)
             test_graph_misc.cpp
             test_hierarchy_core.cpp
             test_lca.cpp
-            test_accumulator.cpp)
+            test_accumulator.cpp
+            test_pink_graph_io.cpp)
 
 
     add_executable(test_exe ${HIGRA_TESTS_SRC})
