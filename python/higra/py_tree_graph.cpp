@@ -5,7 +5,7 @@
 #include "py_tree_graph.hpp"
 #include "py_common_graph.hpp"
 #include "xtensor-python/pyarray.hpp"
-
+#include "accumulator.hpp"
 
 namespace py = pybind11;
 
@@ -20,6 +20,100 @@ using vertex_t = typename boost::graph_traits<graph_t>::vertex_descriptor;
         py::arg("parentRelation")   \
         );
 
+//HG_ACCUMULATORS (min)(max)(mean)(counter)(sum)(prod)
+
+template<typename value_t, typename pyc>
+void add_accumulate_parallel(pyc &c) {
+    c.def("accumulateParallel", [](const graph_t &tree, const xt::pyarray<value_t> &input, xt::pyarray<value_t> &output,
+                                   hg::accumulators accumulator) {
+              switch (accumulator) {
+                  case hg::accumulators::min:
+                      tree.accumulate_parallel(input, output, hg::accumulator_min<value_t>());
+                      break;
+                  case hg::accumulators::max:
+                      tree.accumulate_parallel(input, output, hg::accumulator_max<value_t>());
+                      break;
+                  case hg::accumulators::mean:
+                      tree.accumulate_parallel(input, output, hg::accumulator_mean<value_t>());
+                      break;
+                  case hg::accumulators::counter:
+                      tree.accumulate_parallel(input, output, hg::accumulator_counter<value_t>());
+                      break;
+                  case hg::accumulators::sum:
+                      tree.accumulate_parallel(input, output, hg::accumulator_sum<value_t>());
+                      break;
+                  case hg::accumulators::prod:
+                      tree.accumulate_parallel(input, output, hg::accumulator_prod<value_t>());
+                      break;
+              }
+          },
+          "For each node i of the tree, we accumulate values of the children of i in the input array and put the result "
+                  "in output. i.e. output(i) = accumulate(input(children(i)))",
+          py::arg("inputArray"),
+          py::arg("outputArray"),
+          py::arg("accumulator"));
+}
+
+template<typename value_t, typename pyc>
+void add_accumulate_sequential(pyc &c) {
+    c.def("accumulateSequential", [](const graph_t &tree, xt::pyarray<value_t> &output, hg::accumulators accumulator) {
+              switch (accumulator) {
+                  case hg::accumulators::min:
+                      tree.accumulate_sequential(output, hg::accumulator_min<value_t>());
+                      break;
+                  case hg::accumulators::max:
+                      tree.accumulate_sequential(output, hg::accumulator_max<value_t>());
+                      break;
+                  case hg::accumulators::mean:
+                      tree.accumulate_sequential(output, hg::accumulator_mean<value_t>());
+                      break;
+                  case hg::accumulators::counter:
+                      tree.accumulate_sequential(output, hg::accumulator_counter<value_t>());
+                      break;
+                  case hg::accumulators::sum:
+                      tree.accumulate_sequential(output, hg::accumulator_sum<value_t>());
+                      break;
+                  case hg::accumulators::prod:
+                      tree.accumulate_sequential(output, hg::accumulator_prod<value_t>());
+                      break;
+              }
+          },
+          "Performs a sequential accumulation of node values from the leaves to the root. For each node i from the leaves to the root, output(i) = accumulate(output(children(i)))", \
+        py::arg("outputArray"), py::arg("accumulator"));
+}
+
+template<typename value_t, typename pyc, typename combination_fun_t>
+void add_accumulate_and_combine_sequential(pyc &c, combination_fun_t fun, std::string name) {
+    c.def(("accumulateAnd" + name + "Sequential").c_str(),
+          [fun](const graph_t &tree, const xt::pyarray<value_t> &input, xt::pyarray<value_t> &output,
+                hg::accumulators accumulator) {
+              switch (accumulator) {
+                  case hg::accumulators::min:
+                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_min<value_t>(), fun);
+                      break;
+                  case hg::accumulators::max:
+                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_max<value_t>(), fun);
+                      break;
+                  case hg::accumulators::mean:
+                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_mean<value_t>(), fun);
+                      break;
+                  case hg::accumulators::counter:
+                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_counter<value_t>(), fun);
+                      break;
+                  case hg::accumulators::sum:
+                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_sum<value_t>(), fun);
+                      break;
+                  case hg::accumulators::prod:
+                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_prod<value_t>(), fun);
+                      break;
+              }
+          },
+          "Performs a sequential accumulation of node values from the leaves to the root and combine result with the input array."
+                  "For each node i from the leaves to the root, output(i) = combine(input(i),accumulate(output(children(i))))",
+          py::arg("inputArray"),
+          py::arg("outputArray"),
+          py::arg("accumulator"));
+}
 
 void py_init_tree_graph(pybind11::module &m) {
     xt::import_numpy();
@@ -46,6 +140,21 @@ void py_init_tree_graph(pybind11::module &m) {
           "Get an iterator on the children of the given node.",
           py::arg("node"));
     c.def("parents", &graph_t::parents, "Get the parents array representing the tree.");
+
+#define DEF(rawXKCD, dataXKCD, TYPE) \
+        add_accumulate_parallel<TYPE, decltype(c)>(c);
+    HG_FOREACH(DEF, HG_NUMERIC_TYPES)
+#undef DEF
+
+#define DEF(rawXKCD, dataXKCD, TYPE) \
+        add_accumulate_sequential<TYPE, decltype(c)>(c);
+    HG_FOREACH(DEF, HG_NUMERIC_TYPES)
+#undef DEF
+
+#define DEF(rawXKCD, dataXKCD, TYPE) \
+        add_accumulate_and_combine_sequential<TYPE, decltype(c)>(c, std::plus<TYPE>(), std::string("Add"));
+    HG_FOREACH(DEF, HG_NUMERIC_TYPES)
+#undef DEF
 }
 
 #undef TREE_CTR

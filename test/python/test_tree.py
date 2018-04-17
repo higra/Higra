@@ -196,6 +196,26 @@ class TestTree(unittest.TestCase):
                 res.append(c)
             self.assertTrue(res == ref[v])
 
+    def test_treeAccumulator(self):
+        tree = TestTree.getTree()
+        input = np.asarray((1, 1, 1, 1, 1, 1, 1, 1))
+        res1 = np.asarray((0, 0, 0, 0, 0, 0, 0, 0))
+
+        tree.accumulateParallel(input, res1, hg.Accumulators.sum)
+        ref1 = np.asarray((0, 0, 0, 0, 0, 2, 3, 2))
+        self.assertTrue(np.allclose(ref1, res1))
+
+        res2 = np.asarray((1, 1, 1, 1, 1, 0, 0, 0))
+        tree.accumulateSequential(res2, hg.Accumulators.sum)
+        ref2 = np.asarray((1, 1, 1, 1, 1, 2, 3, 5))
+        self.assertTrue(np.allclose(ref2, res2))
+
+        res3 = np.asarray((1, 1, 1, 1, 1, 1, 1, 1))
+        tree.accumulateAndAddSequential(input, res3, hg.Accumulators.max)
+        ref3 = np.asarray((1, 1, 1, 1, 1, 2, 2, 3))
+        self.assertTrue(np.allclose(ref3, res3))
+
+
 
 if __name__ == '__main__':
     unittest.main()
