@@ -170,7 +170,7 @@ namespace hg {
 
             template<typename T1, typename T2, typename accumulator_t>
             void accumulate_parallel(const xt::xexpression<T1> &xinput, xt::xexpression<T2> &xoutput,
-                                     accumulator_t &&accumulator) {
+                                     accumulator_t &&accumulator) const {
                 auto &input = xinput.derived_cast();
                 auto &output = xoutput.derived_cast();
 
@@ -189,7 +189,7 @@ namespace hg {
             };
 
             template<typename T1, typename accumulator_t>
-            void accumulate_sequential(xt::xexpression<T1> &xoutput, accumulator_t &&accumulator) {
+            void accumulate_sequential(xt::xexpression<T1> &xoutput, accumulator_t &&accumulator) const {
                 auto &output = xoutput.derived_cast();
 
                 for (std::size_t i = _num_leaves; i < _num_vertices; ++i) {
@@ -203,7 +203,7 @@ namespace hg {
 
             template<typename T1, typename T2, typename accumulator_t, typename combination_fun_t>
             void accumulate_and_combine_sequential(const xt::xexpression<T1> &xinput, xt::xexpression<T2> &xoutput,
-                                                   accumulator_t &&accumulator, combination_fun_t combine) {
+                                                   accumulator_t &&accumulator, combination_fun_t combine) const {
                 auto &input = xinput.derived_cast();
                 auto &output = xoutput.derived_cast();
 
