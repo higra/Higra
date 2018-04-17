@@ -5,7 +5,7 @@
 #include "py_pink_io.hpp"
 #include "io/pink_graph_io.hpp"
 #include "xtensor-python/pyarray.hpp"
-
+#include "pybind11/stl.h"
 namespace py = pybind11;
 
 template<typename graph_t>

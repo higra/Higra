@@ -7,6 +7,7 @@
 #include "lca_fast.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
+#include "pybind11/stl.h"
 
 namespace py = pybind11;
 using namespace hg;
