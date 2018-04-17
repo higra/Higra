@@ -13,7 +13,8 @@ set(PYMODULE_COMPONENTS
         py_graph_misc.cpp
         py_lca_fast.cpp
         py_hierarchy_core.cpp
-        py_pink_io.cpp)
+        py_pink_io.cpp
+        py_accumulators.cpp)
 
 set(MODULE_FILES
         __init__.py)

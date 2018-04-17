@@ -13,6 +13,16 @@ namespace hg {
 
 #define HG_ACCUMULATORS (min)(max)(mean)(counter)(sum)(prod)
 
+    enum class accumulators {
+        mean,
+        min,
+        max,
+        counter,
+        sum,
+        prod
+    };
+
+
     namespace accumulator_internal {
 
         template<

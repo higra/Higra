@@ -11,6 +11,7 @@
 #include "py_lca_fast.hpp"
 #include "py_hierarchy_core.hpp"
 #include "py_pink_io.hpp"
+#include "py_accumulators.hpp"
 
 #define FORCE_IMPORT_ARRAY
 
@@ -45,4 +46,5 @@ m.attr("__version__") = "dev";
     py_init_lca_fast(m);
     py_init_hierarchy_core(m);
     py_init_pink_io(m);
+    py_init_accumulators(m);
 }
