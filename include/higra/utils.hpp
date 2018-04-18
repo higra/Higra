@@ -5,6 +5,33 @@
 #pragma once
 
 
+#include <exception>
+#include <string>
+#include <iostream>
+#include "xtensor/xio.hpp"
+
+#define HG_DEBUG
+
+#ifndef __FUNCTION_NAME__
+#ifdef WIN32   //WINDOWS
+#define __FUNCTION_NAME__   __FUNCTION__
+#else          //*NIX
+#define __FUNCTION_NAME__   __func__
+#endif
+#endif
+
+#ifdef HG_DEBUG
+#define hg_assert(test, msg) do { \
+    if(!(test)) {\
+    throw std::runtime_error(std::string() + __FUNCTION_NAME__ + " in file " + __FILE__ + "(line:" + std::to_string(__LINE__) + "): "  + msg);} \
+  } while (0)
+#else
+#define hg_assert(test, msg) ((void)0)
+#endif
+
+
+
+
 #include <boost/preprocessor/seq/for_each.hpp>
 
 #define HG_XSTR(a) HG_STR(a)

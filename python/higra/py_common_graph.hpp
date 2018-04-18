@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "graph.hpp"
-#include "pybind11/stl.h"
+#include "py_common.hpp"
+#include "higra/graph.hpp"
+
 
 template<typename graph_t, typename pyc>
 void add_incidence_graph_concept(pyc &c) {

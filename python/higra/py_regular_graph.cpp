@@ -4,10 +4,6 @@
 
 #include "py_regular_graph.hpp"
 #include "py_common_graph.hpp"
-#include <string>
-#include "xtensor/xgenerator.hpp"
-
-#include <vector>
 
 namespace py = pybind11;
 

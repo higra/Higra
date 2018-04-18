@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "graph.hpp"
+#include "../graph.hpp"
 
 namespace hg {
     namespace lca_internal {

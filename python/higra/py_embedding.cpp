@@ -2,11 +2,11 @@
 // Created by user on 3/24/18.
 //
 
-#include "xtensor-python/pyarray.hpp"
-#include "pybind11/stl.h"
 #include "py_embedding.hpp"
-#include "embedding.hpp"
-#include "utils.hpp"
+
+#include "py_common.hpp"
+#include "xtensor-python/pyarray.hpp"
+#include "higra/structure/embedding.hpp"
 #include "xtensor/xeval.hpp"
 #include <string>
 

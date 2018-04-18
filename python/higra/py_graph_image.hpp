@@ -6,4 +6,4 @@
 
 #include "pybind11/pybind11.h"
 
-void py_init_graph_misc(pybind11::module &m);
+void py_init_graph_image(pybind11::module &m);

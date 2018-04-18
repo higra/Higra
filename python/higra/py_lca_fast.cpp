@@ -3,11 +3,12 @@
 //
 
 #include "py_lca_fast.hpp"
-#include "graph.hpp"
-#include "lca_fast.hpp"
+#include "py_common.hpp"
+#include "higra/graph.hpp"
+#include "higra/structure/lca_fast.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
-#include "pybind11/stl.h"
+
 
 namespace py = pybind11;
 using namespace hg;

@@ -5,7 +5,8 @@
 #include "py_tree_graph.hpp"
 #include "py_common_graph.hpp"
 #include "xtensor-python/pyarray.hpp"
-#include "accumulator.hpp"
+#include "higra/accumulator/accumulator.hpp"
+#include "higra/accumulator/tree_accumulator.hpp"
 
 namespace py = pybind11;
 
@@ -28,22 +29,22 @@ void add_accumulate_parallel(pyc &c) {
                                    hg::accumulators accumulator) {
               switch (accumulator) {
                   case hg::accumulators::min:
-                      tree.accumulate_parallel(input, output, hg::accumulator_min<value_t>());
+                      hg::accumulate_parallel(tree, input, output, hg::accumulator_min<value_t>());
                       break;
                   case hg::accumulators::max:
-                      tree.accumulate_parallel(input, output, hg::accumulator_max<value_t>());
+                      hg::accumulate_parallel(tree, input, output, hg::accumulator_max<value_t>());
                       break;
                   case hg::accumulators::mean:
-                      tree.accumulate_parallel(input, output, hg::accumulator_mean<value_t>());
+                      hg::accumulate_parallel(tree, input, output, hg::accumulator_mean<value_t>());
                       break;
                   case hg::accumulators::counter:
-                      tree.accumulate_parallel(input, output, hg::accumulator_counter<value_t>());
+                      hg::accumulate_parallel(tree, input, output, hg::accumulator_counter<value_t>());
                       break;
                   case hg::accumulators::sum:
-                      tree.accumulate_parallel(input, output, hg::accumulator_sum<value_t>());
+                      hg::accumulate_parallel(tree, input, output, hg::accumulator_sum<value_t>());
                       break;
                   case hg::accumulators::prod:
-                      tree.accumulate_parallel(input, output, hg::accumulator_prod<value_t>());
+                      hg::accumulate_parallel(tree, input, output, hg::accumulator_prod<value_t>());
                       break;
               }
           },
@@ -59,22 +60,22 @@ void add_accumulate_sequential(pyc &c) {
     c.def("accumulateSequential", [](const graph_t &tree, xt::pyarray<value_t> &output, hg::accumulators accumulator) {
               switch (accumulator) {
                   case hg::accumulators::min:
-                      tree.accumulate_sequential(output, hg::accumulator_min<value_t>());
+                      hg::accumulate_sequential(tree, output, hg::accumulator_min<value_t>());
                       break;
                   case hg::accumulators::max:
-                      tree.accumulate_sequential(output, hg::accumulator_max<value_t>());
+                      hg::accumulate_sequential(tree, output, hg::accumulator_max<value_t>());
                       break;
                   case hg::accumulators::mean:
-                      tree.accumulate_sequential(output, hg::accumulator_mean<value_t>());
+                      hg::accumulate_sequential(tree, output, hg::accumulator_mean<value_t>());
                       break;
                   case hg::accumulators::counter:
-                      tree.accumulate_sequential(output, hg::accumulator_counter<value_t>());
+                      hg::accumulate_sequential(tree, output, hg::accumulator_counter<value_t>());
                       break;
                   case hg::accumulators::sum:
-                      tree.accumulate_sequential(output, hg::accumulator_sum<value_t>());
+                      hg::accumulate_sequential(tree, output, hg::accumulator_sum<value_t>());
                       break;
                   case hg::accumulators::prod:
-                      tree.accumulate_sequential(output, hg::accumulator_prod<value_t>());
+                      hg::accumulate_sequential(tree, output, hg::accumulator_prod<value_t>());
                       break;
               }
           },
@@ -89,22 +90,23 @@ void add_accumulate_and_combine_sequential(pyc &c, combination_fun_t fun, std::s
                 hg::accumulators accumulator) {
               switch (accumulator) {
                   case hg::accumulators::min:
-                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_min<value_t>(), fun);
+                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_min<value_t>(), fun);
                       break;
                   case hg::accumulators::max:
-                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_max<value_t>(), fun);
+                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_max<value_t>(), fun);
                       break;
                   case hg::accumulators::mean:
-                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_mean<value_t>(), fun);
+                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_mean<value_t>(), fun);
                       break;
                   case hg::accumulators::counter:
-                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_counter<value_t>(), fun);
+                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_counter<value_t>(),
+                                                            fun);
                       break;
                   case hg::accumulators::sum:
-                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_sum<value_t>(), fun);
+                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_sum<value_t>(), fun);
                       break;
                   case hg::accumulators::prod:
-                      tree.accumulate_and_combine_sequential(input, output, hg::accumulator_prod<value_t>(), fun);
+                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_prod<value_t>(), fun);
                       break;
               }
           },

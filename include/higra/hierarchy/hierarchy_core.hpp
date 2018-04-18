@@ -6,8 +6,8 @@
 
 #include "xtensor/xarray.hpp"
 #include "xtensor/xgenerator.hpp"
-#include "unionfind.hpp"
-#include "graph.hpp"
+#include "higra/structure/unionfind.hpp"
+#include "higra/graph.hpp"
 #include <algorithm>
 #include <utility>
 #include <tuple>

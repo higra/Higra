@@ -7,11 +7,11 @@
 //
 
 #include <boost/test/unit_test.hpp>
-
-#include "hierarchy_core.hpp"
+#include "higra/algo/graph_image.hpp"
+#include "higra/hierarchy/hierarchy_core.hpp"
 #include "test_utils.hpp"
 
-BOOST_AUTO_TEST_SUITE(boost_hierarchycore);
+BOOST_AUTO_TEST_SUITE(hierarchyCore);
 
     using namespace hg;
     using namespace std;

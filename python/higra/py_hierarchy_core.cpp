@@ -3,9 +3,10 @@
 //
 
 #include "py_hierarchy_core.hpp"
-#include "hierarchy_core.hpp"
+#include "py_common.hpp"
+#include "higra/hierarchy/hierarchy_core.hpp"
 #include "xtensor-python/pyarray.hpp"
-#include "pybind11/stl.h"
+
 
 namespace py = pybind11;
 

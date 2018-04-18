@@ -1,6 +1,6 @@
 #include <boost/test/unit_test.hpp>
 #include "test_utils.hpp"
-#include "embedding.hpp"
+#include "higra/structure/embedding.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xgenerator.hpp"
 #include "xtensor/xinfo.hpp"
@@ -12,7 +12,7 @@
 
 
 
-BOOST_AUTO_TEST_SUITE(TestSuitePoint);
+BOOST_AUTO_TEST_SUITE(embedding);
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGrid1d) {
         hg::embedding_grid_1d e1{10};

@@ -2,7 +2,7 @@
 // Created by user on 4/4/18.
 //
 #include <boost/test/unit_test.hpp>
-#include "point.hpp"
+#include "higra/structure/point.hpp"
 
 
 BOOST_AUTO_TEST_SUITE(point);

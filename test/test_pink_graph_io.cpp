@@ -3,13 +3,13 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#include "io/pink_graph_io.hpp"
+#include "higra/io/pink_graph_io.hpp"
 #include <sstream>
 #include <string>
 #include "test_utils.hpp"
 #include "xtensor/xgenerator.hpp"
 
-BOOST_AUTO_TEST_SUITE(pink_graph_io);
+BOOST_AUTO_TEST_SUITE(pinkGraphIO);
 
     using namespace hg;
     using namespace std;

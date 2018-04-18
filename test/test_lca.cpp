@@ -4,11 +4,12 @@
 
 #include <boost/test/unit_test.hpp>
 #include "xtensor/xio.hpp"
-#include "graph.hpp"
-#include "lca_fast.hpp"
+#include "higra/graph.hpp"
+#include "higra/algo/graph_image.hpp"
+#include "higra/structure/lca_fast.hpp"
 #include "test_utils.hpp"
 
-BOOST_AUTO_TEST_SUITE(boost_lcafast);
+BOOST_AUTO_TEST_SUITE(lca);
 
     using namespace hg;
     using namespace std;

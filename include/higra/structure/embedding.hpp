@@ -10,7 +10,7 @@
 #include "xtensor/xstrided_view.hpp"
 #include "xtensor/xio.hpp"
 #include "point.hpp"
-#include "debug.hpp"
+#include "../utils.hpp"
 
 
 namespace hg {

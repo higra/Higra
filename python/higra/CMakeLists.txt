@@ -3,18 +3,19 @@
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 find_package(PythonInterp 3.5 REQUIRED)
 
-include_directories(${Boost_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include/higra ${PROJECT_SOURCE_DIR}/lib/include ${PYTHON_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${PYTHON_INCLUDE_DIR})
 
 set(PYMODULE_COMPONENTS
         py_undirected_graph.cpp
         py_embedding.cpp
         py_regular_graph.cpp
         py_tree_graph.cpp
-        py_graph_misc.cpp
+        py_graph_image.cpp
         py_lca_fast.cpp
         py_hierarchy_core.cpp
         py_pink_io.cpp
-        py_accumulators.cpp)
+        py_accumulators.cpp
+        py_graph_weights.cpp)
 
 set(MODULE_FILES
         __init__.py)

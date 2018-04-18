@@ -11,7 +11,7 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <vector>
 #include <utility>
-#include "debug.hpp"
+#include "../utils.hpp"
 #include "xtensor/xarray.hpp"
 #include <boost/range/irange.hpp>
 
@@ -144,6 +144,10 @@ namespace hg {
                 return _children[v].cend();
             }
 
+            const auto children(vertex_descriptor v) const {
+                return _children[v];
+            }
+
             template<typename... Args>
             const auto parent(Args &&... args) const {
                 return _parents(std::forward<Args>(args)...);
@@ -153,68 +157,25 @@ namespace hg {
                 return _parents;
             }
 
+            const auto iterate_on_leaves() const {
+                return boost::irange<long>(0, _num_leaves);
+            }
 
             const auto iterate_from_leaves_to_root(leaves_it leaves_opt = leaves_it::include,
-                                                   root_it root_opt = root_it::include) {
+                                                   root_it root_opt = root_it::include) const {
                 vertex_descriptor start = (leaves_opt == leaves_it::include) ? 0 : num_leaves();
                 vertex_descriptor end = (root_opt == root_it::include) ? _num_vertices : _num_vertices - 1;
                 return boost::irange<long>(start, end);
             }
 
             const auto iterate_from_root_to_leaves(leaves_it leaves_opt = leaves_it::include,
-                                                   root_it root_opt = root_it::include) {
+                                                   root_it root_opt = root_it::include) const {
                 vertex_descriptor end = (leaves_opt == leaves_it::include) ? -1 : num_leaves() - 1;
                 vertex_descriptor start = (root_opt == root_it::include) ? _num_vertices - 1 : _num_vertices - 2;
                 return boost::irange<long>(start, end, -1);
             }
 
-            template<typename T1, typename T2, typename accumulator_t>
-            void accumulate_parallel(const xt::xexpression<T1> &xinput, xt::xexpression<T2> &xoutput,
-                                     accumulator_t &&accumulator) const {
-                auto &input = xinput.derived_cast();
-                auto &output = xoutput.derived_cast();
 
-                accumulator.reset();
-                auto v = accumulator.result();
-                for (std::size_t i = 0; i < _num_leaves; ++i)
-                    output(i) = v;
-
-                for (std::size_t i = _num_leaves; i < _num_vertices; ++i) {
-                    accumulator.reset();
-                    for (auto c : _children[i]) {
-                        accumulator.accumulate(input(c));
-                    }
-                    output(i) = accumulator.result();
-                }
-            };
-
-            template<typename T1, typename accumulator_t>
-            void accumulate_sequential(xt::xexpression<T1> &xoutput, accumulator_t &&accumulator) const {
-                auto &output = xoutput.derived_cast();
-
-                for (std::size_t i = _num_leaves; i < _num_vertices; ++i) {
-                    accumulator.reset();
-                    for (auto it = children_cbegin(i); it != children_cend(i); it++) {
-                        accumulator.accumulate(output(*it));
-                    }
-                    output(i) = accumulator.result();
-                }
-            };
-
-            template<typename T1, typename T2, typename accumulator_t, typename combination_fun_t>
-            void accumulate_and_combine_sequential(const xt::xexpression<T1> &xinput, xt::xexpression<T2> &xoutput,
-                                                   accumulator_t &&accumulator, combination_fun_t combine) const {
-                auto &input = xinput.derived_cast();
-                auto &output = xoutput.derived_cast();
-
-                for (std::size_t i = _num_leaves; i < _num_vertices; ++i) {
-                    accumulator.reset();
-                    for (auto it = children_cbegin(i); it != children_cend(i); it++) {
-                        accumulator.accumulate(output(*it));
-                    }
-                    output(i) = combine(accumulator.result(), input(i));
-                }
-            };
 
         private:
 

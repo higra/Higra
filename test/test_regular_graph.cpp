@@ -3,10 +3,10 @@
 //
 #include <boost/test/unit_test.hpp>
 
-#include "graph.hpp"
+#include "higra/graph.hpp"
 #include "test_utils.hpp"
 
-BOOST_AUTO_TEST_SUITE(boost_neighbouringgraph);
+BOOST_AUTO_TEST_SUITE(regularGraph);
 
     using namespace hg;
     using namespace std;

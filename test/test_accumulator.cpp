@@ -3,12 +3,12 @@
 //
 #include <boost/test/unit_test.hpp>
 #include "test_utils.hpp"
-#include "accumulator.hpp"
+#include "higra/accumulator/accumulator.hpp"
 
 #include <vector>
 
 
-BOOST_AUTO_TEST_SUITE(TestSuiteAccumulator);
+BOOST_AUTO_TEST_SUITE(accumulator);
 
     template<typename T, typename acc_t>
     auto applyAcc(const T &values, acc_t acc) {

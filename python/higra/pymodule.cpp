@@ -7,7 +7,8 @@
 #include "py_embedding.hpp"
 #include "py_regular_graph.hpp"
 #include "py_tree_graph.hpp"
-#include "py_graph_misc.hpp"
+#include "py_graph_weights.hpp"
+#include "py_graph_image.hpp"
 #include "py_lca_fast.hpp"
 #include "py_hierarchy_core.hpp"
 #include "py_pink_io.hpp"
@@ -42,7 +43,8 @@ m.attr("__version__") = "dev";
     py_init_embedding(m);
     py_init_regular_graph(m);
     py_init_tree_graph(m);
-    py_init_graph_misc(m);
+    py_init_graph_image(m);
+    py_init_graph_weights(m);
     py_init_lca_fast(m);
     py_init_hierarchy_core(m);
     py_init_pink_io(m);

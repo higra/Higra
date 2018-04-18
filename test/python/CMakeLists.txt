@@ -7,7 +7,8 @@ if (DO_TEST)
             test_embedding.py
             test_regular_graph.py
             test_tree.py
-            test_graph_misc.py
+            test_graph_weights.py
+            test_graph_image.py
             test_lca_fast.py
             test_hierarchy_core.py)
 

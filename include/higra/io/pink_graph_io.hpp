@@ -10,7 +10,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include "../array.hpp"
+#include "higra/structure/array.hpp"
 #include "xtensor/xscalar.hpp"
 
 

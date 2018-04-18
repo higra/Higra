@@ -4,7 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "graph.hpp"
+#include "higra/graph.hpp"
 #include "xtensor/xio.hpp"
 
 #include "test_utils.hpp"
@@ -15,7 +15,7 @@
  */
 
 
-BOOST_AUTO_TEST_SUITE(boost_undirectedgraph);
+BOOST_AUTO_TEST_SUITE(undirectedGraph);
 
 
     using namespace std;

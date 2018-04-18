@@ -2,10 +2,8 @@
 // Created by user on 3/15/18.
 //
 
-
+#include "py_undirected_graph.hpp"
 #include "py_common_graph.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "pybind11/stl.h"
 
 namespace py = pybind11;
 
