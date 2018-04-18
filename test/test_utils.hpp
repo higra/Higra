@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 #include <boost/type_index.hpp>
-
+#include "xtensor/xmath.hpp"
 #include "xtensor/xio.hpp"
 
 template <typename T>

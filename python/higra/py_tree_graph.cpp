@@ -5,7 +5,6 @@
 #include "py_tree_graph.hpp"
 #include "py_common_graph.hpp"
 #include "xtensor-python/pyarray.hpp"
-#include "higra/accumulator/accumulator.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 
 namespace py = pybind11;
@@ -38,7 +37,7 @@ void add_accumulate_parallel(pyc &c) {
                       hg::accumulate_parallel(tree, input, output, hg::accumulator_mean<value_t>());
                       break;
                   case hg::accumulators::counter:
-                      hg::accumulate_parallel(tree, input, output, hg::accumulator_counter<value_t>());
+                      hg::accumulate_parallel(tree, input, output, hg::accumulator_counter());
                       break;
                   case hg::accumulators::sum:
                       hg::accumulate_parallel(tree, input, output, hg::accumulator_sum<value_t>());
@@ -69,7 +68,7 @@ void add_accumulate_sequential(pyc &c) {
                       hg::accumulate_sequential(tree, output, hg::accumulator_mean<value_t>());
                       break;
                   case hg::accumulators::counter:
-                      hg::accumulate_sequential(tree, output, hg::accumulator_counter<value_t>());
+                      hg::accumulate_sequential(tree, output, hg::accumulator_counter());
                       break;
                   case hg::accumulators::sum:
                       hg::accumulate_sequential(tree, output, hg::accumulator_sum<value_t>());
@@ -99,7 +98,7 @@ void add_accumulate_and_combine_sequential(pyc &c, combination_fun_t fun, std::s
                       hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_mean<value_t>(), fun);
                       break;
                   case hg::accumulators::counter:
-                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_counter<value_t>(),
+                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_counter(),
                                                             fun);
                       break;
                   case hg::accumulators::sum:
@@ -154,7 +153,7 @@ void py_init_tree_graph(pybind11::module &m) {
 #undef DEF
 
 #define DEF(rawXKCD, dataXKCD, TYPE) \
-        add_accumulate_and_combine_sequential<TYPE, decltype(c)>(c, std::plus<TYPE>(), std::string("Add"));
+        add_accumulate_and_combine_sequential<TYPE, decltype(c)>(c, std::plus<xt::xarray<TYPE>>(), std::string("Add"));
     HG_FOREACH(DEF, HG_NUMERIC_TYPES)
 #undef DEF
 }

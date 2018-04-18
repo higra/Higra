@@ -8,6 +8,7 @@
 #include <exception>
 #include <string>
 #include <iostream>
+#include "xtensor/xstrided_view.hpp"
 #include "xtensor/xio.hpp"
 
 #define HG_DEBUG
@@ -50,3 +51,38 @@
 
 //BOOST_PP_SEQ_FOR_EACH(f,  x, t)	f(r, x,t0) f(r, x,t1)...f(r, x,tk)
 #define HG_FOREACH(f, t) BOOST_PP_SEQ_FOR_EACH(f, ~, t)
+
+namespace xt {
+
+    inline
+    bool all(bool x) {
+        return x;
+    }
+
+    inline
+    bool any(bool x) {
+        return x;
+    }
+
+    template<typename E,
+            typename = std::enable_if_t<!std::is_base_of<xt::xexpression<E>, E>::value> >
+    E &&view_all(E &&e) {
+        return std::forward<E>(e);
+    }
+
+    template<typename E>
+    auto view_all(xt::xcontainer_semantic<E> &&e) {
+        return xt::dynamic_view(e, {});
+    }
+
+    template<typename E>
+    auto &&view_all(xt::xview_semantic<E> &&e) {
+        return std::forward<xt::xview_semantic<E>>(e);
+    }
+
+    template<typename E>
+    auto view_all(xt::xscalar<E> &&e) {
+        return xt::dynamic_view(e, {});
+    }
+
+}

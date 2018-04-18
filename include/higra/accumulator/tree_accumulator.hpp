@@ -5,8 +5,8 @@
 #pragma once
 
 #include "../graph.hpp"
-
-
+#include "accumulator.hpp"
+#include "xtensor/xaxis_iterator.hpp"
 namespace hg {
 
     template<typename tree_t, typename T1, typename T2, typename accumulator_t>
@@ -15,17 +15,20 @@ namespace hg {
         auto &input = xinput.derived_cast();
         auto &output = xoutput.derived_cast();
 
-        accumulator.reset();
-        auto v = accumulator.result();
-        for (auto i: tree.iterate_on_leaves())
-            output(i) = v;
+        acc_reset(accumulator);
+        auto v = acc_result(accumulator);
+
+        for (auto i: tree.iterate_on_leaves()) {
+            xt::view(output, i) = v;
+        }
+
 
         for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
-            accumulator.reset();
+            acc_reset(accumulator);
             for (auto c : tree.children(i)) {
-                accumulator.accumulate(input(c));
+                acc_accumulate(xt::view(input, c), accumulator);
             }
-            output(i) = accumulator.result();
+            xt::view(output, i) = acc_result(accumulator);
         }
     };
 
@@ -34,11 +37,11 @@ namespace hg {
         auto &output = xoutput.derived_cast();
 
         for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
-            accumulator.reset();
+            acc_reset(accumulator);
             for (auto c : tree.children(i)) {
-                accumulator.accumulate(output(c));
+                acc_accumulate(xt::view(output, c), accumulator);
             }
-            output(i) = accumulator.result();
+            xt::view(output, i) = acc_result(accumulator);
         }
     };
 
@@ -48,13 +51,13 @@ namespace hg {
                                            accumulator_t &&accumulator, combination_fun_t combine) {
         auto &input = xinput.derived_cast();
         auto &output = xoutput.derived_cast();
-
         for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
-            accumulator.reset();
+            acc_reset(accumulator);
             for (auto c : tree.children(i)) {
-                accumulator.accumulate(output(c));
+                acc_accumulate(xt::view(output, c), accumulator);
             }
-            output(i) = combine(accumulator.result(), input(i));
+            xt::view(output, i) = combine(acc_result(accumulator), xt::view(input, i));
+
         }
     };
 }

@@ -1,15 +1,17 @@
 //
-// Created by user on 4/15/18.
+// Created by user on 4/18/18.
 //
 
 #pragma once
 
-#include <functional>
-#include "xtensor/xexpression.hpp"
-#include "xtensor/xstrided_view.hpp"
+#include "xtensor/xview.hpp"
+#include "xtensor/xeval.hpp"
+#include "xtensor/xarray.hpp"
+#include "xtensor/xoperation.hpp"
+#include "../utils.hpp"
+
 
 namespace hg {
-
 
 #define HG_ACCUMULATORS (min)(max)(mean)(counter)(sum)(prod)
 
@@ -23,138 +25,131 @@ namespace hg {
     };
 
 
-    namespace accumulator_internal {
-
-        template<
-                typename result_value_t,
-                typename acc_value_t,
-                typename inner_storage_t,
-                typename reset_fun_t = typename std::function<void(inner_storage_t &)>,
-                typename accumulate_fun_t = typename std::function<void(inner_storage_t &, const acc_value_t &)>,
-                typename result_fun_t = typename std::function<acc_value_t(inner_storage_t &)>
-        >
-        class accumulator {
-            inner_storage_t storage;
-            reset_fun_t _reset;
-            accumulate_fun_t _accumulate;
-            result_fun_t _result;
-
-
-        public:
-
-            accumulator(reset_fun_t reset, accumulate_fun_t accumulate, result_fun_t result) : _reset(reset),
-                                                                                               _accumulate(accumulate),
-                                                                                               _result(result) {
-                _reset(storage);
-            }
-
-            void reset() {
-                _reset(storage);
-            }
-
-            void accumulate(const acc_value_t &v) {
-                _accumulate(storage, v);
-            }
-
-            auto result() {
-                return _result(storage);
-            }
-
-        };
-
+    /*
+     * Accumulators free functions
+     */
+    template<typename T>
+    void acc_reset(T &acc) {
+        xt::view_all(acc.storage) = acc.reset_value;
     }
 
-    template<typename value_t,
-            typename = std::enable_if_t<std::is_arithmetic<value_t>::value> >
-    auto accumulator_max() {
-        return accumulator_internal::accumulator<value_t, value_t, value_t>(
-                [](value_t &s) {
-                    s = std::numeric_limits<value_t>::lowest();
-                },
-                [](value_t &s, const value_t &v) {
-                    if (v > s)
-                        s = v;
-                },
-                [](value_t &s) {
-                    return s;
-                });
+    //template<typename E, typename T>
+    //void acc_accumulate(E & val, T & acc);
+
+    template<typename T>
+    auto acc_result(T &acc) {
+        return acc.storage;
     }
 
-    template<typename value_t,
-            typename = std::enable_if_t<std::is_arithmetic<value_t>::value> >
-    auto accumulator_min() {
-        return accumulator_internal::accumulator<value_t, value_t, value_t>(
-                [](value_t &s) {
-                    s = std::numeric_limits<value_t>::max();
-                },
-                [](value_t &s, const value_t &v) {
-                    if (v < s)
-                        s = v;
-                },
-                [](value_t &s) {
-                    return s;
-                });
+    /*
+     * Accumulator sum
+     */
+    template<typename T>
+    struct accumulator_sum {
+        using value_t = T;
+        const value_t reset_value = 0;
+        xt::xarray<value_t> storage{reset_value};
+    };
+
+    template<typename T1, typename T2>
+    void acc_accumulate(const T1 &value, accumulator_sum<T2> &acc) {
+        acc.storage += value;
     }
 
-    template<typename value_t>
-    auto accumulator_counter() {
-        return accumulator_internal::accumulator<std::size_t, value_t, std::size_t>(
-                [](std::size_t &s) {
-                    s = 0;
-                },
-                [](std::size_t &s, const value_t &) {
-                    ++s;
-                },
-                [](std::size_t &s) {
-                    return s;
-                });
+    /*
+     * Accumulator min
+     */
+    template<typename T>
+    struct accumulator_min {
+        using value_t = T;
+        const value_t reset_value = std::numeric_limits<value_t>::max();
+        xt::xarray<value_t> storage{reset_value};
+    };
+
+    template<typename T1, typename T2>
+    void acc_accumulate(const T1 &value, accumulator_min<T2> &acc) {
+        if (xt::all(acc.storage > value))
+            xt::view_all(acc.storage) = value;
     }
 
-    template<typename value_t,
-            typename = std::enable_if_t<std::is_arithmetic<value_t>::value> >
-    auto accumulator_sum() {
-        return accumulator_internal::accumulator<value_t, value_t, value_t>(
-                [](value_t &s) {
-                    s = 0;
-                },
-                [](value_t &s, const value_t &v) {
-                    s += v;
-                },
-                [](value_t &s) {
-                    return s;
-                });
+    /*
+    * Accumulator max
+    */
+    template<typename T>
+    struct accumulator_max {
+        using value_t = T;
+        const value_t reset_value = std::numeric_limits<value_t>::lowest();
+        xt::xarray<value_t> storage{reset_value};
+    };
+
+
+    template<typename T1, typename T2>
+    void acc_accumulate(const T1 &value, accumulator_max<T2> &acc) {
+        if (xt::all(acc.storage < value))
+            xt::view_all(acc.storage) = value;
     }
 
-    template<typename value_t,
-            typename = std::enable_if_t<std::is_arithmetic<value_t>::value> >
-    auto accumulator_prod() {
-        return accumulator_internal::accumulator<value_t, value_t, value_t>(
-                [](value_t &s) {
-                    s = 1;
-                },
-                [](value_t &s, const value_t &v) {
-                    s *= v;
-                },
-                [](value_t &s) {
-                    return s;
-                });
+    /*
+    * Accumulator counter
+    */
+    struct accumulator_counter {
+        using value_t = std::size_t;
+        const value_t reset_value = 0;
+        value_t storage{reset_value};
+    };
+
+    template<typename T>
+    void acc_accumulate(const T &value, accumulator_counter &acc) {
+        acc.storage++;
     }
 
-    template<typename value_t,
-            typename = std::enable_if_t<std::is_arithmetic<value_t>::value> >
-    auto accumulator_mean() {
-        return accumulator_internal::accumulator<value_t, value_t, std::pair<value_t, std::size_t>>(
-                [](std::pair<value_t, std::size_t> &s) {
-                    s.first = 0;
-                    s.second = 0;
-                },
-                [](std::pair<value_t, std::size_t> &s, const value_t &v) {
-                    s.first += v;
-                    s.second++;
-                },
-                [](std::pair<value_t, std::size_t> &s) {
-                    return s.first / s.second;
-                });
+    inline
+    auto acc_result(accumulator_counter &acc) {
+        return xt::xscalar<std::size_t>(acc.storage);
+    }
+
+
+    /*
+   * Accumulator mean
+   */
+    template<typename T>
+    struct accumulator_mean {
+        using value_t = T;
+        xt::xarray<value_t> storage{0};
+        std::size_t count{0};
+    };
+
+    template<typename T>
+    void acc_reset(accumulator_mean<T> &acc) {
+        xt::dynamic_view(acc.storage, {}) = 0;
+        acc.count = 0;
+    }
+
+    template<typename T1, typename T2>
+    void acc_accumulate(const T1 &value, accumulator_mean<T2> &acc) {
+        acc.storage += value;
+        acc.count++;
+    }
+
+    template<typename T>
+    auto acc_result(accumulator_mean<T> &acc) {
+        return xt::eval(acc.storage / acc.count);
+    }
+
+    /*
+    * Accumulator prod
+    */
+    template<typename T>
+    struct accumulator_prod {
+        using value_t = T;
+        const value_t reset_value = 1;
+        xt::xarray<value_t> storage{reset_value};
+    };
+
+
+    template<typename T1, typename T2>
+    void acc_accumulate(const T1 &value, accumulator_prod<T2> &acc) {
+        acc.storage *= value;
     }
 
 }
