@@ -49,11 +49,6 @@ if (USE_SIMD)
 endif(USE_SIMD)
 
 
-FIND_PACKAGE( OpenCV REQUIRED )
-INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIRS} )
-
-
-
 #add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 
 set(PYBIND11_CPP_STANDARD -std=c++14)

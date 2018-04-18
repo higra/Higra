@@ -8,7 +8,6 @@ if (DO_TEST)
     set(HIGRA_TESTS_SRC
             test.cpp
             test_xtensor.cpp
-            test_imageio.cpp
             test_undirected_graph.cpp
             test_embedding.cpp
             test_utils.cpp
@@ -21,10 +20,7 @@ if (DO_TEST)
             test_accumulator.cpp
             test_pink_graph_io.cpp)
 
-
     add_executable(test_exe ${HIGRA_TESTS_SRC})
-
-    TARGET_LINK_LIBRARIES (test_exe ${OpenCV_LIBS})
 
     ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
     target_link_libraries(test_exe ${Boost_LIBRARIES})
