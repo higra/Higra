@@ -12,8 +12,8 @@
 #include <vector>
 #include <utility>
 #include "../utils.hpp"
-#include "xtensor/xarray.hpp"
 #include <boost/range/irange.hpp>
+#include "array.hpp"
 
 namespace hg {
 
@@ -182,7 +182,7 @@ namespace hg {
             vertex_descriptor _root;
             std::size_t _num_vertices;
             std::size_t _num_leaves;
-            xt::xarray<vertex_descriptor> _parents;
+            array_1d<vertex_descriptor> _parents;
             std::vector<children_list_t> _children;
         };
 

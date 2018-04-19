@@ -5,6 +5,7 @@
 #include "py_tree_graph.hpp"
 #include "py_common_graph.hpp"
 #include "xtensor-python/pyarray.hpp"
+#include "xtensor-python/pytensor.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 
 namespace py = pybind11;
