@@ -128,6 +128,17 @@ BOOST_AUTO_TEST_SUITE(graphImage);
         auto r = contour2d_2_khalimsky(g, {4, 5}, data);
         BOOST_CHECK(xt::allclose(ref, r));
 
+        xt::xarray<int> ref2{{0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {1, 1, 1, 1, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0}};
+        auto r2 = contour2d_2_khalimsky(g, {4, 5}, data, true);
+        BOOST_CHECK(xt::allclose(ref2, r2));
     }
 
 
