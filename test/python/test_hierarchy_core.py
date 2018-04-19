@@ -10,6 +10,11 @@ import numpy as np
 
 class TestHierarchyCore(unittest.TestCase):
 
+    @staticmethod
+    def getTree():
+        parentRelation = np.asarray((5, 5, 6, 6, 6, 7, 7, 7), dtype=np.uint64)
+        return hg.Tree(parentRelation)
+
     def test_BPTTrivial(self):
         graph = hg.get4AdjacencyGraph((1, 2))
 
@@ -46,6 +51,26 @@ class TestHierarchyCore(unittest.TestCase):
         for e in mst.edges():
             test.append(e)
         self.assertTrue(ref == test)
+
+    def test_simplifyTree(self):
+        t = TestHierarchyCore.getTree()
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 2))
+
+        criterion = np.equal(altitudes, altitudes[t.parents()])
+
+        newTree, nodeMap = hg.simplifyTree(t, criterion)
+
+        # for reference
+        newAltitudes = altitudes[nodeMap]
+
+        self.assertTrue(newTree.numVertices() == 7)
+
+        refp = np.asarray((5, 5, 6, 6, 6, 6, 6))
+        self.assertTrue(np.all(refp == newTree.parents()))
+
+        refnm = np.asarray((0, 1, 2, 3, 4, 5, 7))
+        self.assertTrue(np.all(refnm == nodeMap))
 
 
 if __name__ == '__main__':

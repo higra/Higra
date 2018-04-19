@@ -69,4 +69,58 @@ namespace hg {
 
     };
 
+    /// Creates a copy of the current Tree and deletes the nodes such that the criterion function is true.
+    /// Also returns an array that maps any node index i of the new tree, to the index of this node in the original tree
+    ///
+    /// The criterion function is a predicate that associates true (this node must be deleted) or
+    /// false (do not delete this node) to a node index (with operator ()).
+    ///
+    /// \tparam criterion_t
+    /// \param tree
+    /// \param criterion
+    /// \return std::pair<tree, node_map>
+    template<typename criterion_t>
+    auto simplify_tree(const tree &t, criterion_t &criterion) {
+        auto n_nodes = t.num_vertices();
+        auto copy_parent = t.parents();
+
+        std::size_t count = 0;
+        array_1d<tree::vertex_descriptor> deleted_map = xt::zeros<tree::vertex_descriptor>(copy_parent.shape());
+        array_1d<bool> deleted = xt::zeros<bool>(copy_parent.shape());
+
+        // from root to leaves, compute the new parent relation,
+        // don't care of the  holes in the parent tab
+        for (auto i: t.iterate_from_root_to_leaves(leaves_it::exclude, root_it::exclude)) {
+            auto parent = copy_parent(i);
+            if (criterion(i)) {
+                for (auto c: t.children(i)) {
+                    copy_parent(c) = parent;
+                }
+                count++;
+            }
+            // number of deleted nodes after node i
+            deleted_map(i) = count;
+        }
+
+        //correct the mapping
+        deleted_map = count - deleted_map;
+
+        array_1d<tree::vertex_descriptor> new_parent = xt::arange<tree::vertex_descriptor>(0, n_nodes - count);
+        array_1d<tree::vertex_descriptor> node_map = xt::zeros<tree::vertex_descriptor>({n_nodes - count});
+
+        count = 0;
+
+        for (auto i: t.iterate_from_leaves_to_root(leaves_it::include, root_it::exclude)) {
+            if (!criterion(i)) {
+                auto par = copy_parent(i);
+                auto new_par = par - deleted_map(par);
+                node_map(count) = i;
+                new_parent(count) = new_par;
+                count++;
+            }
+        }
+        node_map(node_map.size() - 1) = t.root();
+        return std::make_pair(tree(new_parent), node_map);
+    };
+
 }

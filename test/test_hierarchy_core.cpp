@@ -10,11 +10,21 @@
 #include "higra/algo/graph_image.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "test_utils.hpp"
+#include "xtensor/xindex_view.hpp"
 
 BOOST_AUTO_TEST_SUITE(hierarchyCore);
 
     using namespace hg;
     using namespace std;
+
+    struct _data {
+
+        hg::tree t;
+
+        _data() : t(xt::xarray<long>{5, 5, 6, 6, 6, 7, 7, 7}) {
+        }
+
+    } data;
 
 
     BOOST_AUTO_TEST_CASE(testBPTtrivial) {
@@ -64,5 +74,26 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         }
     }
 
+
+    BOOST_AUTO_TEST_CASE(testTreeSimplification) {
+
+        auto t = data.t;
+
+        hg::array_1d<double> altitudes{0, 0, 0, 0, 0, 1, 2, 2};
+
+        auto criterion = xt::equal(altitudes, xt::index_view(altitudes, t.parents()));
+
+        auto res = hg::simplify_tree(t, criterion);
+        auto nt = res.first;
+        auto nm = res.second;
+
+        BOOST_CHECK(num_vertices(nt) == 7);
+
+        hg::array_1d<std::size_t> refp{5, 5, 6, 6, 6, 6, 6};
+        BOOST_CHECK(refp == nt.parents());
+
+        hg::array_1d<std::size_t> refnm{0, 1, 2, 3, 4, 5, 7};
+        BOOST_CHECK(refnm == nm);
+    }
 
 BOOST_AUTO_TEST_SUITE_END();
