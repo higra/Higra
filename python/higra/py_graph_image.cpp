@@ -6,11 +6,20 @@
 #include "py_common_graph.hpp"
 #include "higra/algo/graph_image.hpp"
 #include "xtensor-python/pyarray.hpp"
+#include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"
 
 
 namespace py = pybind11;
 
+template<typename value_t>
+void def_kalhimsky_2_contour(pybind11::module &m) {
+    m.def("khalimsky2Contour", [](const xt::pyarray<value_t> &khalimsky, bool extra_border) {
+              return hg::khalimsky_2_contour2d(khalimsky, extra_border);
+          },
+          "Create a 4 adjacency edge-weighted graph from a contour image in the Khalimsky grid. Returns a tuple of three elements (graph, embedding, edge_weights).",
+          py::arg("khalimsky"), py::arg("extraBorder") = false);
+}
 
 void py_init_graph_image(pybind11::module &m) {
     xt::import_numpy();
@@ -67,6 +76,11 @@ void py_init_graph_image(pybind11::module &m) {
     "Create a contour image in the Khalimsky grid from a 4 adjacency edge-weighted graph (edge weights of type " HG_XSTR(type) ").",\
     py::arg("graph"),py::arg("shape"),py::arg("edgeWeights"),py::arg("addExtraBorder") = false);
 
+    HG_FOREACH(DEF, HG_NUMERIC_TYPES);
+#undef DEF
+
+#define DEF(rawXKCD, dataXKCD, type) \
+    def_kalhimsky_2_contour<type>(m);
     HG_FOREACH(DEF, HG_NUMERIC_TYPES);
 #undef DEF
 }
