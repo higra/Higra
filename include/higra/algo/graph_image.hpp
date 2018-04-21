@@ -56,10 +56,9 @@ namespace hg {
         long border = (add_extra_border) ? 1 : -1;
 
         std::vector<long> res_shape{shape[0] * 2 + border, shape[1] * 2 + border};
-        for (std::size_t i = 1; i < shapew.size(); ++i)
-            res_shape.push_back(shapew[i]);
 
         xt::xarray<result_type> res = xt::zeros<result_type>(res_shape);
+        // workaround for current bug in xscalar stepper (to be removde after 1.15.9)
         point_2d_i one = {1, 1};
         for (auto ei: edge_index_iterator(graph)) {
             auto e = edge(ei, graph);
@@ -98,5 +97,36 @@ namespace hg {
         }
 
         return res;
+    };
+
+    template<typename T, typename result_type = typename T::value_type>
+    auto
+    khalimsky_2_contour2d(const xt::xexpression<T> &xkhalimsky, bool extra_border = false) {
+        const auto &khalimsky = xkhalimsky.derived_cast();
+        hg_assert(khalimsky.dimension() == 2, "Only 2d khalimsky grids are supported!");
+
+        auto &shape = khalimsky.shape();
+
+        long border = (extra_border) ? 0 : 1;
+
+        std::vector<long> res_shape{(long) shape[0] / 2 + border, (long) shape[1] / 2 + border};
+        embedding_grid_2d res_embedding(res_shape);
+
+        auto g = get_4_adjacency_graph(res_embedding);
+        array_1d<result_type> weights = xt::zeros<result_type>({num_edges(g)});
+        // workaround for current bug in xscalar stepper (to be removde after 1.15.9)
+        point_2d_i one{1, 1};
+        for (auto ei : edge_index_iterator(g)) {
+            auto e = edge(ei, g);
+            auto s = res_embedding.lin2grid(source(e, g));
+            auto t = res_embedding.lin2grid(target(e, g));
+            if (extra_border) {
+                weights(ei) = khalimsky[s + t + one];
+            } else {
+                weights(ei) = khalimsky[s + t];
+            }
+        }
+
+        return std::make_tuple(std::move(g), std::move(res_embedding), std::move(weights));
     };
 }

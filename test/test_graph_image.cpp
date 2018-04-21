@@ -142,5 +142,44 @@ BOOST_AUTO_TEST_SUITE(graphImage);
     }
 
 
+    BOOST_AUTO_TEST_CASE(khalimsky2graph) {
+
+
+        array_1d<std::size_t> ref_shape{4, 5};
+
+        xt::xarray<int> data{0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 0, 2,
+                             3};
+
+        xt::xarray<int> ref{{0, 0, 0, 1, 0, 2, 0, 3, 0},
+                            {0, 0, 0, 1, 0, 2, 0, 3, 0},
+                            {0, 0, 0, 1, 0, 2, 0, 3, 0},
+                            {0, 0, 0, 1, 0, 2, 0, 3, 0},
+                            {0, 0, 0, 1, 0, 2, 0, 3, 0},
+                            {1, 1, 1, 1, 0, 2, 0, 3, 0},
+                            {0, 0, 0, 0, 0, 2, 0, 3, 0}};
+        auto r = khalimsky_2_contour2d(ref);
+        //auto & graph = std::get<0>(r);
+        auto &embedding = std::get<1>(r);
+        auto &weights = std::get<2>(r);
+        BOOST_CHECK(xt::allclose(embedding.shape(), ref_shape));
+        BOOST_CHECK(xt::allclose(data, weights));
+
+        xt::xarray<int> ref2{{0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
+                             {1, 1, 1, 1, 1, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0},
+                             {0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0}};
+        auto r2 = khalimsky_2_contour2d(ref2, true);
+        //auto & graph2 = std::get<0>(r2);
+        auto &embedding2 = std::get<1>(r2);
+        auto &weights2 = std::get<2>(r2);
+        BOOST_CHECK(xt::allclose(embedding2.shape(), ref_shape));
+        BOOST_CHECK(xt::allclose(data, weights2));
+    }
+
 
 BOOST_AUTO_TEST_SUITE_END();
