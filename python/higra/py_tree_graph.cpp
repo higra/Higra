@@ -117,6 +117,36 @@ void add_accumulate_and_combine_sequential(pyc &c, combination_fun_t fun, std::s
           py::arg("accumulator"));
 }
 
+template<typename value_t, typename pyc>
+void def_propagate_sequential(pyc &c) {
+    c.def("propagateSequential",
+          [](const graph_t &tree, const xt::pyarray<value_t> &input, xt::pyarray<value_t> &output,
+             const xt::pyarray<bool> &condition) {
+              hg::propagate_sequential(tree, input, output, condition);
+          },
+          "Conditionally propagates parent values to children. "
+                  "For each node i from the root to the leaves, if condition(i) then output(i) = output(tree.parent(i)) otherwise"
+                  "output(i) = input(i)",
+          py::arg("inputArray"),
+          py::arg("outputArray"),
+          py::arg("condition"));
+}
+
+template<typename value_t, typename pyc>
+void def_propagate_parallel(pyc &c) {
+    c.def("propagateParallel",
+          [](const graph_t &tree, const xt::pyarray<value_t> &input, xt::pyarray<value_t> &output,
+             const xt::pyarray<bool> &condition) {
+              hg::propagate_parallel(tree, input, output, condition);
+          },
+          "Conditionally propagates parent values to children. "
+                  "For each node i, if condition(i) then output(i) = input(tree.parent(i)) otherwise"
+                  "output(i) = input(i)",
+          py::arg("inputArray"),
+          py::arg("outputArray"),
+          py::arg("condition"));
+}
+
 void py_init_tree_graph(pybind11::module &m) {
     xt::import_numpy();
     auto c = py::class_<graph_t>(m, "Tree");
@@ -155,6 +185,16 @@ void py_init_tree_graph(pybind11::module &m) {
 
 #define DEF(rawXKCD, dataXKCD, TYPE) \
         add_accumulate_and_combine_sequential<TYPE, decltype(c)>(c, std::plus<xt::xarray<TYPE>>(), std::string("Add"));
+    HG_FOREACH(DEF, HG_NUMERIC_TYPES)
+#undef DEF
+
+#define DEF(rawXKCD, dataXKCD, TYPE) \
+        def_propagate_sequential<TYPE, decltype(c)>(c);
+    HG_FOREACH(DEF, HG_NUMERIC_TYPES)
+#undef DEF
+
+#define DEF(rawXKCD, dataXKCD, TYPE) \
+        def_propagate_parallel<TYPE, decltype(c)>(c);
     HG_FOREACH(DEF, HG_NUMERIC_TYPES)
 #undef DEF
 }

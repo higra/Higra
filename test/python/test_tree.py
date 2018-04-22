@@ -215,6 +215,24 @@ class TestTree(unittest.TestCase):
         ref3 = np.asarray((1, 1, 1, 1, 1, 2, 2, 3))
         self.assertTrue(np.allclose(ref3, res3))
 
+    def test_treePropagate(self):
+        tree = TestTree.getTree()
+        input = np.asarray(((1, 8), (2, 7), (3, 6), (4, 5), (5, 4), (6, 3), (7, 2), (8, 1)), dtype=np.float64)
+        output = np.zeros((8, 2))
+        print(input.dtype)
+        print(output.dtype)
+        condition = np.asarray((True, False, True, False, True, True, False, False))
+
+        tree.propagateParallel(input, output, condition)
+        print(output)
+        ref = np.asarray(((6, 3), (2, 7), (7, 2), (4, 5), (7, 2), (8, 1), (7, 2), (8, 1)))
+        self.assertTrue(np.allclose(ref, output))
+
+        output2 = np.zeros((8, 2))
+
+        tree.propagateSequential(input, output2, condition)
+        ref2 = np.asarray(((8, 1), (2, 7), (7, 2), (4, 5), (7, 2), (8, 1), (7, 2), (8, 1)))
+        self.assertTrue(np.allclose(ref2, output2))
 
 
 if __name__ == '__main__':

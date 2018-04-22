@@ -106,4 +106,57 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
     }
 
 
+    BOOST_AUTO_TEST_CASE(treePropagate) {
+        auto tree = data.t;
+        array_1d<int> input{1, 2, 3, 4, 5, 6, 7, 8};
+        array_1d<int> output{0, 0, 0, 0, 0, 0, 0, 0};
+        array_1d<bool> condition{true, false, true, false, true, true, false, false};
+
+        propagate_parallel(tree, input, output, condition);
+        array_1d<int> ref{6, 2, 7, 4, 7, 8, 7, 8};
+        BOOST_CHECK(xt::allclose(ref, output));
+
+        array_1d<int> output2{0, 0, 0, 0, 0, 0, 0, 0};
+        propagate_sequential(tree, input, output2, condition);
+        array_1d<int> ref2{8, 2, 7, 4, 7, 8, 7, 8};
+        BOOST_CHECK(xt::allclose(ref2, output2));
+    }
+
+    BOOST_AUTO_TEST_CASE(treePropagateVect) {
+        auto tree = data.t;
+        array_2d<int> input{{1, 8},
+                            {2, 7},
+                            {3, 6},
+                            {4, 5},
+                            {5, 4},
+                            {6, 3},
+                            {7, 2},
+                            {8, 1}};
+        array_2d<int> output = xt::zeros<int>({8, 2});
+        array_1d<bool> condition{true, false, true, false, true, true, false, false};
+
+        propagate_parallel(tree, input, output, condition);
+        array_2d<int> ref{{6, 3},
+                          {2, 7},
+                          {7, 2},
+                          {4, 5},
+                          {7, 2},
+                          {8, 1},
+                          {7, 2},
+                          {8, 1}};
+        BOOST_CHECK(xt::allclose(ref, output));
+
+        array_2d<int> output2 = xt::zeros<int>({8, 2});
+        propagate_sequential(tree, input, output2, condition);
+        array_2d<int> ref2{{8, 1},
+                           {2, 7},
+                           {7, 2},
+                           {4, 5},
+                           {7, 2},
+                           {8, 1},
+                           {7, 2},
+                           {8, 1}};
+        BOOST_CHECK(xt::allclose(ref2, output2));
+    }
+
 BOOST_AUTO_TEST_SUITE_END();

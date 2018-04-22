@@ -10,6 +10,7 @@
 #include <string>
 #include <boost/type_index.hpp>
 #include "xtensor/xmath.hpp"
+#include "xtensor/xgenerator.hpp"
 #include "xtensor/xio.hpp"
 
 template <typename T>
