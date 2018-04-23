@@ -7,7 +7,6 @@ sys.path.insert(0, "@PYTHON_MODULE_PATH@")
 import higra as hg
 
 import os
-import errno
 import os.path
 
 
