@@ -25,125 +25,135 @@ using vertex_t = typename boost::graph_traits<graph_t>::vertex_descriptor;
 
 template<typename value_t, typename pyc>
 void add_accumulate_parallel(pyc &c) {
-    c.def("accumulateParallel", [](const graph_t &tree, const xt::pyarray<value_t> &input, xt::pyarray<value_t> &output,
+    c.def("accumulateParallel", [](const graph_t &tree, const xt::pyarray<value_t> &input,
                                    hg::accumulators accumulator) {
               switch (accumulator) {
                   case hg::accumulators::min:
-                      hg::accumulate_parallel(tree, input, output, hg::accumulator_min<value_t>());
+                      return hg::accumulate_parallel(tree, input, hg::accumulator_min<value_t>());
                       break;
                   case hg::accumulators::max:
-                      hg::accumulate_parallel(tree, input, output, hg::accumulator_max<value_t>());
+                      return hg::accumulate_parallel(tree, input, hg::accumulator_max<value_t>());
                       break;
                   case hg::accumulators::mean:
-                      hg::accumulate_parallel(tree, input, output, hg::accumulator_mean<value_t>());
+                      return hg::accumulate_parallel(tree, input, hg::accumulator_mean<value_t>());
                       break;
                   case hg::accumulators::counter:
-                      hg::accumulate_parallel(tree, input, output, hg::accumulator_counter());
+                      return hg::accumulate_parallel(tree, input, hg::accumulator_counter());
                       break;
                   case hg::accumulators::sum:
-                      hg::accumulate_parallel(tree, input, output, hg::accumulator_sum<value_t>());
+                      return hg::accumulate_parallel(tree, input, hg::accumulator_sum<value_t>());
                       break;
                   case hg::accumulators::prod:
-                      hg::accumulate_parallel(tree, input, output, hg::accumulator_prod<value_t>());
+                      return hg::accumulate_parallel(tree, input, hg::accumulator_prod<value_t>());
                       break;
               }
+              throw std::runtime_error("Unknown accumulator.");
           },
           "For each node i of the tree, we accumulate values of the children of i in the input array and put the result "
                   "in output. i.e. output(i) = accumulate(input(children(i)))",
           py::arg("inputArray"),
-          py::arg("outputArray"),
           py::arg("accumulator"));
 }
 
 template<typename value_t, typename pyc>
 void add_accumulate_sequential(pyc &c) {
-    c.def("accumulateSequential", [](const graph_t &tree, xt::pyarray<value_t> &output, hg::accumulators accumulator) {
+    c.def("accumulateSequential",
+          [](const graph_t &tree, const xt::pyarray<value_t> &vertex_data, hg::accumulators accumulator) {
               switch (accumulator) {
                   case hg::accumulators::min:
-                      hg::accumulate_sequential(tree, output, hg::accumulator_min<value_t>());
+                      return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_min<value_t>());
                       break;
                   case hg::accumulators::max:
-                      hg::accumulate_sequential(tree, output, hg::accumulator_max<value_t>());
+                      return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_max<value_t>());
                       break;
                   case hg::accumulators::mean:
-                      hg::accumulate_sequential(tree, output, hg::accumulator_mean<value_t>());
+                      return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_mean<value_t>());
                       break;
                   case hg::accumulators::counter:
-                      hg::accumulate_sequential(tree, output, hg::accumulator_counter());
+                      return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_counter());
                       break;
                   case hg::accumulators::sum:
-                      hg::accumulate_sequential(tree, output, hg::accumulator_sum<value_t>());
+                      return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_sum<value_t>());
                       break;
                   case hg::accumulators::prod:
-                      hg::accumulate_sequential(tree, output, hg::accumulator_prod<value_t>());
+                      return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_prod<value_t>());
                       break;
               }
+              throw std::runtime_error("Unknown accumulator.");
           },
-          "Performs a sequential accumulation of node values from the leaves to the root. For each node i from the leaves to the root, output(i) = accumulate(output(children(i)))", \
-        py::arg("outputArray"), py::arg("accumulator"));
+          "Performs a sequential accumulation of node values from the leaves to the root. "
+                  "For each leaf node i, output(i) = leafData(i)."
+                  "For each node i from the leaves (excluded) to the root, output(i) = accumulate(output(children(i)))",
+          py::arg("leafDataArray"),
+          py::arg("accumulator"));
 }
 
 template<typename value_t, typename pyc, typename combination_fun_t>
 void add_accumulate_and_combine_sequential(pyc &c, combination_fun_t fun, std::string name) {
     c.def(("accumulateAnd" + name + "Sequential").c_str(),
-          [fun](const graph_t &tree, const xt::pyarray<value_t> &input, xt::pyarray<value_t> &output,
+          [fun](const graph_t &tree, const xt::pyarray<value_t> &input, const xt::pyarray<value_t> &vertex_data,
                 hg::accumulators accumulator) {
               switch (accumulator) {
                   case hg::accumulators::min:
-                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_min<value_t>(), fun);
+                      return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
+                                                                   hg::accumulator_min<value_t>(), fun);
                       break;
                   case hg::accumulators::max:
-                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_max<value_t>(), fun);
+                      return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
+                                                                   hg::accumulator_max<value_t>(), fun);
                       break;
                   case hg::accumulators::mean:
-                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_mean<value_t>(), fun);
+                      return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
+                                                                   hg::accumulator_mean<value_t>(), fun);
                       break;
                   case hg::accumulators::counter:
-                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_counter(),
-                                                            fun);
+                      return hg::accumulate_and_combine_sequential(tree, input, vertex_data, hg::accumulator_counter(),
+                                                                   fun);
                       break;
                   case hg::accumulators::sum:
-                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_sum<value_t>(), fun);
+                      return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
+                                                                   hg::accumulator_sum<value_t>(), fun);
                       break;
                   case hg::accumulators::prod:
-                      hg::accumulate_and_combine_sequential(tree, input, output, hg::accumulator_prod<value_t>(), fun);
+                      return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
+                                                                   hg::accumulator_prod<value_t>(), fun);
                       break;
               }
+              throw std::runtime_error("Unknown accumulator.");
           },
           "Performs a sequential accumulation of node values from the leaves to the root and combine result with the input array."
-                  "For each node i from the leaves to the root, output(i) = combine(input(i),accumulate(output(children(i))))",
+                  "For each leaf node i, output(i) = leafData(i)."
+                  "For each node i from the leaves (excluded) to the root, output(i) = combine(input(i),accumulate(output(children(i))))",
           py::arg("inputArray"),
-          py::arg("outputArray"),
+          py::arg("leafDataArray"),
           py::arg("accumulator"));
 }
 
 template<typename value_t, typename pyc>
 void def_propagate_sequential(pyc &c) {
     c.def("propagateSequential",
-          [](const graph_t &tree, const xt::pyarray<value_t> &input, xt::pyarray<value_t> &output,
+          [](const graph_t &tree, const xt::pyarray<value_t> &input,
              const xt::pyarray<bool> &condition) {
-              hg::propagate_sequential(tree, input, output, condition);
+              return hg::propagate_sequential(tree, input, condition);
           },
           "Conditionally propagates parent values to children. "
                   "For each node i from the root to the leaves, if condition(i) then output(i) = output(tree.parent(i)) otherwise"
                   "output(i) = input(i)",
           py::arg("inputArray"),
-          py::arg("outputArray"),
           py::arg("condition"));
 }
 
 template<typename value_t, typename pyc>
 void def_propagate_parallel(pyc &c) {
     c.def("propagateParallel",
-          [](const graph_t &tree, const xt::pyarray<value_t> &input, xt::pyarray<value_t> &output,
+          [](const graph_t &tree, const xt::pyarray<value_t> &input,
              const xt::pyarray<bool> &condition) {
-              hg::propagate_parallel(tree, input, output, condition);
+              return hg::propagate_parallel(tree, input, condition);
           },
           "Conditionally propagates parent values to children. "
                   "For each node i, if condition(i) then output(i) = input(tree.parent(i)) otherwise"
                   "output(i) = input(i)",
           py::arg("inputArray"),
-          py::arg("outputArray"),
           py::arg("condition"));
 }
 
