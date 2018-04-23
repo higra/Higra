@@ -20,7 +20,7 @@ namespace hg {
 
     template<typename graph_t, typename result_value_t=double>
     auto weight_graph(const graph_t &graph, const std::function<result_value_t(std::size_t, std::size_t)> &fun) {
-        auto result = xt::xarray<result_value_t>::from_shape({num_edges(graph)});
+        auto result = array_1d<result_value_t>::from_shape({num_edges(graph)});
         std::size_t i = 0;
         for (const auto e: edge_iterator(graph)) {
             result(i++) = fun(source(e, graph), target(e, graph));
@@ -62,8 +62,8 @@ namespace hg {
                 if (data.dimension() > 1) {
                     std::function<result_value_t(std::size_t, std::size_t)> fun = [&graph, &data](std::size_t i,
                                                                                                   std::size_t j) -> result_value_t {
-                        return xt::sum(xt::abs(xt::dynamic_view(data, {i, xt::ellipsis()}) -
-                                               xt::dynamic_view(data, {j, xt::ellipsis()})))();
+                        return xt::sum(xt::abs(xt::view(data, i) -
+                                               xt::view(data, j)))();
                     };
                     return weight_graph(graph, fun);
                 } else {
@@ -78,8 +78,8 @@ namespace hg {
                 if (data.dimension() > 1) {
                     std::function<result_value_t(std::size_t, std::size_t)> fun = [&graph, &data](std::size_t i,
                                                                                                   std::size_t j) -> result_value_t {
-                        return std::sqrt(xt::sum(xt::pow(xt::dynamic_view(data, {i, xt::ellipsis()}) -
-                                                         xt::dynamic_view(data, {j, xt::ellipsis()}), 2))());
+                        return std::sqrt(xt::sum(xt::pow(xt::view(data, i) -
+                                                         xt::view(data, j), 2))());
                     };
                     return weight_graph(graph, fun);
                 } else {
@@ -96,8 +96,8 @@ namespace hg {
                 if (data.dimension() > 1) {
                     std::function<result_value_t(std::size_t, std::size_t)> fun = [&graph, &data](std::size_t i,
                                                                                                   std::size_t j) -> result_value_t {
-                        return xt::amax(xt::abs(xt::dynamic_view(data, {i, xt::ellipsis()}) -
-                                                xt::dynamic_view(data, {j, xt::ellipsis()})))();
+                        return xt::amax(xt::abs(xt::view(data, i) -
+                                                xt::view(data, j)))();
                     };
                     return weight_graph(graph, fun);
                 } else {
@@ -112,8 +112,8 @@ namespace hg {
                 if (data.dimension() > 1) {
                     std::function<result_value_t(std::size_t, std::size_t)> fun = [&graph, &data](std::size_t i,
                                                                                                   std::size_t j) -> result_value_t {
-                        return xt::sum(xt::pow(xt::dynamic_view(data, {i, xt::ellipsis()}) -
-                                               xt::dynamic_view(data, {j, xt::ellipsis()}), 2))();
+                        return xt::sum(xt::pow(xt::view(data, i) -
+                                               xt::view(data, j), 2))();
                     };
                     return weight_graph(graph, fun);
                 } else {

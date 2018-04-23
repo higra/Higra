@@ -6,6 +6,7 @@
 #include "py_common_graph.hpp"
 #include "higra/algo/graph_weights.hpp"
 #include "xtensor-python/pyarray.hpp"
+#include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"
 
 

@@ -57,7 +57,7 @@ namespace hg {
 
         std::vector<long> res_shape{shape[0] * 2 + border, shape[1] * 2 + border};
 
-        xt::xarray<result_type> res = xt::zeros<result_type>(res_shape);
+        array_2d <result_type> res = xt::zeros<result_type>(res_shape);
         // workaround for current bug in xscalar stepper (to be removde after 1.15.9)
         point_2d_i one = {1, 1};
         for (auto ei: edge_index_iterator(graph)) {

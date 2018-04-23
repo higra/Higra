@@ -8,7 +8,7 @@
 #include "xtensor/xreducer.hpp"
 #include "xtensor/xgenerator.hpp"
 #include "xtensor/xstrided_view.hpp"
-#include "xtensor/xio.hpp"
+#include "array.hpp"
 #include "point.hpp"
 #include "../utils.hpp"
 
@@ -208,7 +208,7 @@ namespace hg {
                 std::vector<std::size_t> shape(shapeO.begin(), shapeO.end());
                 shape.push_back(dim);
 
-                xt::xarray<coordinates_t> result = xt::zeros<coordinates_t>({size, (std::size_t) dim});
+                array_nd<coordinates_t> result = xt::zeros<coordinates_t>({size, (std::size_t) dim});
 
 
                 const auto indicesLin = xt::flatten(indices);
