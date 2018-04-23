@@ -6,6 +6,7 @@
 
 #include "py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
+#include "xtensor-python/pytensor.hpp"
 #include "higra/structure/embedding.hpp"
 #include "xtensor/xeval.hpp"
 #include <string>

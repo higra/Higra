@@ -27,6 +27,9 @@ if (DO_TEST)
     target_link_libraries(test_exe ${Boost_LIBRARIES})
     add_test(NAME Test_cpp COMMAND test_exe)
     set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} test_exe CACHE INTERNAL "" FORCE)
+
+    add_subdirectory(ressources)
+    add_subdirectory(python)
+
 endif (DO_TEST)
 
-add_subdirectory(python)

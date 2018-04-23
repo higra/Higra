@@ -10,7 +10,8 @@ if (DO_TEST)
             test_graph_weights.py
             test_graph_image.py
             test_lca_fast.py
-            test_hierarchy_core.py)
+            test_hierarchy_core.py
+            test_pink_graph_io.py)
 
     foreach (FILE ${PYTHON_TEST_FILES})
         configure_file(${FILE} ${CMAKE_CURRENT_BINARY_DIR}/${FILE})
