@@ -213,6 +213,55 @@ class TestTree(unittest.TestCase):
         ref3 = np.asarray((1, 1, 1, 1, 1, 2, 2, 3))
         self.assertTrue(np.allclose(ref3, res3))
 
+    def test_treeAccumulatorVec(self):
+        tree = TestTree.getTree()
+        input = np.asarray(((1, 0),
+                            (1, 1),
+                            (1, 2),
+                            (1, 3),
+                            (1, 4),
+                            (1, 5),
+                            (1, 6),
+                            (1, 7)))
+
+        res1 = tree.accumulateParallel(input, hg.Accumulators.sum)
+        ref1 = np.asarray(((0, 0),
+                           (0, 0),
+                           (0, 0),
+                           (0, 0),
+                           (0, 0),
+                           (2, 1),
+                           (3, 9),
+                           (2, 11)))
+        self.assertTrue(np.allclose(ref1, res1))
+
+        leafData = np.asarray(((1, 0),
+                               (1, 1),
+                               (1, 2),
+                               (1, 3),
+                               (1, 4)))
+        res2 = tree.accumulateSequential(leafData, hg.Accumulators.sum)
+        ref2 = np.asarray(((1, 0),
+                           (1, 1),
+                           (1, 2),
+                           (1, 3),
+                           (1, 4),
+                           (2, 1),
+                           (3, 9),
+                           (5, 10)))
+        self.assertTrue(np.allclose(ref2, res2))
+
+        res3 = tree.accumulateAndAddSequential(input, leafData, hg.Accumulators.sum)
+        ref3 = np.asarray(((1, 0),
+                           (1, 1),
+                           (1, 2),
+                           (1, 3),
+                           (1, 4),
+                           (3, 6),
+                           (4, 15),
+                           (8, 28)))
+        self.assertTrue(np.allclose(ref3, res3))
+
     def test_treePropagate(self):
         tree = TestTree.getTree()
         input = np.asarray(((1, 8), (2, 7), (3, 6), (4, 5), (5, 4), (6, 3), (7, 2), (8, 1)), dtype=np.float64)
