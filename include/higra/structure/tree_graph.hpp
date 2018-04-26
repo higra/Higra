@@ -335,18 +335,18 @@ namespace boost {
         return g.num_edges();
     }
 
-    inline hg::tree::degree_size_type degree(typename hg::tree::vertex_descriptor v,
+    inline hg::tree::degree_size_type degree(const typename hg::tree::vertex_descriptor v,
                                              const hg::tree &g) {
         return g.degree(v);
     }
 
-    inline hg::tree::degree_size_type in_degree(typename hg::tree::vertex_descriptor v,
+    inline hg::tree::degree_size_type in_degree(const typename hg::tree::vertex_descriptor v,
                                                 const hg::tree &g) {
         return g.degree(v);
     }
 
 
-    inline hg::tree::degree_size_type out_degree(typename hg::tree::vertex_descriptor v,
+    inline hg::tree::degree_size_type out_degree(const typename hg::tree::vertex_descriptor v,
                                                  const hg::tree &g) {
         return g.degree(v);
     }

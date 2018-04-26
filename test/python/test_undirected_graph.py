@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, "@PYTHON_MODULE_PATH@")
 
 import higra as hg
-
+import numpy as np
 
 class TestUndirectedGraph(unittest.TestCase):
 
@@ -116,6 +116,12 @@ class TestUndirectedGraph(unittest.TestCase):
         self.assertTrue(g.degree(3) == 0)
         self.assertTrue(g.outDegree(3) == 0)
         self.assertTrue(g.inDegree(3) == 0)
+
+        indices = np.asarray(((0, 3), (1, 2)))
+        ref = np.asarray(((2, 0), (2, 2)))
+        self.assertTrue(np.allclose(g.degree(indices), ref))
+        self.assertTrue(np.allclose(g.inDegree(indices), ref))
+        self.assertTrue(np.allclose(g.outDegree(indices), ref))
 
     def test_edge_index_iterator(self):
         g = hg.getTestUndirectedGraph()

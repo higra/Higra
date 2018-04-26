@@ -12,7 +12,7 @@ using edge_t = typename boost::graph_traits<graph_t>::edge_descriptor;
 using vertex_t = typename boost::graph_traits<graph_t>::vertex_descriptor;
 
 void py_init_undirected_graph(py::module &m) {
-
+    xt::import_numpy();
 
     auto c = py::class_<graph_t>(m, "UndirectedGraph");
 

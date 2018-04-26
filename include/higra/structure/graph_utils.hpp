@@ -103,4 +103,46 @@ namespace hg {
         using it_t = typename graph_t::children_iterator;
         return iterator_wrapper<it_t>(hg::children(v, g));
     }
+
+    template<typename T, typename graph_t>
+    auto degree(const xt::xexpression<T> &xindex, const graph_t &g) {
+        static_assert(std::is_integral<typename T::value_type>::value,
+                      "Vertex indices must have integral value type.");
+        auto &index = xindex.derived_cast();
+        auto f = xt::flatten(index);
+        array_nd <std::size_t> res = xt::zeros<std::size_t>({index.size()});
+        for (std::size_t i = 0; i < res.size(); ++i) {
+            res(i) = degree(f(i), g);
+        }
+        res.reshape(index.shape());
+        return res;
+    };
+
+    template<typename T, typename graph_t>
+    auto in_degree(const xt::xexpression<T> &xindex, const graph_t &g) {
+        static_assert(std::is_integral<typename T::value_type>::value,
+                      "Vertex indices must have integral value type.");
+        auto &index = xindex.derived_cast();
+        auto f = xt::flatten(index);
+        array_nd <std::size_t> res = xt::zeros<std::size_t>({index.size()});
+        for (std::size_t i = 0; i < res.size(); ++i) {
+            res(i) = in_degree(f(i), g);
+        }
+        res.reshape(index.shape());
+        return res;
+    };
+
+    template<typename T, typename graph_t>
+    auto out_degree(const xt::xexpression<T> &xindex, const graph_t &g) {
+        static_assert(std::is_integral<typename T::value_type>::value,
+                      "Vertex indices must have integral value type.");
+        auto &index = xindex.derived_cast();
+        auto f = xt::flatten(index);
+        array_nd <std::size_t> res = xt::zeros<std::size_t>({index.size()});
+        for (std::size_t i = 0; i < res.size(); ++i) {
+            res(i) = out_degree(f(i), g);
+        }
+        res.reshape(index.shape());
+        return res;
+    };
 }

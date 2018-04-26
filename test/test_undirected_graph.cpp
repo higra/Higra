@@ -47,6 +47,15 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         BOOST_CHECK(out_degree(3, g) == 0);
         BOOST_CHECK(in_degree(3, g) == 0);
         BOOST_CHECK(degree(3, g) == 0);
+
+        array_2d<std::size_t> indices{{0, 3},
+                                      {1, 2}};
+        array_2d<std::size_t> ref{{2, 0},
+                                  {2, 2}};
+
+        BOOST_CHECK(xt::allclose(degree(indices, g), ref));
+        BOOST_CHECK(xt::allclose(in_degree(indices, g), ref));
+        BOOST_CHECK(xt::allclose(out_degree(indices, g), ref));
     }
 
     BOOST_AUTO_TEST_CASE(copyCTR) {

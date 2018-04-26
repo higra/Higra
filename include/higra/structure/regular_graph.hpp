@@ -256,7 +256,7 @@ namespace boost {
     template<typename embedding_t>
     typename hg::regular_graph<embedding_t>::degree_size_type
     out_degree(
-            typename hg::regular_graph<embedding_t>::vertex_descriptor &v,
+            const typename hg::regular_graph<embedding_t>::vertex_descriptor v,
             const hg::regular_graph<embedding_t> &g) {
         typename hg::regular_graph<embedding_t>::degree_size_type count = 0;
         typename hg::regular_graph<embedding_t>::out_edge_iterator out_i, out_end;
@@ -271,7 +271,7 @@ namespace boost {
     template<typename embedding_t>
     typename hg::regular_graph<embedding_t>::degree_size_type
     in_degree(
-            typename hg::regular_graph<embedding_t>::vertex_descriptor &v,
+            const typename hg::regular_graph<embedding_t>::vertex_descriptor v,
             const hg::regular_graph<embedding_t> &g) {
         return out_degree(v, g);
     }
@@ -296,7 +296,7 @@ namespace boost {
     template<typename embedding_t>
     typename hg::regular_graph<embedding_t>::degree_size_type
     degree(
-            typename hg::regular_graph<embedding_t>::vertex_descriptor &v,
+            const typename hg::regular_graph<embedding_t>::vertex_descriptor v,
             const hg::regular_graph<embedding_t> &g) {
         return out_degree(v, g);
     }

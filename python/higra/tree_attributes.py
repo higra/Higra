@@ -29,15 +29,15 @@ def attributeLCA(tree, leavesGraph):
 
 @HGAttribute("frontierLength", ("lcaMap",))
 def attributeFrontierLength(tree, lcaMap):
-    frontierLength = np.zeros((tree.numVertices(),))
+    frontierLength = np.zeros((tree.numVertices(),), dtype=np.int64)
     np.add.at(frontierLength, lcaMap, 1)
     return frontierLength
 
 
 @HGAttribute("perimeterLength", ("leavesGraph", "frontierLength"))
 def attributePerimeter(tree, leavesGraph, frontierLength):
-    # TODO vectorize outdegree to replace following line
-    perimeterLeaves = 4 * np.ones((tree.numLeaves(),))
+    vertices = np.arange(tree.numLeaves())
+    perimeterLeaves = leavesGraph.outDegree(vertices)
     return tree.accumulateAndAddSequential(-2 * frontierLength, perimeterLeaves, hg.Accumulators.sum)
 
 
