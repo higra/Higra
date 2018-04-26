@@ -18,7 +18,10 @@ set(PYMODULE_COMPONENTS
         py_graph_weights.cpp)
 
 set(MODULE_FILES
-        __init__.py)
+        __init__.py
+        attributes_util.py
+        data_cache.py
+        tree_attributes.py)
 
 pybind11_add_module(higram pymodule.cpp ${PYMODULE_COMPONENTS})
 set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} higram CACHE INTERNAL "" FORCE)
