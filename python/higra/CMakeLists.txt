@@ -21,7 +21,6 @@ set(PYMODULE_COMPONENTS
 
 set(MODULE_FILES
         __init__.py
-        attributes_util.py
         data_cache.py
         tree_attributes.py)
 
