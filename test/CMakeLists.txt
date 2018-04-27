@@ -2,7 +2,7 @@
 
 
 if (DO_TEST)
-    find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+    find_package(Boost REQUIRED COMPONENTS unit_test_framework graph)
     include_directories(${Boost_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include)
 
     set(HIGRA_TESTS_SRC

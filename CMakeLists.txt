@@ -26,12 +26,7 @@ endif()
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-local-typedefs")
 
-#set(CMAKE_CXX_STANDARD 14)
-
-#set(EXECUTABLE_OUTPUT_PATH bin/${CMAKE_BUILD_TYPE})
-
-
-
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/cmake/")
 
 option (DO_TEST
         "Execute test suit." ON)
