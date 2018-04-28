@@ -182,6 +182,27 @@ void py_init_tree_graph(pybind11::module &m) {
           "Get an iterator on the children of the given node.",
           py::arg("node"));
     c.def("parents", &graph_t::parents, "Get the parents array representing the tree.");
+    c.def("parent", [](const graph_t &tree, vertex_t v) { return tree.parent(v); }, "Get the parent of the given node.",
+          py::arg("node"));
+
+    c.def("iterateFromLeavesToRoot",
+          [](const graph_t &tree, bool includeLeaves, bool includeRoot) {
+              vertex_t start = (includeLeaves) ? 0 : tree.num_leaves();
+              vertex_t end = (includeRoot) ? tree.num_vertices() : tree.num_vertices() - 1;
+              return py::slice(start, end, 1);
+          }, "Returns an iterator on the node indices going from the leaves to the root of the tree.",
+          py::arg("includeLeaves"),
+          py::arg("includeRoot"));
+
+    c.def("iterateFromRootToLeaves",
+          [](const graph_t &tree, bool includeLeaves, bool includeRoot) {
+              vertex_t end = (includeLeaves) ? -1 : tree.num_leaves() - 1;
+              vertex_t start = (includeRoot) ? tree.num_vertices() - 1 : tree.num_vertices() - 2;
+              return py::slice(start, end, -2);
+          }, "Returns an iterator on the node indices going from the root to the leaves of the tree.",
+          py::arg("includeLeaves"),
+          py::arg("includeRoot"));
+
 
 #define DEF(rawXKCD, dataXKCD, TYPE) \
         add_accumulate_parallel<TYPE, decltype(c)>(c);
