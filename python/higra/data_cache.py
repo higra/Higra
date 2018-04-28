@@ -2,6 +2,12 @@ import weakref
 import functools
 import sys
 import inspect
+import higra as hg
+
+
+def _data_cache__init():
+    hg.__higra_global_cache = DataCache()
+
 
 class DataCache:
 
@@ -19,30 +25,30 @@ class DataCache:
         self.__data.clear()
 
 
-__higra_global_cache = DataCache()
-
-__data_providers = {}
+def listDataProviders():
+    for p in hg.__data_providers:
+        print(hg.__data_providers[p])
 
 
 def getAttribute(key, attributeName):
-    return __higra_global_cache.getData(key).get(attributeName, None)
+    return hg.__higra_global_cache.getData(key).get(attributeName, None)
 
 
 def setAttribute(key, attributeName, attribute):
-    __higra_global_cache.getData(key)[attributeName] = attribute
+    hg.__higra_global_cache.getData(key)[attributeName] = attribute
 
 
 def clearAttributes(key, *attributeName):
     if not attributeName:
-        __higra_global_cache.clearData(key)
+        hg.__higra_global_cache.clearData(key)
     else:
-        objCache = __higra_global_cache.getData(key)
+        objCache = hg.__higra_global_cache.getData(key)
         for k in objCache:
             del objCache[k]
 
 
 def clearAllAttributes():
-    __higra_global_cache.clearAllData()
+    hg.__higra_global_cache.clearAllData()
 
 
 class DataProvider:
@@ -55,15 +61,21 @@ class DataProvider:
     def __call__(self, *args, **kwargs):
         return self.fun(*args, **kwargs)
 
+    def __str__(self):
+        if self.description != "":
+            return self.name + ": " + self.description
+        return self.name
+
 
 def dataProvider(name, description=""):
+
     def decorator(fun):
 
         @functools.wraps(fun)
         def wrapper(obj, *args, **kwargs):
             dataName = kwargs.pop("attributeName", name)
             forceRecompute = kwargs.pop("forceRecompute", False)
-            dataCache = kwargs.pop("dataCache", __higra_global_cache)
+            dataCache = kwargs.pop("dataCache", hg.__higra_global_cache)
             objCache = dataCache.getData(obj)
 
             if dataName not in objCache or forceRecompute:
@@ -74,10 +86,10 @@ def dataProvider(name, description=""):
         wrapper.name = name
         wrapper.original = fun
 
-        if name in __data_providers:
+        if name in hg.__data_providers:
             print("Warning, a data provider with the same name was already defined: ", name, file=sys.stderr)
 
-        __data_providers[name] = DataProvider(name, wrapper, description)
+        hg.__data_providers[name] = DataProvider(name, wrapper, description)
 
         return wrapper
 
@@ -90,8 +102,8 @@ def __cacheLookUp(obj, depPath, dataCache):
     nameData = None
     if name in objCache:
         nameData = objCache[name]
-    elif name in __data_providers:  # look in providers
-        nameData = __data_providers[name](obj)
+    elif name in hg.__data_providers:  # look in providers
+        nameData = hg.__data_providers[name](obj)
     else:
         err = "Dynamic resolution of dependency '" + name + "' failed (no cache data or attribute provider with this name)."
         raise Exception(err)
@@ -137,7 +149,7 @@ def dataConsumer(*dependencies, **dependenciesPath):
             obj = args[0]
             args = __transferToKwArguments(signature, args, kwargs)
 
-            dataCache = kwargs.pop("dataCache", __higra_global_cache)
+            dataCache = kwargs.pop("dataCache", hg.__higra_global_cache)
 
             for depName in dependencies:
                 __resolveDependency(obj, depName, depName, dataCache, kwargs)

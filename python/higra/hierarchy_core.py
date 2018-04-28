@@ -14,9 +14,17 @@ def bptCanonical(graph, edgeWeights):
 
     tree, altitudes, mst = hg._bptCanonical(graph, edgeWeights)
 
+    originalGraph = hg.getAttribute(graph, "originalGraph")
+    if originalGraph:
+        hg.setAttribute(tree, "leafGraph", originalGraph)
+        hg.setAttribute(mst, "originalGraph", originalGraph)
+    else:
+        hg.setAttribute(tree, "leafGraph", graph)
+        hg.setAttribute(mst, "originalGraph", graph)
+
     hg.setAttribute(tree, "altitudes", altitudes)
     hg.setAttribute(tree, "mst", mst)
-    hg.setAttribute(tree, "leafGraph", graph)
+
 
     return tree
 
@@ -40,3 +48,17 @@ def simplifyTree(tree, deletedVertices):
     hg.setAttribute(ntree, "nodeMap", nodeMap)
 
     return ntree
+
+
+@hg.dataConsumer("altitudes", "lcaMap")
+def saliency(tree, altitudes, lcaMap):
+    """
+    Compute the saliency map of the given tree
+    :param tree:
+    :param altitudes: altitudes of the vertices of the tree
+    :param lcaMap: array containing the lowest common ancestor of the source and target vertices of each edge
+    where saliency need to be computed
+    :return: altitudes[lcaMap]
+    """
+
+    return altitudes[lcaMap]

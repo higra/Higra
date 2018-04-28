@@ -15,8 +15,10 @@ def weightGraph(graph, vertexWeights, weightFunction):
     :param weightFunction: in WeightFunction enumeration
     :return: edgeWeights
     """
+    assert vertexWeights.shape[
+               0] == graph.numVertices(), "The size of vertexWeights must be equal to the number of vertices of the graph."
 
-    edgeWeights = hg._weighGraph(graph, weightFunction, vertexWeights)
+    edgeWeights = hg._weightGraph(graph, vertexWeights, weightFunction)
     hg.setAttribute(graph, "vertexWeights", vertexWeights)
     hg.setAttribute(graph, "edgeWeights", edgeWeights)
 
@@ -35,7 +37,7 @@ def weightGraphFunc(graph, weightFunction):
     :return: edgeWeights
     """
 
-    edgeWeights = hg._weighGraph(graph, weightFunction)
+    edgeWeights = hg._weightGraph(graph, weightFunction)
 
     hg.setAttribute(graph, "edgeWeights", edgeWeights)
 
