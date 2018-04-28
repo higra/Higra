@@ -14,7 +14,7 @@ namespace py = pybind11;
 
 template<typename graph_t, typename value_t>
 void weight_graph(pybind11::module &m) {
-    m.def("weightGraph", [](const graph_t &graph, const xt::pyarray<value_t> &data, hg::weight_functions weight_f) {
+    m.def("_weightGraph", [](const graph_t &graph, const xt::pyarray<value_t> &data, hg::weight_functions weight_f) {
               return hg::weight_graph(graph, data, weight_f);
           },
           "Compute the edge weights of a graph using source and target vertices values (of type " HG_XSTR(
@@ -47,7 +47,7 @@ void py_init_graph_weights(pybind11::module &m) {
     HG_FOREACH(DEF, (int) (long) (float) (double));
 #undef DEF
 
-    m.def("weightGraph", [](const hg::ugraph &graph, const std::function<double(std::size_t, std::size_t)> &fun) {
+    m.def("_weightGraph", [](const hg::ugraph &graph, const std::function<double(std::size_t, std::size_t)> &fun) {
               return hg::weight_graph(graph, fun);
           },
           "Compute the edge weights of a graph with the given weighting function. The weighting function takes the "
@@ -55,7 +55,7 @@ void py_init_graph_weights(pybind11::module &m) {
           py::arg("explicitGraph"),
           py::arg("weightFunction"));
 
-    m.def("weightGraph", [](const hg::tree &graph, const std::function<double(std::size_t, std::size_t)> &fun) {
+    m.def("_weightGraph", [](const hg::tree &graph, const std::function<double(std::size_t, std::size_t)> &fun) {
               return hg::weight_graph(graph, fun);
           },
           "Compute the edge weights of a graph with the given weighting function. The weighting function takes the "

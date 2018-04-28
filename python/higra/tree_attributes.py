@@ -3,15 +3,15 @@ import numpy as np
 import higra as hg
 
 
-@dc.dataProvider("leavesArea")
-def attributeLeavesArea(tree):
-    return np.ones((tree.numLeaves(),))
+@dc.dataProvider("vertexArea")
+def attributeVertexArea(graph):
+    return np.ones((graph.numLeaves(),))
 
 
 @dc.dataProvider("area")
-@dc.dataConsumer("leavesArea")
-def attributeArea(tree, leavesArea):
-    return tree.accumulateSequential(leavesArea, hg.Accumulators.sum)
+@dc.dataConsumer(leafArea="leafGraph.vertexArea")
+def attributeArea(tree, leafArea):
+    return tree.accumulateSequential(leafArea, hg.Accumulators.sum)
 
 
 @dc.dataProvider("volume")
@@ -24,10 +24,10 @@ def attributeVolume(tree, area, altitudes):
 
 
 @dc.dataProvider("lcaMap")
-@dc.dataConsumer("leavesGraph")
-def attributeLCA(tree, leavesGraph):
+@dc.dataConsumer("leafGraph")
+def attributeLCA(tree, leafGraph):
     lca = hg.LCAFast(tree)
-    return lca.lca(leavesGraph)
+    return lca.lca(leafGraph)
 
 
 @dc.dataProvider("frontierLength")
@@ -39,10 +39,10 @@ def attributeFrontierLength(tree, lcaMap):
 
 
 @dc.dataProvider("perimeterLength")
-@dc.dataConsumer("leavesGraph", "frontierLength")
-def attributePerimeter(tree, leavesGraph, frontierLength):
+@dc.dataConsumer("leafGraph", "frontierLength")
+def attributePerimeter(tree, leafGraph, frontierLength):
     vertices = np.arange(tree.numLeaves())
-    perimeterLeaves = leavesGraph.outDegree(vertices)
+    perimeterLeaves = leafGraph.outDegree(vertices)
     return tree.accumulateAndAddSequential(-2 * frontierLength, perimeterLeaves, hg.Accumulators.sum)
 
 
@@ -53,7 +53,7 @@ def attributeCompactness(area, perimeterLength):
     return compac / np.max(compac)
 
 
-@dc.dataProvider("meanData")
-@dc.dataConsumer("area", "leavesData")
-def attributeMeanData(tree, area, leavesData):
-    return tree.accumulateSequential(leavesData.astype(np.float64), hg.Accumulators.sum) / area.reshape((-1, 1))
+@dc.dataProvider("meanWeights")
+@dc.dataConsumer("area", leafData="leafGraph.vertexWeights")
+def attributeMeanWeights(tree, area, leafData):
+    return tree.accumulateSequential(leafData.astype(np.float64), hg.Accumulators.sum) / area.reshape((-1, 1))

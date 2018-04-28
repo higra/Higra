@@ -38,7 +38,7 @@ void py_init_pink_io(pybind11::module &m) {
 
     def_save<hg::ugraph>(m);
 
-    m.def("readGraphPink", [](const std::string &filename) {
+    m.def("_readGraphPink", [](const std::string &filename) {
               auto res = hg::read_pink_graph(filename);
               return std::make_tuple(std::move(res.graph), std::move(res.vertex_weights), std::move(res.edge_weights),
                                      std::move(res.shape));

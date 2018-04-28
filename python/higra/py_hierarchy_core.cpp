@@ -13,7 +13,7 @@ namespace py = pybind11;
 
 template<typename graph_t, typename value_t>
 void def_bptCanonical(pybind11::module &m) {
-    m.def("bptCanonical", [](const graph_t &graph, const xt::pyarray<value_t> &edge_weights) {
+    m.def("_bptCanonical", [](const graph_t &graph, const xt::pyarray<value_t> &edge_weights) {
               return hg::bptCanonical(graph, edge_weights);
           },
           "Compute the canonical binary partition tree (binary tree by altitude ordering) of the given weighted graph. "
@@ -25,7 +25,7 @@ void def_bptCanonical(pybind11::module &m) {
 
 template<typename value_t>
 void def_simplify_tree(pybind11::module &m) {
-    m.def("simplifyTree",
+    m.def("_simplifyTree",
           [](const hg::tree &t, xt::pyarray<value_t> &criterion) {
               return hg::simplify_tree(t, criterion);
           },

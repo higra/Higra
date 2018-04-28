@@ -16,11 +16,11 @@ class TestHierarchyCore(unittest.TestCase):
         return hg.Tree(parentRelation)
 
     def test_BPTTrivial(self):
-        graph = hg.get4AdjacencyGraph((1, 2))
+        graph = hg._get4AdjacencyGraph((1, 2))
 
         edgeWeights = np.asarray((2,))
 
-        tree, altitudes, mst = hg.bptCanonical(graph, edgeWeights)
+        tree, altitudes, mst = hg._bptCanonical(graph, edgeWeights)
 
         self.assertTrue(tree.numVertices() == 3)
         self.assertTrue(tree.numEdges() == 2)
@@ -30,11 +30,11 @@ class TestHierarchyCore(unittest.TestCase):
         self.assertTrue(mst.numEdges() == 1)
 
     def test_BPT(self):
-        graph = hg.get4AdjacencyGraph((2, 3))
+        graph = hg._get4AdjacencyGraph((2, 3))
 
         edgeWeights = np.asarray((1, 0, 2, 1, 1, 1, 2))
 
-        tree, altitudes, mst = hg.bptCanonical(graph, edgeWeights)
+        tree, altitudes, mst = hg._bptCanonical(graph, edgeWeights)
         self.assertTrue(tree.numVertices() == 11)
         self.assertTrue(tree.numEdges() == 10)
         self.assertTrue(np.allclose(tree.parents(), (6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10)))
@@ -59,7 +59,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         criterion = np.equal(altitudes, altitudes[t.parents()])
 
-        newTree, nodeMap = hg.simplifyTree(t, criterion)
+        newTree, nodeMap = hg._simplifyTree(t, criterion)
 
         # for reference
         newAltitudes = altitudes[nodeMap]

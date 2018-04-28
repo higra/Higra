@@ -20,7 +20,7 @@ def silentremove(filename):
 class TestPinkGraphIO(unittest.TestCase):
 
     def test_graphRead(self):
-        graph, vertexWeights, edgeWeights, shape = hg.readGraphPink("../ressources/test.graph")
+        graph, vertexWeights, edgeWeights, shape = hg._readGraphPink("../ressources/test.graph")
 
         edgesRef = []
         for i in range(14):

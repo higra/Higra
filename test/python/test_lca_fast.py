@@ -33,7 +33,7 @@ class TestLCAFast(unittest.TestCase):
         self.assertTrue(lca.lca(2, 6) == 6)
 
     def test_LCAFastV(self):
-        g = hg.get4AdjacencyGraph((2, 2))
+        g = hg._get4AdjacencyGraph((2, 2))
         t = hg.Tree((4, 4, 5, 5, 6, 6, 6))
         lca = hg.LCAFast(t)
 

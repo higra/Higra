@@ -25,7 +25,7 @@ __data_providers = {}
 
 
 def getAttribute(key, attributeName):
-    return __higra_global_cache.getData(key)[attributeName]
+    return __higra_global_cache.getData(key).get(attributeName, None)
 
 
 def setAttribute(key, attributeName, attribute):
