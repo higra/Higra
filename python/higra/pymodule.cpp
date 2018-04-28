@@ -3,33 +3,32 @@
 //
 
 #include "pybind11/pybind11.h"
-#include "py_undirected_graph.hpp"
-#include "py_embedding.hpp"
-#include "py_regular_graph.hpp"
-#include "py_tree_graph.hpp"
-#include "py_graph_weights.hpp"
-#include "py_graph_image.hpp"
-#include "py_lca_fast.hpp"
-#include "py_hierarchy_core.hpp"
-#include "py_pink_io.hpp"
-#include "py_accumulators.hpp"
+#include "cpp/py_undirected_graph.hpp"
+#include "cpp/py_embedding.hpp"
+#include "cpp/py_regular_graph.hpp"
+#include "cpp/py_tree_graph.hpp"
+#include "cpp/py_graph_weights.hpp"
+#include "cpp/py_graph_image.hpp"
+#include "cpp/py_lca_fast.hpp"
+#include "cpp/py_hierarchy_core.hpp"
+#include "cpp/py_pink_io.hpp"
+#include "cpp/py_accumulators.hpp"
 
 #define FORCE_IMPORT_ARRAY
 
-#include "xtensor-python/pyarray.hpp"     // Numpy bindings
+#include "xtensor-python/pyarray.hpp"
+#include "xtensor-python/pytensor.hpp"
 
 PYBIND11_MODULE(higram, m
 ) {
 m.
 
 doc() = R"pbdoc(
-        Pybind11 example plugin
+        Higra: Hierarchical Graph Analysis
         -----------------------
-        .. currentmodule:: cmake_example
+        .. currentmodule:: higram
         .. autosummary::
            :toctree: _generate
-           add
-           subtract
     )pbdoc";
 
 
