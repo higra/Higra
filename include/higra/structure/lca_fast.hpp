@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../graph.hpp"
+#include <stack>
 
 namespace hg {
     namespace lca_internal {
@@ -26,6 +27,40 @@ namespace hg {
 
             std::size_t nbR;
 
+            void computeDepth(const tree_t &tree) {
+                Depth[tree.root()] = 0;
+                for (auto i: tree.iterate_from_root_to_leaves(leaves_it::include, root_it::exclude)) {
+                    Depth[i] = Depth[tree.parent(i)] + 1;
+                }
+            }
+
+            void LCApreprocessEuler(const tree_t &tree) {
+                struct se {
+                    std::size_t node;
+                    bool first_visit;
+                };
+
+                long nbr = -1;
+
+                std::stack<se> stack;
+                stack.push({tree.root(), true});
+                while (!stack.empty()) {
+                    auto e = stack.top();
+                    stack.pop();
+                    nbr++;
+                    Euler[nbr] = e.node;
+                    if (e.first_visit) {
+                        Number[e.node] = nbr;
+                        Represent[nbr] = e.node;
+                        for (auto son: children_iterator(e.node, tree)) {
+                            stack.push({e.node, false});
+                            stack.push({son, true});
+                        }
+                    }
+                }
+            }
+
+            /* Recursive version
             long LCApreprocessDepthFirst(const tree_t &tree, std::size_t node, std::size_t depth, long *nbr,
                                          std::size_t *rep) {
                 (*nbr)++;
@@ -40,10 +75,11 @@ namespace hg {
                 }
                 return *nbr;
             }
-
+            */
 
             void LCApreprocess(const tree_t &tree) {
                 //O(n.log(n)) preprocessing
+                /* Recursive version
                 long nbr = -1;
                 std::size_t rep = 0;
 
@@ -53,6 +89,11 @@ namespace hg {
                 std::size_t nbNodes = rep;
                 std::size_t nbRepresent = 2 * nbNodes - 1;
                 hg_assert((std::size_t) (nbr + 1) == nbRepresent, "oops incorrect number of nodes!");
+                */
+                computeDepth(tree);
+                LCApreprocessEuler(tree);
+                std::size_t nbNodes = tree.num_vertices();
+                std::size_t nbRepresent = 2 * nbNodes - 1;
 
                 std::size_t logn = (long) (ceil(log((double) (nbRepresent)) / log(2.0)));
 
