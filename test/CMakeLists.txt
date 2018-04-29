@@ -19,7 +19,7 @@ if (DO_TEST)
             test_accumulator.cpp
             test_pink_graph_io.cpp
             test_graph_weights.cpp
-            test_tree_accumulator.cpp)
+            test_tree_accumulator.cpp test_algo_tree.cpp)
 
     add_executable(test_exe ${HIGRA_TESTS_SRC})
 

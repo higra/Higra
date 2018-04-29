@@ -30,6 +30,10 @@ def listDataProviders():
         print(hg.__data_providers[p])
 
 
+def listAttributes(key):
+    return list(hg.__higra_global_cache.getData(key).keys())
+
+
 def getAttribute(key, attributeName):
     return hg.__higra_global_cache.getData(key).get(attributeName, None)
 

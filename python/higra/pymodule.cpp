@@ -13,6 +13,7 @@
 #include "cpp/py_hierarchy_core.hpp"
 #include "cpp/py_pink_io.hpp"
 #include "cpp/py_accumulators.hpp"
+#include "cpp/py_algo_tree.hpp"
 
 #define FORCE_IMPORT_ARRAY
 
@@ -48,4 +49,5 @@ m.attr("__version__") = "dev";
     py_init_hierarchy_core(m);
     py_init_pink_io(m);
     py_init_accumulators(m);
+    py_init_algo_tree(m);
 }

@@ -17,7 +17,8 @@ set(PYMODULE_COMPONENTS
         cpp/py_hierarchy_core.cpp
         cpp/py_pink_io.cpp
         cpp/py_accumulators.cpp
-        cpp/py_graph_weights.cpp)
+        cpp/py_graph_weights.cpp
+        cpp/py_algo_tree.cpp)
 
 set(MODULE_FILES
         __init__.py
