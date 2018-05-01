@@ -13,20 +13,19 @@
 #include "xsimd_neon_float.hpp"
 #include "xsimd_neon_int32.hpp"
 #include "xsimd_neon_int64.hpp"
-
 #if XSIMD_ARM_INSTR_SET >= XSIMD_ARM8_64_NEON_VERSION
-#include "xsimd_neon_double.hpp"
+    #include "xsimd_neon_double.hpp"
 #endif
 
-namespace xsimd {
+namespace xsimd
+{
 
     /************************
      * conversion functions *
      ************************/
 
-    batch<int32_t, 4> to_int(const batch<float, 4> &x);
-
-    batch<float, 4> to_float(const batch<int32_t, 4> &x);
+    batch<int32_t, 4> to_int(const batch<float, 4>& x);
+    batch<float, 4> to_float(const batch<int32_t, 4>& x);
 
 #if XSIMD_ARM_INSTR_SET >= XSIMD_ARM8_64_NEON_VERSION
     batch<int64_t, 2> to_int(const batch<double, 2>& x);
@@ -37,9 +36,8 @@ namespace xsimd {
      * boolean cast functions *
      **************************/
 
-    batch_bool<int32_t, 4> bool_cast(const batch_bool<float, 4> &x);
-
-    batch_bool<float, 4> bool_cast(const batch_bool<int32_t, 4> &x);
+    batch_bool<int32_t, 4> bool_cast(const batch_bool<float, 4>& x);
+    batch_bool<float, 4> bool_cast(const batch_bool<int32_t, 4>& x);
 
 #if XSIMD_ARM_INSTR_SET >= XSIMD_ARM8_64_NEON_VERSION
     batch_bool<int64_t, 2> bool_cast(const batch_bool<double, 2>& x);
@@ -50,29 +48,31 @@ namespace xsimd {
      * bitwise cast functions *
      **************************/
 
-    template<class B>
-    B bitwise_cast(const batch<float, 4> &x);
+    template <class B>
+    B bitwise_cast(const batch<float, 4>& x);
 
 #if XSIMD_ARM_INSTR_SET >= XSIMD_ARM8_64_NEON_VERSION
     template <class B>
     B bitwise_cast(const batch<double, 2>& x);
 #endif
 
-    template<class B>
-    B bitwise_cast(const batch<int32_t, 4> &x);
+    template <class B>
+    B bitwise_cast(const batch<int32_t, 4>& x);
 
-    template<class B>
-    B bitwise_cast(const batch<int64_t, 2> &x);
+    template <class B>
+    B bitwise_cast(const batch<int64_t, 2>& x);
 
     /***************************************
      * conversion functions implementation *
      ***************************************/
 
-    inline batch<int32_t, 4> to_int(const batch<float, 4> &x) {
+    inline batch<int32_t, 4> to_int(const batch<float, 4>& x)
+    {
         return vcvtq_s32_f32(x);
     }
 
-    inline batch<float, 4> to_float(const batch<int32_t, 4> &x) {
+    inline batch<float, 4> to_float(const batch<int32_t, 4>& x)
+    {
         return vcvtq_f32_s32(x);
     }
 
@@ -92,11 +92,13 @@ namespace xsimd {
      * boolean cast functions *
      **************************/
 
-    inline batch_bool<int32_t, 4> bool_cast(const batch_bool<float, 4> &x) {
+    inline batch_bool<int32_t, 4> bool_cast(const batch_bool<float, 4>& x)
+    {
         return x;
     }
 
-    inline batch_bool<float, 4> bool_cast(const batch_bool<int32_t, 4> &x) {
+    inline batch_bool<float, 4> bool_cast(const batch_bool<int32_t, 4>& x)
+    {
         return x;
     }
 
@@ -116,24 +118,28 @@ namespace xsimd {
      * bitwise cast functions implementation *
      *****************************************/
 
-    template<>
-    inline batch<int32_t, 4> bitwise_cast(const batch<float, 4> &x) {
+    template <>
+    inline batch<int32_t, 4> bitwise_cast(const batch<float, 4>& x)
+    {
         return vreinterpretq_s32_f32(x);
     }
 
-    template<>
-    inline batch<int64_t, 2> bitwise_cast(const batch<float, 4> &x) {
+    template <>
+    inline batch<int64_t, 2> bitwise_cast(const batch<float, 4>& x)
+    {
         return vreinterpretq_s64_f32(x);
     }
 
-    template<>
-    inline batch<float, 4> bitwise_cast(const batch<int32_t, 4> &x) {
+    template <>
+    inline batch<float, 4> bitwise_cast(const batch<int32_t, 4>& x)
+    {
         return vreinterpretq_f32_s32(x);
     }
 
 
-    template<>
-    inline batch<float, 4> bitwise_cast(const batch<int64_t, 2> &x) {
+    template <>
+    inline batch<float, 4> bitwise_cast(const batch<int64_t, 2>& x)
+    {
         return vreinterpretq_f32_s64(x);
     }
 

@@ -38,10 +38,8 @@ unset(_targetsNotDefined)
 unset(_expectedTargets)
 
 
-# Compute the installation prefix relative to this file.
-get_filename_component(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
-get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
-get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+# The installation prefix configured by this project.
+set(_IMPORT_PREFIX "/home/user/Higra/lib")
 
 # Create imported target xsimd
 add_library(xsimd INTERFACE IMPORTED)
