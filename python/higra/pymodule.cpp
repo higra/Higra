@@ -20,11 +20,8 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
-PYBIND11_MODULE(higram, m
-) {
-m.
-
-doc() = R"pbdoc(
+PYBIND11_MODULE(higram, m) {
+    m.doc() = R"pbdoc(
         Higra: Hierarchical Graph Analysis
         -----------------------
         .. currentmodule:: higram
@@ -34,9 +31,9 @@ doc() = R"pbdoc(
 
 
 #ifdef VERSION_INFO
-m.attr("__version__") = VERSION_INFO;
+    m.attr("__version__") = VERSION_INFO;
 #else
-m.attr("__version__") = "dev";
+    m.attr("__version__") = "dev";
 #endif
     xt::import_numpy();
     py_init_undirected_graph(m);
