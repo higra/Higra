@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_SUITE(accumulator);
     };
 
     auto isclose(double a, double b) {
-        return abs(a - b) < 10e-5;
+        return std::abs(a - b) < 10e-5;
     }
 
     BOOST_AUTO_TEST_CASE(accumulatorScalar) {
