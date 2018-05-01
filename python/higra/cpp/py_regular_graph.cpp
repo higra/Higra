@@ -62,7 +62,8 @@ void py_init_regular_graph_impl(pybind11::module &m) {
 
 void py_init_regular_graph(pybind11::module &m) {
     xt::import_numpy();
+    py_init_regular_graph_impl<1>(m);
     py_init_regular_graph_impl<2>(m);
     py_init_regular_graph_impl<3>(m);
-    //py_init_regular_graph_impl<4>(m);
+    py_init_regular_graph_impl<4>(m);
 }

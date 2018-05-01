@@ -12,18 +12,20 @@
 
 namespace py = pybind11;
 
-template<typename graph_t, typename value_t>
-void weight_graph(pybind11::module &m) {
-    m.def("_weightGraph", [](const graph_t &graph, const xt::pyarray<value_t> &data, hg::weight_functions weight_f) {
-              return hg::weight_graph(graph, data, weight_f);
-          },
-          "Compute the edge weights of a graph using source and target vertices values (of type " HG_XSTR(
-                  value_t) ") and specified weighting function (see WeightFunction enumeration).",
-          py::arg("explicitGraph"),
-          py::arg("vertexWeights"),
-          py::arg("weighFunction"));
-}
-
+template<typename graph_t>
+struct def_weight_graph {
+    template<typename type, typename C>
+    static
+    void def(C &m, const char *doc) {
+        m.def("_weightGraph", [](const graph_t &graph, const xt::pyarray<type> &data, hg::weight_functions weight_f) {
+                  return hg::weight_graph(graph, data, weight_f);
+              },
+              doc,
+              py::arg("explicitGraph"),
+              py::arg("vertexWeights"),
+              py::arg("weighFunction"));
+    }
+};
 
 void py_init_graph_weights(pybind11::module &m) {
     xt::import_numpy();
@@ -37,15 +39,18 @@ void py_init_graph_weights(pybind11::module &m) {
             .value("L_infinity", hg::weight_functions::L_infinity)
             .value("L2_squared", hg::weight_functions::L2_squared);
 
-#define DEF(rawXKCD, dataXKCD, type) \
-        weight_graph<hg::ugraph, type>(m);
-    HG_FOREACH(DEF, (int) (long) (float) (double));
-#undef DEF
 
-#define DEF(rawXKCD, dataXKCD, type) \
-            weight_graph<hg::tree, type>(m);
-    HG_FOREACH(DEF, (int) (long) (float) (double));
-#undef DEF
+    add_type_overloads<def_weight_graph<hg::ugraph>, HG_TEMPLATE_SNUMERIC_TYPES>
+            (m,
+             "Compute the edge weights of a graph using source and target vertices values"
+                     " and specified weighting function (see WeightFunction enumeration)."
+            );
+
+    add_type_overloads<def_weight_graph<hg::tree>, HG_TEMPLATE_SNUMERIC_TYPES>
+            (m,
+             "Compute the edge weights of a graph using source and target vertices values"
+                     " and specified weighting function (see WeightFunction enumeration)."
+            );
 
     m.def("_weightGraph", [](const hg::ugraph &graph, const std::function<double(std::size_t, std::size_t)> &fun) {
               return hg::weight_graph(graph, fun);

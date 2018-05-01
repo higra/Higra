@@ -29,13 +29,6 @@ void def_save(pybind11::module &m) {
 void py_init_pink_io(pybind11::module &m) {
     xt::import_numpy();
 
-    /*using class_t = hg::pink_graph<>;
-    py::class_<class_t>(m, "__PinkGraph")
-            .def_readwrite("graph", &class_t::graph)
-            .def_readwrite("vertexWeights", &class_t::vertex_weights)
-            .def_readwrite("edgeWeights", &class_t::edge_weights)
-            .def_readwrite("shape", &class_t::shape);*/
-
     def_save<hg::ugraph>(m);
 
     m.def("_readGraphPink", [](const std::string &filename) {

@@ -9,6 +9,20 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
+template<typename graph_t>
+struct def_out_degree {
+    template<typename value_t, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("outDegree", [](graph_t &g,
+                              xt::pyarray<value_t> vertices) {
+                  return hg::out_degree(vertices, g);
+              },
+              doc,
+              pybind11::arg("verticesArray"));
+    }
+};
+
 template<typename graph_t, typename pyc>
 void add_incidence_graph_concept(pyc &c) {
     using edge_t = typename boost::graph_traits<graph_t>::edge_descriptor;
@@ -35,13 +49,39 @@ void add_incidence_graph_concept(pyc &c) {
           "Return the out degree of the given vertex.",
           pybind11::arg("vertex"));
 
-#define DEF(rawXKCD, dataXKCD, type) \
-        c.def("outDegree", [](graph_t &g, xt::pyarray<type> vertices) { return hg::out_degree(vertices, g); },\
-        "Return the out degree of the given vertices.",\
-            pybind11::arg("verticesArray"));
-    HG_FOREACH(DEF, (int) (unsigned int) (long) (unsigned long))
-#undef DEF
+    add_type_overloads<def_out_degree<graph_t>, int, unsigned int, long, unsigned long>
+            (c, "Return the out degree of the given vertices.");
 
+
+};
+
+
+template<typename graph_t>
+struct def_degree {
+    template<typename value_t, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("degree", [](graph_t &g,
+                              xt::pyarray<value_t> vertices) {
+                  return hg::degree(vertices, g);
+              },
+              doc,
+              pybind11::arg("verticesArray"));
+    }
+};
+
+template<typename graph_t>
+struct def_in_degree {
+    template<typename value_t, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("inDegree", [](graph_t &g,
+                              xt::pyarray<value_t> vertices) {
+                  return hg::in_degree(vertices, g);
+              },
+              doc,
+              pybind11::arg("verticesArray"));
+    }
 };
 
 template<typename graph_t, typename pyc>
@@ -67,27 +107,18 @@ void add_bidirectionnal_graph_concept(pyc &c) {
           pybind11::arg("vertex"));
 
     c.def("degree", [](graph_t &g, vertex_t vertex) { return hg::degree(vertex, g); },
-          "Return the degree of the given vertex (same as inDegree and outDegree)",
+          "Return the degree of the given vertex.",
           pybind11::arg("vertex"));
+
+    add_type_overloads<def_degree<graph_t>, int, unsigned int, long, unsigned long>
+            (c, "Return the degree of the given vertices.");
 
     c.def("inDegree", [](graph_t &g, vertex_t vertex) { return hg::in_degree(vertex, g); },
-          "Return the in degree of the given vertex (same as degree and outDegree)",
+          "Return the in degree of the given vertex.",
           pybind11::arg("vertex"));
 
-#define DEF(rawXKCD, dataXKCD, type) \
-        c.def("inDegree", [](graph_t &g, xt::pyarray<type> vertices) { return hg::in_degree(vertices, g); },\
-        "Return the in degree of the given vertices.",\
-            pybind11::arg("verticesArray"));
-    HG_FOREACH(DEF, (int) (unsigned int) (long) (unsigned long))
-#undef DEF
-
-
-#define DEF(rawXKCD, dataXKCD, type) \
-        c.def("degree", [](graph_t &g, xt::pyarray<type> vertices) { return hg::degree(vertices, g); },\
-        "Return the degree of the given vertices.",\
-            pybind11::arg("verticesArray"));
-    HG_FOREACH(DEF, (int) (unsigned int) (long) (unsigned long))
-#undef DEF
+    add_type_overloads<def_in_degree<graph_t>, int, unsigned int, long, unsigned long>
+            (c, "Return the in degree of the given vertices.");
 }
 
 template<typename graph_t, typename pyc>
