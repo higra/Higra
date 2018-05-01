@@ -51,8 +51,6 @@ namespace hg {
 
         auto &shape = embedding.shape();
 
-        auto shapew = weight.shape();
-
         long border = (add_extra_border) ? 1 : -1;
 
         std::vector<long> res_shape{shape[0] * 2 + border, shape[1] * 2 + border};
