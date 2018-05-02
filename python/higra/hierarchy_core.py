@@ -61,3 +61,23 @@ def saliency(tree, altitudes, lca_map):
     """
 
     return altitudes[lca_map]
+
+
+@hg.data_consumer("altitudes")
+def compute_bpt_merge_attribute(tree, attribute, altitudes):
+    """
+    In the context of watershed hierarchy by attributes, computes for each node n,
+    the level at which n disappears according to the given attribute of the canonical
+    binary partition tree.
+
+    :param tree: canonical binary partition tree of an edge-weighted graph
+    :param attribute: raw attribute computed on the bpt
+    :param altitudes: altitudes of the nodes of the bpt
+    :return: array giving the level of disappearance of each node of the bpt
+    """
+    non_qfz_nodes = altitudes == altitudes[tree.parents()]
+    non_qfz_nodes[-1] = False
+    qfz_nodes_altitudes = attribute.copy()
+    # TODO generalize for possibly negative attributes !
+    qfz_nodes_altitudes[non_qfz_nodes] = 0
+    return hg.accumulate_and_max_sequential(tree, qfz_nodes_altitudes, attribute, hg.Accumulators.max)
