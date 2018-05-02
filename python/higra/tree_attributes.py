@@ -17,7 +17,7 @@ def attribute_vertex_perimeter(graph):
 @hg.data_provider("area")
 @hg.data_consumer(leaf_area="leaf_graph.vertex_area")
 def attribute_area(tree, leaf_area):
-    return tree.accumulate_sequential(leaf_area, hg.Accumulators.sum)
+    return hg.accumulate_sequential(tree, leaf_area, hg.Accumulators.sum)
 
 
 @hg.data_provider("volume")
@@ -26,7 +26,7 @@ def attribute_volume(tree, area, altitudes):
     height = np.abs(altitudes[tree.parents()] - altitudes)
     height = height * area
     volume_leaves = height[:tree.num_leaves()]
-    return tree.accumulate_and_add_sequential(height, volume_leaves, hg.Accumulators.sum)
+    return hg.accumulate_and_add_sequential(tree, height, volume_leaves, hg.Accumulators.sum)
 
 
 @hg.data_provider("lca_map")
@@ -47,7 +47,7 @@ def attribute_frontier_length(tree, lca_map):
 @hg.data_provider("perimeter_length")
 @hg.data_consumer("frontier_length", leaf_perimeter="leaf_graph.vertex_perimeter")
 def attribute_perimeter_length(tree, leaf_perimeter, frontier_length):
-    return tree.accumulate_and_add_sequential(-2 * frontier_length, leaf_perimeter, hg.Accumulators.sum)
+    return hg.accumulate_and_add_sequential(tree, -2 * frontier_length, leaf_perimeter, hg.Accumulators.sum)
 
 
 @hg.data_provider("compactness")
@@ -61,4 +61,4 @@ def attribute_compactness(tree, area, perimeter_length):
 @hg.data_provider("mean_weights")
 @hg.data_consumer("area", leaf_data="leaf_graph.vertex_weights")
 def attribute_mean_weights(tree, area, leaf_data):
-    return tree.accumulate_sequential(leaf_data.astype(np.float64), hg.Accumulators.sum) / area.reshape((-1, 1))
+    return hg.accumulate_sequential(tree, leaf_data.astype(np.float64), hg.Accumulators.sum) / area.reshape((-1, 1))

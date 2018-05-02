@@ -22,6 +22,7 @@ Welcome to Higra's documentation!
     :caption: Algorithms:
 
     Hierarchy core </python/hierarchy_core.rst>
+    Tree accumulators </python/tree_accumulators.rst>
     Tree attributes </python/tree_attributes.rst>
     Tree algorithms </python/tree_algorithm.rst>
 

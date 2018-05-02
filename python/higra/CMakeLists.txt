@@ -18,7 +18,8 @@ set(PYMODULE_COMPONENTS
         cpp/py_pink_io.cpp
         cpp/py_accumulators.cpp
         cpp/py_graph_weights.cpp
-        cpp/py_algo_tree.cpp)
+        cpp/py_algo_tree.cpp
+        cpp/py_tree_accumulators.cpp)
 
 set(MODULE_FILES
         __init__.py
