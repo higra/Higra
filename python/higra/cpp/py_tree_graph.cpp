@@ -21,7 +21,7 @@ struct def_tree_ctr {
     void def(C &c, const char *doc) {
         c.def(py::init([](const xt::pyarray<type> &parent) { return graph_t(parent); }),
               doc,
-              py::arg("parentRelation")
+              py::arg("parent_relation")
         );
     }
 };
@@ -31,8 +31,8 @@ struct def_accumulate_parallel {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("accumulateParallel", [](const graph_t &tree, const xt::pyarray<value_t> &input,
-                                       hg::accumulators accumulator) {
+        c.def("accumulate_parallel", [](const graph_t &tree, const xt::pyarray<value_t> &input,
+                                        hg::accumulators accumulator) {
                   switch (accumulator) {
                       case hg::accumulators::min:
                           return hg::accumulate_parallel(tree, input, hg::accumulator_min<value_t>());
@@ -56,7 +56,7 @@ struct def_accumulate_parallel {
                   throw std::runtime_error("Unknown accumulator.");
               },
               doc,
-              py::arg("inputArray"),
+              py::arg("input"),
               py::arg("accumulator"));
     }
 };
@@ -66,7 +66,7 @@ struct def_accumulate_sequential {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("accumulateSequential",
+        c.def("accumulate_sequential",
               [](const graph_t &tree, const xt::pyarray<value_t> &vertex_data, hg::accumulators accumulator) {
                   switch (accumulator) {
                       case hg::accumulators::min:
@@ -91,7 +91,7 @@ struct def_accumulate_sequential {
                   throw std::runtime_error("Unknown accumulator.");
               },
               doc,
-              py::arg("leafDataArray"),
+              py::arg("leaf_data"),
               py::arg("accumulator"));
     }
 };
@@ -169,8 +169,8 @@ struct def_accumulate_and_combine_sequential {
                   throw std::runtime_error("Unknown accumulator.");
               },
               doc,
-              py::arg("inputArray"),
-              py::arg("leafDataArray"),
+              py::arg("input"),
+              py::arg("leaf_data"),
               py::arg("accumulator"));
     }
 };
@@ -184,13 +184,13 @@ struct def_propagate_sequential {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("propagateSequential",
+        c.def("propagate_sequential",
               [](const graph_t &tree, const xt::pyarray<value_t> &input,
                  const xt::pyarray<bool> &condition) {
                   return hg::propagate_sequential(tree, input, condition);
               },
               doc,
-              py::arg("inputArray"),
+              py::arg("input"),
               py::arg("condition"));
     }
 };
@@ -200,13 +200,13 @@ struct def_propagate_parallel {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("propagateParallel",
+        c.def("propagate_parallel",
               [](const graph_t &tree, const xt::pyarray<value_t> &input,
                  const xt::pyarray<bool> &condition) {
                   return hg::propagate_parallel(tree, input, condition);
               },
               doc,
-              py::arg("inputArray"),
+              py::arg("input"),
               py::arg("condition"));
     }
 };
@@ -225,9 +225,9 @@ void py_init_tree_graph(pybind11::module &m) {
     add_edge_list_graph_concept<graph_t, decltype(c)>(c);
     add_edge_index_graph_concept<graph_t, decltype(c)>(c);
 
-    c.def("root", &graph_t::root, "Get the index of the root node (i.e. self.numVertices() - 1)");
-    c.def("numLeaves", &graph_t::num_leaves, "Get the number of leaves nodes.");
-    c.def("numChildren", &graph_t::num_children, "Get the number of children nodes of the given node.",
+    c.def("root", &graph_t::root, "Get the index of the root node (i.e. self.num_vertices() - 1)");
+    c.def("num_leaves", &graph_t::num_leaves, "Get the number of leaves nodes.");
+    c.def("num_children", &graph_t::num_children, "Get the number of children nodes of the given node.",
           py::arg("node"));
     c.def("children",
           [](const graph_t &g, vertex_t v) {
@@ -240,25 +240,25 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("parent", [](const graph_t &tree, vertex_t v) { return tree.parent(v); }, "Get the parent of the given node.",
           py::arg("node"));
 
-    c.def("iterateFromLeavesToRoot",
+    c.def("iterate_from_leaves_to_root",
           [](const graph_t &tree, bool includeLeaves, bool includeRoot) {
               auto range = tree.iterate_from_leaves_to_root(
                       (includeLeaves) ? hg::leaves_it::include : hg::leaves_it::exclude,
                       (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
               return py::make_iterator(range.begin(), range.end());
           }, "Returns an iterator on the node indices going from the leaves to the root of the tree.",
-          py::arg("includeLeaves") = true,
-          py::arg("includeRoot") = true);
+          py::arg("include_leaves") = true,
+          py::arg("include_root") = true);
 
-    c.def("iterateFromRootToLeaves",
+    c.def("iterate_from_root_to_leaves",
           [](const graph_t &tree, bool includeLeaves, bool includeRoot) {
               auto range = tree.iterate_from_root_to_leaves(
                       (includeLeaves) ? hg::leaves_it::include : hg::leaves_it::exclude,
                       (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
               return py::make_iterator(range.begin(), range.end());
           }, "Returns an iterator on the node indices going from the root to the leaves of the tree.",
-          py::arg("includeLeaves") = true,
-          py::arg("includeRoot") = true);
+          py::arg("include_leaves") = true,
+          py::arg("include_root") = true);
 
 
     add_type_overloads<def_accumulate_parallel<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
@@ -269,39 +269,39 @@ void py_init_tree_graph(pybind11::module &m) {
     add_type_overloads<def_accumulate_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (c,
              "Performs a sequential accumulation of node values from the leaves to the root. "
-                     "For each leaf node i, output(i) = leafData(i)."
+             "For each leaf node i, output(i) = leaf_data(i)."
                      "For each node i from the leaves (excluded) to the root, output(i) = accumulate(output(children(i)))");
 
     add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (c,
              "Performs a sequential accumulation of node values from the leaves to the root and add the result with the input array."
-                     "For each leaf node i, output(i) = leafData(i)."
+             "For each leaf node i, output(i) = leaf_data(i)."
              "For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))",
-             "accumulateAndAddSequential",
+             "accumulate_and_add_sequential",
              functorPlus());
 
     add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (c,
              "Performs a sequential accumulation of node values from the leaves to the root and multiply the result with the input array."
-             "For each leaf node i, output(i) = leafData(i)."
+             "For each leaf node i, output(i) = leaf_data(i)."
              "For each node i from the leaves (excluded) to the root, output(i) = input(i) * accumulate(output(children(i)))",
-             "accumulateAndMultiplySequential",
+             "accumulate_and_multiply_sequential",
              functorMultiply());
 
     add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (c,
              "Performs a sequential accumulation of node values from the leaves to the root and max the result with the input array."
-             "For each leaf node i, output(i) = leafData(i)."
+             "For each leaf node i, output(i) = leaf_data(i)."
              "For each node i from the leaves (excluded) to the root, output(i) = max(input(i), accumulate(output(children(i))))",
-             "accumulateAndMaxSequential",
+             "accumulate_and_max_sequential",
              functorMax());
 
     add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (c,
              "Performs a sequential accumulation of node values from the leaves to the root and min the result with the input array."
-             "For each leaf node i, output(i) = leafData(i)."
+             "For each leaf node i, output(i) = leaf_data(i)."
              "For each node i from the leaves (excluded) to the root, output(i) = min(input(i), accumulate(output(children(i))))",
-             "accumulateAndMinSequential",
+             "accumulate_and_min_sequential",
              functorMin());
 
     add_type_overloads<def_propagate_parallel<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>

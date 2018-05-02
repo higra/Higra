@@ -14,7 +14,7 @@ namespace py = pybind11;
 void py_init_algo_tree(pybind11::module &m) {
     xt::import_numpy();
 
-    m.def("testTreeIsomorphism", &hg::testTreeIsomorphism<hg::tree, hg::tree>,
+    m.def("test_tree_isomorphism", &hg::testTreeIsomorphism<hg::tree, hg::tree>,
           "Test if 2 trees are isomorph assuming that they share the same leaves.\n"
           "\n"
           "By this definition t1 is isomorph to t2 if there exist a bijection f from vertices(t1) to vertices(t2) such that:\n"

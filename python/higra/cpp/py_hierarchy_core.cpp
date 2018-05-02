@@ -16,12 +16,12 @@ struct def_bptCanonical {
     template<typename value_t, typename C>
     static
     void def(C &m, const char *doc) {
-        m.def("_bptCanonical", [](const graph_t &graph, const xt::pyarray<value_t> &edge_weights) {
+        m.def("_bpt_canonical", [](const graph_t &graph, const xt::pyarray<value_t> &edge_weights) {
                   return hg::bptCanonical(graph, edge_weights);
               },
               doc,
               py::arg("graph"),
-              py::arg("edgeWeights")
+              py::arg("edge_weights")
         );
     }
 };
@@ -31,13 +31,13 @@ struct def_simplify_tree {
     template<typename value_t, typename C>
     static
     void def(C &m, const char *doc) {
-        m.def("_simplifyTree",
+        m.def("_simplify_tree",
               [](const hg::tree &t, xt::pyarray<value_t> &criterion) {
                   return hg::simplify_tree(t, criterion);
               },
               doc,
               py::arg("tree"),
-              py::arg("deletedNodes")
+              py::arg("deleted_nodes")
         );
     }
 };
@@ -58,7 +58,6 @@ void py_init_hierarchy_core(pybind11::module &m) {
                      "\n"
                      "The criterion is an array that associates true (this node must be deleted) or\n"
                      "false (do not delete this node) to a node index."
-
             );
 
 }

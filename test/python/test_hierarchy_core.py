@@ -12,35 +12,35 @@ class TestHierarchyCore(unittest.TestCase):
 
     @staticmethod
     def getTree():
-        parentRelation = np.asarray((5, 5, 6, 6, 6, 7, 7, 7), dtype=np.uint64)
-        return hg.Tree(parentRelation)
+        parent_relation = np.asarray((5, 5, 6, 6, 6, 7, 7, 7), dtype=np.uint64)
+        return hg.Tree(parent_relation)
 
     def test_BPTTrivial(self):
-        graph = hg._get4AdjacencyGraph((1, 2))
+        graph = hg._get_4_adjacency_graph((1, 2))
 
-        edgeWeights = np.asarray((2,))
+        edge_weights = np.asarray((2,))
 
-        tree, altitudes, mst = hg._bptCanonical(graph, edgeWeights)
+        tree, altitudes, mst = hg._bpt_canonical(graph, edge_weights)
 
-        self.assertTrue(tree.numVertices() == 3)
-        self.assertTrue(tree.numEdges() == 2)
+        self.assertTrue(tree.num_vertices() == 3)
+        self.assertTrue(tree.num_edges() == 2)
         self.assertTrue(np.allclose(tree.parents(), (2, 2, 2)))
         self.assertTrue(np.allclose(altitudes, (0, 0, 2)))
-        self.assertTrue(mst.numVertices() == 2)
-        self.assertTrue(mst.numEdges() == 1)
+        self.assertTrue(mst.num_vertices() == 2)
+        self.assertTrue(mst.num_edges() == 1)
 
     def test_BPT(self):
-        graph = hg._get4AdjacencyGraph((2, 3))
+        graph = hg._get_4_adjacency_graph((2, 3))
 
-        edgeWeights = np.asarray((1, 0, 2, 1, 1, 1, 2))
+        edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
 
-        tree, altitudes, mst = hg._bptCanonical(graph, edgeWeights)
-        self.assertTrue(tree.numVertices() == 11)
-        self.assertTrue(tree.numEdges() == 10)
+        tree, altitudes, mst = hg._bpt_canonical(graph, edge_weights)
+        self.assertTrue(tree.num_vertices() == 11)
+        self.assertTrue(tree.num_edges() == 10)
         self.assertTrue(np.allclose(tree.parents(), (6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10)))
         self.assertTrue(np.allclose(altitudes, (0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2)))
-        self.assertTrue(mst.numVertices() == 6)
-        self.assertTrue(mst.numEdges() == 5)
+        self.assertTrue(mst.num_vertices() == 6)
+        self.assertTrue(mst.num_edges() == 5)
 
         ref = [(0, 3),
                (0, 1),
@@ -59,18 +59,18 @@ class TestHierarchyCore(unittest.TestCase):
 
         criterion = np.equal(altitudes, altitudes[t.parents()])
 
-        newTree, nodeMap = hg._simplifyTree(t, criterion)
+        new_tree, node_map = hg._simplify_tree(t, criterion)
 
         # for reference
-        newAltitudes = altitudes[nodeMap]
+        new_altitudes = altitudes[node_map]
 
-        self.assertTrue(newTree.numVertices() == 7)
+        self.assertTrue(new_tree.num_vertices() == 7)
 
         refp = np.asarray((5, 5, 6, 6, 6, 6, 6))
-        self.assertTrue(np.all(refp == newTree.parents()))
+        self.assertTrue(np.all(refp == new_tree.parents()))
 
         refnm = np.asarray((0, 1, 2, 3, 4, 5, 7))
-        self.assertTrue(np.all(refnm == nodeMap))
+        self.assertTrue(np.all(refnm == node_map))
 
 
 if __name__ == '__main__':

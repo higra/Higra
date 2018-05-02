@@ -18,7 +18,7 @@ def compare(t1, t2):
 
 class TestEmbedding(unittest.TestCase):
 
-    def test_createEmbedding(self):
+    def test_create_embedding(self):
         e1 = hg.EmbeddingGrid3d((3, 5, 2))
         e2 = hg.EmbeddingGrid3d([3, 5, 2])
         e3 = hg.EmbeddingGrid3d(np.asarray([3, 5, 2], dtype=np.int64))

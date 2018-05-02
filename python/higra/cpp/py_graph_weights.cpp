@@ -17,13 +17,13 @@ struct def_weight_graph {
     template<typename type, typename C>
     static
     void def(C &m, const char *doc) {
-        m.def("_weightGraph", [](const graph_t &graph, const xt::pyarray<type> &data, hg::weight_functions weight_f) {
+        m.def("_weight_graph", [](const graph_t &graph, const xt::pyarray<type> &data, hg::weight_functions weight_f) {
                   return hg::weight_graph(graph, data, weight_f);
               },
               doc,
-              py::arg("explicitGraph"),
-              py::arg("vertexWeights"),
-              py::arg("weighFunction"));
+              py::arg("explicit_graph"),
+              py::arg("vertex_weights"),
+              py::arg("weigh_function"));
     }
 };
 
@@ -52,21 +52,21 @@ void py_init_graph_weights(pybind11::module &m) {
                      " and specified weighting function (see WeightFunction enumeration)."
             );
 
-    m.def("_weightGraph", [](const hg::ugraph &graph, const std::function<double(std::size_t, std::size_t)> &fun) {
+    m.def("_weight_graph", [](const hg::ugraph &graph, const std::function<double(std::size_t, std::size_t)> &fun) {
               return hg::weight_graph(graph, fun);
           },
           "Compute the edge weights of a graph with the given weighting function. The weighting function takes the "
                   "vertex index of the extremities of an edge and returns the weight of the edge",
-          py::arg("explicitGraph"),
-          py::arg("weightFunction"));
+          py::arg("explicit_graph"),
+          py::arg("weight_function"));
 
-    m.def("_weightGraph", [](const hg::tree &graph, const std::function<double(std::size_t, std::size_t)> &fun) {
+    m.def("_weight_graph", [](const hg::tree &graph, const std::function<double(std::size_t, std::size_t)> &fun) {
               return hg::weight_graph(graph, fun);
           },
           "Compute the edge weights of a graph with the given weighting function. The weighting function takes the "
                   "vertex index of the extremities of an edge and returns the weight of the edge",
-          py::arg("explicitGraph"),
-          py::arg("weightFunction"));
+          py::arg("explicit_graph"),
+          py::arg("weight_function"));
 
 }
 

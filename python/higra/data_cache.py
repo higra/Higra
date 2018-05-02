@@ -14,45 +14,45 @@ class DataCache:
     def __init__(self):
         self.__data = weakref.WeakKeyDictionary()
 
-    def getData(self, key):
+    def get_data(self, key):
         return self.__data.setdefault(key, {})
 
-    def clearData(self, key):
+    def clear_data(self, key):
         if key in self.__data:
             del self.__data[key]
 
-    def clearAllData(self):
+    def clear_all_data(self):
         self.__data.clear()
 
 
-def listDataProviders():
+def list_data_providers():
     for p in hg.__data_providers:
         print(hg.__data_providers[p])
 
 
-def listAttributes(key):
-    return list(hg.__higra_global_cache.getData(key).keys())
+def list_attributes(key):
+    return list(hg.__higra_global_cache.get_data(key).keys())
 
 
-def getAttribute(key, attributeName):
-    return hg.__higra_global_cache.getData(key).get(attributeName, None)
+def get_attribute(key, attribute_name):
+    return hg.__higra_global_cache.get_data(key).get(attribute_name, None)
 
 
-def setAttribute(key, attributeName, attribute):
-    hg.__higra_global_cache.getData(key)[attributeName] = attribute
+def set_attribute(key, attribute_name, attribute):
+    hg.__higra_global_cache.get_data(key)[attribute_name] = attribute
 
 
-def clearAttributes(key, *attributeName):
-    if not attributeName:
-        hg.__higra_global_cache.clearData(key)
+def clear_attributes(key, *attribute_name):
+    if not attribute_name:
+        hg.__higra_global_cache.clear_data(key)
     else:
-        objCache = hg.__higra_global_cache.getData(key)
-        for k in objCache:
-            del objCache[k]
+        obj_cache = hg.__higra_global_cache.get_data(key)
+        for k in obj_cache:
+            del obj_cache[k]
 
 
-def clearAllAttributes():
-    hg.__higra_global_cache.clearAllData()
+def clear_all_attributes():
+    hg.__higra_global_cache.clear_all_data()
 
 
 class DataProvider:
@@ -71,21 +71,21 @@ class DataProvider:
         return self.name
 
 
-def dataProvider(name, description=""):
+def data_provider(name, description=""):
 
     def decorator(fun):
 
         @functools.wraps(fun)
         def wrapper(obj, *args, **kwargs):
-            dataName = kwargs.pop("attributeName", name)
-            forceRecompute = kwargs.pop("forceRecompute", False)
-            dataCache = kwargs.pop("dataCache", hg.__higra_global_cache)
-            objCache = dataCache.getData(obj)
+            data_name = kwargs.pop("attribute_name", name)
+            force_recompute = kwargs.pop("force_recompute", False)
+            data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
+            obj_cache = data_cache.get_data(obj)
 
-            if dataName not in objCache or forceRecompute:
-                objCache[dataName] = fun(obj, *args, **kwargs)
+            if data_name not in obj_cache or force_recompute:
+                obj_cache[data_name] = fun(obj, *args, **kwargs)
 
-            return objCache[dataName]
+            return obj_cache[data_name]
 
         wrapper.name = name
         wrapper.original = fun
@@ -100,50 +100,50 @@ def dataProvider(name, description=""):
     return decorator
 
 
-def __cacheLookUp(obj, depPath, dataCache):
-    name, *tail = depPath.split('.', maxsplit=1)
-    objCache = dataCache.getData(obj)
-    nameData = None
-    if name in objCache:
-        nameData = objCache[name]
+def __cache_lookup(obj, dep_path, data_cache):
+    name, *tail = dep_path.split('.', maxsplit=1)
+    obj_cache = data_cache.get_data(obj)
+    name_data = None
+    if name in obj_cache:
+        name_data = obj_cache[name]
     elif name in hg.__data_providers:  # look in providers
-        nameData = hg.__data_providers[name](obj)
+        name_data = hg.__data_providers[name](obj)
     else:
         err = "Dynamic resolution of dependency '" + name + "' failed (no cache data or attribute provider with this name)."
         raise Exception(err)
 
     if len(tail) > 0:
-        nameData = __cacheLookUp(nameData, tail[0], dataCache)
+        name_data = __cache_lookup(name_data, tail[0], data_cache)
 
-    return nameData
+    return name_data
 
 
-def __resolveDependency(obj, depName, depPath, dataCache, kwargs):
+def __resolve_dependency(obj, dep_name, dep_path, data_cache, kwargs):
     # if user has provided an explicit initialization for current dependency
-    if depName in kwargs:
-        providedDep = kwargs[depName]
+    if dep_name in kwargs:
+        provided_dep = kwargs[dep_name]
         # if user has provided a path
-        if isinstance(providedDep, str):
+        if isinstance(provided_dep, str):
             # restart dependency resolution with new path
-            del kwargs[depName]
-            __resolveDependency(obj, depName, providedDep, dataCache, kwargs)
-        # else use providedDep as depName argument value
+            del kwargs[dep_name]
+            __resolve_dependency(obj, dep_name, provided_dep, data_cache, kwargs)
+        # else use provided_dep as depName argument value
     else:
-        kwargs[depName] = __cacheLookUp(obj, depPath, dataCache)
+        kwargs[dep_name] = __cache_lookup(obj, dep_path, data_cache)
 
 
-def __transferToKwArguments(signature, args, kwargs):
+def __transfer_to_kw_arguments(signature, args, kwargs):
     nargs = list(args)
     for p in signature.parameters.values():
         if len(nargs) == 0:
-            break;
+            break
         if p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
             kwargs[p.name] = nargs[0]
             del nargs[0]
     return nargs
 
 
-def dataConsumer(*dependencies, **dependenciesPath):
+def data_consumer(*dependencies, **dependencies_path):
     def decorator(fun):
 
         signature = inspect.signature(fun)
@@ -151,15 +151,15 @@ def dataConsumer(*dependencies, **dependenciesPath):
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
             obj = args[0]
-            args = __transferToKwArguments(signature, args, kwargs)
+            args = __transfer_to_kw_arguments(signature, args, kwargs)
 
-            dataCache = kwargs.pop("dataCache", hg.__higra_global_cache)
+            data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
 
-            for depName in dependencies:
-                __resolveDependency(obj, depName, depName, dataCache, kwargs)
+            for dep_name in dependencies:
+                __resolve_dependency(obj, dep_name, dep_name, data_cache, kwargs)
 
-            for depName in dependenciesPath:
-                __resolveDependency(obj, depName, dependenciesPath[depName], dataCache, kwargs)
+            for dep_name in dependencies_path:
+                __resolve_dependency(obj, dep_name, dependencies_path[dep_name], data_cache, kwargs)
 
             return fun(*args, **kwargs)
 

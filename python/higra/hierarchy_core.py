@@ -1,64 +1,63 @@
 import higra as hg
 
 
-@hg.dataConsumer("edgeWeights")
-def bptCanonical(graph, edgeWeights):
+@hg.data_consumer("edge_weights")
+def bpt_canonical(graph, edge_weights):
     """
     Compute the canonical binary partition tree (binary tree by altitude ordering) of the given weighted graph.
 
 
     :param graph:
-    :param edgeWeights:
-    :return: Tree (with attributes "leafGraph", "altitudes" and "mst")
+    :param edge_weights:
+    :return: Tree (with attributes "leaf_graph", "altitudes" and "mst")
     """
 
-    tree, altitudes, mst = hg._bptCanonical(graph, edgeWeights)
+    tree, altitudes, mst = hg._bpt_canonical(graph, edge_weights)
 
-    originalGraph = hg.getAttribute(graph, "originalGraph")
-    if originalGraph:
-        hg.setAttribute(tree, "leafGraph", originalGraph)
-        hg.setAttribute(mst, "originalGraph", originalGraph)
+    original_graph = hg.get_attribute(graph, "original_graph")
+    if original_graph:
+        hg.set_attribute(tree, "leaf_graph", original_graph)
+        hg.set_attribute(mst, "original_graph", original_graph)
     else:
-        hg.setAttribute(tree, "leafGraph", graph)
-        hg.setAttribute(mst, "originalGraph", graph)
+        hg.set_attribute(tree, "leaf_graph", graph)
+        hg.set_attribute(mst, "original_graph", graph)
 
-    hg.setAttribute(tree, "altitudes", altitudes)
-    hg.setAttribute(tree, "mst", mst)
-
+    hg.set_attribute(tree, "altitudes", altitudes)
+    hg.set_attribute(tree, "mst", mst)
 
     return tree
 
 
-@hg.dataConsumer("deletedVertices")
-def simplifyTree(tree, deletedVertices):
+@hg.data_consumer("deleted_vertices")
+def simplify_tree(tree, deleted_vertices):
     """
     Creates a copy of the current Tree and deletes the vertices i such that deletedVertices[i] is true.
 
-    The attribute "nodeMap" of the returned tree is an array that maps any node index i of the new tree,
+    The attribute "node_map" of the returned tree is an array that maps any node index i of the new tree,
     to the index of this node in the original tree.
 
     :param tree:
-    :param deletedVertices:
-    :return: simplified tree (with attributes "nodeMap")
+    :param deleted_vertices:
+    :return: simplified tree (with attributes "node_map")
     """
 
-    ntree, nodeMap = hg._simplifyTree(tree, deletedVertices)
+    new_tree, node_map = hg._simplify_tree(tree, deleted_vertices)
 
-    hg.setAttribute(ntree, "leafGraph", hg.getAttribute(tree, "leafGraph"))
-    hg.setAttribute(ntree, "nodeMap", nodeMap)
+    hg.set_attribute(new_tree, "leaf_graph", hg.getAttribute(tree, "leaf_graph"))
+    hg.set_attribute(new_tree, "node_map", node_map)
 
-    return ntree
+    return new_tree
 
 
-@hg.dataConsumer("altitudes", "lcaMap")
-def saliency(tree, altitudes, lcaMap):
+@hg.data_consumer("altitudes", "lca_map")
+def saliency(tree, altitudes, lca_map):
     """
     Compute the saliency map of the given tree
     :param tree:
     :param altitudes: altitudes of the vertices of the tree
-    :param lcaMap: array containing the lowest common ancestor of the source and target vertices of each edge
+    :param lca_map: array containing the lowest common ancestor of the source and target vertices of each edge
     where saliency need to be computed
-    :return: altitudes[lcaMap]
+    :return: altitudes[lca_map]
     """
 
-    return altitudes[lcaMap]
+    return altitudes[lca_map]

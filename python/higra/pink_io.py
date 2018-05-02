@@ -1,16 +1,16 @@
 import higra as hg
 
 
-def readGraphPink(filename):
+def read_graph_pink(filename):
     """
     Read a graph file stored in pink ascii format
     :param filename:
-    :return: Graph (with attributes "vertexWeights", "edgeWeights", "shape")
+    :return: Graph (with attributes "vertex_weights", "edge_weights", "shape")
     """
-    graph, vertexWeights, edgeWeights, shape = hg._readGraphPink(filename)
+    graph, vertexWeights, edgeWeights, shape = hg._read_graph_pink(filename)
 
-    hg.setAttribute(graph, "edgeWeigths", edgeWeights)
-    hg.setAttribute(graph, "vertexWeigths", vertexWeights)
-    hg.setAttribute(graph, "shape", shape)
+    hg.set_attribute(graph, "edge_weigths", edgeWeights)
+    hg.set_attribute(graph, "vertex_weigths", vertexWeights)
+    hg.set_attribute(graph, "shape", shape)
 
     return graph

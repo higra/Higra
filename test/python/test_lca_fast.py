@@ -11,8 +11,8 @@ class TestLCAFast(unittest.TestCase):
 
     @staticmethod
     def getTree():
-        parentRelation = np.asarray((5, 5, 6, 6, 6, 7, 7, 7), dtype=np.uint64)
-        return hg.Tree(parentRelation)
+        parent_relation = np.asarray((5, 5, 6, 6, 6, 7, 7, 7), dtype=np.uint64)
+        return hg.Tree(parent_relation)
 
     def test_LCAFast(self):
         t = TestLCAFast.getTree()
@@ -33,7 +33,7 @@ class TestLCAFast(unittest.TestCase):
         self.assertTrue(lca.lca(2, 6) == 6)
 
     def test_LCAFastV(self):
-        g = hg._get4AdjacencyGraph((2, 2))
+        g = hg._get_4_adjacency_graph((2, 2))
         t = hg.Tree((4, 4, 5, 5, 6, 6, 6))
         lca = hg.LCAFast(t)
 

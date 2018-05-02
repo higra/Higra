@@ -17,13 +17,13 @@ struct def_kalhimsky_2_contour {
     template<typename value_t>
     static
     void def(pybind11::module &m, const char *doc) {
-        m.def("_khalimsky2Contour", [](const xt::pyarray<value_t> &khalimsky,
+        m.def("_khalimsky2contour", [](const xt::pyarray<value_t> &khalimsky,
                                        bool extra_border) {
                   return hg::khalimsky_2_contour2d(khalimsky, extra_border);
               },
               doc,
               py::arg("khalimsky"),
-              py::arg("extraBorder") = false);
+              py::arg("extra_border") = false);
     }
 };
 
@@ -31,7 +31,7 @@ struct def_contour2Khalimsky {
     template<typename value_t>
     static
     void def(pybind11::module &m, const char *doc) {
-        m.def("_contour2Khalimsky", [](const hg::ugraph &graph,
+        m.def("_contour2khalimsky", [](const hg::ugraph &graph,
                                        const std::vector<std::size_t> &shape,
                                        const xt::pyarray<value_t> &weights,
                                        bool add_extra_border) {
@@ -42,32 +42,32 @@ struct def_contour2Khalimsky {
               py::arg("graph"),
               py::arg("shape"),
               py::arg("edgeWeights"),
-              py::arg("addExtraBorder") = false);
+              py::arg("add_extra_border") = false);
     }
 };
 
 void py_init_graph_image(pybind11::module &m) {
     xt::import_numpy();
 
-    m.def("_get4AdjacencyGraph", [](const std::vector<long> &v) {
+    m.def("_get_4_adjacency_graph", [](const std::vector<long> &v) {
               return hg::get_4_adjacency_graph(v);
           },
           "Create an explicit undirected 4 adjacency graph of the given shape.",
           py::arg("shape"));
 
-    m.def("_get8AdjacencyGraph", [](const std::vector<long> &v) {
+    m.def("_get_8_adjacency_graph", [](const std::vector<long> &v) {
               return hg::get_8_adjacency_graph(v);
           },
           "Create an explicit undirected 8 adjacency graph of the given shape.",
           py::arg("shape"));
 
-    m.def("_get4AdjacencyImplicitGraph", [](const std::vector<long> &v) {
+    m.def("_get_4_adjacency_implicit_graph", [](const std::vector<long> &v) {
               return hg::get_4_adjacency_implicit_graph(v);
           },
           "Create an explicit undirected 4 adjacency graph of the given shape (edges are not actually stored).",
           py::arg("shape"));
 
-    m.def("_get8AdjacencyImplicitGraph", [](const std::vector<long> &v) {
+    m.def("_get_8_adjacency_implicit_graph", [](const std::vector<long> &v) {
               return hg::get_8_adjacency_implicit_graph(v);
           },
           "Create an explicit undirected 8 adjacency graph of the given shape (edges are not actually stored).",

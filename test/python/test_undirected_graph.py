@@ -7,38 +7,48 @@ sys.path.insert(0, "@PYTHON_MODULE_PATH@")
 import higra as hg
 import numpy as np
 
+
 class TestUndirectedGraph(unittest.TestCase):
+
+    @staticmethod
+    def test_graph():
+        g = hg.UndirectedGraph(4)
+        g.add_edge(0, 1)
+        g.add_edge(1, 2)
+        g.add_edge(0, 2)
+        return g
+
 
     def test_add_vertices(self):
         g = hg.UndirectedGraph()
-        self.assertTrue(g.numVertices() == 0)
-        self.assertTrue(g.addVertex() == 0)
-        self.assertTrue(g.numVertices() == 1)
-        self.assertTrue(g.addVertex() == 1)
-        self.assertTrue(g.numVertices() == 2)
+        self.assertTrue(g.num_vertices() == 0)
+        self.assertTrue(g.add_vertex() == 0)
+        self.assertTrue(g.num_vertices() == 1)
+        self.assertTrue(g.add_vertex() == 1)
+        self.assertTrue(g.num_vertices() == 2)
 
         g = hg.UndirectedGraph(3)
-        self.assertTrue(g.numVertices() == 3)
+        self.assertTrue(g.num_vertices() == 3)
 
     def test_add_edges(self):
         g = hg.UndirectedGraph(3)
-        self.assertTrue(g.numEdges() == 0)
-        g.addEdge(0, 1)
-        self.assertTrue(g.numEdges() == 1)
+        self.assertTrue(g.num_edges() == 0)
+        g.add_edge(0, 1)
+        self.assertTrue(g.num_edges() == 1)
 
         # parallel edge allowed
-        g.addEdge(0, 1)
-        self.assertTrue(g.numEdges() == 2)
+        g.add_edge(0, 1)
+        self.assertTrue(g.num_edges() == 2)
 
         # still parallel edge allowed
-        g.addEdge(1, 0)
-        self.assertTrue(g.numEdges() == 3)
+        g.add_edge(1, 0)
+        self.assertTrue(g.num_edges() == 3)
 
-        g.addEdge(0, 2)
-        self.assertTrue(g.numEdges() == 4)
+        g.add_edge(0, 2)
+        self.assertTrue(g.num_edges() == 4)
 
     def test_vertex_iterator(self):
-        g = hg.getTestUndirectedGraph()
+        g = TestUndirectedGraph.test_graph()
         vref = [0, 1, 2, 3];
         vtest = [];
 
@@ -48,7 +58,7 @@ class TestUndirectedGraph(unittest.TestCase):
         self.assertTrue(vtest == vref)
 
     def test_edge_iterator(self):
-        g = hg.getTestUndirectedGraph()
+        g = TestUndirectedGraph.test_graph()
         ref = [(0, 1), (1, 2), (0, 2)]
         test = []
 
@@ -58,7 +68,7 @@ class TestUndirectedGraph(unittest.TestCase):
         self.assertTrue(test == ref)
 
     def test_out_edge_iterator(self):
-        g = hg.getTestUndirectedGraph()
+        g = TestUndirectedGraph.test_graph()
         ref = [[(0, 1), (0, 2)],
                [(1, 0), (1, 2)],
                [(2, 1), (2, 0)],
@@ -66,13 +76,13 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
         for v in g.vertices():
             test.append([])
-            for e in g.outEdges(v):
+            for e in g.out_edges(v):
                 test[v].append(e)
 
         self.assertTrue(test == ref)
 
     def test_in_edge_iterator(self):
-        g = hg.getTestUndirectedGraph()
+        g = TestUndirectedGraph.test_graph()
         ref = [[(1, 0), (2, 0)],
                [(0, 1), (2, 1)],
                [(1, 2), (0, 2)],
@@ -80,13 +90,13 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
         for v in g.vertices():
             test.append([])
-            for e in g.inEdges(v):
+            for e in g.in_edges(v):
                 test[v].append(e)
 
         self.assertTrue(test == ref)
 
     def test_adjacent_vertex_iterator(self):
-        g = hg.getTestUndirectedGraph()
+        g = TestUndirectedGraph.test_graph()
         ref = [[1, 2],
                [0, 2],
                [1, 0],
@@ -94,47 +104,47 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
         for v in g.vertices():
             test.append([])
-            for av in g.adjacentVertices(v):
+            for av in g.adjacent_vertices(v):
                 test[v].append(av)
 
         self.assertTrue(test == ref)
 
     def test_degrees(self):
-        g = hg.getTestUndirectedGraph()
+        g = TestUndirectedGraph.test_graph()
         self.assertTrue(g.degree(0) == 2)
-        self.assertTrue(g.outDegree(0) == 2)
-        self.assertTrue(g.inDegree(0) == 2)
+        self.assertTrue(g.out_degree(0) == 2)
+        self.assertTrue(g.in_degree(0) == 2)
 
         self.assertTrue(g.degree(1) == 2)
-        self.assertTrue(g.outDegree(1) == 2)
-        self.assertTrue(g.inDegree(1) == 2)
+        self.assertTrue(g.out_degree(1) == 2)
+        self.assertTrue(g.in_degree(1) == 2)
 
         self.assertTrue(g.degree(2) == 2)
-        self.assertTrue(g.outDegree(2) == 2)
-        self.assertTrue(g.inDegree(2) == 2)
+        self.assertTrue(g.out_degree(2) == 2)
+        self.assertTrue(g.in_degree(2) == 2)
 
         self.assertTrue(g.degree(3) == 0)
-        self.assertTrue(g.outDegree(3) == 0)
-        self.assertTrue(g.inDegree(3) == 0)
+        self.assertTrue(g.out_degree(3) == 0)
+        self.assertTrue(g.in_degree(3) == 0)
 
         indices = np.asarray(((0, 3), (1, 2)))
         ref = np.asarray(((2, 0), (2, 2)))
         self.assertTrue(np.allclose(g.degree(indices), ref))
-        self.assertTrue(np.allclose(g.inDegree(indices), ref))
-        self.assertTrue(np.allclose(g.outDegree(indices), ref))
+        self.assertTrue(np.allclose(g.in_degree(indices), ref))
+        self.assertTrue(np.allclose(g.out_degree(indices), ref))
 
     def test_edge_index_iterator(self):
-        g = hg.getTestUndirectedGraph()
+        g = TestUndirectedGraph.test_graph()
         ref = [0, 1, 2]
         test = []
 
-        for e in g.edgeIndexes():
+        for e in g.edge_indexes():
             test.append(e)
 
         self.assertTrue(test == ref)
 
     def test_out_edge_index_iterator(self):
-        g = hg.getTestUndirectedGraph()
+        g = TestUndirectedGraph.test_graph()
         ref = [[0, 2],
                [0, 1],
                [1, 2],
@@ -142,13 +152,13 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
         for v in g.vertices():
             test.append([])
-            for e in g.outEdgeIndexes(v):
+            for e in g.out_edge_indexes(v):
                 test[v].append(e)
 
         self.assertTrue(test == ref)
 
     def test_in_edge_index_iterator(self):
-        g = hg.getTestUndirectedGraph()
+        g = TestUndirectedGraph.test_graph()
         ref = [[0, 2],
                [0, 1],
                [1, 2],
@@ -156,7 +166,7 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
         for v in g.vertices():
             test.append([])
-            for e in g.inEdgeIndexes(v):
+            for e in g.in_edge_indexes(v):
                 test[v].append(e)
 
         self.assertTrue(test == ref)

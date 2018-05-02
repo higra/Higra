@@ -17,7 +17,7 @@ void py_init_undirected_graph(py::module &m) {
     auto c = py::class_<graph_t>(m, "UndirectedGraph");
 
     c.def(py::init<const std::size_t>(), "Create a new graph with no edge.",
-          py::arg("numberOfVertices") = 0);
+          py::arg("number_of_vertices") = 0);
 
 
     add_incidence_graph_concept<graph_t, decltype(c)>(c);
@@ -27,29 +27,18 @@ void py_init_undirected_graph(py::module &m) {
     add_edge_list_graph_concept<graph_t, decltype(c)>(c);
     add_edge_index_graph_concept<graph_t, decltype(c)>(c);
 
-    c.def("addEdge", [](graph_t &g,
-                        const vertex_t source,
-                        const vertex_t target) {
+    c.def("add_edge", [](graph_t &g,
+                         const vertex_t source,
+                         const vertex_t target) {
               hg::add_edge(source, target, g);
           },
           "Add an (undirected) edge between 'vertex1' and 'vertex2'",
           py::arg("vertex1"),
           py::arg("vertex2"));
-    c.def("addVertex", [](graph_t &g) {
+    c.def("add_vertex", [](graph_t &g) {
               return boost::add_vertex(g);
           },
           "Add a vertex to the graph, the index of the new vertex is returned");
-
-
-    m.def("getTestUndirectedGraph", []() {
-              hg::undirected_graph<> g(4);
-              hg::add_edge(0, 1, g);
-              hg::add_edge(1, 2, g);
-              hg::add_edge(0, 2, g);
-              return g;
-          },
-          "Returns a small undirected graph for testing purpose.");
-
 }
 
 

@@ -1,77 +1,77 @@
 import higra as hg
 
 
-@hg.dataConsumer("shape", "edgeWeights")
-def contour2Khalimsky(graph, shape, edgeWeights, addExtraBorder=False):
+@hg.data_consumer("shape", "edge_weights")
+def contour2khalimsky(graph, shape, edge_weights, add_extra_border=False):
     """
     Create a contour image in the Khalimsky grid from a 4 adjacency edge-weighted graph.
 
     :param graph: must be a 4 adjacency 2d graph
     :param shape: shape of the graph
-    :param edgeWeights: edge weights of the graph
-    :param addExtraBorder: if False result size is 2 * shape - 1 and 2 * shape +1 otherwise
+    :param edge_weights: edge weights of the graph
+    :param add_extra_border: if False result size is 2 * shape - 1 and 2 * shape +1 otherwise
     :return:
     """
 
-    return hg._contour2Khalimsky(graph, shape, edgeWeights, addExtraBorder)
+    return hg._contour2khalimsky(graph, shape, edge_weights, add_extra_border)
 
 
-def khalimsky2Contour(khalimsky, extraBorder=False):
+def khalimsky2contour(khalimsky, extra_border=False):
     """
     Create a 4 adjacency edge-weighted graph from a contour image in the Khalimsky grid.
 
     :param khalimsky:
-    :param extraBorder:
-    :return: Graph (with attributes "edgeWeights" and "shape")
+    :param extra_border:
+    :return: Graph (with attributes "edge_weights" and "shape")
     """
 
-    graph, embedding, edgeWeights = hg._khalimsky2Contour(khalimsky, extraBorder)
+    graph, embedding, edge_weights = hg._khalimsky2contour(khalimsky, extra_border)
 
-    hg.setAttribute(graph, "shape", embedding.shape())
-    hg.setAttribute(graph, "edgeWeights", edgeWeights)
+    hg.set_attribute(graph, "shape", embedding.shape())
+    hg.set_attribute(graph, "edge_weights", edge_weights)
 
     return graph
 
 
-def get4AdjacencyGraph(shape):
+def get_4_adjacency_graph(shape):
     """
     Create an explicit undirected 4 adjacency graph of the given shape.
-    :param shape:
+    :param shape: pair (height, width)
     :return: Graph (with attribute "shape")
     """
-    graph = hg._get4AdjacencyGraph(shape)
-    hg.setAttribute(graph, "shape", shape)
+    graph = hg._get_4_adjacency_graph(shape)
+    hg.set_attribute(graph, "shape", shape)
     return graph
 
 
-def get8AdjacencyGraph(shape):
+def get_8_adjacency_graph(shape):
     """
     Create an explicit undirected 8 adjacency graph of the given shape.
-    :param shape:
+    :param shape: pair (height, width)
     :return: Graph (with attribute "shape")
     """
-    graph = hg._get8AdjacencyGraph(shape)
-    hg.setAttribute(graph, "shape", shape)
+    graph = hg._get_8_adjacency_graph(shape)
+    hg.set_attribute(graph, "shape", shape)
     return graph
 
 
-def get4AdjacencyImplicitGraph(shape):
+def get_4_adjacency_implicit_graph(shape):
     """
     Create an implicit undirected 4 adjacency graph of the given shape (edges are not stored).
-    :param shape:
+    :param shape: pair (height, width)
     :return: Graph (with attribute "shape")
     """
-    graph = hg._get4AdjacencyImplicitGraph(shape)
-    hg.setAttribute(graph, "shape", shape)
+    graph = hg._get_4_adjacency_implicit_graph(shape)
+    hg.set_attribute(graph, "shape", shape)
     return graph
 
 
-def get8AdjacencyImplicitGraph(shape):
+def get_8_adjacency_implicit_graph(shape):
     """
     Create an implicit undirected 8 adjacency graph of the given shape (edges are not stored).
-    :param shape:
+    :param shape: pair (height, width)
     :return: Graph (with attribute "shape")
     """
-    graph = hg._get8AdjacencyImplicitGraph(shape)
-    hg.setAttribute(graph, "shape", shape)
+    graph = hg._get_8_adjacency_implicit_graph(shape)
+    hg.set_attribute(graph, "shape", shape)
     return graph

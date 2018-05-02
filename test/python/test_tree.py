@@ -10,20 +10,20 @@ import higra as hg
 class TestTree(unittest.TestCase):
 
     @staticmethod
-    def getTree():
-        parentRelation = np.asarray((5, 5, 6, 6, 6, 7, 7, 7), dtype=np.uint64)
-        return hg.Tree(parentRelation)
+    def get_tree():
+        parent_relation = np.asarray((5, 5, 6, 6, 6, 7, 7, 7), dtype=np.uint64)
+        return hg.Tree(parent_relation)
 
-    def test_sizeTree(self):
-        t = TestTree.getTree()
+    def test_size_tree(self):
+        t = TestTree.get_tree()
 
         self.assertTrue(t.root() == 7)
-        self.assertTrue(t.numVertices() == 8)
-        self.assertTrue(t.numEdges() == 7)
-        self.assertTrue(t.numLeaves() == 5)
+        self.assertTrue(t.num_vertices() == 8)
+        self.assertTrue(t.num_edges() == 7)
+        self.assertTrue(t.num_leaves() == 5)
 
-    def test_vertexIterator(self):
-        t = TestTree.getTree()
+    def test_vertex_iterator(self):
+        t = TestTree.get_tree()
 
         ref = [0, 1, 2, 3, 4, 5, 6, 7];
         res = []
@@ -32,17 +32,17 @@ class TestTree(unittest.TestCase):
             res.append(v)
         self.assertTrue(res == ref)
 
-    def test_treeDegree(self):
-        t = TestTree.getTree()
+    def test_tree_degree(self):
+        t = TestTree.get_tree()
 
         ref = [1, 1, 1, 1, 1, 3, 4, 2]
 
         for v in t.vertices():
             self.assertTrue(t.degree(v) == ref[v])
-            self.assertTrue(t.inDegree(v) == ref[v])
-            self.assertTrue(t.outDegree(v) == ref[v])
+            self.assertTrue(t.in_degree(v) == ref[v])
+            self.assertTrue(t.out_degree(v) == ref[v])
 
-    def test_ctrFail(self):
+    def test_ctr_fail(self):
         with self.assertRaises(RuntimeError):
             hg.Tree((5, 0, 6, 6, 6, 7, 7, 7))
         with self.assertRaises(RuntimeError):
@@ -52,8 +52,8 @@ class TestTree(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             hg.Tree((2, 2, 4, 4, 4))
 
-    def test_edgeIterator(self):
-        t = TestTree.getTree()
+    def test_edge_iterator(self):
+        t = TestTree.get_tree()
 
         ref = [(0, 5),
                (1, 5),
@@ -69,8 +69,8 @@ class TestTree(unittest.TestCase):
 
         self.assertTrue(res == ref)
 
-    def test_adjacentVertexIterator(self):
-        t = TestTree.getTree()
+    def test_adjacent_vertex_iterator(self):
+        t = TestTree.get_tree()
 
         ref = [[5],
                [5],
@@ -83,12 +83,12 @@ class TestTree(unittest.TestCase):
 
         for v in t.vertices():
             res = []
-            for a in t.adjacentVertices(v):
+            for a in t.adjacent_vertices(v):
                 res.append(a)
             self.assertTrue(res == ref[v])
 
-    def test_outEdgeIterator(self):
-        t = TestTree.getTree()
+    def test_out_edge_iterator(self):
+        t = TestTree.get_tree()
 
         ref = [[(0, 5)],
                [(1, 5)],
@@ -100,12 +100,12 @@ class TestTree(unittest.TestCase):
                [(7, 5), (7, 6)]];
         for v in t.vertices():
             res = []
-            for e in t.outEdges(v):
+            for e in t.out_edges(v):
                 res.append(e)
             self.assertTrue(res == ref[v])
 
-    def test_inEdgeIterator(self):
-        t = TestTree.getTree()
+    def test_in_edge_iterator(self):
+        t = TestTree.get_tree()
 
         ref = [[(5, 0)],
                [(5, 1)],
@@ -117,23 +117,23 @@ class TestTree(unittest.TestCase):
                [(5, 7), (6, 7)]];
         for v in t.vertices():
             res = []
-            for e in t.inEdges(v):
+            for e in t.in_edges(v):
                 res.append(e)
             self.assertTrue(res == ref[v])
 
-    def test_edgeIndexIterator(self):
-        t = TestTree.getTree()
+    def test_edge_index_iterator(self):
+        t = TestTree.get_tree()
 
         ref = [0, 1, 2, 3, 4, 5, 6]
         res = []
 
-        for ei in t.edgeIndexes():
+        for ei in t.edge_indexes():
             res.append(ei)
 
         self.assertTrue(res == ref)
 
-    def test_outEdgeIndexIterator(self):
-        t = TestTree.getTree()
+    def test_out_edge_index_iterator(self):
+        t = TestTree.get_tree()
 
         ref = [[0],
                [1],
@@ -146,12 +146,12 @@ class TestTree(unittest.TestCase):
 
         for v in t.vertices():
             res = []
-            for ei in t.outEdgeIndexes(v):
+            for ei in t.out_edge_indexes(v):
                 res.append(ei)
             self.assertTrue(res == ref[v])
 
-    def test_inEdgeIndexIterator(self):
-        t = TestTree.getTree()
+    def test_in_edge_index_iterator(self):
+        t = TestTree.get_tree()
 
         ref = [[0],
                [1],
@@ -164,22 +164,22 @@ class TestTree(unittest.TestCase):
 
         for v in t.vertices():
             res = []
-            for ei in t.inEdgeIndexes(v):
+            for ei in t.in_edge_indexes(v):
                 res.append(ei)
             self.assertTrue(res == ref[v])
 
-    def test_numChildren(self):
-        t = TestTree.getTree()
+    def test_num_children(self):
+        t = TestTree.get_tree()
 
         ref = [0, 0, 0, 0, 0, 2, 3, 2]
         res = []
 
         for v in t.vertices():
-            res.append(t.numChildren(v))
+            res.append(t.num_children(v))
         self.assertTrue(res == ref)
 
-    def test_childrenIterator(self):
-        t = TestTree.getTree()
+    def test_children_iterator(self):
+        t = TestTree.get_tree()
 
         ref = [[],
                [],
@@ -196,41 +196,41 @@ class TestTree(unittest.TestCase):
                 res.append(c)
             self.assertTrue(res == ref[v])
 
-    def test_treeAccumulator(self):
-        tree = TestTree.getTree()
-        input = np.asarray((1, 1, 1, 1, 1, 1, 1, 1))
+    def test_tree_accumulator(self):
+        tree = TestTree.get_tree()
+        input_array = np.asarray((1, 1, 1, 1, 1, 1, 1, 1))
 
-        res1 = tree.accumulateParallel(input, hg.Accumulators.sum)
+        res1 = tree.accumulate_parallel(input_array, hg.Accumulators.sum)
         ref1 = np.asarray((0, 0, 0, 0, 0, 2, 3, 2))
         self.assertTrue(np.allclose(ref1, res1))
 
-        leafData = np.asarray((1, 1, 1, 1, 1))
-        res2 = tree.accumulateSequential(leafData, hg.Accumulators.sum)
+        leaf_data = np.asarray((1, 1, 1, 1, 1))
+        res2 = tree.accumulate_sequential(leaf_data, hg.Accumulators.sum)
         ref2 = np.asarray((1, 1, 1, 1, 1, 2, 3, 5))
         self.assertTrue(np.allclose(ref2, res2))
 
-        res3 = tree.accumulateAndAddSequential(input, leafData, hg.Accumulators.max)
+        res3 = tree.accumulate_and_add_sequential(input_array, leaf_data, hg.Accumulators.max)
         ref3 = np.asarray((1, 1, 1, 1, 1, 2, 2, 3))
         self.assertTrue(np.allclose(ref3, res3))
 
-        input = np.asarray((1, 2, 1, 2, 1, 1, 4, 5))
-        res4 = tree.accumulateAndMaxSequential(input, leafData, hg.Accumulators.sum)
+        input_array = np.asarray((1, 2, 1, 2, 1, 1, 4, 5))
+        res4 = tree.accumulate_and_max_sequential(input_array, leaf_data, hg.Accumulators.sum)
         ref4 = np.asarray((1, 1, 1, 1, 1, 2, 4, 6))
         self.assertTrue(np.allclose(ref4, res4))
 
-        input = np.asarray((1, 2, 1, 2, 1, 2, 3, 1))
-        res5 = tree.accumulateAndMultiplySequential(input, leafData, hg.Accumulators.sum)
+        input_array = np.asarray((1, 2, 1, 2, 1, 2, 3, 1))
+        res5 = tree.accumulate_and_multiply_sequential(input_array, leaf_data, hg.Accumulators.sum)
         ref5 = np.asarray((1, 1, 1, 1, 1, 4, 9, 13))
         self.assertTrue(np.allclose(ref5, res5))
 
-        input = np.asarray((1, 2, 1, 2, 1, 4, 2, 10))
-        res6 = tree.accumulateAndMinSequential(input, leafData, hg.Accumulators.sum)
+        input_array = np.asarray((1, 2, 1, 2, 1, 4, 2, 10))
+        res6 = tree.accumulate_and_min_sequential(input_array, leaf_data, hg.Accumulators.sum)
         ref6 = np.asarray((1, 1, 1, 1, 1, 2, 2, 4))
         self.assertTrue(np.allclose(ref6, res6))
 
-    def test_treeAccumulatorVec(self):
-        tree = TestTree.getTree()
-        input = np.asarray(((1, 0),
+    def test_tree_accumulatorVec(self):
+        tree = TestTree.get_tree()
+        input_array = np.asarray(((1, 0),
                             (1, 1),
                             (1, 2),
                             (1, 3),
@@ -239,7 +239,7 @@ class TestTree(unittest.TestCase):
                             (1, 6),
                             (1, 7)))
 
-        res1 = tree.accumulateParallel(input, hg.Accumulators.sum)
+        res1 = tree.accumulate_parallel(input_array, hg.Accumulators.sum)
         ref1 = np.asarray(((0, 0),
                            (0, 0),
                            (0, 0),
@@ -250,12 +250,12 @@ class TestTree(unittest.TestCase):
                            (2, 11)))
         self.assertTrue(np.allclose(ref1, res1))
 
-        leafData = np.asarray(((1, 0),
-                               (1, 1),
-                               (1, 2),
-                               (1, 3),
-                               (1, 4)))
-        res2 = tree.accumulateSequential(leafData, hg.Accumulators.sum)
+        leaf_data = np.asarray(((1, 0),
+                                (1, 1),
+                                (1, 2),
+                                (1, 3),
+                                (1, 4)))
+        res2 = tree.accumulate_sequential(leaf_data, hg.Accumulators.sum)
         ref2 = np.asarray(((1, 0),
                            (1, 1),
                            (1, 2),
@@ -266,7 +266,7 @@ class TestTree(unittest.TestCase):
                            (5, 10)))
         self.assertTrue(np.allclose(ref2, res2))
 
-        res3 = tree.accumulateAndAddSequential(input, leafData, hg.Accumulators.sum)
+        res3 = tree.accumulate_and_add_sequential(input_array, leaf_data, hg.Accumulators.sum)
         ref3 = np.asarray(((1, 0),
                            (1, 1),
                            (1, 2),
@@ -277,16 +277,16 @@ class TestTree(unittest.TestCase):
                            (8, 28)))
         self.assertTrue(np.allclose(ref3, res3))
 
-    def test_treePropagate(self):
-        tree = TestTree.getTree()
-        input = np.asarray(((1, 8), (2, 7), (3, 6), (4, 5), (5, 4), (6, 3), (7, 2), (8, 1)), dtype=np.float64)
+    def test_tree_propagate(self):
+        tree = TestTree.get_tree()
+        input_array = np.asarray(((1, 8), (2, 7), (3, 6), (4, 5), (5, 4), (6, 3), (7, 2), (8, 1)), dtype=np.float64)
         condition = np.asarray((True, False, True, False, True, True, False, False))
 
-        output = tree.propagateParallel(input, condition)
+        output = tree.propagate_parallel(input_array, condition)
         ref = np.asarray(((6, 3), (2, 7), (7, 2), (4, 5), (7, 2), (8, 1), (7, 2), (8, 1)))
         self.assertTrue(np.allclose(ref, output))
 
-        output2 = tree.propagateSequential(input, condition)
+        output2 = tree.propagate_sequential(input_array, condition)
         ref2 = np.asarray(((8, 1), (2, 7), (7, 2), (4, 5), (7, 2), (8, 1), (7, 2), (8, 1)))
         self.assertTrue(np.allclose(ref2, output2))
 

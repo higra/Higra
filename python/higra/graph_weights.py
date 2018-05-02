@@ -1,44 +1,44 @@
 import higra as hg
 
 
-@hg.dataConsumer("vertexWeights")
-def weightGraph(graph, vertexWeights, weightFunction):
+@hg.data_consumer("vertex_weights")
+def weight_graph(graph, vertex_weights, weight_function):
     """
     Compute the edge weights of a graph using source and target vertices values
     and specified weighting function (see WeightFunction enumeration).
 
-    Set the attribute "vertexWeights" of graph with the provided values.
-    Set the attribute "edgeWeights" of graph with the computed values.
+    Set the attribute "vertex_weights" of graph with the provided values.
+    Set the attribute "edge_weights" of graph with the computed values.
 
     :param graph:
-    :param vertexWeights:
-    :param weightFunction: in WeightFunction enumeration
-    :return: edgeWeights
+    :param vertex_weights:
+    :param weight_function: in WeightFunction enumeration
+    :return: edge_weights
     """
-    assert vertexWeights.shape[
-               0] == graph.numVertices(), "The size of vertexWeights must be equal to the number of vertices of the graph."
+    assert vertex_weights.shape[0] == graph.num_vertices(), \
+        "The size of vertex_weights must be equal to the number of vertices of the graph."
 
-    edgeWeights = hg._weightGraph(graph, vertexWeights, weightFunction)
-    hg.setAttribute(graph, "vertexWeights", vertexWeights)
-    hg.setAttribute(graph, "edgeWeights", edgeWeights)
+    edge_weights = hg._weight_graph(graph, vertex_weights, weight_function)
+    hg.set_attribute(graph, "vertex_weights", vertex_weights)
+    hg.set_attribute(graph, "edge_weights", edge_weights)
 
-    return edgeWeights
+    return edge_weights
 
 
-def weightGraphFunc(graph, weightFunction):
+def weight_graph_function(graph, weight_function):
     """
     Compute the edge weights of a graph with the given weighting function.
     The weighting function takes the vertex index of the extremities of an edge and returns the weight of the edge (scalar)
 
-    Set the attribute "edgeWeights" of graph with the computed values.
+    Set the attribute "edge_weights" of graph with the computed values.
 
     :param graph:
-    :param weightFunction, eg. lambda i, j: abs(data[i]-[j])
-    :return: edgeWeights
+    :param weight_function: eg. lambda i, j: abs(data[i]-[j])
+    :return: edge_weights
     """
 
-    edgeWeights = hg._weightGraph(graph, weightFunction)
+    edge_weights = hg._weight_graph(graph, weight_function)
 
-    hg.setAttribute(graph, "edgeWeights", edgeWeights)
+    hg.set_attribute(graph, "edge_weights", edge_weights)
 
-    return edgeWeights
+    return edge_weights

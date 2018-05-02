@@ -10,7 +10,7 @@ import os
 import os.path
 
 
-def silentremove(filename):
+def silent_remove(filename):
     try:
         os.remove(filename)
     except:
@@ -19,50 +19,50 @@ def silentremove(filename):
 
 class TestPinkGraphIO(unittest.TestCase):
 
-    def test_graphRead(self):
-        graph, vertexWeights, edgeWeights, shape = hg._readGraphPink("../ressources/test.graph")
+    def test_graph_read(self):
+        graph, vertex_weights, edge_weights, shape = hg._read_graph_pink("../ressources/test.graph")
 
-        edgesRef = []
+        edges_ref = []
         for i in range(14):
-            edgesRef.append((i, i + 1))
+            edges_ref.append((i, i + 1))
 
-        vertexWeightsRef = np.arange(1, 16)
-        edgesWeightsRef = (3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0)
+        vertex_weights_ref = np.arange(1, 16)
+        edges_weights_ref = (3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0)
 
         edges = []
         for e in graph.edges():
             edges.append(e)
 
         self.assertTrue(shape == [3, 5])
-        self.assertTrue(edges == edgesRef)
-        self.assertTrue(np.allclose(vertexWeights, vertexWeightsRef))
-        self.assertTrue(np.allclose(edgeWeights, edgesWeightsRef))
+        self.assertTrue(edges == edges_ref)
+        self.assertTrue(np.allclose(vertex_weights, vertex_weights_ref))
+        self.assertTrue(np.allclose(edge_weights, edges_weights_ref))
 
     def test_graphWrite(self):
         filename = "testWriteGraphPink.graph"
-        silentremove(filename)
+        silent_remove(filename)
 
-        vertexWeights = np.arange(1, 16)
-        edgesWeights = (3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0)
+        vertex_weights = np.arange(1, 16)
+        edges_weights = (3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0)
         shape = (3, 5)
 
         graph = hg.UndirectedGraph(15)
         for i in range(14):
-            graph.addEdge(i, i + 1)
+            graph.add_edge(i, i + 1)
 
-        hg.saveGraphPink(filename, graph, vertexWeights, edgesWeights, shape)
+        hg.save_graph_pink(filename, graph, vertex_weights, edges_weights, shape)
 
         self.assertTrue(os.path.exists(filename))
 
         with open(filename, 'r') as f:
             data = f.read()
 
-        silentremove(filename)
+        silent_remove(filename)
 
         with open("../ressources/test.graph", 'r') as f:
-            dataRef = f.read()
+            data_ref = f.read()
 
-        self.assertTrue(data == dataRef)
+        self.assertTrue(data == data_ref)
 
 
 if __name__ == '__main__':
