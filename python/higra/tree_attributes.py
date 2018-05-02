@@ -5,7 +5,13 @@ import higra as hg
 
 @hg.data_provider("vertex_area")
 def attribute_vertex_area(graph):
-    return np.ones((graph.num_vertices(),))
+    return np.ones((graph.num_vertices(),), dtype=np.int64)
+
+
+@hg.data_provider("vertex_perimeter")
+def attribute_vertex_perimeter(graph):
+    vertices = np.arange(graph.num_vertices(), dtype=np.int64)
+    return graph.out_degree(vertices)
 
 
 @hg.data_provider("area")
@@ -19,7 +25,7 @@ def attribute_area(tree, leaf_area):
 def attribute_volume(tree, area, altitudes):
     height = np.abs(altitudes[tree.parents()] - altitudes)
     height = height * area
-    volume_leaves = height[:tree.numLeaves()]
+    volume_leaves = height[:tree.num_leaves()]
     return tree.accumulate_and_add_sequential(height, volume_leaves, hg.Accumulators.sum)
 
 
@@ -39,18 +45,17 @@ def attribute_frontier_length(tree, lca_map):
 
 
 @hg.data_provider("perimeter_length")
-@hg.data_consumer("leaf_graph", "frontier_length")
-def attribute_perimeter(tree, leaf_graph, frontier_length):
-    vertices = np.arange(tree.numLeaves())
-    perimeter_leaves = leaf_graph.out_degree(vertices)
-    return tree.accumulate_and_add_sequential(-2 * frontier_length, perimeter_leaves, hg.Accumulators.sum)
+@hg.data_consumer("frontier_length", leaf_perimeter="leaf_graph.vertex_perimeter")
+def attribute_perimeter_length(tree, leaf_perimeter, frontier_length):
+    return tree.accumulate_and_add_sequential(-2 * frontier_length, leaf_perimeter, hg.Accumulators.sum)
 
 
 @hg.data_provider("compactness")
 @hg.data_consumer("area", "perimeter_length")
-def attribute_compactness(area, perimeter_length):
-    compac = area / (perimeter_length * perimeter_length)
-    return compac / np.max(compac)
+def attribute_compactness(tree, area, perimeter_length):
+    compactness = area / (perimeter_length * perimeter_length)
+    max_compactness = np.nanmax(compactness)
+    return compactness / max_compactness
 
 
 @hg.data_provider("mean_weights")
