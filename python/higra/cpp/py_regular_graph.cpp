@@ -65,4 +65,5 @@ void py_init_regular_graph(pybind11::module &m) {
     py_init_regular_graph_impl<2>(m);
     py_init_regular_graph_impl<3>(m);
     py_init_regular_graph_impl<4>(m);
+    py_init_regular_graph_impl<5>(m);
 }
