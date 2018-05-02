@@ -96,151 +96,74 @@ struct def_accumulate_sequential {
     }
 };
 
-template<typename graph_t>
-struct def_accumulate_and_add_sequential {
-    template<typename value_t, typename C>
-    static
-    void def(C &c, const char *doc) {
-        c.def("accumulateAndAddSequential",
-              [](const graph_t &tree, const xt::pyarray<value_t> &input, const xt::pyarray<value_t> &vertex_data,
-                 hg::accumulators accumulator) {
-                  switch (accumulator) {
-                      case hg::accumulators::min:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_min<value_t>(),
-                                                                       std::plus<xt::xarray<value_t>>());
-                          break;
-                      case hg::accumulators::max:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_max<value_t>(),
-                                                                       std::plus<xt::xarray<value_t>>());
-                          break;
-                      case hg::accumulators::mean:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_mean<value_t>(),
-                                                                       std::plus<xt::xarray<value_t>>());
-                          break;
-                      case hg::accumulators::counter:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_counter(),
-                                                                       std::plus<xt::xarray<value_t>>());
-                          break;
-                      case hg::accumulators::sum:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_sum<value_t>(),
-                                                                       std::plus<xt::xarray<value_t>>());
-                          break;
-                      case hg::accumulators::prod:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_prod<value_t>(),
-                                                                       std::plus<xt::xarray<value_t>>());
-                          break;
-                  }
-                  throw std::runtime_error("Unknown accumulator.");
-              },
-              doc,
-              py::arg("inputArray"),
-              py::arg("leafDataArray"),
-              py::arg("accumulator"));
-    }
-};
 
-
-template<typename graph_t>
-struct def_accumulate_and_multiply_sequential {
-    template<typename value_t, typename C>
-    static
-    void def(C &c, const char *doc) {
-        c.def("accumulateAndMultiplySequential",
-              [](const graph_t &tree, const xt::pyarray<value_t> &input, const xt::pyarray<value_t> &vertex_data,
-                 hg::accumulators accumulator) {
-                  switch (accumulator) {
-                      case hg::accumulators::min:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_min<value_t>(),
-                                                                       std::multiplies<xt::xarray<value_t>>());
-                          break;
-                      case hg::accumulators::max:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_max<value_t>(),
-                                                                       std::multiplies<xt::xarray<value_t>>());
-                          break;
-                      case hg::accumulators::mean:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_mean<value_t>(),
-                                                                       std::multiplies<xt::xarray<value_t>>());
-                          break;
-                      case hg::accumulators::counter:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_counter(),
-                                                                       std::multiplies<xt::xarray<value_t>>());
-                          break;
-                      case hg::accumulators::sum:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_sum<value_t>(),
-                                                                       std::multiplies<xt::xarray<value_t>>());
-                          break;
-                      case hg::accumulators::prod:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_prod<value_t>(),
-                                                                       std::multiplies<xt::xarray<value_t>>());
-                          break;
-                  }
-                  throw std::runtime_error("Unknown accumulator.");
-              },
-              doc,
-              py::arg("inputArray"),
-              py::arg("leafDataArray"),
-              py::arg("accumulator"));
-    }
-};
-
-struct xtmaxer{
+struct functorMax {
     template<typename T1, typename T2>
-    auto operator()(T1 && a, T2 && b) {
+    auto operator()(T1 &&a, T2 &&b) {
         return xt::maximum(std::forward<T1>(a), std::forward<T2>(b));
     }
 };
 
+struct functorMin {
+    template<typename T1, typename T2>
+    auto operator()(T1 &&a, T2 &&b) {
+        return xt::minimum(std::forward<T1>(a), std::forward<T2>(b));
+    }
+};
+
+struct functorPlus {
+    template<typename T1, typename T2>
+    auto operator()(T1 &&a, T2 &&b) {
+        return a + b;
+    }
+};
+
+struct functorMultiply {
+    template<typename T1, typename T2>
+    auto operator()(T1 &&a, T2 &&b) {
+        return a * b;
+    }
+};
+
+
 template<typename graph_t>
-struct def_accumulate_and_max_sequential {
-    template<typename value_t, typename C>
+struct def_accumulate_and_combine_sequential {
+    template<typename value_t, typename C, typename F>
     static
-    void def(C &c, const char *doc) {
-        c.def("accumulateAndMaxSequential",
-              [](const graph_t &tree, const xt::pyarray<value_t> &input, const xt::pyarray<value_t> &vertex_data,
+    void def(C &c, const char *doc, const char *name, const F &f) {
+        c.def(name,
+              [&f](const graph_t &tree, const xt::pyarray<value_t> &input, const xt::pyarray<value_t> &vertex_data,
                  hg::accumulators accumulator) {
-                  xtmaxer fun;
                   switch (accumulator) {
                       case hg::accumulators::min:
                           return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
                                                                        hg::accumulator_min<value_t>(),
-                                                                       fun);
+                                                                       f);
                           break;
                       case hg::accumulators::max:
                           return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
                                                                        hg::accumulator_max<value_t>(),
-                                                                       fun);
+                                                                       f);
                           break;
                       case hg::accumulators::mean:
                           return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
                                                                        hg::accumulator_mean<value_t>(),
-                                                                       fun);
+                                                                       f);
                           break;
                       case hg::accumulators::counter:
                           return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
                                                                        hg::accumulator_counter(),
-                                                                       fun);
+                                                                       f);
                           break;
                       case hg::accumulators::sum:
                           return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
                                                                        hg::accumulator_sum<value_t>(),
-                                                                       fun);
+                                                                       f);
                           break;
                       case hg::accumulators::prod:
                           return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
                                                                        hg::accumulator_prod<value_t>(),
-                                                                       fun);
+                                                                       f);
                           break;
                   }
                   throw std::runtime_error("Unknown accumulator.");
@@ -251,6 +174,9 @@ struct def_accumulate_and_max_sequential {
               py::arg("accumulator"));
     }
 };
+
+
+
 
 
 template<typename graph_t>
@@ -346,23 +272,37 @@ void py_init_tree_graph(pybind11::module &m) {
                      "For each leaf node i, output(i) = leafData(i)."
                      "For each node i from the leaves (excluded) to the root, output(i) = accumulate(output(children(i)))");
 
-    add_type_overloads<def_accumulate_and_add_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
+    add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (c,
              "Performs a sequential accumulation of node values from the leaves to the root and add the result with the input array."
                      "For each leaf node i, output(i) = leafData(i)."
-                     "For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))");
+             "For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))",
+             "accumulateAndAddSequential",
+             functorPlus());
 
-    add_type_overloads<def_accumulate_and_multiply_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
+    add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (c,
              "Performs a sequential accumulation of node values from the leaves to the root and multiply the result with the input array."
-                     "For each leaf node i, output(i) = leafData(i)."
-                     "For each node i from the leaves (excluded) to the root, output(i) = input(i) * accumulate(output(children(i)))");
+             "For each leaf node i, output(i) = leafData(i)."
+             "For each node i from the leaves (excluded) to the root, output(i) = input(i) * accumulate(output(children(i)))",
+             "accumulateAndMultiplySequential",
+             functorMultiply());
 
-    add_type_overloads<def_accumulate_and_max_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
+    add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (c,
              "Performs a sequential accumulation of node values from the leaves to the root and max the result with the input array."
-                     "For each leaf node i, output(i) = leafData(i)."
-                     "For each node i from the leaves (excluded) to the root, output(i) = max(input(i),accumulate(output(children(i))))");
+             "For each leaf node i, output(i) = leafData(i)."
+             "For each node i from the leaves (excluded) to the root, output(i) = max(input(i), accumulate(output(children(i))))",
+             "accumulateAndMaxSequential",
+             functorMax());
+
+    add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
+            (c,
+             "Performs a sequential accumulation of node values from the leaves to the root and min the result with the input array."
+             "For each leaf node i, output(i) = leafData(i)."
+             "For each node i from the leaves (excluded) to the root, output(i) = min(input(i), accumulate(output(children(i))))",
+             "accumulateAndMinSequential",
+             functorMin());
 
     add_type_overloads<def_propagate_parallel<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (c,

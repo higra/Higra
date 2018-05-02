@@ -213,6 +213,21 @@ class TestTree(unittest.TestCase):
         ref3 = np.asarray((1, 1, 1, 1, 1, 2, 2, 3))
         self.assertTrue(np.allclose(ref3, res3))
 
+        input = np.asarray((1, 2, 1, 2, 1, 1, 4, 5))
+        res4 = tree.accumulateAndMaxSequential(input, leafData, hg.Accumulators.sum)
+        ref4 = np.asarray((1, 1, 1, 1, 1, 2, 4, 6))
+        self.assertTrue(np.allclose(ref4, res4))
+
+        input = np.asarray((1, 2, 1, 2, 1, 2, 3, 1))
+        res5 = tree.accumulateAndMultiplySequential(input, leafData, hg.Accumulators.sum)
+        ref5 = np.asarray((1, 1, 1, 1, 1, 4, 9, 13))
+        self.assertTrue(np.allclose(ref5, res5))
+
+        input = np.asarray((1, 2, 1, 2, 1, 4, 2, 10))
+        res6 = tree.accumulateAndMinSequential(input, leafData, hg.Accumulators.sum)
+        ref6 = np.asarray((1, 1, 1, 1, 1, 2, 2, 4))
+        self.assertTrue(np.allclose(ref6, res6))
+
     def test_treeAccumulatorVec(self):
         tree = TestTree.getTree()
         input = np.asarray(((1, 0),
