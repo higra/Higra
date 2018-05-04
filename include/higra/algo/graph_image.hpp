@@ -53,7 +53,7 @@ namespace hg {
 
         long border = (add_extra_border) ? 1 : -1;
 
-        std::vector<long> res_shape{shape[0] * 2 + border, shape[1] * 2 + border};
+        std::array<long, 2> res_shape{shape[0] * 2 + border, shape[1] * 2 + border};
 
         array_2d <result_type> res = xt::zeros<result_type>(res_shape);
         // workaround for current bug in xscalar stepper (to be removde after 1.15.9)
@@ -107,7 +107,7 @@ namespace hg {
 
         long border = (extra_border) ? 0 : 1;
 
-        std::vector<long> res_shape{(long) shape[0] / 2 + border, (long) shape[1] / 2 + border};
+        std::array<long, 2> res_shape{(long) shape[0] / 2 + border, (long) shape[1] / 2 + border};
         embedding_grid_2d res_embedding(res_shape);
 
         auto g = get_4_adjacency_graph(res_embedding);
