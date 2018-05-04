@@ -14,18 +14,11 @@
 
 namespace hg {
 
-
-    namespace hierarchy_core_internal {
-
-
-    }
-
-
     template<typename graph_t, typename T>
     auto bptCanonical(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
         auto &edge_weights = xedge_weights.derived_cast();
 
-        xt::xarray<std::size_t> sorted_edges_indices = xt::arange(num_edges(graph));
+        array_1d<std::size_t> sorted_edges_indices = xt::arange(num_edges(graph));
         std::stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
                          [&edge_weights](std::size_t i, std::size_t j) { return edge_weights(i) < edge_weights(j); });
 
@@ -36,10 +29,10 @@ namespace hg {
 
         union_find uf(num_points);
 
-        xt::xarray<std::size_t> roots = xt::arange<std::size_t>(num_points);
+        array_1d<std::size_t> roots = xt::arange<std::size_t>(num_points);
 
-        xt::xarray<std::size_t> parents = xt::arange<std::size_t>(num_points * 2 - 1);
-        xt::xarray<typename T::value_type> levels = xt::zeros<std::size_t>({num_points * 2 - 1});
+        array_1d<std::size_t> parents = xt::arange<std::size_t>(num_points * 2 - 1);
+        array_1d<typename T::value_type> levels = xt::zeros<std::size_t>({num_points * 2 - 1});
 
         std::size_t num_nodes = num_points;
         std::size_t num_edge_found = 0;
@@ -120,7 +113,7 @@ namespace hg {
             }
         }
         node_map(node_map.size() - 1) = t.root();
-        return std::make_pair(tree(new_parent), node_map);
+        return std::make_pair(tree(new_parent), std::move(node_map));
     };
 
 }
