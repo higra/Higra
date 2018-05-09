@@ -12,9 +12,9 @@ void py_init_accumulators(pybind11::module &m) {
 
     // only exposes enumeration
     py::enum_<hg::accumulators>(m, "Accumulators")
-#define DEF(rawXKCD, dataXKCD, acc_name) \
-        .value(HG_XSTR(acc_name), hg::accumulators::acc_name)
-            HG_FOREACH(DEF, HG_ACCUMULATORS);
-#undef DEF
-
+            .value("min", hg::accumulators::min)
+            .value("max", hg::accumulators::max)
+            .value("counter", hg::accumulators::counter)
+            .value("sum", hg::accumulators::sum)
+            .value("prod", hg::accumulators::prod);
 }

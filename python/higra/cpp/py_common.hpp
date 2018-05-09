@@ -20,3 +20,4 @@ add_type_overloads(module_t & m, const char * doc, Args&&... args){
     F::template def<T1>(m, doc, std::forward<Args>(args)...);
     add_type_overloads<F, Ts...>(m, "", std::forward<Args>(args)...);
 };
+
