@@ -27,17 +27,17 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
 
         xt::xtensor<ulong, 1> input{1, 1, 1, 1, 1, 1, 1, 1};
 
-        auto res1 = accumulate_parallel(tree, input, hg::accumulator_sum<ulong>());
+        auto res1 = accumulate_parallel(tree, input, hg::accumulator_sum());
         xt::xtensor<ulong, 1> ref1{0, 0, 0, 0, 0, 2, 3, 2};
         BOOST_CHECK(xt::allclose(ref1, res1));
 
         xt::xtensor<ulong, 1> vertex_data{1, 1, 1, 1, 1};
-        auto res2 = accumulate_sequential(tree, vertex_data, hg::accumulator_sum<ulong>());
+        auto res2 = accumulate_sequential(tree, vertex_data, hg::accumulator_sum());
         xt::xtensor<ulong, 1> ref2{1, 1, 1, 1, 1, 2, 3, 5};
         BOOST_CHECK(xt::allclose(ref2, res2));
 
-        auto res3 = accumulate_and_combine_sequential(tree, input, vertex_data, hg::accumulator_max<ulong>(),
-                                          std::plus<xt::xarray<ulong>>());
+        auto res3 = accumulate_and_combine_sequential(tree, input, vertex_data, hg::accumulator_max(),
+                                                      std::plus<ulong>());
         xt::xtensor<ulong, 1> ref3{1, 1, 1, 1, 1, 2, 2, 3};
         BOOST_CHECK(xt::allclose(ref3, res3));
 
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
                                     {1, 6},
                                     {1, 7}};
 
-        auto res1 = accumulate_parallel(tree, input, hg::accumulator_sum<ulong>());
+        auto res1 = accumulate_parallel(tree, input, hg::accumulator_sum());
         xt::xtensor<ulong, 2> ref1{{0, 0},
                                    {0, 0},
                                    {0, 0},
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
                                           {1, 2},
                                           {1, 3},
                                           {1, 4}};
-        auto res2 = accumulate_sequential(tree, vertex_data, hg::accumulator_sum<ulong>());
+        auto res2 = accumulate_sequential(tree, vertex_data, hg::accumulator_sum());
         xt::xtensor<ulong, 2> ref2{{1, 0},
                                    {1, 1},
                                    {1, 2},
@@ -84,8 +84,8 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
                                    {5, 10}};
         BOOST_CHECK(xt::allclose(ref2, res2));
 
-        auto res3 = accumulate_and_combine_sequential(tree, input, vertex_data, hg::accumulator_sum<ulong>(),
-                                          std::plus<xt::xarray<ulong>>());
+        auto res3 = accumulate_and_combine_sequential(tree, input, vertex_data, hg::accumulator_sum(),
+                                                      std::plus<ulong>());
         xt::xtensor<ulong, 2> ref3{{1, 0},
                                    {1, 1},
                                    {1, 2},

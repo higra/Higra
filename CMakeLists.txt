@@ -55,6 +55,15 @@ if (USE_SIMD)
 endif(USE_SIMD)
 
 
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+    option(DO_BENCHMARK
+            "Execute benchmark suit." ON)
+else ()
+    option(DO_BENCHMARK
+            "Execute benchmark suit." OFF)
+endif ()
+
+
 #add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 
 set(PYBIND11_CPP_STANDARD -std=c++14)
@@ -76,3 +85,8 @@ if (DO_TEST)
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             )
 endif(DO_TEST)
+
+
+if (DO_BENCHMARK)
+    add_subdirectory(benchmark)
+endif (DO_BENCHMARK)

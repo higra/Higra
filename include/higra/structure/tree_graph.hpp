@@ -194,13 +194,13 @@ namespace hg {
 
         template<>
         inline
-        auto _deference_parent<true>(const tree::vertex_descriptor source, const tree::vertex_descriptor parent) {
+        auto _deference_parent<true>(const tree::vertex_descriptor source, const tree::vertex_descriptor) {
             return source;
         }
 
         template<>
         inline
-        auto _deference_parent<false>(const tree::vertex_descriptor source, const tree::vertex_descriptor parent) {
+        auto _deference_parent<false>(const tree::vertex_descriptor, const tree::vertex_descriptor parent) {
             return parent;
         }
 

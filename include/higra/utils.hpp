@@ -31,8 +31,6 @@
 #endif
 
 
-
-
 #include <boost/preprocessor/seq/for_each.hpp>
 
 #define HG_XSTR(a) HG_STR(a)
@@ -98,3 +96,5 @@ namespace xt {
     }
 
 }
+
+
