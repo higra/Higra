@@ -57,7 +57,9 @@ namespace hg {
             template<bool vectorial2, typename T2, typename combinator_t, typename T1=self_type>
             std::enable_if_t<T1::is_vectorial> combine(const light_axis_view<vectorial2, T2> &rhs, combinator_t fun) {
                 static_assert(T1::is_vectorial == vectorial2, "Mixing vectorial and non vectorial soft axis view!");
-                for (auto v = begin(), r = rhs.begin(); v != end(); v++, r++) {
+                auto r = rhs.begin();
+                auto v = begin();
+                for (; v != end(); v++, r++) {
                     *v = fun(*v, *r);
                 }
             }
@@ -75,7 +77,9 @@ namespace hg {
             std::enable_if_t<T1::is_vectorial> assign(T1 &lhs, const T2 &rhs) {
                 static_assert(T1::is_vectorial == T2::is_vectorial,
                               "Mixing vectorial and non vectorial soft axis view!");
-                for (auto v = begin(), r = rhs.begin(); v != end(); v++, r++) {
+                auto r = rhs.begin();
+                auto v = begin();
+                for (; v != end(); v++, r++) {
                     *v = *r;
                 }
             }
