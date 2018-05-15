@@ -6,13 +6,12 @@
 
 #include <functional>
 #include "details/graph_concepts.hpp"
-#include <boost/iterator/counting_iterator.hpp>
+#include "details/range_iterator.hpp"
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <vector>
 #include <utility>
 #include "../utils.hpp"
-#include <boost/range/irange.hpp>
 #include "array.hpp"
 
 namespace hg {
@@ -53,7 +52,7 @@ namespace hg {
             using traversal_category = tree_graph_traversal_category;
 
             // VertexListGraph associated types
-            using vertex_iterator = boost::counting_iterator<vertex_descriptor>;
+            using vertex_iterator = counting_iterator<vertex_descriptor>;
             using vertices_size_type = std::size_t;
 
             //AdjacencyGraph associated types
@@ -61,7 +60,7 @@ namespace hg {
 
             // custom edge index iterators
             using edge_index_t = std::size_t;
-            using edge_index_iterator = boost::counting_iterator<edge_index_t>;
+            using edge_index_iterator = counting_iterator<edge_index_t>;
             using out_edge_index_iterator = tree_graph_adjacent_vertex_iterator<true>;
             using in_edge_index_iterator = out_edge_index_iterator;
 
@@ -69,7 +68,7 @@ namespace hg {
             using edges_size_type = std::size_t;
             using _edge_iterator_transform_function = std::function<edge_descriptor(edge_index_t)>;
             using edge_iterator = boost::transform_iterator<_edge_iterator_transform_function,
-                    boost::counting_iterator<vertex_descriptor>>;
+                    counting_iterator < vertex_descriptor>>;
 
 
             // IncidenceGraph associated types
@@ -153,21 +152,21 @@ namespace hg {
             }
 
             const auto iterate_on_leaves() const {
-                return boost::irange<long>(0, _num_leaves);
+                return irange<long>(0, _num_leaves);
             }
 
             const auto iterate_from_leaves_to_root(leaves_it leaves_opt = leaves_it::include,
                                                    root_it root_opt = root_it::include) const {
                 vertex_descriptor start = (leaves_opt == leaves_it::include) ? 0 : num_leaves();
                 vertex_descriptor end = (root_opt == root_it::include) ? _num_vertices : _num_vertices - 1;
-                return boost::irange<long>(start, end);
+                return irange<long>(start, end);
             }
 
             const auto iterate_from_root_to_leaves(leaves_it leaves_opt = leaves_it::include,
                                                    root_it root_opt = root_it::include) const {
                 vertex_descriptor end = (leaves_opt == leaves_it::include) ? -1 : num_leaves() - 1;
                 vertex_descriptor start = (root_opt == root_it::include) ? _num_vertices - 1 : _num_vertices - 2;
-                return boost::irange<long>(start, end, -1);
+                return irange<long>(start, end, -1);
             }
 
 
@@ -365,9 +364,9 @@ namespace hg {
             return std::make_pair(i, g.parent(i));
         };
         return std::make_pair(
-                it(boost::counting_iterator<hg::tree::vertex_descriptor>(0),
+                it(counting_iterator<hg::tree::vertex_descriptor>(0),
                    fun),                 // The first iterator position
-                it(boost::counting_iterator<hg::tree::vertex_descriptor>(g.num_edges()),
+                it(counting_iterator<hg::tree::vertex_descriptor>(g.num_edges()),
                    fun)); // The last iterator position
     }
 

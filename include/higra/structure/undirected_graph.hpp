@@ -6,7 +6,7 @@
 
 #include <functional>
 #include "details/graph_concepts.hpp"
-#include <boost/iterator/counting_iterator.hpp>
+#include "details/range_iterator.hpp"
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <vector>
@@ -61,7 +61,7 @@ namespace hg {
             using traversal_category = undirected_graph_traversal_category;
 
             // VertexListGraph associated types
-            using vertex_iterator = boost::counting_iterator<vertex_descriptor>;
+            using vertex_iterator = counting_iterator<vertex_descriptor>;
             using vertices_size_type = std::size_t;
 
             // EdgeListGraph associated types
@@ -86,7 +86,7 @@ namespace hg {
 
             // custom edge index iterators
             using edge_index_t = std::size_t;
-            using edge_index_iterator = boost::counting_iterator<edge_index_t>;
+            using edge_index_iterator = counting_iterator<edge_index_t>;
             using out_edge_index_iterator = adjacency_iterator;
             using in_edge_index_iterator = adjacency_iterator;
 

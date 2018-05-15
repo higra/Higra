@@ -6,8 +6,8 @@
 #pragma once
 
 #include "details/graph_concepts.hpp"
+#include "details/range_iterator.hpp"
 #include <functional>
-#include <boost/iterator/counting_iterator.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <vector>
@@ -49,7 +49,7 @@ namespace hg {
             using traversal_category = regular_graph_traversal_category;
 
             // VertexListGraph associated types
-            using vertex_iterator = boost::counting_iterator<vertex_descriptor>;
+            using vertex_iterator = counting_iterator<vertex_descriptor>;
             using vertices_size_type = std::size_t;
 
             //AdjacencyGraph associated types
