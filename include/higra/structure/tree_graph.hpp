@@ -5,7 +5,7 @@
 #pragma once
 
 #include <functional>
-#include <boost/graph/graph_concepts.hpp>
+#include "details/graph_concepts.hpp"
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
@@ -35,32 +35,28 @@ namespace hg {
         struct tree_graph_adjacent_vertex_iterator;
 
         struct tree_graph_traversal_category :
-                virtual public boost::incidence_graph_tag,
-                virtual public boost::bidirectional_graph_tag,
-                virtual public boost::adjacency_graph_tag,
-                virtual public boost::vertex_list_graph_tag {
+                virtual public graph::incidence_graph_tag,
+                virtual public graph::bidirectional_graph_tag,
+                virtual public graph::adjacency_graph_tag,
+                virtual public graph::vertex_list_graph_tag {
         };
 
         struct tree {
-
-
 
             // Graph associated types
             using vertex_descriptor = std::size_t;
             using children_list_t = std::vector<vertex_descriptor>;
             using children_iterator = children_list_t::const_iterator;
             using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
-            using directed_category = boost::undirected_tag;
-            using edge_parallel_category = boost::disallow_parallel_edge_tag;
+            using directed_category = graph::undirected_tag;
+            using edge_parallel_category = graph::disallow_parallel_edge_tag;
             using traversal_category = tree_graph_traversal_category;
 
             // VertexListGraph associated types
-
             using vertex_iterator = boost::counting_iterator<vertex_descriptor>;
             using vertices_size_type = std::size_t;
 
             //AdjacencyGraph associated types
-
             using adjacency_iterator = tree_graph_adjacent_vertex_iterator<false>;
 
             // custom edge index iterators
@@ -84,7 +80,6 @@ namespace hg {
 
             //BidirectionalGraph associated types
             using in_edge_iterator = out_edge_iterator;
-
 
             template<typename T>
             tree(const xt::xexpression<T> &parents = xt::xarray<vertex_descriptor>({0})) : _parents(parents),
@@ -176,13 +171,12 @@ namespace hg {
             }
 
 
-
         private:
 
             vertex_descriptor _root;
             std::size_t _num_vertices;
             std::size_t _num_leaves;
-            array_1d<vertex_descriptor> _parents;
+            array_1d <vertex_descriptor> _parents;
             std::vector<children_list_t> _children;
         };
 
@@ -256,7 +250,6 @@ namespace hg {
                 }
             }
 
-
             graph_vertex_t _source;
             graph_vertex_t _parent;
 
@@ -268,6 +261,28 @@ namespace hg {
     }
 
     using tree = tree_internal::tree;
+
+    template<>
+    struct graph_traits<hg::tree> {
+        using G = hg::tree;
+
+        using vertex_descriptor = typename G::vertex_descriptor;
+        using edge_descriptor = typename G::edge_descriptor;
+        using edge_iterator = typename G::edge_iterator;
+        using out_edge_iterator = typename G::out_edge_iterator;
+
+        using directed_category = typename G::directed_category;
+        using edge_parallel_category = typename G::edge_parallel_category;
+        using traversal_category = typename G::traversal_category;
+
+        using degree_size_type = typename G::degree_size_type;
+
+        using in_edge_iterator = typename G::in_edge_iterator;
+        using vertex_iterator = typename G::vertex_iterator;
+        using vertices_size_type = typename G::vertices_size_type;
+        using edges_size_type = typename G::edges_size_type;
+        using adjacency_iterator = typename G::adjacency_iterator;
+    };
 
     inline
     std::pair<tree::edge_index_iterator, tree::edge_index_iterator>
@@ -300,57 +315,38 @@ namespace hg {
         return std::make_pair(g.children_cbegin(v), g.children_cend(v));
     }
 
-}
-
-
-namespace boost {
-
-    template<>
-    struct graph_traits<hg::tree> {
-        using G = hg::tree;
-
-        using vertex_descriptor = typename G::vertex_descriptor;
-        using edge_descriptor = typename G::edge_descriptor;
-        using edge_iterator = typename G::edge_iterator;
-        using out_edge_iterator = typename G::out_edge_iterator;
-
-        using directed_category = typename G::directed_category;
-        using edge_parallel_category = typename G::edge_parallel_category;
-        using traversal_category = typename G::traversal_category;
-
-        using degree_size_type = typename G::degree_size_type;
-
-        using in_edge_iterator = typename G::in_edge_iterator;
-        using vertex_iterator = typename G::vertex_iterator;
-        using vertices_size_type = typename G::vertices_size_type;
-        using edges_size_type = typename G::edges_size_type;
-        using adjacency_iterator = typename G::adjacency_iterator;
-    };
-
-    inline hg::tree::vertices_size_type num_vertices(const hg::tree &g) {
+    inline
+    hg::tree::vertices_size_type
+    num_vertices(const hg::tree &g) {
         return g.num_vertices();
     }
 
-    inline hg::tree::edges_size_type num_edges(const hg::tree &g) {
+    inline
+    hg::tree::edges_size_type
+    num_edges(const hg::tree &g) {
         return g.num_edges();
     }
 
-    inline hg::tree::degree_size_type degree(const typename hg::tree::vertex_descriptor v,
-                                             const hg::tree &g) {
+    inline
+    hg::tree::degree_size_type
+    degree(const typename hg::tree::vertex_descriptor v,
+           const hg::tree &g) {
         return g.degree(v);
     }
 
-    inline hg::tree::degree_size_type in_degree(const typename hg::tree::vertex_descriptor v,
-                                                const hg::tree &g) {
+    inline
+    hg::tree::degree_size_type
+    in_degree(const typename hg::tree::vertex_descriptor v,
+              const hg::tree &g) {
         return g.degree(v);
     }
 
-
-    inline hg::tree::degree_size_type out_degree(const typename hg::tree::vertex_descriptor v,
-                                                 const hg::tree &g) {
+    inline
+    hg::tree::degree_size_type
+    out_degree(const typename hg::tree::vertex_descriptor v,
+               const hg::tree &g) {
         return g.degree(v);
     }
-
 
     inline
     std::pair<typename hg::tree::vertex_iterator, typename hg::tree::vertex_iterator>
@@ -375,23 +371,6 @@ namespace boost {
                    fun)); // The last iterator position
     }
 
-    /*
-    inline
-    typename hg::tree::vertex_descriptor
-    source(
-            typename hg::tree::edge_descriptor &e,
-            hg::tree &) {
-        return e.first;
-    }
-
-    inline
-    typename hg::tree::vertex_descriptor
-    target(
-            typename hg::tree::edge_descriptor &e,
-            hg::tree &) {
-        return e.second;
-    }
-*/
     inline
     std::pair<typename hg::tree::adjacency_iterator, typename hg::tree::adjacency_iterator>
     adjacent_vertices(typename hg::tree::vertex_descriptor v, const hg::tree &g) {
@@ -431,6 +410,27 @@ namespace boost {
                 it(ita(par, par, g.children_cend(v)), fun));
     }
 
-
 }
+
+#ifdef HG_USE_BOOST_GRAPH
+namespace boost {
+
+    using hg::graph_traits;
+    using hg::out_edges;
+    using hg::in_edges;
+    using hg::in_degree;
+    using hg::out_degree;
+    using hg::degree;
+    using hg::vertices;
+    using hg::edges;
+    using hg::num_vertices;
+    using hg::num_edges;
+    using hg::adjacent_vertices;
+}
+#endif
+
+
+
+
+
 

@@ -8,8 +8,8 @@
 namespace py = pybind11;
 
 using graph_t = hg::undirected_graph<>;
-using edge_t = typename boost::graph_traits<graph_t>::edge_descriptor;
-using vertex_t = typename boost::graph_traits<graph_t>::vertex_descriptor;
+using edge_t = typename hg::graph_traits<graph_t>::edge_descriptor;
+using vertex_t = typename hg::graph_traits<graph_t>::vertex_descriptor;
 
 void py_init_undirected_graph(py::module &m) {
     xt::import_numpy();
@@ -36,7 +36,7 @@ void py_init_undirected_graph(py::module &m) {
           py::arg("vertex1"),
           py::arg("vertex2"));
     c.def("add_vertex", [](graph_t &g) {
-              return boost::add_vertex(g);
+              return hg::add_vertex(g);
           },
           "Add a vertex to the graph, the index of the new vertex is returned");
 }

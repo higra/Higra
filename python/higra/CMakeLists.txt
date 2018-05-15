@@ -1,6 +1,6 @@
 
 
-find_package(Boost REQUIRED COMPONENTS graph)
+find_package(Boost REQUIRED)
 find_package(PythonInterp 3.5 REQUIRED)
 find_package(NumPy REQUIRED)
 

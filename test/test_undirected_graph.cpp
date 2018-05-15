@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
 
     BOOST_AUTO_TEST_CASE(copyCTR) {
         auto g0 = data.g;
-        auto g = hg::copy_graph(g0);
+        auto g = hg::make_ugraph(g0);
 
         vector<pair<ulong, ulong>> eref{{0, 1},
                                         {1, 2},
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
                                                  {1,  0}}; // 4 adjacency
 
         auto g0 = hg::regular_grid_graph_2d(embedding, neighbours);
-        auto g = hg::copy_graph(g0);
+        auto g = hg::make_ugraph(g0);
 
         vector<vector<pair<ulong, ulong>>> outListsRef{{{0, 1}, {0, 3}},
                                                        {{1, 0}, {1, 2}, {1, 4}},

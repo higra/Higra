@@ -5,7 +5,7 @@
 #pragma once
 
 #include <functional>
-#include <boost/graph/graph_concepts.hpp>
+#include "details/graph_concepts.hpp"
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/iterator_facade.hpp>
@@ -21,13 +21,12 @@ namespace hg {
 
 
         struct undirected_graph_traversal_category :
-                virtual public boost::incidence_graph_tag,
-                virtual public boost::bidirectional_graph_tag,
-                virtual public boost::adjacency_graph_tag,
-                virtual public boost::vertex_list_graph_tag,
-                virtual public boost::edge_list_graph_tag {
+                virtual public graph::incidence_graph_tag,
+                virtual public graph::bidirectional_graph_tag,
+                virtual public graph::adjacency_graph_tag,
+                virtual public graph::vertex_list_graph_tag,
+                virtual public graph::edge_list_graph_tag {
         };
-
 
         // like boost adjacency list
         struct vecS {
@@ -50,7 +49,6 @@ namespace hg {
             typedef std::vector<ValueType> type;
         };
 
-
         template<typename edgeS=vecS>
         struct undirected_graph {
 
@@ -58,8 +56,8 @@ namespace hg {
             using vertex_descriptor = std::size_t;
             using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
             using out_edge_t = std::pair<std::size_t, vertex_descriptor>; // (edge_index, adjacent vertex)
-            using directed_category = boost::undirected_tag;
-            using edge_parallel_category = boost::allow_parallel_edge_tag;
+            using directed_category = graph::undirected_tag;
+            using edge_parallel_category = graph::allow_parallel_edge_tag;
             using traversal_category = undirected_graph_traversal_category;
 
             // VertexListGraph associated types
@@ -151,7 +149,6 @@ namespace hg {
                 return add_edge(e.first, e.second);
             }
 
-
         private:
 
             std::size_t _num_vertices;
@@ -166,6 +163,29 @@ namespace hg {
     using undirected_graph = undirected_graph_internal::undirected_graph<storage_type>;
 
     using ugraph = undirected_graph_internal::undirected_graph<>;
+
+
+    template<typename T>
+    struct graph_traits<hg::undirected_graph<T>> {
+        using G = hg::undirected_graph<T>;
+
+        using vertex_descriptor = typename G::vertex_descriptor;
+        using edge_descriptor = typename G::edge_descriptor;
+        using edge_iterator = typename G::edge_iterator;
+        using out_edge_iterator = typename G::out_edge_iterator;
+
+        using directed_category = typename G::directed_category;
+        using edge_parallel_category = typename G::edge_parallel_category;
+        using traversal_category = typename G::traversal_category;
+
+        using degree_size_type = typename G::degree_size_type;
+
+        using in_edge_iterator = typename G::in_edge_iterator;
+        using vertex_iterator = typename G::vertex_iterator;
+        using vertices_size_type = typename G::vertices_size_type;
+        using edges_size_type = typename G::edges_size_type;
+        using adjacency_iterator = typename G::adjacency_iterator;
+    };
 
     template<typename T>
     std::pair<typename undirected_graph<T>::edge_index_iterator, typename undirected_graph<T>::edge_index_iterator>
@@ -198,32 +218,6 @@ namespace hg {
     auto edge(const typename undirected_graph<T>::vertex_descriptor v, const undirected_graph<T> &g) {
         return g.edge(v);
     }
-}
-
-
-namespace boost {
-
-    template<typename T>
-    struct graph_traits<hg::undirected_graph<T>> {
-        using G = hg::undirected_graph<T>;
-
-        using vertex_descriptor = typename G::vertex_descriptor;
-        using edge_descriptor = typename G::edge_descriptor;
-        using edge_iterator = typename G::edge_iterator;
-        using out_edge_iterator = typename G::out_edge_iterator;
-
-        using directed_category = typename G::directed_category;
-        using edge_parallel_category = typename G::edge_parallel_category;
-        using traversal_category = typename G::traversal_category;
-
-        using degree_size_type = typename G::degree_size_type;
-
-        using in_edge_iterator = typename G::in_edge_iterator;
-        using vertex_iterator = typename G::vertex_iterator;
-        using vertices_size_type = typename G::vertices_size_type;
-        using edges_size_type = typename G::edges_size_type;
-        using adjacency_iterator = typename G::adjacency_iterator;
-    };
 
     template<typename T>
     typename hg::undirected_graph<T>::vertices_size_type num_vertices(const hg::undirected_graph<T> &g) {
@@ -283,23 +277,6 @@ namespace boost {
                 g.edges_cend()); // The last iterator position
     }
 
-    /*
-    template<typename T>
-    typename hg::undirected_graph<T>::vertex_descriptor
-    source(
-            typename hg::undirected_graph<T>::edge_descriptor &e,
-            const hg::undirected_graph<T> &) {
-        return e.first;
-    }
-
-    template<typename T>
-    typename hg::undirected_graph<T>::vertex_descriptor
-    target(
-            typename hg::undirected_graph<T>::edge_descriptor &e,
-            const hg::undirected_graph<T> &) {
-        return e.second;
-    }*/
-
     template<typename T>
     std::pair<typename hg::undirected_graph<T>::out_edge_iterator, typename hg::undirected_graph<T>::out_edge_iterator>
     out_edges(typename hg::undirected_graph<T>::vertex_descriptor v, const hg::undirected_graph<T> &g) {
@@ -337,4 +314,24 @@ namespace boost {
     }
 
 }
+
+#ifdef HG_USE_BOOST_GRAPH
+namespace boost {
+
+    using hg::graph_traits;
+    using hg::out_edges;
+    using hg::in_edges;
+    using hg::in_degree;
+    using hg::out_degree;
+    using hg::degree;
+    using hg::vertices;
+    using hg::edges;
+    using hg::add_vertex;
+    using hg::add_edge;
+    using hg::num_vertices;
+    using hg::num_edges;
+    using hg::adjacent_vertices;
+}
+#endif
+
 
