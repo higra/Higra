@@ -21,7 +21,8 @@ if (DO_TEST)
             test_graph_weights.cpp
             test_tree_accumulator.cpp
             test_algo_tree.cpp
-            test_light_axis_view.cpp)
+            test_light_axis_view.cpp
+            test_watershed.cpp)
 
     add_executable(test_exe ${HIGRA_TESTS_SRC})
 
