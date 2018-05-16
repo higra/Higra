@@ -6,9 +6,7 @@
 
 #include <functional>
 #include "details/graph_concepts.hpp"
-#include "details/range_iterator.hpp"
-#include <boost/iterator/transform_iterator.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+#include "higra/structure/details/iterators.hpp"
 #include <vector>
 #include <list>
 
@@ -71,8 +69,9 @@ namespace hg {
 
             // IncidenceGraph associated types
             using out_iterator_transform_function = std::function<edge_descriptor(out_edge_t)>;
-            using out_edge_iterator = boost::transform_iterator<out_iterator_transform_function,
-                    typename container_gen<edgeS, out_edge_t>::type::const_iterator>;
+            using out_edge_iterator = transform_forward_iterator<out_iterator_transform_function,
+                    typename container_gen<edgeS, out_edge_t>::type::const_iterator,
+                    edge_descriptor>;
             using degree_size_type = std::size_t;
 
             //BidirectionalGraph associated types
@@ -80,8 +79,9 @@ namespace hg {
 
             //AdjacencyGraph associated types
             using adjacent_iterator_transform_function = std::function<vertex_descriptor(out_edge_t)>;
-            using adjacency_iterator = boost::transform_iterator<adjacent_iterator_transform_function,
-                    typename container_gen<edgeS, out_edge_t>::type::const_iterator>;
+            using adjacency_iterator = transform_forward_iterator<adjacent_iterator_transform_function,
+                    typename container_gen<edgeS, out_edge_t>::type::const_iterator,
+                    vertex_descriptor>;
 
 
             // custom edge index iterators

@@ -28,7 +28,10 @@ void add_incidence_graph_concept(pyc &c) {
     using edge_t = typename hg::graph_traits<graph_t>::edge_descriptor;
     using vertex_t = typename hg::graph_traits<graph_t>::vertex_descriptor;
     using iterator_transform_function = std::function<pybind11::tuple(edge_t)>;
-    using out_edge_iterator = boost::transform_iterator<iterator_transform_function, typename hg::graph_traits<graph_t>::out_edge_iterator>;
+    using out_edge_iterator = hg::transform_forward_iterator<iterator_transform_function,
+            typename hg::graph_traits<graph_t>::out_edge_iterator,
+            pybind11::tuple
+    >;
 
     c.def("out_edges", [](const graph_t &g,
                           const vertex_t v) {
@@ -62,7 +65,7 @@ struct def_degree {
     static
     void def(C &c, const char *doc) {
         c.def("degree", [](graph_t &g,
-                              xt::pyarray<value_t> vertices) {
+                           xt::pyarray<value_t> vertices) {
                   return hg::degree(vertices, g);
               },
               doc,
@@ -89,7 +92,10 @@ void add_bidirectionnal_graph_concept(pyc &c) {
     using edge_t = typename hg::graph_traits<graph_t>::edge_descriptor;
     using vertex_t = typename hg::graph_traits<graph_t>::vertex_descriptor;
     using iterator_transform_function = std::function<pybind11::tuple(edge_t)>;
-    using in_edge_iterator = boost::transform_iterator<iterator_transform_function, typename hg::graph_traits<graph_t>::in_edge_iterator>;
+    using in_edge_iterator = hg::transform_forward_iterator<
+            iterator_transform_function,
+            typename hg::graph_traits<graph_t>::in_edge_iterator,
+            pybind11::tuple>;
 
     c.def("in_edges", [](graph_t &g,
                          const vertex_t v) {
@@ -151,7 +157,10 @@ template<typename graph_t, typename pyc>
 void add_edge_list_graph_concept(pyc &c) {
     using edge_t = typename hg::graph_traits<graph_t>::edge_descriptor;
     using iterator_transform_function = std::function<pybind11::tuple(edge_t)>;
-    using edge_iterator = boost::transform_iterator<iterator_transform_function, typename hg::graph_traits<graph_t>::edge_iterator>;
+    using edge_iterator = hg::transform_forward_iterator<
+            iterator_transform_function,
+            typename hg::graph_traits<graph_t>::edge_iterator,
+            pybind11::tuple>;
     c.def("edges", [](graph_t &g) {
               auto it = hg::edges(g);
               // wrapping  edge iterator to python friendly type

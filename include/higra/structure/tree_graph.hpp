@@ -6,9 +6,7 @@
 
 #include <functional>
 #include "details/graph_concepts.hpp"
-#include "details/range_iterator.hpp"
-#include <boost/iterator/transform_iterator.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+#include "higra/structure/details/iterators.hpp"
 #include <vector>
 #include <utility>
 #include "../utils.hpp"
@@ -67,14 +65,15 @@ namespace hg {
             // EdgeListGraph associated types
             using edges_size_type = std::size_t;
             using _edge_iterator_transform_function = std::function<edge_descriptor(edge_index_t)>;
-            using edge_iterator = boost::transform_iterator<_edge_iterator_transform_function,
-                    counting_iterator < vertex_descriptor>>;
+            using edge_iterator = transform_forward_iterator <_edge_iterator_transform_function,
+            counting_iterator<vertex_descriptor>, edge_descriptor>;
 
 
             // IncidenceGraph associated types
             using out_iterator_transform_function = std::function<edge_descriptor(vertex_descriptor)>;
-            using out_edge_iterator = boost::transform_iterator<out_iterator_transform_function,
-                    tree_graph_adjacent_vertex_iterator<false>>;
+            using out_edge_iterator = transform_forward_iterator<out_iterator_transform_function,
+                    tree_graph_adjacent_vertex_iterator<false>,
+                    edge_descriptor>;
             using degree_size_type = std::size_t;
 
             //BidirectionalGraph associated types
@@ -200,9 +199,7 @@ namespace hg {
         // Iterator
         template<bool edge_index_iterator = false>
         struct tree_graph_adjacent_vertex_iterator :
-                public boost::iterator_facade<tree_graph_adjacent_vertex_iterator<edge_index_iterator>,
-                        tree::vertex_descriptor,
-                        boost::forward_traversal_tag,
+                public forward_iterator_facade<tree_graph_adjacent_vertex_iterator<edge_index_iterator>,
                         tree::vertex_descriptor> {
         public:
             using graph_t = tree;
@@ -222,11 +219,6 @@ namespace hg {
                 }
             }
 
-        private:
-
-
-            friend class boost::iterator_core_access;
-
             void increment() {
                 if (_iterating_on_children) {
                     _child_iterator++;
@@ -240,7 +232,6 @@ namespace hg {
                        (this->_child_iterator == that._child_iterator);
             }
 
-
             graph_vertex_t dereference() const {
                 if (_iterating_on_children) {
                     return *_child_iterator;
@@ -249,6 +240,7 @@ namespace hg {
                 }
             }
 
+        private:
             graph_vertex_t _source;
             graph_vertex_t _parent;
 

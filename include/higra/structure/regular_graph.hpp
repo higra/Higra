@@ -6,10 +6,8 @@
 #pragma once
 
 #include "details/graph_concepts.hpp"
-#include "details/range_iterator.hpp"
+#include "higra/structure/details/iterators.hpp"
 #include <functional>
-#include <boost/iterator/transform_iterator.hpp>
-#include <boost/iterator/iterator_facade.hpp>
 #include <vector>
 #include <utility>
 
@@ -59,7 +57,9 @@ namespace hg {
             using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
             using iterator_transform_function = std::function<edge_descriptor(vertex_descriptor)>;
 
-            using out_edge_iterator = boost::transform_iterator<iterator_transform_function, adjacency_iterator>;
+            using out_edge_iterator = transform_forward_iterator<iterator_transform_function,
+                    adjacency_iterator,
+                    edge_descriptor>;
             using degree_size_type = std::size_t;
 
             //BidirectionalGraph associated types
@@ -82,9 +82,8 @@ namespace hg {
         // Iterator
         template<typename embedding_t>
         struct regular_graph_adjacent_vertex_iterator :
-                public boost::iterator_facade<regular_graph_adjacent_vertex_iterator<embedding_t>,
+                public forward_iterator_facade<regular_graph_adjacent_vertex_iterator<embedding_t>,
                         typename regular_graph<embedding_t>::vertex_descriptor,
-                        boost::forward_traversal_tag,
                         typename regular_graph<embedding_t>::vertex_descriptor> {
         public:
             using graph_t = regular_graph<embedding_t>;
@@ -114,11 +113,9 @@ namespace hg {
                 }
             }
 
-        private:
 
             using point_type = typename embedding_t::point_type;
 
-            friend class boost::iterator_core_access;
 
             void increment() {
                 bool flag;
@@ -147,6 +144,7 @@ namespace hg {
                 return neighbour;
             }
 
+        private:
             graph_vertex_t source;
             graph_vertex_t neighbour;
             point_type source_coordinates;
