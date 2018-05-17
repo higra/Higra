@@ -185,4 +185,11 @@ namespace hg {
         }
         return g;
     };
-}
+
+    template<typename graph_t>
+    auto other_vertex(const typename graph::graph_traits<graph_t>::edge_descriptor &edge,
+                      typename graph::graph_traits<graph_t>::vertex_descriptor vertex,
+                      const graph_t &graph) {
+        return (source(edge, graph) == vertex) ? target(edge, graph) : source(edge, graph);
+    }
+};

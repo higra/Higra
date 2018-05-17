@@ -22,7 +22,7 @@ if (DO_TEST)
             test_tree_accumulator.cpp
             test_algo_tree.cpp
             test_light_axis_view.cpp
-            test_watershed.cpp)
+            test_watershed.cpp test_rag.cpp)
 
     add_executable(test_exe ${HIGRA_TESTS_SRC})
 
