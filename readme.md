@@ -5,8 +5,9 @@
 Requires:
 
 * cmake 
-* BOOST
 * Python + Numpy
+* Boost Test (optional)
+* Google Benchmark (optional)
 
 Commands:
 
@@ -18,7 +19,7 @@ cmake ../Higra/
 make
 ```
 
-Sometimes, cmake gets confused when several Python versions are installed in the system.
+Sometimes, cmake gets confused when several Python versions are installed on the system.
 You can specify which version to use with `-DPYTHON_EXECUTABLE:FILEPATH=/PATH-TO-PYTHON/python`, e.g.
 
 ```
