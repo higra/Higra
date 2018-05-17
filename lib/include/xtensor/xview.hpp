@@ -55,6 +55,28 @@ namespace xt
         using const_stepper = xview_stepper<true, std::remove_cv_t<CT>, S...>;
     };
 
+
+    namespace detail
+    {
+        template <class S>
+        struct is_contigous_slice
+        {
+            static constexpr bool value = true;
+        };
+
+        template <class T>
+        struct is_contigous_slice<xislice<T>>
+        {
+            static constexpr bool value = false;
+        };
+
+        template <class... S>
+        struct slices_contigous
+        {
+            static constexpr bool value = xtl::conjunction<is_contigous_slice<S>...>::value;
+        };
+    }
+
     /**
      * @class xview
      * @brief Multidimensional view with tensor semantic.
@@ -78,16 +100,17 @@ namespace xt
         using self_type = xview<CT, S...>;
         using xexpression_type = std::decay_t<CT>;
         using semantic_base = xview_semantic<self_type>;
+        using temporary_type = typename xcontainer_inner_types<self_type>::temporary_type;
 
         static constexpr bool is_const = std::is_const<std::remove_reference_t<CT>>::value;
         using value_type = typename xexpression_type::value_type;
         using reference = std::conditional_t<is_const,
-                typename xexpression_type::const_reference,
-                typename xexpression_type::reference>;
+                                             typename xexpression_type::const_reference,
+                                             typename xexpression_type::reference>;
         using const_reference = typename xexpression_type::const_reference;
         using pointer = std::conditional_t<is_const,
-                typename xexpression_type::const_pointer,
-                typename xexpression_type::pointer>;
+                                           typename xexpression_type::const_pointer,
+                                           typename xexpression_type::pointer>;
         using const_pointer = typename xexpression_type::const_pointer;
         using size_type = typename xexpression_type::size_type;
         using difference_type = typename xexpression_type::difference_type;
@@ -167,28 +190,40 @@ namespace xt
         const_stepper stepper_end(const ST& shape, layout_type l) const;
 
         template <class T = xexpression_type>
-        std::enable_if_t<has_raw_data_interface<T>::value, typename T::container_type&>
-        data();
+        std::enable_if_t<has_data_interface<T>::value, typename T::storage_type&>
+        storage();
 
         template <class T = xexpression_type>
-        std::enable_if_t<has_raw_data_interface<T>::value, const typename T::container_type&>
-        data() const;
+        std::enable_if_t<has_data_interface<T>::value, const typename T::storage_type&>
+        storage() const;
 
         template <class T = xexpression_type>
-        std::enable_if_t<has_raw_data_interface<T>::value, const strides_type&>
+        std::enable_if_t<has_data_interface<T>::value && detail::slices_contigous<S...>::value, const strides_type&>
         strides() const;
 
         template <class T = xexpression_type>
-        std::enable_if_t<has_raw_data_interface<T>::value, const value_type*>
-        raw_data() const;
+        std::enable_if_t<has_data_interface<T>::value && detail::slices_contigous<S...>::value, const value_type*>
+        data() const;
 
         template <class T = xexpression_type>
-        std::enable_if_t<has_raw_data_interface<T>::value, value_type*>
-        raw_data();
+        std::enable_if_t<has_data_interface<T>::value && detail::slices_contigous<S...>::value, value_type*>
+        data();
 
         template <class T = xexpression_type>
-        std::enable_if_t<has_raw_data_interface<T>::value, const std::size_t>
-        raw_data_offset() const noexcept;
+        std::enable_if_t<has_data_interface<T>::value && detail::slices_contigous<S...>::value, const std::size_t>
+        data_offset() const noexcept;
+
+        template <class ST = self_type, class = std::enable_if_t<is_xscalar<std::decay_t<ST>>::value, int>>
+        operator reference()
+        {
+            return (*this)();
+        }
+
+        template <class ST = self_type, class = std::enable_if_t<is_xscalar<std::decay_t<ST>>::value, int>>
+        operator const_reference() const
+        {
+            return (*this)();
+        }
 
         size_type underlying_size(size_type dim) const;
 
@@ -234,7 +269,6 @@ namespace xt
         template <typename std::decay_t<CT>::size_type I, class T, class... Args>
         disable_xslice<T, size_type> sliced_access(const T& squeeze, Args...) const;
 
-        using temporary_type = typename xcontainer_inner_types<self_type>::temporary_type;
         using base_index_type = xindex_type_t<shape_type>;
 
         template <class It>
@@ -292,7 +326,7 @@ namespace xt
 
         xview_stepper() = default;
         xview_stepper(view_type* view, substepper_type it,
-                      size_type offset, bool end = false);
+                      size_type offset, bool end = false, layout_type l = XTENSOR_DEFAULT_LAYOUT);
 
         reference operator*() const;
 
@@ -304,37 +338,31 @@ namespace xt
         void reset_back(size_type dim);
 
         void to_begin();
-        void to_end(layout_type);
-
-        bool equal(const xview_stepper& rhs) const;
+        void to_end(layout_type l);
 
     private:
 
         bool is_newaxis_slice(size_type index) const noexcept;
-        void to_end_impl();
+        void to_end_impl(layout_type l);
 
         template <class F>
-        void common_step(size_type dim, F f);
+        void common_step_forward(size_type dim, F f);
+        template <class F>
+        void common_step_backward(size_type dim, F f);
 
         template <class F>
-        void common_step(size_type dim, size_type n, F f);
+        void common_step_forward(size_type dim, size_type n, F f);
+        template <class F>
+        void common_step_backward(size_type dim, size_type n, F f);
 
         template <class F>
-        void common_reset(size_type dim, F f);
+        void common_reset(size_type dim, F f, bool backwards);
 
         view_type* p_view;
         substepper_type m_it;
         size_type m_offset;
+        std::array<std::size_t, sizeof...(S)> m_index_keeper;
     };
-
-    template <bool is_const, class CT, class... S>
-    bool operator==(const xview_stepper<is_const, CT, S...>& lhs,
-                    const xview_stepper<is_const, CT, S...>& rhs);
-
-    template <bool is_const, class CT, class... S>
-    bool operator!=(const xview_stepper<is_const, CT, S...>& lhs,
-                    const xview_stepper<is_const, CT, S...>& rhs);
-
 
     // meta-function returning the shape type for an xview
     template <class ST, class... S>
@@ -348,6 +376,33 @@ namespace xt
     {
         using type = std::array<I, L - integral_count<S...>() + newaxis_count<S...>()>;
     };
+
+    namespace detail
+    {
+        template <class T>
+        struct static_dimension
+        {
+            static constexpr std::ptrdiff_t value = -1;
+        };
+
+        template <class T, std::size_t N>
+        struct static_dimension<std::array<T, N>>
+        {
+            static constexpr std::ptrdiff_t value = static_cast<std::ptrdiff_t>(N);
+        };
+
+        template <class T, std::size_t N>
+        struct static_dimension<xt::const_array<T, N>>
+        {
+            static constexpr std::ptrdiff_t value = static_cast<std::ptrdiff_t>(N);
+        };
+
+        template <class CT, class... S>
+        struct is_xscalar_impl<xview<CT, S...>>
+        {
+            static constexpr bool value = static_cast<std::ptrdiff_t>(integral_count<S...>()) == static_dimension<typename std::decay_t<CT>::shape_type>::value ? true : false;
+        };
+    }
 
     /************************
      * xview implementation *
@@ -459,7 +514,13 @@ namespace xt
     template <class CT, class... S>
     inline layout_type xview<CT, S...>::layout() const noexcept
     {
-        return static_layout;
+        return xtl::mpl::static_if<detail::slices_contigous<S...>::value>([&](auto self)
+        {
+            return do_strides_match(self(this)->shape(), self(this)->strides(), self(this)->m_e.layout()) ?
+                self(this)->m_e.layout() : layout_type::dynamic;
+        }, /* else */ [&](auto /*self*/) {
+            return layout_type::dynamic;
+        });
     }
     //@}
 
@@ -606,18 +667,18 @@ namespace xt
      */
     template <class CT, class... S>
     template <class T>
-    inline auto xview<CT, S...>::data() ->
-        std::enable_if_t<has_raw_data_interface<T>::value, typename T::container_type&>
+    inline auto xview<CT, S...>::storage() ->
+        std::enable_if_t<has_data_interface<T>::value, typename T::storage_type&>
     {
-        return m_e.data();
+        return m_e.storage();
     }
 
     template <class CT, class... S>
     template <class T>
-    inline auto xview<CT, S...>::data() const ->
-        std::enable_if_t<has_raw_data_interface<T>::value, const typename T::container_type&>
+    inline auto xview<CT, S...>::storage() const ->
+        std::enable_if_t<has_data_interface<T>::value, const typename T::storage_type&>
     {
-        return m_e.data();
+        return m_e.storage();
     }
 
     /**
@@ -626,7 +687,7 @@ namespace xt
     template <class CT, class... S>
     template <class T>
     inline auto xview<CT, S...>::strides() const ->
-        std::enable_if_t<has_raw_data_interface<T>::value, const strides_type&>
+        std::enable_if_t<has_data_interface<T>::value && detail::slices_contigous<S...>::value, const strides_type&>
     {
         if (!m_strides_computed)
         {
@@ -641,18 +702,18 @@ namespace xt
      */
     template <class CT, class... S>
     template <class T>
-    inline auto xview<CT, S...>::raw_data() const ->
-        std::enable_if_t<has_raw_data_interface<T>::value, const value_type*>
+    inline auto xview<CT, S...>::data() const ->
+        std::enable_if_t<has_data_interface<T>::value && detail::slices_contigous<S...>::value, const value_type*>
     {
-        return m_e.raw_data();
+        return m_e.data();
     }
 
     template <class CT, class... S>
     template <class T>
-    inline auto xview<CT, S...>::raw_data() ->
-        std::enable_if_t<has_raw_data_interface<T>::value, value_type*>
+    inline auto xview<CT, S...>::data() ->
+        std::enable_if_t<has_data_interface<T>::value && detail::slices_contigous<S...>::value, value_type*>
     {
-        return m_e.raw_data();
+        return m_e.data();
     }
 
     /**
@@ -660,11 +721,11 @@ namespace xt
      */
     template <class CT, class... S>
     template <class T>
-    inline auto xview<CT, S...>::raw_data_offset() const noexcept ->
-        std::enable_if_t<has_raw_data_interface<T>::value, const std::size_t>
+    inline auto xview<CT, S...>::data_offset() const noexcept ->
+        std::enable_if_t<has_data_interface<T>::value && detail::slices_contigous<S...>::value, const std::size_t>
     {
         auto func = [](const auto& s) { return xt::value(s, 0); };
-        typename T::size_type offset = m_e.raw_data_offset();
+        typename T::size_type offset = m_e.data_offset();
 
         for (size_type i = 0; i < sizeof...(S); ++i)
         {
@@ -733,15 +794,19 @@ namespace xt
     {
         strides_type strides = xtl::make_sequence<strides_type>(dimension(), 0);
 
-        auto func = [](const auto& s) { return xt::step_size(s); };
+        auto func = [](const auto& s) { return xt::step_size(s, 1); };
 
         for (size_type i = 0; i != dimension(); ++i)
         {
             size_type index = integral_skip<S...>(i);
             strides[i] = index < sizeof...(S) ?
-                         apply<size_type>(index, func, m_slices) *
-                         m_e.strides()[index - newaxis_count_before<S...>(index)] :
-                         m_e.strides()[index - newaxis_count_before<S...>(index)];
+                apply<size_type>(index, func, m_slices) * m_e.strides()[index - newaxis_count_before<S...>(index)] :
+                m_e.strides()[index - newaxis_count_before<S...>(index)];
+            // adapt strides for shape[i] == 1 to make consistent with rest of xtensor
+            if (shape()[i] == 1)
+            {
+                strides[i] = 0;
+            }
         }
 
         return strides;
@@ -841,16 +906,18 @@ namespace xt
             return I - newaxis_count_before<get_slice_type<E, S>...>(I);
         }
 
-        template<class... S>
+        template <class... S>
         struct check_slice;
 
-        template<>
-        struct check_slice<> {
+        template <>
+        struct check_slice<>
+        {
             using type = void_t<>;
         };
 
-        template<class S, class... SL>
-        struct check_slice<S, SL...> {
+        template <class S, class... SL>
+        struct check_slice<S, SL...>
+        {
             static_assert(!std::is_same<S, xellipsis_tag>::value, "ellipsis not supported vith xview");
             using type = typename check_slice<SL...>::type;
         };
@@ -898,7 +965,7 @@ namespace xt
     inline auto xview<CT, S...>::stepper_end(const ST& shape, layout_type l) -> stepper
     {
         size_type offset = shape.size() - dimension();
-        return stepper(this, m_e.stepper_end(m_e.shape(), l), offset, true);
+        return stepper(this, m_e.stepper_end(m_e.shape(), l), offset, true, l);
     }
 
     template <class CT, class... S>
@@ -916,7 +983,7 @@ namespace xt
     {
         size_type offset = shape.size() - dimension();
         const xexpression_type& e = m_e;
-        return const_stepper(this, e.stepper_end(m_e.shape(), l), offset, true);
+        return const_stepper(this, e.stepper_end(m_e.shape(), l), offset, true, l);
     }
 
     /********************************
@@ -925,11 +992,12 @@ namespace xt
 
     template <bool is_const, class CT, class... S>
     inline xview_stepper<is_const, CT, S...>::xview_stepper(view_type* view, substepper_type it,
-                                                            size_type offset, bool end)
+                                                            size_type offset, bool end, layout_type l)
         : p_view(view), m_it(it), m_offset(offset)
     {
         if (!end)
         {
+            std::fill(m_index_keeper.begin(), m_index_keeper.end(), 0);
             auto func = [](const auto& s) { return xt::value(s, 0); };
             for (size_type i = 0; i < sizeof...(S); ++i)
             {
@@ -943,7 +1011,7 @@ namespace xt
         }
         else
         {
-            to_end_impl();
+            to_end_impl(l);
         }
     }
 
@@ -957,47 +1025,52 @@ namespace xt
     inline void xview_stepper<is_const, CT, S...>::step(size_type dim)
     {
         auto func = [this](size_type index, size_type offset) { m_it.step(index, offset); };
-        common_step(dim, func);
+        common_step_forward(dim, func);
     }
 
     template <bool is_const, class CT, class... S>
     inline void xview_stepper<is_const, CT, S...>::step_back(size_type dim)
     {
-        auto func = [this](size_type index, size_type offset) { m_it.step_back(index, offset); };
-        common_step(dim, func);
+        auto func = [this](size_type index, size_type offset) {
+            m_it.step_back(index, offset);
+        };
+        common_step_backward(dim, func);
     }
 
     template <bool is_const, class CT, class... S>
     inline void xview_stepper<is_const, CT, S...>::step(size_type dim, size_type n)
     {
         auto func = [this](size_type index, size_type offset) { m_it.step(index, offset); };
-        common_step(dim, n, func);
+        common_step_forward(dim, n, func);
     }
 
     template <bool is_const, class CT, class... S>
     inline void xview_stepper<is_const, CT, S...>::step_back(size_type dim, size_type n)
     {
-        auto func = [this](size_type index, size_type offset) { m_it.step_back(index, offset); };
-        common_step(dim, n, func);
+        auto func = [this](size_type index, size_type offset) { 
+            m_it.step_back(index, offset);
+        };
+        common_step_backward(dim, n, func);
     }
 
     template <bool is_const, class CT, class... S>
     inline void xview_stepper<is_const, CT, S...>::reset(size_type dim)
     {
         auto func = [this](size_type index, size_type offset) { m_it.step_back(index, offset); };
-        common_reset(dim, func);
+        common_reset(dim, func, false);
     }
 
     template <bool is_const, class CT, class... S>
     inline void xview_stepper<is_const, CT, S...>::reset_back(size_type dim)
     {
         auto func = [this](size_type index, size_type offset) { m_it.step(index, offset); };
-        common_reset(dim, func);
+        common_reset(dim, func, true);
     }
 
     template <bool is_const, class CT, class... S>
     inline void xview_stepper<is_const, CT, S...>::to_begin()
     {
+        std::fill(m_index_keeper.begin(), m_index_keeper.end(), 0);
         m_it.to_begin();
     }
 
@@ -1005,13 +1078,7 @@ namespace xt
     inline void xview_stepper<is_const, CT, S...>::to_end(layout_type l)
     {
         m_it.to_end(l);
-        to_end_impl();
-    }
-
-    template <bool is_const, class CT, class... S>
-    inline bool xview_stepper<is_const, CT, S...>::equal(const xview_stepper& rhs) const
-    {
-        return p_view == rhs.p_view && m_it == rhs.m_it && m_offset == rhs.m_offset;
+        to_end_impl(l);
     }
 
     template <bool is_const, class CT, class... S>
@@ -1022,28 +1089,65 @@ namespace xt
     }
 
     template <bool is_const, class CT, class... S>
-    inline void xview_stepper<is_const, CT, S...>::to_end_impl()
+    inline void xview_stepper<is_const, CT, S...>::to_end_impl(layout_type l)
     {
-        auto func = [](const auto& s) { return xt::value(s, get_size(s) - 1); };
+        auto func = [](const auto& s) {
+            return xt::value(s, get_size(s) - 1);
+        };
+        auto size_func = [](const auto& s) {
+            return get_size(s);
+        };
+
         for (size_type i = 0; i < sizeof...(S); ++i)
         {
             if (!is_newaxis_slice(i))
             {
                 size_type s = apply<size_type>(i, func, p_view->slices());
+                size_type ix = apply<size_type>(i, size_func, p_view->slices());
+                m_index_keeper[i] = ix;
                 size_type index = i - newaxis_count_before<S...>(i);
                 s = p_view->underlying_size(index) - 1 - s;
                 m_it.step_back(index, s);
             }
         }
+        if (l == layout_type::row_major)
+        {
+            for (size_type i = sizeof...(S); i > 0; --i)
+            {
+                if (!is_newaxis_slice(i - 1))
+                {
+                    m_index_keeper[i - 1]++;
+                    break;
+                }
+            }
+        }
+        else if (l == layout_type::column_major)
+        {
+            for (size_type i = 0; i < sizeof...(S); ++i)
+            {
+                if (!is_newaxis_slice(i))
+                {
+                    m_index_keeper[i]++;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            throw std::runtime_error("Iteration only allowed in row or column major.");
+        }
     }
 
     template <bool is_const, class CT, class... S>
     template <class F>
-    void xview_stepper<is_const, CT, S...>::common_step(size_type dim, F f)
+    void xview_stepper<is_const, CT, S...>::common_step_forward(size_type dim, F f)
     {
         if (dim >= m_offset)
         {
-            auto func = [](const auto& s) noexcept { return step_size(s); };
+            auto func = [&dim, this](const auto& s) noexcept {
+                this->m_index_keeper[dim]++;
+                return step_size(s, this->m_index_keeper[dim], 1);
+            };
             size_type index = integral_skip<S...>(dim);
             if (!is_newaxis_slice(index))
             {
@@ -1057,28 +1161,76 @@ namespace xt
 
     template <bool is_const, class CT, class... S>
     template <class F>
-    void xview_stepper<is_const, CT, S...>::common_step(size_type dim, size_type n, F f)
+    void xview_stepper<is_const, CT, S...>::common_step_forward(size_type dim, size_type n, F f)
     {
         if (dim >= m_offset)
         {
-            auto func = [](const auto& s) noexcept { return step_size(s); };
+            auto func = [&dim, &n, this](const auto& s) noexcept {
+                this->m_index_keeper[dim] += n;
+                return step_size(s, this->m_index_keeper[dim], n);
+            };
+
             size_type index = integral_skip<S...>(dim);
             if (!is_newaxis_slice(index))
             {
                 size_type step_size = index < sizeof...(S) ?
                     apply<size_type>(index, func, p_view->slices()) : 1;
                 index -= newaxis_count_before<S...>(index);
-                f(index, step_size * n);
+                f(index, step_size);
             }
         }
     }
 
     template <bool is_const, class CT, class... S>
     template <class F>
-    void xview_stepper<is_const, CT, S...>::common_reset(size_type dim, F f)
+    void xview_stepper<is_const, CT, S...>::common_step_backward(size_type dim, F f)
+    {
+        if (dim >= m_offset)
+        {
+            auto func = [&dim, this](const auto& s) noexcept {
+                this->m_index_keeper[dim]--;
+                return step_size(s, this->m_index_keeper[dim], 1);
+            };
+            size_type index = integral_skip<S...>(dim);
+            if (!is_newaxis_slice(index))
+            {
+                size_type step_size = index < sizeof...(S) ?
+                    apply<size_type>(index, func, p_view->slices()) : 1;
+                index -= newaxis_count_before<S...>(index);
+                f(index, step_size);
+            }
+        }
+    }
+
+    template <bool is_const, class CT, class... S>
+    template <class F>
+    void xview_stepper<is_const, CT, S...>::common_step_backward(size_type dim, size_type n, F f)
+    {
+        if (dim >= m_offset)
+        {
+            auto func = [&dim, &n, this](const auto& s) noexcept {
+                this->m_index_keeper[dim] -= n;
+                return step_size(s, this->m_index_keeper[dim], n);
+            };
+
+            size_type index = integral_skip<S...>(dim);
+            if (!is_newaxis_slice(index))
+            {
+                size_type step_size = index < sizeof...(S) ?
+                    apply<size_type>(index, func, p_view->slices()) : 1;
+                index -= newaxis_count_before<S...>(index);
+                f(index, step_size);
+            }
+        }
+    }
+
+    template <bool is_const, class CT, class... S>
+    template <class F>
+    void xview_stepper<is_const, CT, S...>::common_reset(size_type dim, F f, bool backwards)
     {
         auto size_func = [](const auto& s) noexcept { return get_size(s); };
-        auto step_func = [](const auto& s) noexcept { return step_size(s); };
+        auto end_func = [](const auto& s) noexcept { return xt::value(s, get_size(s) - 1) - xt::value(s, 0); };
+
         size_type index = integral_skip<S...>(dim);
         if (!is_newaxis_slice(index))
         {
@@ -1087,24 +1239,15 @@ namespace xt
             {
                 size = size - 1;
             }
-            size_type step_size = index < sizeof...(S) ? apply<size_type>(index, step_func, p_view->slices()) : 1;
+
+            auto ss = index < sizeof...(S) ? apply<size_type>(index, end_func, p_view->slices()) : p_view->shape()[dim];
+            size_type sz = index < sizeof...(S) ? apply<size_type>(index, size_func, p_view->slices()) : p_view->shape()[dim];
+            this->m_index_keeper[dim] = backwards ? sz : 0;
+
+            size_type reset_n = index < sizeof...(S) ? ss : size;
             index -= newaxis_count_before<S...>(index);
-            f(index, step_size * size);
+            f(index, reset_n);
         }
-    }
-
-    template <bool is_const, class CT, class... S>
-    inline bool operator==(const xview_stepper<is_const, CT, S...>& lhs,
-                           const xview_stepper<is_const, CT, S...>& rhs)
-    {
-        return lhs.equal(rhs);
-    }
-
-    template <bool is_const, class CT, class... S>
-    inline bool operator!=(const xview_stepper<is_const, CT, S...>& lhs,
-                           const xview_stepper<is_const, CT, S...>& rhs)
-    {
-        return !(lhs.equal(rhs));
     }
 }
 

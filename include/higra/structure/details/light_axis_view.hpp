@@ -78,7 +78,7 @@ namespace hg {
                 static_assert(T1::is_vectorial == T2::is_vectorial,
                               "Mixing vectorial and non vectorial soft axis view!");
                 auto r = rhs.begin();
-                auto v = begin();
+                auto v = lhs.begin();
                 for (; v != end(); v++, r++) {
                     *v = *r;
                 }
@@ -88,7 +88,7 @@ namespace hg {
             std::enable_if_t<!T1::is_vectorial> assign(T1 &lhs, const T2 &rhs) {
                 static_assert(T1::is_vectorial == T2::is_vectorial,
                               "Mixing vectorial and non vectorial soft axis view!");
-                *begin() = *rhs.begin();
+                *lhs.begin() = *rhs.begin();
             }
 
             T &m_data;

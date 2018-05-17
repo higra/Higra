@@ -16,7 +16,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_targetsDefined)
 set(_targetsNotDefined)
 set(_expectedTargets)
-foreach(_expectedTarget xtensor)
+foreach(_expectedTarget xtensor-python)
   list(APPEND _expectedTargets ${_expectedTarget})
   if(NOT TARGET ${_expectedTarget})
     list(APPEND _targetsNotDefined ${_expectedTarget})
@@ -43,12 +43,12 @@ get_filename_component(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
 get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
 get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
 
-# Create imported target xtensor
-add_library(xtensor INTERFACE IMPORTED)
+# Create imported target xtensor-python
+add_library(xtensor-python INTERFACE IMPORTED)
 
-set_target_properties(xtensor PROPERTIES
+set_target_properties(xtensor-python PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-  INTERFACE_LINK_LIBRARIES "xtl;xsimd"
+  INTERFACE_LINK_LIBRARIES "xtensor"
 )
 
 if(CMAKE_VERSION VERSION_LESS 3.0.0)
@@ -57,7 +57,7 @@ endif()
 
 # Load information for each installed configuration.
 get_filename_component(_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-file(GLOB CONFIG_FILES "${_DIR}/xtensorTargets-*.cmake")
+file(GLOB CONFIG_FILES "${_DIR}/xtensor-pythonTargets-*.cmake")
 foreach(f ${CONFIG_FILES})
   include(${f})
 endforeach()

@@ -58,7 +58,7 @@ namespace xt
 
             for (std::size_t i = 0; i < n_iters; ++i, offset += secondary_stride)
             {
-                fct(ev.raw_data() + offset, ev.raw_data() + offset + secondary_stride);
+                fct(ev.data() + offset, ev.data() + offset + secondary_stride);
             }
         }
 
@@ -159,7 +159,7 @@ namespace xt
         };
 
         template <class IT, class F>
-        inline std::size_t cmp_idx(IT iter, IT end, std::ptrdiff_t inc, F &&cmp)
+        inline std::size_t cmp_idx(IT iter, IT end, std::ptrdiff_t inc, F&& cmp)
         {
             std::size_t idx = 0;
             double min = *iter;
@@ -178,8 +178,8 @@ namespace xt
         template <class E, class F>
         xtensor<std::size_t, 0> arg_func_impl(const E& e, F&& f)
         {
-            return cmp_idx(e.template begin<DEFAULT_LAYOUT>(),
-                           e.template end<DEFAULT_LAYOUT>(), 1,
+            return cmp_idx(e.template begin<XTENSOR_DEFAULT_LAYOUT>(),
+                           e.template end<XTENSOR_DEFAULT_LAYOUT>(), 1,
                            std::forward<F>(f));
         }
 
@@ -221,7 +221,7 @@ namespace xt
             {
                 E input;
                 auto axis_numbers = arange<std::size_t>(e.shape().size());
-                std::vector <std::size_t> permutation(axis_numbers.cbegin(), axis_numbers.cend());
+                std::vector<std::size_t> permutation(axis_numbers.cbegin(), axis_numbers.cend());
                 permutation.erase(permutation.begin() + std::ptrdiff_t(axis));
                 if (input.layout() == layout_type::row_major)
                 {
@@ -284,7 +284,7 @@ namespace xt
      * @param e input xexpression
      * @param axis select axis (or none)
      *
-     * @return returns xarray with positions of minimal value
+     * @return returns xarray with positions of maximal value
      */
     template <class E>
     auto argmax(const xexpression<E>& e, std::size_t axis)

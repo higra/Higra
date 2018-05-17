@@ -1,22 +1,22 @@
 ############################################################################
-# Copyright (c) 2017, Sylvain Corlay and Johan Mabille                     #
+# Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     #
 #                                                                          #
 # Distributed under the terms of the BSD 3-Clause License.                 #
 #                                                                          #
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-# xtl cmake module
+# xtensor-python cmake module
 # This module sets the following variables in your project::
 #
-#   xtl_FOUND - true if xtl found on the system
-#   xtl_INCLUDE_DIRS - the directory containing xtl headers
-#   xtl_LIBRARY - empty
+#   xtensor-python_FOUND - true if xtensor-python found on the system
+#   xtensor-python_INCLUDE_DIRS - the directory containing xtensor-python headers
+#   xtensor-python_LIBRARY - empty
 
 
 ####### Expanded from @PACKAGE_INIT@ by configure_package_config_file() #######
 ####### Any changes to this file will be overwritten by the next CMake run ####
-####### The input file was xtlConfig.cmake.in                            ########
+####### The input file was xtensor-pythonConfig.cmake.in                            ########
 
 get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../" ABSOLUTE)
 
@@ -39,7 +39,7 @@ endmacro()
 
 ####################################################################################
 
-if(NOT TARGET xtl)
-  include("${CMAKE_CURRENT_LIST_DIR}/xtlTargets.cmake")
-  get_target_property(xtl_INCLUDE_DIRS xtl INTERFACE_INCLUDE_DIRECTORIES)
-endif()
+set(PN xtensor-python)
+set_and_check(${PN}_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include")
+set(${PN}_LIBRARY "")
+check_required_components(${PN})

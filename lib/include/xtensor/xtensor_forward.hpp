@@ -26,9 +26,12 @@ namespace xt
     template <class C>
     struct xcontainer_inner_types;
 
+    template <class D>
+    class xcontainer;
+
     template <class EC,
-              layout_type L = DEFAULT_LAYOUT,
-              class SC = DEFAULT_SHAPE_CONTAINER(typename EC::value_type,
+              layout_type L = XTENSOR_DEFAULT_LAYOUT,
+              class SC = XTENSOR_DEFAULT_SHAPE_CONTAINER(typename EC::value_type,
                                                  typename EC::allocator_type,
                                                  std::allocator<typename EC::size_type>),
               class Tag = xtensor_expression_tag>
@@ -55,14 +58,14 @@ namespace xt
      * @tparam SA The allocator of the containers holding the shape and the strides.
      */
     template <class T,
-              layout_type L = DEFAULT_LAYOUT,
-              class A = DEFAULT_ALLOCATOR(T),
+              layout_type L = XTENSOR_DEFAULT_LAYOUT,
+              class A = XTENSOR_DEFAULT_ALLOCATOR(T),
               class SA = std::allocator<typename std::vector<T, A>::size_type>>
-    using xarray = xarray_container<DEFAULT_DATA_CONTAINER(T, A), L, DEFAULT_SHAPE_CONTAINER(T, A, SA)>;
+    using xarray = xarray_container<XTENSOR_DATA_SHAPE_CONTAINER(T, A), L, XTENSOR_DEFAULT_SHAPE_CONTAINER(T, A, SA)>;
 
     template <class EC,
-              layout_type L = DEFAULT_LAYOUT,
-              class SC = DEFAULT_SHAPE_CONTAINER(typename EC::value_type,
+              layout_type L = XTENSOR_DEFAULT_LAYOUT,
+              class SC = XTENSOR_DEFAULT_SHAPE_CONTAINER(typename EC::value_type,
                                                  std::allocator<typename EC::size_type>,
                                                  std::allocator<typename EC::size_type>),
               class Tag = xtensor_expression_tag>
@@ -79,13 +82,13 @@ namespace xt
      * @tparam SA The allocator of the containers holding the shape and the strides.
      */
     template <class T,
-              layout_type L = DEFAULT_LAYOUT,
-              class A = DEFAULT_ALLOCATOR(T),
+              layout_type L = XTENSOR_DEFAULT_LAYOUT,
+              class A = XTENSOR_DEFAULT_ALLOCATOR(T),
               class BC = xtl::xdynamic_bitset<std::size_t>,
               class SA = std::allocator<typename std::vector<T, A>::size_type>>
-    using xarray_optional = xarray_container<xtl::xoptional_vector<T, A, BC>, L, DEFAULT_SHAPE_CONTAINER(T, A, SA), xoptional_expression_tag>;
+    using xarray_optional = xarray_container<xtl::xoptional_vector<T, A, BC>, L, XTENSOR_DEFAULT_SHAPE_CONTAINER(T, A, SA), xoptional_expression_tag>;
 
-    template <class EC, std::size_t N, layout_type L = DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
+    template <class EC, std::size_t N, layout_type L = XTENSOR_DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
     class xtensor_container;
 
     /**
@@ -110,11 +113,11 @@ namespace xt
      */
     template <class T,
               std::size_t N,
-              layout_type L = DEFAULT_LAYOUT,
-              class A = DEFAULT_ALLOCATOR(T)>
-    using xtensor = xtensor_container<DEFAULT_DATA_CONTAINER(T, A), N, L>;
+              layout_type L = XTENSOR_DEFAULT_LAYOUT,
+              class A = XTENSOR_DEFAULT_ALLOCATOR(T)>
+    using xtensor = xtensor_container<XTENSOR_DATA_SHAPE_CONTAINER(T, A), N, L>;
 
-    template <class EC, std::size_t N, layout_type L = DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
+    template <class EC, std::size_t N, layout_type L = XTENSOR_DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
     class xtensor_adaptor;
 
     template <std::size_t... N>
@@ -122,24 +125,24 @@ namespace xt
 
     /**
      * @typedef xshape
-     * Alias template for ``fixed_shape`` allows for a shorter template shape definition in ``xtensorf``.
+     * Alias template for ``fixed_shape`` allows for a shorter template shape definition in ``xtensor_fixed``.
      */
     template <std::size_t... N>
     using xshape = fixed_shape<N...>;
 
-    template <class EC, class FS, layout_type L = DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
+    template <class EC, class FS, layout_type L = XTENSOR_DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
     class xfixed_container;
 
-    template <class EC, class FS, layout_type L = DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
+    template <class EC, class FS, layout_type L = XTENSOR_DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
     class xfixed_adaptor;
 
     /**
-     * @typedef xtensorf
+     * @typedef xtensor_fixed
      * Alias template on xfixed_container with default parameters for layout
      * type. This allows to write
      *
      * \code{.cpp}
-     * xt::xtensorf<double, xt::xshape<2, 2>> a = {{1., 2.}, {3., 4.}};
+     * xt::xtensor_fixed<double, xt::xshape<2, 2>> a = {{1., 2.}, {3., 4.}};
      * \endcode
      *
      * instead of the syntax
@@ -155,8 +158,8 @@ namespace xt
      */
     template <class T,
               class FS,
-              layout_type L = DEFAULT_LAYOUT>
-    using xtensorf = xfixed_container<T, FS, L>;
+              layout_type L = XTENSOR_DEFAULT_LAYOUT>
+    using xtensor_fixed = xfixed_container<T, FS, L>;
 
     /**
      * @typedef xtensor_optional
@@ -170,13 +173,16 @@ namespace xt
      */
     template <class T,
               std::size_t N,
-              layout_type L = DEFAULT_LAYOUT,
-              class A = DEFAULT_ALLOCATOR(T),
+              layout_type L = XTENSOR_DEFAULT_LAYOUT,
+              class A = XTENSOR_DEFAULT_ALLOCATOR(T),
               class BC = xtl::xdynamic_bitset<std::size_t>>
     using xtensor_optional = xtensor_container<xtl::xoptional_vector<T, A, BC>, N, L, xoptional_expression_tag>;
 
     template <class CT, class... S>
     class xview;
+
+    template <class F, class R, class... CT>
+    class xfunction;
 
     namespace check_policy
     {

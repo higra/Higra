@@ -94,7 +94,7 @@ namespace xt
         };
 
         template <class F, class R>
-        struct simd_return_type<F, R, void_t<decltype(&F::simd_apply)>>
+        struct simd_return_type<F, R, void_t<decltype(&F::template simd_apply<R>)>>
         {
             using type = R;
         };
@@ -107,6 +107,13 @@ namespace xt
         {
             using type = R;
             using simd_type = xsimd::simd_type<T>;
+        };
+
+        template <class T>
+        struct functor_return_type<T, std::complex<T>>
+        {
+            using type = std::complex<T>;
+            using simd_type = xsimd::simd_type<std::complex<T>>;
         };
 
         template <class T>
@@ -145,7 +152,7 @@ namespace xt
      * xfunction_base *
      ******************/
 
-#define DL DEFAULT_LAYOUT
+#define DL XTENSOR_DEFAULT_LAYOUT
 
     /**
      * @class xfunction_base
@@ -286,8 +293,8 @@ namespace xt
 
     protected:
 
-        template<class Func, class... CTA, class U = std::enable_if_t<!std::is_base_of<Func, self_type>::value>>
-        xfunction_base(Func &&f, CTA &&... e) noexcept;
+        template <class Func, class... CTA, class U = std::enable_if_t<!std::is_base_of<std::decay_t<Func>, self_type>::value>>
+        xfunction_base(Func&& f, CTA&&... e) noexcept;
 
         ~xfunction_base() = default;
 
@@ -467,8 +474,6 @@ namespace xt
 
         reference operator*() const;
 
-        bool equal(const self_type& rhs) const;
-
     private:
 
         template <std::size_t... I>
@@ -477,14 +482,6 @@ namespace xt
         const xfunction_type* p_f;
         std::tuple<typename std::decay_t<CT>::const_stepper...> m_it;
     };
-
-    template <class F, class R, class... CT>
-    bool operator==(const xfunction_stepper<F, R, CT...>& it1,
-                    const xfunction_stepper<F, R, CT...>& it2);
-
-    template <class F, class R, class... CT>
-    bool operator!=(const xfunction_stepper<F, R, CT...>& it1,
-                    const xfunction_stepper<F, R, CT...>& it2);
 
     /*************
      * xfunction *
@@ -511,8 +508,8 @@ namespace xt
         using self_type = xfunction<F, R, CT...>;
         using base_type = xfunction_base<F, R, CT...>;
 
-        template<class Func, class... CTA, class U = std::enable_if_t<!std::is_base_of<Func, self_type>::value>>
-        xfunction(Func &&f, CTA &&... e) noexcept;
+        template <class Func, class... CTA, class U = std::enable_if_t<!std::is_base_of<std::decay_t<Func>, self_type>::value>>
+        xfunction(Func&& f, CTA&&... e) noexcept;
 
         ~xfunction() = default;
 
@@ -538,10 +535,9 @@ namespace xt
      * @param e the \ref xexpression arguments
      */
     template <class F, class R, class... CT>
-    template<class Func, class... CTA, class U>
-    inline xfunction_base<F, R, CT...>::xfunction_base(Func &&f, CTA &&... e) noexcept
-            : m_e(std::forward<CTA>(e)...), m_f(std::forward<Func>(f)),
-              m_shape(xtl::make_sequence<shape_type>(0, size_type(0))),
+    template <class Func, class... CTA, class U>
+    inline xfunction_base<F, R, CT...>::xfunction_base(Func&& f, CTA&&... e) noexcept
+        : m_e(std::forward<CTA>(e)...), m_f(std::forward<Func>(f)), m_shape(xtl::make_sequence<shape_type>(0, size_type(0))),
           m_shape_computed(false)
     {
     }
@@ -1076,30 +1072,10 @@ namespace xt
     }
 
     template <class F, class R, class... CT>
-    inline bool xfunction_stepper<F, R, CT...>::equal(const self_type& rhs) const
-    {
-        return p_f == rhs.p_f && m_it == rhs.m_it;
-    }
-
-    template <class F, class R, class... CT>
     template <std::size_t... I>
     inline auto xfunction_stepper<F, R, CT...>::deref_impl(std::index_sequence<I...>) const -> reference
     {
         return (p_f->m_f)(*std::get<I>(m_it)...);
-    }
-
-    template <class F, class R, class... CT>
-    inline bool operator==(const xfunction_stepper<F, R, CT...>& it1,
-                           const xfunction_stepper<F, R, CT...>& it2)
-    {
-        return it1.equal(it2);
-    }
-
-    template <class F, class R, class... CT>
-    inline bool operator!=(const xfunction_stepper<F, R, CT...>& it1,
-                           const xfunction_stepper<F, R, CT...>& it2)
-    {
-        return !(it1.equal(it2));
     }
 
     /****************************
@@ -1113,9 +1089,9 @@ namespace xt
      * @param e the \ref xexpression arguments
      */
     template <class F, class R, class... CT>
-    template<class Func, class... CTA, class U>
-    xfunction<F, R, CT...>::xfunction(Func &&f, CTA &&... e) noexcept
-            : base_type(std::forward<Func>(f), std::forward<CTA>(e)...)
+    template <class Func, class... CTA, class U>
+    xfunction<F, R, CT...>::xfunction(Func&& f, CTA&&... e) noexcept
+        : base_type(std::forward<Func>(f), std::forward<CTA>(e)...)
     {
     }
 }

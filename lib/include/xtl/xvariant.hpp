@@ -17,6 +17,8 @@
     #include "xvariant_impl.hpp"
 #endif
 
+#include "xclosure.hpp"
+
 namespace xtl
 {
     using mpark::variant;
@@ -34,6 +36,120 @@ namespace xtl
     using mpark::holds_alternative;
     using mpark::get;
     using mpark::get_if;
+
+    namespace detail
+    {
+        template <class T>
+        struct xgetter
+        {
+            template <class... Ts>
+            static inline constexpr T& get(xtl::variant<Ts...>& v)
+            {
+                return xtl::get<T>(v);
+            }
+
+            template <class... Ts>
+            static inline constexpr T&& get(xtl::variant<Ts...>&& v)
+            {
+                return xtl::get<T>(std::move(v));
+            }
+
+            template <class... Ts>
+            static inline constexpr const T& get(const xtl::variant<Ts...>& v)
+            {
+                return xtl::get<T>(v);
+            }
+
+            template <class... Ts>
+            static inline constexpr const T&& get(const xtl::variant<Ts...>&& v)
+            {
+                return xtl::get<T>(std::move(v));
+            }
+        };
+
+        template <class T>
+        struct xgetter<T&>
+        {
+            template <class... Ts>
+            static inline constexpr T& get(xtl::variant<Ts...>& v)
+            {
+                return xtl::get<xtl::xclosure_wrapper<T&>>(v).get();
+            }
+
+            template <class... Ts>
+            static inline constexpr T&& get(xtl::variant<Ts...>&& v)
+            {
+                return xtl::get<xtl::xclosure_wrapper<T&>>(std::move(v)).get();
+            }
+
+            template <class... Ts>
+            static inline constexpr const T& get(const xtl::variant<Ts...>& v)
+            {
+                return xtl::get<xtl::xclosure_wrapper<T&>>(v).get();
+            }
+
+            template <class... Ts>
+            static inline constexpr const T&& get(const xtl::variant<Ts...>&& v)
+            {
+                return xtl::get<xtl::xclosure_wrapper<T&>>(std::move(v)).get();
+            }
+        };
+    }
+
+    template <class T, class... Ts>
+    inline constexpr decltype(auto) xget(xtl::variant<Ts...>& v)
+    {
+        return detail::xgetter<T>::get(v);
+    }
+
+    template <class T, class... Ts>
+    inline constexpr decltype(auto) xget(xtl::variant<Ts...>&& v)
+    {
+        return detail::xgetter<T>::get(std::move(v));
+    }
+
+    template <class T, class... Ts>
+    inline constexpr decltype(auto) xget(const xtl::variant<Ts...>& v)
+    {
+        return detail::xgetter<T>::get(v);
+    }
+
+    template <class T, class... Ts>
+    inline constexpr decltype(auto) xget(const xtl::variant<Ts...>&& v)
+    {
+        return detail::xgetter<T>::get(std::move(v));
+    }
+
+    /************************
+     * overload for lambdas *
+     ************************/
+
+    // This hierarchy is required since ellipsis in using declarations are not supported until C++17
+    template <class... Ts>
+    struct overloaded;
+
+    template <class T>
+    struct overloaded<T> : T
+    {
+        overloaded(T arg) : T(arg) {}
+        using T::operator();
+    };
+
+    template <class T1, class T2, class... Ts>
+    struct overloaded<T1, T2, Ts...> : T1, overloaded<T2, Ts...>
+    {
+        template <class... Us>
+        overloaded(T1 t1, T2 t2, Us... args) : T1(t1), overloaded<T2, Ts...>(t2, args...) {}
+
+        using T1::operator();
+        using overloaded<T2, Ts...>::operator();
+    };
+
+    template <class... Ts>
+    inline overloaded<Ts...> make_overload(Ts... arg)
+    {
+        return overloaded<Ts...>{arg...};
+    }
 }
 
 #endif

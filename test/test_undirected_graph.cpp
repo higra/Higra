@@ -5,7 +5,6 @@
 #include <boost/test/unit_test.hpp>
 
 #include "higra/graph.hpp"
-#include "xtensor/xio.hpp"
 
 #include "test_utils.hpp"
 
@@ -75,10 +74,10 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
 
     BOOST_AUTO_TEST_CASE(copyCTR2) {
         hg::embedding_grid_2d embedding{2, 3}; // 2 rows, 3 columns
-        std::vector<point_2d_i> neighbours{{      -1, 0},
-                                                 {0,  -1},
-                                                 {0,  1},
-                                                 {1,  0}}; // 4 adjacency
+        std::vector<point_2d_i> neighbours{point_2d_i{{-1l, 0l}},
+                                           point_2d_i{{0l,  -1l}},
+                                           point_2d_i{{0l,  1l}},
+                                           point_2d_i{{1l,  0l}}}; // 4 adjacency
 
         auto g0 = hg::regular_grid_graph_2d(embedding, neighbours);
         auto g = hg::make_ugraph(g0);

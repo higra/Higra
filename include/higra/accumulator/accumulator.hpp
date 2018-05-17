@@ -277,7 +277,7 @@ namespace hg {
 
         template<typename shape_t>
         static
-        auto get_output_shape(const shape_t &input_shape) {
+        auto get_output_shape(const shape_t &) {
             return std::vector<std::size_t>();
         }
     };

@@ -15,6 +15,7 @@
 #include <complex>
 #include <cstddef>
 #include <initializer_list>
+#include <iostream>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -492,15 +493,15 @@ namespace xt
     }
 
     /*****************************************
-     * has_raw_data_interface implementation *
+     * has_data_interface implementation *
      *****************************************/
 
     template <class T>
-    class has_raw_data_interface
+    class has_data_interface
     {
         // the test function has one argument -- the return type of the function we're searching if it exists
         template <class C>
-        static std::true_type test(decltype(std::declval<C>().raw_data()));
+        static std::true_type test(decltype(std::declval<C>().data()));
 
         template <class C>
         static std::false_type test(...);
@@ -508,9 +509,7 @@ namespace xt
     public:
 
         // we try to call the test function with the return type and report the result
-        constexpr static bool value = decltype(test<T>(
-                std::declval<const std::add_pointer_t<typename T::value_type>>()))
-        ::value == true;
+        constexpr static bool value = decltype(test<T>(std::declval<const std::add_pointer_t<typename T::value_type>>()))::value == true;
     };
 
     /******************
@@ -893,6 +892,85 @@ namespace xt
      */
     template <class T>
     using squared_norm_type_t = typename squared_norm_type<T>::type;
+
+    namespace alloc_tracking
+    {
+        inline bool& enabled()
+        {
+            static bool enabled;
+            return enabled;
+        };
+
+        inline void enable()
+        {
+            enabled() = true;
+        }
+
+        inline void disable()
+        {
+            enabled() = false;
+        }
+
+        enum policy
+        {
+            print,
+            assert
+        };
+    }
+
+    template <class T, class A, alloc_tracking::policy P>
+    struct tracking_allocator
+        : private A
+    {
+        using base_type = A;
+        using value_type = typename A::value_type;
+        using reference = typename A::reference;
+        using const_reference = typename A::const_reference;
+        using pointer = typename A::pointer;
+        using const_pointer = typename A::const_pointer;
+        using size_type = typename A::size_type;
+        using difference_type = typename A::difference_type;
+
+        tracking_allocator() = default;
+
+        T* allocate(std::size_t n)
+        {
+            if (alloc_tracking::enabled())
+            {
+                if (P == alloc_tracking::print)
+                {
+                    std::cout << "xtensor allocating: " << n << "" << std::endl;
+                }
+                else if (P == alloc_tracking::assert)
+                {
+                    throw std::runtime_error("xtensor allocation of " + std::to_string(n) + " elements detected");
+                }
+            }
+            return base_type::allocate(n);
+        }
+
+        using base_type::deallocate;
+        using base_type::construct;
+        using base_type::destroy;
+
+        template <class U>
+        struct rebind
+        {
+            using other = tracking_allocator<U, typename A::template rebind<U>::other, P>;
+        };
+    };
+
+    template <class T, class AT, alloc_tracking::policy PT, class U, class AU, alloc_tracking::policy PU>
+    inline bool operator==(const tracking_allocator<T, AT, PT>&, const tracking_allocator<U, AU, PU>&)
+    {
+      return std::is_same<AT, AU>::value;
+    }
+
+    template <class T, class AT, alloc_tracking::policy PT, class U, class AU, alloc_tracking::policy PU>
+    inline bool operator!=(const tracking_allocator<T, AT, PT>& a, const tracking_allocator<U, AU, PU>& b)
+    {
+      return !(a == b);
+    }
 }
 
 #endif

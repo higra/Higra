@@ -164,25 +164,27 @@ namespace hg {
     using regular_grid_graph_3d = regular_graph<hg::embedding_grid_3d>;
     using regular_grid_graph_4d = regular_graph<hg::embedding_grid_4d>;
 
-    template<typename embedding_t>
-    struct graph_traits<hg::regular_graph<embedding_t>> {
-        using G = hg::regular_graph<embedding_t>;
+    namespace graph {
+        template<typename embedding_t>
+        struct graph_traits<hg::regular_graph<embedding_t>> {
+            using G = hg::regular_graph<embedding_t>;
 
-        using vertex_descriptor = typename G::vertex_descriptor;
-        using edge_descriptor = typename G::edge_descriptor;
-        using out_edge_iterator = typename G::out_edge_iterator;
+            using vertex_descriptor = typename G::vertex_descriptor;
+            using edge_descriptor = typename G::edge_descriptor;
+            using out_edge_iterator = typename G::out_edge_iterator;
 
-        using directed_category = typename G::directed_category;
-        using edge_parallel_category = typename G::edge_parallel_category;
-        using traversal_category = typename G::traversal_category;
+            using directed_category = typename G::directed_category;
+            using edge_parallel_category = typename G::edge_parallel_category;
+            using traversal_category = typename G::traversal_category;
 
-        using degree_size_type = typename G::degree_size_type;
+            using degree_size_type = typename G::degree_size_type;
 
-        using in_edge_iterator = typename G::in_edge_iterator;
-        using vertex_iterator = typename G::vertex_iterator;
-        using vertices_size_type = typename G::vertices_size_type;
-        using adjacency_iterator = typename G::adjacency_iterator;
-    };
+            using in_edge_iterator = typename G::in_edge_iterator;
+            using vertex_iterator = typename G::vertex_iterator;
+            using vertices_size_type = typename G::vertices_size_type;
+            using adjacency_iterator = typename G::adjacency_iterator;
+        };
+    }
 
     template<typename embedding_t>
     using regular_graph_out_edge_iterator = typename regular_graph_internal::regular_graph<embedding_t>::out_edge_iterator;

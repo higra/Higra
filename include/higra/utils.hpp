@@ -78,7 +78,7 @@ namespace xt {
 
     template<typename E>
     auto view_all(xt::xcontainer_semantic<E> &&e) {
-        return xt::dynamic_view(e, {});
+        return xt::strided_view(e, {});
     }
 
     template<typename E>
@@ -88,7 +88,7 @@ namespace xt {
 
     template<typename E>
     auto view_all(xt::xscalar<E> &&e) {
-        return xt::dynamic_view(e, {});
+        return xt::strided_view(e, {});
     }
 
 }

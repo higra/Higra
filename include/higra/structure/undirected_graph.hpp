@@ -164,28 +164,29 @@ namespace hg {
 
     using ugraph = undirected_graph_internal::undirected_graph<>;
 
+    namespace graph {
+        template<typename T>
+        struct graph_traits<hg::undirected_graph<T>> {
+            using G = hg::undirected_graph<T>;
 
-    template<typename T>
-    struct graph_traits<hg::undirected_graph<T>> {
-        using G = hg::undirected_graph<T>;
+            using vertex_descriptor = typename G::vertex_descriptor;
+            using edge_descriptor = typename G::edge_descriptor;
+            using edge_iterator = typename G::edge_iterator;
+            using out_edge_iterator = typename G::out_edge_iterator;
 
-        using vertex_descriptor = typename G::vertex_descriptor;
-        using edge_descriptor = typename G::edge_descriptor;
-        using edge_iterator = typename G::edge_iterator;
-        using out_edge_iterator = typename G::out_edge_iterator;
+            using directed_category = typename G::directed_category;
+            using edge_parallel_category = typename G::edge_parallel_category;
+            using traversal_category = typename G::traversal_category;
 
-        using directed_category = typename G::directed_category;
-        using edge_parallel_category = typename G::edge_parallel_category;
-        using traversal_category = typename G::traversal_category;
+            using degree_size_type = typename G::degree_size_type;
 
-        using degree_size_type = typename G::degree_size_type;
-
-        using in_edge_iterator = typename G::in_edge_iterator;
-        using vertex_iterator = typename G::vertex_iterator;
-        using vertices_size_type = typename G::vertices_size_type;
-        using edges_size_type = typename G::edges_size_type;
-        using adjacency_iterator = typename G::adjacency_iterator;
-    };
+            using in_edge_iterator = typename G::in_edge_iterator;
+            using vertex_iterator = typename G::vertex_iterator;
+            using vertices_size_type = typename G::vertices_size_type;
+            using edges_size_type = typename G::edges_size_type;
+            using adjacency_iterator = typename G::adjacency_iterator;
+        };
+    }
 
     template<typename T>
     std::pair<typename undirected_graph<T>::edge_index_iterator, typename undirected_graph<T>::edge_index_iterator>

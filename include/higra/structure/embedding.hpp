@@ -61,8 +61,12 @@ namespace hg {
             embedding_grid() {}
 
 
-            embedding_grid(const std::initializer_list<long> &shape) : _shape(shape) {
+            embedding_grid(const std::initializer_list<long> &shape){
                 hg_assert(dim == _shape.size(), "Shape dimension does not match embedding dimension !");
+                _shape = xt::zeros<long>({shape.size()});
+                std::size_t i = 0;
+                for (const auto c:shape)
+                    _shape(i++) = c;
                 assert_positive_shape();
                 computeSumProd();
                 computeSize();

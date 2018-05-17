@@ -33,7 +33,8 @@
 
 #include "xtl/xsequence.hpp"
 
-namespace xt {
+namespace xt
+{
 
     inline void import_numpy();
 
@@ -47,23 +48,24 @@ namespace xt {
      * @tparam D The derived type, i.e. the inheriting class for which pycontainer
      *           provides the interface.
      */
-    template<class D>
+    template <class D>
     class pycontainer : public pybind11::object,
-                        public xcontainer<D> {
+                        public xcontainer<D>
+    {
     public:
 
         using derived_type = D;
 
         using base_type = xcontainer<D>;
         using inner_types = xcontainer_inner_types<D>;
-        using container_type = typename inner_types::container_type;
-        using value_type = typename container_type::value_type;
-        using reference = typename container_type::reference;
-        using const_reference = typename container_type::const_reference;
-        using pointer = typename container_type::pointer;
-        using const_pointer = typename container_type::const_pointer;
-        using size_type = typename container_type::size_type;
-        using difference_type = typename container_type::difference_type;
+        using storage_type = typename inner_types::storage_type;
+        using value_type = typename storage_type::value_type;
+        using reference = typename storage_type::reference;
+        using const_reference = typename storage_type::const_reference;
+        using pointer = typename storage_type::pointer;
+        using const_pointer = typename storage_type::const_pointer;
+        using size_type = typename storage_type::size_type;
+        using difference_type = typename storage_type::difference_type;
 
         using shape_type = typename inner_types::shape_type;
         using strides_type = typename inner_types::strides_type;
@@ -82,17 +84,15 @@ namespace xt {
         static constexpr layout_type static_layout = layout_type::dynamic;
         static constexpr bool contiguous_layout = false;
 
-        template<class S = shape_type>
-        void resize(const S &shape);
+        template <class S = shape_type>
+        void resize(const S& shape);
+        template <class S = shape_type>
+        void resize(const S& shape, layout_type l);
+        template <class S = shape_type>
+        void resize(const S& shape, const strides_type& strides);
 
-        template<class S = shape_type>
-        void resize(const S &shape, layout_type l);
-
-        template<class S = shape_type>
-        void resize(const S &shape, const strides_type &strides);
-
-        template<class S = shape_type>
-        void reshape(S &&shape, layout_type layout = base_type::static_layout);
+        template <class S = shape_type>
+        void reshape(S&& shape, layout_type layout = base_type::static_layout);
 
         layout_type layout() const;
 
@@ -104,41 +104,34 @@ namespace xt {
     protected:
 
         pycontainer();
-
         ~pycontainer() = default;
 
         pycontainer(pybind11::handle h, borrowed_t);
-
         pycontainer(pybind11::handle h, stolen_t);
+        pycontainer(const pybind11::object& o);
 
-        pycontainer(const pybind11::object &o);
+        pycontainer(const pycontainer&) = default;
+        pycontainer& operator=(const pycontainer&) = default;
 
-        pycontainer(const pycontainer &) = default;
-
-        pycontainer &operator=(const pycontainer &) = default;
-
-        pycontainer(pycontainer &&) = default;
-
-        pycontainer &operator=(pycontainer &&) = default;
+        pycontainer(pycontainer&&) = default;
+        pycontainer& operator=(pycontainer&&) = default;
 
         static derived_type ensure(pybind11::handle h);
-
         static bool check_(pybind11::handle h);
+        static PyObject* raw_array_t(PyObject* ptr);
 
-        static PyObject *raw_array_t(PyObject *ptr);
+        derived_type& derived_cast();
+        const derived_type& derived_cast() const;
 
-        derived_type &derived_cast();
-
-        const derived_type &derived_cast() const;
-
-        PyArrayObject *python_array() const;
-
+        PyArrayObject* python_array() const;
         size_type get_min_stride() const;
     };
 
-    namespace detail {
-        template<class T>
-        struct numpy_traits {
+    namespace detail
+    {
+        template <class T>
+        struct numpy_traits
+        {
         private:
 
             // On Windows 64 bits, NPY_INT != NPY_INT32 and NPY_UINT != NPY_UINT32
@@ -148,11 +141,11 @@ namespace xt {
             // we use the values of NPY_INT64 and NPY_UINT64 which are consistent with the
             // values of NPY_LONG and NPY_ULONG.
             constexpr static const int value_list[15] = {
-                    NPY_BOOL,
-                    NPY_BYTE, NPY_UBYTE, NPY_SHORT, NPY_USHORT,
-                    NPY_INT32, NPY_UINT32, NPY_INT64, NPY_UINT64,
-                    NPY_FLOAT, NPY_DOUBLE, NPY_LONGDOUBLE,
-                    NPY_CFLOAT, NPY_CDOUBLE, NPY_CLONGDOUBLE};
+                NPY_BOOL,
+                NPY_BYTE, NPY_UBYTE, NPY_SHORT, NPY_USHORT,
+                NPY_INT32, NPY_UINT32, NPY_INT64, NPY_UINT64,
+                NPY_FLOAT, NPY_DOUBLE, NPY_LONGDOUBLE,
+                NPY_CFLOAT, NPY_CDOUBLE, NPY_CLONGDOUBLE};
 
         public:
 
@@ -164,25 +157,31 @@ namespace xt {
         // On Linux x64, NPY_INT64 != NPY_LONGLONG and NPY_UINT64 != NPY_ULONGLONG
         // NPY_LONGLONG and NPY_ULONGLONG must be adjusted so the right type is
         // selected
-        template<bool>
-        struct numpy_enum_adjuster {
-            static inline int pyarray_type(PyArrayObject *obj) {
+        template <bool>
+        struct numpy_enum_adjuster
+        {
+            static inline int pyarray_type(PyArrayObject* obj)
+            {
                 return PyArray_TYPE(obj);
             }
         };
 
-        template<>
-        struct numpy_enum_adjuster<true> {
-            static inline int pyarray_type(PyArrayObject *obj) {
+        template <>
+        struct numpy_enum_adjuster<true>
+        {
+            static inline int pyarray_type(PyArrayObject* obj)
+            {
                 int res = PyArray_TYPE(obj);
-                if (res == NPY_LONGLONG || res == NPY_ULONGLONG) {
+                if(res == NPY_LONGLONG || res == NPY_ULONGLONG)
+                {
                     res -= 2;
                 }
                 return res;
             }
         };
 
-        inline int pyarray_type(PyArrayObject *obj) {
+        inline int pyarray_type(PyArrayObject* obj)
+        {
             return numpy_enum_adjuster<NPY_LONGLONG != NPY_INT64>::pyarray_type(obj);
         }
     }
@@ -191,48 +190,58 @@ namespace xt {
      * pycontainer implementation *
      ******************************/
 
-    template<class D>
+    template <class D>
     inline pycontainer<D>::pycontainer()
-            : pybind11::object() {
+        : pybind11::object()
+    {
     }
 
-    template<class D>
+    template <class D>
     inline pycontainer<D>::pycontainer(pybind11::handle h, borrowed_t b)
-            : pybind11::object(h, b) {
+        : pybind11::object(h, b)
+    {
     }
 
-    template<class D>
+    template <class D>
     inline pycontainer<D>::pycontainer(pybind11::handle h, stolen_t s)
-            : pybind11::object(h, s) {
+        : pybind11::object(h, s)
+    {
     }
 
-    template<class D>
-    inline pycontainer<D>::pycontainer(const pybind11::object &o)
-            : pybind11::object(raw_array_t(o.ptr()), pybind11::object::stolen_t{}) {
-        if (!this->m_ptr) {
+    template <class D>
+    inline pycontainer<D>::pycontainer(const pybind11::object& o)
+        : pybind11::object(raw_array_t(o.ptr()), pybind11::object::stolen_t{})
+    {
+        if (!this->m_ptr)
+        {
             throw pybind11::error_already_set();
         }
     }
 
-    template<class D>
-    inline auto pycontainer<D>::ensure(pybind11::handle h) -> derived_type {
+    template <class D>
+    inline auto pycontainer<D>::ensure(pybind11::handle h) -> derived_type
+    {
         auto result = pybind11::reinterpret_steal<derived_type>(raw_array_t(h.ptr()));
-        if (result.ptr() == nullptr) {
+        if (result.ptr() == nullptr)
+        {
             PyErr_Clear();
         }
         return result;
     }
 
-    template<class D>
-    inline bool pycontainer<D>::check_(pybind11::handle h) {
+    template <class D>
+    inline bool pycontainer<D>::check_(pybind11::handle h)
+    {
         int type_num = detail::numpy_traits<value_type>::type_num;
         return PyArray_Check(h.ptr()) &&
-               PyArray_EquivTypenums(PyArray_TYPE(reinterpret_cast<PyArrayObject *>(h.ptr())), type_num);
+            PyArray_EquivTypenums(PyArray_TYPE(reinterpret_cast<PyArrayObject*>(h.ptr())), type_num);
     }
 
-    template<class D>
-    inline PyObject *pycontainer<D>::raw_array_t(PyObject *ptr) {
-        if (ptr == nullptr) {
+    template <class D>
+    inline PyObject* pycontainer<D>::raw_array_t(PyObject* ptr)
+    {
+        if (ptr == nullptr)
+        {
             return nullptr;
         }
         int type_num = detail::numpy_traits<value_type>::type_num;
@@ -241,26 +250,29 @@ namespace xt {
         return res;
     }
 
-    template<class D>
-    inline PyArrayObject *pycontainer<D>::python_array() const {
-        return reinterpret_cast<PyArrayObject *>(this->m_ptr);
+    template <class D>
+    inline PyArrayObject* pycontainer<D>::python_array() const
+    {
+        return reinterpret_cast<PyArrayObject*>(this->m_ptr);
     }
 
-    template<class D>
-    inline auto pycontainer<D>::get_min_stride() const -> size_type {
-        const size_type &(*min)(const size_type &, const size_type &) = std::min<size_type>;
-        return std::max(size_type(1), std::accumulate(this->strides().cbegin(), this->strides().cend(),
-                                                      std::numeric_limits<size_type>::max(), min));
+    template <class D>
+    inline auto pycontainer<D>::get_min_stride() const -> size_type
+    {
+        const size_type& (*min)(const size_type&, const size_type&) = std::min<size_type>;
+        return std::max(size_type(1), std::accumulate(this->strides().cbegin(), this->strides().cend(), std::numeric_limits<size_type>::max(), min));
     }
 
-    template<class D>
-    inline auto pycontainer<D>::derived_cast() -> derived_type & {
-        return *static_cast<derived_type *>(this);
+    template <class D>
+    inline auto pycontainer<D>::derived_cast() -> derived_type&
+    {
+        return *static_cast<derived_type*>(this);
     }
 
-    template<class D>
-    inline auto pycontainer<D>::derived_cast() const -> const derived_type & {
-        return *static_cast<const derived_type *>(this);
+    template <class D>
+    inline auto pycontainer<D>::derived_cast() const -> const derived_type&
+    {
+        return *static_cast<const derived_type*>(this);
     }
 
 
@@ -268,11 +280,12 @@ namespace xt {
      * resizes the container.
      * @param shape the new shape
      */
-    template<class D>
-    template<class S>
-    inline void pycontainer<D>::resize(const S &shape) {
-        if (shape.size() != this->dimension() ||
-            !std::equal(std::begin(shape), std::end(shape), std::begin(this->shape()))) {
+    template <class D>
+    template <class S>
+    inline void pycontainer<D>::resize(const S& shape)
+    {
+        if (shape.size() != this->dimension() || !std::equal(std::begin(shape), std::end(shape), std::begin(this->shape())))
+        {
             resize(shape, layout_type::row_major);
         }
     }
@@ -282,9 +295,10 @@ namespace xt {
      * @param shape the new shape
      * @param l the new layout
      */
-    template<class D>
-    template<class S>
-    inline void pycontainer<D>::resize(const S &shape, layout_type l) {
+    template <class D>
+    template <class S>
+    inline void pycontainer<D>::resize(const S& shape, layout_type l)
+    {
         strides_type strides = xtl::make_sequence<strides_type>(shape.size(), size_type(1));
         compute_strides(shape, l, strides);
         resize(shape, strides);
@@ -295,36 +309,41 @@ namespace xt {
      * @param shape the new shape
      * @param strides the new strides
      */
-    template<class D>
-    template<class S>
-    inline void pycontainer<D>::resize(const S &shape, const strides_type &strides) {
+    template <class D>
+    template <class S>
+    inline void pycontainer<D>::resize(const S& shape, const strides_type& strides)
+    {
         derived_type tmp(xtl::forward_sequence<shape_type>(shape), strides);
-        *static_cast<derived_type *>(this) = std::move(tmp);
+        *static_cast<derived_type*>(this) = std::move(tmp);
     }
 
-    template<class D>
-    template<class S>
-    inline void pycontainer<D>::reshape(S &&shape, layout_type layout) {
-        if (compute_size(shape) != this->size()) {
+    template <class D>
+    template <class S>
+    inline void pycontainer<D>::reshape(S&& shape, layout_type layout)
+    {
+        if (compute_size(shape) != this->size())
+        {
             throw std::runtime_error("Cannot reshape with incorrect number of elements.");
         }
 
-        if (layout == layout_type::dynamic || layout == layout_type::any) {
-            layout = DEFAULT_LAYOUT;
-        }
+        layout = default_assignable_layout(layout);
 
         NPY_ORDER npy_layout;
-        if (layout == layout_type::row_major) {
+        if (layout == layout_type::row_major)
+        {
             npy_layout = NPY_CORDER;
-        } else if (layout == layout_type::column_major) {
+        }
+        else if (layout == layout_type::column_major)
+        {
             npy_layout = NPY_FORTRANORDER;
-        } else {
+        }
+        else
+        {
             throw std::runtime_error("Cannot reshape with unknown layout_type.");
         }
 
-        PyArray_Dims dims = {reinterpret_cast<npy_intp *>(shape.data()), static_cast<int>(shape.size())};
-        auto new_ptr = PyArray_Newshape((PyArrayObject * )
-        this->ptr(), &dims, npy_layout);
+        PyArray_Dims dims = {reinterpret_cast<npy_intp*>(shape.data()), static_cast<int>(shape.size())};
+        auto new_ptr = PyArray_Newshape((PyArrayObject*) this->ptr(), &dims, npy_layout);
         auto old_ptr = this->ptr();
         this->ptr() = new_ptr;
         Py_XDECREF(old_ptr);
@@ -335,8 +354,9 @@ namespace xt {
      * Return the layout_type of the container
      * @return layout_type of the container
      */
-    template<class D>
-    inline layout_type pycontainer<D>::layout() const {
+    template <class D>
+    inline layout_type pycontainer<D>::layout() const
+    {
         if (PyArray_CHKFLAGS(python_array(), NPY_ARRAY_C_CONTIGUOUS))
             return layout_type::row_major;
         else if (PyArray_CHKFLAGS(python_array(), NPY_ARRAY_F_CONTIGUOUS))
@@ -348,7 +368,8 @@ namespace xt {
     /**
      * Import the numpy Python module.
      */
-    inline void import_numpy() {
+    inline void import_numpy()
+    {
 #ifdef FORCE_IMPORT_ARRAY
         if (_import_array() < 0)
         {

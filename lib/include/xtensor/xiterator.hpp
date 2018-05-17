@@ -91,18 +91,18 @@ namespace xt
     {
     public:
 
-        using container_type = C;
+        using storage_type = C;
         using subiterator_type = get_stepper_iterator<C>;
         using subiterator_traits = std::iterator_traits<subiterator_type>;
         using value_type = typename subiterator_traits::value_type;
         using reference = typename subiterator_traits::reference;
         using pointer = typename subiterator_traits::pointer;
         using difference_type = typename subiterator_traits::difference_type;
-        using size_type = typename container_type::size_type;
-        using shape_type = typename container_type::shape_type;
+        using size_type = typename storage_type::size_type;
+        using shape_type = typename storage_type::shape_type;
 
         xstepper() = default;
-        xstepper(container_type* c, subiterator_type it, size_type offset) noexcept;
+        xstepper(storage_type* c, subiterator_type it, size_type offset) noexcept;
 
         reference operator*() const;
 
@@ -114,22 +114,12 @@ namespace xt
         void to_begin();
         void to_end(layout_type l);
 
-        bool equal(const xstepper& rhs) const;
-
     private:
 
-        container_type* p_c;
+        storage_type* p_c;
         subiterator_type m_it;
         size_type m_offset;
     };
-
-    template <class C>
-    bool operator==(const xstepper<C>& lhs,
-                    const xstepper<C>& rhs);
-
-    template <class C>
-    bool operator!=(const xstepper<C>& lhs,
-                    const xstepper<C>& rhs);
 
     template <layout_type L>
     struct stepper_tools
@@ -165,7 +155,7 @@ namespace xt
      * xindexed_stepper *
      ********************/
 
-    template<class E, bool is_const>
+    template <class E, bool is_const>
     class xindexed_stepper
     {
     public:
@@ -199,22 +189,12 @@ namespace xt
         void to_begin();
         void to_end(layout_type l);
 
-        bool equal(const self_type& rhs) const;
-
     private:
 
         xexpression_type* p_e;
         index_type m_index;
         size_type m_offset;
     };
-
-    template <class C, bool is_const>
-    bool operator==(const xindexed_stepper<C, is_const>& lhs,
-                    const xindexed_stepper<C, is_const>& rhs);
-
-    template <class C, bool is_const>
-    bool operator!=(const xindexed_stepper<C, is_const>& lhs,
-                    const xindexed_stepper<C, is_const>& rhs);
 
     /*************
      * xiterator *
@@ -408,7 +388,7 @@ namespace xt
      ***************************/
 
     template <class C>
-    inline xstepper<C>::xstepper(container_type* c, subiterator_type it, size_type offset) noexcept
+    inline xstepper<C>::xstepper(storage_type* c, subiterator_type it, size_type offset) noexcept
         : p_c(c), m_it(it), m_offset(offset)
     {
     }
@@ -424,7 +404,8 @@ namespace xt
     {
         if (dim >= m_offset)
         {
-            m_it += difference_type(n * p_c->strides()[dim - m_offset]);
+            using strides_value_type = decltype(p_c->strides()[0]);
+            m_it += difference_type(static_cast<strides_value_type>(n) * p_c->strides()[dim - m_offset]);
         }
     }
 
@@ -433,7 +414,8 @@ namespace xt
     {
         if (dim >= m_offset)
         {
-            m_it -= difference_type(n * p_c->strides()[dim - m_offset]);
+            using strides_value_type = decltype(p_c->strides()[0]);
+            m_it -= difference_type(static_cast<strides_value_type>(n) * p_c->strides()[dim - m_offset]);
         }
     }
 
@@ -465,26 +447,6 @@ namespace xt
     inline void xstepper<C>::to_end(layout_type l)
     {
         m_it = p_c->data_xend(l);
-    }
-
-    template <class C>
-    inline bool xstepper<C>::equal(const xstepper& rhs) const
-    {
-        return p_c == rhs.p_c && m_it == rhs.m_it && m_offset == rhs.m_offset;
-    }
-
-    template <class C>
-    inline bool operator==(const xstepper<C>& lhs,
-                           const xstepper<C>& rhs)
-    {
-        return lhs.equal(rhs);
-    }
-
-    template <class C>
-    inline bool operator!=(const xstepper<C>& lhs,
-                           const xstepper<C>& rhs)
-    {
-        return !(lhs.equal(rhs));
     }
 
     template <>
@@ -646,7 +608,7 @@ namespace xt
     template <>
     template <class S, class IT, class ST>
     void stepper_tools<layout_type::column_major>::increment_stepper(S& stepper,
-                                                                     IT &index,
+                                                                     IT& index,
                                                                      const ST& shape)
     {
         using size_type = typename S::size_type;
@@ -728,7 +690,7 @@ namespace xt
     template <>
     template <class S, class IT, class ST>
     void stepper_tools<layout_type::column_major>::decrement_stepper(S& stepper,
-                                                                     IT &index,
+                                                                     IT& index,
                                                                      const ST& shape)
     {
         using size_type = typename S::size_type;
@@ -815,7 +777,8 @@ namespace xt
     {
         if (end)
         {
-            to_end(layout_type::row_major);
+            // Note: the layout here doesn't matter (unused) but using default layout looks more "correct"
+            to_end(XTENSOR_DEFAULT_LAYOUT);
         }
     }
 
@@ -830,7 +793,7 @@ namespace xt
     {
         if (dim >= m_offset)
         {
-            m_index[dim - m_offset] += n;
+            m_index[dim - m_offset] += static_cast<typename index_type::value_type>(n);
         }
     }
 
@@ -839,7 +802,7 @@ namespace xt
     {
         if (dim >= m_offset)
         {
-            m_index[dim - m_offset] -= n;
+            m_index[dim - m_offset] -= static_cast<typename index_type::value_type>(n);
         }
     }
 
@@ -871,26 +834,6 @@ namespace xt
     inline void xindexed_stepper<C, is_const>::to_end(layout_type)
     {
         std::copy(p_e->shape().begin(), p_e->shape().end(), m_index.begin());
-    }
-
-    template <class C, bool is_const>
-    inline bool xindexed_stepper<C, is_const>::equal(const self_type& rhs) const
-    {
-        return p_e == rhs.p_e && m_index == rhs.m_index && m_offset == rhs.m_offset;
-    }
-
-    template <class C, bool is_const>
-    inline bool operator==(const xindexed_stepper<C, is_const>& lhs,
-                           const xindexed_stepper<C, is_const>& rhs)
-    {
-        return lhs.equal(rhs);
-    }
-
-    template <class C, bool is_const>
-    inline bool operator!=(const xindexed_stepper<C, is_const>& lhs,
-                           const xindexed_stepper<C, is_const>& rhs)
-    {
-        return !lhs.equal(rhs);
     }
 
     /****************************
@@ -1024,13 +967,15 @@ namespace xt
     template <class It, class S, layout_type L>
     inline bool xiterator<It, S, L>::equal(const xiterator& rhs) const
     {
-        return m_it == rhs.m_it && this->shape() == rhs.shape();
+        XTENSOR_ASSERT(this->shape() == rhs.shape());
+        return m_linear_index == rhs.m_linear_index;
     }
 
     template <class It, class S, layout_type L>
     inline bool xiterator<It, S, L>::less_than(const xiterator& rhs) const
     {
-        return m_index < rhs.m_index && this->shape() == rhs.shape();
+        XTENSOR_ASSERT(this->shape() == rhs.shape());
+        return m_linear_index < rhs.m_linear_index;
     }
 
     template <class It, class S, layout_type L>
@@ -1098,7 +1043,8 @@ namespace xt
     template <class It, class BIt>
     inline auto xbounded_iterator<It, BIt>::operator*() const -> value_type
     {
-        return (*m_it < *m_bound_it) ? *m_it : static_cast<value_type>((*m_bound_it) - 1);
+        using type = decltype(*m_bound_it);
+        return (static_cast<type>(*m_it) < *m_bound_it) ? *m_it : static_cast<value_type>((*m_bound_it) - 1);
     }
 
     template <class It, class BIt>

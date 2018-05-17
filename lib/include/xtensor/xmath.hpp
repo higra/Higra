@@ -14,6 +14,7 @@
 #define XTENSOR_MATH_HPP
 
 #include <cmath>
+#include <array>
 #include <complex>
 #include <type_traits>
 
@@ -22,6 +23,9 @@
 #include "xaccumulator.hpp"
 #include "xoperation.hpp"
 #include "xreducer.hpp"
+#include "xslice.hpp"
+#include "xstrided_view.hpp"
+#include "xeval.hpp"
 
 namespace xt
 {
@@ -46,32 +50,32 @@ namespace xt
      * Helpers *
      ***********/
 
-#define UNSIGNED_ABS_FUNC(T)                                                      \
+#define XTENSOR_UNSIGNED_ABS_FUNC(T)                                              \
 constexpr inline T abs(const T& x)                                                \
 {                                                                                 \
     return x;                                                                     \
 }                                                                                 \
 
-#define INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, T)                         \
+#define XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, T)                 \
 constexpr inline bool FUNC_NAME(const T& /*x*/) noexcept                          \
 {                                                                                 \
     return RETURN_VAL;                                                            \
 }                                                                                 \
 
-#define INT_SPECIALIZATION(FUNC_NAME, RETURN_VAL)                                 \
-INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, char);                             \
-INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, short);                            \
-INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, int);                              \
-INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, long);                             \
-INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, long long);                        \
-INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned char);                    \
-INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned short);                   \
-INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned int);                     \
-INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long);                    \
-INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);               \
+#define XTENSOR_INT_SPECIALIZATION(FUNC_NAME, RETURN_VAL)                         \
+XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, char);                     \
+XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, short);                    \
+XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, int);                      \
+XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, long);                     \
+XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, long long);                \
+XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned char);            \
+XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned short);           \
+XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned int);             \
+XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long);            \
+XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);       \
 
 
-#define UNARY_MATH_FUNCTOR_IMPL(NAME, R)                                          \
+#define XTENSOR_UNARY_MATH_FUNCTOR_IMPL(NAME, R)                                  \
     template <class T>                                                            \
     struct NAME##_fun                                                             \
     {                                                                             \
@@ -102,10 +106,10 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
         };                                                                        \
     }
 
-#define UNARY_MATH_FUNCTOR(NAME) UNARY_MATH_FUNCTOR_IMPL(NAME, T)
-#define UNARY_BOOL_FUNCTOR(NAME) UNARY_MATH_FUNCTOR_IMPL(NAME, bool)
+#define XTENSOR_UNARY_MATH_FUNCTOR(NAME) XTENSOR_UNARY_MATH_FUNCTOR_IMPL(NAME, T)
+#define XTENSOR_UNARY_BOOL_FUNCTOR(NAME) XTENSOR_UNARY_MATH_FUNCTOR_IMPL(NAME, bool)
 
-#define UNARY_MATH_FUNCTOR_COMPLEX_REDUCING(NAME)                                 \
+#define XTENSOR_UNARY_MATH_FUNCTOR_COMPLEX_REDUCING(NAME)                         \
     template <class T>                                                            \
     struct NAME##_fun                                                             \
     {                                                                             \
@@ -135,7 +139,7 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
         };                                                                        \
     }
 
-#define BINARY_MATH_FUNCTOR_IMPL(NAME, R)                                         \
+#define XTENSOR_BINARY_MATH_FUNCTOR_IMPL(NAME, R)                                 \
     template <class T>                                                            \
     struct NAME##_fun                                                             \
     {                                                                             \
@@ -168,10 +172,10 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
         };                                                                        \
     }
 
-#define BINARY_MATH_FUNCTOR(NAME) BINARY_MATH_FUNCTOR_IMPL(NAME, T)
-#define BINARY_BOOL_FUNCTOR(NAME) BINARY_MATH_FUNCTOR_IMPL(NAME, bool)
+#define XTENSOR_BINARY_MATH_FUNCTOR(NAME) XTENSOR_BINARY_MATH_FUNCTOR_IMPL(NAME, T)
+#define XTENSOR_BINARY_BOOL_FUNCTOR(NAME) XTENSOR_BINARY_MATH_FUNCTOR_IMPL(NAME, bool)
 
-#define TERNARY_MATH_FUNCTOR_IMPL(NAME, R)                                        \
+#define XTENSOR_TERNARY_MATH_FUNCTOR_IMPL(NAME, R)                                \
     template <class T>                                                            \
     struct NAME##_fun                                                             \
     {                                                                             \
@@ -209,8 +213,8 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
         };                                                                        \
     }
 
-#define TERNARY_MATH_FUNCTOR(NAME) TERNARY_MATH_FUNCTOR_IMPL(NAME, T)
-#define TERNARY_BOOL_FUNCTOR(NAME) TERNARY_MATH_FUNCTOR_IMPL(NAME, bool)
+#define XTENSOR_TERNARY_MATH_FUNCTOR(NAME) XTENSOR_TERNARY_MATH_FUNCTOR_IMPL(NAME, T)
+#define XTENSOR_TERNARY_BOOL_FUNCTOR(NAME) XTENSOR_TERNARY_MATH_FUNCTOR_IMPL(NAME, bool)
 
     namespace math
     {
@@ -303,81 +307,83 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
 
         // The following specializations are needed to avoid 'ambiguous overload' errors,
         // whereas 'unsigned char' and 'unsigned short' are automatically converted to 'int'.
-        UNSIGNED_ABS_FUNC(unsigned int);
-        UNSIGNED_ABS_FUNC(unsigned long);
-        UNSIGNED_ABS_FUNC(unsigned long long);
+        // we're still adding those functions to silence warnings
+        XTENSOR_UNSIGNED_ABS_FUNC(unsigned char);
+        XTENSOR_UNSIGNED_ABS_FUNC(unsigned short);
+        XTENSOR_UNSIGNED_ABS_FUNC(unsigned int);
+        XTENSOR_UNSIGNED_ABS_FUNC(unsigned long);
+        XTENSOR_UNSIGNED_ABS_FUNC(unsigned long long);
 
 #ifdef _WIN32
-        INT_SPECIALIZATION(isinf, false);
-        INT_SPECIALIZATION(isnan, false);
-        INT_SPECIALIZATION(isfinite, true);
+        XTENSOR_INT_SPECIALIZATION(isinf, false);
+        XTENSOR_INT_SPECIALIZATION(isnan, false);
+        XTENSOR_INT_SPECIALIZATION(isfinite, true);
 #endif
 
-        UNARY_MATH_FUNCTOR_COMPLEX_REDUCING(abs);
+        XTENSOR_UNARY_MATH_FUNCTOR_COMPLEX_REDUCING(abs);
 
-        UNARY_MATH_FUNCTOR(fabs);
-        BINARY_MATH_FUNCTOR(fmod);
-        BINARY_MATH_FUNCTOR(remainder);
-        TERNARY_MATH_FUNCTOR(fma);
-        BINARY_MATH_FUNCTOR(fmax);
-        BINARY_MATH_FUNCTOR(fmin);
-        BINARY_MATH_FUNCTOR(fdim);
-        UNARY_MATH_FUNCTOR(exp);
-        UNARY_MATH_FUNCTOR(exp2);
-        UNARY_MATH_FUNCTOR(expm1);
-        UNARY_MATH_FUNCTOR(log);
-        UNARY_MATH_FUNCTOR(log10);
-        UNARY_MATH_FUNCTOR(log2);
-        UNARY_MATH_FUNCTOR(log1p);
-        BINARY_MATH_FUNCTOR(pow);
-        UNARY_MATH_FUNCTOR(sqrt);
-        UNARY_MATH_FUNCTOR(cbrt);
-        BINARY_MATH_FUNCTOR(hypot);
-        UNARY_MATH_FUNCTOR(sin);
-        UNARY_MATH_FUNCTOR(cos);
-        UNARY_MATH_FUNCTOR(tan);
-        UNARY_MATH_FUNCTOR(asin);
-        UNARY_MATH_FUNCTOR(acos);
-        UNARY_MATH_FUNCTOR(atan);
-        BINARY_MATH_FUNCTOR(atan2);
-        UNARY_MATH_FUNCTOR(sinh);
-        UNARY_MATH_FUNCTOR(cosh);
-        UNARY_MATH_FUNCTOR(tanh);
-        UNARY_MATH_FUNCTOR(asinh);
-        UNARY_MATH_FUNCTOR(acosh);
-        UNARY_MATH_FUNCTOR(atanh);
-        UNARY_MATH_FUNCTOR(erf);
-        UNARY_MATH_FUNCTOR(erfc);
-        UNARY_MATH_FUNCTOR(tgamma);
-        UNARY_MATH_FUNCTOR(lgamma);
-        UNARY_MATH_FUNCTOR(ceil);
-        UNARY_MATH_FUNCTOR(floor);
-        UNARY_MATH_FUNCTOR(trunc);
-        UNARY_MATH_FUNCTOR(round);
-        UNARY_MATH_FUNCTOR(nearbyint);
-        UNARY_MATH_FUNCTOR(rint);
-        UNARY_BOOL_FUNCTOR(isfinite);
-        UNARY_BOOL_FUNCTOR(isinf);
-        UNARY_BOOL_FUNCTOR(isnan);
+        XTENSOR_UNARY_MATH_FUNCTOR(fabs);
+        XTENSOR_BINARY_MATH_FUNCTOR(fmod);
+        XTENSOR_BINARY_MATH_FUNCTOR(remainder);
+        XTENSOR_TERNARY_MATH_FUNCTOR(fma);
+        XTENSOR_BINARY_MATH_FUNCTOR(fmax);
+        XTENSOR_BINARY_MATH_FUNCTOR(fmin);
+        XTENSOR_BINARY_MATH_FUNCTOR(fdim);
+        XTENSOR_UNARY_MATH_FUNCTOR(exp);
+        XTENSOR_UNARY_MATH_FUNCTOR(exp2);
+        XTENSOR_UNARY_MATH_FUNCTOR(expm1);
+        XTENSOR_UNARY_MATH_FUNCTOR(log);
+        XTENSOR_UNARY_MATH_FUNCTOR(log10);
+        XTENSOR_UNARY_MATH_FUNCTOR(log2);
+        XTENSOR_UNARY_MATH_FUNCTOR(log1p);
+        XTENSOR_BINARY_MATH_FUNCTOR(pow);
+        XTENSOR_UNARY_MATH_FUNCTOR(sqrt);
+        XTENSOR_UNARY_MATH_FUNCTOR(cbrt);
+        XTENSOR_BINARY_MATH_FUNCTOR(hypot);
+        XTENSOR_UNARY_MATH_FUNCTOR(sin);
+        XTENSOR_UNARY_MATH_FUNCTOR(cos);
+        XTENSOR_UNARY_MATH_FUNCTOR(tan);
+        XTENSOR_UNARY_MATH_FUNCTOR(asin);
+        XTENSOR_UNARY_MATH_FUNCTOR(acos);
+        XTENSOR_UNARY_MATH_FUNCTOR(atan);
+        XTENSOR_BINARY_MATH_FUNCTOR(atan2);
+        XTENSOR_UNARY_MATH_FUNCTOR(sinh);
+        XTENSOR_UNARY_MATH_FUNCTOR(cosh);
+        XTENSOR_UNARY_MATH_FUNCTOR(tanh);
+        XTENSOR_UNARY_MATH_FUNCTOR(asinh);
+        XTENSOR_UNARY_MATH_FUNCTOR(acosh);
+        XTENSOR_UNARY_MATH_FUNCTOR(atanh);
+        XTENSOR_UNARY_MATH_FUNCTOR(erf);
+        XTENSOR_UNARY_MATH_FUNCTOR(erfc);
+        XTENSOR_UNARY_MATH_FUNCTOR(tgamma);
+        XTENSOR_UNARY_MATH_FUNCTOR(lgamma);
+        XTENSOR_UNARY_MATH_FUNCTOR(ceil);
+        XTENSOR_UNARY_MATH_FUNCTOR(floor);
+        XTENSOR_UNARY_MATH_FUNCTOR(trunc);
+        XTENSOR_UNARY_MATH_FUNCTOR(round);
+        XTENSOR_UNARY_MATH_FUNCTOR(nearbyint);
+        XTENSOR_UNARY_MATH_FUNCTOR(rint);
+        XTENSOR_UNARY_BOOL_FUNCTOR(isfinite);
+        XTENSOR_UNARY_BOOL_FUNCTOR(isinf);
+        XTENSOR_UNARY_BOOL_FUNCTOR(isnan);
     }
 
-#undef UNARY_MATH_FUNCTOR
-#undef UNARY_BOOL_FUNCTOR
-#undef UNARY_MATH_FUNCTOR_IMPL
-#undef BINARY_MATH_FUNCTOR
-#undef BINARY_BOOL_FUNCTOR
-#undef BINARY_MATH_FUNCTOR_IMPL
-#undef TERNARY_MATH_FUNCTOR
-#undef TERNARY_BOOL_FUNCTOR
-#undef TERNARY_MATH_FUNCTOR_IMPL
-#undef UNARY_MATH_FUNCTOR_COMPLEX_REDUCING
-#undef UNSIGNED_ABS_FUNCTOR
-#undef UNSIGNED_ABS_FUNC
+#undef XTENSOR_UNARY_MATH_FUNCTOR
+#undef XTENSOR_UNARY_BOOL_FUNCTOR
+#undef XTENSOR_UNARY_MATH_FUNCTOR_IMPL
+#undef XTENSOR_BINARY_MATH_FUNCTOR
+#undef XTENSOR_BINARY_BOOL_FUNCTOR
+#undef XTENSOR_BINARY_MATH_FUNCTOR_IMPL
+#undef XTENSOR_TERNARY_MATH_FUNCTOR
+#undef XTENSOR_TERNARY_BOOL_FUNCTOR
+#undef XTENSOR_TERNARY_MATH_FUNCTOR_IMPL
+#undef XTENSOR_UNARY_MATH_FUNCTOR_COMPLEX_REDUCING
+#undef XTENSOR_UNSIGNED_ABS_FUNC
 
-#define REDUCER_FUNCTION(NAME, FUNCTOR, RESULT_TYPE)                                                              \
+#define XTENSOR_REDUCER_FUNCTION(NAME, FUNCTOR, RESULT_TYPE)                                                      \
     template <class E, class X, class ES = DEFAULT_STRATEGY_REDUCERS,                                             \
               class = std::enable_if_t<!std::is_base_of<evaluation_strategy::base, std::decay_t<X>>::value, int>> \
-    inline auto NAME(E&& e, X&& axes, ES es = ES()) noexcept                                                      \
+    inline auto NAME(E&& e, X&& axes, ES es = ES())                                                               \
     {                                                                                                             \
         using result_type = RESULT_TYPE;                                                                          \
         using functor_type = FUNCTOR<result_type>;                                                                \
@@ -387,25 +393,25 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
                                                                                                                   \
     template <class E, class ES = DEFAULT_STRATEGY_REDUCERS,                                                      \
               class = std::enable_if_t<std::is_base_of<evaluation_strategy::base, ES>::value, int>>               \
-    inline auto NAME(E&& e, ES es = ES()) noexcept                                                                \
+    inline auto NAME(E&& e, ES es = ES())                                                                         \
     {                                                                                                             \
         using result_type = RESULT_TYPE;                                                                          \
         using functor_type = FUNCTOR<result_type>;                                                                \
         return reduce(make_xreducer_functor(functor_type()), std::forward<E>(e), es);                             \
     }
 
-#define OLD_CLANG_REDUCER(NAME, FUNCTOR, RESULT_TYPE)                                                             \
+#define XTENSOR_OLD_CLANG_REDUCER(NAME, FUNCTOR, RESULT_TYPE)                                                     \
     template <class E, class I, class ES = DEFAULT_STRATEGY_REDUCERS>                                             \
-        inline auto NAME(E&& e, std::initializer_list<I> axes, ES es = ES()) noexcept                             \
+        inline auto NAME(E&& e, std::initializer_list<I> axes, ES es = ES())                                      \
         {                                                                                                         \
             using result_type = RESULT_TYPE;                                                                      \
             using functor_type = FUNCTOR<result_type>;                                                            \
-            return reduce(make_xreducer_functor(functor_type()), std::forward<E>(e), axes);                       \
+            return reduce(make_xreducer_functor(functor_type()), std::forward<E>(e), axes, es);                   \
         }                                                                                                         \
 
-#define MODERN_CLANG_REDUCER(NAME, FUNCTOR, RESULT_TYPE)                                                          \
+#define XTENSOR_MODERN_CLANG_REDUCER(NAME, FUNCTOR, RESULT_TYPE)                                                  \
     template <class E, class I, std::size_t N, class ES = DEFAULT_STRATEGY_REDUCERS>                              \
-    inline auto NAME(E&& e, const I (&axes)[N], ES es = ES()) noexcept                                            \
+    inline auto NAME(E&& e, const I (&axes)[N], ES es = ES())                                                     \
     {                                                                                                             \
         using result_type = RESULT_TYPE;                                                                          \
         using functor_type = FUNCTOR<result_type>;                                                                \
@@ -665,11 +671,11 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @param es evaluation strategy of the reducer
      * @return an \ref xreducer
      */
-    REDUCER_FUNCTION(amax, math::maximum, typename std::decay_t<E>::value_type);
+    XTENSOR_REDUCER_FUNCTION(amax, math::maximum, typename std::decay_t<E>::value_type);
 #ifdef X_OLD_CLANG
-    OLD_CLANG_REDUCER(amax, math::maximum, typename std::decay_t<E>::value_type);
+    XTENSOR_OLD_CLANG_REDUCER(amax, math::maximum, typename std::decay_t<E>::value_type);
 #else
-    MODERN_CLANG_REDUCER(amax, math::maximum, typename std::decay_t<E>::value_type);
+    XTENSOR_MODERN_CLANG_REDUCER(amax, math::maximum, typename std::decay_t<E>::value_type);
 #endif
 
     /**
@@ -683,11 +689,11 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @param es evaluation strategy of the reducer
      * @return an \ref xreducer
      */
-    REDUCER_FUNCTION(amin, math::minimum, typename std::decay_t<E>::value_type);
+    XTENSOR_REDUCER_FUNCTION(amin, math::minimum, typename std::decay_t<E>::value_type);
 #ifdef X_OLD_CLANG
-    OLD_CLANG_REDUCER(amin, math::minimum, typename std::decay_t<E>::value_type);
+    XTENSOR_OLD_CLANG_REDUCER(amin, math::minimum, typename std::decay_t<E>::value_type);
 #else
-    MODERN_CLANG_REDUCER(amin, math::minimum, typename std::decay_t<E>::value_type);
+    XTENSOR_MODERN_CLANG_REDUCER(amin, math::minimum, typename std::decay_t<E>::value_type);
 #endif
 
     /**
@@ -1547,11 +1553,11 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @param es evaluation strategy of the reducer
      * @return an \ref xreducer
      */
-    REDUCER_FUNCTION(sum, std::plus, big_promote_type_t<typename std::decay_t<E>::value_type>);
+    XTENSOR_REDUCER_FUNCTION(sum, std::plus, big_promote_type_t<typename std::decay_t<E>::value_type>);
 #ifdef X_OLD_CLANG
-    OLD_CLANG_REDUCER(sum, std::plus, big_promote_type_t<typename std::decay_t<E>::value_type>);
+    XTENSOR_OLD_CLANG_REDUCER(sum, std::plus, big_promote_type_t<typename std::decay_t<E>::value_type>);
 #else
-    MODERN_CLANG_REDUCER(sum, std::plus, big_promote_type_t<typename std::decay_t<E>::value_type>);
+    XTENSOR_MODERN_CLANG_REDUCER(sum, std::plus, big_promote_type_t<typename std::decay_t<E>::value_type>);
 #endif
 
     /**
@@ -1565,11 +1571,11 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @param es evaluation strategy of the reducer
      * @return an \ref xreducer
      */
-    REDUCER_FUNCTION(prod, std::multiplies, big_promote_type_t<typename std::decay_t<E>::value_type>);
+    XTENSOR_REDUCER_FUNCTION(prod, std::multiplies, big_promote_type_t<typename std::decay_t<E>::value_type>);
 #ifdef X_OLD_CLANG
-    OLD_CLANG_REDUCER(prod, std::multiplies, big_promote_type_t<typename std::decay_t<E>::value_type>);
+    XTENSOR_OLD_CLANG_REDUCER(prod, std::multiplies, big_promote_type_t<typename std::decay_t<E>::value_type>);
 #else
-    MODERN_CLANG_REDUCER(prod, std::multiplies, big_promote_type_t<typename std::decay_t<E>::value_type>);
+    XTENSOR_MODERN_CLANG_REDUCER(prod, std::multiplies, big_promote_type_t<typename std::decay_t<E>::value_type>);
 #endif
 
     /**
@@ -1583,7 +1589,7 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @return an \ref xexpression
      */
     template <class E, class X>
-    inline auto mean(E&& e, X&& axes) noexcept
+    inline auto mean(E&& e, X&& axes)
     {
         auto size = e.size();
         auto s = sum(std::forward<E>(e), std::forward<X>(axes));
@@ -1591,7 +1597,7 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
     }
 
     template <class E>
-    inline auto mean(E&& e) noexcept
+    inline auto mean(E&& e)
     {
         auto size = e.size();
         return sum(std::forward<E>(e)) / static_cast<double>(size);
@@ -1599,7 +1605,7 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
 
 #ifdef X_OLD_CLANG
     template <class E, class I>
-    inline auto mean(E&& e, std::initializer_list<I> axes) noexcept
+    inline auto mean(E&& e, std::initializer_list<I> axes)
     {
         auto size = e.size();
         auto s = sum(std::forward<E>(e), axes);
@@ -1607,7 +1613,7 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
     }
 #else
     template <class E, class I, std::size_t N>
-    inline auto mean(E&& e, const I (&axes)[N]) noexcept
+    inline auto mean(E&& e, const I (&axes)[N])
     {
         auto size = e.size();
         auto s = sum(std::forward<E>(e), axes);
@@ -1626,7 +1632,7 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      */
     template <class E, class ES = DEFAULT_STRATEGY_REDUCERS,
               XTENSOR_REQUIRE<std::is_base_of<evaluation_strategy::base, ES>::value>>
-    inline auto minmax(E&& e, ES es = ES()) noexcept
+    inline auto minmax(E&& e, ES es = ES())
     {
         using std::min;
         using std::max;
@@ -1667,14 +1673,14 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @return an \ref xarray<T>
      */
     template <class E>
-    inline auto cumsum(E&& e, std::size_t axis) noexcept
+    inline auto cumsum(E&& e, std::size_t axis)
     {
         using result_type = big_promote_type_t<typename std::decay_t<E>::value_type>;
         return accumulate(make_xaccumulator_functor(std::plus<result_type>()), std::forward<E>(e), axis);
     }
 
     template <class E>
-    inline auto cumsum(E&& e) noexcept
+    inline auto cumsum(E&& e)
     {
         using result_type = big_promote_type_t<typename std::decay_t<E>::value_type>;
         return accumulate(make_xaccumulator_functor(std::plus<result_type>()), std::forward<E>(e));
@@ -1691,14 +1697,14 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @return an \ref xarray<T>
      */
     template <class E>
-    inline auto cumprod(E&& e, std::size_t axis) noexcept
+    inline auto cumprod(E&& e, std::size_t axis)
     {
         using result_type = big_promote_type_t<typename std::decay_t<E>::value_type>;
         return accumulate(make_xaccumulator_functor(std::multiplies<result_type>()), std::forward<E>(e), axis);
     }
 
     template <class E>
-    inline auto cumprod(E&& e) noexcept
+    inline auto cumprod(E&& e)
     {
         using result_type = big_promote_type_t<typename std::decay_t<E>::value_type>;
         return accumulate(make_xaccumulator_functor(std::multiplies<result_type>()), std::forward<E>(e));
@@ -1708,20 +1714,28 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * nan functions *
      *****************/
 
-    namespace detail {
-        template<class T>
-        struct nan_to_num_functor {
+    namespace detail
+    {
+        template <class T>
+        struct nan_to_num_functor
+        {
             using value_type = T;
             using result_type = value_type;
 
-            inline result_type operator()(const value_type a) const {
-                if (math::isnan(a)) {
+            inline result_type operator()(const value_type a) const
+            {
+                if (math::isnan(a))
+                {
                     return 0;
                 }
-                if (math::isinf(a)) {
-                    if (a < 0) {
+                if (math::isinf(a))
+                {
+                    if (a < 0)
+                    {
                         return std::numeric_limits<result_type>::lowest();
-                    } else {
+                    }
+                    else
+                    {
                         return std::numeric_limits<result_type>::max();
                     }
                 }
@@ -1729,32 +1743,37 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
             }
         };
 
-        template<class T>
-        struct nan_plus {
+        template <class T>
+        struct nan_plus
+        {
             using value_type = T;
             using result_type = value_type;
 
-            constexpr result_type operator()(const value_type lhs, const value_type rhs) const {
+            constexpr result_type operator()(const value_type lhs, const value_type rhs) const
+            {
                 return !math::isnan(rhs) ? lhs + rhs : lhs;
             }
         };
 
-        template<class T>
-        struct nan_multiplies {
+        template <class T>
+        struct nan_multiplies
+        {
             using value_type = T;
             using result_type = value_type;
 
-            constexpr result_type operator()(const value_type lhs, const value_type rhs) const {
+            constexpr result_type operator()(const value_type lhs, const value_type rhs) const
+            {
                 return !math::isnan(rhs) ? lhs * rhs : lhs;
             }
         };
 
-        template<class T, int V>
-        struct nan_init {
+        template <class T, int V>
+        struct nan_init
+        {
             using value_type = T;
             using result_type = T;
-
-            constexpr result_type operator()(const value_type lhs) const {
+            constexpr result_type operator()(const value_type lhs) const
+            {
                 return math::isnan(lhs) ? result_type(V) : lhs;
             }
         };
@@ -1774,15 +1793,16 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @param e input \ref xexpression
      * @return an \ref xexpression
      */
-    template<class E>
-    inline auto nan_to_num(E &&e) {
+    template <class E>
+    inline auto nan_to_num(E&& e)
+    {
         return detail::make_xfunction<detail::nan_to_num_functor>(std::forward<E>(e));
     }
 
-#define NAN_REDUCER_FUNCTION(NAME, FUNCTOR, RESULT_TYPE, NAN)                                                     \
+#define XTENSOR_NAN_REDUCER_FUNCTION(NAME, FUNCTOR, RESULT_TYPE, NAN)                                             \
     template <class E, class X, class ES = DEFAULT_STRATEGY_REDUCERS,                                             \
               class = std::enable_if_t<!std::is_base_of<evaluation_strategy::base, std::decay_t<X>>::value, int>> \
-    inline auto NAME(E&& e, X&& axes, ES es = ES()) noexcept                                                      \
+    inline auto NAME(E&& e, X&& axes, ES es = ES())                                                               \
     {                                                                                                             \
         using result_type = RESULT_TYPE;                                                                          \
         using functor_type = FUNCTOR<result_type>;                                                                \
@@ -1793,7 +1813,7 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
                                                                                                                   \
     template <class E, class ES = DEFAULT_STRATEGY_REDUCERS,                                                      \
               class = std::enable_if_t<std::is_base_of<evaluation_strategy::base, ES>::value, int>>               \
-    inline auto NAME(E&& e, ES es = ES()) noexcept                                                                \
+    inline auto NAME(E&& e, ES es = ES())                                                                         \
     {                                                                                                             \
         using result_type = RESULT_TYPE;                                                                          \
         using functor_type = FUNCTOR<result_type>;                                                                \
@@ -1801,19 +1821,19 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
         return reduce(make_xreducer_functor(functor_type(), init_functor_type()), std::forward<E>(e), es);        \
     }
 
-#define OLD_CLANG_NAN_REDUCER(NAME, FUNCTOR, RESULT_TYPE, NAN)                                                    \
-    template <class E, class I, class ES = DEFAULT_STRATEGY_REDUCERS>                                             \
-        inline auto NAME(E&& e, std::initializer_list<I> axes, ES es = ES()) noexcept                             \
-        {                                                                                                         \
-            using result_type = RESULT_TYPE;                                                                      \
-            using functor_type = FUNCTOR<result_type>;                                                            \
-            using init_functor_type = detail::nan_init<result_type, NAN>;                                         \
-            return reduce(make_xreducer_functor(functor_type(), init_functor_type()), std::forward<E>(e), axes);  \
+#define OLD_CLANG_NAN_REDUCER(NAME, FUNCTOR, RESULT_TYPE, NAN)                                                       \
+    template <class E, class I, class ES = DEFAULT_STRATEGY_REDUCERS>                                                \
+        inline auto NAME(E&& e, std::initializer_list<I> axes, ES es = ES())                                         \
+        {                                                                                                            \
+            using result_type = RESULT_TYPE;                                                                         \
+            using functor_type = FUNCTOR<result_type>;                                                               \
+            using init_functor_type = detail::nan_init<result_type, NAN>;                                            \
+            return reduce(make_xreducer_functor(functor_type(), init_functor_type()), std::forward<E>(e), axes, es); \
         }
 
 #define MODERN_CLANG_NAN_REDUCER(NAME, FUNCTOR, RESULT_TYPE, NAN)                                                 \
     template <class E, class I, std::size_t N, class ES = DEFAULT_STRATEGY_REDUCERS>                              \
-    inline auto NAME(E&& e, const I (&axes)[N], ES es = ES()) noexcept                                            \
+    inline auto NAME(E&& e, const I (&axes)[N], ES es = ES())                                                     \
     {                                                                                                             \
         using result_type = RESULT_TYPE;                                                                          \
         using functor_type = FUNCTOR<result_type>;                                                                \
@@ -1832,11 +1852,10 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @param es evaluation strategy of the reducer (optional)
      * @return an \ref xreducer
      */
-    NAN_REDUCER_FUNCTION(nansum, detail::nan_plus, typename std::decay_t<E>::value_type, 0);
+    XTENSOR_NAN_REDUCER_FUNCTION(nansum, detail::nan_plus, typename std::decay_t<E>::value_type, 0);
 #ifdef X_OLD_CLANG
     OLD_CLANG_NAN_REDUCER(nansum, detail::nan_plus, typename std::decay_t<E>::value_type, 0);
 #else
-
     MODERN_CLANG_NAN_REDUCER(nansum, detail::nan_plus, typename std::decay_t<E>::value_type, 0);
 #endif
 
@@ -1851,17 +1870,68 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @param es evaluation strategy of the reducer (optional)
      * @return an \ref xreducer
      */
-    NAN_REDUCER_FUNCTION(nanprod, detail::nan_multiplies, typename std::decay_t<E>::value_type, 1);
+    XTENSOR_NAN_REDUCER_FUNCTION(nanprod, detail::nan_multiplies, typename std::decay_t<E>::value_type, 1);
 #ifdef X_OLD_CLANG
     OLD_CLANG_NAN_REDUCER(nanprod, detail::nan_multiplies, typename std::decay_t<E>::value_type, 1);
 #else
-
     MODERN_CLANG_NAN_REDUCER(nanprod, detail::nan_multiplies, typename std::decay_t<E>::value_type, 1);
 #endif
 
-#undef NAN_REDUCER_FUNCTION
+#undef XTENSOR_NAN_REDUCER_FUNCTION
 #undef OLD_CLANG_NAN_REDUCER
 #undef MODERN_CLANG_NAN_REDUCER
+
+#define COUNT_NON_ZEROS_CONTENT                                                 \
+    using result_type = std::size_t;                                            \
+    using value_type = typename std::decay_t<E>::value_type;                    \
+    auto init_fct = [](value_type const& lhs) -> result_type                    \
+    {                                                                           \
+        return (lhs != value_type(0)) ? result_type(1) : result_type(0);        \
+    };                                                                          \
+    auto reduce_fct = [](const result_type& lhs, const value_type& rhs)         \
+         -> result_type                                                         \
+    {                                                                           \
+        return (rhs != value_type(0)) ? lhs + result_type(1) : lhs;             \
+    };                                                                          \
+    auto merge_func = std::plus<result_type>();                                 \
+
+    template <class E, class ES = DEFAULT_STRATEGY_REDUCERS,
+              class = std::enable_if_t<std::is_base_of<evaluation_strategy::base, ES>::value, int>>
+    inline auto count_nonzeros(E&& e, ES es = ES())
+    {
+        COUNT_NON_ZEROS_CONTENT;
+        return reduce(make_xreducer_functor(std::move(reduce_fct), std::move(init_fct), std::move(merge_func)),
+                      std::forward<E>(e), es);
+    }
+
+    template <class E, class X, class ES = DEFAULT_STRATEGY_REDUCERS,
+              class = std::enable_if_t<!std::is_base_of<evaluation_strategy::base, X>::value, int>>
+    inline auto count_nonzeros(E&& e, X&& axes, ES es = ES())
+    {
+        COUNT_NON_ZEROS_CONTENT;
+        return reduce(make_xreducer_functor(std::move(reduce_fct), std::move(init_fct), std::move(merge_func)),
+                      std::forward<E>(e), std::forward<X>(axes), es);
+    }
+
+#ifdef X_OLD_CLANG
+    template <class E, class I, class ES = DEFAULT_STRATEGY_REDUCERS>
+    inline auto count_nonzeros(E&& e, std::initializer_list<I> axes, ES es = ES())
+    {
+        COUNT_NON_ZEROS_CONTENT;
+        return reduce(make_xreducer_functor(std::move(reduce_fct), std::move(init_fct), std::move(merge_func)),
+                      std::forward<E>(e), axes, es);
+    }
+#else
+    template <class E, class I, std::size_t N, class ES = DEFAULT_STRATEGY_REDUCERS>
+    inline auto count_nonzeros(E&& e, const I (&axes)[N], ES es = ES())
+    {
+        COUNT_NON_ZEROS_CONTENT;
+        return reduce(make_xreducer_functor(std::move(reduce_fct), std::move(init_fct), std::move(merge_func)),
+                      std::forward<E>(e), axes, es);
+    }
+#endif
+
+#undef COUNT_NON_ZEROS_CONTENT
 
     /**
      * @ingroup nan_functions
@@ -1873,20 +1943,18 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @param axis the axis along which the elements are accumulated (optional)
      * @return an xaccumulator
      */
-    template<class E>
-    inline auto nancumsum(E &&e, std::size_t axis) {
+    template <class E>
+    inline auto nancumsum(E&& e, std::size_t axis)
+    {
         using result_type = big_promote_type_t<typename std::decay_t<E>::value_type>;
-        return accumulate(
-                make_xaccumulator_functor(detail::nan_plus<result_type>(), detail::nan_init<result_type, 0>()),
-                std::forward<E>(e), axis);
+        return accumulate(make_xaccumulator_functor(detail::nan_plus<result_type>(), detail::nan_init<result_type, 0>()), std::forward<E>(e), axis);
     }
 
-    template<class E>
-    inline auto nancumsum(E &&e) {
+    template <class E>
+    inline auto nancumsum(E&& e)
+    {
         using result_type = big_promote_type_t<typename std::decay_t<E>::value_type>;
-        return accumulate(
-                make_xaccumulator_functor(detail::nan_plus<result_type>(), detail::nan_init<result_type, 0>()),
-                std::forward<E>(e));
+        return accumulate(make_xaccumulator_functor(detail::nan_plus<result_type>(), detail::nan_init<result_type, 0>()), std::forward<E>(e));
     }
 
     /**
@@ -1899,20 +1967,164 @@ INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);             
      * @param axis the axis along which the elements are accumulated (optional)
      * @return an xaccumulator
      */
-    template<class E>
-    inline auto nancumprod(E &&e, std::size_t axis) {
+    template <class E>
+    inline auto nancumprod(E&& e, std::size_t axis)
+    {
         using result_type = big_promote_type_t<typename std::decay_t<E>::value_type>;
-        return accumulate(
-                make_xaccumulator_functor(detail::nan_multiplies<result_type>(), detail::nan_init<result_type, 1>()),
-                std::forward<E>(e), axis);
+        return accumulate(make_xaccumulator_functor(detail::nan_multiplies<result_type>(), detail::nan_init<result_type, 1>()), std::forward<E>(e), axis);
     }
 
-    template<class E>
-    inline auto nancumprod(E &&e) {
+    template <class E>
+    inline auto nancumprod(E&& e)
+    {
         using result_type = big_promote_type_t<typename std::decay_t<E>::value_type>;
-        return accumulate(
-                make_xaccumulator_functor(detail::nan_multiplies<result_type>(), detail::nan_init<result_type, 1>()),
-                std::forward<E>(e));
+        return accumulate(make_xaccumulator_functor(detail::nan_multiplies<result_type>(), detail::nan_init<result_type, 1>()), std::forward<E>(e));
+    }
+
+    namespace detail
+    {
+        template <class T>
+        struct diff_impl
+        {
+            template <class Arg>
+            inline void operator()(Arg& ad, const std::size_t& n, slice_vector& slice1, slice_vector& slice2, const std::size_t& saxis)
+            {
+                for (std::size_t i = 0; i < n; ++i)
+                {
+                    slice2[saxis] = range(xnone(), ad.shape()[saxis] - 1);
+                    ad = strided_view(ad, slice1) - strided_view(ad, slice2);
+                }
+            };
+        };
+
+        template <>
+        struct diff_impl<bool>
+        {
+            template <class Arg>
+            inline void operator()(Arg& ad, const std::size_t& n, slice_vector& slice1, slice_vector& slice2, const std::size_t& saxis)
+            {
+                for (std::size_t i = 0; i < n; ++i)
+                {
+                    slice2[saxis] = range(xnone(), ad.shape()[saxis] - 1);
+                    ad = not_equal(strided_view(ad, slice1), strided_view(ad, slice2));
+                }
+            };
+        };
+    }
+
+    /**
+     * @ingroup red_functions
+     * @brief Calculate the n-th discrete difference along the given axis.
+     *
+     * Calculate the n-th discrete difference along the given axis. This function is not lazy (might change in the future).
+     * @param a an \ref xexpression
+     * @param n The number of times values are differenced. If zero, the input is returned as-is. (optional)
+     * @param axis The axis along which the difference is taken, default is the last axis.
+     * @return an xarray
+     */
+    template <class T>
+    auto diff(const xexpression<T>& a, std::size_t n = 1, std::ptrdiff_t axis = -1)
+    {
+        auto ad = a.derived_cast();
+        std::size_t saxis = static_cast<std::size_t>(axis);
+
+        if (n == 0)
+        {
+            return eval(ad);
+        }
+
+        if (axis == -1)
+        {
+            saxis = ad.dimension() - 1;
+        }
+
+        slice_vector slice1(ad.dimension(), all());
+        slice_vector slice2(ad.dimension(), all());
+        slice1[saxis] = range(1, xnone());
+
+        detail::diff_impl<typename T::value_type> impl;
+        impl(ad, n, slice1, slice2, saxis);
+
+        return eval(ad);
+    }
+
+    /**
+     * @ingroup red_functions
+     * @brief Integrate along the given axis using the composite trapezoidal rule.
+     *
+     * Returns definite integral as approximated by trapezoidal rule. This function is not lazy (might change in the future).
+     * @param y an \ref xexpression
+     * @param dx the spacing between sample points (optional)
+     * @param axis the axis along which to integrate.
+     * @return an xarray
+     */
+    template <class T>
+    auto trapz(const xexpression<T>& y, double dx = 1.0, std::ptrdiff_t axis = -1)
+    {
+        auto& yd = y.derived_cast();
+        std::size_t saxis = static_cast<std::size_t>(axis);
+
+        if (axis == -1)
+        {
+          saxis = yd.dimension() - 1;
+        }
+
+        slice_vector slice1(yd.dimension(), all());
+        slice_vector slice2(yd.dimension(), all());
+        slice1[saxis] = range(1, xnone());
+        slice2[saxis] = range(xnone(), yd.shape()[saxis] - 1);
+
+        auto trap = dx * (strided_view(yd, slice1) + strided_view(yd, slice2)) * 0.5;
+
+        return eval(sum(trap, {saxis}));
+    }
+
+    /**
+     * @ingroup red_functions
+     * @brief Integrate along the given axis using the composite trapezoidal rule.
+     *
+     * Returns definite integral as approximated by trapezoidal rule. This function is not lazy (might change in the future).
+     * @param y an \ref xexpression
+     * @param x an \ref xexpression representing the sample points corresponding to the y values.
+     * @param axis the axis along which to integrate.
+     * @return an xarray
+     */
+    template <class T, class E>
+    auto trapz(const xexpression<T>& y, const xexpression<E>& x, std::ptrdiff_t axis = -1)
+    {
+        auto& yd = y.derived_cast();
+        auto& xd = x.derived_cast();
+        decltype(diff(x)) dx;
+
+        std::size_t saxis = static_cast<std::size_t>(axis);
+
+        if (axis == -1)
+        {
+            saxis = yd.dimension() - 1;
+        }
+
+        if (xd.dimension() == 1)
+        {
+            dx = diff(x);
+            typename std::decay_t<decltype(yd)>::shape_type shape;
+            resize_container(shape, yd.dimension());
+            std::fill(shape.begin(), shape.end(), 1);
+            shape[saxis] = dx.shape()[0];
+            dx.reshape(shape);
+        }
+        else
+        {
+            dx = diff(x, 1, axis);
+        }
+
+        slice_vector slice1(yd.dimension(), all());
+        slice_vector slice2(yd.dimension(), all());
+        slice1[saxis] = range(1, xnone());
+        slice2[saxis] = range(xnone(), yd.shape()[saxis] - 1);
+
+        auto trap = dx * (strided_view(yd, slice1) + strided_view(yd, slice2)) * 0.5;
+
+        return eval(sum(trap, {saxis}));
     }
 }
 

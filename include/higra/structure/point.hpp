@@ -8,7 +8,7 @@
 
 namespace hg {
     template<typename value_t, uint dim>
-    using point = xt::xtensorf <value_t, xt::xshape<dim>>;
+    using point = xt::xtensor_fixed <value_t, xt::xshape<dim>>;
 
     using point_1d_f = point<double, 1>;
     using point_1d_i = point<long, 1>;

@@ -91,7 +91,46 @@ namespace xt
 #endif
 
     /**
-     * Create a xcontainer (xarray, xtensor or xtensorf) with uninitialized values of
+     * Create a xcontainer (xarray, xtensor or xtensor_fixed) with uninitialized values of
+     * with value_type T and shape. Selects the best container match automatically
+     * from the supplied shape.
+     *
+     * - ``std::vector`` → ``xarray<T>``
+     * - ``std::array`` or ``initializer_list`` → ``xtensor<T, N>``
+     * - ``xshape<N...>`` → ``xtensor_fixed<T, xshape<N...>>``
+     *
+     * @param shape shape of the new xcontainer
+     */
+    template <class T, layout_type L = XTENSOR_DEFAULT_LAYOUT, class S>
+    inline xarray<T, L> empty(const S& shape)
+    {
+        return xarray<T, L>::from_shape(shape);
+    }
+
+    template <class T, layout_type L = XTENSOR_DEFAULT_LAYOUT, class ST, std::size_t N>
+    inline xtensor<T, N, L> empty(const std::array<ST, N>& shape)
+    {
+        using shape_type = typename xtensor<T, N>::shape_type;
+        return xtensor<T, N, L>(xtl::forward_sequence<shape_type>(shape));
+    }
+
+#ifndef X_OLD_CLANG
+    template <class T, layout_type L = XTENSOR_DEFAULT_LAYOUT, class I, std::size_t N>
+    inline xtensor<T, N, L> empty(const I(&shape)[N])
+    {
+        using shape_type = typename xtensor<T, N>::shape_type;
+        return xtensor<T, N, L>(xtl::forward_sequence<shape_type>(shape));
+    }
+#endif
+
+    template <class T, layout_type L = XTENSOR_DEFAULT_LAYOUT, std::size_t... N>
+    inline xtensor_fixed<T, fixed_shape<N...>, L> empty(const fixed_shape<N...>& /*shape*/)
+    {
+        return xtensor_fixed<T, fixed_shape<N...>, L>();
+    }
+
+    /**
+     * Create a xcontainer (xarray, xtensor or xtensor_fixed) with uninitialized values of
      * the same shape, value type and layout as the input xexpression *e*.
      *
      * @param e the xexpression from which to extract shape, value type and layout.
@@ -104,7 +143,7 @@ namespace xt
     }
 
     /**
-     * Create a xcontainer (xarray, xtensor or xtensorf), filled with *fill_value* and of
+     * Create a xcontainer (xarray, xtensor or xtensor_fixed), filled with *fill_value* and of
      * the same shape, value type and layout as the input xexpression *e*.
      *
      * @param e the xexpression from which to extract shape, value type and layout.
@@ -118,10 +157,10 @@ namespace xt
     }
 
     /**
-     * Create a xcontainer (xarray, xtensor or xtensorf), filled with zeros and of
+     * Create a xcontainer (xarray, xtensor or xtensor_fixed), filled with zeros and of
      * the same shape, value type and layout as the input xexpression *e*.
      *
-     * Note: contrary to zeros(shape), this function returns a non-lazy, allocated container! 
+     * Note: contrary to zeros(shape), this function returns a non-lazy, allocated container!
      * Use ``xt::zeros<double>(e.shape());` for a lazy version.
      *
      * @param e the xexpression from which to extract shape, value type and layout.
@@ -133,7 +172,7 @@ namespace xt
     }
 
     /**
-     * Create a xcontainer (xarray, xtensor or xtensorf), filled with ones and of
+     * Create a xcontainer (xarray, xtensor or xtensor_fixed), filled with ones and of
      * the same shape, value type and layout as the input xexpression *e*.
      *
      * Note: contrary to ones(shape), this function returns a non-lazy, evaluated container!
@@ -478,7 +517,7 @@ namespace xt
             template <class It>
             inline value_type element(It first, It) const
             {
-                return m_source(*(first + m_axis));
+                return m_source(*(first + static_cast<std::ptrdiff_t>(m_axis)));
             }
 
         private:
@@ -697,52 +736,6 @@ namespace xt
             const int m_k;
         };
 
-        template <class CT>
-        class flip_impl
-        {
-        public:
-
-            using xexpression_type = std::decay_t<CT>;
-            using value_type = typename xexpression_type::value_type;
-            using size_type = typename xexpression_type::size_type;
-
-            template <class CTA>
-            flip_impl(CTA&& source, std::size_t axis)
-                : m_source(std::forward<CTA>(source)), m_axis(axis), m_shape_at_axis(m_source.shape()[m_axis] - 1)
-            {
-            }
-
-            template <class... Args>
-            inline value_type operator()(Args... args) const
-            {
-                std::array<size_type, sizeof...(Args)> idx({static_cast<size_type>(args)...});
-                return access_impl(idx.begin(), idx.end());
-            }
-
-            template <class It>
-            inline value_type element(It first, It last) const
-            {
-                // TODO: avoid memory allocation
-                xindex idx(first, last);
-                return access_impl(idx.begin(), idx.end());
-            }
-
-        private:
-
-            template <class It>
-            inline value_type access_impl(It begin, It end) const
-            {
-                using difference_type = typename std::iterator_traits<It>::difference_type;
-                auto it = begin + difference_type(m_axis);
-                *it = m_shape_at_axis - *it;
-                return m_source.element(begin, end);
-            }
-
-            CT m_source;
-            const size_type m_axis;
-            const size_type m_shape_at_axis;
-        };
-
         template <class CT, class Comp>
         class trilu_fn
         {
@@ -869,25 +862,6 @@ namespace xt
         std::size_t s = arr.shape()[0] + sk;
         return detail::make_xgenerator(detail::fn_impl<detail::diag_fn<CT>>(detail::diag_fn<CT>(std::forward<E>(arr), k)),
                                        {s, s});
-    }
-
-    /**
-     * @brief Reverse the order of elements in an xexpression along the given axis.
-     * Note: A NumPy/Matlab style `flipud(arr)` is equivalent to `xt::flip(arr, 0)`,
-     * `fliplr(arr)` to `xt::flip(arr, 1)`.
-     *
-     * @param arr the input xexpression
-     * @param axis the axis along which elements should be reversed
-     *
-     * @return xexpression evaluating to reversed array
-     */
-    template <class E>
-    inline auto flip(E&& arr, std::size_t axis)
-    {
-        using CT = xclosure_t<E>;
-        auto shape = arr.shape();
-        return detail::make_xgenerator(detail::flip_impl<CT>(std::forward<E>(arr), axis),
-                                       shape);
     }
 
     /**

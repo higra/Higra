@@ -45,8 +45,8 @@ static void BM_tree_accumulate_parallel_scalar_cstyle(benchmark::State &state) {
         auto input = eval(random::randn<double>({t.num_vertices()}));
         state.ResumeTiming();
         array_nd<double> output = array_nd<double>::from_shape({t.num_vertices()});
-        auto sout = output.raw_data();
-        auto sin = input.raw_data();
+        auto sout = output.data();
+        auto sin = input.data();
         std::fill(sout, sout + t.num_vertices(), 0);
         for (auto i: t.iterate_from_leaves_to_root(leaves_it::exclude)) {
             for (auto c: t.children(i)) {

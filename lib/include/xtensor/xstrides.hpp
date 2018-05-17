@@ -89,7 +89,6 @@ namespace xt
         else
         {
             auto leading_stride = (l == layout_type::row_major ? c.strides().back() : c.strides().front());
-            leading_stride = std::max(leading_stride, typename strides_type::value_type(1));
             return end + difference_type(leading_stride - 1);
         }
     }
@@ -221,6 +220,40 @@ namespace xt
     }
 
     template <class shape_type, class strides_type>
+    inline bool do_strides_match(const shape_type& shape, const strides_type& strides, layout_type l)
+    {
+        std::size_t data_size = 1;
+        if (l == layout_type::row_major)
+        {
+            for (std::size_t i = strides.size(); i != 0; --i)
+            {
+                if ((shape[i - 1] == 1 && strides[i - 1] != 0) || (shape[i - 1] != 1 && strides[i - 1] != data_size))
+                {
+                    return false;
+                }
+                data_size *= shape[i - 1];
+            }
+            return true;
+        }
+        else if (l == layout_type::column_major)
+        {
+            for (std::size_t i = 0; i < strides.size(); ++i)
+            {
+                if ((shape[i] != 1 && strides[i] != data_size) || (shape[i] == 1 && strides[i] != 0))
+                {
+                    return false;
+                }
+                data_size *= shape[i];
+            }
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    template <class shape_type, class strides_type>
     inline void adapt_strides(const shape_type& shape, strides_type& strides) noexcept
     {
         for (typename shape_type::size_type i = 0; i < shape.size(); ++i)
@@ -294,8 +327,9 @@ namespace xt
     {
         bool trivial_broadcast = (input.size() == output.size());
         // Indices are faster than reverse iterators
-        std::size_t output_index = output.size();
-        std::size_t input_index = input.size();
+        using value_type = typename S2::value_type;
+        auto output_index = output.size();
+        auto input_index = input.size();
         for (; input_index != 0; --input_index, --output_index)
         {
             // First case: output = (0, 0, ...., 0)
@@ -303,13 +337,13 @@ namespace xt
             // the broadcast process yet; broadcast is trivial
             if (output[output_index - 1] == 0)
             {
-                output[output_index - 1] = input[input_index - 1];
+                output[output_index - 1] = static_cast<value_type>(input[input_index - 1]);
             }
             // Second case: output has been initialized to 1. Broacast is trivial
             // only if input is 1 to.
             else if (output[output_index - 1] == 1)
             {
-                output[output_index - 1] = input[input_index - 1];
+                output[output_index - 1] = static_cast<value_type>(input[input_index - 1]);
                 trivial_broadcast = trivial_broadcast && (input[input_index - 1] == 1);
             }
             // Third case: output has been initialized to something different from 1.
@@ -320,7 +354,7 @@ namespace xt
             }
             // Last case: input and output must have the same value, else
             // shape are not compatible and an exception is thrown
-            else if (input[input_index - 1] != output[output_index - 1])
+            else if (static_cast<value_type>(input[input_index - 1]) != output[output_index - 1])
             {
                 throw_broadcast_error(output, input);
             }
@@ -329,7 +363,7 @@ namespace xt
     }
 
     template <class S1, class S2>
-    inline bool broadcastable(const S1 &src_shape, const S2 &dst_shape)
+    inline bool broadcastable(const S1& src_shape, const S2& dst_shape)
     {
         auto src_iter = src_shape.crbegin();
         auto dst_iter = dst_shape.crbegin();

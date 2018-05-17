@@ -89,16 +89,13 @@ namespace xt
 
         size_type size() const noexcept;
         size_type step_size() const noexcept;
-
-        size_type step_size(size_type i, size_type n = 1) const noexcept;
-
-        size_type revert_index(size_type i) const noexcept;
+        size_type step_size(std::size_t i, std::size_t n = 1) const noexcept;
+        size_type revert_index(std::size_t i) const noexcept;
 
         bool contains(size_type i) const noexcept;
 
-        bool operator==(const self_type &rhs) const noexcept;
-
-        bool operator!=(const self_type &rhs) const noexcept;
+        bool operator==(const self_type& rhs) const noexcept;
+        bool operator!=(const self_type& rhs) const noexcept;
 
     private:
 
@@ -125,16 +122,13 @@ namespace xt
 
         size_type size() const noexcept;
         size_type step_size() const noexcept;
-
-        size_type step_size(size_type i, size_type n = 1) const noexcept;
-
-        size_type revert_index(size_type i) const noexcept;
+        size_type step_size(std::size_t i, std::size_t n = 1) const noexcept;
+        size_type revert_index(std::size_t i) const noexcept;
 
         bool contains(size_type i) const noexcept;
 
-        bool operator==(const self_type &rhs) const noexcept;
-
-        bool operator!=(const self_type &rhs) const noexcept;
+        bool operator==(const self_type& rhs) const noexcept;
+        bool operator!=(const self_type& rhs) const noexcept;
 
     private:
 
@@ -162,16 +156,13 @@ namespace xt
 
         size_type size() const noexcept;
         size_type step_size() const noexcept;
-
-        size_type step_size(size_type i, size_type n = 1) const noexcept;
-
-        size_type revert_index(size_type i) const noexcept;
+        size_type step_size(std::size_t i, std::size_t n = 1) const noexcept;
+        size_type revert_index(std::size_t i) const noexcept;
 
         bool contains(size_type i) const noexcept;
 
-        bool operator==(const self_type &rhs) const noexcept;
-
-        bool operator!=(const self_type &rhs) const noexcept;
+        bool operator==(const self_type& rhs) const noexcept;
+        bool operator!=(const self_type& rhs) const noexcept;
 
     private:
 
@@ -185,27 +176,12 @@ namespace xt
     /**
      * Returns a slice representing a full dimension,
      * to be used as an argument of view function.
-     * @sa view, dynamic_view
+     * @sa view, strided_view
      */
     inline auto all() noexcept
     {
         return xall_tag();
     }
-
-    template <class T>
-    class xellipsis : public xslice<xellipsis<T>>
-    {
-    public:
-
-        using size_type = T;
-
-        xellipsis() = default;
-
-        size_type operator()(size_type i) const noexcept;
-
-        size_type size() const noexcept;
-        size_type step_size() const noexcept;
-    };
 
     struct xellipsis_tag
     {
@@ -217,15 +193,15 @@ namespace xt
      * to a series of `all()` slices, until the number of slices is
      * equal to the number of dimensions of the source array.
      *
-     * Note: ellipsis can only be used in dynamic_view!
+     * Note: ellipsis can only be used in strided_view!
      *
      * \code{.cpp}
      * xarray<double> a = xarray<double>::from_shape({5, 5, 1, 1, 5});
-     * auto v = xt::dynamic_view(a, {2, xt::ellipsis(), 2});
+     * auto v = xt::strided_view(a, {2, xt::ellipsis(), 2});
      * // equivalent to using {2, xt::all(), xt::all(), xt::all(), 2};
      * \endcode
      *
-     * @sa dynamic_view
+     * @sa strided_view
      */
     inline auto ellipsis() noexcept
     {
@@ -249,10 +225,8 @@ namespace xt
 
         size_type size() const noexcept;
         size_type step_size() const noexcept;
-
-        size_type step_size(size_type i, size_type n = 1) const noexcept;
-
-        size_type revert_index(size_type i) const noexcept;
+        size_type step_size(std::size_t i, std::size_t n = 1) const noexcept;
+        size_type revert_index(std::size_t i) const noexcept;
 
         bool contains(size_type i) const noexcept;
     };
@@ -264,12 +238,111 @@ namespace xt
     /**
      * Returns a slice representing a new axis of length one,
      * to be used as an argument of view function.
-     * @sa view, dynamic_view
+     * @sa view, strided_view
      */
     inline auto newaxis() noexcept
     {
         return xnewaxis_tag();
     }
+
+    template <class T>
+    class xislice : public xslice<xislice<T>>
+    {
+    public:
+
+        using container_type = std::decay_t<T>;
+        using size_type = typename container_type::value_type;
+
+        explicit xislice(const container_type& cont)
+            : m_indices(cont)
+        {
+        }
+
+        explicit xislice(container_type&& cont)
+            : m_indices(std::move(cont))
+        {
+        }
+
+        size_type operator()(size_type i) const noexcept
+        {
+            return m_indices[i];
+        }
+
+        size_type size() const noexcept
+        {
+            // TODO change return type to container_type::size_type (e.g. size_t?)
+            return static_cast<size_type>(m_indices.size());
+        }
+
+        size_type step_size(std::size_t i, std::size_t n = 1) const noexcept
+        {
+            // special case one-past-end step (should be removed soon)
+            if (i == static_cast<size_type>(m_indices.size()))
+            {
+                return 1;
+            }
+            else
+            {
+                --i;
+                return m_indices[i + n] - m_indices[i];
+            }
+        }
+
+        size_type revert_index(std::size_t i) const
+        {
+            auto it = std::find(m_indices.begin(), m_indices.end(), i);
+            if (it != m_indices.end())
+            {
+                return std::distance(m_indices.begin(), it);
+            }
+            else
+            {
+                throw std::runtime_error("Index i (" + std::to_string(i) + ") not in indices of islice.");
+            }
+        }
+
+        bool contains(size_type i) const noexcept
+        {
+            return (std::find(m_indices.begin(), m_indices.end(), i) == m_indices.end()) ? false : true;
+        }
+
+    private:
+
+        T m_indices;
+    };
+
+    /**
+     * Create a non-contigous slice from a container of indices.
+     * Note: this slice can **only** be used in the xview!
+     *
+     * \code{.cpp}
+     * xt::xarray<double> a = xt::arange(9);
+     * a.reshape({3, 3});
+     * xt::view(a, xt::islice({0, 2}); // => {{0, 1, 2}, {6, 7, 8}}
+     * xt::view(a, xt::islice({1, 1, 1}); // => {{3, 4, 5}, {3, 4, 5}, {3, 4, 5}}
+     * \endcode
+     *
+     * @param indices The indices container
+     * @return instance of xislice
+     */
+    template <class T>
+    inline auto islice(T&& indices)
+    {
+        return xislice<T>(std::forward<T>(indices));
+    }
+
+#ifndef X_OLD_CLANG
+    template <class T, std::size_t N>
+    inline auto islice(const T (&cont)[N])
+    {
+        return xislice<std::array<std::size_t, N>>(xtl::forward_sequence<std::array<std::size_t, N>>(cont));
+    }
+#else
+    inline auto islice(std::initializer_list<std::size_t> cont)
+    {
+        return xislice<std::vector<std::size_t>>(cont);
+    }
+#endif
 
     /******************
      * xrange_adaptor *
@@ -287,8 +360,8 @@ namespace xt
         inline std::enable_if_t<std::is_integral<MI>::value &&
                                 std::is_integral<MA>::value &&
                                 std::is_integral<STEP>::value,
-                xstepped_range<std::ptrdiff_t>>
-        get(std::size_t /*size*/) const
+                                xstepped_range<std::ptrdiff_t>>
+            get(std::size_t /*size*/) const
         {
             return xstepped_range<std::ptrdiff_t>(m_min, m_max, m_step);
         }
@@ -297,28 +370,28 @@ namespace xt
         inline std::enable_if_t<!std::is_integral<MI>::value &&
                                 std::is_integral<MA>::value &&
                                 std::is_integral<STEP>::value,
-                xstepped_range<std::ptrdiff_t>>
+                                xstepped_range<std::ptrdiff_t>>
         get(std::size_t size) const
         {
-            return xstepped_range<std::ptrdiff_t>(m_step > 0 ? 0 : int(size) - 1, m_max, m_step);
+            return xstepped_range<std::ptrdiff_t>(m_step > 0 ? 0 : static_cast<std::ptrdiff_t>(size) - 1, m_max, m_step);
         }
 
         template <class MI = A, class MA = B, class STEP = C>
         inline std::enable_if_t<std::is_integral<MI>::value &&
                                 !std::is_integral<MA>::value &&
                                 std::is_integral<STEP>::value,
-                xstepped_range<std::ptrdiff_t>>
+                                xstepped_range<std::ptrdiff_t>>
         get(std::size_t size) const
         {
-            return xstepped_range<std::ptrdiff_t>(m_min, m_step > 0 ? int(size) : -1, m_step);
+            return xstepped_range<std::ptrdiff_t>(m_min, m_step > 0 ? static_cast<std::ptrdiff_t>(size) : -1, m_step);
         }
 
         template <class MI = A, class MA = B, class STEP = C>
         inline std::enable_if_t<std::is_integral<MI>::value &&
                                 std::is_integral<MA>::value &&
                                 !std::is_integral<STEP>::value,
-                xrange<std::ptrdiff_t>>
-        get(std::size_t /*size*/) const
+                                xrange<std::ptrdiff_t>>
+            get(std::size_t /*size*/) const
         {
             return xrange<std::ptrdiff_t>(static_cast<std::ptrdiff_t>(m_min), static_cast<std::ptrdiff_t>(m_max));
         }
@@ -327,11 +400,11 @@ namespace xt
         inline std::enable_if_t<!std::is_integral<MI>::value &&
                                 !std::is_integral<MA>::value &&
                                 std::is_integral<STEP>::value,
-                xstepped_range<std::ptrdiff_t>>
+                                xstepped_range<std::ptrdiff_t>>
         get(std::size_t size) const
         {
-            int min_val_arg = m_step > 0 ? 0 : int(size) - 1;
-            int max_val_arg = m_step > 0 ? int(size) : -1;
+            std::ptrdiff_t min_val_arg = m_step > 0 ? 0 : static_cast<std::ptrdiff_t>(size) - 1;
+            std::ptrdiff_t max_val_arg = m_step > 0 ? static_cast<std::ptrdiff_t>(size) : -1;
             return xstepped_range<std::ptrdiff_t>(min_val_arg, max_val_arg, m_step);
         }
 
@@ -339,30 +412,30 @@ namespace xt
         inline std::enable_if_t<std::is_integral<MI>::value &&
                                 !std::is_integral<MA>::value &&
                                 !std::is_integral<STEP>::value,
-                xrange<std::ptrdiff_t>>
+                                xrange<std::ptrdiff_t>>
         get(std::size_t size) const
         {
-            return xrange<std::ptrdiff_t>(std::size_t(m_min), size);
+            return xrange<std::ptrdiff_t>(static_cast<std::ptrdiff_t>(m_min), static_cast<std::ptrdiff_t>(size));
         }
 
         template <class MI = A, class MA = B, class STEP = C>
         inline std::enable_if_t<!std::is_integral<MI>::value &&
                                 std::is_integral<MA>::value &&
                                 !std::is_integral<STEP>::value,
-                xrange<std::ptrdiff_t>>
-        get(std::size_t /*size*/) const
+                                xrange<std::ptrdiff_t>>
+            get(std::size_t /*size*/) const
         {
-            return xrange<std::ptrdiff_t>(0, std::size_t(m_max));
+            return xrange<std::ptrdiff_t>(0, static_cast<std::ptrdiff_t>(m_max));
         }
 
         template <class MI = A, class MA = B, class STEP = C>
         inline std::enable_if_t<!std::is_integral<MI>::value &&
                                 !std::is_integral<MA>::value &&
                                 !std::is_integral<STEP>::value,
-                xall<std::ptrdiff_t>>
+                                xall<std::ptrdiff_t>>
         get(std::size_t size) const
         {
-            return xall<std::ptrdiff_t>(size);
+            return xall<std::ptrdiff_t>(static_cast<std::ptrdiff_t>(size));
         }
 
     private:
@@ -372,26 +445,31 @@ namespace xt
         C m_step;
     };
 
-    namespace detail {
-        template<class T, class E = void>
-        struct cast_if_integer {
+    namespace detail
+    {
+        template <class T, class E = void>
+        struct cast_if_integer
+        {
             using type = T;
 
-            type operator()(T t) {
+            type operator()(T t)
+            {
                 return t;
             }
         };
 
-        template<class T>
-        struct cast_if_integer<T, std::enable_if_t<std::is_integral<T>::value>> {
+        template <class T>
+        struct cast_if_integer<T, std::enable_if_t<std::is_integral<T>::value>>
+        {
             using type = std::ptrdiff_t;
 
-            type operator()(T t) {
+            type operator()(T t)
+            {
                 return static_cast<type>(t);
             }
         };
 
-        template<class T>
+        template <class T>
         using cast_if_integer_t = typename cast_if_integer<T>::type;
     }
 
@@ -407,13 +485,13 @@ namespace xt
      * range(_, _)  // equivalent to `all()`
      * \endcode
      *
-     * @sa view, dynamic_view
+     * @sa view, strided_view
      */
     template <class A, class B>
     inline auto range(A min_val, B max_val)
     {
         return xrange_adaptor<detail::cast_if_integer_t<A>, detail::cast_if_integer_t<B>, placeholders::xtuph>(
-                detail::cast_if_integer<A>{}(min_val), detail::cast_if_integer<B>{}(max_val), placeholders::xtuph());
+            detail::cast_if_integer<A>{}(min_val), detail::cast_if_integer<B>{}(max_val), placeholders::xtuph());
     }
 
     /**
@@ -425,14 +503,13 @@ namespace xt
      * range(3, _, 5)  // select from index 3 to the end with stepsize 5
      * \endcode
      *
-     * @sa view, dynamic_view
+     * @sa view, strided_view
      */
     template <class A, class B, class C>
     inline auto range(A min_val, B max_val, C step)
     {
         return xrange_adaptor<detail::cast_if_integer_t<A>, detail::cast_if_integer_t<B>, detail::cast_if_integer_t<C>>(
-                detail::cast_if_integer<A>{}(min_val), detail::cast_if_integer<B>{}(max_val),
-                detail::cast_if_integer<C>{}(step));
+            detail::cast_if_integer<A>{}(min_val), detail::cast_if_integer<B>{}(max_val), detail::cast_if_integer<C>{}(step));
     }
 
 
@@ -457,15 +534,27 @@ namespace xt
      *******************************************************/
 
     template <class S>
-    inline disable_xslice<S, std::size_t> step_size(const S&) noexcept
+    inline disable_xslice<S, std::size_t> step_size(const S&, std::size_t) noexcept
     {
         return 0;
     }
 
     template <class S>
-    inline auto step_size(const xslice<S>& slice) noexcept
+    inline disable_xslice<S, std::size_t> step_size(const S&, std::size_t, std::size_t) noexcept
     {
-        return slice.derived_cast().step_size();
+        return 0;
+    }
+
+    template <class S>
+    inline auto step_size(const xslice<S>& slice, std::size_t idx) noexcept
+    {
+        return slice.derived_cast().step_size(idx);
+    }
+
+    template <class S>
+    inline auto step_size(const xslice<S>& slice, std::size_t idx, std::size_t n) noexcept
+    {
+        return slice.derived_cast().step_size(idx, n);
     }
 
     /*********************************************
@@ -502,12 +591,6 @@ namespace xt
     }
 
     template <class E>
-    inline auto get_slice_implementation(E& /*e*/, xellipsis_tag, std::size_t /*index*/)
-    {
-        return xellipsis<typename E::size_type>();
-    }
-
-    template <class E>
     inline auto get_slice_implementation(E& /*e*/, xnewaxis_tag, std::size_t /*index*/)
     {
         return xnewaxis<typename E::size_type>();
@@ -535,12 +618,6 @@ namespace xt
         struct get_slice_type_impl<E, xall_tag>
         {
             using type = xall<typename E::size_type>;
-        };
-
-        template <class E>
-        struct get_slice_type_impl<E, xellipsis_tag>
-        {
-            using type = xellipsis<typename E::size_type>;
         };
 
         template <class E>
@@ -603,28 +680,33 @@ namespace xt
         return 1;
     }
 
-    template<class T>
-    inline auto xrange<T>::step_size(size_type /*i*/, size_type n) const noexcept -> size_type {
-        return n;
+    template <class T>
+    inline auto xrange<T>::step_size(std::size_t /*i*/, std::size_t n) const noexcept -> size_type
+    {
+        return static_cast<size_type>(n);
     }
 
-    template<class T>
-    inline auto xrange<T>::revert_index(size_type i) const noexcept -> size_type {
+    template <class T>
+    inline auto xrange<T>::revert_index(std::size_t i) const noexcept -> size_type
+    {
         return i - m_min;
     }
 
-    template<class T>
-    inline bool xrange<T>::contains(size_type i) const noexcept {
+    template <class T>
+    inline bool xrange<T>::contains(size_type i) const noexcept
+    {
         return i >= m_min && i < m_min + m_size;
     }
 
-    template<class T>
-    inline bool xrange<T>::operator==(const self_type &rhs) const noexcept {
+    template <class T>
+    inline bool xrange<T>::operator==(const self_type& rhs) const noexcept
+    {
         return (m_min == rhs.m_min) && (m_size == rhs.m_size);
     }
 
-    template<class T>
-    inline bool xrange<T>::operator!=(const self_type &rhs) const noexcept {
+    template <class T>
+    inline bool xrange<T>::operator!=(const self_type& rhs) const noexcept
+    {
         return !(*this == rhs);
     }
 
@@ -657,28 +739,33 @@ namespace xt
         return m_step;
     }
 
-    template<class T>
-    inline auto xstepped_range<T>::step_size(size_type /*i*/, size_type n) const noexcept -> size_type {
-        return m_step * n;
+    template <class T>
+    inline auto xstepped_range<T>::step_size(std::size_t /*i*/, std::size_t n) const noexcept -> size_type
+    {
+        return m_step * static_cast<size_type>(n);
     }
 
-    template<class T>
-    inline auto xstepped_range<T>::revert_index(size_type i) const noexcept -> size_type {
+    template <class T>
+    inline auto xstepped_range<T>::revert_index(std::size_t i) const noexcept -> size_type
+    {
         return (i - m_min) / m_step;
     }
 
-    template<class T>
-    inline bool xstepped_range<T>::contains(size_type i) const noexcept {
+    template <class T>
+    inline bool xstepped_range<T>::contains(size_type i) const noexcept
+    {
         return i >= m_min && i < m_min + m_size * m_step && ((i - m_min) % m_step == 0);
     }
 
-    template<class T>
-    inline bool xstepped_range<T>::operator==(const self_type &rhs) const noexcept {
+    template <class T>
+    inline bool xstepped_range<T>::operator==(const self_type& rhs) const noexcept
+    {
         return (m_min == rhs.m_min) && (m_size == rhs.m_size) && (m_step == rhs.m_step);
     }
 
-    template<class T>
-    inline bool xstepped_range<T>::operator!=(const self_type &rhs) const noexcept {
+    template <class T>
+    inline bool xstepped_range<T>::operator!=(const self_type& rhs) const noexcept
+    {
         return !(*this == rhs);
     }
 
@@ -710,51 +797,34 @@ namespace xt
         return 1;
     }
 
-    template<class T>
-    inline auto xall<T>::step_size(size_type /*i*/, size_type n) const noexcept -> size_type {
-        return n;
+    template <class T>
+    inline auto xall<T>::step_size(std::size_t /*i*/, std::size_t n) const noexcept -> size_type
+    {
+        return static_cast<size_type>(n);
     }
 
-    template<class T>
-    inline auto xall<T>::revert_index(size_type i) const noexcept -> size_type {
+    template <class T>
+    inline auto xall<T>::revert_index(std::size_t i) const noexcept -> size_type
+    {
         return i;
     }
 
-    template<class T>
-    inline bool xall<T>::contains(size_type i) const noexcept {
+    template <class T>
+    inline bool xall<T>::contains(size_type i) const noexcept
+    {
         return i < m_size;
     }
 
-    template<class T>
-    inline bool xall<T>::operator==(const self_type &rhs) const noexcept {
+    template <class T>
+    inline bool xall<T>::operator==(const self_type& rhs) const noexcept
+    {
         return m_size == rhs.m_size;
     }
 
-    template<class T>
-    inline bool xall<T>::operator!=(const self_type &rhs) const noexcept {
+    template <class T>
+    inline bool xall<T>::operator!=(const self_type& rhs) const noexcept
+    {
         return !(*this == rhs);
-    }
-
-    /****************************
-     * xellipsis implementation *
-     ****************************/
-
-    template <class T>
-    inline auto xellipsis<T>::operator()(size_type /*i*/) const noexcept -> size_type
-    {
-        return 0;
-    }
-
-    template <class T>
-    inline auto xellipsis<T>::size() const noexcept -> size_type
-    {
-        return 0;
-    }
-
-    template <class T>
-    inline auto xellipsis<T>::step_size() const noexcept -> size_type
-    {
-        return 1;
     }
 
     /***************************
@@ -779,18 +849,21 @@ namespace xt
         return 0;
     }
 
-    template<class T>
-    inline auto xnewaxis<T>::step_size(size_type /*i*/, size_type /*n*/) const noexcept -> size_type {
+    template <class T>
+    inline auto xnewaxis<T>::step_size(std::size_t /*i*/, std::size_t /*n*/) const noexcept -> size_type
+    {
         return 0;
     }
 
-    template<class T>
-    inline auto xnewaxis<T>::revert_index(size_type i) const noexcept -> size_type {
+    template <class T>
+    inline auto xnewaxis<T>::revert_index(std::size_t i) const noexcept -> size_type
+    {
         return i;
     }
 
-    template<class T>
-    inline bool xnewaxis<T>::contains(size_type i) const noexcept {
+    template <class T>
+    inline bool xnewaxis<T>::contains(size_type i) const noexcept
+    {
         return i == 0;
     }
 }

@@ -9,24 +9,24 @@
 namespace hg {
     inline
     auto get_4_adjacency_implicit_graph(const embedding_grid_2d &embedding) {
-        std::vector<point_2d_i> neighbours{{-1, 0},
-                                           {0,  -1},
-                                           {0,  1},
-                                           {1,  0}}; // 4 adjacency
+        std::vector<point_2d_i> neighbours{{{-1, 0}},
+                                           {{0,  -1}},
+                                           {{0,  1}},
+                                           {{1,  0}}}; // 4 adjacency
 
         return regular_grid_graph_2d(embedding, std::move(neighbours));
     }
 
     inline
     auto get_8_adjacency_implicit_graph(const embedding_grid_2d &embedding) {
-        std::vector<point_2d_i> neighbours{{-1, -1},
-                                           {-1, 0},
-                                           {-1, 1},
-                                           {0,  -1},
-                                           {0,  1},
-                                           {1,  -1},
-                                           {1,  0},
-                                           {1,  1}}; // 8 adjacency
+        std::vector<point_2d_i> neighbours{{{-1, -1}},
+                                           {{-1, 0}},
+                                           {{-1, 1}},
+                                           {{0,  -1}},
+                                           {{0,  1}},
+                                           {{1,  -1}},
+                                           {{1,  0}},
+                                           {{1,  1}}}; // 8 adjacency
 
         return regular_grid_graph_2d(embedding, std::move(neighbours));
     }
@@ -57,7 +57,7 @@ namespace hg {
 
         array_2d <result_type> res = xt::zeros<result_type>(res_shape);
         // workaround for current bug in xscalar stepper (to be removde after 1.15.9)
-        point_2d_i one = {1, 1};
+        point_2d_i one{{1, 1}};
         for (auto ei: edge_index_iterator(graph)) {
             auto e = edge(ei, graph);
             auto s = source(e, graph);
@@ -111,9 +111,9 @@ namespace hg {
         embedding_grid_2d res_embedding(res_shape);
 
         auto g = get_4_adjacency_graph(res_embedding);
-        array_1d<result_type> weights = xt::zeros<result_type>({num_edges(g)});
+        array_1d <result_type> weights = xt::zeros<result_type>({num_edges(g)});
         // workaround for current bug in xscalar stepper (to be removde after 1.15.9)
-        point_2d_i one{1, 1};
+        point_2d_i one{{1, 1}};
         for (auto ei : edge_index_iterator(g)) {
             auto e = edge(ei, g);
             auto s = res_embedding.lin2grid(source(e, g));

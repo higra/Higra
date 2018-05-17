@@ -137,12 +137,12 @@ namespace hg {
                 return _children[v].cend();
             }
 
-            const auto children(vertex_descriptor v) const {
+            auto children(vertex_descriptor v) const {
                 return _children[v];
             }
 
             template<typename... Args>
-            const auto parent(Args &&... args) const {
+            auto parent(Args &&... args) const {
                 return _parents(std::forward<Args>(args)...);
             }
 
@@ -150,19 +150,19 @@ namespace hg {
                 return _parents;
             }
 
-            const auto iterate_on_leaves() const {
+            auto iterate_on_leaves() const {
                 return irange<long>(0, _num_leaves);
             }
 
-            const auto iterate_from_leaves_to_root(leaves_it leaves_opt = leaves_it::include,
-                                                   root_it root_opt = root_it::include) const {
+            auto iterate_from_leaves_to_root(leaves_it leaves_opt = leaves_it::include,
+                                             root_it root_opt = root_it::include) const {
                 vertex_descriptor start = (leaves_opt == leaves_it::include) ? 0 : num_leaves();
                 vertex_descriptor end = (root_opt == root_it::include) ? _num_vertices : _num_vertices - 1;
                 return irange<long>(start, end);
             }
 
-            const auto iterate_from_root_to_leaves(leaves_it leaves_opt = leaves_it::include,
-                                                   root_it root_opt = root_it::include) const {
+            auto iterate_from_root_to_leaves(leaves_it leaves_opt = leaves_it::include,
+                                             root_it root_opt = root_it::include) const {
                 vertex_descriptor end = (leaves_opt == leaves_it::include) ? -1 : num_leaves() - 1;
                 vertex_descriptor start = (root_opt == root_it::include) ? _num_vertices - 1 : _num_vertices - 2;
                 return irange<long>(start, end, -1);
@@ -253,27 +253,29 @@ namespace hg {
 
     using tree = tree_internal::tree;
 
-    template<>
-    struct graph_traits<hg::tree> {
-        using G = hg::tree;
+    namespace graph {
+        template<>
+        struct graph_traits<hg::tree> {
+            using G = hg::tree;
 
-        using vertex_descriptor = typename G::vertex_descriptor;
-        using edge_descriptor = typename G::edge_descriptor;
-        using edge_iterator = typename G::edge_iterator;
-        using out_edge_iterator = typename G::out_edge_iterator;
+            using vertex_descriptor = typename G::vertex_descriptor;
+            using edge_descriptor = typename G::edge_descriptor;
+            using edge_iterator = typename G::edge_iterator;
+            using out_edge_iterator = typename G::out_edge_iterator;
 
-        using directed_category = typename G::directed_category;
-        using edge_parallel_category = typename G::edge_parallel_category;
-        using traversal_category = typename G::traversal_category;
+            using directed_category = typename G::directed_category;
+            using edge_parallel_category = typename G::edge_parallel_category;
+            using traversal_category = typename G::traversal_category;
 
-        using degree_size_type = typename G::degree_size_type;
+            using degree_size_type = typename G::degree_size_type;
 
-        using in_edge_iterator = typename G::in_edge_iterator;
-        using vertex_iterator = typename G::vertex_iterator;
-        using vertices_size_type = typename G::vertices_size_type;
-        using edges_size_type = typename G::edges_size_type;
-        using adjacency_iterator = typename G::adjacency_iterator;
-    };
+            using in_edge_iterator = typename G::in_edge_iterator;
+            using vertex_iterator = typename G::vertex_iterator;
+            using vertices_size_type = typename G::vertices_size_type;
+            using edges_size_type = typename G::edges_size_type;
+            using adjacency_iterator = typename G::adjacency_iterator;
+        };
+    }
 
     inline
     std::pair<tree::edge_index_iterator, tree::edge_index_iterator>

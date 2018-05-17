@@ -10,8 +10,8 @@
 #define XTENSOR_CONFIG_HPP
 
 #define XTENSOR_VERSION_MAJOR 0
-#define XTENSOR_VERSION_MINOR 15
-#define XTENSOR_VERSION_PATCH 9
+#define XTENSOR_VERSION_MINOR 16
+#define XTENSOR_VERSION_PATCH 0
 
 // DETECT 3.6 <= clang < 3.8 for compiler bug workaround.
 #ifdef __clang__
@@ -22,28 +22,42 @@
     #endif
 #endif
 
-#ifndef DEFAULT_DATA_CONTAINER
-#define DEFAULT_DATA_CONTAINER(T, A) uvector<T, A>
+#ifndef XTENSOR_DATA_SHAPE_CONTAINER
+#define XTENSOR_DATA_SHAPE_CONTAINER(T, A) uvector<T, A>
 #endif
 
-#ifndef DEFAULT_SHAPE_CONTAINER
-#define DEFAULT_SHAPE_CONTAINER(T, EA, SA) \
-    xt::svector<typename DEFAULT_DATA_CONTAINER(T, EA)::size_type, 4, SA>
+#ifndef XTENSOR_DEFAULT_SHAPE_CONTAINER
+#define XTENSOR_DEFAULT_SHAPE_CONTAINER(T, EA, SA) \
+    xt::svector<typename XTENSOR_DATA_SHAPE_CONTAINER(T, EA)::size_type, 4, SA>
 #endif
 
-#ifndef DEFAULT_ALLOCATOR
-#ifdef XTENSOR_USE_XSIMD
-#include <xsimd/xsimd.hpp>
-#define DEFAULT_ALLOCATOR(T) \
-    xsimd::aligned_allocator<T, XSIMD_DEFAULT_ALIGNMENT>
+#ifndef XTENSOR_DEFAULT_ALLOCATOR
+#ifdef XTENSOR_ALLOC_TRACKING
+    #ifndef XTENSOR_ALLOC_TRACKING_POLICY
+        #define XTENSOR_ALLOC_TRACKING_POLICY xt::alloc_tracking::policy::print
+    #endif
+    #ifdef XTENSOR_USE_XSIMD
+        #include <xsimd/xsimd.hpp>
+        #define XTENSOR_DEFAULT_ALLOCATOR(T) \
+            xt::tracking_allocator<T, xsimd::aligned_allocator<T, XSIMD_DEFAULT_ALIGNMENT>, XTENSOR_ALLOC_TRACKING_POLICY>
+    #else
+        #define XTENSOR_DEFAULT_ALLOCATOR(T) \
+            xt::tracking_allocator<T, std::allocator<T>, XTENSOR_ALLOC_TRACKING_POLICY>
+    #endif
 #else
-#define DEFAULT_ALLOCATOR(T) \
-    std::allocator<T>
+    #ifdef XTENSOR_USE_XSIMD
+    #include <xsimd/xsimd.hpp>
+    #define XTENSOR_DEFAULT_ALLOCATOR(T) \
+        xsimd::aligned_allocator<T, XSIMD_DEFAULT_ALIGNMENT>
+    #else
+    #define XTENSOR_DEFAULT_ALLOCATOR(T) \
+        std::allocator<T>
+    #endif
 #endif
 #endif
 
-#ifndef DEFAULT_LAYOUT
-#define DEFAULT_LAYOUT layout_type::row_major
+#ifndef XTENSOR_DEFAULT_LAYOUT
+#define XTENSOR_DEFAULT_LAYOUT ::xt::layout_type::row_major
 #endif
 
 #endif

@@ -12,22 +12,24 @@
 #include <cstddef>
 #include <iterator>
 
-namespace xt {
+namespace xt
+{
 
-    template<std::size_t N>
+    template <std::size_t N>
     class pystrides_iterator;
 
     /*********************************
      * pystrides_adaptor declaration *
      *********************************/
 
-    template<std::size_t N>
-    class pystrides_adaptor {
+    template <std::size_t N>
+    class pystrides_adaptor
+    {
     public:
 
         using value_type = std::size_t;
         using const_reference = value_type;
-        using const_pointer = const value_type *;
+        using const_pointer = const value_type*;
         using size_type = std::size_t;
         using difference_type = std::ptrdiff_t;
 
@@ -35,33 +37,24 @@ namespace xt {
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         pystrides_adaptor() = default;
-
         pystrides_adaptor(const_pointer data, size_type size);
 
         bool empty() const noexcept;
-
         size_type size() const noexcept;
 
         const_reference operator[](size_type i) const;
 
         const_reference front() const;
-
         const_reference back() const;
 
         const_iterator begin() const;
-
         const_iterator end() const;
-
         const_iterator cbegin() const;
-
         const_iterator cend() const;
 
         const_reverse_iterator rbegin() const;
-
         const_reverse_iterator rend() const;
-
         const_reverse_iterator crbegin() const;
-
         const_reverse_iterator crend() const;
 
     private:
@@ -74,8 +67,9 @@ namespace xt {
      * pystrides_iterator declaration *
      **********************************/
 
-    template<std::size_t N>
-    class pystrides_iterator {
+    template <std::size_t N>
+    class pystrides_iterator
+    {
     public:
 
         using self_type = pystrides_iterator<N>;
@@ -87,64 +81,77 @@ namespace xt {
         using iterator_category = std::random_access_iterator_tag;
 
         inline pystrides_iterator(pointer current)
-                : p_current(current) {
+            : p_current(current)
+        {
         }
 
-        inline reference operator*() const {
+        inline reference operator*() const
+        {
             return *p_current / N;
         }
 
-        inline pointer operator->() const {
+        inline pointer operator->() const
+        {
             // Returning the address of a temporary
             value_type res = *p_current / N;
             return &res;
         }
 
-        inline reference operator[](difference_type n) const {
+        inline reference operator[](difference_type n) const
+        {
             return *(p_current + n) / N;
         }
 
-        inline self_type &operator++() {
+        inline self_type& operator++()
+        {
             ++p_current;
             return *this;
         }
 
-        inline self_type &operator--() {
+        inline self_type& operator--()
+        {
             --p_current;
             return *this;
         }
 
-        inline self_type operator++(int) {
+        inline self_type operator++(int)
+        {
             self_type tmp(*this);
             ++p_current;
             return tmp;
         }
 
-        inline self_type operator--(int) {
+        inline self_type operator--(int)
+        {
             self_type tmp(*this);
             --p_current;
             return tmp;
         }
 
-        inline self_type &operator+=(difference_type n) {
+        inline self_type& operator+=(difference_type n)
+        {
             p_current += n;
             return *this;
         }
 
-        inline self_type &operator-=(difference_type n) {
+        inline self_type& operator-=(difference_type n)
+        {
             p_current -= n;
             return *this;
         }
 
-        inline self_type operator+(difference_type n) const {
+        inline self_type operator+(difference_type n) const
+        {
             return self_type(p_current + n);
         }
 
-        inline self_type operator-(difference_type n) const {
+        inline self_type operator-(difference_type n) const
+        {
             return self_type(p_current - n);
         }
 
-        inline difference_type operator-(const self_type &rhs) const {
+        inline difference_type operator-(const self_type& rhs) const
+        {
             self_type tmp(*this);
             return p_current - rhs.p_current;
         }
@@ -156,39 +163,45 @@ namespace xt {
         pointer p_current;
     };
 
-    template<std::size_t N>
-    inline bool operator==(const pystrides_iterator<N> &lhs,
-                           const pystrides_iterator<N> &rhs) {
+    template <std::size_t N>
+    inline bool operator==(const pystrides_iterator<N>& lhs,
+                           const pystrides_iterator<N>& rhs)
+    {
         return lhs.get_pointer() == rhs.get_pointer();
     }
 
-    template<std::size_t N>
-    inline bool operator!=(const pystrides_iterator<N> &lhs,
-                           const pystrides_iterator<N> &rhs) {
+    template <std::size_t N>
+    inline bool operator!=(const pystrides_iterator<N>& lhs,
+                           const pystrides_iterator<N>& rhs)
+    {
         return !(lhs == rhs);
     }
 
-    template<std::size_t N>
-    inline bool operator<(const pystrides_iterator<N> &lhs,
-                          const pystrides_iterator<N> &rhs) {
+    template <std::size_t N>
+    inline bool operator<(const pystrides_iterator<N>& lhs,
+                          const pystrides_iterator<N>& rhs)
+    {
         return lhs.get_pointer() < rhs.get_pointer();
     }
 
-    template<std::size_t N>
-    inline bool operator<=(const pystrides_iterator<N> &lhs,
-                           const pystrides_iterator<N> &rhs) {
+    template <std::size_t N>
+    inline bool operator<=(const pystrides_iterator<N>& lhs,
+                           const pystrides_iterator<N>& rhs)
+    {
         return (lhs < rhs) || (lhs == rhs);
     }
 
-    template<std::size_t N>
-    inline bool operator>(const pystrides_iterator<N> &lhs,
-                          const pystrides_iterator<N> &rhs) {
+    template <std::size_t N>
+    inline bool operator>(const pystrides_iterator<N>& lhs,
+                          const pystrides_iterator<N>& rhs)
+    {
         return !(lhs <= rhs);
     }
 
-    template<std::size_t N>
-    inline bool operator>=(const pystrides_iterator<N> &lhs,
-                           const pystrides_iterator<N> &rhs) {
+    template <std::size_t N>
+    inline bool operator>=(const pystrides_iterator<N>& lhs,
+                           const pystrides_iterator<N>& rhs)
+    {
         return !(lhs < rhs);
     }
 
@@ -196,73 +209,87 @@ namespace xt {
      * pystrides_adaptor implementation *
      ************************************/
 
-    template<std::size_t N>
+    template <std::size_t N>
     inline pystrides_adaptor<N>::pystrides_adaptor(const_pointer data, size_type size)
-            : p_data(data), m_size(size) {
+        : p_data(data), m_size(size)
+    {
     }
 
-    template<std::size_t N>
-    inline bool pystrides_adaptor<N>::empty() const noexcept {
+    template <std::size_t N>
+    inline bool pystrides_adaptor<N>::empty() const noexcept
+    {
         return m_size == 0;
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::size() const noexcept -> size_type {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::size() const noexcept -> size_type
+    {
         return m_size;
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::operator[](size_type i) const -> const_reference {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::operator[](size_type i) const -> const_reference
+    {
         return p_data[i] / N;
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::front() const -> const_reference {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::front() const -> const_reference
+    {
         return p_data[0] / N;
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::back() const -> const_reference {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::back() const -> const_reference
+    {
         return p_data[m_size - 1] / N;
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::begin() const -> const_iterator {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::begin() const -> const_iterator
+    {
         return cbegin();
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::end() const -> const_iterator {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::end() const -> const_iterator
+    {
         return cend();
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::cbegin() const -> const_iterator {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::cbegin() const -> const_iterator
+    {
         return const_iterator(p_data);
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::cend() const -> const_iterator {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::cend() const -> const_iterator
+    {
         return const_iterator(p_data + m_size);
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::rbegin() const -> const_reverse_iterator {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::rbegin() const -> const_reverse_iterator
+    {
         return crbegin();
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::rend() const -> const_reverse_iterator {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::rend() const -> const_reverse_iterator
+    {
         return crend();
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::crbegin() const -> const_reverse_iterator {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::crbegin() const -> const_reverse_iterator
+    {
         return const_reverse_iterator(cend());
     }
 
-    template<std::size_t N>
-    inline auto pystrides_adaptor<N>::crend() const -> const_reverse_iterator {
+    template <std::size_t N>
+    inline auto pystrides_adaptor<N>::crend() const -> const_reverse_iterator
+    {
         return const_reverse_iterator(cbegin());
     }
 }

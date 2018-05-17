@@ -7,6 +7,9 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
+#ifndef XTENSOR_NPY_HPP
+#define XTENSOR_NPY_HPP
+
 // Derived from https://github.com/llohse/libnpy by Leon Merten Lohse,
 // relicensed from MIT License with permission
 
@@ -647,7 +650,7 @@ namespace xt
             detail::write_header(stream, typestring, fortran_order, shape);
 
             std::size_t size = compute_size(shape);
-            stream.write(reinterpret_cast<const char*>(eval_ex.raw_data()),
+            stream.write(reinterpret_cast<const char*>(eval_ex.data()),
                          std::streamsize((sizeof(value_type) * size)));
         }
     }  // namespace detail
@@ -694,3 +697,6 @@ namespace xt
     }
 
 }  // namespace xt
+
+#endif
+

@@ -38,12 +38,12 @@ BOOST_AUTO_TEST_SUITE(embedding);
         BOOST_CHECK(e1.size() == 50);
         BOOST_CHECK(e1.dimension() == 2);
 
-        hg::point_2d_i p1 = {0, 3};
+        hg::point_2d_i p1={{0, 3}};
         auto p1t = e1.lin2grid(3);
         BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
         BOOST_CHECK((e1.grid2lin(p1t)) == 3);
 
-        hg::point_2d_i p2 = {2, 4};
+        hg::point_2d_i p2{{2, 4}};
         auto p2t = e1.lin2grid(14);
         BOOST_CHECK(std::equal(p2.begin(), p2.end(), p2t.begin()));
         BOOST_CHECK(e1.grid2lin(p2) == 14);
@@ -51,10 +51,10 @@ BOOST_AUTO_TEST_SUITE(embedding);
         BOOST_CHECK(e1.contains(p1t));
         BOOST_CHECK(e1.contains(p2t));
 
-        hg::point_2d_i p3 = {-1, 2};
-        hg::point_2d_i p4 = {6, -1};
-        hg::point_2d_i p5 = {10, 2};
-        hg::point_2d_i p6 = {6, 5};
+        hg::point_2d_i p3{{-1l, 2l}};
+        hg::point_2d_i p4{{6l, -1l}};
+        hg::point_2d_i p5{{10l, 2l}};
+        hg::point_2d_i p6{{6l, 5l}};
         BOOST_CHECK(!e1.contains(p3));
         BOOST_CHECK(!e1.contains(p4));
         BOOST_CHECK(!e1.contains(p5));
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_SUITE(embedding);
         BOOST_CHECK(e1.size() == 100);
         BOOST_CHECK(e1.dimension() == 3);
 
-        hg::point_3d_i p1 = {3, 2, 1};
+        hg::point_3d_i p1{{3, 2, 1}};
         auto p1t = e1.lin2grid(35);
         BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
         BOOST_CHECK(e1.grid2lin(p1) == 35);
@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_SUITE(embedding);
         BOOST_CHECK(e1.size() == 100);
         BOOST_CHECK(e1.dimension() == 3);
 
-        hg::point_3d_i p1 = {3, 2, 1};
+        hg::point_3d_i p1{{3, 2, 1}};
         auto p1t = e1.lin2grid(35);
         BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
         BOOST_CHECK(e1.grid2lin(p1) == 35);
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_SUITE(embedding);
         BOOST_CHECK(e1.size() == 100);
         BOOST_CHECK(e1.dimension() == 3);
 
-        hg::point_3d_i p1 = {3, 2, 1};
+        hg::point_3d_i p1 = {{3, 2, 1}};
         auto p1t = e1.lin2grid(35);
         BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
         BOOST_CHECK(e1.grid2lin(p1) == 35);

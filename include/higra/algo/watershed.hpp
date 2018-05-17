@@ -20,7 +20,7 @@ namespace hg {
      * @tparam T
      * @param graph
      * @param xedge_weights
-     * @return label array on graph vertices
+     * @return array of labels on graph vertices, numbered from 1 to n with n the number of minima
      */
     template<typename graph_t, typename T>
     auto

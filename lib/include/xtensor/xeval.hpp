@@ -9,8 +9,7 @@
 #ifndef XTENSOR_EVAL_HPP
 #define XTENSOR_EVAL_HPP
 
-#include "xarray.hpp"
-#include "xtensor.hpp"
+#include "xtensor_forward.hpp"
 
 namespace xt
 {
@@ -20,10 +19,11 @@ namespace xt
         template <class T>
         using is_container = std::is_base_of<xcontainer<std::remove_const_t<T>>, T>;
     }
+
     /**
      * Force evaluation of xexpression.
      * @return xarray or xtensor depending on shape type
-     * 
+     *
      * \code{.cpp}
      * xarray<double> a = {1,2,3,4};
      * auto&& b = xt::eval(a); // b is a reference to a, no copy!

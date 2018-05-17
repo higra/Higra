@@ -18,10 +18,10 @@ BOOST_AUTO_TEST_SUITE(regularGraph);
 
         _data() {
             hg::embedding_grid_2d embedding{2, 3}; // 2 rows, 3 columns
-            std::vector<point_2d_i> neighbours{{-1, 0},
-                                               {0,  -1},
-                                               {0,  1},
-                                               {1,  0}}; // 4 adjacency
+            std::vector<point_2d_i> neighbours{{{-1, 0}},
+                                               {{0,  -1}},
+                                               {{0,  1}},
+                                               {{1,  0}}}; // 4 adjacency
 
             g = hg::regular_grid_graph_2d(embedding, neighbours);
         }

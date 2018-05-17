@@ -284,7 +284,7 @@ namespace hg {
         }
     };
 
-
+/*
     template<typename tree_t, typename T, typename accumulator_t, typename output_t = typename T::value_type>
     auto accumulate_parallel_view(const tree_t &tree,
                                   const xt::xexpression<T> &xinput,
@@ -395,5 +395,5 @@ namespace hg {
             }
         }
         return output;
-    };
+    };*/
 }

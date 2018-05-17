@@ -47,7 +47,7 @@ namespace xt
         using stepper = xscalar_stepper<false, CT>;
     };
 
-#define DL DEFAULT_LAYOUT
+#define DL XTENSOR_DEFAULT_LAYOUT
     template <class CT>
     class xscalar : public xexpression<xscalar<CT>>,
                     private xiterable<xscalar<CT>>
@@ -104,7 +104,11 @@ namespace xt
         static constexpr layout_type static_layout = layout_type::any;
         static constexpr bool contiguous_layout = true;
 
+        xscalar() noexcept;
         xscalar(CT value) noexcept;
+
+        operator value_type&() noexcept;
+        operator const value_type&() const noexcept;
 
         size_type size() const noexcept;
         size_type dimension() const noexcept;
@@ -313,21 +317,21 @@ namespace xt
     public:
 
         using self_type = xscalar_stepper<is_const, CT>;
-        using container_type = std::conditional_t<is_const,
-                                                  const xscalar<CT>,
-                                                  xscalar<CT>>;
+        using storage_type = std::conditional_t<is_const,
+                                                const xscalar<CT>,
+                                                xscalar<CT>>;
 
-        using value_type = typename container_type::value_type;
+        using value_type = typename storage_type::value_type;
         using reference = std::conditional_t<is_const,
-                                             typename container_type::const_reference,
-                                             typename container_type::reference>;
+                                             typename storage_type::const_reference,
+                                             typename storage_type::reference>;
         using pointer = std::conditional_t<is_const,
-                                           typename container_type::const_pointer,
-                                           typename container_type::pointer>;
-        using size_type = typename container_type::size_type;
-        using difference_type = typename container_type::difference_type;
+                                           typename storage_type::const_pointer,
+                                           typename storage_type::pointer>;
+        using size_type = typename storage_type::size_type;
+        using difference_type = typename storage_type::difference_type;
 
-        xscalar_stepper(container_type* c) noexcept;
+        xscalar_stepper(storage_type* c) noexcept;
 
         reference operator*() const noexcept;
 
@@ -339,20 +343,10 @@ namespace xt
         void to_begin() noexcept;
         void to_end(layout_type l) noexcept;
 
-        bool equal(const self_type& rhs) const noexcept;
-
     private:
 
-        container_type* p_c;
+        storage_type* p_c;
     };
-
-    template <bool is_const, class CT>
-    bool operator==(const xscalar_stepper<is_const, CT>& lhs,
-                    const xscalar_stepper<is_const, CT>& rhs) noexcept;
-
-    template <bool is_const, class CT>
-    bool operator!=(const xscalar_stepper<is_const, CT>& lhs,
-                    const xscalar_stepper<is_const, CT>& rhs) noexcept;
 
     /*******************
      * xdummy_iterator *
@@ -382,17 +376,17 @@ namespace xt
     public:
 
         using self_type = xdummy_iterator<is_const, CT>;
-        using container_type = std::conditional_t<is_const,
-                                                  const xscalar<CT>,
-                                                  xscalar<CT>>;
+        using storage_type = std::conditional_t<is_const,
+                                                const xscalar<CT>,
+                                                xscalar<CT>>;
 
-        using value_type = typename container_type::value_type;
+        using value_type = typename storage_type::value_type;
         using reference = detail::dummy_reference_t<is_const, CT>;
         using pointer = detail::dummy_pointer_t<is_const, CT>;
-        using difference_type = typename container_type::difference_type;
+        using difference_type = typename storage_type::difference_type;
         using iterator_category = std::random_access_iterator_tag;
 
-        explicit xdummy_iterator(container_type* c) noexcept;
+        explicit xdummy_iterator(storage_type* c) noexcept;
 
         self_type& operator++() noexcept;
         self_type& operator--() noexcept;
@@ -409,7 +403,7 @@ namespace xt
 
     private:
 
-        container_type* p_c;
+        storage_type* p_c;
     };
 
     template <bool is_const, class CT>
@@ -455,10 +449,29 @@ namespace xt
      * xscalar implementation *
      **************************/
 
+    // This constructor will not compile when CT is a reference type.
+    template <class CT>
+    inline xscalar<CT>::xscalar() noexcept
+        : m_value()
+    {
+    }
+
     template <class CT>
     inline xscalar<CT>::xscalar(CT value) noexcept
         : m_value(value)
     {
+    }
+
+    template <class CT>
+    inline xscalar<CT>::operator value_type&() noexcept
+    {
+        return m_value;
+    }
+
+    template <class CT>
+    inline xscalar<CT>::operator const value_type&() const noexcept
+    {
+        return m_value;
     }
 
     template <class CT>
@@ -764,98 +777,98 @@ namespace xt
     template <layout_type L>
     inline auto xscalar<CT>::storage_begin() noexcept -> iterator
     {
-        return begin<L>();
+        return this->template begin<L>();
     }
 
     template <class CT>
     template <layout_type L>
     inline auto xscalar<CT>::storage_end() noexcept -> iterator
     {
-        return end<L>();
+        return this->template end<L>();
     }
 
     template <class CT>
     template <layout_type L>
     inline auto xscalar<CT>::storage_begin() const noexcept -> const_iterator
     {
-        return begin<L>();
+        return this->template begin<L>();
     }
 
     template <class CT>
     template <layout_type L>
     inline auto xscalar<CT>::storage_end() const noexcept -> const_iterator
     {
-        return end<L>();
+        return this->template end<L>();
     }
 
     template <class CT>
     template <layout_type L>
     inline auto xscalar<CT>::storage_cbegin() const noexcept -> const_iterator
     {
-        return cbegin<L>();
+        return this->template cbegin<L>();
     }
 
     template <class CT>
     template <layout_type L>
     inline auto xscalar<CT>::storage_cend() const noexcept -> const_iterator
     {
-        return cend<L>();
+        return this->template cend<L>();
     }
 
     template <class CT>
     template <layout_type L>
     inline auto xscalar<CT>::storage_rbegin() noexcept -> reverse_iterator
     {
-        return rbegin<L>();
+        return this->template rbegin<L>();
     }
 
     template <class CT>
     template <layout_type L>
     inline auto xscalar<CT>::storage_rend() noexcept -> reverse_iterator
     {
-        return rend<L>();
+        return this->template rend<L>();
     }
 
     template <class CT>
     template <layout_type L>
     inline auto xscalar<CT>::storage_rbegin() const noexcept -> const_reverse_iterator
     {
-        return rbegin<L>();
+        return this->template rbegin<L>();
     }
 
     template <class CT>
     template <layout_type L>
     inline auto xscalar<CT>::storage_rend() const noexcept -> const_reverse_iterator
     {
-        return rend<L>();
+        return this->template rend<L>();
     }
 
     template <class CT>
     template <layout_type L>
     inline auto xscalar<CT>::storage_crbegin() const noexcept -> const_reverse_iterator
     {
-        return crbegin<L>();
+        return this->template crbegin<L>();
     }
 
     template <class CT>
     template <layout_type L>
     inline auto xscalar<CT>::storage_crend() const noexcept -> const_reverse_iterator
     {
-        return crend<L>();
+        return this->template crend<L>();
     }
 
     template <class CT>
     template <class S>
     inline auto xscalar<CT>::stepper_begin(const S&) noexcept -> stepper
     {
-        return stepper(this);
+        return stepper(this, false);
     }
 
     template <class CT>
     template <class S>
     inline auto xscalar<CT>::stepper_end(const S&, layout_type) noexcept -> stepper
     {
-        return stepper(this + 1);
+        return stepper(this);
     }
 
     template <class CT>
@@ -869,7 +882,7 @@ namespace xt
     template <class S>
     inline auto xscalar<CT>::stepper_end(const S&, layout_type) const noexcept -> const_stepper
     {
-        return const_stepper(this + 1);
+        return const_stepper(this);
     }
 
     template <class CT>
@@ -939,7 +952,7 @@ namespace xt
      **********************************/
 
     template <bool is_const, class CT>
-    inline xscalar_stepper<is_const, CT>::xscalar_stepper(container_type* c) noexcept
+    inline xscalar_stepper<is_const, CT>::xscalar_stepper(storage_type* c) noexcept
         : p_c(c)
     {
     }
@@ -973,33 +986,11 @@ namespace xt
     template <bool is_const, class CT>
     inline void xscalar_stepper<is_const, CT>::to_begin() noexcept
     {
-        p_c = p_c->stepper_begin(p_c->shape()).p_c;
     }
 
     template <bool is_const, class CT>
-    inline void xscalar_stepper<is_const, CT>::to_end(layout_type l) noexcept
+    inline void xscalar_stepper<is_const, CT>::to_end(layout_type /*l*/) noexcept
     {
-        p_c = p_c->stepper_end(p_c->shape(), l).p_c;
-    }
-
-    template <bool is_const, class CT>
-    inline bool xscalar_stepper<is_const, CT>::equal(const self_type& rhs) const noexcept
-    {
-        return (p_c == rhs.p_c);
-    }
-
-    template <bool is_const, class CT>
-    inline bool operator==(const xscalar_stepper<is_const, CT>& lhs,
-                           const xscalar_stepper<is_const, CT>& rhs) noexcept
-    {
-        return lhs.equal(rhs);
-    }
-
-    template <bool is_const, class CT>
-    inline bool operator!=(const xscalar_stepper<is_const, CT>& lhs,
-                           const xscalar_stepper<is_const, CT>& rhs) noexcept
-    {
-        return !(lhs.equal(rhs));
     }
 
     /**********************************
@@ -1007,7 +998,7 @@ namespace xt
      **********************************/
 
     template <bool is_const, class CT>
-    inline xdummy_iterator<is_const, CT>::xdummy_iterator(container_type* c) noexcept
+    inline xdummy_iterator<is_const, CT>::xdummy_iterator(storage_type* c) noexcept
         : p_c(c)
     {
     }

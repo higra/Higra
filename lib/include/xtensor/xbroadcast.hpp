@@ -21,6 +21,7 @@
 
 #include "xexpression.hpp"
 #include "xiterable.hpp"
+#include "xscalar.hpp"
 #include "xstrides.hpp"
 #include "xutils.hpp"
 
@@ -32,14 +33,14 @@ namespace xt
      *************/
 
     template <class E, class S>
-    auto broadcast(E &&e, const S &s);
+    auto broadcast(E&& e, const S& s);
 
 #ifdef X_OLD_CLANG
     template <class E, class I>
     auto broadcast(E&& e, std::initializer_list<I> s);
 #else
     template <class E, class I, std::size_t L>
-    auto broadcast(E &&e, const I (&s)[L]);
+    auto broadcast(E&& e, const I (&s)[L]);
 #endif
 
     /**************
@@ -100,7 +101,7 @@ namespace xt
         static constexpr bool contiguous_layout = false;
 
         template <class CTA, class S>
-        xbroadcast(CTA &&e, S &&s);
+        xbroadcast(CTA&& e, S&& s);
 
         size_type size() const noexcept;
         size_type dimension() const noexcept;
@@ -133,6 +134,9 @@ namespace xt
         template <class S>
         const_stepper stepper_end(const S& shape, layout_type l) const noexcept;
 
+        template <class E, class XCT = CT, class = std::enable_if_t<xt::is_xscalar<XCT>::value>>
+        void assign_to(xexpression<E>& e) const;
+
     private:
 
         CT m_e;
@@ -154,7 +158,7 @@ namespace xt
      * depending on whether \p e is an lvalue or an rvalue.
      */
     template <class E, class S>
-    inline auto broadcast(E &&e, const S &s)
+    inline auto broadcast(E&& e, const S& s)
     {
         using broadcast_type = xbroadcast<const_xclosure_t<E>, S>;
         using shape_type = typename broadcast_type::shape_type;
@@ -171,7 +175,7 @@ namespace xt
     }
 #else
     template <class E, class I, std::size_t L>
-    inline auto broadcast(E &&e, const I (&s)[L])
+    inline auto broadcast(E&& e, const I (&s)[L])
     {
         using broadcast_type = xbroadcast<const_xclosure_t<E>, std::array<std::size_t, L>>;
         using shape_type = typename broadcast_type::shape_type;
@@ -196,7 +200,7 @@ namespace xt
      */
     template <class CT, class X>
     template <class CTA, class S>
-    inline xbroadcast<CT, X>::xbroadcast(CTA &&e, S &&s)
+    inline xbroadcast<CT, X>::xbroadcast(CTA&& e, S&& s)
         : m_e(std::forward<CTA>(e)), m_shape(std::forward<S>(s))
     {
         xt::broadcast_shape(m_e.shape(), m_shape);
@@ -363,6 +367,15 @@ namespace xt
     {
         // Could check if (broadcastable(shape, m_shape)
         return m_e.stepper_end(shape, l);
+    }
+
+    template <class CT, class X>
+    template <class E, class XCT, class>
+    inline void xbroadcast<CT, X>::assign_to(xexpression<E>& e) const
+    {
+        auto& ed = e.derived_cast();
+        ed.resize(m_shape);
+        std::fill(ed.begin(), ed.end(), m_e());
     }
 }
 
