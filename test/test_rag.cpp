@@ -31,7 +31,6 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
     BOOST_AUTO_TEST_CASE(rag_simple) {
 
         fixture d;
-
         auto &rag = d.data.rag;
         auto &vertex_map = d.data.vertex_map;
         auto &edge_map = d.data.edge_map;
@@ -147,6 +146,49 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
                                                    {2, 8},
                                                    {0, 0}};
         BOOST_CHECK(edge_weights_vec == expected_edge_weights_vec);
+    }
+
+    BOOST_AUTO_TEST_CASE(accumulate_vertex_weights) {
+
+        fixture d;
+
+        auto &vertex_map = d.data.vertex_map;
+
+        array_1d<int> vertex_weights({16}, 1);
+
+        auto rag_vertex_weights = rag_accumulate(vertex_map, vertex_weights, accumulator_sum());
+        array_nd<double> expected_rag_vertex_weights{8, 4, 2, 2};
+        BOOST_CHECK(rag_vertex_weights == expected_rag_vertex_weights);
+
+        array_2d<int> vertex_weights_vec({16, 2}, 1);
+        auto rag_vertex_weights_vec = rag_accumulate(vertex_map, vertex_weights_vec, accumulator_sum());
+        array_nd<double> expected_rag_vertex_weights_vec{{8, 8},
+                                                         {4, 4},
+                                                         {2, 2},
+                                                         {2, 2}};
+        BOOST_CHECK(rag_vertex_weights_vec == expected_rag_vertex_weights_vec);
+    }
+
+    BOOST_AUTO_TEST_CASE(accumulate_edge_weights) {
+
+        fixture d;
+
+        auto &edge_map = d.data.edge_map;
+
+        array_1d<int> edge_weights({24}, 1);
+
+        auto rag_edge_weights = rag_accumulate(edge_map, edge_weights, accumulator_sum());
+        array_nd<double> expected_rag_edge_weights{2, 2, 1, 2, 1};
+        BOOST_CHECK(rag_edge_weights == expected_rag_edge_weights);
+
+        array_2d<int> edge_weights_vec({24, 2}, 1);
+        auto rag_edge_weights_vec = rag_accumulate(edge_map, edge_weights_vec, accumulator_sum());
+        array_nd<double> expected_rag_edge_weights_vec{{2, 2},
+                                                       {2, 2},
+                                                       {1, 1},
+                                                       {2, 2},
+                                                       {1, 1}};
+        BOOST_CHECK(rag_edge_weights_vec == expected_rag_edge_weights_vec);
     }
 
 BOOST_AUTO_TEST_SUITE_END();

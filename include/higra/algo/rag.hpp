@@ -8,6 +8,7 @@
 #include <stack>
 #include <map>
 #include "../structure/details/light_axis_view.hpp"
+#include "../accumulator/accumulator.hpp"
 
 namespace hg {
 
@@ -34,13 +35,11 @@ namespace hg {
         hg_assert(vertex_labels.size() == num_vertices(graph),
                   "Vertex labels size does not match graph number of vertices.");
 
-        using index_t = std::size_t;
-
         ugraph rag;
 
         array_1d<index_t> vertex_map({num_vertices(graph)}, invalid_index);
         array_1d<index_t> edge_map({num_edges(graph)}, invalid_index);
-        
+
         index_t num_regions = 0;
         index_t num_edges = 0;
 
@@ -104,7 +103,7 @@ namespace hg {
         rag_back_project_weights(const array_1d<index_t> &rag_map, const xt::xexpression<T> &xrag_weights) {
             auto &rag_weights = xrag_weights.derived_cast();
 
-            auto numv = rag_map.size();
+            index_t numv = rag_map.size();
             std::vector<std::size_t> shape;
             shape.push_back(numv);
             shape.insert(shape.end(), rag_weights.shape().begin() + 1, rag_weights.shape().end());
@@ -124,6 +123,51 @@ namespace hg {
 
             return weights;
         }
+
+        template<bool vectorial,
+                typename T,
+                typename accumulator_t,
+                typename output_t = typename T::value_type>
+        auto
+        rag_accumulate(const array_1d<index_t> &rag_map,
+                       const xt::xexpression<T> &xweights,
+                       const accumulator_t &accumulator) {
+            auto &weights = xweights.derived_cast();
+            hg_assert(weights.shape()[0] == rag_map.size(), "Weights dimension does not match rag map dimension.");
+
+            index_t size = xt::amax(rag_map)() + 1;
+            auto data_shape = std::vector<std::size_t>(weights.shape().begin() + 1, weights.shape().end());
+            auto output_shape = accumulator_t::get_output_shape(data_shape);
+            output_shape.insert(output_shape.begin(), size);
+            array_nd<typename T::value_type> rag_weights = array_nd<typename T::value_type>::from_shape(output_shape);
+
+            auto input_view = make_light_axis_view<vectorial>(weights);
+            auto output_view = make_light_axis_view<vectorial>(rag_weights);
+
+            std::vector<decltype(accumulator.template make_accumulator<vectorial>(output_view))> accs;
+            accs.reserve(size);
+
+
+            for (index_t i = 0; i < size; ++i) {
+                output_view.set_position(i);
+                accs.push_back(accumulator.template make_accumulator<vectorial>(output_view));
+                accs[i].initialize();
+            }
+
+            index_t map_size = rag_map.size();
+            for (index_t i = 0; i < map_size; ++i) {
+                if (rag_map.data()[i] != invalid_index) {
+                    input_view.set_position(i);
+                    accs[rag_map.data()[i]].accumulate(input_view.begin());
+                }
+            }
+
+            for (auto &acc: accs) {
+                acc.finalize();
+            }
+
+            return rag_weights;
+        }
     }
 
     template<typename T>
@@ -136,4 +180,15 @@ namespace hg {
         }
 
     }
+
+    template<typename T, typename accumulator_t, typename output_t = typename T::value_type>
+    auto rag_accumulate(const array_1d<index_t> &rag_map,
+                        const xt::xexpression<T> &xweights,
+                        const accumulator_t &accumulator) {
+        if (xweights.derived_cast().dimension() == 1) {
+            return rag_internal::rag_accumulate<false, T, accumulator_t, output_t>(rag_map, xweights, accumulator);
+        } else {
+            return rag_internal::rag_accumulate<true, T, accumulator_t, output_t>(rag_map, xweights, accumulator);
+        }
+    };
 }
