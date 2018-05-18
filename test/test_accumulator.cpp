@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_SUITE(accumulator);
 
         for (std::size_t i = 0; i < values.shape()[0]; i++) {
             inview.set_position(i);
-            acc.accumulate(inview);
+            acc.accumulate(inview.begin());
         }
         acc.finalize();
         return storage;

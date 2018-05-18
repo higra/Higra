@@ -95,9 +95,9 @@ namespace xt {
 
 namespace hg {
 
-    using index_t = std::size_t;
+    using index_t = long;
 
-    const index_t invalid_index = std::numeric_limits<index_t>::max();
+    const index_t invalid_index = -1;
 
 }
 

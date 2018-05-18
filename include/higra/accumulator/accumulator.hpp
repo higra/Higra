@@ -28,53 +28,65 @@ namespace hg {
         template<typename S, bool vectorial = true>
         struct acc_marginal_impl {
             using self_type = acc_marginal_impl<S, vectorial>;
-            using value_type = typename S::value_type;
+            using value_type = typename std::iterator_traits<S>::value_type;
             using reducer_type = std::function<value_type(value_type, value_type)>;
 
             static const bool is_vectorial = vectorial;
 
-            acc_marginal_impl(S &storage, reducer_type reducer, value_type init_value) :
+            acc_marginal_impl(S storage_begin, S storage_end, reducer_type reducer, value_type init_value) :
                     m_init_value(init_value),
                     m_reducer(reducer),
-                    m_storage(storage) {
+                    m_storage_begin(storage_begin),
+                    m_storage_end(storage_end) {
             }
 
             template<typename T = self_type, typename ...Args>
             typename std::enable_if_t<T::is_vectorial>
             initialize(Args &&...) {
-                std::fill(m_storage.begin(), m_storage.end(), m_init_value);
+                std::fill(m_storage_begin, m_storage_end, m_init_value);
             }
 
             template<typename T = self_type, typename ...Args>
             typename std::enable_if_t<!T::is_vectorial>
             initialize(Args &&...) {
-                *m_storage.begin() = m_init_value;
+                *m_storage_begin = m_init_value;
             }
 
             template<typename T1 = self_type, typename T, typename ...Args>
             std::enable_if_t<T1::is_vectorial>
-            accumulate(T &value, Args &&...) {
-                auto s = m_storage.begin();
-                auto v = value.begin();
-                for (; s != m_storage.end(); s++, v++) {
-                    *s = m_reducer(*v, *s);
+            accumulate(T value_begin, Args &&...) {
+                auto s = m_storage_begin;
+                for (; s != m_storage_end; s++, value_begin++) {
+                    *s = m_reducer(*value_begin, *s);
                 }
             };
 
             template<typename T1 = self_type, typename T, typename ...Args>
             std::enable_if_t<!T1::is_vectorial>
-            accumulate(T &value, Args &&...) {
-                *m_storage.begin() = m_reducer(*value.begin(), *m_storage.begin());
+            accumulate(T value_begin, Args &&...) {
+                *m_storage_begin = m_reducer(*value_begin, *m_storage_begin);
             };
 
             template<typename ...Args>
             void finalize(Args &&...) const {}
 
+            void set_storage(S storage_begin, S storage_end) {
+                m_storage_begin = storage_begin;
+                m_storage_end = storage_end;
+            }
+
+            template<typename T>
+            void set_storage(T &range) {
+                m_storage_begin = range.begin();
+                m_storage_end = range.end();
+            }
+
         private:
 
             value_type m_init_value;
             reducer_type m_reducer;
-            S &m_storage;
+            S m_storage_begin;
+            S m_storage_end;
         };
 
 
@@ -87,48 +99,48 @@ namespace hg {
         struct acc_mean_impl {
 
             using self_type = acc_marginal_impl<S, vectorial>;
-            using value_type = typename S::value_type;
+            using value_type = typename std::iterator_traits<S>::value_type;
             static const bool is_vectorial = vectorial;
 
-            acc_mean_impl(S &storage) :
+            acc_mean_impl(S storage_begin, S storage_end) :
                     m_counter(0),
-                    m_storage(storage) {
+                    m_storage_begin(storage_begin),
+                    m_storage_end(storage_end) {
             }
 
             template<typename T = self_type, typename ...Args>
             typename std::enable_if_t<T::is_vectorial>
             initialize(Args &&...) {
-                std::fill(m_storage.begin(), m_storage.end(), 0);
+                std::fill(m_storage_begin, m_storage_end, 0);
             }
 
             template<typename T = self_type, typename ...Args>
             typename std::enable_if_t<!T::is_vectorial>
             initialize(Args &&...) {
-                *m_storage.begin() = 0;
+                *m_storage_begin = 0;
             }
 
             template<typename T1 = self_type, typename T, typename ...Args>
             std::enable_if_t<T1::is_vectorial>
-            accumulate(T &value, Args &&...) {
+            accumulate(T value_begin, Args &&...) {
                 m_counter++;
-                auto s = m_storage.begin();
-                auto v = value.begin();
-                for (; s != m_storage.end(); s++, v++) {
-                    *s += *v;
+                auto s = m_storage_begin;
+                for (; s != m_storage_end; s++, value_begin++) {
+                    *s += *value_begin;
                 }
             }
 
             template<typename T1 = self_type, typename T, typename ...Args>
             std::enable_if_t<!T1::is_vectorial>
-            accumulate(T &value, Args &&...) {
+            accumulate(const T value_begin, Args &&...) {
                 m_counter++;
-                *m_storage.begin() += *value.begin();
+                *m_storage_begin += *value_begin;
             }
 
             template<typename T = self_type, typename ...Args>
             typename std::enable_if_t<T::is_vectorial>
             finalize(Args &&...) const {
-                for (auto s = m_storage.begin(); s != m_storage.end(); s++) {
+                for (auto s = m_storage_begin; s != m_storage_end; s++) {
                     *s /= m_counter;
                 }
             }
@@ -136,12 +148,24 @@ namespace hg {
             template<typename T = self_type, typename ...Args>
             typename std::enable_if_t<!T::is_vectorial>
             finalize(Args &&...) const {
-                *m_storage.begin() /= m_counter;
+                *m_storage_begin /= m_counter;
+            }
+
+            void set_storage(S storage_begin, S storage_end) {
+                m_storage_begin = storage_begin;
+                m_storage_end = storage_end;
+            }
+
+            template<typename T>
+            void set_storage(T &range) {
+                m_storage_begin = range.begin();
+                m_storage_end = range.end();
             }
 
         private:
             std::size_t m_counter;
-            S &m_storage;
+            S m_storage_begin;
+            S m_storage_end;
         };
 
         /**
@@ -151,31 +175,43 @@ namespace hg {
          */
         template<typename S, bool vectorial = true>
         struct acc_counter_impl {
-
+            using value_type = typename std::iterator_traits<S>::value_type;
             using self_type = acc_marginal_impl<S, vectorial>;
-            using value_type = typename S::value_type;
             static const bool is_vectorial = vectorial;
 
-            acc_counter_impl(S &storage) :
-                    m_storage(storage) {
+            acc_counter_impl(S storage_begin, S storage_end) :
+                    m_storage_begin(storage_begin),
+                    m_storage_end(storage_end) {
             }
 
             template<typename ...Args>
             void initialize(Args &&...) {
-                *m_storage.begin() = 0;
+                *m_storage_begin = 0;
             }
 
             template<typename T, typename ...Args>
-            void accumulate(T &, Args &&...) {
-                (*m_storage.begin())++;
+            void accumulate(const T &, Args &&...) {
+                (*m_storage_begin)++;
             }
 
             template<typename ...Args>
             void finalize(Args &&...) const {}
 
 
+            void set_storage(S storage_begin, S storage_end) {
+                m_storage_begin = storage_begin;
+                m_storage_end = storage_end;
+            }
+
+            template<typename T>
+            void set_storage(T &range) {
+                m_storage_begin = range.begin();
+                m_storage_end = range.end();
+            }
+
         private:
-            S &m_storage;
+            S m_storage_begin;
+            S m_storage_end;
         };
 
     }
@@ -185,8 +221,10 @@ namespace hg {
         template<bool vectorial = true, typename S>
         auto make_accumulator(S &storage) const {
             using value_type = typename S::value_type;
-            return accumulator_detail::acc_marginal_impl<S, vectorial>(
-                    storage,
+            using iterator_type = decltype(storage.begin());
+            return accumulator_detail::acc_marginal_impl<iterator_type, vectorial>(
+                    storage.begin(),
+                    storage.end(),
                     std::plus<value_type>(),
                     0);
         }
@@ -203,8 +241,10 @@ namespace hg {
         template<bool vectorial = true, typename S>
         auto make_accumulator(S &storage) const {
             using value_type = typename S::value_type;
-            return accumulator_detail::acc_marginal_impl<S, vectorial>(
-                    storage,
+            using iterator_type = decltype(storage.begin());
+            return accumulator_detail::acc_marginal_impl<iterator_type, vectorial>(
+                    storage.begin(),
+                    storage.end(),
                     [](value_type v1, value_type v2) { return std::min(v1, v2); },
                     std::numeric_limits<value_type>::max());
         }
@@ -221,8 +261,10 @@ namespace hg {
         template<bool vectorial = true, typename S>
         auto make_accumulator(S &storage) const {
             using value_type = typename S::value_type;
-            return accumulator_detail::acc_marginal_impl<S, vectorial>(
-                    storage,
+            using iterator_type = decltype(storage.begin());
+            return accumulator_detail::acc_marginal_impl<iterator_type, vectorial>(
+                    storage.begin(),
+                    storage.end(),
                     [](value_type v1, value_type v2) { return std::max(v1, v2); },
                     std::numeric_limits<value_type>::lowest());
         }
@@ -239,8 +281,10 @@ namespace hg {
         template<bool vectorial = true, typename S>
         auto make_accumulator(S &storage) const {
             using value_type = typename S::value_type;
-            return accumulator_detail::acc_marginal_impl<S, vectorial>(
-                    storage,
+            using iterator_type = decltype(storage.begin());
+            return accumulator_detail::acc_marginal_impl<iterator_type, vectorial>(
+                    storage.begin(),
+                    storage.end(),
                     std::multiplies<value_type>(),
                     1);
         }
@@ -257,7 +301,8 @@ namespace hg {
         template<bool vectorial = true, typename S>
         auto make_accumulator(S &storage) const {
             using value_type = typename S::value_type;
-            return accumulator_detail::acc_mean_impl<S, vectorial>(storage);
+            using iterator_type = decltype(storage.begin());
+            return accumulator_detail::acc_mean_impl<iterator_type, vectorial>(storage.begin(), storage.end());
         }
 
         template<typename shape_t>
@@ -272,7 +317,8 @@ namespace hg {
         template<bool vectorial = true, typename S>
         auto make_accumulator(S &storage) const {
             using value_type = typename S::value_type;
-            return accumulator_detail::acc_counter_impl<S, vectorial>(storage);
+            using iterator_type = decltype(storage.begin());
+            return accumulator_detail::acc_counter_impl<iterator_type, vectorial>(storage.begin(), storage.end());
         }
 
         template<typename shape_t>

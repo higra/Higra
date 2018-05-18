@@ -36,16 +36,18 @@ namespace hg {
 
             for (auto i: tree.iterate_on_leaves()) {
                 output_view.set_position(i);
+                acc.set_storage(output_view);
                 acc.initialize();
                 acc.finalize();
             }
 
             for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
                 output_view.set_position(i);
+                acc.set_storage(output_view);
                 acc.initialize();
                 for (auto c : tree.children(i)) {
                     input_view.set_position(c);
-                    acc.accumulate(input_view);
+                    acc.accumulate(input_view.begin());
                 }
                 acc.finalize();
             }
@@ -82,10 +84,11 @@ namespace hg {
 
             for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
                 output_view.set_position(i);
+                acc.set_storage(output_view);
                 acc.initialize();
                 for (auto c : tree.children(i)) {
                     input_view.set_position(c);
-                    acc.accumulate(input_view);
+                    acc.accumulate(input_view.begin());
                 }
                 acc.finalize();
             }
@@ -129,13 +132,13 @@ namespace hg {
             }
 
             for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
-
                 output_view.set_position(i);
+                acc.set_storage(output_view);
                 acc.initialize();
                 for (auto c : tree.children(i)) {
 
                     inout_view.set_position(c);
-                    acc.accumulate(inout_view);
+                    acc.accumulate(inout_view.begin());
                 }
                 acc.finalize();
                 input_view.set_position(i);

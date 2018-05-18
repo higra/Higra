@@ -17,7 +17,10 @@ namespace hg {
 
             static const bool is_vectorial = vectorial;
 
-            light_axis_view(T &data) : m_data(data), m_stride(data.size() / data.shape()[0]) {
+            light_axis_view(T &data, std::size_t position = 0) :
+                    m_data(data),
+                    m_stride(data.size() / data.shape()[0]),
+                    m_position(position) {
 
             }
 
@@ -93,13 +96,13 @@ namespace hg {
 
             T &m_data;
             std::size_t m_stride;
-            std::size_t m_position = 0;
+            std::size_t m_position;
         };
     }
 
     template<bool vectorial = true, typename T>
-    auto make_light_axis_view(T &e) {
-        return details::light_axis_view<vectorial, T>(e);
+    auto make_light_axis_view(T &e, std::size_t position = 0) {
+        return details::light_axis_view<vectorial, T>(e, position);
     }
 
 }
