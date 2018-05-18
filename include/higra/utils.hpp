@@ -93,4 +93,12 @@ namespace xt {
 
 }
 
+namespace hg {
+
+    using index_t = std::size_t;
+
+    const index_t invalid_index = std::numeric_limits<index_t>::max();
+
+}
+
 

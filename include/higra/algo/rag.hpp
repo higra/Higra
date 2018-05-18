@@ -12,8 +12,8 @@ namespace hg {
 
     struct region_adjacency_graph {
         ugraph rag;
-        std::vector<std::vector<std::size_t>> vertex_map;
-        std::vector<std::vector<std::size_t>> edge_map;
+        array_1d<index_t> vertex_map;
+        array_1d<index_t> edge_map;
     };
 
     /**
@@ -37,29 +37,23 @@ namespace hg {
 
         ugraph rag;
 
-        const index_t not_defined = std::numeric_limits<index_t>::max();
-        array_1d<index_t> vertex_region({num_vertices(graph)}, not_defined);
-
-        std::vector<std::vector<std::size_t>> edge_map;
-        std::vector<std::vector<std::size_t>> vertex_map;
-
+        array_1d<index_t> vertex_map({num_vertices(graph)}, invalid_index);
+        array_1d<index_t> edge_map({num_edges(graph)}, invalid_index);
+        
         index_t num_regions = 0;
         index_t num_edges = 0;
 
         std::map<std::pair<index_t, index_t>, index_t> canonical_edge;
 
         auto explore_component =
-                [&graph, &vertex_labels, &rag, &vertex_region, &vertex_map, &edge_map, &num_regions, &num_edges, &canonical_edge, not_defined]
+                [&graph, &vertex_labels, &rag, &vertex_map, &edge_map, &num_regions, &num_edges, &canonical_edge]
                         (index_t start_vertex) {
                     std::stack<index_t> s;
                     auto label_region = vertex_labels[start_vertex];
 
                     s.push(start_vertex);
-
-                    vertex_region[start_vertex] = num_regions;
-
+                    vertex_map[start_vertex] = num_regions;
                     add_vertex(rag);
-                    vertex_map.push_back({start_vertex});
 
                     while (!s.empty()) {
                         auto v = s.top();
@@ -69,22 +63,21 @@ namespace hg {
                             auto e = edge(ei, graph);
                             auto adjv = other_vertex(e, v, graph);
                             if (vertex_labels[adjv] == label_region) {
-                                if (vertex_region[adjv] == not_defined) {
-                                    vertex_map[num_regions].push_back(adjv);
-                                    vertex_region[adjv] = num_regions;
+                                if (vertex_map[adjv] == invalid_index) {
+                                    vertex_map[adjv] = num_regions;
                                     s.push(adjv);
                                 }
                             } else {
-                                if (vertex_region[adjv] != not_defined) {
-                                    auto num_region_adjacent = vertex_region[adjv];
+                                if (vertex_map[adjv] != invalid_index) {
+                                    auto num_region_adjacent = vertex_map[adjv];
                                     auto new_edge = std::make_pair(num_region_adjacent, num_regions);
                                     if (canonical_edge.count(new_edge) == 0) {
                                         add_edge(num_region_adjacent, num_regions, rag);
-                                        edge_map.push_back({ei});
+                                        edge_map[ei] = num_edges;
                                         canonical_edge[new_edge] = num_edges;
                                         num_edges++;
                                     } else {
-                                        edge_map[canonical_edge[new_edge]].push_back(ei);
+                                        edge_map[ei] = canonical_edge[new_edge];
                                     }
                                 }
                             }
@@ -95,7 +88,7 @@ namespace hg {
 
 
         for (auto v: vertex_iterator(graph)) {
-            if (vertex_region[v] != not_defined)
+            if (vertex_map[v] != invalid_index)
                 continue;
             explore_component(v);
 

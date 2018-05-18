@@ -35,22 +35,22 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph);
                                                                            {0, 2},
                                                                            {2, 3},
                                                                            {0, 3}};
-        std::size_t i = 0;
+            index_t i = 0;
         for (auto e: edge_iterator(rag)) {
             BOOST_CHECK(e == expected_edges[i++]);
         }
 
-        std::vector<std::vector<std::size_t>> expected_vertex_map{{0,  1, 4, 5, 8, 9, 12, 13},
-                                                                  {2,  3, 6, 7},
-                                                                  {10, 11},
-                                                                  {14, 15}};
+            array_1d<index_t> expected_vertex_map{0, 0, 1, 1,
+                                                  0, 0, 1, 1,
+                                                  0, 0, 2, 2,
+                                                  0, 0, 3, 3};
         BOOST_CHECK(vertex_map == expected_vertex_map);
 
-        std::vector<std::vector<std::size_t>> expected_edge_map{{2,  9},
-                                                                {12, 13},
-                                                                {16},
-                                                                {19, 20},
-                                                                {22}};
+            auto iv = invalid_index;
+            array_1d<index_t> expected_edge_map{iv, iv, 0, iv, iv, iv, iv,
+                                                iv, iv, 0, iv, iv, 1, 1,
+                                                iv, iv, 2, iv, iv, 3, 3,
+                                                iv, 4, iv};
 
         BOOST_CHECK(edge_map == expected_edge_map);
 
