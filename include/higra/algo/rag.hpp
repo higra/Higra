@@ -7,6 +7,7 @@
 #include "../graph.hpp"
 #include <stack>
 #include <map>
+#include "../structure/details/light_axis_view.hpp"
 
 namespace hg {
 
@@ -97,4 +98,42 @@ namespace hg {
         return region_adjacency_graph{std::move(rag), std::move(vertex_map), std::move(edge_map)};
     }
 
+    namespace rag_internal {
+        template<bool vectorial, typename T>
+        auto
+        rag_back_project_weights(const array_1d<index_t> &rag_map, const xt::xexpression<T> &xrag_weights) {
+            auto &rag_weights = xrag_weights.derived_cast();
+
+            auto numv = rag_map.size();
+            std::vector<std::size_t> shape;
+            shape.push_back(numv);
+            shape.insert(shape.end(), rag_weights.shape().begin() + 1, rag_weights.shape().end());
+            array_nd<typename T::value_type> weights = xt::zeros<typename T::value_type>(shape);
+
+
+            auto input_view = make_light_axis_view<vectorial>(rag_weights);
+            auto output_view = make_light_axis_view<vectorial>(weights);
+
+            for (index_t i = 0; i < numv; ++i) {
+                if (rag_map.data()[i] != invalid_index) {
+                    output_view.set_position(i);
+                    input_view.set_position(rag_map.data()[i]);
+                    output_view = input_view;
+                }
+            }
+
+            return weights;
+        }
+    }
+
+    template<typename T>
+    auto
+    rag_back_project_weights(const array_1d<index_t> &rag_map, const xt::xexpression<T> &xrag_weights) {
+        if (xrag_weights.derived_cast().dimension() == 1) {
+            return rag_internal::rag_back_project_weights<false>(rag_map, xrag_weights);
+        } else {
+            return rag_internal::rag_back_project_weights<true>(rag_map, xrag_weights);
+        }
+
+    }
 }
