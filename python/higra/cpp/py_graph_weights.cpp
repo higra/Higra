@@ -34,6 +34,7 @@ void py_init_graph_weights(pybind11::module &m) {
             .value("mean", hg::weight_functions::mean)
             .value("min", hg::weight_functions::min)
             .value("max", hg::weight_functions::max)
+            .value("L0", hg::weight_functions::L0)
             .value("L1", hg::weight_functions::L1)
             .value("L2", hg::weight_functions::L2)
             .value("L_infinity", hg::weight_functions::L_infinity)

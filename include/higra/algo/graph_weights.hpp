@@ -13,6 +13,7 @@ namespace hg {
         mean,
         min,
         max,
+        L0,
         L1,
         L2,
         L_infinity,
@@ -60,6 +61,29 @@ namespace hg {
                     return std::max(data(i), data(j));
                 };
                 return weight_graph(graph, fun);
+            }
+            case weight_functions::L0: {
+                if (data.dimension() > 1) {
+                    auto v1 = make_light_axis_view(data);
+                    auto v2 = make_light_axis_view(data);
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&data, &v1, &v2](std::size_t i,
+                                                                                                    std::size_t j) -> result_value_t {
+                        v1.set_position(i);
+                        v2.set_position(j);
+                        for (auto it1 = v1.begin(), it2 = v2.begin(); it1 != v1.end(); it1++, it2++) {
+                            if (*it1 != *it2)
+                                return 1;
+                        }
+                        return 0;
+                    };
+                    return weight_graph(graph, fun);
+                } else {
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&data](std::size_t i,
+                                                                                          std::size_t j) -> result_value_t {
+                        return (data(i) == data(j)) ? 0 : 1;
+                    };
+                    return weight_graph(graph, fun);
+                }
             }
             case weight_functions::L1: {
                 if (data.dimension() > 1) {
