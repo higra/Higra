@@ -14,7 +14,8 @@ if (DO_TEST)
             test_pink_graph_io.py
             test_data_cache.py
             test_algo_tree.py
-            test_attributes.py)
+            test_attributes.py
+            test_rag.py)
 
     foreach (FILE ${PYTHON_TEST_FILES})
         configure_file(${FILE} ${CMAKE_CURRENT_BINARY_DIR}/${FILE})

@@ -19,7 +19,8 @@ set(PYMODULE_COMPONENTS
         cpp/py_accumulators.cpp
         cpp/py_graph_weights.cpp
         cpp/py_algo_tree.cpp
-        cpp/py_tree_accumulators.cpp)
+        cpp/py_tree_accumulators.cpp
+        cpp/py_rag.cpp)
 
 set(MODULE_FILES
         __init__.py
@@ -28,6 +29,7 @@ set(MODULE_FILES
         graph_weights.py
         hierarchy_core.py
         pink_io.py
+        rag.py
         tree_attributes.py)
 
 pybind11_add_module(higram pymodule.cpp ${PYMODULE_COMPONENTS})
