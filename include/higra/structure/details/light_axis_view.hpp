@@ -17,33 +17,64 @@ namespace hg {
 
             static const bool is_vectorial = vectorial;
 
-            light_axis_view(T &data, std::size_t position = 0) :
+            template<typename T1 = self_type>
+            light_axis_view(T &data, std::size_t position = 0, typename std::enable_if_t<T1::is_vectorial> * = 0) :
                     m_data(data),
                     m_stride(data.size() / data.shape()[0]),
                     m_position(position) {
 
             }
 
+            template<typename T1 = self_type>
+            light_axis_view(T &data, std::size_t position = 0, typename std::enable_if_t<!T1::is_vectorial> * = 0) :
+                    m_data(data),
+                    m_stride(1),
+                    m_position(position) {
+            }
+
             void set_position(std::size_t i) {
                 m_position = i;
             }
 
-            auto begin() {
+            template<typename T1=self_type>
+            auto begin(typename std::enable_if_t<T1::is_vectorial> * = 0) {
                 return m_data.storage_begin() + m_position * m_stride;
             }
 
-            auto end() {
+            template<typename T1=self_type>
+            auto begin(typename std::enable_if_t<!T1::is_vectorial> * = 0) {
+                return m_data.storage_begin() + m_position;
+            }
+
+            template<typename T1=self_type>
+            auto end(typename std::enable_if_t<T1::is_vectorial> * = 0) {
                 return m_data.storage_begin() + (m_position + 1) * m_stride;
             }
 
-            auto begin() const {
+            template<typename T1=self_type>
+            auto end(typename std::enable_if_t<!T1::is_vectorial> * = 0) {
+                return m_data.storage_begin() + (m_position + 1);
+            }
+
+            template<typename T1=self_type>
+            auto begin(typename std::enable_if_t<T1::is_vectorial> * = 0) const {
                 return m_data.storage_begin() + m_position * m_stride;
             }
 
-            auto end() const {
+            template<typename T1=self_type>
+            auto begin(typename std::enable_if_t<!T1::is_vectorial> * = 0) const {
+                return m_data.storage_begin() + m_position;
+            }
+
+            template<typename T1=self_type>
+            auto end(typename std::enable_if_t<T1::is_vectorial> * = 0) const {
                 return m_data.storage_begin() + (m_position + 1) * m_stride;
             }
 
+            template<typename T1=self_type>
+            auto end(typename std::enable_if_t<!T1::is_vectorial> * = 0) const {
+                return m_data.storage_begin() + (m_position + 1);
+            }
 
             template<bool vectorial2, typename T2>
             self_type &operator=(const light_axis_view<vectorial2, T2> &rhs) {

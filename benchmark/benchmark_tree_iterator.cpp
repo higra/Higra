@@ -79,7 +79,7 @@ static void BM_tree_accumulate_parallel_scalar_view(benchmark::State& state) {
 
 BENCHMARK(BM_tree_accumulate_parallel_scalar)->Range(1<<min_tree_size, 1<<max_tree_size);
 */
-static void BM_tree_accumulate_parallel_scalar(benchmark::State &state) {
+static void BM_tree_accumulate_parallel_light_view_scalar(benchmark::State &state) {
     for (auto _ : state) {
         state.PauseTiming();
 
@@ -94,9 +94,9 @@ static void BM_tree_accumulate_parallel_scalar(benchmark::State &state) {
     }
 }
 
-BENCHMARK(BM_tree_accumulate_parallel_scalar)->Range(1 << min_tree_size, 1 << max_tree_size);
+BENCHMARK(BM_tree_accumulate_parallel_light_view_scalar)->Range(1 << min_tree_size, 1 << max_tree_size);
 
-static void BM_tree_accumulate_parallel_vectorial(benchmark::State &state) {
+static void BM_tree_accumulate_parallel_light_view_vectorial(benchmark::State &state) {
     for (auto _ : state) {
         state.PauseTiming();
 
@@ -111,7 +111,7 @@ static void BM_tree_accumulate_parallel_vectorial(benchmark::State &state) {
     }
 }
 
-BENCHMARK(BM_tree_accumulate_parallel_vectorial)->Range(1 << min_tree_size, 1 << max_tree_size);
+BENCHMARK(BM_tree_accumulate_parallel_light_view_vectorial)->Range(1 << min_tree_size, 1 << max_tree_size);
 /*
 static void BM_tree_accumulate_parallel_vectorial(benchmark::State& state) {
     for (auto _ : state)

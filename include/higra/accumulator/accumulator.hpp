@@ -25,35 +25,36 @@ namespace hg {
         * @tparam S the storage type
         * @tparam vectorial bool: is dimension of storage > 0 (different from scalar)
         */
-        template<typename S, bool vectorial = true>
+        template<typename S, bool vectorial>
         struct acc_marginal_impl {
-            using self_type = acc_marginal_impl<S, vectorial>;
+        };
+
+        template<typename S>
+        struct acc_marginal_impl<S, true> {
+
+            static const bool is_vectorial = true;
+
+            using self_type = acc_marginal_impl<S, is_vectorial>;
             using value_type = typename std::iterator_traits<S>::value_type;
             using reducer_type = std::function<value_type(value_type, value_type)>;
 
-            static const bool is_vectorial = vectorial;
 
-            acc_marginal_impl(S storage_begin, S storage_end, reducer_type reducer, value_type init_value) :
+            acc_marginal_impl(const S &storage_begin, const S &storage_end, const reducer_type &reducer,
+                              const value_type &init_value) :
                     m_init_value(init_value),
                     m_reducer(reducer),
                     m_storage_begin(storage_begin),
                     m_storage_end(storage_end) {
             }
 
-            template<typename T = self_type, typename ...Args>
-            typename std::enable_if_t<T::is_vectorial>
+            template<typename ...Args>
+            void
             initialize(Args &&...) {
                 std::fill(m_storage_begin, m_storage_end, m_init_value);
             }
 
-            template<typename T = self_type, typename ...Args>
-            typename std::enable_if_t<!T::is_vectorial>
-            initialize(Args &&...) {
-                *m_storage_begin = m_init_value;
-            }
-
-            template<typename T1 = self_type, typename T, typename ...Args>
-            std::enable_if_t<T1::is_vectorial>
+            template<typename T, typename ...Args>
+            void
             accumulate(T value_begin, Args &&...) {
                 auto s = m_storage_begin;
                 for (; s != m_storage_end; s++, value_begin++) {
@@ -61,32 +62,75 @@ namespace hg {
                 }
             };
 
-            template<typename T1 = self_type, typename T, typename ...Args>
-            std::enable_if_t<!T1::is_vectorial>
-            accumulate(T value_begin, Args &&...) {
+            template<typename ...Args>
+            void finalize(Args &&...) const {}
+
+            void
+            set_storage(S &storage_begin, S &storage_end) {
+                m_storage_begin = storage_begin;
+                m_storage_end = storage_end;
+            }
+
+            template<typename T>
+            void
+            set_storage(T &range) {
+                m_storage_begin = range.begin();
+                m_storage_end = range.end();
+            }
+
+        private:
+            value_type m_init_value;
+            reducer_type m_reducer;
+            S m_storage_begin;
+            S m_storage_end;
+        };
+
+        template<typename S>
+        struct acc_marginal_impl<S, false> {
+
+            static const bool is_vectorial = false;
+
+            using self_type = acc_marginal_impl<S, is_vectorial>;
+            using value_type = typename std::iterator_traits<S>::value_type;
+            using reducer_type = std::function<value_type(value_type, value_type)>;
+
+            acc_marginal_impl(const S &storage_begin, const S &, const reducer_type &reducer,
+                              const value_type &init_value) :
+                    m_init_value(init_value),
+                    m_reducer(reducer),
+                    m_storage_begin(storage_begin) {
+            }
+
+            template<typename ...Args>
+            void
+            initialize(Args &&...) {
+                *m_storage_begin = m_init_value;
+            }
+
+            template<typename T, typename ...Args>
+            void
+            accumulate(const T value_begin, Args &&...) {
                 *m_storage_begin = m_reducer(*value_begin, *m_storage_begin);
             };
 
             template<typename ...Args>
             void finalize(Args &&...) const {}
 
-            void set_storage(S storage_begin, S storage_end) {
+            void
+            set_storage(S &storage_begin, S &) {
                 m_storage_begin = storage_begin;
-                m_storage_end = storage_end;
             }
 
             template<typename T>
-            void set_storage(T &range) {
+            void
+            set_storage(T &range) {
                 m_storage_begin = range.begin();
-                m_storage_end = range.end();
             }
 
         private:
-
             value_type m_init_value;
             reducer_type m_reducer;
             S m_storage_begin;
-            S m_storage_end;
         };
 
 
