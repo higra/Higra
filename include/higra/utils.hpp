@@ -4,12 +4,13 @@
 
 #pragma once
 
-
+#include <stdio.h>
 #include <exception>
 #include <string>
 #include <iostream>
 #include "xtensor/xstrided_view.hpp"
 #include "xtensor/xio.hpp"
+#include "detail/log.hpp"
 
 #define HG_DEBUG
 
