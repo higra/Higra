@@ -16,6 +16,7 @@
 #include "cpp/py_algo_tree.hpp"
 #include "cpp/py_tree_accumulators.hpp"
 #include "cpp/py_rag.hpp"
+#include "cpp/py_watershed.hpp"
 
 #define FORCE_IMPORT_ARRAY
 
@@ -51,4 +52,5 @@ PYBIND11_MODULE(higram, m) {
     py_init_algo_tree(m);
     py_init_tree_accumulator(m);
     py_init_rag(m);
+    py_init_watershed(m);
 }

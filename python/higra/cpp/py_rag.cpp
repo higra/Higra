@@ -79,6 +79,8 @@ struct def_rag_accumulate {
 
 
 void py_init_rag(pybind11::module &m) {
+    xt::import_numpy();
+
     add_type_overloads<def_make_rag<hg::ugraph>, HG_TEMPLATE_INTEGRAL_TYPES>
             (m,
              "Create a region adjacency graph of the input graph with regions identified by the provided vertex labels.");

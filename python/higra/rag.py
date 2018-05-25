@@ -32,6 +32,7 @@ def make_region_adjacency_graph(graph, vertex_labels):
     return rag
 
 
+@hg.data_consumer(rag_vertex_weights="vertex_weights")
 def rag_back_project_vertex_weights(rag, rag_vertex_weights):
     """
     Projects rag vertex weights onto original graph vertices.
@@ -49,7 +50,8 @@ def rag_back_project_vertex_weights(rag, rag_vertex_weights):
     return hg._rag_back_project_weights(hg.get_attribute(rag, "vertex_map"), rag_vertex_weights)
 
 
-def rag_back_project_edge_weights(rag, rag_vertex_weights):
+@hg.data_consumer(rag_edge_weights="edge_weights")
+def rag_back_project_edge_weights(rag, rag_edge_weights):
     """
     Projects rag edge weights onto original graph edges.
     The result is an array weighting the edges of the original graph of the rag such that:
@@ -64,10 +66,11 @@ def rag_back_project_edge_weights(rag, rag_vertex_weights):
     :param rag_vertex_weights:
     :return:
     """
-    return hg._rag_back_project_weights(hg.get_attribute(rag, "edge_map"), rag_vertex_weights)
+    return hg._rag_back_project_weights(hg.get_attribute(rag, "edge_map"), rag_edge_weights)
 
 
-def rag_accumulate_on_vertices(rag, vertex_weights, accumulator):
+@hg.data_consumer(vertex_weights="original_graph.vertex_weights")
+def rag_accumulate_on_vertices(rag, accumulator, vertex_weights):
     """
     Computes rag vertex weights by accumulating values from the vertex weights of the original graph.
 
@@ -82,7 +85,8 @@ def rag_accumulate_on_vertices(rag, vertex_weights, accumulator):
     return hg._rag_accumulate(hg.get_attribute(rag, "vertex_map"), vertex_weights, accumulator)
 
 
-def rag_accumulate_on_edges(rag, edge_weights, accumulator):
+@hg.data_consumer(edge_weights="original_graph.edge_weights")
+def rag_accumulate_on_edges(rag, accumulator, edge_weights):
     """
     Computes rag edge weights by accumulating values from the edge weights of the original graph.
 
