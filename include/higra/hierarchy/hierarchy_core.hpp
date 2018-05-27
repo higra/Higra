@@ -16,7 +16,12 @@ namespace hg {
 
     template<typename graph_t, typename T>
     auto bptCanonical(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+        HG_TRACE();
         auto &edge_weights = xedge_weights.derived_cast();
+        hg_assert(edge_weights.dimension() == 1, "Edge weights must be scalar.");
+        hg_assert(num_edges(graph) == edge_weights.size(),
+                  "Edge weights size does not match the number of edge in the graph.");
+
 
         array_1d<std::size_t> sorted_edges_indices = xt::arange(num_edges(graph));
         std::stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
@@ -74,6 +79,7 @@ namespace hg {
     /// \return std::pair<tree, node_map>
     template<typename criterion_t>
     auto simplify_tree(const tree &t, criterion_t &criterion) {
+        HG_TRACE();
         auto n_nodes = t.num_vertices();
         auto copy_parent = t.parents();
 

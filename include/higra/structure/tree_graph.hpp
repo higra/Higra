@@ -82,6 +82,7 @@ namespace hg {
             template<typename T>
             tree(const xt::xexpression<T> &parents = xt::xarray<vertex_descriptor>({0})) : _parents(parents),
                                                                                            _children(_parents.size()) {
+                HG_TRACE();
 
                 hg_assert(_parents.shape().size() == 1, "parents must be a linear (1d) array");
                 _num_vertices = _parents.size();

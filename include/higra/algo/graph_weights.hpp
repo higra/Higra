@@ -32,41 +32,48 @@ namespace hg {
 
 
     template<typename graph_t, typename T, typename result_value_t=double>
-    auto weight_graph(const graph_t &graph, const xt::xexpression<T> &xdata, weight_functions weight) {
-        const auto &data = xdata.derived_cast();
+    auto weight_graph(const graph_t &graph, const xt::xexpression<T> &xvertex_weights, weight_functions weight) {
+        HG_TRACE();
+        const auto &vertex_weights = xvertex_weights.derived_cast();
+        hg_assert(vertex_weights.dimension() > 0, "Vertex weights cannot have 0 dimension.");
+        hg_assert(num_vertices(graph) == vertex_weights.shape()[0],
+                  "Vertex weights dimension does not match graph number of vertices.");
+
         switch (weight) {
             case weight_functions::mean: {
-                hg_assert(data.dimension() == 1, "Weight is only defined for scalar data.");
-                std::function<result_value_t(std::size_t, std::size_t)> fun = [&data](std::size_t i,
+                hg_assert(vertex_weights.dimension() == 1, "Weight is only defined for scalar data.");
+                std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights](std::size_t i,
                                                                                       std::size_t j)
                         -> result_value_t {
                     return static_cast<result_value_t>(
-                            (static_cast<result_value_t>(data(i)) + static_cast<result_value_t>(data(j))) /
+                            (static_cast<result_value_t>(vertex_weights(i)) +
+                             static_cast<result_value_t>(vertex_weights(j))) /
                             static_cast<result_value_t>(2.0));
                 };
                 return weight_graph(graph, fun);
             }
             case weight_functions::min: {
-                hg_assert(data.dimension() == 1, "Weight is only defined for scalar data.");
-                std::function<result_value_t(std::size_t, std::size_t)> fun = [&data](
+                hg_assert(vertex_weights.dimension() == 1, "Weight is only defined for scalar data.");
+                std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights](
                         std::size_t i, std::size_t j) -> result_value_t {
-                    return std::min(data(i), data(j));
+                    return std::min(vertex_weights(i), vertex_weights(j));
                 };
                 return weight_graph(graph, fun);
             }
             case weight_functions::max: {
-                hg_assert(data.dimension() == 1, "Weight is only defined for scalar data.");
-                std::function<result_value_t(std::size_t, std::size_t)> fun = [&data](std::size_t i,
+                hg_assert(vertex_weights.dimension() == 1, "Weight is only defined for scalar data.");
+                std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights](std::size_t i,
                                                                                       std::size_t j) -> result_value_t {
-                    return std::max(data(i), data(j));
+                    return std::max(vertex_weights(i), vertex_weights(j));
                 };
                 return weight_graph(graph, fun);
             }
             case weight_functions::L0: {
-                if (data.dimension() > 1) {
-                    auto v1 = make_light_axis_view(data);
-                    auto v2 = make_light_axis_view(data);
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&data, &v1, &v2](std::size_t i,
+                if (vertex_weights.dimension() > 1) {
+                    auto v1 = make_light_axis_view(vertex_weights);
+                    auto v2 = make_light_axis_view(vertex_weights);
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights, &v1, &v2](
+                            std::size_t i,
                                                                                                     std::size_t j) -> result_value_t {
                         v1.set_position(i);
                         v2.set_position(j);
@@ -78,18 +85,19 @@ namespace hg {
                     };
                     return weight_graph(graph, fun);
                 } else {
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&data](std::size_t i,
-                                                                                          std::size_t j) -> result_value_t {
-                        return (data(i) == data(j)) ? 0 : 1;
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights](std::size_t i,
+                                                                                                    std::size_t j) -> result_value_t {
+                        return (vertex_weights(i) == vertex_weights(j)) ? 0 : 1;
                     };
                     return weight_graph(graph, fun);
                 }
             }
             case weight_functions::L1: {
-                if (data.dimension() > 1) {
-                    auto v1 = make_light_axis_view(data);
-                    auto v2 = make_light_axis_view(data);
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&data, &v1, &v2](std::size_t i,
+                if (vertex_weights.dimension() > 1) {
+                    auto v1 = make_light_axis_view(vertex_weights);
+                    auto v2 = make_light_axis_view(vertex_weights);
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights, &v1, &v2](
+                            std::size_t i,
                                                                                                     std::size_t j) -> result_value_t {
                         v1.set_position(i);
                         v2.set_position(j);
@@ -101,18 +109,20 @@ namespace hg {
                     };
                     return weight_graph(graph, fun);
                 } else {
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&data](std::size_t i,
-                                                                                          std::size_t j) -> result_value_t {
-                        return std::abs(static_cast<result_value_t>(data(i)) - static_cast<result_value_t>(data(j)));
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights](std::size_t i,
+                                                                                                    std::size_t j) -> result_value_t {
+                        return std::abs(static_cast<result_value_t>(vertex_weights(i)) -
+                                        static_cast<result_value_t>(vertex_weights(j)));
                     };
                     return weight_graph(graph, fun);
                 }
             }
             case weight_functions::L2: {
-                if (data.dimension() > 1) {
-                    auto v1 = make_light_axis_view(data);
-                    auto v2 = make_light_axis_view(data);
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&data, &v1, &v2](std::size_t i,
+                if (vertex_weights.dimension() > 1) {
+                    auto v1 = make_light_axis_view(vertex_weights);
+                    auto v2 = make_light_axis_view(vertex_weights);
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights, &v1, &v2](
+                            std::size_t i,
                                                                                                     std::size_t j) -> result_value_t {
                         v1.set_position(i);
                         v2.set_position(j);
@@ -125,10 +135,10 @@ namespace hg {
                     };
                     return weight_graph(graph, fun);
                 } else {
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&data](std::size_t i,
-                                                                                          std::size_t j) -> result_value_t {
-                        auto v1 = data(i);
-                        auto v2 = data(j);
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights](std::size_t i,
+                                                                                                    std::size_t j) -> result_value_t {
+                        auto v1 = vertex_weights(i);
+                        auto v2 = vertex_weights(j);
                         auto tmp = static_cast<result_value_t>(v1) - static_cast<result_value_t>(v2);
                         return std::sqrt(tmp * tmp);
                     };
@@ -136,10 +146,11 @@ namespace hg {
                 }
             }
             case weight_functions::L_infinity: {
-                if (data.dimension() > 1) {
-                    auto v1 = make_light_axis_view(data);
-                    auto v2 = make_light_axis_view(data);
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&data, &v1, &v2](std::size_t i,
+                if (vertex_weights.dimension() > 1) {
+                    auto v1 = make_light_axis_view(vertex_weights);
+                    auto v2 = make_light_axis_view(vertex_weights);
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights, &v1, &v2](
+                            std::size_t i,
                                                                                                     std::size_t j) -> result_value_t {
                         v1.set_position(i);
                         v2.set_position(j);
@@ -152,18 +163,20 @@ namespace hg {
                     };
                     return weight_graph(graph, fun);
                 } else {
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&data](std::size_t i,
-                                                                                          std::size_t j) -> result_value_t {
-                        return std::abs(static_cast<result_value_t>(data(i)) - static_cast<result_value_t>(data(j)));
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights](std::size_t i,
+                                                                                                    std::size_t j) -> result_value_t {
+                        return std::abs(static_cast<result_value_t>(vertex_weights(i)) -
+                                        static_cast<result_value_t>(vertex_weights(j)));
                     };
                     return weight_graph(graph, fun);
                 }
             }
             case weight_functions::L2_squared: {
-                if (data.dimension() > 1) {
-                    auto v1 = make_light_axis_view(data);
-                    auto v2 = make_light_axis_view(data);
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&data, &v1, &v2](std::size_t i,
+                if (vertex_weights.dimension() > 1) {
+                    auto v1 = make_light_axis_view(vertex_weights);
+                    auto v2 = make_light_axis_view(vertex_weights);
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights, &v1, &v2](
+                            std::size_t i,
                                                                                                     std::size_t j) -> result_value_t {
                         v1.set_position(i);
                         v2.set_position(j);
@@ -176,10 +189,11 @@ namespace hg {
                     };
                     return weight_graph(graph, fun);
                 } else {
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&graph, &data](std::size_t i,
-                                                                                                  std::size_t j) -> result_value_t {
-                        auto v1 = data(i);
-                        auto v2 = data(j);
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&graph, &vertex_weights](
+                            std::size_t i,
+                            std::size_t j) -> result_value_t {
+                        auto v1 = vertex_weights(i);
+                        auto v2 = vertex_weights(j);
                         auto tmp = static_cast<result_value_t>(v1) - static_cast<result_value_t>(v2);
                         return tmp * tmp;
                     };

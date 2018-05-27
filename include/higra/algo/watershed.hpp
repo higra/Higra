@@ -25,6 +25,7 @@ namespace hg {
     template<typename graph_t, typename T>
     auto
     labelisation_watershed(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+        HG_TRACE();
         auto &edge_weights = xedge_weights.derived_cast();
         hg_assert(edge_weights.dimension() == 1, "Only scalar edge waits are supported");
         hg_assert(edge_weights.size() == graph.num_edges(),

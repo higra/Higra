@@ -5,10 +5,26 @@
 #pragma once
 
 namespace hg {
+
     struct trace {
-        constexpr static bool enabled = true;
+        static bool &enabled() {
+            static bool value;
+            return value;
+        }
     };
+
 }
+#if defined(__clang__)
+#define HG_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#elif defined(__GNUC__) || defined(__GNUG__)
+#define HG_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#elif defined(_MSC_VER)
+#define HG_PRETTY_FUNCTION __FUNCSIG__
+#else
+#define HG_PRETTY_FUNCTION __func__
+#endif
+
+
 
 #define HG_LOG_LEVEL_ERROR (1)
 #define HG_LOG_LEVEL_WARNING (2)
@@ -27,7 +43,7 @@ namespace hg {
 #define HG_LOG_LEVEL HG_LOG_LEVEL_WARNING
 #endif
 
-#define HG_LOG_EMIT(LEVEL, M, ...)   fprintf(stdout, "[" LEVEL "] %s (%s:%d) " M, __func__, __FILE__, __LINE__, ##__VA_ARGS__);
+#define HG_LOG_EMIT(LEVEL, M, ...)   fprintf(stdout, "[" LEVEL "] %s (%s:%d) " M "\n", HG_PRETTY_FUNCTION, __FILE__, __LINE__, ##__VA_ARGS__);
 
 #if HG_LOG_LEVEL <= HG_LOG_LEVEL_ERROR
 #define HG_LOG_ERROR(M, ...) HG_LOG_EMIT(HG_LOG_LEVEL_ERROR_NAME, M, ##__VA_ARGS__)
@@ -59,8 +75,8 @@ namespace hg {
 #define HG_LOG_DETAIL(...) do{}while(0)
 #endif
 
-#define HG_TRACE do{                                \
-if(hg::trace::enabled){                             \
-    HG_LOG_EMIT("TRACE", "function called");        \
-}                                                   \
+#define HG_TRACE(M, ...) do{                                            \
+if(hg::trace::enabled()){                                                 \
+    HG_LOG_EMIT("TRACE", "function called " M, ##__VA_ARGS__);         \
+}                                                                       \
 }while(0)

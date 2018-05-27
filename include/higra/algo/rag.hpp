@@ -29,6 +29,7 @@ namespace hg {
     template<typename graph_t, typename T>
     auto
     make_region_adjacency_graph(const graph_t &graph, const xt::xexpression<T> &xvertex_labels) {
+        HG_TRACE();
         static_assert(std::is_integral<typename T::value_type>::value, "Labels must have an integral type.");
         auto &vertex_labels = xvertex_labels.derived_cast();
         hg_assert(vertex_labels.dimension() == 1, "Vertex labels must be scalar numbers.");
@@ -101,6 +102,7 @@ namespace hg {
         template<bool vectorial, typename T>
         auto
         rag_back_project_weights(const array_1d<index_t> &rag_map, const xt::xexpression<T> &xrag_weights) {
+            HG_TRACE();
             auto &rag_weights = xrag_weights.derived_cast();
 
             index_t numv = rag_map.size();
@@ -132,6 +134,7 @@ namespace hg {
         rag_accumulate(const array_1d<index_t> &rag_map,
                        const xt::xexpression<T> &xweights,
                        const accumulator_t &accumulator) {
+            HG_TRACE();
             auto &weights = xweights.derived_cast();
             hg_assert(weights.shape()[0] == rag_map.size(), "Weights dimension does not match rag map dimension.");
 

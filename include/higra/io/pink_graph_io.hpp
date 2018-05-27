@@ -27,7 +27,7 @@ namespace hg {
 
     inline
     auto read_pink_graph(std::istream &in) {
-
+        HG_TRACE();
         std::string discard;
 
         std::vector<std::size_t> shape;
@@ -97,6 +97,7 @@ namespace hg {
                          const xt::xexpression<T2> &xedge_values = xt::xscalar<char>(0),
                          S &shape = std::vector<std::size_t>()
     ) {
+        HG_TRACE();
         auto &vertex_values = xvertex_values.derived_cast();
         auto &edge_values = xedge_values.derived_cast();
 

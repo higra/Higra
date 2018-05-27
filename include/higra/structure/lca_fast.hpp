@@ -128,7 +128,7 @@ namespace hg {
 
         public:
             lca_fast(const tree_t &tree) {
-
+                HG_TRACE();
                 auto nbNodes = num_vertices(tree);
 
                 Depth.resize({nbNodes});
@@ -165,6 +165,7 @@ namespace hg {
 
             template<typename T>
             auto lca(const T &range) const {
+                HG_TRACE();
                 std::size_t size = range.end() - range.begin();
                 auto result = array_1d<vertex_t>::from_shape({size});
 

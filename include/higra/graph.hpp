@@ -155,6 +155,7 @@ namespace hg {
 
     template<typename T>
     ugraph make_ugraph(const T &graph) {
+        HG_TRACE();
         static_assert(
                 std::is_base_of<graph::adjacency_graph_tag, typename graph::graph_traits<T>::traversal_category>::value,
                 "Graph must implement adjacency graph concept.");
@@ -178,6 +179,7 @@ namespace hg {
     template<>
     inline
     ugraph make_ugraph(const ugraph &graph) {
+        HG_TRACE();
         ugraph g(num_vertices(graph));
         auto edge_it = edges(graph);
         for (auto eb = edge_it.first, ee = edge_it.second; eb != ee; eb++) {

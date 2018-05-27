@@ -80,4 +80,5 @@ def compute_bpt_merge_attribute(tree, attribute, altitudes):
     qfz_nodes_altitudes = attribute.copy()
     # TODO generalize for possibly negative attributes !
     qfz_nodes_altitudes[non_qfz_nodes] = 0
-    return hg.accumulate_and_max_sequential(tree, qfz_nodes_altitudes, attribute, hg.Accumulators.max)
+    return hg.accumulate_and_max_sequential(tree, qfz_nodes_altitudes, attribute[:tree.num_leaves()],
+                                            hg.Accumulators.max)

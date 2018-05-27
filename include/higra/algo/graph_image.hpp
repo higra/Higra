@@ -44,11 +44,16 @@ namespace hg {
 
     template<typename graph_t, typename T, typename result_type = typename T::value_type>
     auto
-    contour2d_2_khalimsky(const graph_t &graph, const embedding_grid_2d &embedding, const xt::xexpression<T> &xweight,
+    contour2d_2_khalimsky(const graph_t &graph, const embedding_grid_2d &embedding,
+                          const xt::xexpression<T> &xedge_weights,
                           bool add_extra_border = false) {
-        const auto &weight = xweight.derived_cast();
-        hg_assert(weight.dimension() == 1, "Only scalar weights are supported!");
-
+        HG_TRACE();
+        const auto &weight = xedge_weights.derived_cast();
+        hg_assert(weight.dimension() == 1, "Edge weights must be scalar.");
+        hg_assert(num_edges(graph) == weight.size(),
+                  "Edge weights size does not match the number of edge in the graph.");
+        hg_assert(num_vertices(graph) == embedding.size(),
+                  "Graph number of vertices does not match the size of the embedding.");
         auto &shape = embedding.shape();
 
         long border = (add_extra_border) ? 1 : -1;
@@ -100,6 +105,7 @@ namespace hg {
     template<typename T, typename result_type = typename T::value_type>
     auto
     khalimsky_2_contour2d(const xt::xexpression<T> &xkhalimsky, bool extra_border = false) {
+        HG_TRACE();
         const auto &khalimsky = xkhalimsky.derived_cast();
         hg_assert(khalimsky.dimension() == 2, "Only 2d khalimsky grids are supported!");
 
