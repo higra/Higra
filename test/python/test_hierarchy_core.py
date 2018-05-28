@@ -78,9 +78,9 @@ class TestHierarchyCore(unittest.TestCase):
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2), dtype=np.float32)
         attribute = np.asarray((2, 3, 6, 5, 5, 1, 5, 11, 16, 21, 22), dtype=np.float32)
 
-        ref = (2, 3, 6, 5, 5, 1, 3, 6, 6, 21, 22)
+        # ref = (2, 3, 6, 5, 5, 1, 3, 6, 6, 21, 22) extinction
+        ref = (0, 0, 0, 0, 0, 0, 2, 3, 5, 5, 1)  # persistence
         merge_attribute = hg.compute_bpt_merge_attribute(tree, attribute, altitudes)
-        print(merge_attribute)
         self.assertTrue(np.allclose(ref, merge_attribute))
 
 if __name__ == '__main__':
