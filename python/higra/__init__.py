@@ -1,14 +1,13 @@
 __all__ = []
 
-import pkgutil
 import inspect
+import pkgutil
 import sys
 
 globals()["__data_providers"] = {}
 __all__.append("__data_providers")
 globals()["__higra_global_cache"] = None
 __all__.append("__higra_global_cache")
-
 
 for loader, name, is_pkg in pkgutil.walk_packages(__path__):
     if name not in sys.modules:
@@ -22,3 +21,7 @@ for loader, name, is_pkg in pkgutil.walk_packages(__path__):
             __all__.append(name)
 
 _data_cache__init()
+
+
+def __logger_printer(m):
+    print(m)

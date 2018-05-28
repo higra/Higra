@@ -4,12 +4,38 @@
 
 #pragma once
 
+#include <vector>
+#include <functional>
+#include <iostream>
+#include <string>
+
 namespace hg {
 
-    struct trace {
-        static bool &enabled() {
-            static bool value;
+    struct logger {
+
+        static const std::size_t MAX_MSG_SIZE = 8096;
+        using callback_list = std::vector<std::function<void(const std::string &)>>;
+
+        static bool &trace_enabled() {
+            static bool value{false};
             return value;
+        }
+
+        static callback_list &callbacks() {
+            static callback_list callbacks{
+                    [](const std::string &msg) { std::cout << msg; }}; //not the perfect initialization...
+            return callbacks;
+        }
+
+        template<typename ...Args>
+        static void emit(const char *format, Args &&...args) {
+            char message[MAX_MSG_SIZE];
+            snprintf(message, MAX_MSG_SIZE, format, std::forward<Args>(args)...);
+            std::string sm(message);
+            for (auto c: callbacks()) {
+                c(sm);
+            }
+
         }
     };
 
@@ -23,7 +49,6 @@ namespace hg {
 #else
 #define HG_PRETTY_FUNCTION __func__
 #endif
-
 
 
 #define HG_LOG_LEVEL_ERROR (1)
@@ -43,7 +68,8 @@ namespace hg {
 #define HG_LOG_LEVEL HG_LOG_LEVEL_WARNING
 #endif
 
-#define HG_LOG_EMIT(LEVEL, M, ...)   fprintf(stdout, "[" LEVEL "] %s (%s:%d) " M "\n", HG_PRETTY_FUNCTION, __FILE__, __LINE__, ##__VA_ARGS__);
+//#define HG_LOG_EMIT(LEVEL, M, ...)   fprintf(stdout, "[" LEVEL "] %s (%s:%d) " M "\n", HG_PRETTY_FUNCTION, __FILE__, __LINE__, ##__VA_ARGS__);
+#define HG_LOG_EMIT(LEVEL, M, ...)   hg::logger::emit("[" LEVEL "] %s (%s:%d) " M "\n", HG_PRETTY_FUNCTION, __FILE__, __LINE__, ##__VA_ARGS__)
 
 #if HG_LOG_LEVEL <= HG_LOG_LEVEL_ERROR
 #define HG_LOG_ERROR(M, ...) HG_LOG_EMIT(HG_LOG_LEVEL_ERROR_NAME, M, ##__VA_ARGS__)
@@ -76,7 +102,7 @@ namespace hg {
 #endif
 
 #define HG_TRACE(M, ...) do{                                            \
-if(hg::trace::enabled()){                                                 \
-    HG_LOG_EMIT("TRACE", "function called " M, ##__VA_ARGS__);         \
+if(hg::logger::trace_enabled()){                                        \
+    HG_LOG_EMIT("TRACE", "function called " M, ##__VA_ARGS__);          \
 }                                                                       \
 }while(0)

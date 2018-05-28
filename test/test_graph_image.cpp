@@ -112,7 +112,6 @@ BOOST_AUTO_TEST_SUITE(graphImage);
 
     BOOST_AUTO_TEST_CASE(graph2d2khalimsky) {
 
-
         auto g = get_4_adjacency_graph({4, 5});
 
         xt::xarray<int> data{0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 0, 2,

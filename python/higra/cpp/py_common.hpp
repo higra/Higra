@@ -5,6 +5,7 @@
 #pragma once
 
 #include "pybind11/stl.h"
+#include "pybind11/functional.h"
 #include "higra/utils.hpp"
 #include <functional>
 
