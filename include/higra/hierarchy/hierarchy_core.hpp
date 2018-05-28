@@ -21,11 +21,11 @@ namespace hg {
         hg_assert(edge_weights.dimension() == 1, "Edge weights must be scalar.");
         hg_assert(num_edges(graph) == edge_weights.size(),
                   "Edge weights size does not match the number of edge in the graph.");
-
+        auto &weights = edge_weights.storage();
 
         array_1d<std::size_t> sorted_edges_indices = xt::arange(num_edges(graph));
         std::stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
-                         [&edge_weights](std::size_t i, std::size_t j) { return edge_weights(i) < edge_weights(j); });
+                         [&weights](std::size_t i, std::size_t j) { return weights[i] < weights[j]; });
 
         auto num_points = num_vertices(graph);
 
@@ -50,7 +50,7 @@ namespace hg {
             auto c2 = uf.find(target(e, graph));
             if (c1 != c2) {
                 num_edge_found++;
-                levels[num_nodes] = edge_weights[ei];
+                levels[num_nodes] = weights[ei];
                 parents[roots[c1]] = num_nodes;
                 parents[roots[c2]] = num_nodes;
                 parents[num_nodes] = num_nodes;
