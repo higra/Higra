@@ -8,19 +8,20 @@ find_package(NumPy REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIRS})
 
 set(PYMODULE_COMPONENTS
-        cpp/py_undirected_graph.cpp
-        cpp/py_embedding.cpp
-        cpp/py_regular_graph.cpp
-        cpp/py_tree_graph.cpp
-        cpp/py_graph_image.cpp
-        cpp/py_lca_fast.cpp
-        cpp/py_hierarchy_core.cpp
-        cpp/py_pink_io.cpp
         cpp/py_accumulators.cpp
-        cpp/py_graph_weights.cpp
         cpp/py_algo_tree.cpp
-        cpp/py_tree_accumulators.cpp
+        cpp/py_embedding.cpp
+        cpp/py_graph_image.cpp
+        cpp/py_graph_weights.cpp
+        cpp/py_hierarchy_core.cpp
+        cpp/py_lca_fast.cpp
+        cpp/py_log.cpp
+        cpp/py_pink_io.cpp
         cpp/py_rag.cpp
+        cpp/py_regular_graph.cpp
+        cpp/py_tree_accumulators.cpp
+        cpp/py_tree_graph.cpp
+        cpp/py_undirected_graph.cpp
         cpp/py_watershed.cpp)
 
 set(MODULE_FILES
