@@ -44,10 +44,10 @@ namespace hg {
         index_t num_regions = 0;
         index_t num_edges = 0;
 
-        std::map<std::pair<index_t, index_t>, index_t> canonical_edge;
+        std::vector<long> canonical_edge_indexes;
 
         auto explore_component =
-                [&graph, &vertex_labels, &rag, &vertex_map, &edge_map, &num_regions, &num_edges, &canonical_edge]
+                [&graph, &vertex_labels, &rag, &vertex_map, &edge_map, &num_regions, &num_edges, &canonical_edge_indexes]
                         (index_t start_vertex) {
                     std::stack<index_t> s;
                     auto label_region = vertex_labels[start_vertex];
@@ -55,7 +55,7 @@ namespace hg {
                     s.push(start_vertex);
                     vertex_map[start_vertex] = num_regions;
                     add_vertex(rag);
-
+                    auto lowest_edge = num_edges;
                     while (!s.empty()) {
                         auto v = s.top();
                         s.pop();
@@ -67,18 +67,18 @@ namespace hg {
                                 if (vertex_map[adjv] == invalid_index) {
                                     vertex_map[adjv] = num_regions;
                                     s.push(adjv);
+                                    canonical_edge_indexes.push_back(-1);
                                 }
                             } else {
                                 if (vertex_map[adjv] != invalid_index) {
                                     auto num_region_adjacent = vertex_map[adjv];
-                                    auto new_edge = std::make_pair(num_region_adjacent, num_regions);
-                                    if (canonical_edge.count(new_edge) == 0) {
+                                    if (canonical_edge_indexes[num_region_adjacent] < lowest_edge) {
                                         add_edge(num_region_adjacent, num_regions, rag);
                                         edge_map[ei] = num_edges;
-                                        canonical_edge[new_edge] = num_edges;
+                                        canonical_edge_indexes[num_region_adjacent] = num_edges;
                                         num_edges++;
                                     } else {
-                                        edge_map[ei] = canonical_edge[new_edge];
+                                        edge_map[ei] = canonical_edge_indexes[num_region_adjacent];
                                     }
                                 }
                             }
