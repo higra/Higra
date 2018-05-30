@@ -7,22 +7,24 @@ if (DO_TEST)
 
     set(HIGRA_TESTS_SRC
             test.cpp
-            test_undirected_graph.cpp
+            test_accumulator.cpp
+            test_algo_tree.cpp
             test_embedding.cpp
-            test_utils.cpp
-            test_regular_graph.cpp
-            test_tree.cpp
-            test_point.cpp
             test_graph_image.cpp
+            test_graph_weights.cpp
             test_hierarchy_core.cpp
             test_lca.cpp
-            test_accumulator.cpp
-            test_pink_graph_io.cpp
-            test_graph_weights.cpp
-            test_tree_accumulator.cpp
-            test_algo_tree.cpp
             test_light_axis_view.cpp
-            test_watershed.cpp test_rag.cpp)
+            test_pink_graph_io.cpp
+            test_point.cpp
+            test_rag.cpp
+            test_regular_graph.cpp
+            test_tree.cpp
+            test_tree_accumulator.cpp
+            test_tree_io.cpp
+            test_undirected_graph.cpp
+            test_utils.cpp
+            test_watershed.cpp)
 
     add_executable(test_exe ${HIGRA_TESTS_SRC})
 
