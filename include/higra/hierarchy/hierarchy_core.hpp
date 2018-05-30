@@ -34,10 +34,14 @@ namespace hg {
 
         union_find uf(num_points);
 
-        array_1d<std::size_t> roots = xt::arange<std::size_t>(num_points);
+        array_1d<std::size_t> roots = array_1d<std::size_t>::from_shape({num_points});
+        std::iota(roots.begin(), roots.end(), 0);
+        array_1d<std::size_t> parents = array_1d<std::size_t>::from_shape({num_points * 2 - 1});
+        std::iota(parents.begin(), parents.end(), 0);
 
-        array_1d<std::size_t> parents = xt::arange<std::size_t>(num_points * 2 - 1);
-        array_1d<typename T::value_type> levels = xt::zeros<std::size_t>({num_points * 2 - 1});
+        array_1d<typename T::value_type> levels = array_1d<typename T::value_type>::from_shape({num_points * 2 - 1});
+        std::fill(levels.begin(), levels.begin() + num_points, 0);
+
 
         std::size_t num_nodes = num_points;
         std::size_t num_edge_found = 0;
