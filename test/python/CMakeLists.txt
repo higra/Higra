@@ -3,19 +3,20 @@ if (DO_TEST)
     set(PYTHON_MODULE_PATH ${CMAKE_BINARY_DIR}/python/)
 
     set(PYTHON_TEST_FILES
-            test_undirected_graph.py
-            test_embedding.py
-            test_regular_graph.py
-            test_tree.py
-            test_graph_weights.py
-            test_graph_image.py
-            test_lca_fast.py
-            test_hierarchy_core.py
-            test_pink_graph_io.py
-            test_data_cache.py
             test_algo_tree.py
             test_attributes.py
+            test_data_cache.py
+            test_embedding.py
+            test_graph_weights.py
+            test_graph_image.py
+            test_hierarchy_core.py
+            test_lca_fast.py
+            test_pink_graph_io.py
             test_rag.py
+            test_regular_graph.py
+            test_tree.py
+            test_tree_io.py
+            test_undirected_graph.py
             test_watershed.py)
 
     foreach (FILE ${PYTHON_TEST_FILES})

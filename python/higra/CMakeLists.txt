@@ -21,6 +21,7 @@ set(PYMODULE_COMPONENTS
         cpp/py_regular_graph.cpp
         cpp/py_tree_accumulators.cpp
         cpp/py_tree_graph.cpp
+        cpp/py_tree_io.cpp
         cpp/py_undirected_graph.cpp
         cpp/py_watershed.cpp)
 
@@ -33,6 +34,7 @@ set(MODULE_FILES
         pink_io.py
         rag.py
         tree_attributes.py
+        tree_io.py
         watershed.py)
 
 pybind11_add_module(higram pymodule.cpp ${PYMODULE_COMPONENTS})
