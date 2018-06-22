@@ -305,7 +305,7 @@ namespace hg {
     template<typename T>
     std::pair<typename hg::undirected_graph<T>::adjacency_iterator, typename hg::undirected_graph<T>::adjacency_iterator>
     adjacent_vertices(typename hg::undirected_graph<T>::vertex_descriptor v, const hg::undirected_graph<T> &g) {
-        auto fun = [v](const typename hg::undirected_graph<T>::out_edge_t &oe) {
+        auto fun = [](const typename hg::undirected_graph<T>::out_edge_t &oe) {
             return oe.second;
         };
         using it = typename hg::undirected_graph<T>::adjacency_iterator;

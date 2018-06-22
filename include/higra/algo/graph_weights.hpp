@@ -72,7 +72,7 @@ namespace hg {
                 if (vertex_weights.dimension() > 1) {
                     auto v1 = make_light_axis_view(vertex_weights);
                     auto v2 = make_light_axis_view(vertex_weights);
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights, &v1, &v2](
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&v1, &v2](
                             std::size_t i,
                                                                                                     std::size_t j) -> result_value_t {
                         v1.set_position(i);
@@ -96,7 +96,7 @@ namespace hg {
                 if (vertex_weights.dimension() > 1) {
                     auto v1 = make_light_axis_view(vertex_weights);
                     auto v2 = make_light_axis_view(vertex_weights);
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights, &v1, &v2](
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&v1, &v2](
                             std::size_t i,
                                                                                                     std::size_t j) -> result_value_t {
                         v1.set_position(i);
@@ -121,7 +121,7 @@ namespace hg {
                 if (vertex_weights.dimension() > 1) {
                     auto v1 = make_light_axis_view(vertex_weights);
                     auto v2 = make_light_axis_view(vertex_weights);
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights, &v1, &v2](
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&v1, &v2](
                             std::size_t i,
                                                                                                     std::size_t j) -> result_value_t {
                         v1.set_position(i);
@@ -149,7 +149,7 @@ namespace hg {
                 if (vertex_weights.dimension() > 1) {
                     auto v1 = make_light_axis_view(vertex_weights);
                     auto v2 = make_light_axis_view(vertex_weights);
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights, &v1, &v2](
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&v1, &v2](
                             std::size_t i,
                                                                                                     std::size_t j) -> result_value_t {
                         v1.set_position(i);
@@ -175,7 +175,7 @@ namespace hg {
                 if (vertex_weights.dimension() > 1) {
                     auto v1 = make_light_axis_view(vertex_weights);
                     auto v2 = make_light_axis_view(vertex_weights);
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights, &v1, &v2](
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&v1, &v2](
                             std::size_t i,
                                                                                                     std::size_t j) -> result_value_t {
                         v1.set_position(i);
@@ -189,7 +189,7 @@ namespace hg {
                     };
                     return weight_graph(graph, fun);
                 } else {
-                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&graph, &vertex_weights](
+                    std::function<result_value_t(std::size_t, std::size_t)> fun = [&vertex_weights](
                             std::size_t i,
                             std::size_t j) -> result_value_t {
                         auto v1 = vertex_weights(i);

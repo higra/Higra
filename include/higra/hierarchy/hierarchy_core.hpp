@@ -21,11 +21,10 @@ namespace hg {
         hg_assert(edge_weights.dimension() == 1, "Edge weights must be scalar.");
         hg_assert(num_edges(graph) == edge_weights.size(),
                   "Edge weights size does not match the number of edge in the graph.");
-        auto &weights = edge_weights.storage();
 
         array_1d<std::size_t> sorted_edges_indices = xt::arange(num_edges(graph));
         std::stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
-                         [&weights](std::size_t i, std::size_t j) { return weights[i] < weights[j]; });
+                         [&edge_weights](std::size_t i, std::size_t j) { return edge_weights[i] < edge_weights[j]; });
 
         auto num_points = num_vertices(graph);
 
@@ -34,14 +33,10 @@ namespace hg {
 
         union_find uf(num_points);
 
-        array_1d<std::size_t> roots = array_1d<std::size_t>::from_shape({num_points});
-        std::iota(roots.begin(), roots.end(), 0);
-        array_1d<std::size_t> parents = array_1d<std::size_t>::from_shape({num_points * 2 - 1});
-        std::iota(parents.begin(), parents.end(), 0);
+        array_1d<std::size_t> roots = xt::arange(num_points);
+        array_1d<std::size_t> parents = xt::arange(num_points * 2 - 1);
 
-        array_1d<typename T::value_type> levels = array_1d<typename T::value_type>::from_shape({num_points * 2 - 1});
-        std::fill(levels.begin(), levels.begin() + num_points, 0);
-
+        array_1d<typename T::value_type> levels = xt::zeros<typename T::value_type>({num_points * 2 - 1});
 
         std::size_t num_nodes = num_points;
         std::size_t num_edge_found = 0;
@@ -54,7 +49,7 @@ namespace hg {
             auto c2 = uf.find(target(e, graph));
             if (c1 != c2) {
                 num_edge_found++;
-                levels[num_nodes] = weights[ei];
+                levels[num_nodes] = edge_weights[ei];
                 parents[roots[c1]] = num_nodes;
                 parents[roots[c2]] = num_nodes;
                 parents[num_nodes] = num_nodes;

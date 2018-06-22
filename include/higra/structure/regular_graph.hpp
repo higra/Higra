@@ -249,7 +249,7 @@ namespace hg {
             const hg::regular_graph<embedding_t> &g) {
         typename hg::regular_graph<embedding_t>::degree_size_type count = 0;
         typename hg::regular_graph<embedding_t>::out_edge_iterator out_i, out_end;
-        typename hg::regular_graph<embedding_t>::edge_descriptor e;
+        //typename hg::regular_graph<embedding_t>::edge_descriptor e;
         auto it = out_edges(v, g);
         for (out_i = it.first, out_end = it.second; out_i != out_end; ++out_i) {
             count++;
