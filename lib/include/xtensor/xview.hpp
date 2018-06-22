@@ -149,10 +149,15 @@ namespace xt
         const slice_type& slices() const noexcept;
         layout_type layout() const noexcept;
 
+        template <class T>
+        void fill(const T& value);
+
         template <class... Args>
         reference operator()(Args... args);
         template <class... Args>
         reference at(Args... args);
+        template <class... Args>
+        reference unchecked(Args... args);
         template <class OS>
         disable_integral_t<OS, reference> operator[](const OS& index);
         template <class I>
@@ -165,6 +170,8 @@ namespace xt
         const_reference operator()(Args... args) const;
         template <class... Args>
         const_reference at(Args... args) const;
+        template <class... Args>
+        const_reference unchecked(Args... args) const;
         template <class OS>
         disable_integral_t<OS, const_reference> operator[](const OS& index) const;
         template <class I>
@@ -246,7 +253,26 @@ namespace xt
         mutable strides_type m_strides;
         mutable bool m_strides_computed;
 
+        template <class... Args>
+        auto make_index_sequence(Args... args) const noexcept;
+
         strides_type compute_strides() const;
+
+        reference access();
+
+        template <class Arg, class... Args>
+        reference access(Arg arg, Args... args);
+
+        const_reference access() const;
+
+        template <class Arg, class... Args>
+        const_reference access(Arg arg, Args... args) const;
+
+        template <typename std::decay_t<CT>::size_type... I, class... Args>
+        reference unchecked_impl(std::index_sequence<I...>, Args... args);
+
+        template <typename std::decay_t<CT>::size_type... I, class... Args>
+        const_reference unchecked_impl(std::index_sequence<I...>, Args... args) const;
 
         template <typename std::decay_t<CT>::size_type... I, class... Args>
         reference access_impl(std::index_sequence<I...>, Args... args);
@@ -528,6 +554,18 @@ namespace xt
      * @name Data
      */
     //@{
+
+    /**
+     * Fills the view with the given value.
+     * @param value the value to fill the view with.
+     */
+    template <class CT, class... S>
+    template <class T>
+    inline void xview<CT, S...>::fill(const T& value)
+    {
+        std::fill(this->storage_begin(), this->storage_end(), value);
+    }
+
     /**
      * Returns a reference to the element at the specified position in the view.
      * @param args a list of indices specifying the position in the view. Indices
@@ -538,12 +576,11 @@ namespace xt
     template <class... Args>
     inline auto xview<CT, S...>::operator()(Args... args) -> reference
     {
+        XTENSOR_TRY(check_index(shape(), args...));
+        XTENSOR_CHECK_DIMENSION(shape(), args...);
         // The static cast prevents the compiler from instantiating the template methods with signed integers,
         // leading to warning about signed/unsigned conversions in the deeper layers of the access methods
-        return access_impl(std::make_index_sequence<(sizeof...(Args) + integral_count<S...>() > newaxis_count<S...>() ?
-                                                        sizeof...(Args) + integral_count<S...>() - newaxis_count<S...>() :
-                                                        0)>(),
-                           static_cast<size_type>(args)...);
+        return access(static_cast<size_type>(args)...);
     }
 
     /**
@@ -563,6 +600,38 @@ namespace xt
         return this->operator()(args...);
     }
 
+    /**
+    * Returns a reference to the element at the specified position in the view.
+    * @param args a list of indices specifying the position in the view. Indices
+    * must be unsigned integers, the number of indices must be equal to the number of
+    * dimensions of the view, else the behavior is undefined.
+    *
+    * @warning This method is meant for performance, for expressions with a dynamic
+    * number of dimensions (i.e. not known at compile time). Since it may have
+    * undefined behavior (see parameters), operator() should be prefered whenever
+    * it is possible.
+    * @warning This method is NOT compatible with broadcasting, meaning the following
+    * code has undefined behavior:
+    * \code{.cpp}
+    * xt::xarray<double> a = {{0, 1}, {2, 3}};
+    * xt::xarray<double> b = {0, 1};
+    * auto fd = a + b;
+    * double res = fd.uncheked(0, 1);
+    * \endcode
+    */
+    template <class CT, class... S>
+    template <class... Args>
+    inline auto xview<CT, S...>::unchecked(Args... args) -> reference
+    {
+        return unchecked_impl(make_index_sequence(args...), static_cast<size_type>(args)...);
+    }
+
+    /**
+     * Returns a reference to the element at the specified position in the view.
+     * @param index a sequence of indices specifying the position in the view. Indices
+     * must be unsigned integers, the number of indices in the list should be equal or greater
+     * than the number of dimensions of the view.
+     */
     template <class CT, class... S>
     template <class OS>
     inline auto xview<CT, S...>::operator[](const OS& index)
@@ -589,6 +658,7 @@ namespace xt
     template <class It>
     inline auto xview<CT, S...>::element(It first, It last) -> reference
     {
+        XTENSOR_TRY(check_element_index(shape(), first, last));
         // TODO: avoid memory allocation
         auto index = make_index(first, last);
         return m_e.element(index.cbegin(), index.cend());
@@ -604,16 +674,15 @@ namespace xt
     template <class... Args>
     inline auto xview<CT, S...>::operator()(Args... args) const -> const_reference
     {
+        XTENSOR_TRY(check_index(shape(), args...));
+        XTENSOR_CHECK_DIMENSION(shape(), args...);
         // The static cast prevents the compiler from instantiating the template methods with signed integers,
         // leading to warning about signed/unsigned conversions in the deeper layers of the access methods
-        return access_impl(std::make_index_sequence<(sizeof...(Args) + integral_count<S...>() > newaxis_count<S...>() ?
-                                                        sizeof...(Args) + integral_count<S...>() - newaxis_count<S...>() :
-                                                        0)>(),
-                           static_cast<size_type>(args)...);
+        return access(static_cast<size_type>(args)...);
     }
 
     /**
-     * Returns a constant reference to the element at the specified position in the expression,
+     * Returns a constant reference to the element at the specified position in the view,
      * after dimension and bounds checking.
      * @param args a list of indices specifying the position in the function. Indices
      * must be unsigned integers, the number of indices should be equal to the number of dimensions
@@ -629,6 +698,38 @@ namespace xt
         return this->operator()(args...);
     }
 
+    /**
+     * Returns a constant reference to the element at the specified position in the view.
+     * @param args a list of indices specifying the position in the view. Indices
+     * must be unsigned integers, the number of indices must be equal to the number of
+     * dimensions of the view, else the behavior is undefined.
+     *
+     * @warning This method is meant for performance, for expressions with a dynamic
+     * number of dimensions (i.e. not known at compile time). Since it may have
+     * undefined behavior (see parameters), operator() should be prefered whenever
+     * it is possible.
+     * @warning This method is NOT compatible with broadcasting, meaning the following
+     * code has undefined behavior:
+     * \code{.cpp}
+     * xt::xarray<double> a = {{0, 1}, {2, 3}};
+     * xt::xarray<double> b = {0, 1};
+     * auto fd = a + b;
+     * double res = fd.uncheked(0, 1);
+     * \endcode
+     */
+    template <class CT, class... S>
+    template <class... Args>
+    inline auto xview<CT, S...>::unchecked(Args... args) const -> const_reference
+    {
+        return unchecked_impl(make_index_sequence(args...), static_cast<size_type>(args)...);
+    }
+
+    /**
+     * Returns a constant reference to the element at the specified position in the view.
+     * @param index a sequence of indices specifying the position in the view. Indices
+     * must be unsigned integers, the number of indices in the list should be equal or greater
+     * than the number of dimensions of the view.
+     */
     template <class CT, class... S>
     template <class OS>
     inline auto xview<CT, S...>::operator[](const OS& index) const
@@ -767,6 +868,7 @@ namespace xt
     /**
      * Broadcast the shape of the view to the specified parameter.
      * @param shape the result shape
+     * @param reuse_cache parameter for internal optimization
      * @return a boolean indicating whether the broadcasting is trivial
      */
     template <class CT, class... S>
@@ -790,6 +892,15 @@ namespace xt
     //@}
 
     template <class CT, class... S>
+    template <class... Args>
+    inline auto xview<CT, S...>::make_index_sequence(Args...) const noexcept
+    {
+        return std::make_index_sequence<(sizeof...(Args)+integral_count<S...>() > newaxis_count<S...>() ?
+                                         sizeof...(Args)+integral_count<S...>() - newaxis_count<S...>() :
+                                         0)>();
+    }
+
+    template <class CT, class... S>
     inline auto xview<CT, S...>::compute_strides() const -> strides_type
     {
         strides_type strides = xtl::make_sequence<strides_type>(dimension(), 0);
@@ -810,6 +921,54 @@ namespace xt
         }
 
         return strides;
+    }
+
+    template <class CT, class... S>
+    inline auto xview<CT, S...>::access() -> reference
+    {
+        return access_impl(make_index_sequence());
+    }
+
+    template <class CT, class... S>
+    template <class Arg, class... Args>
+    inline auto xview<CT, S...>::access(Arg arg, Args... args) -> reference
+    {
+        if (sizeof...(Args) >= dimension())
+        {
+            return access(args...);
+        }
+        return access_impl(make_index_sequence(arg, args...), arg, args...);
+    }
+
+    template <class CT, class... S>
+    inline auto xview<CT, S...>::access() const -> const_reference
+    {
+        return access_impl(make_index_sequence());
+    }
+
+    template <class CT, class... S>
+    template <class Arg, class... Args>
+    inline auto xview<CT, S...>::access(Arg arg, Args... args) const -> const_reference
+    {
+        if (sizeof...(Args) >= dimension())
+        {
+            return access(args...);
+        }
+        return access_impl(make_index_sequence(arg, args...), arg, args...);
+    }
+
+    template <class CT, class... S>
+    template <typename std::decay_t<CT>::size_type... I, class... Args>
+    inline auto xview<CT, S...>::unchecked_impl(std::index_sequence<I...>, Args... args) -> reference
+    {
+        return m_e.unchecked(index<I>(args...)...);
+    }
+
+    template <class CT, class... S>
+    template <typename std::decay_t<CT>::size_type... I, class... Args>
+    inline auto xview<CT, S...>::unchecked_impl(std::index_sequence<I...>, Args... args) const -> const_reference
+    {
+        return m_e.unchecked(index<I>(args...)...);
     }
 
     template <class CT, class... S>
@@ -1174,7 +1333,7 @@ namespace xt
             if (!is_newaxis_slice(index))
             {
                 size_type step_size = index < sizeof...(S) ?
-                    apply<size_type>(index, func, p_view->slices()) : 1;
+                    apply<size_type>(index, func, p_view->slices()) : n;
                 index -= newaxis_count_before<S...>(index);
                 f(index, step_size);
             }
@@ -1217,7 +1376,7 @@ namespace xt
             if (!is_newaxis_slice(index))
             {
                 size_type step_size = index < sizeof...(S) ?
-                    apply<size_type>(index, func, p_view->slices()) : 1;
+                    apply<size_type>(index, func, p_view->slices()) : n;
                 index -= newaxis_count_before<S...>(index);
                 f(index, step_size);
             }
@@ -1240,10 +1399,13 @@ namespace xt
                 size = size - 1;
             }
 
-            auto ss = index < sizeof...(S) ? apply<size_type>(index, end_func, p_view->slices()) : p_view->shape()[dim];
             size_type sz = index < sizeof...(S) ? apply<size_type>(index, size_func, p_view->slices()) : p_view->shape()[dim];
-            this->m_index_keeper[dim] = backwards ? sz : 0;
+            if (dim < m_index_keeper.size())
+            {
+                m_index_keeper[dim] = backwards ? sz : 0;
+            }
 
+            auto ss = index < sizeof...(S) ? apply<size_type>(index, end_func, p_view->slices()) : p_view->shape()[dim];
             size_type reset_n = index < sizeof...(S) ? ss : size;
             index -= newaxis_count_before<S...>(index);
             f(index, reset_n);

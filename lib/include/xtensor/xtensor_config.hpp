@@ -11,7 +11,7 @@
 
 #define XTENSOR_VERSION_MAJOR 0
 #define XTENSOR_VERSION_MINOR 16
-#define XTENSOR_VERSION_PATCH 0
+#define XTENSOR_VERSION_PATCH 3
 
 // DETECT 3.6 <= clang < 3.8 for compiler bug workaround.
 #ifdef __clang__
@@ -22,13 +22,13 @@
     #endif
 #endif
 
-#ifndef XTENSOR_DATA_SHAPE_CONTAINER
-#define XTENSOR_DATA_SHAPE_CONTAINER(T, A) uvector<T, A>
+#ifndef XTENSOR_DEFAULT_DATA_CONTAINER
+#define XTENSOR_DEFAULT_DATA_CONTAINER(T, A) uvector<T, A>
 #endif
 
 #ifndef XTENSOR_DEFAULT_SHAPE_CONTAINER
 #define XTENSOR_DEFAULT_SHAPE_CONTAINER(T, EA, SA) \
-    xt::svector<typename XTENSOR_DATA_SHAPE_CONTAINER(T, EA)::size_type, 4, SA>
+    xt::svector<typename XTENSOR_DEFAULT_DATA_CONTAINER(T, EA)::size_type, 4, SA>
 #endif
 
 #ifndef XTENSOR_DEFAULT_ALLOCATOR

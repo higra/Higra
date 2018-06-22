@@ -106,10 +106,14 @@ namespace xt
         size_type dimension() const noexcept;
         const inner_shape_type& shape() const noexcept;
         layout_type layout() const noexcept;
+        
+        template <class T>
+        void fill(const T& value);
 
-        reference operator()();
+        reference operator()(size_type idx = size_type(0));
         template <class... Args>
-        reference operator()(size_type idx, Args... /*args*/);
+        reference operator()(size_type idx0, size_type idx1, Args... args);
+        reference unchecked(size_type idx);
         template <class S>
         disable_integral_t<S, reference> operator[](const S& index);
         template <class OI>
@@ -119,9 +123,10 @@ namespace xt
         template <class It>
         reference element(It first, It last);
 
-        const_reference operator()() const;
+        const_reference operator()(size_type idx = size_type(0)) const;
         template <class... Args>
-        const_reference operator()(size_type idx, Args... /*args*/) const;
+        const_reference operator()(size_type idx0, size_type idx1, Args... args) const;
+        const_reference unchecked(size_type idx) const;
         template <class S>
         disable_integral_t<S, const_reference> operator[](const S& index) const;
         template <class OI>
@@ -313,37 +318,81 @@ namespace xt
     /**
      * @name Data
      */
+    //@{
+    
+    /**
+     * Fills the view with the given value.
+     * @param value the value to fill the view with.
+     */
     template <class CT, class I>
-    inline auto xindex_view<CT, I>::operator()() -> reference
+    template <class T>
+    inline void xindex_view<CT, I>::fill(const T& value)
     {
-        return m_e();
-    }
-
-    template <class CT, class I>
-    inline auto xindex_view<CT, I>::operator()() const -> const_reference
-    {
-        return m_e();
-    }
-
-    template <class CT, class I>
-    template <class... Args>
-    inline auto xindex_view<CT, I>::operator()(size_type idx, Args... /*args*/) -> reference
-    {
-        return m_e[m_indices[idx]];
+        std::fill(this->storage_begin(), this->storage_end(), value);
     }
 
     /**
-     * Returns the element at the specified position in the xindex_view. 
-     * 
-     * @param idx the position in the view
+     * Returns a reference to the element at the specified position in the xindex_view.
+     * @param idx index specifying the position in the index_view. More indices may be provided,
+     * only the last one will be used.
      */
     template <class CT, class I>
-    template <class... Args>
-    inline auto xindex_view<CT, I>::operator()(size_type idx, Args... /*args*/) const -> const_reference
+    inline auto xindex_view<CT, I>::operator()(size_type idx) -> reference
     {
         return m_e[m_indices[idx]];
     }
 
+    template <class CT, class I>
+    template <class... Args>
+    inline auto xindex_view<CT, I>::operator()(size_type, size_type idx1, Args... args) -> reference
+    {
+        return this->operator()(idx1, args...);
+    }
+
+    /**
+     * Returns a reference to the element at the specified position in the xindex_view.
+     * @param idx index specifying the position in the index_view.
+     */
+    template <class CT, class I>
+    inline auto xindex_view<CT, I>::unchecked(size_type idx) -> reference
+    {
+        return this->operator()(idx);
+    }
+
+    /**
+     * Returns a constant reference to the element at the specified position in the xindex_view.
+     * @param idx index specifying the position in the index_view. More indices may be provided,
+     * only the last one will be used.
+     */
+    template <class CT, class I>
+    inline auto xindex_view<CT, I>::operator()(size_type idx) const -> const_reference
+    {
+        return m_e[m_indices[idx]];
+    }
+
+    template <class CT, class I>
+    template <class... Args>
+    inline auto xindex_view<CT, I>::operator()(size_type, size_type idx1, Args... args) const -> const_reference
+    {
+        return this->operator()(idx1, args...);
+    }
+
+    /**
+     * Returns a constant reference to the element at the specified position in the xindex_view.
+     * @param idx index specifying the position in the index_view.
+     */
+    template <class CT, class I>
+    inline auto xindex_view<CT, I>::unchecked(size_type idx) const -> const_reference
+    {
+        return this->operator()(idx);
+    }
+
+    /**
+     * Returns a reference to the element at the specified position in the container.
+     * @param index a sequence of indices specifying the position in the container. Indices
+     * must be unsigned integers, the number of indices in the list should be equal or greater
+     * than the number of dimensions of the container.
+     */
     template <class CT, class I>
     template <class S>
     inline auto xindex_view<CT, I>::operator[](const S& index)
@@ -366,6 +415,12 @@ namespace xt
         return operator()(i);
     }
 
+    /**
+     * Returns a constant reference to the element at the specified position in the container.
+     * @param index a sequence of indices specifying the position in the container. Indices
+     * must be unsigned integers, the number of indices in the list should be equal or greater
+     * than the number of dimensions of the container.
+     */
     template <class CT, class I>
     template <class S>
     inline auto xindex_view<CT, I>::operator[](const S& index) const
@@ -400,6 +455,11 @@ namespace xt
         return m_e[m_indices[(*first)]];
     }
 
+    /**
+     * Returns a reference to the element at the specified position in the xindex_view.
+     * @param first iterator starting the sequence of indices
+     * The number of indices in the sequence should be equal to or greater 1.
+     */
     template <class CT, class I>
     template <class It>
     inline auto xindex_view<CT, I>::element(It first, It /*last*/) const -> const_reference
@@ -415,6 +475,7 @@ namespace xt
     /**
      * Broadcast the shape of the xindex_view to the specified parameter.
      * @param shape the result shape
+     * @param reuse_cache parameter for internal optimization
      * @return a boolean indicating whether the broadcasting is trivial
      */
     template <class CT, class I>

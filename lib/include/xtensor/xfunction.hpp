@@ -88,19 +88,19 @@ namespace xt
         template <class... Args>
         using common_value_type_t = typename common_value_type<Args...>::type;
 
-        template <class F, class R, class = void_t<>>
+        template <class F, class CST, class R, class = void_t<>>
         struct simd_return_type
         {
         };
 
-        template <class F, class R>
-        struct simd_return_type<F, R, void_t<decltype(&F::template simd_apply<R>)>>
+        template <class F, class CST, class R>
+        struct simd_return_type<F, CST, R, void_t<decltype(&F::template simd_apply<CST>)>>
         {
-            using type = R;
+            using type = xsimd::simd_type<xsimd::simd_return_type<CST, R>>;
         };
 
-        template <class F, class R>
-        using simd_return_type_t = typename simd_return_type<F, R>::type;
+        template <class F, class CST, class R>
+        using simd_return_type_t = typename simd_return_type<F, CST, R>::type;
 
         template <class T, class R>
         struct functor_return_type
@@ -185,6 +185,7 @@ namespace xt
         using size_type = detail::common_size_type_t<std::decay_t<CT>...>;
         using difference_type = detail::common_difference_type_t<std::decay_t<CT>...>;
         using simd_value_type = typename detail::functor_return_type<detail::common_value_type_t<std::decay_t<CT>...>, R>::simd_type;
+        using simd_argument_type = xsimd::simd_type<detail::common_value_type_t<std::decay_t<CT>...>>;
         using iterable_base = xconst_iterable<xfunction_base<F, R, CT...>>;
         using inner_shape_type = typename iterable_base::inner_shape_type;
         using shape_type = inner_shape_type;
@@ -233,6 +234,9 @@ namespace xt
 
         template <class... Args>
         const_reference at(Args... args) const;
+
+        template <class... Args>
+        const_reference unchecked(Args... args) const;
 
         template <class S>
         disable_integral_t<S, const_reference> operator[](const S& index) const;
@@ -287,7 +291,7 @@ namespace xt
         operator value_type() const;
 
         template <class align, class simd = simd_value_type>
-        detail::simd_return_type_t<functor_type, simd> load_simd(size_type i) const;
+        detail::simd_return_type_t<functor_type, simd_argument_type, simd> load_simd(size_type i) const;
 
         const tuple_type& arguments() const noexcept;
 
@@ -311,6 +315,9 @@ namespace xt
 
         template <std::size_t... I, class... Args>
         const_reference access_impl(std::index_sequence<I...>, Args... args) const;
+        
+        template <std::size_t... I, class... Args>
+        const_reference unchecked_impl(std::index_sequence<I...>, Args... args) const;
 
         template <std::size_t... I, class It>
         const_reference element_access_impl(std::index_sequence<I...>, It first, It last) const;
@@ -319,7 +326,7 @@ namespace xt
         const_reference data_element_impl(std::index_sequence<I...>, size_type i) const;
 
         template <class align, class simd, std::size_t... I>
-        simd load_simd_impl(std::index_sequence<I...>, size_type i) const;
+        auto load_simd_impl(std::index_sequence<I...>, size_type i) const;
 
         template <class Func, std::size_t... I>
         const_stepper build_stepper(Func&& f, std::index_sequence<I...>) const noexcept;
@@ -626,6 +633,34 @@ namespace xt
         return this->operator()(args...);
     }
 
+    /**
+     * Returns a constant reference to the element at the specified position in the expression.
+     * @param args a list of indices specifying the position in the expression. Indices
+     * must be unsigned integers, the number of indices must be equal to the number of
+     * dimensions of the expression, else the behavior is undefined.
+     *
+     * @warning This method is meant for performance, for expressions with a dynamic
+     * number of dimensions (i.e. not known at compile time). Since it may have
+     * undefined behavior (see parameters), operator() should be prefered whenever
+     * it is possible.
+     * @warning This method is NOT compatible with broadcasting, meaning the following
+     * code has undefined behavior:
+     * \code{.cpp}
+     * xt::xarray<double> a = {{0, 1}, {2, 3}};
+     * xt::xarray<double> b = {0, 1};
+     * auto fd = a + b;
+     * double res = fd.uncheked(0, 1);
+     * \endcode
+     */
+    template <class F, class R, class... CT>
+    template <class... Args>
+    inline auto xfunction_base<F, R, CT...>::unchecked(Args... args) const -> const_reference
+    {
+        // The static cast prevents the compiler from instantiating the template methods with signed integers,
+        // leading to warning about signed/unsigned conversions in the deeper layers of the access methods
+        return unchecked_impl(std::make_index_sequence<sizeof...(CT)>(), static_cast<size_type>(args)...);
+    }
+
     template <class F, class R, class... CT>
     template <class S>
     inline auto xfunction_base<F, R, CT...>::operator[](const S& index) const
@@ -792,7 +827,7 @@ namespace xt
 
     template <class F, class R, class... CT>
     template <class align, class simd>
-    inline auto xfunction_base<F, R, CT...>::load_simd(size_type i) const -> detail::simd_return_type_t<functor_type, simd>
+    inline auto xfunction_base<F, R, CT...>::load_simd(size_type i) const -> detail::simd_return_type_t<functor_type, simd_argument_type, simd>
     {
         return load_simd_impl<align, simd>(std::make_index_sequence<sizeof...(CT)>(), i);
     }
@@ -814,13 +849,23 @@ namespace xt
     template <std::size_t... I, class... Args>
     inline auto xfunction_base<F, R, CT...>::access_impl(std::index_sequence<I...>, Args... args) const -> const_reference
     {
-        return m_f(detail::get_element(std::get<I>(m_e), args...)...);
+        XTENSOR_TRY(check_index(shape(), args...));
+        XTENSOR_CHECK_DIMENSION(shape(), args...);
+        return m_f(std::get<I>(m_e)(args...)...);
+    }
+    
+    template <class F, class R, class... CT>
+    template <std::size_t... I, class... Args>
+    inline auto xfunction_base<F, R, CT...>::unchecked_impl(std::index_sequence<I...>, Args... args) const -> const_reference
+    {
+        return m_f(std::get<I>(m_e).unchecked(args...)...);
     }
 
     template <class F, class R, class... CT>
     template <std::size_t... I, class It>
     inline auto xfunction_base<F, R, CT...>::element_access_impl(std::index_sequence<I...>, It first, It last) const -> const_reference
     {
+        XTENSOR_TRY(check_element_index(shape(), first, last));
         return m_f((std::get<I>(m_e).element(first, last))...);
     }
 
@@ -871,11 +916,10 @@ namespace xt
 
     template <class F, class R, class... CT>
     template <class align, class simd, std::size_t... I>
-    inline auto xfunction_base<F, R, CT...>::load_simd_impl(std::index_sequence<I...>, size_type i) const -> simd
+    inline auto xfunction_base<F, R, CT...>::load_simd_impl(std::index_sequence<I...>, size_type i) const
     {
-        using common_simd = xsimd::simd_type<detail::common_value_type_t<std::decay_t<CT>...>>;
         return m_f.simd_apply((std::get<I>(m_e)
-            .template load_simd<align, detail::get_simd_type_t<std::tuple_element_t<I, tuple_type>, simd, common_simd>>(i))...);
+            .template load_simd<align, detail::get_simd_type_t<std::tuple_element_t<I, tuple_type>, simd, simd_argument_type>>(i))...);
     }
 
     template <class F, class R, class... CT>
@@ -895,7 +939,7 @@ namespace xt
     template <class F, class R, class... CT>
     inline auto xfunction_base<F, R, CT...>::compute_dimension() const noexcept -> size_type
     {
-        auto func = [](size_type d, auto&& e) noexcept { return std::max(d, e.dimension()); };
+        auto func = [](size_type d, auto&& e) noexcept { return (std::max)(d, e.dimension()); };
         return accumulate(func, size_type(0), m_e);
     }
 
@@ -980,7 +1024,7 @@ namespace xt
                                                                 const data_type& rhs) const -> difference_type
     {
         auto diff = std::make_tuple((std::get<I>(lhs) - std::get<I>(rhs))...);
-        auto func = [](difference_type n, auto&& v) { return std::max(n, v); };
+        auto func = [](difference_type n, auto&& v) { return (std::max)(n, v); };
         return accumulate(func, difference_type(0), diff);
     }
 

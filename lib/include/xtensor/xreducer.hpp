@@ -39,20 +39,20 @@ namespace xt
 
 #define DEFAULT_STRATEGY_REDUCERS evaluation_strategy::lazy
 
-    template <class F, class E, class X, class ES = DEFAULT_STRATEGY_REDUCERS,
+    template <class F, class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
               class = std::enable_if_t<!std::is_base_of<evaluation_strategy::base, std::decay_t<X>>::value, int>>
-    auto reduce(F&& f, E&& e, X&& axes, ES es = ES());
+    auto reduce(F&& f, E&& e, X&& axes, EVS es = EVS());
 
-    template <class F, class E, class ES = DEFAULT_STRATEGY_REDUCERS,
-              class = std::enable_if_t<std::is_base_of<evaluation_strategy::base, ES>::value, int>>
-    auto reduce(F&& f, E&& e, ES es = ES());
+    template <class F, class E, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              class = std::enable_if_t<std::is_base_of<evaluation_strategy::base, EVS>::value, int>>
+    auto reduce(F&& f, E&& e, EVS es = EVS());
 
 #ifdef X_OLD_CLANG
-    template <class F, class E, class I, class ES = DEFAULT_STRATEGY_REDUCERS>
-    auto reduce(F&& f, E&& e, std::initializer_list<I> axes, ES es = ES());
+    template <class F, class E, class I, class EVS = DEFAULT_STRATEGY_REDUCERS>
+    auto reduce(F&& f, E&& e, std::initializer_list<I> axes, EVS es = EVS());
 #else
-    template <class F, class E, class I, std::size_t N, class ES = DEFAULT_STRATEGY_REDUCERS>
-    auto reduce(F&& f, E&& e, const I (&axes)[N], ES es = ES());
+    template <class F, class E, class I, std::size_t N, class EVS = DEFAULT_STRATEGY_REDUCERS>
+    auto reduce(F&& f, E&& e, const I (&axes)[N], EVS es = EVS());
 #endif
 
     template <class ST, class X>
@@ -439,6 +439,8 @@ namespace xt
         const_reference operator()(Args... args) const;
         template <class... Args>
         const_reference at(Args... args) const;
+        template <class... Args>
+        const_reference unchecked(Args... args) const;
         template <class S>
         disable_integral_t<S, const_reference> operator[](const S& index) const;
         template <class I>
@@ -505,14 +507,14 @@ namespace xt
      * depending on whether \p e is an lvalue or an rvalue.
      */
 
-    template <class F, class E, class X, class ES, class>
-    inline auto reduce(F&& f, E&& e, X&& axes, ES evaluation_strategy)
+    template <class F, class E, class X, class EVS, class>
+    inline auto reduce(F&& f, E&& e, X&& axes, EVS evaluation_strategy)
     {
         return detail::reduce_impl(std::forward<F>(f), std::forward<E>(e), std::forward<X>(axes), evaluation_strategy);
     }
 
-    template <class F, class E, class ES, class>
-    inline auto reduce(F&& f, E&& e, ES evaluation_strategy)
+    template <class F, class E, class EVS, class>
+    inline auto reduce(F&& f, E&& e, EVS evaluation_strategy)
     {
         typename std::decay_t<E>::shape_type ar;
         resize_container(ar, e.dimension());
@@ -521,16 +523,16 @@ namespace xt
     }
 
 #ifdef X_OLD_CLANG
-    template <class F, class E, class I, class ES>
-    inline auto reduce(F&& f, E&& e, std::initializer_list<I> axes, ES evaluation_strategy)
+    template <class F, class E, class I, class EVS>
+    inline auto reduce(F&& f, E&& e, std::initializer_list<I> axes, EVS evaluation_strategy)
     {
         using axes_type = std::vector<typename std::decay_t<E>::size_type>;
         using reducer_type = xreducer<F, const_xclosure_t<E>, axes_type>;
         return detail::reduce_impl(std::forward<F>(f), std::forward<E>(e), xtl::forward_sequence<axes_type>(axes), evaluation_strategy);
     }
 #else
-    template <class F, class E, class I, std::size_t N, class ES>
-    inline auto reduce(F&& f, E&& e, const I (&axes)[N], ES evaluation_strategy)
+    template <class F, class E, class I, std::size_t N, class EVS>
+    inline auto reduce(F&& f, E&& e, const I (&axes)[N], EVS evaluation_strategy)
     {
         using axes_type = std::array<typename std::decay_t<E>::size_type, N>;
         return detail::reduce_impl(std::forward<F>(f), std::forward<E>(e), xtl::forward_sequence<axes_type>(axes), evaluation_strategy);
@@ -730,6 +732,8 @@ namespace xt
     template <class... Args>
     inline auto xreducer<F, CT, X>::operator()(Args... args) const -> const_reference
     {
+        XTENSOR_TRY(check_index(shape(), args...));
+        XTENSOR_CHECK_DIMENSION(shape(), args...);
         std::array<std::size_t, sizeof...(Args)> arg_array = {{static_cast<std::size_t>(args)...}};
         return element(arg_array.cbegin(), arg_array.cend());
     }
@@ -750,6 +754,34 @@ namespace xt
         check_access(shape(), static_cast<size_type>(args)...);
         return this->operator()(args...);
     }
+
+    /**
+     * Returns a constant reference to the element at the specified position in the reducer.
+     * @param args a list of indices specifying the position in the reducer. Indices
+     * must be unsigned integers, the number of indices must be equal to the number of
+     * dimensions of the reducer, else the behavior is undefined.
+     *
+     * @warning This method is meant for performance, for expressions with a dynamic
+     * number of dimensions (i.e. not known at compile time). Since it may have
+     * undefined behavior (see parameters), operator() should be prefered whenever
+     * it is possible.
+     * @warning This method is NOT compatible with broadcasting, meaning the following
+     * code has undefined behavior:
+     * \code{.cpp}
+     * xt::xarray<double> a = {{0, 1}, {2, 3}};
+     * xt::xarray<double> b = {0, 1};
+     * auto fd = a + b;
+     * double res = fd.uncheked(0, 1);
+     * \endcode
+     */
+    template <class F, class CT, class X>
+    template <class... Args>
+    inline auto xreducer<F, CT, X>::unchecked(Args... args) const -> const_reference
+    {
+        std::array<std::size_t, sizeof...(Args)> arg_array = { { static_cast<std::size_t>(args)... } };
+        return element(arg_array.cbegin(), arg_array.cend());
+    }
+
     /**
      * Returns a constant reference to the element at the specified position in the reducer.
      * @param index a sequence of indices specifying the position in the reducer. Indices
@@ -789,11 +821,24 @@ namespace xt
     template <class It>
     inline auto xreducer<F, CT, X>::element(It first, It last) const -> const_reference
     {
+        XTENSOR_TRY(check_element_index(shape(), first, last));
         auto stepper = const_stepper(*this, 0);
         size_type dim = 0;
-        while (first != last)
+        // drop left most elements
+        using difference_type = typename std::iterator_traits<It>::difference_type;
+        auto size = std::ptrdiff_t(dimension()) - std::distance(first, last);
+        auto begin = first - size;
+        while (begin != last)
         {
-            stepper.step(dim++, std::size_t(*first++));
+            if (begin < first)
+            {
+                stepper.step(dim++, std::size_t(0));
+                begin++;
+            }
+            else
+            {
+                stepper.step(dim++, std::size_t(*begin++));
+            }
         }
         return *stepper;
     }
@@ -806,6 +851,7 @@ namespace xt
     /**
      * Broadcast the shape of the reducer to the specified parameter.
      * @param shape the result shape
+     * @param reuse_cache parameter for internal optimization
      * @return a boolean indicating whether the broadcasting is trivial
      */
     template <class F, class CT, class X>

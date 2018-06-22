@@ -17,7 +17,12 @@
 #undef XSIMD_BATCH_FLOAT_SIZE
 #undef XSIMD_BATCH_DOUBLE_SIZE
 
-#if XSIMD_X86_INSTR_SET >= XSIMD_X86_AVX_VERSION
+#if XSIMD_X86_INSTR_SET >= XSIMD_X86_AVX512_VERSION
+#define XSIMD_BATCH_INT32_SIZE 16
+#define XSIMD_BATCH_INT64_SIZE 8
+#define XSIMD_BATCH_FLOAT_SIZE 16
+#define XSIMD_BATCH_DOUBLE_SIZE 8
+#elif XSIMD_X86_INSTR_SET >= XSIMD_X86_AVX_VERSION
 #define XSIMD_BATCH_INT32_SIZE 8
 #define XSIMD_BATCH_INT64_SIZE 4
 #define XSIMD_BATCH_FLOAT_SIZE 8
@@ -143,10 +148,36 @@ namespace xsimd
                 std::is_same<T1, int64_t>::value ||
                 std::is_same<T1, int32_t>::value;
         };
+
+        template <class T1, class T2>
+        struct simd_return_type_impl
+        {
+            using type = typename std::enable_if<simd_condition<T1, T2>::value, simd_type<T2>>::type;
+        };
+
+        template <class T1, std::size_t N1, class T2, std::size_t N2>
+        struct simd_return_type_impl<batch<T1, N1>, batch<T2, N2>>
+        {
+            // Do not rely on simd_return_type_impl<T1, T2> becasue N2 can be different from
+            // simd_type<T2>::size
+            using type = typename std::enable_if<simd_condition<T1, T2>::value, batch<T2, N2>>::type;
+        };
+
+        template <class T1, std::size_t N1, class T2, std::size_t N2>
+        struct simd_return_type_impl<batch<T1, N1>, batch_bool<T2, N2>>
+        {
+            using type = typename std::enable_if<simd_condition<T1, T2>::value, batch_bool<T2, N2>>::type;
+        };
+
+        template <class T1, std::size_t N1, class T2, std::size_t N2>
+        struct simd_return_type_impl<batch_bool<T1, N1>, batch_bool<T2, N2>>
+        {
+            using type = typename std::enable_if<simd_condition<T1, T2>::value, batch_bool<T2, N2>>::type;
+        };
     }
 
     template <class T1, class T2>
-    using simd_return_type = typename std::enable_if<detail::simd_condition<T1, T2>::value, simd_type<T2>>::type;
+    using simd_return_type = typename detail::simd_return_type_impl<T1, T2>::type;
 }
 
 #endif

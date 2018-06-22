@@ -43,7 +43,7 @@ namespace xt
     template <class S1, class S2>
     [[noreturn]] void throw_broadcast_error(const S1&, const S2&)
     {
-        throw broadcast_error("Incompatible dimneison of arrays, compile in DEBUG for more info");
+        throw broadcast_error("Incompatible dimension of arrays, compile in DEBUG for more info");
     }
 #else
     template <class S1, class S2>
@@ -127,7 +127,7 @@ namespace xt
     inline void check_element_index(const S& shape, It first, It last)
     {
         auto dst = static_cast<typename S::size_type>(last - first);
-        It efirst = last - static_cast<std::ptrdiff_t>(std::min(shape.size(), dst));
+        It efirst = last - static_cast<std::ptrdiff_t>((std::min)(shape.size(), dst));
         std::size_t axis = 0;
         while (efirst != last)
         {

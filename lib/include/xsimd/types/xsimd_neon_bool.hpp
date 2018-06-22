@@ -54,7 +54,7 @@ namespace xsimd
     template <class T>
     struct simd_batch_traits<batch_bool<T, 4>>
     {
-        using value_type = bool;
+        using value_type = T;
         static constexpr std::size_t size = 4;
         using batch_type = batch<T, 4>;
         static constexpr std::size_t align = XSIMD_DEFAULT_ALIGNMENT;
@@ -77,6 +77,8 @@ namespace xsimd
         batch_bool& operator=(const simd_type& rhs);
 
         operator simd_type() const;
+
+        bool operator[](std::size_t index) const;
 
     private:
 
@@ -153,12 +155,6 @@ namespace xsimd
     }
 
     template <class T>
-    inline batch_bool<T, 4> isnan(const batch<T, 4>& x)
-    {
-        return !vceqq_f32(x, x);
-    }
-
-    template <class T>
     inline batch_bool<T, 4> operator!(const batch_bool<T, 4>& lhs)
     {
         return ~(lhs);
@@ -197,13 +193,19 @@ namespace xsimd
     template <class T>
     inline batch_bool<T, 4> operator!=(const batch_bool<T, 4>& lhs, const batch_bool<T, 4>& rhs)
     {
-        return !(vceqq_u32(lhs, rhs));
+        return veorq_u32(lhs, rhs);
     }
 
     template <class T>
     inline batch_bool<T, 4>::operator uint32x4_t() const
     {
         return m_value;
+    }
+
+    template <class T>
+    inline bool batch_bool<T, 4>::operator[](std::size_t index) const
+    {
+        return static_cast<bool>(m_value[index]);
     }
 
     template <class T>
@@ -223,9 +225,10 @@ namespace xsimd
     template <class T>
     struct simd_batch_traits<batch_bool<T, 2>>
     {
-        using value_type = bool;
+        using value_type = T;
         static constexpr std::size_t size = 2;
         using batch_type = batch<T, 2>;
+        static constexpr std::size_t align = XSIMD_DEFAULT_ALIGNMENT;
     };
 
     template <class T>
@@ -245,6 +248,8 @@ namespace xsimd
         batch_bool& operator=(const simd_type& rhs);
 
         operator simd_type() const;
+
+        bool operator[](std::size_t index) const;
 
     private:
 
@@ -350,19 +355,29 @@ namespace xsimd
     template <class T>
     inline batch_bool<T, 2> operator==(const batch_bool<T, 2>& lhs, const batch_bool<T, 2>& rhs)
     {
+    #if XSIMD_ARM_INSTR_SET >= XSIMD_ARM8_64_NEON_VERSION
         return vceqq_u64(lhs, rhs);
+    #else
+        return vreinterpretq_u64_u32(vceqq_u32(vreinterpretq_u32_u64(lhs), vreinterpretq_u32_u64(rhs)));
+    #endif
     }
 
     template <class T>
     inline batch_bool<T, 2> operator!=(const batch_bool<T, 2>& lhs, const batch_bool<T, 2>& rhs)
     {
-        return !(vceqq_u64(lhs, rhs));
+        return veorq_u64(lhs, rhs);
     }
 
     template <class T>
     inline batch_bool<T, 2>::operator uint64x2_t() const
     {
         return m_value;
+    }
+
+    template <class T>
+    inline bool batch_bool<T, 2>::operator[](std::size_t index) const
+    {
+        return static_cast<bool>(m_value[index]);
     }
 
     template <class T>

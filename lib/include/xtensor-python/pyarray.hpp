@@ -23,7 +23,7 @@
 
 namespace xt
 {
-    template <class T>
+    template <class T, layout_type L = layout_type::dynamic>
     class pyarray;
 }
 
@@ -31,30 +31,25 @@ namespace pybind11
 {
     namespace detail
     {
-        template <class T>
-        struct handle_type_name<xt::pyarray<T>>
+        template <class T, xt::layout_type L>
+        struct handle_type_name<xt::pyarray<T, L>>
         {
             static PYBIND11_DESCR name()
             {
-                return _("numpy.ndarray[") + make_caster<T>::name() + _("]");
+                return _("numpy.ndarray[") + npy_format_descriptor<T>::name() + _("]");
             }
         };
 
-        template <typename T>
-        struct pyobject_caster<xt::pyarray<T>>
+        template <typename T, xt::layout_type L>
+        struct pyobject_caster<xt::pyarray<T, L>>
         {
-            using type = xt::pyarray<T>;
+            using type = xt::pyarray<T, L>;
 
             bool load(handle src, bool convert)
             {
                 if (!convert)
                 {
-                    if (!PyArray_Check(src.ptr()))
-                    {
-                        return false;
-                    }
-                    int type_num = xt::detail::numpy_traits<T>::type_num;
-                    if(xt::detail::pyarray_type(reinterpret_cast<PyArrayObject*>(src.ptr())) != type_num)
+                    if (!xt::detail::check_array<T>(src))
                     {
                         return false;
                     }
@@ -72,10 +67,10 @@ namespace pybind11
         };
 
         // Type caster for casting ndarray to xexpression<pyarray>
-        template <typename T>
-        struct type_caster<xt::xexpression<xt::pyarray<T>>> : pyobject_caster<xt::pyarray<T>>
+        template <typename T, xt::layout_type L>
+        struct type_caster<xt::xexpression<xt::pyarray<T, L>>> : pyobject_caster<xt::pyarray<T, L>>
         {
-            using Type = xt::xexpression<xt::pyarray<T>>;
+            using Type = xt::xexpression<xt::pyarray<T, L>>;
 
             operator Type&()
             {
@@ -89,8 +84,8 @@ namespace pybind11
         };
 
         // Type caster for casting xarray to ndarray
-        template <class T>
-        struct type_caster<xt::xarray<T>> : xtensor_type_caster_base<xt::xarray<T>>
+        template <class T, xt::layout_type L>
+        struct type_caster<xt::xarray<T, L>> : xtensor_type_caster_base<xt::xarray<T, L>>
         {
         };
     }
@@ -282,24 +277,24 @@ namespace xt
         const array_type* p_a;
     };
 
-    template <class T>
-    struct xiterable_inner_types<pyarray<T>>
-        : xcontainer_iterable_types<pyarray<T>>
+    template <class T, layout_type L>
+    struct xiterable_inner_types<pyarray<T, L>>
+        : xcontainer_iterable_types<pyarray<T, L>>
     {
     };
 
-    template <class T>
-    struct xcontainer_inner_types<pyarray<T>>
+    template <class T, layout_type L>
+    struct xcontainer_inner_types<pyarray<T, L>>
     {
         using storage_type = xbuffer_adaptor<T*>;
         using shape_type = std::vector<typename storage_type::size_type>;
         using strides_type = shape_type;
-        using backstrides_type = pyarray_backstrides<pyarray<T>>;
+        using backstrides_type = pyarray_backstrides<pyarray<T, L>>;
         using inner_shape_type = xbuffer_adaptor<std::size_t*>;
         using inner_strides_type = pystrides_adaptor<sizeof(T)>;
         using inner_backstrides_type = backstrides_type;
-        using temporary_type = pyarray<T>;
-        static constexpr layout_type layout = layout_type::dynamic;
+        using temporary_type = pyarray<T, L>;
+        static constexpr layout_type layout = L;
     };
 
     /**
@@ -312,13 +307,13 @@ namespace xt
      * @tparam T The type of the element stored in the pyarray.
      * @sa pytensor
      */
-    template <class T>
-    class pyarray : public pycontainer<pyarray<T>>,
-                    public xcontainer_semantic<pyarray<T>>
+    template <class T, layout_type L>
+    class pyarray : public pycontainer<pyarray<T, L>>,
+                    public xcontainer_semantic<pyarray<T, L>>
     {
     public:
 
-        using self_type = pyarray<T>;
+        using self_type = pyarray<T, L>;
         using semantic_base = xcontainer_semantic<self_type>;
         using base_type = pycontainer<self_type>;
         using storage_type = typename base_type::storage_type;
@@ -374,7 +369,7 @@ namespace xt
         inner_shape_type m_shape;
         inner_strides_type m_strides;
         mutable inner_backstrides_type m_backstrides;
-        storage_type m_data;
+        storage_type m_storage;
 
         void init_array(const shape_type& shape, const strides_type& strides);
         void init_from_python();
@@ -386,8 +381,8 @@ namespace xt
         storage_type& storage_impl() noexcept;
         const storage_type& storage_impl() const noexcept;
 
-        friend class xcontainer<pyarray<T>>;
-        friend class pycontainer<pyarray<T>>;
+        friend class xcontainer<pyarray<T, L>>;
+        friend class pycontainer<pyarray<T, L>>;
     };
 
     /**************************************
@@ -469,84 +464,84 @@ namespace xt
      * @name Constructors
      */
     //@{
-    template <class T>
-    inline pyarray<T>::pyarray()
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray()
         : base_type()
     {
         // TODO: avoid allocation
         shape_type shape = xtl::make_sequence<shape_type>(0, size_type(1));
         strides_type strides = xtl::make_sequence<strides_type>(0, size_type(0));
         init_array(shape, strides);
-        m_data[0] = T();
+        detail::default_initialize(m_storage);
     }
 
     /**
      * Allocates a pyarray with nested initializer lists.
      */
-    template <class T>
-    inline pyarray<T>::pyarray(const value_type& t)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(const value_type& t)
         : base_type()
     {
         base_type::resize(xt::shape<shape_type>(t), layout_type::row_major);
-        nested_copy(m_data.begin(), t);
+        nested_copy(m_storage.begin(), t);
     }
 
-    template <class T>
-    inline pyarray<T>::pyarray(nested_initializer_list_t<T, 1> t)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(nested_initializer_list_t<T, 1> t)
         : base_type()
     {
         base_type::resize(xt::shape<shape_type>(t), layout_type::row_major);
-        nested_copy(m_data.begin(), t);
+        nested_copy(m_storage.begin(), t);
     }
 
-    template <class T>
-    inline pyarray<T>::pyarray(nested_initializer_list_t<T, 2> t)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(nested_initializer_list_t<T, 2> t)
         : base_type()
     {
         base_type::resize(xt::shape<shape_type>(t), layout_type::row_major);
-        nested_copy(m_data.begin(), t);
+        nested_copy(m_storage.begin(), t);
     }
 
-    template <class T>
-    inline pyarray<T>::pyarray(nested_initializer_list_t<T, 3> t)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(nested_initializer_list_t<T, 3> t)
         : base_type()
     {
         base_type::resize(xt::shape<shape_type>(t), layout_type::row_major);
-        nested_copy(m_data.begin(), t);
+        nested_copy(m_storage.begin(), t);
     }
 
-    template <class T>
-    inline pyarray<T>::pyarray(nested_initializer_list_t<T, 4> t)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(nested_initializer_list_t<T, 4> t)
         : base_type()
     {
         base_type::resize(xt::shape<shape_type>(t), layout_type::row_major);
-        nested_copy(m_data.begin(), t);
+        nested_copy(m_storage.begin(), t);
     }
 
-    template <class T>
-    inline pyarray<T>::pyarray(nested_initializer_list_t<T, 5> t)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(nested_initializer_list_t<T, 5> t)
         : base_type()
     {
         base_type::resize(xt::shape<shape_type>(t), layout_type::row_major);
-        nested_copy(m_data.begin(), t);
+        nested_copy(m_storage.begin(), t);
     }
 
-    template <class T>
-    inline pyarray<T>::pyarray(pybind11::handle h, pybind11::object::borrowed_t b)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(pybind11::handle h, pybind11::object::borrowed_t b)
         : base_type(h, b)
     {
         init_from_python();
     }
 
-    template <class T>
-    inline pyarray<T>::pyarray(pybind11::handle h, pybind11::object::stolen_t s)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(pybind11::handle h, pybind11::object::stolen_t s)
         : base_type(h, s)
     {
         init_from_python();
     }
 
-    template <class T>
-    inline pyarray<T>::pyarray(const pybind11::object& o)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(const pybind11::object& o)
         : base_type(o)
     {
         init_from_python();
@@ -558,8 +553,8 @@ namespace xt
      * @param shape the shape of the pyarray
      * @param l the layout of the pyarray
      */
-    template <class T>
-    inline pyarray<T>::pyarray(const shape_type& shape, layout_type l)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(const shape_type& shape, layout_type l)
         : base_type()
     {
         strides_type strides(shape.size());
@@ -574,14 +569,14 @@ namespace xt
      * @param value the value of the elements
      * @param l the layout of the pyarray
      */
-    template <class T>
-    inline pyarray<T>::pyarray(const shape_type& shape, const_reference value, layout_type l)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(const shape_type& shape, const_reference value, layout_type l)
         : base_type()
     {
         strides_type strides(shape.size());
         compute_strides(shape, l, strides);
         init_array(shape, strides);
-        std::fill(m_data.begin(), m_data.end(), value);
+        std::fill(m_storage.begin(), m_storage.end(), value);
     }
 
     /**
@@ -591,12 +586,12 @@ namespace xt
      * @param strides the strides of the pyarray
      * @param value the value of the elements
      */
-    template <class T>
-    inline pyarray<T>::pyarray(const shape_type& shape, const strides_type& strides, const_reference value)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(const shape_type& shape, const strides_type& strides, const_reference value)
         : base_type()
     {
         init_array(shape, strides);
-        std::fill(m_data.begin(), m_data.end(), value);
+        std::fill(m_storage.begin(), m_storage.end(), value);
     }
 
     /**
@@ -604,8 +599,8 @@ namespace xt
      * @param shape the shape of the pyarray
      * @param strides the strides of the pyarray
      */
-    template <class T>
-    inline pyarray<T>::pyarray(const shape_type& shape, const strides_type& strides)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(const shape_type& shape, const strides_type& strides)
         : base_type()
     {
         init_array(shape, strides);
@@ -619,8 +614,8 @@ namespace xt
     /**
      * The copy constructor.
      */
-    template <class T>
-    inline pyarray<T>::pyarray(const self_type& rhs)
+    template <class T, layout_type L>
+    inline pyarray<T, L>::pyarray(const self_type& rhs)
         : base_type(), semantic_base(rhs)
     {
         auto tmp = pybind11::reinterpret_steal<pybind11::object>(
@@ -639,8 +634,8 @@ namespace xt
     /**
      * The assignment operator.
      */
-    template <class T>
-    inline auto pyarray<T>::operator=(const self_type& rhs) -> self_type&
+    template <class T, layout_type L>
+    inline auto pyarray<T, L>::operator=(const self_type& rhs) -> self_type&
     {
         self_type tmp(rhs);
         *this = std::move(tmp);
@@ -656,9 +651,9 @@ namespace xt
     /**
      * The extended copy constructor.
      */
-    template <class T>
+    template <class T, layout_type L>
     template <class E>
-    inline pyarray<T>::pyarray(const xexpression<E>& e)
+    inline pyarray<T, L>::pyarray(const xexpression<E>& e)
         : base_type()
     {
         // TODO: prevent intermediary shape allocation
@@ -672,28 +667,28 @@ namespace xt
     /**
      * The extended assignment operator.
      */
-    template <class T>
+    template <class T, layout_type L>
     template <class E>
-    inline auto pyarray<T>::operator=(const xexpression<E>& e) -> self_type&
+    inline auto pyarray<T, L>::operator=(const xexpression<E>& e) -> self_type&
     {
         return semantic_base::operator=(e);
     }
     //@}
 
-    template <class T>
-    inline auto pyarray<T>::ensure(pybind11::handle h) -> self_type
+    template <class T, layout_type L>
+    inline auto pyarray<T, L>::ensure(pybind11::handle h) -> self_type
     {
         return base_type::ensure(h);
     }
 
-    template <class T>
-    inline bool pyarray<T>::check_(pybind11::handle h)
+    template <class T, layout_type L>
+    inline bool pyarray<T, L>::check_(pybind11::handle h)
     {
         return base_type::check_(h);
     }
 
-    template <class T>
-    inline void pyarray<T>::init_array(const shape_type& shape, const strides_type& strides)
+    template <class T, layout_type L>
+    inline void pyarray<T, L>::init_array(const shape_type& shape, const strides_type& strides)
     {
         strides_type adapted_strides(strides);
 
@@ -705,13 +700,15 @@ namespace xt
         {
             flags |= NPY_ARRAY_WRITEABLE;
         }
-        int type_num = detail::numpy_traits<T>::type_num;
+
+        auto dtype = pybind11::detail::npy_format_descriptor<T>::dtype();
 
         npy_intp* shape_data = reinterpret_cast<npy_intp*>(const_cast<size_type*>(shape.data()));
         npy_intp* strides_data = reinterpret_cast<npy_intp*>(adapted_strides.data());
+
         auto tmp = pybind11::reinterpret_steal<pybind11::object>(
-            PyArray_New(&PyArray_Type, static_cast<int>(shape.size()), shape_data, type_num, strides_data,
-                        nullptr, static_cast<int>(sizeof(T)), flags, nullptr));
+            PyArray_NewFromDescr(&PyArray_Type, (PyArray_Descr*) dtype.release().ptr(), static_cast<int>(shape.size()), shape_data, strides_data,
+                        nullptr, flags, nullptr));
 
         if (!tmp)
         {
@@ -722,32 +719,32 @@ namespace xt
         init_from_python();
     }
 
-    template <class T>
-    inline void pyarray<T>::init_from_python()
+    template <class T, layout_type L>
+    inline void pyarray<T, L>::init_from_python()
     {
         m_shape = inner_shape_type(reinterpret_cast<size_type*>(PyArray_SHAPE(this->python_array())),
                                    static_cast<size_type>(PyArray_NDIM(this->python_array())));
         m_strides = inner_strides_type(reinterpret_cast<size_type*>(PyArray_STRIDES(this->python_array())),
                                        static_cast<size_type>(PyArray_NDIM(this->python_array())));
         m_backstrides = backstrides_type(*this);
-        m_data = storage_type(reinterpret_cast<pointer>(PyArray_DATA(this->python_array())),
-                              this->get_min_stride() * static_cast<size_type>(PyArray_SIZE(this->python_array())));
+        m_storage = storage_type(reinterpret_cast<pointer>(PyArray_DATA(this->python_array())),
+                                 this->get_min_stride() * static_cast<size_type>(PyArray_SIZE(this->python_array())));
     }
 
-    template <class T>
-    inline auto pyarray<T>::shape_impl() const noexcept -> const inner_shape_type&
+    template <class T, layout_type L>
+    inline auto pyarray<T, L>::shape_impl() const noexcept -> const inner_shape_type&
     {
         return m_shape;
     }
 
-    template <class T>
-    inline auto pyarray<T>::strides_impl() const noexcept -> const inner_strides_type&
+    template <class T, layout_type L>
+    inline auto pyarray<T, L>::strides_impl() const noexcept -> const inner_strides_type&
     {
         return m_strides;
     }
 
-    template <class T>
-    inline auto pyarray<T>::backstrides_impl() const noexcept -> const inner_backstrides_type&
+    template <class T, layout_type L>
+    inline auto pyarray<T, L>::backstrides_impl() const noexcept -> const inner_backstrides_type&
     {
         // m_backstrides wraps the numpy array backstrides, which is a raw pointer.
         // The address of the raw pointer stored in the wrapper would be invalidated when the pyarray is copied.
@@ -756,16 +753,16 @@ namespace xt
         return m_backstrides;
     }
 
-    template <class T>
-    inline auto pyarray<T>::storage_impl() noexcept -> storage_type&
+    template <class T, layout_type L>
+    inline auto pyarray<T, L>::storage_impl() noexcept -> storage_type&
     {
-        return m_data;
+        return m_storage;
     }
 
-    template <class T>
-    inline auto pyarray<T>::storage_impl() const noexcept -> const storage_type&
+    template <class T, layout_type L>
+    inline auto pyarray<T, L>::storage_impl() const noexcept -> const storage_type&
     {
-        return m_data;
+        return m_storage;
     }
 }
 

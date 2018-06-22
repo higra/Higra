@@ -21,7 +21,7 @@ namespace xsimd
     template <>
     struct simd_batch_traits<batch_bool<float, 4>>
     {
-        using value_type = bool;
+        using value_type = float;
         static constexpr std::size_t size = 4;
         using batch_type = batch<float, 4>;
         static constexpr std::size_t align = 16;
@@ -39,6 +39,8 @@ namespace xsimd
         batch_bool& operator=(const __m128& rhs);
 
         operator __m128() const;
+
+        bool operator[](std::size_t index) const;
 
     private:
 
@@ -189,6 +191,13 @@ namespace xsimd
         return m_value;
     }
 
+    inline bool batch_bool<float, 4>::operator[](std::size_t index) const
+    {
+        alignas(16) float x[4];
+        _mm_store_ps(x, m_value);
+        return static_cast<bool>(x[index & 3]);
+    }
+
     inline batch_bool<float, 4> operator&(const batch_bool<float, 4>& lhs, const batch_bool<float, 4>& rhs)
     {
         return _mm_and_ps(lhs, rhs);
@@ -216,7 +225,7 @@ namespace xsimd
 
     inline batch_bool<float, 4> operator==(const batch_bool<float, 4>& lhs, const batch_bool<float, 4>& rhs)
     {
-        return _mm_cmpeq_ps(lhs, rhs);
+        return _mm_castsi128_ps(_mm_cmpeq_epi32(_mm_castps_si128(lhs), _mm_castps_si128(rhs)));
     }
 
     inline batch_bool<float, 4> operator!=(const batch_bool<float, 4>& lhs, const batch_bool<float, 4>& rhs)

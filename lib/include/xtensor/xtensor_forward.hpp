@@ -61,7 +61,7 @@ namespace xt
               layout_type L = XTENSOR_DEFAULT_LAYOUT,
               class A = XTENSOR_DEFAULT_ALLOCATOR(T),
               class SA = std::allocator<typename std::vector<T, A>::size_type>>
-    using xarray = xarray_container<XTENSOR_DATA_SHAPE_CONTAINER(T, A), L, XTENSOR_DEFAULT_SHAPE_CONTAINER(T, A, SA)>;
+    using xarray = xarray_container<XTENSOR_DEFAULT_DATA_CONTAINER(T, A), L, XTENSOR_DEFAULT_SHAPE_CONTAINER(T, A, SA)>;
 
     template <class EC,
               layout_type L = XTENSOR_DEFAULT_LAYOUT,
@@ -115,7 +115,7 @@ namespace xt
               std::size_t N,
               layout_type L = XTENSOR_DEFAULT_LAYOUT,
               class A = XTENSOR_DEFAULT_ALLOCATOR(T)>
-    using xtensor = xtensor_container<XTENSOR_DATA_SHAPE_CONTAINER(T, A), N, L>;
+    using xtensor = xtensor_container<XTENSOR_DEFAULT_DATA_CONTAINER(T, A), N, L>;
 
     template <class EC, std::size_t N, layout_type L = XTENSOR_DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
     class xtensor_adaptor;
@@ -130,10 +130,10 @@ namespace xt
     template <std::size_t... N>
     using xshape = fixed_shape<N...>;
 
-    template <class EC, class FS, layout_type L = XTENSOR_DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
+    template <class ET, class S, layout_type L = XTENSOR_DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
     class xfixed_container;
 
-    template <class EC, class FS, layout_type L = XTENSOR_DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
+    template <class ET, class S, layout_type L = XTENSOR_DEFAULT_LAYOUT, class Tag = xtensor_expression_tag>
     class xfixed_adaptor;
 
     /**
@@ -152,14 +152,14 @@ namespace xt
      * \endcode
      *
      * @tparam T The value type of the elements.
-     * @tparam FS A xshape template shape.
+     * @tparam FSH A xshape template shape.
      * @tparam L The layout_type of the tensor (default: row_major).
      * @tparam A The allocator of the containers holding the elements.
      */
     template <class T,
-              class FS,
+              class FSH,
               layout_type L = XTENSOR_DEFAULT_LAYOUT>
-    using xtensor_fixed = xfixed_container<T, FS, L>;
+    using xtensor_fixed = xfixed_container<T, FSH, L>;
 
     /**
      * @typedef xtensor_optional

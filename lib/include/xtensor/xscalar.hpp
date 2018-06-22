@@ -119,6 +119,8 @@ namespace xt
         reference operator()(Args...) noexcept;
         template <class... Args>
         reference at(Args...);
+        template <class... Args>
+        reference unchecked(Args...) noexcept;
         template <class S>
         disable_integral_t<S, reference> operator[](const S&) noexcept;
         template <class I>
@@ -129,6 +131,8 @@ namespace xt
         const_reference operator()(Args...) const noexcept;
         template <class... Args>
         const_reference at(Args...) const;
+        template <class... Args>
+        const_reference unchecked(Args...) const noexcept;
         template <class S>
         disable_integral_t<S, const_reference> operator[](const S&) const noexcept;
         template <class I>
@@ -503,6 +507,7 @@ namespace xt
     template <class... Args>
     inline auto xscalar<CT>::operator()(Args...) noexcept -> reference
     {
+        XTENSOR_CHECK_DIMENSION((std::array<int, 0>()), Args()...);
         return m_value;
     }
 
@@ -512,6 +517,13 @@ namespace xt
     {
         check_dimension(shape(), args...);
         return this->operator()(args...);
+    }
+
+    template <class CT>
+    template <class... Args>
+    inline auto xscalar<CT>::unchecked(Args...) noexcept -> reference
+    {
+        return m_value;
     }
 
     template <class CT>
@@ -540,6 +552,7 @@ namespace xt
     template <class... Args>
     inline auto xscalar<CT>::operator()(Args...) const noexcept -> const_reference
     {
+        XTENSOR_CHECK_DIMENSION((std::array<int, 0>()), Args()...);
         return m_value;
     }
 
@@ -549,6 +562,13 @@ namespace xt
     {
         check_dimension(shape(), args...);
         return this->operator()(args...);
+    }
+
+    template <class CT>
+    template <class... Args>
+    inline auto xscalar<CT>::unchecked(Args...) const noexcept -> const_reference
+    {
+        return m_value;
     }
 
     template <class CT>

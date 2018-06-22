@@ -114,6 +114,9 @@ namespace xt
         template <class... Args>
         const_reference at(Args... args) const;
 
+        template <class... Args>
+        const_reference unchecked(Args... args) const;
+
         template <class S>
         disable_integral_t<S, const_reference> operator[](const S& index) const;
         template <class I>
@@ -121,7 +124,7 @@ namespace xt
         const_reference operator[](size_type i) const;
 
         template <class It>
-        const_reference element(It, It last) const;
+        const_reference element(It first, It last) const;
 
         template <class S>
         bool broadcast_shape(S& shape, bool reuse_cache = false) const;
@@ -260,7 +263,7 @@ namespace xt
     template <class... Args>
     inline auto xbroadcast<CT, X>::operator()(Args... args) const -> const_reference
     {
-        return detail::get_element(m_e, args...);
+        return m_e(args...);
     }
 
     /**
@@ -277,6 +280,32 @@ namespace xt
     inline auto xbroadcast<CT, X>::at(Args... args) const -> const_reference
     {
         check_access(shape(), static_cast<size_type>(args)...);
+        return this->operator()(args...);
+    }
+
+    /**
+     * Returns a constant reference to the element at the specified position in the expression.
+     * @param args a list of indices specifying the position in the expression. Indices
+     * must be unsigned integers, the number of indices must be equal to the number of
+     * dimensions of the expression, else the behavior is undefined.
+     *
+     * @warning This method is meant for performance, for expressions with a dynamic
+     * number of dimensions (i.e. not known at compile time). Since it may have
+     * undefined behavior (see parameters), operator() should be prefered whenever
+     * it is possible.
+     * @warning This method is NOT compatible with broadcasting, meaning the following
+     * code has undefined behavior:
+     * \code{.cpp}
+     * xt::xarray<double> a = {{0, 1}, {2, 3}};
+     * xt::xarray<double> b = {0, 1};
+     * auto fd = a + b;
+     * double res = fd.uncheked(0, 1);
+     * \endcode
+     */
+    template <class CT, class X>
+    template <class... Args>
+    inline auto xbroadcast<CT, X>::unchecked(Args... args) const -> const_reference
+    {
         return this->operator()(args...);
     }
 
@@ -329,6 +358,7 @@ namespace xt
     /**
      * Broadcast the shape of the function to the specified parameter.
      * @param shape the result shape
+     * @param reuse_cache parameter for internal optimization
      * @return a boolean indicating whether the broadcasting is trivial
      */
     template <class CT, class X>
