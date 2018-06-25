@@ -127,7 +127,7 @@ class TestTree(unittest.TestCase):
         ref = [0, 1, 2, 3, 4, 5, 6]
         res = []
 
-        for ei in t.edge_indexes():
+        for ei in t.edge_index_iterator():
             res.append(ei)
 
         self.assertTrue(res == ref)
@@ -146,7 +146,7 @@ class TestTree(unittest.TestCase):
 
         for v in t.vertices():
             res = []
-            for ei in t.out_edge_indexes(v):
+            for ei in t.out_edge_index_iterator(v):
                 res.append(ei)
             self.assertTrue(res == ref[v])
 
@@ -164,7 +164,7 @@ class TestTree(unittest.TestCase):
 
         for v in t.vertices():
             res = []
-            for ei in t.in_edge_indexes(v):
+            for ei in t.in_edge_index_iterator(v):
                 res.append(ei)
             self.assertTrue(res == ref[v])
 

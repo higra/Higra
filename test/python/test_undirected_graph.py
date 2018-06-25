@@ -138,7 +138,7 @@ class TestUndirectedGraph(unittest.TestCase):
         ref = [0, 1, 2]
         test = []
 
-        for e in g.edge_indexes():
+        for e in g.edge_index_iterator():
             test.append(e)
 
         self.assertTrue(test == ref)
@@ -152,7 +152,7 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
         for v in g.vertices():
             test.append([])
-            for e in g.out_edge_indexes(v):
+            for e in g.out_edge_index_iterator(v):
                 test[v].append(e)
 
         self.assertTrue(test == ref)
@@ -166,7 +166,7 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
         for v in g.vertices():
             test.append([])
-            for e in g.in_edge_indexes(v):
+            for e in g.in_edge_index_iterator(v):
                 test[v].append(e)
 
         self.assertTrue(test == ref)
