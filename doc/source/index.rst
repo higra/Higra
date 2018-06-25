@@ -8,6 +8,16 @@ Welcome to Higra's documentation!
 
 .. toctree::
     :maxdepth: 2
+    :caption: Fundamentals:
+
+    Graphs <graph.rst>
+
+
+Python modules
+==============
+
+.. toctree::
+    :maxdepth: 2
     :caption: Classes:
 
     UndirectedGraph </python/UndirectedGraph.rst>
