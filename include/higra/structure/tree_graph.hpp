@@ -169,6 +169,10 @@ namespace hg {
                 return irange<long>(start, end, -1);
             }
 
+            auto edge(edge_index_t ei) const{
+                return std::make_pair(ei, parent(ei));
+            }
+
 
         private:
 
@@ -275,7 +279,15 @@ namespace hg {
             using vertices_size_type = typename G::vertices_size_type;
             using edges_size_type = typename G::edges_size_type;
             using adjacency_iterator = typename G::adjacency_iterator;
+
+            using edge_index = typename G::edge_index_t;
         };
+    }
+
+    inline
+    tree::edge_descriptor
+    edge(tree::edge_index_t ei, const tree &g){
+        return g.edge(ei);
     }
 
     inline

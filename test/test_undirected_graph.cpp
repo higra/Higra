@@ -242,4 +242,19 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         }
     }
 
+    BOOST_AUTO_TEST_CASE(edgeIndex) {
+
+        auto g = data.g;
+
+        vector<pair<ulong, ulong>> eref{{0, 1},
+                                        {1, 2},
+                                        {0, 2}};
+        vector<pair<ulong, ulong>> etest;
+        for (auto ei: hg::edge_index_iterator(g)) {
+            etest.push_back(edge(ei, g));
+        }
+
+        BOOST_CHECK(vectorEqual(eref, etest));
+    }
+
 BOOST_AUTO_TEST_SUITE_END();

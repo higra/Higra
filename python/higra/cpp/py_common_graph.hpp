@@ -181,6 +181,7 @@ void add_edge_list_graph_concept(pyc &c) {
 template<typename graph_t, typename pyc>
 void add_edge_index_graph_concept(pyc &c) {
     using vertex_t = typename hg::graph_traits<graph_t>::vertex_descriptor;
+    using edge_index_t = typename hg::graph_traits<graph_t>::edge_index;
 
     c.def("edge_index_iterator", [](graph_t &g) {
               auto it = hg::edge_indexes(g);
@@ -199,4 +200,10 @@ void add_edge_index_graph_concept(pyc &c) {
           },
           "Iterator over all in edge indexes of the given vertex.",
           pybind11::arg("vertex"));
+    c.def("edge", [](graph_t &g, edge_index_t v) {
+              auto e = hg::edge(v, g);
+              return pybind11::make_tuple(hg::source(e, g), hg::target(e, g));
+          },
+          "Get an edge from its index.",
+          pybind11::arg("edge_index"));
 }

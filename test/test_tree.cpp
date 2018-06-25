@@ -210,6 +210,25 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         }
     }
 
+    BOOST_AUTO_TEST_CASE(edgeIndex) {
+
+        auto g = data.t;
+
+        vector<pair<ulong, ulong>> eref{{0, 5},
+                                        {1, 5},
+                                        {2, 6},
+                                        {3, 6},
+                                        {4, 6},
+                                        {5, 7},
+                                        {6, 7}};
+        vector<pair<ulong, ulong>> etest;
+        for (auto ei: hg::edge_index_iterator(g)) {
+            etest.push_back(edge(ei, g));
+        }
+
+        BOOST_CHECK(vectorEqual(eref, etest));
+    }
+
     BOOST_AUTO_TEST_CASE(childrenIteratorTreeGraph) {
 
         auto g = data.t;

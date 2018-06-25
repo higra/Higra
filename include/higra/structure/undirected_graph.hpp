@@ -185,6 +185,8 @@ namespace hg {
             using vertices_size_type = typename G::vertices_size_type;
             using edges_size_type = typename G::edges_size_type;
             using adjacency_iterator = typename G::adjacency_iterator;
+
+            using edge_index = typename G::edge_index_t;
         };
     }
 
