@@ -46,12 +46,13 @@ namespace hg {
 
         std::vector<long> canonical_edge_indexes;
 
-        auto explore_component =
-                [&graph, &vertex_labels, &rag, &vertex_map, &edge_map, &num_regions, &num_edges, &canonical_edge_indexes]
-                        (index_t start_vertex) {
-                    std::stack<index_t> s;
-                    auto label_region = vertex_labels[start_vertex];
+        std::stack<index_t> s;
 
+        auto explore_component =
+                [&s, &graph, &vertex_labels, &rag, &vertex_map, &edge_map, &num_regions, &num_edges, &canonical_edge_indexes]
+                        (index_t start_vertex) {
+
+                    auto label_region = vertex_labels[start_vertex];
                     s.push(start_vertex);
                     vertex_map[start_vertex] = num_regions;
                     add_vertex(rag);
