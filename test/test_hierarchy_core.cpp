@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         auto mst = std::get<2>(res);
         BOOST_CHECK(num_vertices(tree) == 11);
         BOOST_CHECK(num_edges(tree) == 10);
-        BOOST_CHECK(xt::allclose(tree.parents(), xt::xarray<uint>({6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10})));
+        BOOST_CHECK(xt::allclose(hg::parents(tree), xt::xarray<uint>({6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10})));
         BOOST_CHECK(xt::allclose(altitude, xt::xarray<double>({0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2})));
         BOOST_CHECK(num_vertices(mst) == 6);
         BOOST_CHECK(num_edges(mst) == 5);
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         BOOST_CHECK(num_vertices(nt) == 7);
 
         hg::array_1d<std::size_t> refp{5, 5, 6, 6, 6, 6, 6};
-        BOOST_CHECK(refp == nt.parents());
+        BOOST_CHECK(refp == hg::parents(nt));
 
         hg::array_1d<std::size_t> refnm{0, 1, 2, 3, 4, 5, 7};
         BOOST_CHECK(refnm == nm);

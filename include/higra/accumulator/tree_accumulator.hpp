@@ -24,11 +24,11 @@ namespace hg {
             HG_TRACE();
             auto &input = xinput.derived_cast();
             hg_assert(input.dimension() > 0, "Input cannot be a scalar.");
-            hg_assert(tree.num_vertices() == input.shape()[0],
+            hg_assert(num_vertices(tree) == input.shape()[0],
                       "Size of input first dimension must be equal to the number of nodes in the tree.");
             auto data_shape = std::vector<std::size_t>(input.shape().begin() + 1, input.shape().end());
             auto output_shape = accumulator_t::get_output_shape(data_shape);
-            output_shape.insert(output_shape.begin(), tree.num_vertices());
+            output_shape.insert(output_shape.begin(), num_vertices(tree));
 
             array_nd<output_t> output = array_nd<output_t>::from_shape(output_shape);
 
@@ -36,18 +36,18 @@ namespace hg {
             auto output_view = make_light_axis_view<vectorial>(output);
             auto acc = accumulator.template make_accumulator<vectorial>(output_view);
 
-            for (auto i: tree.iterate_on_leaves()) {
+            for (auto i: leaves_iterator(tree)) {
                 output_view.set_position(i);
                 acc.set_storage(output_view);
                 acc.initialize();
                 acc.finalize();
             }
 
-            for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
+            for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
                 output_view.set_position(i);
                 acc.set_storage(output_view);
                 acc.initialize();
-                for (auto c : tree.children(i)) {
+                for (auto c : children_iterator(i, tree)) {
                     input_view.set_position(c);
                     acc.accumulate(input_view.begin());
                 }
@@ -68,12 +68,12 @@ namespace hg {
             HG_TRACE();
             auto &vertex_data = xvertex_data.derived_cast();
             hg_assert(vertex_data.dimension() > 0, "Vertex data cannot be a scalar.");
-            hg_assert(tree.num_leaves() == vertex_data.shape()[0],
+            hg_assert(num_leaves(tree) == vertex_data.shape()[0],
                       "Size of vertex data first dimension must be equal to the number of leaves in the tree.");
 
             auto data_shape = std::vector<std::size_t>(vertex_data.shape().begin() + 1, vertex_data.shape().end());
             auto output_shape = accumulator_t::get_output_shape(data_shape);
-            output_shape.insert(output_shape.begin(), tree.num_vertices());
+            output_shape.insert(output_shape.begin(), num_vertices(tree));
 
             array_nd<output_t> output = array_nd<output_t>::from_shape(output_shape);
 
@@ -82,17 +82,17 @@ namespace hg {
             auto output_view = make_light_axis_view<vectorial>(output);
             auto acc = accumulator.template make_accumulator<vectorial>(output_view);
 
-            for (auto i: tree.iterate_on_leaves()) {
+            for (auto i: leaves_iterator(tree)) {
                 output_view.set_position(i);
                 vertex_data_view.set_position(i);
                 output_view = vertex_data_view;
             }
 
-            for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
+            for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
                 output_view.set_position(i);
                 acc.set_storage(output_view);
                 acc.initialize();
-                for (auto c : tree.children(i)) {
+                for (auto c : children_iterator(i, tree)) {
                     input_view.set_position(c);
                     acc.accumulate(input_view.begin());
                 }
@@ -116,12 +116,12 @@ namespace hg {
             HG_TRACE();
             auto &input = xinput.derived_cast();
             hg_assert(input.dimension() > 0, "Input cannot be a scalar.");
-            hg_assert(tree.num_vertices() == input.shape()[0],
+            hg_assert(num_vertices(tree) == input.shape()[0],
                       "Size of input first dimension must be equal to the number of nodes in the tree.");
 
             auto &vertex_data = xvertex_data.derived_cast();
             hg_assert(vertex_data.dimension() > 0, "Vertex data cannot be a scalar.");
-            hg_assert(tree.num_leaves() == vertex_data.shape()[0],
+            hg_assert(num_leaves(tree) == vertex_data.shape()[0],
                       "Size of vertex data first dimension must be equal to the number of leaves in the tree.");
 
             auto data_shape = std::vector<std::size_t>(input.shape().begin() + 1, input.shape().end());
@@ -134,7 +134,7 @@ namespace hg {
                       "Input shape does not match accumulator output shape.");
             hg_assert(std::equal(output_shape.begin(), output_shape.end(), vertex_data.shape().begin() + 1),
                       "Vertex data shape does not match accumulator output shape.");
-            output_shape.insert(output_shape.begin(), tree.num_vertices());
+            output_shape.insert(output_shape.begin(), num_vertices(tree));
 
             array_nd<output_t> output = array_nd<output_t>::from_shape(output_shape);
 
@@ -145,17 +145,17 @@ namespace hg {
 
             auto vertex_data_view = make_light_axis_view<vectorial>(vertex_data);
 
-            for (auto i: tree.iterate_on_leaves()) {
+            for (auto i: leaves_iterator(tree)) {
                 output_view.set_position(i);
                 vertex_data_view.set_position(i);
                 output_view = vertex_data_view;
             }
 
-            for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
+            for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
                 output_view.set_position(i);
                 acc.set_storage(output_view);
                 acc.initialize();
-                for (auto c : tree.children(i)) {
+                for (auto c : children_iterator(i, tree)) {
 
                     inout_view.set_position(c);
                     acc.accumulate(inout_view.begin());
@@ -180,7 +180,7 @@ namespace hg {
             auto &input = xinput.derived_cast();
             auto &condition = xcondition.derived_cast();
             hg_assert(input.dimension() > 0, "Input cannot be a scalar.");
-            hg_assert(tree.num_vertices() == input.shape()[0],
+            hg_assert(num_vertices(tree) == input.shape()[0],
                       "Size of input first dimension must be equal to the number of nodes in the tree.");
 
 
@@ -189,11 +189,11 @@ namespace hg {
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
 
-            auto parents = tree.parents().storage_begin();
+            auto aparents = parents(tree).storage_begin();
 
-            for (auto i: tree.iterate_from_root_to_leaves()) {
+            for (auto i: root_to_leaves_iterator(tree)) {
                 if (condition(i)) {
-                    input_view.set_position(parents[i]);
+                    input_view.set_position(aparents[i]);
                 } else {
                     input_view.set_position(i);
                 }
@@ -214,7 +214,7 @@ namespace hg {
             HG_TRACE();
             auto &input = xinput.derived_cast();
             hg_assert(input.dimension() > 0, "Input cannot be a scalar.");
-            hg_assert(tree.num_vertices() == input.shape()[0],
+            hg_assert(num_vertices(tree) == input.shape()[0],
                       "Size of input first dimension must be equal to the number of nodes in the tree.");
 
             array_nd<output_t> output = array_nd<output_t>::from_shape(input.shape());
@@ -225,16 +225,16 @@ namespace hg {
 
             auto &condition = xcondition.derived_cast();
             hg_assert(condition.dimension() == 1, "Condition must be a 1d array.");
-            hg_assert(tree.num_vertices() == condition.size(),
+            hg_assert(num_vertices(tree) == condition.size(),
                       "Size of condition must be equal to the number of nodes in the tree.");
 
-            auto parents = tree.parents().storage_begin();
+            auto aparents = parents(tree).storage_begin();
 
-            for (auto i: tree.iterate_from_root_to_leaves()) {
+            for (auto i: root_to_leaves_iterator(tree)) {
                 output_view.set_position(i);
 
                 if (condition(i)) {
-                    inout_view.set_position(parents[i]);
+                    inout_view.set_position(aparents[i]);
                     output_view = inout_view;
                 } else {
                     input_view.set_position(i);

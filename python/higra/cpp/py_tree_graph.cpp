@@ -45,7 +45,7 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("num_leaves", &graph_t::num_leaves, "Get the number of leaves nodes.");
     c.def("num_children", &graph_t::num_children, "Get the number of children nodes of the given node.",
           py::arg("node"));
-    c.def("children",
+    c.def("children_iterator",
           [](const graph_t &g, vertex_t v) {
               auto it = hg::children(v, g);
               return pybind11::make_iterator(it.first, it.second);
@@ -56,9 +56,15 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("parent", [](const graph_t &tree, vertex_t v) { return tree.parent(v); }, "Get the parent of the given node.",
           py::arg("node"));
 
-    c.def("iterate_from_leaves_to_root",
+    c.def("leaves_iterator",
+          [](const graph_t &tree) {
+              auto range = hg::leaves_iterator(tree);
+              return py::make_iterator(range.begin(), range.end());
+          }, "Returns an iterator on leaves of the tree.");
+
+    c.def("leaves_to_root_iterator",
           [](const graph_t &tree, bool includeLeaves, bool includeRoot) {
-              auto range = tree.iterate_from_leaves_to_root(
+              auto range = hg::leaves_to_root_iterator(tree,
                       (includeLeaves) ? hg::leaves_it::include : hg::leaves_it::exclude,
                       (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
               return py::make_iterator(range.begin(), range.end());
@@ -66,9 +72,9 @@ void py_init_tree_graph(pybind11::module &m) {
           py::arg("include_leaves") = true,
           py::arg("include_root") = true);
 
-    c.def("iterate_from_root_to_leaves",
+    c.def("root_to_leaves_iterator",
           [](const graph_t &tree, bool includeLeaves, bool includeRoot) {
-              auto range = tree.iterate_from_root_to_leaves(
+              auto range = root_to_leaves_iterator(tree,
                       (includeLeaves) ? hg::leaves_it::include : hg::leaves_it::exclude,
                       (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
               return py::make_iterator(range.begin(), range.end());

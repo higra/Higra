@@ -28,9 +28,9 @@ namespace hg {
             std::size_t nbR;
 
             void computeDepth(const tree_t &tree) {
-                Depth[tree.root()] = 0;
-                for (auto i: tree.iterate_from_root_to_leaves(leaves_it::include, root_it::exclude)) {
-                    Depth[i] = Depth[tree.parent(i)] + 1;
+                Depth[root(tree)] = 0;
+                for (auto i: root_to_leaves_iterator(tree, leaves_it::include, root_it::exclude)) {
+                    Depth[i] = Depth[parent(i, tree)] + 1;
                 }
             }
 
@@ -92,7 +92,7 @@ namespace hg {
                 */
                 computeDepth(tree);
                 LCApreprocessEuler(tree);
-                std::size_t nbNodes = tree.num_vertices();
+                std::size_t nbNodes = num_vertices(tree);
                 std::size_t nbRepresent = 2 * nbNodes - 1;
 
                 std::size_t logn = (long) (ceil(log((double) (nbRepresent)) / log(2.0)));

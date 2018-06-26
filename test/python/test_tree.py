@@ -192,7 +192,7 @@ class TestTree(unittest.TestCase):
 
         for v in t.vertices():
             res = []
-            for c in t.children(v):
+            for c in t.children_iterator(v):
                 res.append(c)
             self.assertTrue(res == ref[v])
 

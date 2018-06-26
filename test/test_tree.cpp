@@ -26,10 +26,10 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
 
     BOOST_AUTO_TEST_CASE(sizeTree) {
         auto t = data.t;
-        BOOST_CHECK(t.root() == 7);
-        BOOST_CHECK(t.num_vertices() == 8);
-        BOOST_CHECK(t.num_edges() == 7);
-        BOOST_CHECK(t.num_leaves() == 5);
+        BOOST_CHECK(hg::root(t) == 7);
+        BOOST_CHECK(hg::num_vertices(t) == 8);
+        BOOST_CHECK(hg::num_edges(t) == 7);
+        BOOST_CHECK(hg::num_leaves(t) == 5);
     }
 
     BOOST_AUTO_TEST_CASE(vertexIteratorTree) {
@@ -258,28 +258,28 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
 
         vector<ulong> ref1{0, 1, 2, 3, 4, 5, 6, 7};
         vector<ulong> t;
-        for (auto v: tree.iterate_from_leaves_to_root()) {
+        for (auto v: hg::leaves_to_root_iterator(tree)) {
             t.push_back(v);
         }
         BOOST_CHECK(vectorEqual(ref1, t));
         t.clear();
 
         vector<ulong> ref2{0, 1, 2, 3, 4, 5, 6};
-        for (auto v: tree.iterate_from_leaves_to_root(hg::leaves_it::include, hg::root_it::exclude)) {
+        for (auto v: hg::leaves_to_root_iterator(tree, hg::leaves_it::include, hg::root_it::exclude)) {
             t.push_back(v);
         }
         BOOST_CHECK(vectorEqual(ref2, t));
         t.clear();
 
         vector<ulong> ref3{5, 6, 7};
-        for (auto v: tree.iterate_from_leaves_to_root(hg::leaves_it::exclude, hg::root_it::include)) {
+        for (auto v: hg::leaves_to_root_iterator(tree, hg::leaves_it::exclude, hg::root_it::include)) {
             t.push_back(v);
         }
         BOOST_CHECK(vectorEqual(ref3, t));
         t.clear();
 
         vector<ulong> ref4{5, 6};
-        for (auto v: tree.iterate_from_leaves_to_root(hg::leaves_it::exclude, hg::root_it::exclude)) {
+        for (auto v: hg::leaves_to_root_iterator(tree, hg::leaves_it::exclude, hg::root_it::exclude)) {
             t.push_back(v);
         }
         BOOST_CHECK(vectorEqual(ref4, t));
@@ -292,28 +292,28 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
 
         vector<ulong> ref1{7, 6, 5, 4, 3, 2, 1, 0};
         vector<ulong> t;
-        for (auto v: tree.iterate_from_root_to_leaves()) {
+        for (auto v: hg::root_to_leaves_iterator(tree)) {
             t.push_back(v);
         }
         BOOST_CHECK(vectorEqual(ref1, t));
         t.clear();
 
         vector<ulong> ref2{6, 5, 4, 3, 2, 1, 0};
-        for (auto v: tree.iterate_from_root_to_leaves(hg::leaves_it::include, hg::root_it::exclude)) {
+        for (auto v: hg::root_to_leaves_iterator(tree,hg::leaves_it::include, hg::root_it::exclude)) {
             t.push_back(v);
         }
         BOOST_CHECK(vectorEqual(ref2, t));
         t.clear();
 
         vector<ulong> ref3{7, 6, 5};
-        for (auto v: tree.iterate_from_root_to_leaves(hg::leaves_it::exclude, hg::root_it::include)) {
+        for (auto v: hg::root_to_leaves_iterator(tree, hg::leaves_it::exclude, hg::root_it::include)) {
             t.push_back(v);
         }
         BOOST_CHECK(vectorEqual(ref3, t));
         t.clear();
 
         vector<ulong> ref4{6, 5};
-        for (auto v: tree.iterate_from_root_to_leaves(hg::leaves_it::exclude, hg::root_it::exclude)) {
+        for (auto v: hg::root_to_leaves_iterator(tree, hg::leaves_it::exclude, hg::root_it::exclude)) {
             t.push_back(v);
         }
         BOOST_CHECK(vectorEqual(ref4, t));

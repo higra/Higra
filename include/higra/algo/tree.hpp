@@ -29,22 +29,22 @@ namespace hg {
     template<typename tree1_t, typename tree2_t>
     bool testTreeIsomorphism(const tree1_t &t1, const tree2_t &t2) {
         HG_TRACE();
-        if (t1.num_vertices() != t2.num_vertices() || t1.num_leaves() != t2.num_leaves())
+        if (num_vertices(t1) != num_vertices(t2) || num_leaves(t1) != num_leaves(t2))
             return false;
 
-        long num_v = t1.num_vertices();
-        long num_l = t1.num_leaves();
+        long num_v = num_vertices(t1);
+        long num_l = num_leaves(t1);
         auto not_defined = num_v;
 
         auto f = xt::eval(not_defined + xt::zeros<long>({num_v}));
 
 
-        for (auto i: t1.iterate_from_leaves_to_root()) {
+        for (auto i: leaves_to_root_iterator(t1)) {
             if (i < num_l)
                 f[i] = i; // 1) for any leaf node n of t1, f(n) = n and n
 
-            auto t1pi = t1.parent(i); // t1.parent(n)
-            long t2pfi = t2.parent(f(i)); //t2.parent(f(n))
+            auto t1pi = parent(i, t1); // t1.parent(n)
+            long t2pfi = parent(f(i), t2); //t2.parent(f(n))
 
             if (f(t1pi) == not_defined) { // f(t1.parent(n)) not defined
                 f(t1pi) = t2pfi; // f(t1.parent(n)) = t2.parent(f(n))

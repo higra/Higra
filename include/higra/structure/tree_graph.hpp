@@ -151,18 +151,18 @@ namespace hg {
                 return _parents;
             }
 
-            auto iterate_on_leaves() const {
+            auto leaves_iterator() const {
                 return irange<long>(0, _num_leaves);
             }
 
-            auto iterate_from_leaves_to_root(leaves_it leaves_opt = leaves_it::include,
+            auto leaves_to_root_iterator(leaves_it leaves_opt = leaves_it::include,
                                              root_it root_opt = root_it::include) const {
                 vertex_descriptor start = (leaves_opt == leaves_it::include) ? 0 : num_leaves();
                 vertex_descriptor end = (root_opt == root_it::include) ? _num_vertices : _num_vertices - 1;
                 return irange<long>(start, end);
             }
 
-            auto iterate_from_root_to_leaves(leaves_it leaves_opt = leaves_it::include,
+            auto root_to_leaves_iterator(leaves_it leaves_opt = leaves_it::include,
                                              root_it root_opt = root_it::include) const {
                 vertex_descriptor end = (leaves_opt == leaves_it::include) ? -1 : num_leaves() - 1;
                 vertex_descriptor start = (root_opt == root_it::include) ? _num_vertices - 1 : _num_vertices - 2;
@@ -283,6 +283,66 @@ namespace hg {
             using edge_index = typename G::edge_index_t;
         };
     }
+
+    inline
+    auto
+    num_leaves(const tree & t){
+        return t.num_leaves();
+    }
+
+    inline
+    auto
+    num_children(tree::vertex_descriptor v, const tree & t){
+        return t.num_children(v);
+    }
+
+    inline
+    auto
+    root(const tree & t){
+        return t.root();
+    }
+
+    inline
+    auto
+    parent(tree::vertex_descriptor v, const tree & t){
+        return t.parent(v);
+    }
+
+    inline
+    const auto &
+    parents(const tree & t){
+        return t.parents();
+    }
+
+    inline
+    auto
+    leaves_to_root_iterator(const tree & t,
+                                leaves_it leaves_opt = leaves_it::include,
+                                        root_it root_opt = root_it::include){
+        return t.leaves_to_root_iterator(leaves_opt, root_opt);
+    }
+
+    inline
+    auto
+    root_to_leaves_iterator(const tree & t,
+                                leaves_it leaves_opt = leaves_it::include,
+                                root_it root_opt = root_it::include){
+        return t.root_to_leaves_iterator(leaves_opt, root_opt);
+    }
+
+    inline
+    auto
+    leaves_iterator(const tree &t){
+        return t.leaves_iterator();
+    }
+    /*num_leaves
+    num_children
+    root
+    children
+    parent
+    iterate_from_leaves_to_root
+    iterate_from_root_to_leaves
+    iterate_on_leaves*/
 
     inline
     tree::edge_descriptor

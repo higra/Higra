@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_SUITE(treeIO);
         auto t2 = tree_attr.first;
         auto attributes = tree_attr.second;
 
-        BOOST_CHECK(xt::allclose(parent, t2.parents()));
+        BOOST_CHECK(xt::allclose(parent, parents(t2)));
 
         BOOST_CHECK(attributes.count("attr1") == 1);
         BOOST_CHECK(xt::allclose(attributes["attr1"], attr1));

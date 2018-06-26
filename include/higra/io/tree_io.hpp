@@ -79,8 +79,8 @@ namespace hg {
                 m_out << HG_TREE_IO_HEADEREND_KEY << std::endl;
 
                 std::vector<int> p;
-                p.reserve(m_tree.num_vertices());
-                for (auto v: m_tree.parents())
+                p.reserve(num_vertices(m_tree));
+                for (auto v: parents(m_tree))
                     p.push_back(v);
 
                 m_out.write(reinterpret_cast<const char *>(&p[0]), std::streamsize(p.size() * sizeof(int)));

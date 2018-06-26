@@ -79,8 +79,8 @@ namespace hg {
     template<typename criterion_t>
     auto simplify_tree(const tree &t, criterion_t &criterion) {
         HG_TRACE();
-        auto n_nodes = t.num_vertices();
-        auto copy_parent = t.parents();
+        auto n_nodes = num_vertices(t);
+        auto copy_parent = parents(t);
 
         std::size_t count = 0;
         array_1d<tree::vertex_descriptor> deleted_map = xt::zeros<tree::vertex_descriptor>(copy_parent.shape());
@@ -88,10 +88,10 @@ namespace hg {
 
         // from root to leaves, compute the new parent relation,
         // don't care of the  holes in the parent tab
-        for (auto i: t.iterate_from_root_to_leaves(leaves_it::exclude, root_it::exclude)) {
+        for (auto i: root_to_leaves_iterator(t, leaves_it::exclude, root_it::exclude)) {
             auto parent = copy_parent(i);
             if (criterion(i)) {
-                for (auto c: t.children(i)) {
+                for (auto c: children_iterator(i, t)) {
                     copy_parent(c) = parent;
                 }
                 count++;
@@ -108,7 +108,7 @@ namespace hg {
 
         count = 0;
 
-        for (auto i: t.iterate_from_leaves_to_root(leaves_it::include, root_it::exclude)) {
+        for (auto i: leaves_to_root_iterator(t, leaves_it::include, root_it::exclude)) {
             if (!criterion(i)) {
                 auto par = copy_parent(i);
                 auto new_par = par - deleted_map(par);
@@ -117,7 +117,7 @@ namespace hg {
                 count++;
             }
         }
-        node_map(node_map.size() - 1) = t.root();
+        node_map(node_map.size() - 1) = root(t);
         return std::make_pair(tree(new_parent), std::move(node_map));
     };
 
