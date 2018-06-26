@@ -52,9 +52,14 @@ namespace hg {
         auto notInL = array_1d<bool>::from_shape({graph.num_vertices()});
         std::fill(notInL.begin(), notInL.end(), true);
 
-        auto stream = [&graph, &edge_weights, &fminus, &notInL, &labels, no_label](vertex_t x) {
-            std::vector<vertex_t> L{x};
-            std::vector<vertex_t> LL{x};
+        std::vector<vertex_t> L;
+        std::vector<vertex_t> LL;
+
+        auto stream = [&L, &LL, &graph, &edge_weights, &fminus, &notInL, &labels, no_label](vertex_t x) {
+            L.clear();
+            LL.clear();
+            L.push_back(x);
+            LL.push_back(x);
             notInL[x] = false;
 
             while (!LL.empty()) {
