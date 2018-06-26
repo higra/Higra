@@ -3,12 +3,18 @@
 Graphs
 ======
 
+.. important::
+
+    ``#include "higra/graph.hpp``
 
 Graphs come in three flavours in Higra:
 
-1. ``regular_graph`` represents implicit graphs: in such graphs edges are computed on the fly (not stored). For example, they can be used to represent pixel adjacencies in images.
-2. ``ugraph`` represents general undirected graphs.
-3. ``tree`` represents undirected connected acyclic rooted graphs.
+1. ``ugraph`` represents general undirected graphs (adjacency list).
+2. ``tree`` represents undirected connected acyclic rooted graphs (parent array).
+3. ``regular_graph`` represents implicit graphs: in such graphs edges are computed on the fly (not stored). For example, they can be used to represent pixel adjacencies in images.
+
+This page presents common functions for the manipulation of graphs.
+A dedicated page for the ``tree`` structure, see :ref:`tree`.
 
 All functions acting on graphs have the same name in C++ and in Python.
 In C++ graph methods are free functions (as in the `Boost Graph Library BGL <https://www.boost.org/doc/libs/1_67_0/libs/graph/doc/index.html>`_),
@@ -416,6 +422,7 @@ Operations are done in constant time in ``ugraph``, ``tree``. Operations are don
 
             # out degree of vertex 3
             d3 = g.out_degree(3)
+
 
 Weighted graph
 --------------

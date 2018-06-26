@@ -11,6 +11,7 @@ Welcome to Higra's documentation!
     :caption: Fundamentals:
 
     Graphs <graph.rst>
+    Trees <tree.rst>
 
 
 Python modules
