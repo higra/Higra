@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
         BOOST_CHECK(num_vertices(rag) == 4);
         BOOST_CHECK(num_edges(rag) == 5);
 
-        std::vector<std::pair<std::size_t, std::size_t>> expected_edges = {{0, 1},
+        std::vector<std::pair<index_t, index_t>> expected_edges = {{0, 1},
                                                                            {1, 2},
                                                                            {0, 2},
                                                                            {2, 3},

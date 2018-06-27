@@ -24,7 +24,7 @@ void py_init_regular_graph_impl(pybind11::module &m) {
                        for (const auto &v : pl) {
                            hg_assert(v.size() == dim, "Invalid dimension in point list.");
                            point_t p;
-                           for (std::size_t i = 0; i < dim; ++i)
+                           for (hg::index_t i = 0; i < dim; ++i)
                                p(i) = v[i];
                            points.push_back(p);
                        }
@@ -35,13 +35,13 @@ void py_init_regular_graph_impl(pybind11::module &m) {
           py::arg("embedding"),
           py::arg("neighbour_list"));
 
-    c.def(py::init([](const std::vector<std::size_t> &shape, const std::vector<std::vector<long>> &pl) {
+    c.def(py::init([](const std::vector<hg::size_t> &shape, const std::vector<std::vector<long>> &pl) {
                        std::vector<point_t> points;
 
                        for (const auto &v : pl) {
                            hg_assert(v.size() == dim, "Invalid dimension in point list.");
                            point_t p;
-                           for (std::size_t i = 0; i < dim; ++i)
+                           for (hg::index_t i = 0; i < dim; ++i)
                                p(i) = v[i];
                            points.push_back(p);
                        }

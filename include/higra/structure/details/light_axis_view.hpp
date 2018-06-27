@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "../../utils.hpp"
 
 namespace hg {
 
@@ -18,7 +19,7 @@ namespace hg {
             static const bool is_vectorial = vectorial;
 
             template<typename T1 = self_type>
-            light_axis_view(T &data, std::size_t position = 0, typename std::enable_if_t<T1::is_vectorial> * = 0) :
+            light_axis_view(T &data, index_t position = 0, typename std::enable_if_t<T1::is_vectorial> * = 0) :
                     m_data(data),
                     m_stride(data.size() / data.shape()[0]),
                     m_position(position) {
@@ -26,13 +27,13 @@ namespace hg {
             }
 
             template<typename T1 = self_type>
-            light_axis_view(T &data, std::size_t position = 0, typename std::enable_if_t<!T1::is_vectorial> * = 0) :
+            light_axis_view(T &data, index_t position = 0, typename std::enable_if_t<!T1::is_vectorial> * = 0) :
                     m_data(data),
                     m_stride(1),
                     m_position(position) {
             }
 
-            void set_position(std::size_t i) {
+            void set_position(index_t i) {
                 m_position = i;
             }
 
@@ -126,13 +127,13 @@ namespace hg {
             }
 
             T &m_data;
-            std::size_t m_stride;
-            std::size_t m_position;
+            size_t m_stride;
+            index_t m_position;
         };
     }
 
     template<bool vectorial = true, typename T>
-    auto make_light_axis_view(T &e, std::size_t position = 0) {
+    auto make_light_axis_view(T &e, index_t position = 0) {
         return details::light_axis_view<vectorial, T>(e, position);
     }
 

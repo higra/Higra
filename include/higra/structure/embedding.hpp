@@ -23,12 +23,12 @@ namespace hg {
         class embedding_grid {
         public:
             using coordinate_type = coordinates_t;
-            using point_type = point<long, dim>;
+            using point_type = point<index_t, dim>;
             using shape_type = point_type;
         private:
-            std::size_t nbElement = 0;
-            shape_type _shape; // long for safer comparisons
-            point<std::size_t, dim> sum_prod;
+            size_t nbElement = 0;
+            shape_type _shape; // signed for safer comparisons
+            point<size_t, dim> sum_prod;
 
             void computeSize() {
                 if (dim == 0)
@@ -64,7 +64,7 @@ namespace hg {
             embedding_grid(const std::initializer_list<long> &shape){
                 hg_assert(dim == _shape.size(), "Shape dimension does not match embedding dimension !");
                 _shape = xt::zeros<long>({shape.size()});
-                std::size_t i = 0;
+                index_t i = 0;
                 for (const auto c:shape)
                     _shape(i++) = c;
                 assert_positive_shape();
@@ -90,7 +90,7 @@ namespace hg {
             embedding_grid(const T &shape) {
                 hg_assert(dim == shape.size(), "Shape dimension does not match embedding dimension !");
                 _shape = xt::zeros<long>({shape.size()});
-                std::size_t i = 0;
+                index_t i = 0;
                 for (const auto c:shape)
                     _shape(i++) = c;
                 assert_positive_shape();
@@ -110,9 +110,9 @@ namespace hg {
             template<typename T,
                     typename = std::enable_if_t<!std::is_base_of<xt::xexpression<T>, T>::value>
             >
-            std::size_t grid2lin(const T &coordinates) const {
-                std::size_t result = 0;
-                std::size_t count = 0;
+            index_t grid2lin(const T &coordinates) const {
+                index_t result = 0;
+                index_t count = 0;
                 for (const auto &c: coordinates)
                     result += c * sum_prod(count++);
                 return result;
@@ -123,8 +123,8 @@ namespace hg {
             auto grid2lin(const point<T, dim> &coordinates) const {
                 static_assert(std::is_integral<T>::value,
                               "Coordinates must have integral value type.");
-                std::size_t res = coordinates[dim - 1];
-                for (std::size_t i = 0; i < dim - 1; ++i)
+                index_t res = coordinates[dim - 1];
+                for (index_t i = 0; i < dim - 1; ++i)
                     res += coordinates[i] * sum_prod[i];
                 return res;
             }
@@ -140,9 +140,9 @@ namespace hg {
                 return xt::sum(coordinates * sum_prod, {last});
             }
 
-            std::size_t grid2lin(const std::initializer_list<coordinates_t> &coordinates) const {
-                std::size_t result = 0;
-                std::size_t count = 0;
+            index_t grid2lin(const std::initializer_list<coordinates_t> &coordinates) const {
+                index_t result = 0;
+                index_t count = 0;
                 for (const auto &c: coordinates)
                     result += c * sum_prod(count++);
                 return result;
@@ -150,7 +150,7 @@ namespace hg {
 
 
             bool contains(const std::initializer_list<coordinates_t> &coordinates) const {
-                std::size_t count = 0;
+                index_t count = 0;
                 for (const auto &c: coordinates)
                     if (c < 0 || c >= _shape(count++))
                         return false;
@@ -159,7 +159,7 @@ namespace hg {
 
             template<typename T>
             auto contains(const point<T, dim> &coordinates) const {
-                for (std::size_t i = 0; i < dim; ++i)
+                for (index_t i = 0; i < dim; ++i)
                     if (coordinates(i) < 0 || coordinates(i) >= _shape(i))
                         return false;
                 return true;
@@ -182,17 +182,17 @@ namespace hg {
             >
             bool contains(const T &coordinates) const {
 
-                std::size_t count = 0;
+                index_t count = 0;
                 for (const auto &c: coordinates)
                     if (c < 0 || c >= (long) _shape(count++))
                         return false;
                 return true;
             }
 
-            auto lin2grid(std::size_t index) const {
+            auto lin2grid(index_t index) const {
                 point_type result;
 
-                for (std::size_t i = 0; i < dim - 1; ++i) {
+                for (index_t i = 0; i < dim - 1; ++i) {
 
                     result[i] = index / sum_prod(i);
                     index = index % sum_prod(i);
@@ -207,19 +207,19 @@ namespace hg {
                               "Indices must have integral value type.");
                 const auto &indices = xindices.derived_cast();
 
-                auto size = indices.size();
+                index_t size = (index_t)indices.size();
                 auto shapeO = indices.shape();
-                std::vector<std::size_t> shape(shapeO.begin(), shapeO.end());
+                std::vector<size_t> shape(shapeO.begin(), shapeO.end());
                 shape.push_back(dim);
 
-                array_nd<coordinates_t> result = xt::zeros<coordinates_t>({size, (std::size_t) dim});
+                array_nd<coordinates_t> result = array_nd<coordinates_t>::from_shape({(size_t)size, (size_t) dim});
 
 
                 const auto indicesLin = xt::flatten(indices);
 
-                for (std::size_t j = 0; j < size; ++j) {
+                for (index_t j = 0; j < size; ++j) {
                     auto index = indicesLin(j);
-                    for (std::size_t i = 0; i < dim - 1; ++i) {
+                    for (index_t i = 0; i < dim - 1; ++i) {
 
                         result(j, i) = index / sum_prod[i];
                         index = index % sum_prod[i];

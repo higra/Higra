@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
 
     BOOST_AUTO_TEST_CASE(vertexIteratorTree) {
         auto t = data.t;
-        vector<ulong> ref = {0, 1, 2, 3, 4, 5, 6, 7};
+        vector<hg::index_t> ref = {0, 1, 2, 3, 4, 5, 6, 7};
         for (auto v: vertex_iterator(t)) {
             BOOST_CHECK(v == ref[v]);
         }

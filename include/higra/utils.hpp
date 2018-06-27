@@ -96,8 +96,8 @@ namespace xt {
 
 namespace hg {
 
-    using index_t = long;
-
+    using index_t = std::ptrdiff_t ;
+    using size_t = std::size_t;
     const index_t invalid_index = -1;
 
 }

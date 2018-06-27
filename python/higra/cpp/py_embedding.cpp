@@ -89,7 +89,7 @@ void py_init_embedding_impl(pybind11::module &m) {
                      "indicating if each point is contained in the embedding.");
 
 
-    c.def("lin2grid", [](const class_t &e, const std::size_t a) { return xt::pyarray<long>(e.lin2grid(a)); },
+    c.def("lin2grid", [](const class_t &e, const index_t a) { return xt::pyarray<long>(e.lin2grid(a)); },
           "Compute the nd coordinates of a point given its linear coordinate.",
           py::arg("index"));
 

@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_SUITE(accumulator);
     template<bool vec, typename acc_t>
     auto applyAcc(const hg::array_nd<double> &values, acc_t accFactory) {
         auto inview = hg::make_light_axis_view<vec>(values);
-        std::vector<std::size_t> data_shape(values.shape().begin() + 1, values.shape().end());
+        std::vector<size_t> data_shape(values.shape().begin() + 1, values.shape().end());
 
         auto out_shape = acc_t::get_output_shape(data_shape);
         if (out_shape.empty())
@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_SUITE(accumulator);
         auto acc = accFactory.template make_accumulator<vec>(storage);
         acc.initialize();
 
-        for (std::size_t i = 0; i < values.shape()[0]; i++) {
+        for (hg::index_t i = 0; i < (hg::index_t)values.shape()[0]; i++) {
             inview.set_position(i);
             acc.accumulate(inview.begin());
         }

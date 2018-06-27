@@ -22,7 +22,7 @@ void py_init_lca_fast(pybind11::module &m) {
           py::arg("tree"));
 
     c.def("lca",
-          [](const lca_fast &l, std::size_t v1, std::size_t v2) { return l.lca(v1, v2); },
+          [](const lca_fast &l, index_t v1, index_t v2) { return l.lca(v1, v2); },
           "Get LCA of given two vertices.",
           py::arg("v1"),
           py::arg("v2"));

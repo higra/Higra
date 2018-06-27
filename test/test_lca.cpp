@@ -19,7 +19,7 @@ BOOST_AUTO_TEST_SUITE(lca);
 
         hg::tree t;
 
-        _data() : t(xt::xarray<long>{5, 5, 6, 6, 6, 7, 7, 7}) {
+        _data() : t(xt::xarray<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
         }
 
     } data;
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_SUITE(lca);
 
     BOOST_AUTO_TEST_CASE(lcaV) {
         auto g = get_4_adjacency_graph({2, 2});
-        tree t(array_1d<long> { 4, 4, 5, 5, 6, 6, 6 });
+        tree t(array_1d<index_t> { 4, 4, 5, 5, 6, 6, 6 });
         lca_fast lca(t);
         auto l = lca.lca(edge_iterator(g));
         array_1d<decltype(g)::vertex_descriptor> ref{4, 6, 6, 5};

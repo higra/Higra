@@ -41,7 +41,7 @@ For example, the function ``num_vertices`` that returns the number of vertices i
 Vertices
 --------
 
-Graph vertices are represented by positive integers, suitable for array indexing. All operations are done in constant time.
+Graph vertices are represented by positive integers (``index_t`` in c++), suitable for array indexing. All operations are done in constant time.
 
 
 .. list-table::
@@ -149,7 +149,7 @@ Iterating on vertices
 Edges
 -----
 
-Graph edges are represented by pairs of vertices (pairs of positive integers) whose first element is the source and second element is the target.
+Graph edges are represented by pairs of vertices, i.e. pairs of positive integers (``index_t`` in c++), whose first element is the source and second element is the target.
 All operations are done in constant time.
 
 .. list-table::
@@ -285,7 +285,7 @@ Iterating on edges
 Edge indexes
 ************
 
-``regular_graph`` and ``tree`` are also able to represent their edges by positive integers, suitable for array indexing.
+``regular_graph`` and ``tree`` are also able to represent their edges by positive integers (``index_t`` in c++), suitable for array indexing.
 Operations are done in constant time.
 
 .. list-table::

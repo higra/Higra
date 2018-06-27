@@ -26,7 +26,7 @@ int sum1d_fori(const xt::xexpression<T> &xa) {
     auto a = xa.derived_cast();
     auto s = a.shape();
     int sum = 0;
-    for (long i = 0; i < s[0]; ++i) {
+    for (index_t i = 0; i < (index_t)s[0]; ++i) {
         sum += a(i);
     }
     return sum;
@@ -37,8 +37,8 @@ int sum2d_fori(const xt::xexpression<T> &xa) {
     auto a = xa.derived_cast();
     auto s = a.shape();
     int sum = 0;
-    for (long i = 0; i < s[0]; ++i) {
-        for (long j = 0; j < s[1]; ++j)
+    for (index_t i = 0; i < (index_t)s[0]; ++i) {
+        for (index_t j = 0; j < (index_t)s[1]; ++j)
             sum += a(i, j);
     }
     return sum;

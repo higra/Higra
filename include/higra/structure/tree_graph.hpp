@@ -41,7 +41,7 @@ namespace hg {
         struct tree {
 
             // Graph associated types
-            using vertex_descriptor = std::size_t;
+            using vertex_descriptor = index_t;
             using children_list_t = std::vector<vertex_descriptor>;
             using children_iterator = children_list_t::const_iterator;
             using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
@@ -51,19 +51,19 @@ namespace hg {
 
             // VertexListGraph associated types
             using vertex_iterator = counting_iterator<vertex_descriptor>;
-            using vertices_size_type = std::size_t;
+            using vertices_size_type = size_t;
 
             //AdjacencyGraph associated types
             using adjacency_iterator = tree_graph_adjacent_vertex_iterator<false>;
 
             // custom edge index iterators
-            using edge_index_t = std::size_t;
+            using edge_index_t = index_t;
             using edge_index_iterator = counting_iterator<edge_index_t>;
             using out_edge_index_iterator = tree_graph_adjacent_vertex_iterator<true>;
             using in_edge_index_iterator = out_edge_index_iterator;
 
             // EdgeListGraph associated types
-            using edges_size_type = std::size_t;
+            using edges_size_type = size_t;
             using _edge_iterator_transform_function = std::function<edge_descriptor(edge_index_t)>;
             using edge_iterator = transform_forward_iterator <_edge_iterator_transform_function,
             counting_iterator<vertex_descriptor>, edge_descriptor>;
@@ -74,7 +74,7 @@ namespace hg {
             using out_edge_iterator = transform_forward_iterator<out_iterator_transform_function,
                     tree_graph_adjacent_vertex_iterator<false>,
                     edge_descriptor>;
-            using degree_size_type = std::size_t;
+            using degree_size_type = size_t;
 
             //BidirectionalGraph associated types
             using in_edge_iterator = out_edge_iterator;
@@ -96,14 +96,15 @@ namespace hg {
                     _children[parent_v].push_back(v);
                 }
 
-                _num_leaves = 0;
+                index_t num_leaves = 0;
 
                 for (vertex_descriptor v = 0; v <= _root; ++v) {
                     if (_children[v].size() == 0) {
-                        hg_assert(_num_leaves == v, "leaves nodes are not before internal nodes");
-                        _num_leaves++;
+                        hg_assert(num_leaves == v, "leaves nodes are not before internal nodes");
+                        num_leaves++;
                     }
                 }
+                _num_leaves = (size_t)num_leaves;
             };
 
             vertices_size_type num_vertices() const {
@@ -118,7 +119,7 @@ namespace hg {
                 return (_num_vertices == 0) ? 0 : _num_vertices - 1;
             }
 
-            std::size_t num_children(const vertex_descriptor v) const {
+            size_t num_children(const vertex_descriptor v) const {
                 return _children[v].size();
             }
 
@@ -177,8 +178,8 @@ namespace hg {
         private:
 
             vertex_descriptor _root;
-            std::size_t _num_vertices;
-            std::size_t _num_leaves;
+            size_t _num_vertices;
+            size_t _num_leaves;
             array_1d <vertex_descriptor> _parents;
             std::vector<children_list_t> _children;
         };

@@ -26,7 +26,7 @@ namespace hg {
             hg_assert(input.dimension() > 0, "Input cannot be a scalar.");
             hg_assert(num_vertices(tree) == input.shape()[0],
                       "Size of input first dimension must be equal to the number of nodes in the tree.");
-            auto data_shape = std::vector<std::size_t>(input.shape().begin() + 1, input.shape().end());
+            auto data_shape = std::vector<size_t>(input.shape().begin() + 1, input.shape().end());
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(tree));
 
@@ -71,7 +71,7 @@ namespace hg {
             hg_assert(num_leaves(tree) == vertex_data.shape()[0],
                       "Size of vertex data first dimension must be equal to the number of leaves in the tree.");
 
-            auto data_shape = std::vector<std::size_t>(vertex_data.shape().begin() + 1, vertex_data.shape().end());
+            auto data_shape = std::vector<size_t>(vertex_data.shape().begin() + 1, vertex_data.shape().end());
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(tree));
 
@@ -124,7 +124,7 @@ namespace hg {
             hg_assert(num_leaves(tree) == vertex_data.shape()[0],
                       "Size of vertex data first dimension must be equal to the number of leaves in the tree.");
 
-            auto data_shape = std::vector<std::size_t>(input.shape().begin() + 1, input.shape().end());
+            auto data_shape = std::vector<size_t>(input.shape().begin() + 1, input.shape().end());
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             hg_assert(output_shape.size() == input.dimension() - 1,
                       "Input dimension does not match accumulator output dimension.");

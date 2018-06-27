@@ -22,9 +22,9 @@ namespace hg {
         hg_assert(num_edges(graph) == edge_weights.size(),
                   "Edge weights size does not match the number of edge in the graph.");
 
-        array_1d<std::size_t> sorted_edges_indices = xt::arange(num_edges(graph));
+        array_1d<index_t> sorted_edges_indices = xt::arange(num_edges(graph));
         std::stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
-                         [&edge_weights](std::size_t i, std::size_t j) { return edge_weights[i] < edge_weights[j]; });
+                         [&edge_weights](index_t i, index_t j) { return edge_weights[i] < edge_weights[j]; });
 
         auto num_points = num_vertices(graph);
 
@@ -33,16 +33,16 @@ namespace hg {
 
         union_find uf(num_points);
 
-        array_1d<std::size_t> roots = xt::arange(num_points);
-        array_1d<std::size_t> parents = xt::arange(num_points * 2 - 1);
+        array_1d<index_t> roots = xt::arange(num_points);
+        array_1d<index_t> parents = xt::arange(num_points * 2 - 1);
 
         array_1d<typename T::value_type> levels = xt::zeros<typename T::value_type>({num_points * 2 - 1});
 
-        std::size_t num_nodes = num_points;
-        std::size_t num_edge_found = 0;
-        std::size_t i = 0;
+        size_t num_nodes = num_points;
+        size_t num_edge_found = 0;
+        index_t i = 0;
 
-        while (num_edge_found < num_edge_mst && i < sorted_edges_indices.size()) {
+        while (num_edge_found < num_edge_mst && i < (index_t)sorted_edges_indices.size()) {
             auto ei = sorted_edges_indices[i];
             auto e = edge(ei, graph);
             auto c1 = uf.find(source(e, graph));

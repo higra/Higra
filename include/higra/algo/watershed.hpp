@@ -45,8 +45,8 @@ namespace hg {
         }
 
 
-        auto no_label = std::numeric_limits<std::size_t>::max();
-        auto labels = array_1d<std::size_t>::from_shape({graph.num_vertices()});
+        auto no_label = std::numeric_limits<index_t>::max();
+        auto labels = array_1d<index_t>::from_shape({graph.num_vertices()});
         std::fill(labels.begin(), labels.end(), no_label);
 
         auto notInL = array_1d<bool>::from_shape({graph.num_vertices()});
@@ -89,7 +89,7 @@ namespace hg {
             return std::make_pair(std::move(L), no_label);
         };
 
-        std::size_t num_labs = 0;
+        index_t num_labs = 0;
 
         for (auto v: vertex_iterator(graph)) {
             if (labels[v] == no_label) {

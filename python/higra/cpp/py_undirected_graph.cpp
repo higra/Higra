@@ -16,7 +16,7 @@ void py_init_undirected_graph(py::module &m) {
 
     auto c = py::class_<graph_t>(m, "UndirectedGraph");
 
-    c.def(py::init<const std::size_t>(), "Create a new graph with no edge.",
+    c.def(py::init<const hg::size_t>(), "Create a new graph with no edge.",
           py::arg("number_of_vertices") = 0);
 
 

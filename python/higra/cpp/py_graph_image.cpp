@@ -32,7 +32,7 @@ struct def_contour2Khalimsky {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_contour2khalimsky", [](const hg::ugraph &graph,
-                                       const std::vector<std::size_t> &shape,
+                                       const std::vector<size_t> &shape,
                                        const xt::pyarray<value_t> &weights,
                                        bool add_extra_border) {
                   hg::embedding_grid_2d embedding(shape);

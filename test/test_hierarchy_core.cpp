@@ -63,12 +63,12 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         BOOST_CHECK(xt::allclose(altitude, xt::xarray<double>({0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2})));
         BOOST_CHECK(num_vertices(mst) == 6);
         BOOST_CHECK(num_edges(mst) == 5);
-        std::vector<std::pair<ulong, ulong> > ref = {{0, 3},
+        std::vector<std::pair<index_t, index_t> > ref = {{0, 3},
                                                      {0, 1},
                                                      {1, 4},
                                                      {2, 5},
                                                      {1, 2}};
-        for (std::size_t i = 0; i < ref.size(); i++) {
+        for (index_t i = 0; i < (index_t)ref.size(); i++) {
             auto e = edge(i, mst);
             BOOST_CHECK(e == ref[i]);
         }
@@ -89,10 +89,10 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
 
         BOOST_CHECK(num_vertices(nt) == 7);
 
-        hg::array_1d<std::size_t> refp{5, 5, 6, 6, 6, 6, 6};
+        hg::array_1d<index_t> refp{5, 5, 6, 6, 6, 6, 6};
         BOOST_CHECK(refp == hg::parents(nt));
 
-        hg::array_1d<std::size_t> refnm{0, 1, 2, 3, 4, 5, 7};
+        hg::array_1d<index_t> refnm{0, 1, 2, 3, 4, 5, 7};
         BOOST_CHECK(refnm == nm);
     }
 

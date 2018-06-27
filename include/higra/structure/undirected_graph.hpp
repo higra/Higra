@@ -51,19 +51,19 @@ namespace hg {
         struct undirected_graph {
 
             // Graph associated types
-            using vertex_descriptor = std::size_t;
+            using vertex_descriptor = index_t;
             using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
-            using out_edge_t = std::pair<std::size_t, vertex_descriptor>; // (edge_index, adjacent vertex)
+            using out_edge_t = std::pair<vertex_descriptor, vertex_descriptor>; // (edge_index, adjacent vertex)
             using directed_category = graph::undirected_tag;
             using edge_parallel_category = graph::allow_parallel_edge_tag;
             using traversal_category = undirected_graph_traversal_category;
 
             // VertexListGraph associated types
             using vertex_iterator = counting_iterator<vertex_descriptor>;
-            using vertices_size_type = std::size_t;
+            using vertices_size_type = size_t;
 
             // EdgeListGraph associated types
-            using edges_size_type = std::size_t;
+            using edges_size_type = size_t;
             using edge_iterator = typename container_gen<edgeS, edge_descriptor>::type::const_iterator;
 
 
@@ -72,7 +72,7 @@ namespace hg {
             using out_edge_iterator = transform_forward_iterator<out_iterator_transform_function,
                     typename container_gen<edgeS, out_edge_t>::type::const_iterator,
                     edge_descriptor>;
-            using degree_size_type = std::size_t;
+            using degree_size_type = size_t;
 
             //BidirectionalGraph associated types
             using in_edge_iterator = out_edge_iterator;
@@ -85,12 +85,12 @@ namespace hg {
 
 
             // custom edge index iterators
-            using edge_index_t = std::size_t;
+            using edge_index_t = index_t;
             using edge_index_iterator = counting_iterator<edge_index_t>;
             using out_edge_index_iterator = adjacency_iterator;
             using in_edge_index_iterator = adjacency_iterator;
 
-            undirected_graph(const std::size_t num_vertices = 0) : _num_vertices(num_vertices),
+            undirected_graph(const size_t num_vertices = 0) : _num_vertices(num_vertices),
                                                                    out_edges(num_vertices) {};
 
 
@@ -151,7 +151,7 @@ namespace hg {
 
         private:
 
-            std::size_t _num_vertices;
+            size_t _num_vertices;
             typename container_gen<edgeS, edge_descriptor>::type edges;
             std::vector<typename container_gen<edgeS, out_edge_t>::type> out_edges; // same as in_edges...
 

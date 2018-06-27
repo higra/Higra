@@ -107,7 +107,7 @@ namespace hg {
             auto &rag_weights = xrag_weights.derived_cast();
 
             index_t numv = rag_map.size();
-            std::vector<std::size_t> shape;
+            std::vector<size_t> shape;
             shape.push_back(numv);
             shape.insert(shape.end(), rag_weights.shape().begin() + 1, rag_weights.shape().end());
             array_nd<typename T::value_type> weights = xt::zeros<typename T::value_type>(shape);
@@ -140,7 +140,7 @@ namespace hg {
             hg_assert(weights.shape()[0] == rag_map.size(), "Weights dimension does not match rag map dimension.");
 
             index_t size = xt::amax(rag_map)() + 1;
-            auto data_shape = std::vector<std::size_t>(weights.shape().begin() + 1, weights.shape().end());
+            auto data_shape = std::vector<size_t>(weights.shape().begin() + 1, weights.shape().end());
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), size);
             array_nd<typename T::value_type> rag_weights = array_nd<typename T::value_type>::from_shape(output_shape);

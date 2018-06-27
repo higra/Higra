@@ -23,9 +23,9 @@ namespace hg {
             array Number;
             array2d Minim;
 
-            std::size_t rep = 0;
+            size_t rep = 0;
 
-            std::size_t nbR;
+            size_t nbR;
 
             void computeDepth(const tree_t &tree) {
                 Depth[root(tree)] = 0;
@@ -36,7 +36,7 @@ namespace hg {
 
             void LCApreprocessEuler(const tree_t &tree) {
                 struct se {
-                    std::size_t node;
+                    index_t node;
                     bool first_visit;
                 };
 
@@ -92,14 +92,14 @@ namespace hg {
                 */
                 computeDepth(tree);
                 LCApreprocessEuler(tree);
-                std::size_t nbNodes = num_vertices(tree);
-                std::size_t nbRepresent = 2 * nbNodes - 1;
+                index_t nbNodes = (index_t)num_vertices(tree);
+                index_t nbRepresent = 2 * nbNodes - 1;
 
-                std::size_t logn = (long) (ceil(log((double) (nbRepresent)) / log(2.0)));
+                index_t logn = (index_t) (ceil(log((double) (nbRepresent)) / log(2.0)));
 
-                Minim.resize({logn, nbRepresent});
+                Minim.resize({(size_t)logn, (size_t)nbRepresent});
 
-                for (std::size_t i = 0; i < nbRepresent - 1; i++) {
+                for (index_t i = 0; i < nbRepresent - 1; i++) {
                     if (Depth[Euler[i]] < Depth[Euler[i + 1]]) {
                         Minim(0, i) = i;
                     } else {
@@ -108,10 +108,10 @@ namespace hg {
                 }
                 Minim(0, nbRepresent - 1) = nbRepresent - 1;
 
-                for (std::size_t j = 1; j < logn; j++) {
-                    std::size_t k1 = 1 << (j - 1);
-                    std::size_t k2 = k1 << 1;
-                    for (std::size_t i = 0; i < nbRepresent; i++) {
+                for (index_t j = 1; j < logn; j++) {
+                    index_t k1 = 1 << (j - 1);
+                    index_t k2 = k1 << 1;
+                    for (index_t i = 0; i < nbRepresent; i++) {
                         if ((i + k2) >= nbRepresent) {
                             Minim(j, i) = nbRepresent - 1;
                         } else {
@@ -141,7 +141,7 @@ namespace hg {
             }
 
             vertex_t lca(vertex_t n1, vertex_t n2) const {
-                long ii, jj, kk, k;
+                index_t ii, jj, kk, k;
 
                 ii = Number[n1];
                 jj = Number[n2];
@@ -154,7 +154,7 @@ namespace hg {
                     ii = kk;
                 }
 
-                k = (long) (log((double) (jj - ii)) / log(2.));
+                k = (index_t) (log((double) (jj - ii)) / log(2.));
 
                 if (Depth[Euler[Minim(k, ii)]] < Depth[Euler[Minim(k, jj - (1 << (k)))]]) {
                     return Represent[Number[Euler[Minim(k, ii)]]];
@@ -166,7 +166,7 @@ namespace hg {
             template<typename T>
             auto lca(const T &range) const {
                 HG_TRACE();
-                std::size_t size = range.end() - range.begin();
+                size_t size = range.end() - range.begin();
                 auto result = array_1d<vertex_t>::from_shape({size});
 
                 auto it = result.begin();

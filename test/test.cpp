@@ -14,6 +14,8 @@ BOOST_AUTO_TEST_SUITE(xp);
 
     BOOST_AUTO_TEST_CASE(xpp) {
 
+        xt::xarray<int> a;
+        showTypeName<decltype(a.shape())>("shape type ");
         /*xt::xarray<int> a{{{1, 2, 3}, {4,  5,  6}},
                           {{7, 8, 9}, {10, 11, 12}}};
 

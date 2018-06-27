@@ -41,14 +41,14 @@ namespace hg {
 
         public:
             // Graph associated types
-            using vertex_descriptor = std::size_t;
+            using vertex_descriptor = index_t;
             using directed_category = graph::undirected_tag;
             using edge_parallel_category = graph::disallow_parallel_edge_tag;
             using traversal_category = regular_graph_traversal_category;
 
             // VertexListGraph associated types
             using vertex_iterator = counting_iterator<vertex_descriptor>;
-            using vertices_size_type = std::size_t;
+            using vertices_size_type = size_t;
 
             //AdjacencyGraph associated types
             using adjacency_iterator = regular_graph_adjacent_vertex_iterator<embedding_t>;
@@ -60,7 +60,7 @@ namespace hg {
             using out_edge_iterator = transform_forward_iterator<iterator_transform_function,
                     adjacency_iterator,
                     edge_descriptor>;
-            using degree_size_type = std::size_t;
+            using degree_size_type = size_t;
 
             //BidirectionalGraph associated types
             using in_edge_iterator = out_edge_iterator;

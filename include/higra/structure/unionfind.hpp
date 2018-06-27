@@ -5,18 +5,19 @@
 #pragma once
 
 #include <vector>
+#include "../utils.hpp"
 
 namespace hg {
 
     namespace union_find_internal {
 
-        template<typename idx_t=std::size_t>
+        template<typename idx_t=size_t>
         struct union_find {
 
         public:
 
-            union_find(std::size_t size = 0) : parent(size), rank(size) {
-                for (std::size_t i = 0; i < parent.size(); ++i) {
+            union_find(size_t size = 0) : parent(size), rank(size) {
+                for (index_t i = 0; i < (index_t)parent.size(); ++i) {
                     parent[i] = i;
                 }
             }

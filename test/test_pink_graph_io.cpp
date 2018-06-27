@@ -57,16 +57,16 @@ BOOST_AUTO_TEST_SUITE(pinkGraphIO);
 
         auto res = read_pink_graph(in);
 
-        std::vector<std::size_t> shape = {3, 5};
+        std::vector<size_t> shape = {3, 5};
 
-        std::vector<std::pair<std::size_t, std::size_t> > edges;
-        for (std::size_t i = 0; i < 14; ++i)
+        std::vector<std::pair<index_t, index_t> > edges;
+        for (index_t i = 0; i < 14; ++i)
             edges.push_back({i, i + 1});
 
         array_1d<double> vertex_weights = xt::arange<double>(1, 16);
         array_1d<double> edge_weights = {3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0};
 
-        std::vector<std::pair<std::size_t, std::size_t> > res_edges;
+        std::vector<std::pair<index_t, index_t> > res_edges;
         for (auto e : edge_iterator(res.graph))
             res_edges.push_back(e);
 
@@ -82,12 +82,12 @@ BOOST_AUTO_TEST_SUITE(pinkGraphIO);
 
         array_1d<double> vertex_weights = xt::arange<double>(1, 16);
         array_1d<double> edge_weights = {3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0};
-        std::vector<std::size_t> shape = {3, 5};
+        std::vector<size_t> shape = {3, 5};
 
         ugraph g(15);
 
-        std::vector<std::pair<std::size_t, std::size_t> > edges;
-        for (std::size_t i = 0; i < 14; ++i)
+        std::vector<std::pair<index_t, index_t> > edges;
+        for (index_t i = 0; i < 14; ++i)
             add_edge(i, i + 1, g);
 
         ostringstream out;

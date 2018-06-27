@@ -12,6 +12,7 @@
 #include "xtensor/xmath.hpp"
 #include "xtensor/xgenerator.hpp"
 #include "xtensor/xio.hpp"
+#include "higra/utils.hpp"
 
 template <typename T>
 bool vectorEqual(std::vector<T> v1, std::vector<T> v2){

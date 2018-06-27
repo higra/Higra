@@ -37,8 +37,8 @@ void add_incidence_graph_concept(pyc &c) {
                           const vertex_t v) {
               auto it = hg::out_edges(v, g);
               // wrapping out edge iterator to python friendly type
-              iterator_transform_function fun = [&g](edge_t e) -> pybind11::tuple {
-                  return pybind11::make_tuple(hg::source(e, g), hg::target(e, g));
+              iterator_transform_function fun = [](edge_t e) -> pybind11::tuple {
+                  return pybind11::make_tuple(e.first, e.second);
               };
               auto it1 = out_edge_iterator(it.first, fun);
               auto it2 = out_edge_iterator(it.second, fun);
@@ -101,8 +101,8 @@ void add_bidirectionnal_graph_concept(pyc &c) {
                          const vertex_t v) {
               auto it = hg::in_edges(v, g);
               // wrapping in edge iterator to python friendly type
-              iterator_transform_function fun = [&g](edge_t e) -> pybind11::tuple {
-                  return pybind11::make_tuple(hg::source(e, g), hg::target(e, g));
+              iterator_transform_function fun = [](edge_t e) -> pybind11::tuple {
+                  return pybind11::make_tuple(e.first, e.second);
               };
               auto it1 = in_edge_iterator(it.first, fun);
               auto it2 = in_edge_iterator(it.second, fun);
@@ -164,8 +164,8 @@ void add_edge_list_graph_concept(pyc &c) {
     c.def("edges", [](graph_t &g) {
               auto it = hg::edges(g);
               // wrapping  edge iterator to python friendly type
-              iterator_transform_function fun = [&g](edge_t e) -> pybind11::tuple {
-                  return pybind11::make_tuple(hg::source(e, g), hg::target(e, g));
+              iterator_transform_function fun = [](edge_t e) -> pybind11::tuple {
+                  return pybind11::make_tuple(e.first, e.second);
               };
               auto it1 = edge_iterator(it.first, fun);
               auto it2 = edge_iterator(it.second, fun);

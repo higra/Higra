@@ -9,6 +9,8 @@
 #include "xtensor/xgenerator.hpp"
 #include "xtensor/xeval.hpp"
 
+#include "point.hpp"
+
 namespace hg {
 
     template<typename value_t>

@@ -16,14 +16,14 @@ void def_save(pybind11::module &m) {
                                 const graph_t &graph,
                                 const xt::pyarray<double> &vertex_values = {0},
                                 const xt::pyarray<double> &edge_values = {0},
-                                const std::vector<std::size_t> &shape = {}) {
+                                const std::vector<size_t> &shape = {}) {
               hg::save_pink_graph(filename, graph, vertex_values, edge_values, shape);
           },
           py::arg("filename"),
           py::arg("graph"),
           py::arg("vertex_weights") = xt::pyarray<double>(),
           py::arg("edge_weights") = xt::pyarray<double>(),
-          py::arg("shape") = std::vector<std::size_t>());
+          py::arg("shape") = std::vector<size_t>());
 }
 
 void py_init_pink_io(pybind11::module &m) {

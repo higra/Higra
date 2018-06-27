@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_SUITE(algo_watershed);
 
         auto labels = hg::labelisation_watershed(g, edge_weights);
 
-            array_1d<std::size_t> expected{1, 1, 1, 2,
+            array_1d<index_t> expected{1, 1, 1, 2,
                                            1, 1, 2, 2,
                                            1, 1, 3, 3,
                                            1, 1, 3, 3};

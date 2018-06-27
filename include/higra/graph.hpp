@@ -114,8 +114,8 @@ namespace hg {
                       "Vertex indices must have integral value type.");
         auto &index = xindex.derived_cast();
         auto f = xt::flatten(index);
-        array_nd<std::size_t> res = xt::zeros<std::size_t>({index.size()});
-        for (std::size_t i = 0; i < res.size(); ++i) {
+        array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
+        for (index_t i = 0; i < (index_t)res.size(); ++i) {
             res(i) = degree(f(i), g);
         }
         res.reshape(index.shape());
@@ -128,8 +128,8 @@ namespace hg {
                       "Vertex indices must have integral value type.");
         auto &index = xindex.derived_cast();
         auto f = xt::flatten(index);
-        array_nd<std::size_t> res = xt::zeros<std::size_t>({index.size()});
-        for (std::size_t i = 0; i < res.size(); ++i) {
+        array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
+        for (index_t i = 0; i < (index_t)res.size(); ++i) {
             res(i) = in_degree(f(i), g);
         }
         res.reshape(index.shape());
@@ -142,8 +142,8 @@ namespace hg {
                       "Vertex indices must have integral value type.");
         auto &index = xindex.derived_cast();
         auto f = xt::flatten(index);
-        array_nd<std::size_t> res = xt::zeros<std::size_t>({index.size()});
-        for (std::size_t i = 0; i < res.size(); ++i) {
+        array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
+        for (index_t i = 0; i < (index_t)res.size(); ++i) {
             res(i) = out_degree(f(i), g);
         }
         res.reshape(index.shape());
