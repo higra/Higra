@@ -10,6 +10,18 @@ namespace hg {
     namespace details {
 
 
+        /**
+         * An efficient and simple view over the first axis of an xtensor container
+         * (does not support overloaded operators, broadcasting and such fancy things).
+         *
+         * Mostly provide range functions (begin, end) and an assignement operator.
+         *
+         * The view must know at compile time if the underlying container has more than one dimension
+         * (i.e. if the view contain a scalar or more elements) in order to perform compile time optimization.
+         *
+         * @tparam vectorial indicates if the underlying container has more than 1 dimension
+         * @tparam T Underlying xtensor container
+         */
         template<bool vectorial, typename T>
         struct light_axis_view {
 

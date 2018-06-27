@@ -6,6 +6,18 @@
 
 namespace hg {
 
+    /**
+     * Facade to ease the declaration of new forward iterators (quick reimplementation of boost facade iterator).
+     *
+     * The iterator must inherit of the facade and declare the following 3 functions:
+     *  - deference: obtain the element at the current position of the iterator
+     *  - increment: move the iterator to next element
+     *  - equal: test if two iterators are equal
+     *
+     * @tparam derived_type
+     * @tparam value_t
+     * @tparam reference_t
+     */
     template<typename derived_type, typename value_t, typename reference_t = value_t>
     struct forward_iterator_facade {
         using self_type = forward_iterator_facade<derived_type, value_t, reference_t>;
@@ -44,6 +56,15 @@ namespace hg {
     };
 
 
+    /**
+     * Facade to ease the declaration of new forward iterators as a transformation of an existing forward iterator
+     * (quick reimplementation of boost transform iterator).
+     *
+     * @tparam transform_fun_type
+     * @tparam base_iterator_t
+     * @tparam value_t
+     * @tparam reference_t
+     */
     template<typename transform_fun_type, typename base_iterator_t, typename value_t, typename reference_t = value_t>
     struct transform_forward_iterator :
             public forward_iterator_facade<transform_forward_iterator<transform_fun_type, base_iterator_t, value_t, reference_t>, value_t, reference_t> {
@@ -78,6 +99,14 @@ namespace hg {
     };
 
 
+    /**
+     * Quick implementation of a counting iterator.
+     *
+     * Counting iterator has an integer value and a step size.
+     * Incrementing the iterator simply add the step size to the current value of the iterator.
+     *
+     * @tparam value_type
+     */
     template<typename value_type = long>
     struct counting_iterator :
             public forward_iterator_facade<counting_iterator<value_type>,
@@ -107,6 +136,15 @@ namespace hg {
     };
 
 
+    /**
+     * A range of integer value with a start value, a step size, and a maximum value (excluded).
+     *
+     * irange(start, stop, step) is the equivalent to
+     * - python range(start, stop, step)
+     * - matlab start:step:stop
+     *
+     * @tparam value_type
+     */
     template<typename value_type = long>
     struct irange {
 

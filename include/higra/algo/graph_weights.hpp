@@ -9,6 +9,10 @@
 #include "../structure/details/light_axis_view.hpp"
 
 namespace hg {
+
+    /**
+     * Predefined edge-weighting functions (see weight_graph function)
+     */
     enum class weight_functions {
         mean,
         min,
@@ -20,6 +24,17 @@ namespace hg {
         L2_squared
     };
 
+    /**
+     * Compute edge-weights of a graph based on a weighting function.
+     *
+     * A weighting function is a function that associates a weights to a pair of vertices.
+     *
+     * @tparam graph_t
+     * @tparam result_value_t
+     * @param graph
+     * @param fun
+     * @return an array of weights
+     */
     template<typename graph_t, typename result_value_t=double>
     auto weight_graph(const graph_t &graph, const std::function<result_value_t(
             typename graph_t::vertex_descriptor,
@@ -32,7 +47,19 @@ namespace hg {
         return result;
     };
 
-
+    /**
+     * Compute edge-weights of a graph based from the vertex-weights and a predefined weighting function (see weight_functions enum).
+     *
+     * Each edge is weighted with a combination of its extremities weights.
+     *
+     * @tparam graph_t
+     * @tparam T
+     * @tparam result_value_t
+     * @param graph
+     * @param xvertex_weights
+     * @param weight
+     * @return
+     */
     template<typename graph_t, typename T, typename result_value_t=double>
     auto weight_graph(const graph_t &graph, const xt::xexpression<T> &xvertex_weights, weight_functions weight) {
         HG_TRACE();

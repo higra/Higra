@@ -7,6 +7,12 @@
 #include "../graph.hpp"
 
 namespace hg {
+
+    /**
+     * Create a 4 adjacency implicit regular graph for the given embedding
+     * @param embedding
+     * @return
+     */
     inline
     auto get_4_adjacency_implicit_graph(const embedding_grid_2d &embedding) {
         std::vector<point_2d_i> neighbours{{{-1, 0}},
@@ -17,6 +23,11 @@ namespace hg {
         return regular_grid_graph_2d(embedding, std::move(neighbours));
     }
 
+    /**
+     * Create of 4 adjacency implicit regular graph for the given embedding
+     * @param embedding
+     * @return
+     */
     inline
     auto get_8_adjacency_implicit_graph(const embedding_grid_2d &embedding) {
         std::vector<point_2d_i> neighbours{{{-1, -1}},
@@ -31,17 +42,32 @@ namespace hg {
         return regular_grid_graph_2d(embedding, std::move(neighbours));
     }
 
+    /**
+     * Create of 4 adjacency explicit regular graph for the given embedding
+     * @param embedding
+     * @return
+     */
     inline
     auto get_4_adjacency_graph(const embedding_grid_2d &embedding) {
         return hg::make_ugraph(get_4_adjacency_implicit_graph(embedding));
     }
 
+    /**
+     * Create of 8 adjacency explicit regular graph for the given embedding
+     * @param embedding
+     * @return
+     */
     inline
     auto get_8_adjacency_graph(const embedding_grid_2d &embedding) {
         return hg::make_ugraph(get_8_adjacency_implicit_graph(embedding));
     }
 
 
+    /**
+     * Represents a 4 adjacency edge weighted regular graph in 2d Khalimsky space
+     * @param embedding
+     * @return
+     */
     template<typename graph_t, typename T, typename result_type = typename T::value_type>
     auto
     contour2d_2_khalimsky(const graph_t &graph, const embedding_grid_2d &embedding,
@@ -102,6 +128,12 @@ namespace hg {
         return res;
     };
 
+    /**
+     * Transforms a contour map represented in 2d Khalimsky space into a weighted 4 adjacency edge weighted regular graph
+     * (0-face and 2-face of the Khalimsky space are ignored).
+     * @param embedding
+     * @return
+     */
     template<typename T, typename result_type = typename T::value_type>
     auto
     khalimsky_2_contour2d(const xt::xexpression<T> &xkhalimsky, bool extra_border = false) {

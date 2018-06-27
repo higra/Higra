@@ -71,22 +71,46 @@ namespace xt {
         return x;
     }
 
+    /**
+     * Provides a view semantic over any xtensor container
+     * @tparam E
+     * @param e
+     * @return
+     */
     template<typename E,
             typename = std::enable_if_t<!std::is_base_of<xt::xexpression<E>, E>::value> >
     E &&view_all(E &&e) {
         return std::forward<E>(e);
     }
 
+    /**
+     * Provides a view semantic over any xtensor container
+     * @tparam E
+     * @param e
+     * @return
+     */
     template<typename E>
     auto view_all(xt::xcontainer_semantic<E> &&e) {
         return xt::strided_view(e, {});
     }
 
+    /**
+     * Provides a view semantic over any xtensor container
+     * @tparam E
+     * @param e
+     * @return
+     */
     template<typename E>
     auto &&view_all(xt::xview_semantic<E> &&e) {
         return std::forward<xt::xview_semantic<E>>(e);
     }
 
+    /**
+     * Provides a view semantic over any xtensor container
+     * @tparam E
+     * @param e
+     * @return
+     */
     template<typename E>
     auto view_all(xt::xscalar<E> &&e) {
         return xt::strided_view(e, {});
@@ -96,9 +120,20 @@ namespace xt {
 
 namespace hg {
 
-    using index_t = std::ptrdiff_t ;
-    using size_t = std::size_t;
+    /**
+     * Preferred type to represent an index
+     */
+    using index_t = std::ptrdiff_t;
+
+    /**
+     * Constant used to represent an invalid index (eg. not initialized)
+     */
     const index_t invalid_index = -1;
+
+    /**
+     * Preferred type to represent a size
+     */
+    using size_t = std::size_t;
 
 }
 

@@ -12,19 +12,34 @@
 
 namespace hg {
 
+    /**
+     * Result of the region adjacency graph (rag) construction algorithm
+     */
     struct region_adjacency_graph {
+        /**
+         * The region adjacency graph
+         */
         ugraph rag;
+
+        /**
+         * An array indicating for each vertex of the original graph, the corresponding vertex of the rag
+         */
         array_1d<index_t> vertex_map;
+
+        /**
+        * An array indicating for each edge of the original graph, the corresponding edge of the rag.
+         * An edge with no corresponding edge in the rag (edge within a region) is indicated with the value invalid_index.
+        */
         array_1d<index_t> edge_map;
     };
 
     /**
-     * Construct a region adjacency graph from a vertex labeled graph.
+     * Construct a region adjacency graph from a vertex labeled graph in linear time.
      * @tparam graph_t
      * @tparam T
      * @param graph
      * @param xvertex_labels
-     * @return
+     * @return see struct region_adjacency_graph
      */
     template<typename graph_t, typename T>
     auto
@@ -174,6 +189,13 @@ namespace hg {
         }
     }
 
+    /**
+     * Projects weights on the rag (vertices or edges) onto the original graph.
+     * @tparam T
+     * @param rag_map rag vertex_map or rag edge_map (see struct region_adjacency_graph)
+     * @param xrag_weights node or edge weights of the rag (depending of the provided rag_map)
+     * @return original graph (vertices or edges) weights
+     */
     template<typename T>
     auto
     rag_back_project_weights(const array_1d<index_t> &rag_map, const xt::xexpression<T> &xrag_weights) {
@@ -185,6 +207,16 @@ namespace hg {
 
     }
 
+    /**
+     * Accumulate original graph (vertices or edges) weights onto the rag (vertices or edges)
+     * @tparam T
+     * @tparam accumulator_t
+     * @tparam output_t
+     * @param rag_map rag vertex_map or rag edge_map (see struct region_adjacency_graph)
+     * @param xweights node or edge weights of the original graph (depending of the provided rag_map)
+     * @param accumulator
+     * @return rag (vertices or edges) weights
+     */
     template<typename T, typename accumulator_t, typename output_t = typename T::value_type>
     auto rag_accumulate(const array_1d<index_t> &rag_map,
                         const xt::xexpression<T> &xweights,

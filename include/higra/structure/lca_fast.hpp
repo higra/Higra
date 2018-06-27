@@ -9,6 +9,11 @@
 
 namespace hg {
     namespace lca_internal {
+
+        /**
+         * n x log(n) pre-processing of a tree to obtain a constant query time for lowest common ancestors of two nodes
+         * @tparam tree_t
+         */
         template<typename tree_t>
         struct lca_fast {
         private:
@@ -140,6 +145,12 @@ namespace hg {
                 LCApreprocess(tree);
             }
 
+            /**
+             * Return the lowest common ancestor of two nodes
+             * @param n1
+             * @param n2
+             * @return
+             */
             vertex_t lca(vertex_t n1, vertex_t n2) const {
                 index_t ii, jj, kk, k;
 
@@ -163,6 +174,12 @@ namespace hg {
                 }
             }
 
+            /**
+             * Return the lowest common ancestors of a range of pairs of nodes
+             * @tparam T
+             * @param range
+             * @return
+             */
             template<typename T>
             auto lca(const T &range) const {
                 HG_TRACE();

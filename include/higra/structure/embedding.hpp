@@ -19,6 +19,12 @@ namespace hg {
     namespace embedding_internal {
 
 
+        /**
+         * Grid embeddings are utility classes to ease the manipulation of point coordinates in the d-dimensional integer grid.
+         * An embedding has a shape (height and width in 2 dimensions).
+         * @tparam dim Dimension of the embedding
+         * @tparam coordinates_t Type of coordinates manipulated
+         */
         template<int dim, typename coordinates_t=long>
         class embedding_grid {
         public:
@@ -58,9 +64,15 @@ namespace hg {
 
             static const int _dim = dim;
 
+            /**
+             * Creates an embedding of size 0.
+             */
             embedding_grid() {}
 
-
+            /**
+             * Creates an embedding with the given shape
+             * @param shape list of dim positive integers
+             */
             embedding_grid(const std::initializer_list<long> &shape){
                 hg_assert(dim == _shape.size(), "Shape dimension does not match embedding dimension !");
                 _shape = xt::zeros<long>({shape.size()});
@@ -72,6 +84,10 @@ namespace hg {
                 computeSize();
             }
 
+            /**
+             * Creates an embedding with the given shape
+             * @param shape array of dim positive integers
+             */
             template<typename T>
             embedding_grid(const xt::xexpression<T> &shape) : _shape(shape.derived_cast()) {
                 static_assert(std::is_integral<typename T::value_type>::value,
@@ -82,10 +98,18 @@ namespace hg {
                 computeSize();
             }
 
+            /**
+             * Shape of the embedding
+             * @return
+             */
             const auto &shape() const {
                 return _shape;
             }
 
+            /**
+             * Creates an embedding with the given shape
+             * @param shape list of dim positive integers
+             */
             template<typename T>
             embedding_grid(const T &shape) {
                 hg_assert(dim == shape.size(), "Shape dimension does not match embedding dimension !");
@@ -98,15 +122,28 @@ namespace hg {
                 computeSize();
             }
 
-
+            /**
+             * Dimension of the embedding
+             * @return
+             */
             auto dimension() const {
                 return dim;
             }
 
+            /**
+             * Number of elements in the embedding (product of every shape dimension)
+             * @return
+             */
             auto size() const {
                 return nbElement;
             }
 
+            /**
+             * Convert the coordinates of a point (in the grid coordinate system) into linear coordinates (row major)
+             * @tparam T
+             * @param coordinates
+             * @return
+             */
             template<typename T,
                     typename = std::enable_if_t<!std::is_base_of<xt::xexpression<T>, T>::value>
             >
@@ -118,7 +155,12 @@ namespace hg {
                 return result;
             }
 
-
+            /**
+             * Convert the coordinates of a point (in the grid coordinate system) into linear coordinates (row major)
+             * @tparam T
+             * @param coordinates
+             * @return
+             */
             template<typename T>
             auto grid2lin(const point<T, dim> &coordinates) const {
                 static_assert(std::is_integral<T>::value,
@@ -129,6 +171,12 @@ namespace hg {
                 return res;
             }
 
+            /**
+             * Convert an array of points coordinates (in the grid coordinate system) into linear coordinates (row major)
+             * @tparam T
+             * @param coordinates an array of grid coordinates of shape (n1, n2, .., nx, dim)
+             * @return an array of linear coordinates of shape (n1, n2, .., nx)
+             */
             template<typename T>
             auto grid2lin(const xt::xexpression<T> &xcoordinates) const {
                 static_assert(std::is_integral<typename T::value_type>::value,
@@ -140,6 +188,11 @@ namespace hg {
                 return xt::sum(coordinates * sum_prod, {last});
             }
 
+            /**
+             * Convert the coordinates of a point (in the grid coordinate system) into linear coordinates (row major)
+             * @param coordinates
+             * @return
+             */
             index_t grid2lin(const std::initializer_list<coordinates_t> &coordinates) const {
                 index_t result = 0;
                 index_t count = 0;
@@ -149,6 +202,11 @@ namespace hg {
             }
 
 
+            /**
+             * Test if the given embedding contains the given point given with its grid coordinates
+             * @param coordinates
+             * @return
+             */
             bool contains(const std::initializer_list<coordinates_t> &coordinates) const {
                 index_t count = 0;
                 for (const auto &c: coordinates)
@@ -157,6 +215,11 @@ namespace hg {
                 return true;
             }
 
+            /**
+             * Test if the given embedding contains the given point given with its grid coordinates
+             * @param coordinates
+             * @return
+             */
             template<typename T>
             auto contains(const point<T, dim> &coordinates) const {
                 for (index_t i = 0; i < dim; ++i)
@@ -165,11 +228,16 @@ namespace hg {
                 return true;
             }
 
+            /**
+             * Test if the given embedding contains the given points given with their grid coordinates
+             * @tparam T
+             * @param coordinates an array of grid coordinates of shape (n1, n2, .., nx, dim)
+             * @return an array of boolean of shape (n1, n2, .., nx)
+             */
             template<typename T>
             auto contains(const xt::xexpression<T> &xcoordinates) const {
                 static_assert(std::is_integral<typename T::value_type>::value,
                               "Coordinates must have integral value type.");
-
 
                 const auto &coordinates = xcoordinates.derived_cast();
                 hg_assert(coordinates.shape().back() == dim, "Coordinates size does not match embedding dimension.");
@@ -177,6 +245,11 @@ namespace hg {
                 return xt::amin(coordinates >= 0 && coordinates < _shape, {coordinates.dimension() - 1});
             }
 
+            /**
+             * Test if the given embedding contains the given point given with its grid coordinates
+             * @param coordinates
+             * @return
+             */
             template<typename T,
                     typename = std::enable_if_t<!std::is_base_of<xt::xexpression<T>, T>::value>
             >
@@ -189,6 +262,11 @@ namespace hg {
                 return true;
             }
 
+            /**
+             * Converts the coordinates of a point from linear to grid system
+             * @param index
+             * @return
+             */
             auto lin2grid(index_t index) const {
                 point_type result;
 
@@ -201,6 +279,12 @@ namespace hg {
                 return result;
             }
 
+            /**
+             * Converts the coordinates of points from linear to grid system
+             * @tparam T
+             * @param xindices an array of points linear coordinates of shape (n1, n2,... nx)
+             * @return an array of points grid coordinates of shape (n1, n2,... nx, dim)
+             */
             template<typename T>
             xt::xarray<coordinates_t> lin2grid(const xt::xexpression<T> &xindices) const {
                 static_assert(std::is_integral<typename T::value_type>::value,

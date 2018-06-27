@@ -14,6 +14,24 @@
 
 namespace hg {
 
+    /**
+     * Compute the canonical binary partition tree (or binary partition tree by altitude ordering) of the given
+     * edge weighted graph.
+     *
+     * The algorithm returns a tuple composed of:
+     *  - the binary partition tree,
+     *  - the levels of the vertices of the tree,
+     *  - the minimum spanning tree of the given graph that corresponds to this tree.
+     *
+     * L. Najman, J. Cousty, B. Perret. Playing with Kruskal: algorithms for morphological trees in edge-weighted graphs.
+     * In, 11th International Symposium on Mathematical Morphology, ISMM 2013, Uppsala, Sweden, Mai 2013.
+     *
+     * @tparam graph_t
+     * @tparam T
+     * @param graph
+     * @param xedge_weights
+     * @return
+     */
     template<typename graph_t, typename T>
     auto bptCanonical(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
         HG_TRACE();

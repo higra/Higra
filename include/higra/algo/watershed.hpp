@@ -13,6 +13,8 @@
 namespace hg {
 
     /**
+     * Linear time watershed cut algorithm.
+     *
      * Jean Cousty, Gilles Bertrand, Laurent Najman, Michel Couprie. Watershed Cuts: Minimum Spanning
      * Forests and the Drop of Water Principle. IEEE Transactions on Pattern Analysis and Machine
      * Intelligence, Institute of Electrical and Electronics Engineers, 2009, 31 (8), pp.1362-1374.
