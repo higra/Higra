@@ -10,6 +10,7 @@ if (DO_TEST)
             test_accumulator.cpp
             test_algo_tree.cpp
             test_embedding.cpp
+            test_fibonacci_heap.cpp
             test_graph_image.cpp
             test_graph_weights.cpp
             test_hierarchy_core.cpp
