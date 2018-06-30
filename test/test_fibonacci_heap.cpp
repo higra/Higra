@@ -51,7 +51,8 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
         }
 
         void pop() {
-            elements.erase(elements.begin() + imin());
+            if (elements.size() > 0)
+                elements.erase(elements.begin() + imin());
         }
 
         void update(node<T> &node, const T &value) {
@@ -72,7 +73,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
         index_t imin() {
             T minv = elements[0].get_value();
             index_t imini = 0;
-            for (index_t i = 1; i < elements.size(); i++) {
+            for (index_t i = 1; i < (index_t) elements.size(); i++) {
                 if (elements[i].get_value() < minv) {
                     imini = i;
                     minv = elements[i].get_value();
@@ -178,14 +179,30 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
         heap.push(10);
         heap.push(15);
         heap.push(8);
+        heap.push(22);
+        heap.push(17);
 
         BOOST_CHECK(heap.top().get_value() == 8);
         heap.pop();
-        BOOST_CHECK(heap.size() == 2);
+
+        heap.push(5);
+        heap.push(19);
+        heap.push(2);
+
+
+        BOOST_CHECK(heap.top().get_value() == 2);
+        heap.pop();
+        BOOST_CHECK(heap.top().get_value() == 5);
+        heap.pop();
         BOOST_CHECK(heap.top().get_value() == 10);
         heap.pop();
-        BOOST_CHECK(heap.size() == 1);
         BOOST_CHECK(heap.top().get_value() == 15);
+        heap.pop();
+        BOOST_CHECK(heap.top().get_value() == 17);
+        heap.pop();
+        BOOST_CHECK(heap.top().get_value() == 19);
+        heap.pop();
+        BOOST_CHECK(heap.top().get_value() == 22);
         heap.pop();
         BOOST_CHECK(heap.size() == 0);
     }
@@ -216,17 +233,23 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
 
     }
 
-    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_stress_test_push_pop) {
-        std::mt19937 rng;
-        rng.seed(std::random_device()());
-        std::uniform_int_distribution<std::mt19937::result_type> dist100(1, 100); // distribution in range [1, 6]
+    struct rnd {
+        static auto &get_rng() {
+            static std::mt19937 rng(150000); //std::random_device()()
+            return rng;
+        }
 
-        std::uniform_int_distribution<std::mt19937::result_type> weights(1, 100000); // distribution in range [1, 6]
+    };
+
+    auto random_heaps(int nbop) {
+        std::uniform_int_distribution<std::mt19937::result_type> dist100(1, 100);
+        std::uniform_int_distribution<std::mt19937::result_type> weights(1, 100000);
+
+        auto &rng = rnd::get_rng();
+
 
         fibonacci_heap_internal::fibonacci_heap<long> heap;
         trivial_heap<long> theap;
-
-        int nbop = 1000;
 
         for (int i = 0; i < nbop; i++) {
             int op = dist100(rng);
@@ -235,16 +258,65 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
                 heap.push(w);
                 theap.push(w);
             } else {
-                BOOST_CHECK(heap.top().get_value() == theap.top().get_value());
-                BOOST_CHECK(heap.size() == theap.size());
-                heap.pop();
-                theap.pop();
-                BOOST_CHECK(heap.top().get_value() == theap.top().get_value());
-                BOOST_CHECK(heap.size() == theap.size());
+                if (theap.size() > 0) {
+                    BOOST_CHECK(heap.top().get_value() == theap.top().get_value());
+                    BOOST_CHECK(heap.size() == theap.size());
+                    heap.pop();
+                    theap.pop();
+                    if (theap.size() > 0) {
+                        BOOST_CHECK(heap.top().get_value() == theap.top().get_value());
+                    }
+                    BOOST_CHECK(heap.size() == theap.size());
+                }
             }
 
         }
-
+        return std::make_pair(std::move(heap), std::move(theap));
     }
+
+
+    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_stress_test_push_pop) {
+        random_heaps(10000);
+        random_heaps(10000);
+        random_heaps(10000);
+    }
+
+    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_stress_test_push_pop_merge) {
+
+        std::uniform_int_distribution<std::mt19937::result_type> dist100(1, 100);
+        std::uniform_int_distribution<std::mt19937::result_type> weights(1, 100000);
+
+        auto &rng = rnd::get_rng();
+        int nbop = 1000;
+
+        fibonacci_heap_internal::fibonacci_heap<long> heap;
+        trivial_heap<long> theap;
+
+        for (int i = 0; i < nbop; i++) {
+            int op = dist100(rng);
+            if (op < 50) {
+                auto w = weights(rng);
+                heap.push(w);
+                theap.push(w);
+            } else if (op < 80) {
+                if (theap.size() > 0) {
+                    BOOST_CHECK(heap.top().get_value() == theap.top().get_value());
+                    BOOST_CHECK(heap.size() == theap.size());
+                    heap.pop();
+                    theap.pop();
+                    if (theap.size() > 0) {
+                        BOOST_CHECK(heap.top().get_value() == theap.top().get_value());
+                    }
+                    BOOST_CHECK(heap.size() == theap.size());
+                }
+
+            } else {
+                auto hh = random_heaps(100);
+                heap.merge(hh.first);
+                theap.merge(hh.second);
+            }
+        }
+    }
+
 
 BOOST_AUTO_TEST_SUITE_END();

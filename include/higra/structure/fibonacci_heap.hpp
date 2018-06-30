@@ -8,7 +8,7 @@
 #include <stack>
 #include <array>
 #include "../utils.hpp"
-
+#include <cstring>
 namespace hg {
 
     namespace fibonacci_heap_internal {
@@ -31,7 +31,8 @@ namespace hg {
             };
 
 
-            void free(const T *element) {
+            void free(T *element) {
+                //memset(element, 0, sizeof(T));
                 object *new_first = (object *) element;
                 new_first->next = first_free;
                 first_free = new_first;
@@ -42,7 +43,7 @@ namespace hg {
                     pool.emplace_back(m_blocksize);
                     auto &block = pool[pool.size() - 1];
                     first_free = &block[0];
-                    for (index_t i = 0; i < block.size() - 1; i++)
+                    for (index_t i = 0; i < (index_t) block.size() - 1; i++)
                         block[i].next = first_free + i + 1;
                     block[block.size() - 1].next = nullptr;
                 }
@@ -122,6 +123,24 @@ namespace hg {
                 clear();
             }
 
+            fibonacci_heap(const fibonacci_heap &) = delete;
+
+            fibonacci_heap &operator=(const fibonacci_heap &) = delete;
+
+            fibonacci_heap(fibonacci_heap &&other) {
+                m_heap = other.m_heap;
+                m_size = other.m_size;
+                other.m_heap = nullptr;
+                other.m_size = 0;
+            }
+
+            fibonacci_heap &operator=(fibonacci_heap &&other) {
+                m_heap = other.m_heap;
+                m_size = other.m_size;
+                other.m_heap = nullptr;
+                other.m_size = 0;
+            }
+
             bool empty() const {
                 return m_heap == nullptr;
             }
@@ -194,13 +213,13 @@ namespace hg {
                 }
 
                 node_t *root1_previous = root1->m_previous;
-                node_t *root2_next = root2->m_next;
+                node_t *root2_previous = root2->m_previous;
 
-                root2->m_next = root1;
-                root1->m_previous = root2;
+                root2->m_previous = root1_previous;
+                root1_previous->m_next = root2;
 
-                root1_previous->m_next = root2_next;
-                root2_next->m_previous = root1_previous;
+                root2_previous->m_next = root1;
+                root1->m_previous = root2_previous;
 
                 return root2;
             }
@@ -231,10 +250,12 @@ namespace hg {
 
                 std::array<node_t *, 64> A;
                 std::fill(A.begin(), A.end(), nullptr);
-
+                auto *last = m_heap->m_previous;
                 auto *x = m_heap;
-                do {
+                while (true) {
                     auto d = x->m_degree;
+                    auto *cur = x;
+                    auto *next = x->m_next;
                     while (A[d] != nullptr) {
                         auto *y = A[d];
                         if (y->m_value < x->m_value) {
@@ -246,12 +267,14 @@ namespace hg {
                     }
                     A[d] = x;
 
-                    x = x->m_next;
-                } while (x != m_heap);
+                    if (cur == last)
+                        break;
+                    x = next;
+                };
 
                 node_t *minh = nullptr;
                 int i = 0;
-                while (minh == nullptr) {
+                while (minh == nullptr && i < (index_t) A.size()) {
                     if (A[i] != nullptr) {
                         minh = A[i];
                     }
@@ -267,7 +290,6 @@ namespace hg {
                     pos = pos->m_next;
                 }
                 m_heap = minh;
-
             }
 
             void m_extract_min() {
@@ -278,24 +300,54 @@ namespace hg {
                             child->m_parent = nullptr;
                             child = child->m_next;
                         } while (child != m_heap->m_child);
+                        m_merge(m_heap, m_heap->m_child);
+                        m_heap->m_child = nullptr;
                     }
-
-                    m_merge(m_heap, m_heap->m_child);
-
-                    m_heap->m_previous->m_next = m_heap->m_next;
-                    m_heap->m_next->m_previous = m_heap->m_previous;
 
                     auto *old_heap = m_heap;
                     if (old_heap->m_next == old_heap) {
                         m_heap = nullptr;
                     } else {
+                        m_heap->m_previous->m_next = m_heap->m_next;
+                        m_heap->m_next->m_previous = m_heap->m_previous;
                         m_heap = old_heap->m_next;
                         m_consolidate();
                     }
+
                     s_pool().free(old_heap);
                     m_size--;
                 }
             }
+
+            /*
+            int m_check_integrity(node_t * node, node_t * parent){
+                if(node== nullptr)
+                    return 0;
+                int size = 0;
+                node_t * start = node;
+
+                node_t * position = node;
+                do{
+                    size++;
+                    if(position->m_next->m_previous != position)
+                    {
+                        std::cout << "error";
+                    }
+                    if(position->m_previous->m_next != position)
+                    {
+                        std::cout << "error";
+                    }
+                    if(position->m_parent != parent)
+                    {
+                        std::cout << "error";
+                    }
+                    if(position->m_child != nullptr){
+                        size+=m_check_integrity(position->m_child, position);
+                    }
+                    position = position->m_next;
+                }while (position!=start);
+                return size;
+            };*/
 
         };
     }
