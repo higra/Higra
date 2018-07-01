@@ -9,6 +9,7 @@
 #include <array>
 #include "../utils.hpp"
 #include <cstring>
+
 namespace hg {
 
     namespace fibonacci_heap_internal {
@@ -101,11 +102,17 @@ namespace hg {
         };
 
 
+        /**
+         * Fibonacci heap implementation
+         * @tparam T Value type, must implement operator < (ie. with a and b two values of type T, a < b must be a well formed expression)
+         */
         template<typename T>
         struct fibonacci_heap final {
             using node_t = node<T>;
+            using value_handle = node_t *;
 
         private:
+
             static object_pool<node_t> &s_pool() {
                 static object_pool<node_t> pool{};
                 return pool;
@@ -115,10 +122,17 @@ namespace hg {
             size_t m_size = 0;
 
         public:
+
+            /**
+             * Creates an empty min-heap
+             */
             fibonacci_heap() {
 
             }
 
+            /**
+             * Deletes current heap
+             */
             ~fibonacci_heap() {
                 clear();
             }
@@ -141,18 +155,38 @@ namespace hg {
                 other.m_size = 0;
             }
 
+            /**
+             * Test if heap is empty
+             * @return
+             */
             bool empty() const {
                 return m_heap == nullptr;
             }
 
-            auto &push(T value) {
+            /**
+             * Insert new value in  the heap
+             *
+             * Complexity O(1)
+             *
+             * @param value
+             * @return Handle on the new value (used for increase/decrease/update/erase operations)
+             */
+            value_handle push(T value) {
                 m_size++;
                 node_t *new_node = s_pool().allocate();
                 new_node->init(value);
                 m_heap = m_merge(m_heap, new_node);
-                return *new_node;
+                return new_node;
             }
 
+            /**
+             * Merge the provided heap into the current heap.
+             * The provided heap is empty after the operation.
+             *
+             * Complexity O(1)
+             *
+             * @param other
+             */
             void merge(fibonacci_heap &other) {
                 m_heap = m_merge(m_heap, other.m_heap);
                 m_size += other.size();
@@ -160,18 +194,108 @@ namespace hg {
                 other.m_heap = nullptr;
             }
 
-            auto &top() {
-                return *m_heap;
+            /**
+             * Returns an handle on the min element of the heap
+             *
+             * Complexity O(1)
+             *
+             * @return Handle on the value (used for increase/decrease/update/erase operations)
+             */
+            value_handle top() {
+                return m_heap;
             }
 
+            /**
+             * Removes the min element from the heap (this invalidates any previously obtained handles on this element)
+             */
             void pop() {
+                auto old_heap = m_heap;
                 m_extract_min();
+                s_pool().free(old_heap);
             }
 
-            void update(node_t &node, const T &value) {
-
+            /**
+             * Removes the given element from the heap.
+             *
+             * Complexity amortized O(log(n))
+             *
+             * @param node
+             */
+            void erase(value_handle node) {
+                m_delete_key(node);
+                s_pool().free(node);
             }
 
+
+            /**
+             * Decreases the value of the given element to the given value.
+             *
+             * Complexity amortized O(1)
+             *
+             * @param node
+             * @param value
+             */
+            void decrease(value_handle node, const T &value) {
+                node->m_value = value;
+                decrease(node);
+            }
+
+            /**
+             * Updates the heap after the value of the given element has been decreased
+             *
+             * Complexity amortized O(1)
+             *
+             * @param node
+             */
+            void decrease(value_handle node) {
+                m_decrease_key(node);
+            }
+
+            /**
+             * Increases the value of the given element to the given value.
+             *
+             * Complexity amortized O(log(n))
+             *
+             * @param node
+             * @param value
+             */
+            void increase(value_handle node, const T &value) {
+                node->m_value = value;
+                increase(node);
+            }
+
+            /**
+             * Updates the heap after the value of the given element has been increased
+             *
+             * Complexity amortized O(log(n))
+             *
+             * @param node
+             */
+            void increase(value_handle node) {
+                m_increase_key(node);
+            }
+
+            /**
+             * Changes the value of the given element to the given value.
+             *
+             * Complexity amortized O(log(n))
+             *
+             * @param node
+             * @param value
+             */
+            void update(value_handle node, const T &value) {
+                if (value < node->m_value)
+                    decrease(node, value);
+                else if (node->m_value < value) {
+                    increase(node, value);
+                }
+            }
+
+            /**
+             * Empties the heap
+             *
+             * Complexity O(n)
+             */
             void clear() {
                 if (m_heap == nullptr)
                     return;
@@ -230,12 +354,12 @@ namespace hg {
 
                 y->m_parent = x;
                 auto *child = x->m_child;
-                if(child != nullptr) {
+                if (child != nullptr) {
                     y->m_next = child->m_next;
                     y->m_previous = child;
                     child->m_next->m_previous = y;
                     child->m_next = y;
-                }else{
+                } else {
                     y->m_next = y;
                     y->m_previous = y;
                     x->m_child = y;
@@ -295,7 +419,7 @@ namespace hg {
             void m_extract_min() {
                 if (m_heap != nullptr) {
                     auto *child = m_heap->m_child;
-                    if(child != nullptr) {
+                    if (child != nullptr) {
                         do {
                             child->m_parent = nullptr;
                             child = child->m_next;
@@ -314,9 +438,87 @@ namespace hg {
                         m_consolidate();
                     }
 
-                    s_pool().free(old_heap);
                     m_size--;
                 }
+            }
+
+            void m_decrease_key(node_t *node) {
+                auto parent = node->m_parent;
+                if (parent != nullptr && node->m_value < parent->m_value) {
+                    m_cut(node, parent);
+                    m_cascading_cut(parent);
+                }
+                if (node->m_value < m_heap->m_value)
+                    m_heap = node;
+            }
+
+            void m_cut(node_t *node, node_t *parent) {
+                node->m_parent = nullptr;
+                if (node->m_next == node) {
+                    parent->m_child = nullptr;
+                } else {
+                    parent->m_child = node->m_next;
+                    node->m_next->m_previous = node->m_previous;
+                    node->m_previous->m_next = node->m_next;
+                }
+                parent->m_degree--;
+
+                node->m_next = m_heap->m_next;
+                m_heap->m_next->m_previous = node;
+
+                m_heap->m_next = node;
+                node->m_previous = m_heap;
+
+                node->m_marked = false;
+            }
+
+            void m_cascading_cut(node_t *node) {
+                auto parent = node->m_parent;
+                if (parent != nullptr) {
+                    if (!node->m_marked) {
+                        node->m_marked = true;
+                    } else {
+                        m_cut(node, parent);
+                        m_cascading_cut(parent);
+                    }
+                }
+            }
+
+            void m_delete_key(node_t *node) {
+                auto parent = node->m_parent;
+                if (parent != nullptr) {
+                    m_cut(node, parent);
+                    m_cascading_cut(parent);
+                }
+
+                auto *child = node->m_child;
+                if (child != nullptr) {
+                    do {
+                        child->m_parent = nullptr;
+                        child = child->m_next;
+                    } while (child != node->m_child);
+                    m_merge(m_heap, node->m_child);
+                    node->m_child = nullptr;
+                }
+
+                if (node->m_next == node) {
+                    m_heap = nullptr;
+                } else {
+                    node->m_next->m_previous = node->m_previous;
+                    node->m_previous->m_next = node->m_next;
+                    m_heap = node->m_next;
+                    m_consolidate();
+                }
+
+
+                m_size--;
+            }
+
+            void m_increase_key(node_t *node) {
+                m_delete_key(node);
+                m_size++;
+                node->init(node->m_value);
+                m_heap = m_merge(m_heap, node);
             }
 
             /*
@@ -352,5 +554,7 @@ namespace hg {
         };
     }
 
+    template<typename value_type>
+    using fibonacci_heap = fibonacci_heap_internal::fibonacci_heap<value_type>;
 
 }

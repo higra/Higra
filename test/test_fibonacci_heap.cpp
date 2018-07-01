@@ -7,8 +7,10 @@
 #include "higra/structure/fibonacci_heap.hpp"
 #include "test_utils.hpp"
 #include <random>
+#include <map>
+#include <algorithm>
 
-BOOST_AUTO_TEST_SUITE(fibonacci_heap);
+BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
 
     using namespace hg;
     using namespace std;
@@ -20,23 +22,28 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
             return m_value;
         }
 
-        node(T value) : m_value(value) {
+        node() {
+
+        }
+
+        node(T value, index_t index) : m_value(value), m_index(index) {
 
         }
 
         T m_value;
+        index_t m_index;
     };
 
     template<typename T>
     struct trivial_heap {
-
+        using value_handle = node<T>;
 
         bool empty() const {
             return elements.empty();
         }
 
-        auto &push(T value) {
-            elements.emplace_back(value);
+        value_handle push(T value) {
+            elements.emplace_back(value, m_counter++);
             return elements[elements.size() - 1];
         }
 
@@ -46,7 +53,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
             other.elements.clear();
         }
 
-        auto &top() {
+        value_handle top() {
             return elements[imin()];
         }
 
@@ -55,8 +62,36 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
                 elements.erase(elements.begin() + imin());
         }
 
-        void update(node<T> &node, const T &value) {
+        void erase(value_handle &node) {
+            auto i = find(node.m_index);
+            elements.erase(elements.begin() + i);
+        }
+
+        void increase(value_handle &node, const T &value) {
+            update(node, value);
+        }
+
+        void decrease(value_handle &node, const T &value) {
+            update(node, value);
+        }
+
+        void update(value_handle &node, const T &value) {
+            auto i = find(node.m_index);
             node.m_value = value;
+            elements[i].m_value = value;
+        }
+
+        void increase(value_handle node) {
+            update(node);
+        }
+
+        void decrease(value_handle node) {
+            update(node);
+        }
+
+        void update(value_handle node) {
+            auto i = find(node.m_index);
+            elements[i].m_value = node.m_value;
         }
 
         void clear() {
@@ -81,6 +116,15 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
             }
             return imini;
         }
+
+        index_t find(index_t index) {
+            for (index_t i = 0; i < elements.size(); i++)
+                if (elements[i].m_index == index)
+                    return i;
+            throw std::runtime_error("cannot find element");
+        }
+
+        index_t m_counter = 0;
     };
 
     BOOST_AUTO_TEST_CASE(test_pool_one_block) {
@@ -152,17 +196,17 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
     }
 
     BOOST_AUTO_TEST_CASE(test_fibonacci_heap1) {
-        fibonacci_heap_internal::fibonacci_heap<long> heap;
+        fibonacci_heap<long> heap;
         heap.push(10);
         BOOST_CHECK(heap.size() == 1);
         BOOST_CHECK(!heap.empty());
-        BOOST_CHECK(heap.top().get_value() == 10);
+        BOOST_CHECK(heap.top()->get_value() == 10);
         heap.push(15);
         BOOST_CHECK(heap.size() == 2);
-        BOOST_CHECK(heap.top().get_value() == 10);
+        BOOST_CHECK(heap.top()->get_value() == 10);
         heap.push(8);
         BOOST_CHECK(heap.size() == 3);
-        BOOST_CHECK(heap.top().get_value() == 8);
+        BOOST_CHECK(heap.top()->get_value() == 8);
 
         heap.clear();
         BOOST_CHECK(heap.size() == 0);
@@ -170,7 +214,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
     }
 
     BOOST_AUTO_TEST_CASE(test_fibonacci_heap2) {
-        fibonacci_heap_internal::fibonacci_heap<long> heap;
+        fibonacci_heap<long> heap;
         heap.push(10);
         heap.pop();
         BOOST_CHECK(heap.size() == 0);
@@ -182,7 +226,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
         heap.push(22);
         heap.push(17);
 
-        BOOST_CHECK(heap.top().get_value() == 8);
+        BOOST_CHECK(heap.top()->get_value() == 8);
         heap.pop();
 
         heap.push(5);
@@ -190,47 +234,160 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
         heap.push(2);
 
 
-        BOOST_CHECK(heap.top().get_value() == 2);
+        BOOST_CHECK(heap.top()->get_value() == 2);
         heap.pop();
-        BOOST_CHECK(heap.top().get_value() == 5);
+        BOOST_CHECK(heap.top()->get_value() == 5);
         heap.pop();
-        BOOST_CHECK(heap.top().get_value() == 10);
+        BOOST_CHECK(heap.top()->get_value() == 10);
         heap.pop();
-        BOOST_CHECK(heap.top().get_value() == 15);
+        BOOST_CHECK(heap.top()->get_value() == 15);
         heap.pop();
-        BOOST_CHECK(heap.top().get_value() == 17);
+        BOOST_CHECK(heap.top()->get_value() == 17);
         heap.pop();
-        BOOST_CHECK(heap.top().get_value() == 19);
+        BOOST_CHECK(heap.top()->get_value() == 19);
         heap.pop();
-        BOOST_CHECK(heap.top().get_value() == 22);
+        BOOST_CHECK(heap.top()->get_value() == 22);
         heap.pop();
         BOOST_CHECK(heap.size() == 0);
     }
 
 
     BOOST_AUTO_TEST_CASE(test_fibonacci_heap3) {
-        fibonacci_heap_internal::fibonacci_heap<long> heap;
+        fibonacci_heap<long> heap;
         heap.push(10);
         heap.push(15);
         heap.push(8);
 
-        fibonacci_heap_internal::fibonacci_heap<long> heap2;
+        fibonacci_heap<long> heap2;
         heap.push(9);
         heap.push(7);
 
         heap.merge(heap2);
-        BOOST_CHECK(heap.top().get_value() == 7);
+        BOOST_CHECK(heap.top()->get_value() == 7);
         heap.pop();
-        BOOST_CHECK(heap.top().get_value() == 8);
+        BOOST_CHECK(heap.top()->get_value() == 8);
         heap.pop();
-        BOOST_CHECK(heap.top().get_value() == 9);
+        BOOST_CHECK(heap.top()->get_value() == 9);
         heap.pop();
-        BOOST_CHECK(heap.top().get_value() == 10);
+        BOOST_CHECK(heap.top()->get_value() == 10);
         heap.pop();
-        BOOST_CHECK(heap.top().get_value() == 15);
+        BOOST_CHECK(heap.top()->get_value() == 15);
         heap.pop();
         BOOST_CHECK(heap.size() == 0);
 
+    }
+
+    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_decrease_key) {
+        fibonacci_heap<long> heap;
+        heap.push(10);
+        heap.pop();
+        BOOST_CHECK(heap.size() == 0);
+        BOOST_CHECK(heap.empty());
+
+        heap.push(10);
+        heap.push(15);
+        heap.push(8);
+        auto e1 = heap.push(22);
+        auto e2 = heap.push(17);
+
+        BOOST_CHECK(heap.top()->get_value() == 8);
+        heap.pop();
+
+        heap.push(5);
+        heap.push(19);
+        heap.push(2);
+
+        heap.decrease(e2, 12);
+        heap.decrease(e1, 3);
+
+        BOOST_CHECK(heap.top()->get_value() == 2);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 3);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 5);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 10);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 12);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 15);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 19);
+        heap.pop();
+    }
+
+    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_erase_key) {
+        fibonacci_heap<long> heap;
+        heap.push(10);
+        heap.pop();
+        BOOST_CHECK(heap.size() == 0);
+        BOOST_CHECK(heap.empty());
+
+        heap.push(10);
+        heap.push(15);
+        heap.push(8);
+        auto e1 = heap.push(22);
+        auto e2 = heap.push(17);
+
+        BOOST_CHECK(heap.top()->get_value() == 8);
+        heap.pop();
+
+        heap.push(5);
+        heap.push(19);
+        heap.push(2);
+
+        heap.erase(e2);
+        heap.erase(e1);
+
+        BOOST_CHECK(heap.top()->get_value() == 2);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 5);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 10);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 15);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 19);
+        heap.pop();
+    }
+
+    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_increase_key) {
+        fibonacci_heap<long> heap;
+        heap.push(10);
+        heap.pop();
+        BOOST_CHECK(heap.size() == 0);
+        BOOST_CHECK(heap.empty());
+
+        heap.push(10);
+        heap.push(15);
+        heap.push(8);
+        auto e1 = heap.push(22);
+        auto e2 = heap.push(17);
+
+        BOOST_CHECK(heap.top()->get_value() == 8);
+        heap.pop();
+
+        heap.push(5);
+        heap.push(19);
+        heap.push(2);
+
+        heap.increase(e2, 25);
+        heap.increase(e1, 23);
+
+        BOOST_CHECK(heap.top()->get_value() == 2);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 5);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 10);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 15);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 19);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 23);
+        heap.pop();
+        BOOST_CHECK(heap.top()->get_value() == 25);
+        heap.pop();
     }
 
     struct rnd {
@@ -248,7 +405,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
         auto &rng = rnd::get_rng();
 
 
-        fibonacci_heap_internal::fibonacci_heap<long> heap;
+        fibonacci_heap<long> heap;
         trivial_heap<long> theap;
 
         for (int i = 0; i < nbop; i++) {
@@ -259,12 +416,12 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
                 theap.push(w);
             } else {
                 if (theap.size() > 0) {
-                    BOOST_CHECK(heap.top().get_value() == theap.top().get_value());
+                    BOOST_CHECK(heap.top()->get_value() == theap.top().get_value());
                     BOOST_CHECK(heap.size() == theap.size());
                     heap.pop();
                     theap.pop();
                     if (theap.size() > 0) {
-                        BOOST_CHECK(heap.top().get_value() == theap.top().get_value());
+                        BOOST_CHECK(heap.top()->get_value() == theap.top().get_value());
                     }
                     BOOST_CHECK(heap.size() == theap.size());
                 }
@@ -276,9 +433,9 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
 
 
     BOOST_AUTO_TEST_CASE(test_fibonacci_heap_stress_test_push_pop) {
-        random_heaps(10000);
-        random_heaps(10000);
-        random_heaps(10000);
+        random_heaps(1000);
+        random_heaps(1000);
+        random_heaps(1000);
     }
 
     BOOST_AUTO_TEST_CASE(test_fibonacci_heap_stress_test_push_pop_merge) {
@@ -287,29 +444,31 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
         std::uniform_int_distribution<std::mt19937::result_type> weights(1, 100000);
 
         auto &rng = rnd::get_rng();
-        int nbop = 1000;
+        int nbop = 500;
 
-        fibonacci_heap_internal::fibonacci_heap<long> heap;
+        fibonacci_heap<long> heap;
         trivial_heap<long> theap;
 
         for (int i = 0; i < nbop; i++) {
             int op = dist100(rng);
-            if (op < 50) {
+            if (op < 60) {
                 auto w = weights(rng);
                 heap.push(w);
                 theap.push(w);
             } else if (op < 80) {
                 if (theap.size() > 0) {
-                    BOOST_CHECK(heap.top().get_value() == theap.top().get_value());
+                    auto fht = heap.top();
+                    auto tht = theap.top();
+
+                    BOOST_CHECK(fht->get_value() == tht.get_value());
                     BOOST_CHECK(heap.size() == theap.size());
                     heap.pop();
                     theap.pop();
                     if (theap.size() > 0) {
-                        BOOST_CHECK(heap.top().get_value() == theap.top().get_value());
+                        BOOST_CHECK(heap.top()->get_value() == theap.top().get_value());
                     }
                     BOOST_CHECK(heap.size() == theap.size());
                 }
-
             } else {
                 auto hh = random_heaps(100);
                 heap.merge(hh.first);
@@ -318,5 +477,79 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap);
         }
     }
 
+    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_stress_test_push_pop_update_erase) {
+
+        std::uniform_int_distribution<std::mt19937::result_type> dist100(1, 100);
+        std::uniform_int_distribution<std::mt19937::result_type> weights(1, 100000);
+
+        auto &rng = rnd::get_rng();
+        int nbop = 20000;
+
+        fibonacci_heap<long> heap;
+        trivial_heap<long> theap;
+
+        map<fibonacci_heap<long>::value_handle, trivial_heap<long>::value_handle> heapset;
+
+        for (int i = 0; i < nbop; i++) {
+            int op = dist100(rng);
+            if (op < 60) {
+                auto w = weights(rng);
+                heapset[heap.push(w)] = theap.push(w);
+            } else if (op < 80) {
+                if (theap.size() > 0) {
+                    auto fht = heap.top();
+                    auto tht = theap.top();
+
+                    BOOST_CHECK(fht->get_value() == tht.get_value());
+                    BOOST_CHECK(heap.size() == theap.size());
+                    heap.pop();
+                    theap.pop();
+                    heapset.erase(fht);
+                    if (theap.size() > 0) {
+                        BOOST_CHECK(heap.top()->get_value() == theap.top().get_value());
+                    }
+                    BOOST_CHECK(heap.size() == theap.size());
+                }
+
+            } else if (op < 90) {
+                if (heap.size() > 0) {
+                    std::uniform_int_distribution<std::mt19937::result_type> dist(0, heapset.size() - 1);
+                    auto nb = dist(rng);
+
+                    auto it = heapset.begin();
+                    std::advance(it, nb);
+                    auto e = *it;
+
+                    auto fhe = e.first;
+                    auto the = e.second;
+
+                    heap.erase(fhe);
+                    theap.erase(the);
+                    heapset.erase(fhe);
+                }
+            } else {
+                if (heap.size() > 0) {
+
+
+                    std::uniform_int_distribution<std::mt19937::result_type> dist(0, heapset.size() - 1);
+                    auto nb = dist(rng);
+
+                    auto it = heapset.begin();
+                    std::advance(it, nb);
+                    auto e = *it;
+
+                    auto fhe = e.first;
+                    auto the = e.second;
+
+                    if (fhe->get_value() != 1) {
+                        auto w = weights(rng);
+                        heap.update(fhe, w);
+                        theap.update(the, w);
+                    }
+
+                }
+            }
+        }
+    }
 
 BOOST_AUTO_TEST_SUITE_END();
