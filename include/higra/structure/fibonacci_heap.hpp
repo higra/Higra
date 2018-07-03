@@ -14,6 +14,13 @@ namespace hg {
 
     namespace fibonacci_heap_internal {
 
+        /**
+         * A simple object pool, only support allocating objects one at a time.
+         *
+         * Warning : not thread safe
+         *
+         * @tparam T Type of objects in the pool
+         */
         template<typename T>
         struct object_pool {
 
@@ -103,7 +110,11 @@ namespace hg {
 
 
         /**
-         * Fibonacci heap implementation
+         * Fibonacci Heap
+         *
+         * Warning different heaps will share the same object pool which is NOT thread safe !
+         * The following method are not thread safe: push, pop, erase, clear, destructor
+         *
          * @tparam T Value type, must implement operator < (ie. with a and b two values of type T, a < b must be a well formed expression)
          */
         template<typename T>
