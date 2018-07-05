@@ -106,6 +106,7 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
 #
@@ -176,3 +177,6 @@ texinfo_documents = [
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+def setup(app):
+    app.add_stylesheet('css/custom.css')
