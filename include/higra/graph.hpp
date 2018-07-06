@@ -250,13 +250,15 @@ namespace hg {
     };
 
     /**
-     * Create a new undirected graph (ugraph) as a copy of the given graph
-     * @tparam T
+     * Create a new graph as a copy of the given graph
+     * @tparam T input graph type
+     * @tparam output_graph_type return type (default = ugraph)
      * @param graph
      * @return
      */
-    template<typename T>
-    ugraph make_ugraph(const T &graph) {
+    template<typename output_graph_type = ugraph, typename T>
+    output_graph_type
+    copy_graph(const T &graph) {
         HG_TRACE();
         static_assert(
                 std::is_base_of<graph::adjacency_graph_tag, typename graph::graph_traits<T>::traversal_category>::value,
@@ -265,7 +267,7 @@ namespace hg {
                 std::is_base_of<graph::vertex_list_graph_tag, typename graph::graph_traits<T>::traversal_category>::value,
                 "Graph must implement vertex list graph concept.");
 
-        ugraph g(num_vertices(graph));
+        output_graph_type g(num_vertices(graph));
         auto vertex_it = vertices(graph);
         for (auto vb = vertex_it.first, ve = vertex_it.second; vb != ve; vb++) {
             auto adj_vertex_it = adjacent_vertices(*vb, graph);
@@ -278,16 +280,17 @@ namespace hg {
     };
 
     /**
-     * Create a new undirected graph (ugraph) as a copy of the given graph
-     * @tparam T
+     * Create a new graph as a copy of the given graph
+     * @tparam output_graph_type return type
      * @param graph
      * @return
      */
-    template<>
+    template<typename output_graph_type = ugraph>
     inline
-    ugraph make_ugraph(const ugraph &graph) {
+    output_graph_type
+    copy_graph(const ugraph &graph) {
         HG_TRACE();
-        ugraph g(num_vertices(graph));
+        output_graph_type g(num_vertices(graph));
         auto edge_it = edges(graph);
         for (auto eb = edge_it.first, ee = edge_it.second; eb != ee; eb++) {
             g.add_edge((*eb).first, (*eb).second);

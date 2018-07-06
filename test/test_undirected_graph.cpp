@@ -3,9 +3,8 @@
 //
 
 #include <boost/test/unit_test.hpp>
-
+#include <boost/mpl/list.hpp>
 #include "higra/graph.hpp"
-
 #include "test_utils.hpp"
 
 
@@ -13,30 +12,33 @@
  * graph tests
  */
 
+typedef boost::mpl::list<hg::ugraph, hg::undirected_graph<hg::hash_setS> > test_types;
 
 BOOST_AUTO_TEST_SUITE(undirectedGraph);
+
+
 
 
     using namespace std;
     using namespace hg;
 
-
-    struct _data {
+    template<typename T>
+    struct data {
         // 0 - 1
         // | /
         // 2   3
-        hg::ugraph g;
-
-        _data() : g(4ul) {
+        static auto g() {
+            T g(4ul);
             add_edge(0, 1, g);
             add_edge(1, 2, g);
             add_edge(0, 2, g);
+            return g;
         }
 
-    } data;
+    };
 
-    BOOST_AUTO_TEST_CASE(sizeSimpleGraph) {
-        auto g = data.g;
+    BOOST_AUTO_TEST_CASE_TEMPLATE(sizeSimpleGraph, T, test_types) {
+        auto g = data<T>::g();
 
         BOOST_CHECK(num_vertices(g) == 4);
         BOOST_CHECK(num_edges(g) == 3);
@@ -57,9 +59,9 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         BOOST_CHECK(xt::allclose(out_degree(indices, g), ref));
     }
 
-    BOOST_AUTO_TEST_CASE(copyCTR) {
-        auto g0 = data.g;
-        auto g = hg::make_ugraph(g0);
+    BOOST_AUTO_TEST_CASE_TEMPLATE(copyCTR, T, test_types) {
+        auto g0 = data<T>::g();
+        auto g = hg::copy_graph<T>(g0);
 
         vector<pair<ulong, ulong>> eref{{0, 1},
                                         {1, 2},
@@ -68,11 +70,12 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         for (auto e: hg::edge_iterator(g)) {
             etest.push_back({source(e, g), target(e, g)});
         }
-        BOOST_CHECK(vectorEqual(eref, etest));
+
+        BOOST_CHECK(vectorSame(eref, etest));
 
     }
 
-    BOOST_AUTO_TEST_CASE(copyCTR2) {
+    BOOST_AUTO_TEST_CASE_TEMPLATE(copyCTR2, T, test_types) {
         hg::embedding_grid_2d embedding{2, 3}; // 2 rows, 3 columns
         std::vector<point_2d_i> neighbours{point_2d_i{{-1l, 0l}},
                                            point_2d_i{{0l, -1l}},
@@ -80,7 +83,7 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
                                            point_2d_i{{1l, 0l}}}; // 4 adjacency
 
         auto g0 = hg::regular_grid_graph_2d(embedding, neighbours);
-        auto g = hg::make_ugraph(g0);
+        auto g = hg::copy_graph<T>(g0);
 
         vector<vector<pair<ulong, ulong>>> outListsRef{{{0, 1}, {0, 3}},
                                                        {{1, 0}, {1, 2}, {1, 4}},
@@ -95,7 +98,7 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
             outListsTest.push_back({});
             for (auto e: hg::out_edge_iterator(v, g))
                 outListsTest[v].push_back({source(e, g), target(e, g)});
-            BOOST_CHECK(vectorEqual(outListsRef[v], outListsTest[v]));
+            BOOST_CHECK(vectorSame(outListsRef[v], outListsTest[v]));
             BOOST_CHECK(out_degree(v, g) == outListsRef[v].size());
 
         }
@@ -104,9 +107,9 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
     }
 
 
-    BOOST_AUTO_TEST_CASE(vertexIteratorSimpleGraph) {
+    BOOST_AUTO_TEST_CASE_TEMPLATE(vertexIteratorSimpleGraph, T, test_types) {
 
-        auto g = data.g;
+        auto g = data<T>::g();
 
         vector<ulong> vref{0, 1, 2, 3};
         vector<ulong> vtest;
@@ -118,9 +121,9 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
 
     }
 
-    BOOST_AUTO_TEST_CASE(edgeIteratorSimpleGraph) {
+    BOOST_AUTO_TEST_CASE_TEMPLATE(edgeIteratorSimpleGraph, T, test_types) {
 
-        auto g = data.g;
+        auto g = data<T>::g();
 
         vector<pair<ulong, ulong>> eref{{0, 1},
                                         {1, 2},
@@ -133,9 +136,9 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         BOOST_CHECK(vectorEqual(eref, etest));
     }
 
-    BOOST_AUTO_TEST_CASE(outEdgeIteratorSimpleGraph) {
+    BOOST_AUTO_TEST_CASE_TEMPLATE(outEdgeIteratorSimpleGraph, T, test_types) {
 
-        auto g = data.g;
+        auto g = data<T>::g();
 
         vector<vector<pair<ulong, ulong>>> outListsRef{{{0, 1}, {0, 2}},
                                                        {{1, 0}, {1, 2}},
@@ -149,14 +152,14 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
                 //showTypeName<decltype(e)>("edge type : ");
                 outListsTest[v].push_back({source(e, g), target(e, g)});
             }
-            BOOST_CHECK(vectorEqual(outListsRef[v], outListsTest[v]));
+            BOOST_CHECK(vectorSame(outListsRef[v], outListsTest[v]));
         }
 
     }
 
-    BOOST_AUTO_TEST_CASE(inEdgeIteratorSimpleGraph) {
+    BOOST_AUTO_TEST_CASE_TEMPLATE(inEdgeIteratorSimpleGraph, T, test_types) {
 
-        auto g = data.g;
+        auto g = data<T>::g();
 
         vector<vector<pair<ulong, ulong>>> inListsRef{{{1, 0}, {2, 0}},
                                                       {{0, 1}, {2, 1}},
@@ -168,13 +171,13 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
             inListsTest.push_back(vector<pair<ulong, ulong>>());
             for (auto e: hg::in_edge_iterator(v, g))
                 inListsTest[v].push_back({source(e, g), target(e, g)});
-            BOOST_CHECK(vectorEqual(inListsRef[v], inListsTest[v]));
+            BOOST_CHECK(vectorSame(inListsRef[v], inListsTest[v]));
         }
     }
 
-    BOOST_AUTO_TEST_CASE(adjacentVertexIteratorSimpleGraph) {
+    BOOST_AUTO_TEST_CASE_TEMPLATE(adjacentVertexIteratorSimpleGraph, T, test_types) {
 
-        auto g = data.g;
+        auto g = data<T>::g();
 
         vector<vector<ulong>> adjListsRef{{1, 2},
                                           {0, 2},
@@ -187,13 +190,13 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
             for (auto av: hg::adjacent_vertex_iterator(v, g)) {
                 adjListsTest[v].push_back(av);
             }
-            BOOST_CHECK(vectorEqual(adjListsRef[v], adjListsTest[v]));
+            BOOST_CHECK(vectorSame(adjListsRef[v], adjListsTest[v]));
         }
     }
 
-    BOOST_AUTO_TEST_CASE(edgeIndexIteratorSimpleGraph) {
+    BOOST_AUTO_TEST_CASE_TEMPLATE(edgeIndexIteratorSimpleGraph, T, test_types) {
 
-        auto g = data.g;
+        auto g = data<T>::g();
 
         vector<ulong> ref{0, 1, 2};
         vector<ulong> test;
@@ -201,12 +204,12 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         for (auto v: hg::edge_index_iterator(g)) {
             test.push_back(v);
         }
-        BOOST_CHECK(vectorEqual(ref, test));
+        BOOST_CHECK(vectorSame(ref, test));
     }
 
-    BOOST_AUTO_TEST_CASE(outEdgeIndexIteratorSimpleGraph) {
+    BOOST_AUTO_TEST_CASE_TEMPLATE(outEdgeIndexIteratorSimpleGraph, T, test_types) {
 
-        auto g = data.g;
+        auto g = data<T>::g();
 
         vector<vector<ulong>> ref{{0, 2},
                                   {0, 1},
@@ -219,13 +222,13 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
             for (auto av: hg::out_edge_index_iterator(v, g)) {
                 test[v].push_back(av);
             }
-            BOOST_CHECK(vectorEqual(ref[v], test[v]));
+            BOOST_CHECK(vectorSame(ref[v], test[v]));
         }
     }
 
-    BOOST_AUTO_TEST_CASE(inEdgeIndexIteratorSimpleGraph) {
+    BOOST_AUTO_TEST_CASE_TEMPLATE(inEdgeIndexIteratorSimpleGraph, T, test_types) {
 
-        auto g = data.g;
+        auto g = data<T>::g();
 
         vector<vector<ulong>> ref{{0, 2},
                                   {0, 1},
@@ -238,13 +241,13 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
             for (auto av: hg::in_edge_index_iterator(v, g)) {
                 test[v].push_back(av);
             }
-            BOOST_CHECK(vectorEqual(ref[v], test[v]));
+            BOOST_CHECK(vectorSame(ref[v], test[v]));
         }
     }
 
-    BOOST_AUTO_TEST_CASE(edgeIndex) {
+    BOOST_AUTO_TEST_CASE_TEMPLATE(edgeIndex, T, test_types) {
 
-        auto g = data.g;
+        auto g = data<T>::g();
 
         vector<pair<ulong, ulong>> eref{{0, 1},
                                         {1, 2},
@@ -254,7 +257,42 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
             etest.push_back(edge(ei, g));
         }
 
-        BOOST_CHECK(vectorEqual(eref, etest));
+        BOOST_CHECK(vectorSame(eref, etest));
+    }
+
+    BOOST_AUTO_TEST_CASE_TEMPLATE(removeEdge, T, test_types) {
+
+        auto g = data<T>::g();
+
+        g.remove_edge(1);
+
+        vector<pair<ulong, ulong>> eref{{0,             1}, // deleted {1,2}
+                                        {invalid_index, invalid_index},
+                                        {0,             2}};
+        vector<pair<ulong, ulong>> etest;
+        for (auto ei: hg::edge_index_iterator(g)) {
+            etest.push_back(edge(ei, g));
+        }
+
+        BOOST_CHECK(vectorSame(eref, etest));
+
+        BOOST_CHECK(degree(0, g) == 2);
+        BOOST_CHECK(degree(1, g) == 1);
+        BOOST_CHECK(degree(2, g) == 1);
+
+        vector<vector<ulong>> adjListsRef{{1, 2},
+                                          {0},
+                                          {0},
+                                          {}};
+        vector<vector<ulong>> adjListsTest;
+
+        for (auto v: hg::vertex_iterator(g)) {
+            adjListsTest.push_back(vector<ulong>());
+            for (auto av: hg::adjacent_vertex_iterator(v, g)) {
+                adjListsTest[v].push_back(av);
+            }
+            BOOST_CHECK(vectorSame(adjListsRef[v], adjListsTest[v]));
+        }
     }
 
 BOOST_AUTO_TEST_SUITE_END();

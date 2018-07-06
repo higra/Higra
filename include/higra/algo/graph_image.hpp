@@ -49,7 +49,7 @@ namespace hg {
      */
     inline
     auto get_4_adjacency_graph(const embedding_grid_2d &embedding) {
-        return hg::make_ugraph(get_4_adjacency_implicit_graph(embedding));
+        return hg::copy_graph<ugraph>(get_4_adjacency_implicit_graph(embedding));
     }
 
     /**
@@ -59,7 +59,7 @@ namespace hg {
      */
     inline
     auto get_8_adjacency_graph(const embedding_grid_2d &embedding) {
-        return hg::make_ugraph(get_8_adjacency_implicit_graph(embedding));
+        return hg::copy_graph<ugraph>(get_8_adjacency_implicit_graph(embedding));
     }
 
 

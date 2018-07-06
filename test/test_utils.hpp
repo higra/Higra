@@ -22,6 +22,13 @@ bool vectorEqual(std::vector<T> v1, std::vector<T> v2){
 }
 
 template<typename T>
+bool vectorSame(std::vector<T> v1, std::vector<T> v2) {
+    if (v1.size() != v2.size())
+        return false;
+    return std::is_permutation(v1.begin(), v1.end(), v2.begin());
+}
+
+template<typename T>
 void showTypeName(std::string msg = "") {
     std::cout << msg << boost::typeindex::type_id<T>().pretty_name() << std::endl;
 }
