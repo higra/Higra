@@ -57,15 +57,16 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
                                     {1, 6},
                                     {1, 7}};
 
-        auto res1 = accumulate_parallel(tree, input, hg::accumulator_sum());
-        xt::xtensor<ulong, 2> ref1{{0, 0},
-                                   {0, 0},
-                                   {0, 0},
-                                   {0, 0},
-                                   {0, 0},
-                                   {2, 1},
-                                   {3, 9},
-                                   {2, 11}};
+        auto res1 = accumulate_parallel(tree, input, hg::accumulator_min());
+        auto ulongmax = std::numeric_limits<ulong>::max();
+        xt::xtensor<ulong, 2> ref1{{ulongmax, ulongmax},
+                                   {ulongmax, ulongmax},
+                                   {ulongmax, ulongmax},
+                                   {ulongmax, ulongmax},
+                                   {ulongmax, ulongmax},
+                                   {1,        0},
+                                   {1,        2},
+                                   {1,        5}};
         BOOST_CHECK(xt::allclose(ref1, res1));
 
         xt::xtensor<ulong, 2> vertex_data{{1, 0},
