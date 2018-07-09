@@ -7,7 +7,7 @@ Utility functions move and accumulates values along trees
 
 .. autofunction:: higra.propagate_sequential
 
-.. autofunction:: higra.accumulate_sequential
+.. autofunction:: higra.accumulate_parallel
 
 .. autofunction:: higra.accumulate_sequential
 

@@ -12,3 +12,76 @@
    }
 }
 
+.wy-nav-content {
+   max-width: 1200px !important;
+}
+
+.admonition-syntaxe {
+   background-color: #EEEEEE;
+}
+
+/*
+.activity {
+	border: 1px;
+	width: 80%;
+	background-color: #EEEEEE;
+	margin-left: auto;
+	margin-right: auto;
+
+}*/
+
+.wy-alert-title, .rst-content .admonition-title {
+   margin: 0px;
+}
+
+div.rst-content h1 {
+   background-color: transparent;
+   /* border-bottom: 1px solid #000a15;*/
+   line-height: 1.5;
+   margin: 50px 0px 20px -20px;
+   text-shadow: 0px 1px 0 #b3b3b3;
+   font-size: 300%;
+}
+
+div.rst-content h2 {
+   background-color: transparent;
+   border-bottom: 1px solid #000a15;
+   line-height: 1.5;
+   margin: 50px 0px 20px -20px;
+   text-shadow: 0px 1px 0 #b3b3b3;
+   font-size: 250%;
+}
+
+div.rst-content h3,
+div.rst-content h4,
+div.rst-content h5,
+div.rst-content h6 {
+   background-color: transparent;
+   margin: 10px 0px 10px 0px;
+   text-shadow: 0px 1px 0 #b3b3b3;
+}
+
+div.rst-content h3 {
+   font-size: 150%;
+   margin: 40px 0px 12px -10px;
+}
+
+p {
+   margin-bottom: 12px;
+}
+
+.parhead {
+   margin: 0 20px 0 0;
+   font-size: 110%;
+   font-weight: 700;
+}
+
+.wy-nav-side {
+   position: fixed;
+}
+
+.rst-content pre.literal-block, .rst-content div[class^='highlight'] pre, .rst-content .linenodiv pre {
+   font-family: Consolas, "Liberation Mono", "Courier New", Courier, monospace;
+   font-size: 14px;
+   line-height: 1.1;
+}

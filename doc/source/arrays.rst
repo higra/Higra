@@ -44,7 +44,7 @@ Therefore, using the most specific type compatible with your needs will provide 
         - ``xtensor_fixed``
     *   - ``point_3d_i``
         -
-        - A three dimentional point with real coordinates (``double``)
+        - A three dimentional point with integral coordinates (``long``)
         - ``xtensor_fixed``
     *   - ``point_4d_f``
         -
@@ -52,25 +52,25 @@ Therefore, using the most specific type compatible with your needs will provide 
         - ``xtensor_fixed``
     *   - ``point_4d_i``
         -
-        - A four dimentional point with real coordinates (``double``)
+        - A four dimentional point with integral coordinates (``long``)
         - ``xtensor_fixed``
-    *   - ``array1d``
+    *   - ``array_1d``
         - ``value_t`` the type of elements
         - A one dimentional array
         - ``xtensor``
-    *   - ``array2d``
+    *   - ``array_2d``
         - ``value_t`` the type of elements
         - A two dimentional array
         - ``xtensor``
-    *   - ``array3d``
+    *   - ``array_3d``
         - ``value_t`` the type of elements
         - A three dimentional array
         - ``xtensor``
-    *   - ``array4d``
+    *   - ``array_4d``
         - ``value_t`` the type of elements
         - A four dimentional array
         - ``xtensor``
-    *   - ``arraynd``
+    *   - ``array_nd``
         - ``value_t`` the type of elements
         - A n-dimentional array (n being defined at runtime)
         - ``xarray``
