@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 2.7)
 project(higra)
 
 
-
-
 set (HIGRA_VERSION_MAJOR 1 CACHE INTERNAL "" FORCE)
 set (HIGRA_VERSION_MINOR 0 CACHE INTERNAL "" FORCE)
 set (HIGRA_RELEASE_TYPE "alpha" CACHE INTERNAL "" FORCE)
@@ -39,8 +37,15 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/cmake/")
 
-option (DO_TEST
+find_package(Boost QUIET COMPONENTS unit_test_framework)
+if (Boost_FOUND)
+    option(DO_TEST
         "Execute test suit." ON)
+else ()
+    message("Testing disabled as 'Boost unit test framework' cannot be found. Please install it or manually provide its location to cmake in order to enable testing.")
+    option(DO_TEST
+            "Execute test suit." OFF)
+endif ()
 
 if (DO_TEST)
     enable_testing()
@@ -56,9 +61,17 @@ endif(USE_SIMD)
 
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
-    option(DO_BENCHMARK
+    find_package(benchmark QUIET)
+    if (benchmark_FOUND)
+        option(DO_BENCHMARK
             "Execute benchmark suit." ON)
+    else ()
+        message("Benchmarking disabled as 'Google benchmark' cannot be found. Please install it or manually provide its location to cmake in order to enable testing.")
+        option(DO_BENCHMARK
+                "Execute benchmark suit." OFF)
+    endif ()
 else ()
+    message("Benchmarking disabled in 'debug' mode.")
     option(DO_BENCHMARK
             "Execute benchmark suit." OFF)
 endif ()

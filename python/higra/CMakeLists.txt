@@ -1,11 +1,9 @@
 
-
-find_package(Boost REQUIRED)
 find_package(PythonInterp 3.5 REQUIRED)
 find_package(NumPy REQUIRED)
 
 
-include_directories(${Boost_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIRS})
 
 set(PYMODULE_COMPONENTS
         cpp/py_accumulators.cpp
