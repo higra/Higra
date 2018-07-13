@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_SUITE(embedding);
     }
 
     BOOST_AUTO_TEST_CASE(CreateEmbeddingGridFromXTensor) {
-        xt::xarray<ulong> shape = {10, 5, 2};
+        xt::xarray<unsigned long> shape = {10, 5, 2};
         hg::embedding_grid_3d e1(shape);
         BOOST_CHECK(e1.size() == 100);
         BOOST_CHECK(e1.dimension() == 3);
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_SUITE(embedding);
 
 
     BOOST_AUTO_TEST_CASE(grid2LinV) {
-        xt::xarray<ulong> shape = {10, 5, 2};
+        xt::xarray<unsigned long> shape = {10, 5, 2};
         hg::embedding_grid_3d e1(shape);
 
         xt::xarray<long> coord = {{0, 0, 0},
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_SUITE(embedding);
         auto linCoord = e1.grid2lin(coord);
         BOOST_CHECK(linCoord.shape().size() == 1);
         BOOST_CHECK(linCoord.shape()[0] == 4);
-        std::vector<ulong> resShape = {3};
+        std::vector<unsigned long> resShape = {3};
 
         BOOST_CHECK(linCoord(0) == 0);
         BOOST_CHECK(linCoord(1) == 1);
@@ -118,11 +118,11 @@ BOOST_AUTO_TEST_SUITE(embedding);
 
 
     BOOST_AUTO_TEST_CASE(lin2GridV) {
-        xt::xarray<ulong> shape = {5, 10};
+        xt::xarray<unsigned long> shape = {5, 10};
         hg::embedding_grid_2d e1(shape);
 
-        xt::xarray<ulong> coordLin = {{0,  1,  2,  3},
-                                      {22, 42, 43, 44}};
+        xt::xarray<unsigned long> coordLin = {{0,  1,  2,  3},
+                                              {22, 42, 43, 44}};
         xt::xarray<long> coords = {{{0, 0}, {0, 1}, {0, 2}, {0, 3}},
                                    {{2, 2}, {4, 2}, {4, 3}, {4, 4}}};
 
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_SUITE(embedding);
     }
 
     BOOST_AUTO_TEST_CASE(containsV) {
-        xt::xarray<ulong> shape = {5, 10};
+        xt::xarray<unsigned long> shape = {5, 10};
         hg::embedding_grid_2d e1(shape);
 
         xt::xarray<long> coords{{{0, 0}, {3, 8}, {-1, 2}},

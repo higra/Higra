@@ -17,14 +17,14 @@ BOOST_AUTO_TEST_SUITE(graphImage);
 
         auto g = get_4_adjacency_graph({2, 3});
 
-        vector<vector<pair<ulong, ulong>>> outListsRef{{{0, 1}, {0, 3}},
-                                                       {{1, 0}, {1, 2}, {1, 4}},
-                                                       {{2, 1}, {2, 5}},
-                                                       {{3, 0}, {3, 4}},
-                                                       {{4, 1}, {4, 3}, {4, 5}},
-                                                       {{5, 2}, {5, 4}}
+        vector<vector<pair<unsigned long, unsigned long>>> outListsRef{{{0, 1}, {0, 3}},
+                                                                       {{1, 0}, {1, 2}, {1, 4}},
+                                                                       {{2, 1}, {2, 5}},
+                                                                       {{3, 0}, {3, 4}},
+                                                                       {{4, 1}, {4, 3}, {4, 5}},
+                                                                       {{5, 2}, {5, 4}}
         };
-        vector<vector<pair<ulong, ulong>>> outListsTest;
+        vector<vector<pair<unsigned long, unsigned long>>> outListsTest;
 
         for (size_t v = 0; v < 6; v++) {
             outListsTest.push_back({});
@@ -41,14 +41,14 @@ BOOST_AUTO_TEST_SUITE(graphImage);
 
         auto g = get_4_adjacency_implicit_graph({2, 3});
 
-        vector<vector<pair<ulong, ulong>>> outListsRef{{{0, 1}, {0, 3}},
-                                                       {{1, 0}, {1, 2}, {1, 4}},
-                                                       {{2, 1}, {2, 5}},
-                                                       {{3, 0}, {3, 4}},
-                                                       {{4, 1}, {4, 3}, {4, 5}},
-                                                       {{5, 2}, {5, 4}}
+        vector<vector<pair<unsigned long, unsigned long>>> outListsRef{{{0, 1}, {0, 3}},
+                                                                       {{1, 0}, {1, 2}, {1, 4}},
+                                                                       {{2, 1}, {2, 5}},
+                                                                       {{3, 0}, {3, 4}},
+                                                                       {{4, 1}, {4, 3}, {4, 5}},
+                                                                       {{5, 2}, {5, 4}}
         };
-        vector<vector<pair<ulong, ulong>>> outListsTest;
+        vector<vector<pair<unsigned long, unsigned long>>> outListsTest;
 
         for (size_t v = 0; v < 6; v++) {
             outListsTest.push_back({});
@@ -65,14 +65,14 @@ BOOST_AUTO_TEST_SUITE(graphImage);
 
         auto g = get_8_adjacency_graph({2, 3});
 
-        vector<vector<pair<ulong, ulong>>> outListsRef{{{0, 1}, {0, 3}, {0, 4}},
-                                                       {{1, 0}, {1, 2}, {1, 3}, {1, 4}, {1, 5}},
-                                                       {{2, 1}, {2, 4}, {2, 5}},
-                                                       {{3, 0}, {3, 1}, {3, 4}},
-                                                       {{4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 5}},
-                                                       {{5, 1}, {5, 2}, {5, 4}}
+        vector<vector<pair<unsigned long, unsigned long>>> outListsRef{{{0, 1}, {0, 3}, {0, 4}},
+                                                                       {{1, 0}, {1, 2}, {1, 3}, {1, 4}, {1, 5}},
+                                                                       {{2, 1}, {2, 4}, {2, 5}},
+                                                                       {{3, 0}, {3, 1}, {3, 4}},
+                                                                       {{4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 5}},
+                                                                       {{5, 1}, {5, 2}, {5, 4}}
         };
-        vector<vector<pair<ulong, ulong>>> outListsTest;
+        vector<vector<pair<unsigned long, unsigned long>>> outListsTest;
 
         for (size_t v = 0; v < 6; v++) {
             outListsTest.push_back({});
@@ -89,14 +89,14 @@ BOOST_AUTO_TEST_SUITE(graphImage);
 
         auto g = get_8_adjacency_implicit_graph({2, 3});
 
-        vector<vector<pair<ulong, ulong>>> outListsRef{{{0, 1}, {0, 3}, {0, 4}},
-                                                       {{1, 0}, {1, 2}, {1, 3}, {1, 4}, {1, 5}},
-                                                       {{2, 1}, {2, 4}, {2, 5}},
-                                                       {{3, 0}, {3, 1}, {3, 4}},
-                                                       {{4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 5}},
-                                                       {{5, 1}, {5, 2}, {5, 4}}
+        vector<vector<pair<unsigned long, unsigned long>>> outListsRef{{{0, 1}, {0, 3}, {0, 4}},
+                                                                       {{1, 0}, {1, 2}, {1, 3}, {1, 4}, {1, 5}},
+                                                                       {{2, 1}, {2, 4}, {2, 5}},
+                                                                       {{3, 0}, {3, 1}, {3, 4}},
+                                                                       {{4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 5}},
+                                                                       {{5, 1}, {5, 2}, {5, 4}}
         };
-        vector<vector<pair<ulong, ulong>>> outListsTest;
+        vector<vector<pair<unsigned long, unsigned long>>> outListsTest;
 
         for (size_t v = 0; v < 6; v++) {
             outListsTest.push_back({});

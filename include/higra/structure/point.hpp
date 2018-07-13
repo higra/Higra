@@ -7,7 +7,7 @@
 #include "xtensor/xfixed.hpp"
 
 namespace hg {
-    template<typename value_t, uint dim>
+    template<typename value_t, unsigned int dim>
     using point = xt::xtensor_fixed <value_t, xt::xshape<dim>>;
 
     using point_1d_f = point<double, 1>;
