@@ -145,6 +145,20 @@ namespace hg {
                 edges[ei].second = invalid_index;
             }
 
+            void set_edge(edge_index_t ei, vertex_descriptor v1, vertex_descriptor v2) {
+                if (v1 > v2) {
+                    std::swap(v1, v2);
+                }
+                // TODO optimize cases !
+                remove_edge(ei);
+
+                add_to_container(out_edges[v1], ei);
+                if (v1 != v2)
+                    add_to_container(out_edges[v2], ei);
+                edges[ei].first = v1;
+                edges[ei].second = v2;
+            }
+
             auto edge(vertex_descriptor v) const {
                 return edges[v];
             }
@@ -297,6 +311,19 @@ namespace hg {
                                                                typename hg::undirected_graph<T>::vertex_descriptor v2,
                                                                hg::undirected_graph<T> &g) {
         return g.add_edge(v1, v2);
+    }
+
+    template<typename T>
+    void remove_edge(typename hg::undirected_graph<T>::edge_index_t ei, hg::undirected_graph<T> &g) {
+        g.remove_edge(ei);
+    }
+
+    template<typename T>
+    void set_edge(typename hg::undirected_graph<T>::edge_index_t ei,
+                  typename hg::undirected_graph<T>::vertex_descriptor v1,
+                  typename hg::undirected_graph<T>::vertex_descriptor v2,
+                  hg::undirected_graph<T> &g) {
+        g.set_edge(ei, v1, v2);
     }
 
     template<typename T>

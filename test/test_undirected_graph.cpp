@@ -264,7 +264,7 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
 
         auto g = data<T>::g();
 
-        g.remove_edge(1);
+        remove_edge(1, g);
 
         vector<pair<unsigned long, unsigned long>> eref{{0,             1}, // deleted {1,2}
                                         {                invalid_index, invalid_index},
@@ -284,6 +284,42 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
                                                   {0},
                                                   {0},
                                                   {}};
+        vector<vector<unsigned long>> adjListsTest;
+
+        for (auto v: hg::vertex_iterator(g)) {
+            adjListsTest.push_back(vector<unsigned long>());
+            for (auto av: hg::adjacent_vertex_iterator(v, g)) {
+                adjListsTest[v].push_back(av);
+            }
+            BOOST_CHECK(vectorSame(adjListsRef[v], adjListsTest[v]));
+        }
+    }
+
+    BOOST_AUTO_TEST_CASE_TEMPLATE(setEdge, T, test_types) {
+
+        auto g = data<T>::g();
+
+        set_edge(1, 3, 0, g);
+
+        vector<pair<unsigned long, unsigned long>> eref{{0, 1}, // deleted {1,2}
+                                                        {0, 3},
+                                                        {0, 2}};
+        vector<pair<unsigned long, unsigned long>> etest;
+        for (auto ei: hg::edge_index_iterator(g)) {
+            etest.push_back(edge(ei, g));
+        }
+
+        BOOST_CHECK(vectorSame(eref, etest));
+
+        BOOST_CHECK(degree(0, g) == 3);
+        BOOST_CHECK(degree(1, g) == 1);
+        BOOST_CHECK(degree(2, g) == 1);
+        BOOST_CHECK(degree(3, g) == 1);
+
+        vector<vector<unsigned long>> adjListsRef{{1, 2, 3},
+                                                  {0},
+                                                  {0},
+                                                  {0}};
         vector<vector<unsigned long>> adjListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
