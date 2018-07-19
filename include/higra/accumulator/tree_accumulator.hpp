@@ -171,6 +171,33 @@ namespace hg {
         template<bool vectorial,
                 typename tree_t,
                 typename T1,
+                typename output_t = typename T1::value_type>
+        auto propagate_parallel_impl(const tree_t &tree,
+                                     const xt::xexpression<T1> &xinput) {
+            HG_TRACE();
+            auto &input = xinput.derived_cast();
+            hg_assert(input.dimension() > 0, "Input cannot be a scalar.");
+            hg_assert(num_vertices(tree) == input.shape()[0],
+                      "Size of input first dimension must be equal to the number of nodes in the tree.");
+
+            array_nd<output_t> output = array_nd<output_t>::from_shape(input.shape());
+
+            auto input_view = make_light_axis_view<vectorial>(input);
+            auto output_view = make_light_axis_view<vectorial>(output);
+
+            auto aparents = parents(tree).storage_begin();
+
+            for (auto i: root_to_leaves_iterator(tree)) {
+                input_view.set_position(aparents[i]);
+                output_view.set_position(i);
+                output_view = input_view;
+            }
+            return output;
+        };
+
+        template<bool vectorial,
+                typename tree_t,
+                typename T1,
                 typename T2,
                 typename output_t = typename T1::value_type>
         auto propagate_parallel_impl(const tree_t &tree,
@@ -288,10 +315,21 @@ namespace hg {
             return tree_accumulator_detail::accumulate_and_combine_sequential_impl<true>(tree, xinput, xvertex_data,
                                                                                          accumulator, combine);
         }
-
     };
 
-    template<typename tree_t, typename T1, typename T2, typename output_t = typename T1::value_type>
+    template<typename tree_t, typename T1>
+    auto propagate_parallel(const tree_t &tree,
+                            const xt::xexpression<T1> &xinput) {
+        auto &input = xinput.derived_cast();
+
+        if (input.dimension() == 1) {
+            return tree_accumulator_detail::propagate_parallel_impl<false>(tree, xinput);
+        } else {
+            return tree_accumulator_detail::propagate_parallel_impl<true>(tree, xinput);
+        }
+    };
+
+    template<typename tree_t, typename T1, typename T2>
     auto propagate_parallel(const tree_t &tree,
                             const xt::xexpression<T1> &xinput,
                             const xt::xexpression<T2> &xcondition) {
@@ -304,7 +342,7 @@ namespace hg {
         }
     };
 
-    template<typename tree_t, typename T1, typename T2, typename output_t = typename T1::value_type>
+    template<typename tree_t, typename T1, typename T2>
     auto propagate_sequential(const tree_t &tree,
                               const xt::xexpression<T1> &xinput,
                               const xt::xexpression<T2> &xcondition) {
@@ -317,116 +355,5 @@ namespace hg {
         }
     };
 
-/*
-    template<typename tree_t, typename T, typename accumulator_t, typename output_t = typename T::value_type>
-    auto accumulate_parallel_view(const tree_t &tree,
-                                  const xt::xexpression<T> &xinput,
-                                  accumulator_t &&accumulator) {
-        auto &input = xinput.derived_cast();
-        array_nd<output_t> output = xt::zeros<output_t>(input.shape());
 
-        acc_reset(accumulator);
-        auto v = acc_result(accumulator);
-
-        for (auto i: tree.iterate_on_leaves()) {
-            xt::view(output, i) = v;
-        }
-
-
-        for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
-            acc_reset(accumulator);
-            for (auto c : tree.children(i)) {
-                acc_accumulate(xt::view(input, c), accumulator);
-            }
-            xt::view(output, i) = acc_result(accumulator);
-        }
-
-        return output;
-    };
-
-    template<typename tree_t, typename T, typename accumulator_t, typename output_t = typename T::value_type>
-    auto accumulate_sequential_view(const tree_t &tree,
-                                    const xt::xexpression<T> &xvertex_data,
-                                    accumulator_t &&accumulator) {
-        auto &vertex_data = xvertex_data.derived_cast();
-        std::vector<std::size_t> res_shape(vertex_data.shape().begin(), vertex_data.shape().end());
-        res_shape[0] = num_vertices(tree);
-        array_nd<output_t> output = xt::zeros<output_t>(res_shape);
-
-        for (auto i: tree.iterate_on_leaves())
-            xt::view(output, i) = xt::view(vertex_data, i);
-
-        for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
-            acc_reset(accumulator);
-            for (auto c : tree.children(i)) {
-                acc_accumulate(xt::view(output, c), accumulator);
-            }
-            xt::view(output, i) = acc_result(accumulator);
-        }
-        return output;
-    };
-
-    template<typename tree_t, typename T1, typename T2, typename accumulator_t, typename combination_fun_t, typename output_t = typename T1::value_type>
-    auto accumulate_and_combine_sequential_view(const tree_t &tree,
-                                                const xt::xexpression<T1> &xinput,
-                                                const xt::xexpression<T2> &xvertex_data,
-                                                accumulator_t &&accumulator,
-                                                combination_fun_t combine) {
-        auto &input = xinput.derived_cast();
-        auto &vertex_data = xvertex_data.derived_cast();
-        std::vector<std::size_t> res_shape(vertex_data.shape().begin(), vertex_data.shape().end());
-        res_shape[0] = num_vertices(tree);
-        array_nd<output_t> output = xt::zeros<output_t>(res_shape);
-
-        for (auto i: tree.iterate_on_leaves())
-            xt::view(output, i) = xt::view(vertex_data, i);
-
-        for (auto i : tree.iterate_from_leaves_to_root(leaves_it::exclude)) {
-            acc_reset(accumulator);
-            for (auto c : tree.children(i)) {
-                acc_accumulate(xt::view(output, c), accumulator);
-            }
-            xt::view(output, i) = combine(acc_result(accumulator), xt::view(input, i));
-        }
-
-        return output;
-    };
-
-    template<typename tree_t, typename T1, typename T2, typename output_t = typename T1::value_type>
-    auto propagate_parallel_view(const tree_t &tree,
-                                 const xt::xexpression<T1> &xinput,
-                                 const xt::xexpression<T2> &xcondition) {
-        auto &input = xinput.derived_cast();
-        auto &condition = xcondition.derived_cast();
-        array_nd<output_t> output = xt::zeros<output_t>(input.shape());
-        auto &parents = tree.parents();
-
-        for (auto i: tree.iterate_from_root_to_leaves()) {
-            if (condition(i)) {
-                xt::view(output, i) = xt::view(input, parents(i));
-            } else {
-                xt::view(output, i) = xt::view(input, i);
-            }
-        }
-        return output;
-    };
-
-    template<typename tree_t, typename T1, typename T2, typename output_t = typename T1::value_type>
-    auto propagate_sequential_view(const tree_t &tree,
-                                   const xt::xexpression<T1> &xinput,
-                                   const xt::xexpression<T2> &xcondition) {
-        auto &input = xinput.derived_cast();
-        array_nd<output_t> output = xt::zeros<output_t>(input.shape());
-        auto &condition = xcondition.derived_cast();
-        auto &parents = tree.parents();
-
-        for (auto i: tree.iterate_from_root_to_leaves()) {
-            if (condition(i)) {
-                xt::view(output, i) = xt::view(output, parents(i));
-            } else {
-                xt::view(output, i) = xt::view(input, i);
-            }
-        }
-        return output;
-    };*/
 }

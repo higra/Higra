@@ -20,7 +20,7 @@ struct def_accumulate_parallel {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("accumulate_parallel", [](const graph_t &tree, const xt::pyarray <value_t> &input,
+        c.def("accumulate_parallel", [](const graph_t &tree, const xt::pyarray<value_t> &input,
                                         hg::accumulators accumulator) {
                   switch (accumulator) {
                       case hg::accumulators::min:
@@ -57,7 +57,7 @@ struct def_accumulate_sequential {
     static
     void def(C &c, const char *doc) {
         c.def("accumulate_sequential",
-              [](const graph_t &tree, const xt::pyarray <value_t> &vertex_data, hg::accumulators accumulator) {
+              [](const graph_t &tree, const xt::pyarray<value_t> &vertex_data, hg::accumulators accumulator) {
                   switch (accumulator) {
                       case hg::accumulators::min:
                           return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_min());
@@ -123,7 +123,7 @@ struct def_accumulate_and_combine_sequential {
     static
     void def(C &c, const char *doc, const char *name, const F &f) {
         c.def(name,
-              [&f](const graph_t &tree, const xt::pyarray <value_t> &input, const xt::pyarray <value_t> &vertex_data,
+              [&f](const graph_t &tree, const xt::pyarray<value_t> &input, const xt::pyarray<value_t> &vertex_data,
                    hg::accumulators accumulator) {
                   switch (accumulator) {
                       case hg::accumulators::min:
@@ -174,7 +174,7 @@ struct def_propagate_sequential {
     static
     void def(C &c, const char *doc) {
         c.def("propagate_sequential",
-              [](const graph_t &tree, const xt::pyarray <value_t> &input,
+              [](const graph_t &tree, const xt::pyarray<value_t> &input,
                  const xt::pyarray<bool> &condition) {
                   return hg::propagate_sequential(tree, input, condition);
               },
@@ -191,14 +191,18 @@ struct def_propagate_parallel {
     static
     void def(C &c, const char *doc) {
         c.def("propagate_parallel",
-              [](const graph_t &tree, const xt::pyarray <value_t> &input,
+              [](const graph_t &tree, const xt::pyarray<value_t> &input,
                  const xt::pyarray<bool> &condition) {
-                  return hg::propagate_parallel(tree, input, condition);
+                  if (condition.dimension() == 0) {
+                      return hg::propagate_parallel(tree, input);
+                  } else {
+                      return hg::propagate_parallel(tree, input, condition);
+                  }
               },
               doc,
               py::arg("tree"),
               py::arg("input"),
-              py::arg("condition"));
+              py::arg("condition") = xt::pyarray<bool>{});
     }
 };
 
@@ -248,9 +252,23 @@ void py_init_tree_accumulator(pybind11::module &m) {
 
     add_type_overloads<def_propagate_parallel<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
-             "Conditionally propagates parent values to children. "
-             "For each node i, if condition(i) then output(i) = input(tree.parent(i)) otherwise"
-             "output(i) = input(i)");
+             "\
+The conditional parallel propagator defines the new value of a node as its parent value if the condition is true and keeps its value otherwise. \
+This process is done in parallel on the whole tree. The default condition (if the user does not provide one) is true for all nodes: each node takes \
+the value of its parent. \n\n\
+The conditional parallel propagator pseudo-code could be::\n\n\
+	# input: a tree t\n\
+	# input: an attribute att on the nodes of t\n\
+	# input: a condition cond on the nodes of t\n\n\
+\
+	output = copy(input)\n\n\
+\
+	for each node n of t:\n\
+	if(cond(n)):\n\
+	    output[n] = input[t.parent(n)]\n\n\
+\
+	return output\
+");
 
     add_type_overloads<def_propagate_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,

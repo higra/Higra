@@ -105,13 +105,17 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
         array_1d<int> input{1, 2, 3, 4, 5, 6, 7, 8};
         array_1d<bool> condition{true, false, true, false, true, true, false, false};
 
-        auto output = propagate_parallel(tree, input, condition);
-        array_1d<int> ref{6, 2, 7, 4, 7, 8, 7, 8};
+        auto output = propagate_parallel(tree, input);
+        array_1d<int> ref{6, 6, 7, 7, 7, 8, 8, 8};
         BOOST_CHECK(xt::allclose(ref, output));
 
-        auto output2 = propagate_sequential(tree, input, condition);
-        array_1d<int> ref2{8, 2, 7, 4, 7, 8, 7, 8};
+        auto output2 = propagate_parallel(tree, input, condition);
+        array_1d<int> ref2{6, 2, 7, 4, 7, 8, 7, 8};
         BOOST_CHECK(xt::allclose(ref2, output2));
+
+        auto output3 = propagate_sequential(tree, input, condition);
+        array_1d<int> ref3{8, 2, 7, 4, 7, 8, 7, 8};
+        BOOST_CHECK(xt::allclose(ref3, output3));
     }
 
     BOOST_AUTO_TEST_CASE(treePropagateVect) {
@@ -127,19 +131,19 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
 
         array_1d<bool> condition{true, false, true, false, true, true, false, false};
 
-        auto output = propagate_parallel(tree, input, condition);
+        auto output = propagate_parallel(tree, input);
         array_2d<int> ref{{6, 3},
-                          {2, 7},
+                          {6, 3},
                           {7, 2},
-                          {4, 5},
+                          {7, 2},
                           {7, 2},
                           {8, 1},
-                          {7, 2},
+                          {8, 1},
                           {8, 1}};
         BOOST_CHECK(xt::allclose(ref, output));
 
-        auto output2 = propagate_sequential(tree, input, condition);
-        array_2d<int> ref2{{8, 1},
+        auto output2 = propagate_parallel(tree, input, condition);
+        array_2d<int> ref2{{6, 3},
                            {2, 7},
                            {7, 2},
                            {4, 5},
@@ -148,6 +152,17 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
                            {7, 2},
                            {8, 1}};
         BOOST_CHECK(xt::allclose(ref2, output2));
+
+        auto output3 = propagate_sequential(tree, input, condition);
+        array_2d<int> ref3{{8, 1},
+                           {2, 7},
+                           {7, 2},
+                           {4, 5},
+                           {7, 2},
+                           {8, 1},
+                           {7, 2},
+                           {8, 1}};
+        BOOST_CHECK(xt::allclose(ref3, output3));
     }
 
 BOOST_AUTO_TEST_SUITE_END();

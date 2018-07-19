@@ -60,7 +60,8 @@ include_directories(${GBENCHMARK_INCLUDE_DIRS})
 set(FILES_BENCHMARK
         main.cpp
         # benchmark_tree_iterator.cpp
-        benchmark_array_accessor.cpp)
+        #benchmark_array_accessor.cpp
+        benchmark_views.cpp)
 
 set(BENCHMARK_TARGET benchmark_higra)
 add_executable(${BENCHMARK_TARGET} ${FILES_BENCHMARK})

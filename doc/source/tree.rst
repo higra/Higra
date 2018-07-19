@@ -461,7 +461,8 @@ Conditional parallel propagator
 *******************************
 
 The conditional parallel propagator defines the new value of a node as its parent value if the condition is true and keeps its value otherwise.
-This process is done in parallel on the whole tree.
+This process is done in parallel on the whole tree. The default condition (if the user does not provide one) is true for all nodes: each node takes
+the value of its parent.
 
 The conditional parallel propagator pseudo-code could be:
 

@@ -101,6 +101,10 @@ class TestTreeAccumulators(unittest.TestCase):
         input_array = np.asarray(((1, 8), (2, 7), (3, 6), (4, 5), (5, 4), (6, 3), (7, 2), (8, 1)), dtype=np.float64)
         condition = np.asarray((True, False, True, False, True, True, False, False))
 
+        output = hg.propagate_parallel(tree, input_array)
+        ref = np.asarray(((6, 3), (6, 3), (7, 2), (7, 2), (7, 2), (8, 1), (8, 1), (8, 1)))
+        self.assertTrue(np.allclose(ref, output))
+
         output = hg.propagate_parallel(tree, input_array, condition)
         ref = np.asarray(((6, 3), (2, 7), (7, 2), (4, 5), (7, 2), (8, 1), (7, 2), (8, 1)))
         self.assertTrue(np.allclose(ref, output))
