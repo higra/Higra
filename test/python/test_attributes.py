@@ -125,7 +125,6 @@ class TestAttributes(unittest.TestCase):
                                     (2., 2.), (29. / 7, 29. / 7), (4., 4.)))
 
         attribute = hg.attribute_mean_weights(t, leaf_data=leaf_data)
-        print(attribute)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
 

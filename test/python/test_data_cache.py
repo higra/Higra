@@ -49,7 +49,6 @@ def consumer3(obj, attr1, attr2):
 def provider_consumer(obj, attr1, crash=False):
     if crash:
         raise Exception("Should not have been called")
-    print(attr1)
     return attr1 + 1
 
 
