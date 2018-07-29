@@ -1,5 +1,5 @@
 
-find_package(PythonInterp 3.5 REQUIRED)
+find_package(PythonInterp 2.7 REQUIRED)
 find_package(NumPy REQUIRED)
 
 
