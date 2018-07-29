@@ -82,7 +82,7 @@ endif ()
 set(PYBIND11_CPP_STANDARD -std=c++14)
 add_subdirectory(lib/pybind11)
 
-add_subdirectory(python/higra)
+add_subdirectory(python)
 
 
 if (DO_TEST)

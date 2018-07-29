@@ -1,9 +1,5 @@
 import unittest
 import numpy as np
-import sys
-
-sys.path.insert(0, "@PYTHON_MODULE_PATH@")
-
 import higra as hg
 
 import os
@@ -20,7 +16,7 @@ def silent_remove(filename):
 class TestPinkGraphIO(unittest.TestCase):
 
     def test_graph_read(self):
-        graph, vertex_weights, edge_weights, shape = hg._read_graph_pink("../ressources/test.graph")
+        graph, vertex_weights, edge_weights, shape = hg._read_graph_pink("ressources/test.graph")
 
         edges_ref = []
         for i in range(14):
@@ -59,7 +55,7 @@ class TestPinkGraphIO(unittest.TestCase):
 
         silent_remove(filename)
 
-        with open("../ressources/test.graph", 'r') as f:
+        with open("ressources/test.graph", 'r') as f:
             data_ref = f.read()
 
         self.assertTrue(data == data_ref)

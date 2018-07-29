@@ -65,6 +65,10 @@ setup(
     long_description='',
     packages=['higra'],
     ext_modules=[CMakeExtension('higra/higram',sourcedir="..")],
+    test_suite="test",
     cmdclass=dict(build_ext=CMakeBuild),
+    install_requires=[
+        'numpy',
+    ],
     zip_safe=False,
 )

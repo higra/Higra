@@ -36,7 +36,6 @@ if (DO_TEST)
     set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} test_exe CACHE INTERNAL "" FORCE)
 
     add_subdirectory(ressources)
-    add_subdirectory(python)
 
 endif (DO_TEST)
 

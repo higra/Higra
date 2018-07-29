@@ -1,10 +1,5 @@
-import sys
 import unittest
-
 import numpy as np
-
-sys.path.insert(0, "@PYTHON_MODULE_PATH@")
-
 import higra as hg
 
 
