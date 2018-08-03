@@ -163,6 +163,9 @@ namespace xt
         explicit pytensor(const shape_type& shape, const strides_type& strides, const_reference value);
         explicit pytensor(const shape_type& shape, const strides_type& strides);
 
+        template<class S = shape_type>
+        static pytensor from_shape(S &&shape);
+
         pytensor(const self_type& rhs);
         self_type& operator=(const self_type& rhs);
 
@@ -315,6 +318,18 @@ namespace xt
     {
         init_tensor(shape, strides);
     }
+
+    /**
+     * Allocates and returns an pytensor with the specified shape.
+     * @param shape the shape of the pytensor
+     */
+    template<class T, std::size_t N, layout_type L>
+    template<class S>
+    inline pytensor<T, N, L> pytensor<T, N, L>::from_shape(S &&shape) {
+        detail::check_dims<shape_type>::run(shape.size());
+        auto shp = xtl::forward_sequence<shape_type>(shape);
+        return self_type(shp);
+    }
     //@}
 
     /**
@@ -326,7 +341,7 @@ namespace xt
      */
     template <class T, std::size_t N, layout_type L>
     inline pytensor<T, N, L>::pytensor(const self_type& rhs)
-        : self_type()
+            : base_type(), semantic_base(rhs)
     {
         init_tensor(rhs.shape(), rhs.strides());
         std::copy(rhs.storage().cbegin(), rhs.storage().cend(), this->storage().begin());
@@ -400,9 +415,10 @@ namespace xt
         auto dtype = pybind11::detail::npy_format_descriptor<T>::dtype();
 
         auto tmp = pybind11::reinterpret_steal<pybind11::object>(
-            PyArray_NewFromDescr(&PyArray_Type, (PyArray_Descr*) dtype.ptr(), static_cast<int>(shape.size()),
-                        const_cast<npy_intp*>(shape.data()), python_strides,
-                        nullptr, flags, nullptr));
+                PyArray_NewFromDescr(&PyArray_Type, (PyArray_Descr *) dtype.release().ptr(),
+                                     static_cast<int>(shape.size()),
+                                     const_cast<npy_intp*>(shape.data()), python_strides,
+                                     nullptr, flags, nullptr));
 
         if (!tmp)
         {
@@ -429,6 +445,11 @@ namespace xt
         std::transform(PyArray_STRIDES(this->python_array()), PyArray_STRIDES(this->python_array()) + N, m_strides.begin(),
                        [](auto v) { return v / sizeof(T); });
         adapt_strides(m_shape, m_strides, m_backstrides);
+
+        if (L != layout_type::dynamic && !do_strides_match(m_shape, m_strides, L)) {
+            throw std::runtime_error("NumPy: passing container with bad strides for layout (is it a view?).");
+        }
+
         m_storage = storage_type(reinterpret_cast<pointer>(PyArray_DATA(this->python_array())),
                                  this->get_min_stride() * static_cast<size_type>(PyArray_SIZE(this->python_array())));
     }

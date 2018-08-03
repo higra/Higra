@@ -45,7 +45,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 endif()
 
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/cmake/")
+
 
 find_package(Boost QUIET COMPONENTS unit_test_framework)
 if (Boost_FOUND)
@@ -89,8 +89,8 @@ endif ()
 
 #add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 
-set(PYBIND11_CPP_STANDARD -std=c++14)
-add_subdirectory(lib/pybind11)
+#set(PYBIND11_CPP_STANDARD -std=c++14)
+#add_subdirectory(lib/pybind11)
 
 add_subdirectory(python)
 

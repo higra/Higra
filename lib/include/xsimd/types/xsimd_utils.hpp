@@ -17,6 +17,9 @@ namespace xsimd
     template <class T, size_t N>
     class batch;
 
+    template<class T, std::size_t N>
+    class batch_bool;
+
     /**************
      * as_integer *
      **************/
@@ -253,6 +256,27 @@ namespace xsimd
         #endif
     }
 
+#define XSIMD_MACRO_UNROLL_BINARY(FUNC)                                                                   \
+    constexpr std::size_t size = simd_batch_traits<batch_type>::size;                                     \
+    using value_type = typename simd_batch_traits<batch_type>::value_type;                                \
+    alignas(simd_batch_traits<batch_type>::align) value_type tmp_lhs[size], tmp_rhs[size], tmp_res[size]; \
+    lhs.store_aligned(tmp_lhs);                                                                           \
+    rhs.store_aligned(tmp_rhs);                                                                           \
+    unroller<size>([&](std::size_t i) {                                                                   \
+        tmp_res[i] = tmp_lhs[i] FUNC tmp_rhs[i];                                                          \
+    });                                                                                                   \
+    return batch_type(&tmp_res[0], aligned_mode());
+
+    template<class F, std::size_t... I>
+    inline void unroller_impl(F &&f, detail::index_sequence<I...>) {
+        static_cast<void>(std::initializer_list<int>{(f(I), 0)...});
+    }
+
+    template<std::size_t N, class F>
+    inline void unroller(F &&f) {
+        unroller_impl(f, detail::make_index_sequence<N>{});
+    }
+
     /*****************************************
      * Supplementary std::array constructors *
      *****************************************/
@@ -302,11 +326,11 @@ namespace xsimd
         >;
 
         template <typename T, typename... Args>
-        using is_only_this_type = all_true<std::is_same<Args, T>::value...>;
+        using is_all_convertible = all_true<std::is_convertible<Args, T>::value...>;
 
         template <typename T, std::size_t N, typename... Args>
         using is_array_initializer = std::enable_if<
-            (sizeof...(Args) == N) && is_only_this_type<T, Args...>::value
+                (sizeof...(Args) == N) && is_all_convertible<T, Args...>::value
         >;
 
         // Check that a variadic argument pack is a list of N values of type T,

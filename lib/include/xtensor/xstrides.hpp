@@ -26,17 +26,17 @@ namespace xt
      * data offset *
      ***************/
 
-    template <class size_type, class S>
-    size_type data_offset(const S& strides) noexcept;
+    template<class offset_type, class S>
+    offset_type data_offset(const S &strides) noexcept;
 
-    template <class size_type, class S, class Arg, class... Args>
-    size_type data_offset(const S& strides, Arg arg, Args... args) noexcept;
+    template<class offset_type, class S, class Arg, class... Args>
+    offset_type data_offset(const S &strides, Arg arg, Args... args) noexcept;
 
-    template <class size_type, class S, class... Args>
-    size_type unchecked_data_offset(const S& strides, Args... args) noexcept;
+    template<class offset_type, class S, class... Args>
+    offset_type unchecked_data_offset(const S &strides, Args... args) noexcept;
 
-    template <class size_type, class S, class It>
-    size_type element_offset(const S& strides, It first, It last) noexcept;
+    template<class offset_type, class S, class It>
+    offset_type element_offset(const S &strides, It first, It last) noexcept;
 
     /*******************
      * strides builder *
@@ -64,7 +64,7 @@ namespace xt
     S unravel_from_strides(typename S::value_type index, const S& strides, layout_type l);
 
     template <class S>
-    S unravel_index(typename S::value_type index, const S& shape, layout_type l);
+    get_strides_t<S> unravel_index(typename S::value_type index, const S &shape, layout_type l);
 
     /***********************
      * broadcast functions *
@@ -76,6 +76,13 @@ namespace xt
     template <class S1, class S2>
     bool broadcastable(const S1& s1, S2& s2);
 
+    /*************************
+     * check strides overlap *
+     *************************/
+
+    template<layout_type L>
+    struct check_strides_overlap;
+
     /********************************************
      * utility functions for strided containers *
      ********************************************/
@@ -83,7 +90,6 @@ namespace xt
     template <class C, class It>
     It strided_data_end(const C& c, It end, layout_type l)
     {
-        using strides_type = std::decay_t<decltype(c.strides())>;
         using difference_type = typename std::iterator_traits<It>::difference_type;
         if (c.dimension() == 0)
         {
@@ -109,59 +115,60 @@ namespace xt
 
     namespace detail
     {
-        template <class size_type, std::size_t dim, class S>
-        inline size_type raw_data_offset(const S&) noexcept
+        template<std::size_t dim, class S>
+        inline auto raw_data_offset(const S &) noexcept
         {
-            return 0;
+            using strides_value_type = std::decay_t<decltype(std::declval<S>()[0])>;
+            return strides_value_type(0);
         }
 
-        template <class size_type, std::size_t dim, class S, class Arg, class... Args>
-        inline size_type raw_data_offset(const S& strides, Arg arg, Args... args) noexcept
+        template<std::size_t dim, class S, class Arg, class... Args>
+        inline auto raw_data_offset(const S &strides, Arg arg, Args... args) noexcept
         {
-            return arg * strides[dim] + raw_data_offset<size_type, dim + 1>(strides, args...);
+            return arg * strides[dim] + raw_data_offset<dim + 1>(strides, args...);
         }
     }
 
-    template <class size_type, class S>
-    inline size_type data_offset(const S&) noexcept
+    template<class offset_type, class S>
+    inline offset_type data_offset(const S &) noexcept
     {
-        return 0;
+        return offset_type(0);
     }
 
-    template <class size_type, class S, class Arg, class... Args>
-    inline size_type data_offset(const S& strides, Arg arg, Args... args) noexcept
+    template<class offset_type, class S, class Arg, class... Args>
+    inline offset_type data_offset(const S &strides, Arg arg, Args... args) noexcept
     {
         constexpr std::size_t nargs = sizeof...(Args) + 1;
         if (nargs == strides.size())
         {
             // Correct number of arguments: iterate
-            return detail::raw_data_offset<size_type, 0>(strides, arg, args...);
+            return static_cast<offset_type>(detail::raw_data_offset<0>(strides, arg, args...));
         }
         else if (nargs > strides.size())
         {
             // Too many arguments: drop the first
-            return data_offset<size_type, S>(strides, args...);
+            return data_offset<offset_type, S>(strides, args...);
         }
         else
         {
             // Too few arguments: right to left scalar product
             auto view = strides.cend() - nargs;
-            return detail::raw_data_offset<size_type, 0>(view, arg, args...);
+            return static_cast<offset_type>(detail::raw_data_offset<0>(view, arg, args...));
         }
     }
 
-    template <class size_type, class S, class... Args>
-    inline size_type unchecked_data_offset(const S& strides, Args... args) noexcept
+    template<class offset_type, class S, class... Args>
+    inline offset_type unchecked_data_offset(const S &strides, Args... args) noexcept
     {
-        return detail::raw_data_offset<size_type, 0>(strides.cbegin(), args...);
+        return static_cast<offset_type>(detail::raw_data_offset<0>(strides.cbegin(), args...));
     }
 
-    template <class size_type, class S, class It>
-    inline size_type element_offset(const S& strides, It first, It last) noexcept
+    template<class offset_type, class S, class It>
+    inline offset_type element_offset(const S &strides, It first, It last) noexcept
     {
         using difference_type = typename std::iterator_traits<It>::difference_type;
         auto size = static_cast<difference_type>((std::min)(static_cast<typename S::size_type>(std::distance(first, last)), strides.size()));
-        return std::inner_product(last - size, last, strides.cend() - size, size_type(0));
+        return std::inner_product(last - size, last, strides.cend() - size, offset_type(0));
     }
 
     namespace detail
@@ -174,7 +181,7 @@ namespace xt
             {
                 strides[i] = 0;
             }
-            (*backstrides)[i] = strides[i] * (shape[i] - 1);
+            (*backstrides)[i] = strides[i] * std::ptrdiff_t(shape[i] - 1);
         }
 
         template <class shape_type, class strides_type>
@@ -191,13 +198,14 @@ namespace xt
         inline std::size_t compute_strides(const shape_type& shape, layout_type l,
                                            strides_type& strides, bs_ptr bs)
         {
-            std::size_t data_size = 1;
+            using strides_value_type = std::decay_t<decltype(strides[0])>;
+            strides_value_type data_size = 1;
             if (l == layout_type::row_major)
             {
                 for (std::size_t i = strides.size(); i != 0; --i)
                 {
                     strides[i - 1] = data_size;
-                    data_size = strides[i - 1] * shape[i - 1];
+                    data_size = strides[i - 1] * static_cast<strides_value_type>(shape[i - 1]);
                     adapt_strides(shape, strides, bs, i - 1);
                 }
             }
@@ -206,11 +214,11 @@ namespace xt
                 for (std::size_t i = 0; i < strides.size(); ++i)
                 {
                     strides[i] = data_size;
-                    data_size = strides[i] * shape[i];
+                    data_size = strides[i] * static_cast<strides_value_type>(shape[i]);
                     adapt_strides(shape, strides, bs, i);
                 }
             }
-            return data_size;
+            return static_cast<std::size_t>(data_size);
         }
     }
 
@@ -231,8 +239,8 @@ namespace xt
     template <class shape_type, class strides_type>
     inline bool do_strides_match(const shape_type& shape, const strides_type& strides, layout_type l)
     {
-        using shape_value_type = typename shape_type::value_type;
-        shape_value_type data_size = 1;
+        using value_type = typename strides_type::value_type;
+        value_type data_size = 1;
         if (l == layout_type::row_major)
         {
             for (std::size_t i = strides.size(); i != 0; --i)
@@ -241,7 +249,7 @@ namespace xt
                 {
                     return false;
                 }
-                data_size *= shape[i - 1];
+                data_size *= static_cast<value_type>(shape[i - 1]);
             }
             return true;
         }
@@ -253,7 +261,7 @@ namespace xt
                 {
                     return false;
                 }
-                data_size *= shape[i];
+                data_size *= static_cast<value_type>(shape[i]);
             }
             return true;
         }
@@ -325,11 +333,12 @@ namespace xt
     }
 
     template <class S>
-    inline S unravel_index(typename S::value_type index, const S& shape, layout_type l)
+    inline get_strides_t<S> unravel_index(typename S::value_type index, const S &shape, layout_type l)
     {
-        S strides = xtl::make_sequence<S>(shape.size(), 0);
+        get_strides_t<S> strides = xtl::make_sequence<get_strides_t<S>>(shape.size(), 0);
+        using strides_value_type = std::decay_t<decltype(strides[0])>;
         compute_strides(shape, l, strides);
-        return unravel_from_strides(index, strides, l);
+        return unravel_from_strides(static_cast<strides_value_type>(index), strides, l);
     }
 
     template <class S1, class S2>
@@ -340,6 +349,9 @@ namespace xt
         using value_type = typename S2::value_type;
         auto output_index = output.size();
         auto input_index = input.size();
+        if (output_index < input_index) {
+            throw_broadcast_error(output, input);
+        }
         for (; input_index != 0; --input_index, --output_index)
         {
             // First case: output = (0, 0, ...., 0)
@@ -380,10 +392,53 @@ namespace xt
         bool res = dst_shape.size() >= src_shape.size();
         for (; src_iter != src_shape.crend() && res; ++src_iter, ++dst_iter)
         {
-            res = (*src_iter == *dst_iter) || (*src_iter == 1);
+            res = (static_cast<std::size_t>(*src_iter) == static_cast<std::size_t>(*dst_iter)) || (*src_iter == 1);
         }
         return res;
     }
+
+    template<>
+    struct check_strides_overlap<layout_type::row_major> {
+        template<class S1, class S2>
+        static std::size_t get(const S1 &s1, const S2 &s2) {
+            using value_type = typename S1::value_type;
+            // Indices are faster than reverse iterators
+            auto s1_index = s1.size();
+            auto s2_index = s2.size();
+
+            for (; s2_index != 0; --s1_index, --s2_index) {
+                if (static_cast<value_type>(s1[s1_index - 1]) != static_cast<value_type>(s2[s2_index - 1])) {
+                    break;
+                }
+            }
+            return s1_index;
+        }
+    };
+
+    template<>
+    struct check_strides_overlap<layout_type::column_major> {
+        template<class S1, class S2>
+        static std::size_t get(const S1 &s1, const S2 &s2) {
+            // Indices are faster than reverse iterators
+            using size_type = typename S1::size_type;
+            using value_type = typename S1::value_type;
+            size_type index = 0;
+
+            // This check is necessary as column major "broadcasting" is still
+            // peformed in a row major fashion
+            if (s1.size() != s2.size())
+                return 0;
+
+            auto size = s2.size();
+
+            for (; index < size; ++index) {
+                if (static_cast<value_type>(s1[index]) != static_cast<value_type>(s2[index])) {
+                    break;
+                }
+            }
+            return index;
+        }
+    };
 }
 
 #endif

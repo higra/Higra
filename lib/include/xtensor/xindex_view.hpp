@@ -80,7 +80,6 @@ namespace xt
         using iterable_base = xiterable<self_type>;
         using inner_shape_type = typename iterable_base::inner_shape_type;
         using shape_type = inner_shape_type;
-        using strides_type = shape_type;
 
         using indices_type = I;
 
@@ -346,7 +345,7 @@ namespace xt
     template <class... Args>
     inline auto xindex_view<CT, I>::operator()(size_type, size_type idx1, Args... args) -> reference
     {
-        return this->operator()(idx1, args...);
+        return this->operator()(idx1, static_cast<size_type>(args)...);
     }
 
     /**
@@ -587,7 +586,7 @@ namespace xt
     template <class E>
     inline auto xfiltration<ECT, CCT>::operator+=(const E& e) -> disable_xexpression<E, self_type&>
     {
-        return apply([this, &e](const_reference v, bool cond) { return cond ? v + e : v; });
+        return apply([&e](const_reference v, bool cond) { return cond ? v + e : v; });
     }
 
     /**
@@ -599,7 +598,7 @@ namespace xt
     template <class E>
     inline auto xfiltration<ECT, CCT>::operator-=(const E& e) -> disable_xexpression<E, self_type&>
     {
-        return apply([this, &e](const_reference v, bool cond) { return cond ? v - e : v; });
+        return apply([&e](const_reference v, bool cond) { return cond ? v - e : v; });
     }
 
     /**
@@ -611,7 +610,7 @@ namespace xt
     template <class E>
     inline auto xfiltration<ECT, CCT>::operator*=(const E& e) -> disable_xexpression<E, self_type&>
     {
-        return apply([this, &e](const_reference v, bool cond) { return cond ? v * e : v; });
+        return apply([&e](const_reference v, bool cond) { return cond ? v * e : v; });
     }
 
     /**
@@ -623,7 +622,7 @@ namespace xt
     template <class E>
     inline auto xfiltration<ECT, CCT>::operator/=(const E& e) -> disable_xexpression<E, self_type&>
     {
-        return apply([this, &e](const_reference v, bool cond) { return cond ? v / e : v; });
+        return apply([&e](const_reference v, bool cond) { return cond ? v / e : v; });
     }
 
     /**
@@ -635,7 +634,7 @@ namespace xt
     template <class E>
     inline auto xfiltration<ECT, CCT>::operator%=(const E& e) -> disable_xexpression<E, self_type&>
     {
-        return apply([this, &e](const_reference v, bool cond) { return cond ? v % e : v; });
+        return apply([&e](const_reference v, bool cond) { return cond ? v % e : v; });
     }
 
     template <class ECT, class CCT>

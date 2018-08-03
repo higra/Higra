@@ -68,6 +68,14 @@ namespace xt
     template <class T, std::size_t N>
     bool resize_container(std::array<T, N>& a, typename std::array<T, N>::size_type size);
 
+    template<std::size_t... I>
+    class fixed_shape;
+
+    template<std::size_t... I>
+    bool resize_container(fixed_shape<I...> &a, std::size_t size);
+
+    std::size_t normalize_axis(std::size_t dim, std::ptrdiff_t axis);
+
     // gcc 4.9 is affected by C++14 defect CGW 1558
     // see http://open-std.org/JTC1/SC22/WG21/docs/cwg_defects.html#1558
     template <class... T>
@@ -130,6 +138,25 @@ namespace xt
     template <class F, class... T>
     inline void for_each(F&& f, std::tuple<T...>& t) noexcept(noexcept(std::declval<F>()))
     {
+        detail::for_each_impl<0, F, T...>(std::forward<F>(f), t);
+    }
+
+    namespace detail {
+        template<std::size_t I, class F, class... T>
+        inline typename std::enable_if<I == sizeof...(T), void>::type
+        for_each_impl(F && /*f*/, const std::tuple<T...> & /*t*/) noexcept(noexcept(std::declval<F>())) {
+        }
+
+        template<std::size_t I, class F, class... T>
+        inline typename std::enable_if<I < sizeof...(T), void>::type
+        for_each_impl(F &&f, const std::tuple<T...> &t) noexcept(noexcept(std::declval<F>())) {
+            f(std::get<I>(t));
+            for_each_impl<I + 1, F, T...>(std::forward<F>(f), t);
+        }
+    }
+
+    template<class F, class... T>
+    inline void for_each(F &&f, const std::tuple<T...> &t) noexcept(noexcept(std::declval<F>())) {
         detail::for_each_impl<0, F, T...>(std::forward<F>(f), t);
     }
 
@@ -389,6 +416,20 @@ namespace xt
         return size == N;
     }
 
+    template<std::size_t... I>
+    inline bool resize_container(xt::fixed_shape<I...> &, std::size_t size) {
+        return sizeof...(I) == size;
+    }
+
+    /*********************************
+     * normalize_axis implementation *
+     *********************************/
+
+    inline std::size_t normalize_axis(std::size_t dim, std::ptrdiff_t axis) {
+        return axis < 0 ? static_cast<std::size_t>(static_cast<std::ptrdiff_t>(dim) + axis)
+                        : static_cast<std::size_t>(axis);
+    }
+
     /******************
      * get_value_type *
      ******************/
@@ -511,9 +552,9 @@ namespace xt
         return N;
     }
 
-    /*****************************************
+    /*************************************
      * has_data_interface implementation *
-     *****************************************/
+     *************************************/
 
     template <class T>
     class has_data_interface
@@ -529,6 +570,15 @@ namespace xt
 
         // we try to call the test function with the return type and report the result
         constexpr static bool value = decltype(test<T>(std::declval<const std::add_pointer_t<typename T::value_type>>()))::value == true;
+    };
+
+    template<class E, class = void>
+    struct has_strides : std::false_type {
+    };
+
+    template<class E>
+    struct has_strides<E, void_t<decltype(std::declval<E>().strides())>>
+            : std::true_type {
     };
 
     /******************
@@ -591,7 +641,7 @@ namespace xt
     inline auto conditional_cast(U&& u)
     {
         return conditional_cast_functor<condition, T>()(std::forward<U>(u));
-    };
+    }
 
     /************************************
      * arithmetic type promotion traits *
@@ -647,7 +697,7 @@ namespace xt
         using type = typename promote_type<bool, typename promote_type<REST...>::type>::type;
     };
 
-    /** 
+    /**
      * @brief Abbreviation of 'typename promote_type<T>::type'.
      */
     template <class... T>
@@ -664,7 +714,7 @@ namespace xt
     struct big_promote_type
     {
     private:
-        
+
         using V = std::decay_t<T>;
         static constexpr bool is_arithmetic = std::is_arithmetic<V>::value;
         static constexpr bool is_signed = std::is_signed<V>::value;
@@ -918,7 +968,7 @@ namespace xt
         {
             static bool enabled;
             return enabled;
-        };
+        }
 
         inline void enable()
         {
@@ -990,6 +1040,45 @@ namespace xt
     {
       return !(a == b);
     }
+
+    template<class E1, class E2, class = void>
+    struct has_assign_to : std::false_type {
+    };
+
+    template<class E1, class E2>
+    struct has_assign_to<E1, E2, void_t<decltype(std::declval<const E2 &>().assign_to(std::declval<E1 &>()))>>
+            : std::true_type {
+    };
+
+    template<class X, class C>
+    struct rebind_container;
+
+    template<class X, template<class, class> class C, class T, class A>
+    struct rebind_container<X, C<T, A>> {
+        using allocator = typename A::template rebind<X>::other;
+        using type = C<X, allocator>;
+    };
+
+    template<class X, template<class, std::size_t> class C, class T, std::size_t N>
+    struct rebind_container<X, C<T, N>> {
+        using type = C<X, N>;
+    };
+
+    template<class S>
+    struct get_strides_type {
+        using type = typename rebind_container<std::ptrdiff_t, S>::type;
+    };
+
+    template<std::size_t... I>
+    struct get_strides_type<fixed_shape<I...>> {
+        // TODO we could compute the strides statically here.
+        //      But we'll need full constexpr support to have a
+        //      homogenous ``compute_strides`` method
+        using type = std::array<std::ptrdiff_t, sizeof...(I)>;
+    };
+
+    template<class C>
+    using get_strides_t = typename get_strides_type<C>::type;
 }
 
 #endif

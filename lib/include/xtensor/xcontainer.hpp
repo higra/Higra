@@ -110,11 +110,13 @@ namespace xt
 
         size_type size() const noexcept;
 
-        constexpr size_type dimension() const noexcept;
+        XTENSOR_CONSTEXPR_RETURN size_type dimension() const noexcept;
 
-        constexpr const inner_shape_type& shape() const noexcept;
-        constexpr const inner_strides_type& strides() const noexcept;
-        constexpr const inner_backstrides_type& backstrides() const noexcept;
+        XTENSOR_CONSTEXPR_RETURN const inner_shape_type &shape() const noexcept;
+
+        XTENSOR_CONSTEXPR_RETURN const inner_strides_type &strides() const noexcept;
+
+        XTENSOR_CONSTEXPR_RETURN const inner_backstrides_type &backstrides() const noexcept;
 
         template <class T>
         void fill(const T& value);
@@ -487,7 +489,7 @@ namespace xt
      * Returns the number of dimensions of the container.
      */
     template <class D>
-    inline constexpr auto xcontainer<D>::dimension() const noexcept -> size_type
+    XTENSOR_CONSTEXPR_RETURN auto xcontainer<D>::dimension() const noexcept -> size_type
     {
         return shape().size();
     }
@@ -496,7 +498,7 @@ namespace xt
      * Returns the shape of the container.
      */
     template <class D>
-    constexpr inline auto xcontainer<D>::shape() const noexcept -> const inner_shape_type&
+    XTENSOR_CONSTEXPR_RETURN auto xcontainer<D>::shape() const noexcept -> const inner_shape_type &
     {
         return derived_cast().shape_impl();
     }
@@ -505,7 +507,7 @@ namespace xt
      * Returns the strides of the container.
      */
     template <class D>
-    constexpr inline auto xcontainer<D>::strides() const noexcept -> const inner_strides_type&
+    XTENSOR_CONSTEXPR_RETURN auto xcontainer<D>::strides() const noexcept -> const inner_strides_type &
     {
         return derived_cast().strides_impl();
     }
@@ -514,7 +516,7 @@ namespace xt
      * Returns the backstrides of the container.
      */
     template <class D>
-    constexpr inline auto xcontainer<D>::backstrides() const noexcept -> const inner_backstrides_type&
+    XTENSOR_CONSTEXPR_RETURN auto xcontainer<D>::backstrides() const noexcept -> const inner_backstrides_type &
     {
         return derived_cast().backstrides_impl();
     }
@@ -523,6 +525,7 @@ namespace xt
     /**
      * @name Data
      */
+    //@{
 
     /**
      * Fills the container with the given value.
@@ -535,7 +538,6 @@ namespace xt
         std::fill(storage_begin(), storage_end(), value);
     }
 
-    //@{
     /**
      * Returns a reference to the element at the specified position in the container.
      * @param args a list of indices specifying the position in the container. Indices
@@ -548,7 +550,7 @@ namespace xt
     {
         XTENSOR_TRY(check_index(shape(), args...));
         XTENSOR_CHECK_DIMENSION(shape(), args...);
-        size_type index = xt::data_offset<size_type>(strides(), static_cast<size_type>(args)...);
+        size_type index = xt::data_offset<size_type>(strides(), static_cast<std::ptrdiff_t>(args)...);
         return storage()[index];
     }
 
@@ -564,7 +566,7 @@ namespace xt
     {
         XTENSOR_TRY(check_index(shape(), args...));
         XTENSOR_CHECK_DIMENSION(shape(), args...);
-        size_type index = xt::data_offset<size_type>(strides(), static_cast<size_type>(args)...);
+        size_type index = xt::data_offset<size_type>(strides(), static_cast<std::ptrdiff_t>(args)...);
         return storage()[index];
     }
 
@@ -625,7 +627,7 @@ namespace xt
     template <class... Args>
     inline auto xcontainer<D>::unchecked(Args... args) -> reference
     {
-        size_type index = xt::unchecked_data_offset<size_type>(strides(), static_cast<size_type>(args)...);
+        size_type index = xt::unchecked_data_offset<size_type>(strides(), static_cast<std::ptrdiff_t>(args)...);
         return storage()[index];
     }
 
@@ -652,7 +654,7 @@ namespace xt
     template <class... Args>
     inline auto xcontainer<D>::unchecked(Args... args) const -> const_reference
     {
-        size_type index = xt::unchecked_data_offset<size_type>(strides(), static_cast<size_type>(args)...);
+        size_type index = xt::unchecked_data_offset<size_type>(strides(), static_cast<std::ptrdiff_t>(args)...);
         return storage()[index];
     }
 
@@ -760,7 +762,9 @@ namespace xt
     }
 
     /**
-     * Returns the offset to the first element in the container.
+     * Returns a pointer to the underlying array serving as element storage. The pointer
+     * is such that range [data(); data() + size()] is always a valid range, even if the
+     * container is empty (data() is not is not dereferenceable in that case)
      */
     template <class D>
     inline auto xcontainer<D>::data() noexcept -> value_type*
@@ -768,9 +772,13 @@ namespace xt
         return storage().data();
     }
 
+    /**
+    * Returns a constant pointer to the underlying array serving as element storage. The pointer
+    * is such that range [data(); data() + size()] is always a valid range, even if the
+    * container is empty (data() is not is not dereferenceable in that case)
+    */
     template <class D>
-    inline auto xcontainer<D>::data() const noexcept -> const value_type*
-    {
+    inline auto xcontainer<D>::data() const noexcept -> const value_type* {
         return storage().data();
     }
 

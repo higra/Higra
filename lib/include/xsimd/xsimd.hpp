@@ -13,6 +13,7 @@
 #include "config/xsimd_config.hpp"
 #include "types/xsimd_traits.hpp"
 #include "math/xsimd_math.hpp"
+#include "math/xsimd_math_complex.hpp"
 
 namespace xsimd
 {
@@ -55,6 +56,29 @@ namespace xsimd
 
     /**
      * @ingroup data_transfer
+     * Loads the memory arrays pointed to by \c real_src and \c imag_src
+     * into a batch of complex numbers and returns it. \c real_src and
+     * \c imag_src are required to be aligned.
+     * @param real_src the pointer to the memory array containing the real part.
+     * @param imag_src the pointer to the memory array containing the imaginary part.
+     * @return the batch of complex wrapping the highest available instruction set.
+     */
+    template<class T1, class T2>
+    simd_return_type<T1, T2> load_aligned(const T1 *real_src, const T1 *imag_src);
+
+    /**
+     * @ingroup data_transfer
+     * Loads the memory arrays pointed to by \c real_src and \c imag_src
+     * into the batch \c dst. \c real_src and \c imag_src are required to be aligned.
+     * @param real_src the pointer to the memory array containing the real part.
+     * @param imag_src the pointer to the memory array containing the imaginary part.
+     * @param dst the destination batch.
+     */
+    template<class T1, class T2>
+    void load_aligned(const T1 *real_src, const T1 *imag_src, simd_type<T2> &dst);
+
+    /**
+     * @ingroup data_transfer
      * Loads the memory array pointed to by \c src into a batch and returns it.
      * \c src is not required to be aligned.
      * @param src the pointer to the memory array to load.
@@ -75,6 +99,29 @@ namespace xsimd
 
     /**
      * @ingroup data_transfer
+     * Loads the memory arrays pointed to by \c real_src and \c imag_src
+     * into a batch of complex numbers and returns it. \c real_src and
+     * \c imag_src are not required to be aligned.
+     * @param real_src the pointer to the memory array containing the real part.
+     * @param imag_src the pointer to the memory array containing the imaginary part.
+     * @return the batch of complex wrapping the highest available instruction set.
+     */
+    template<class T1, class T2>
+    simd_return_type<T1, T2> load_unaligned(const T1 *real_src, const T1 *imag_src);
+
+    /**
+     * @ingroup data_transfer
+     * Loads the memory arrays pointed to by \c real_src and \c imag_src
+     * into the batch \c dst. \c real_src and \c imag_src are not required to be aligned.
+     * @param real_src the pointer to the memory array containing the real part.
+     * @param imag_src the pointer to the memory array containing the imaginary part.
+     * @param dst the destination batch.
+     */
+    template<class T1, class T2>
+    void load_unaligned(const T1 *real_src, const T1 *imag_src, simd_type<T2> &dst);
+
+    /**
+     * @ingroup data_transfer
      * Stores the batch \c src into  the memory array pointed to by \c dst.
      * \c dst is required to be aligned.
      * @param dst the pointer to the memory array.
@@ -92,6 +139,30 @@ namespace xsimd
      */
     template <class T1, class T2 = T1>
     void store_unaligned(T1* dst, const simd_type<T2>& src);
+
+    /**
+     * @ingroup data_transfer
+     * Stores the batch of complex numbers \c src into  the memory arrays pointed
+     * to by \c real_dst and \c imag_dst. \c real_dst and \c imag_dst are required
+     * to be aligned.
+     * @param real_dst the pointer to the memory array of the real part.
+     * @param imag_dst the pointer to the memory array of the imaginary part.
+     * @param src the batch to store.
+     */
+    template<class T1, class T2>
+    void store_aligned(T1 *real_dst, T1 *imag_dst, const simd_type<T2> &src);
+
+    /**
+     * @ingroup data_transfer
+     * Stores the batch of complex numbers \c src into  the memory arrays pointed
+     * to by \c real_dst and \c imag_dst. \c real_dst and \c imag_dst are not required
+     * to be aligned.
+     * @param real_dst the pointer to the memory array of the real part.
+     * @param imag_dst the pointer to the memory array of the imaginary part.
+     * @param src the batch to store.
+     */
+    template<class T1, class T2>
+    void store_unaligned(T1 *real_dst, T1 *imag_dst, const simd_type<T2> &src);
 
     // Load / store generic functions
 
@@ -121,6 +192,29 @@ namespace xsimd
 
     /**
      * @ingroup generic_load_store
+     * Loads the memory arrays pointed to by \c real_src and \c imag_src
+     * into a batch of complex numbers and returns it. \c real_src and
+     * \c imag_src are required to be aligned.
+     * @param real_src the pointer to the memory array containing the real part.
+     * @param imag_src the pointer to the memory array containing the imaginary part.
+     * @return the batch of complex wrapping the highest available instruction set.
+     */
+    template<class T1, class T2>
+    simd_return_type<T1, T2> load_simd(const T1 *real_src, const T1 *imag_src, aligned_mode);
+
+    /**
+     * @ingroup generic_load_store
+     * Loads the memory arrays pointed to by \c real_src and \c imag_src
+     * into the batch \c dst. \c real_src and \c imag_src are required to be aligned.
+     * @param real_src the pointer to the memory array containing the real part.
+     * @param imag_src the pointer to the memory array containing the imaginary part.
+     * @param dst the destination batch.
+     */
+    template<class T1, class T2>
+    void load_simd(const T1 *real_src, const T1 *imag_src, simd_type<T2> &dst, aligned_mode);
+
+    /**
+     * @ingroup generic_load_store
      * Loads the memory array pointed to by \c src into a batch and returns it.
      * \c src is not required to be aligned.
      * @param src the pointer to the memory array to load.
@@ -141,6 +235,29 @@ namespace xsimd
 
     /**
      * @ingroup generic_load_store
+     * Loads the memory arrays pointed to by \c real_src and \c imag_src
+     * into a batch of complex numbers and returns it. \c real_src and
+     * \c imag_src are not required to be aligned.
+     * @param real_src the pointer to the memory array containing the real part.
+     * @param imag_src the pointer to the memory array containing the imaginary part.
+     * @return the batch of complex wrapping the highest available instruction set.
+     */
+    template<class T1, class T2>
+    simd_return_type<T1, T2> load_simd(const T1 *real_src, const T1 *imag_src, unaligned_mode);
+
+    /**
+     * @ingroup generic_load_store
+     * Loads the memory arrays pointed to by \c real_src and \c imag_src
+     * into the batch \c dst. \c real_src and \c imag_src are not required to be aligned.
+     * @param real_src the pointer to the memory array containing the real part.
+     * @param imag_src the pointer to the memory array containing the imaginary part.
+     * @param dst the destination batch.
+     */
+    template<class T1, class T2>
+    void load_simd(const T1 *real_src, const T1 *imag_src, simd_type<T2> &dst, unaligned_mode);
+
+    /**
+     * @ingroup generic_load_store
      * Stores the batch \c src into  the memory array pointed to by \c dst.
      * \c dst is required to be aligned.
      * @param dst the pointer to the memory array.
@@ -158,7 +275,31 @@ namespace xsimd
      */
     template <class T1, class T2 = T1>
     void store_simd(T1* dst, const simd_type<T2>& src, unaligned_mode);
-    
+
+    /**
+     * @ingroup generic_load_store
+     * Stores the batch of complex numbers \c src into  the memory arrays pointed
+     * to by \c real_dst and \c imag_dst. \c real_dst and \c imag_dst are required
+     * to be aligned.
+     * @param real_dst the pointer to the memory array of the real part.
+     * @param imag_dst the pointer to the memory array of the imaginary part.
+     * @param src the batch to store.
+     */
+    template<class T1, class T2>
+    void store_simd(T1 *real_dst, T1 *imag_dst, const simd_type<T2> &src, aligned_mode);
+
+    /**
+     * @ingroup generic_load_store
+     * Stores the batch of complex numbers \c src into  the memory arrays pointed
+     * to by \c real_dst and \c imag_dst. \c real_dst and \c imag_dst are not required
+     * to be aligned.
+     * @param real_dst the pointer to the memory array of the real part.
+     * @param imag_dst the pointer to the memory array of the imaginary part.
+     * @param src the batch to store.
+     */
+    template<class T1, class T2>
+    void store_simd(T1 *real_dst, T1 *imag_dst, const simd_type<T2> &src, unaligned_mode);
+
     // Prefetch
     
     template <class T>
@@ -212,6 +353,35 @@ namespace xsimd
             inline static void store_unaligned(T* dst, const V& src)
             {
                 src.store_unaligned(dst);
+            }
+        };
+
+        template<class T, class V>
+        struct simd_complex_invoker {
+            inline static V load_aligned(const T *real_src, const T *imag_src) {
+                V res;
+                return res.load_aligned(real_src, imag_src);
+            }
+
+            inline static void load_aligned(const T *real_src, const T *imag_src, V &dst) {
+                dst.load_aligned(real_src, imag_src);
+            }
+
+            inline static V load_unaligned(const T *real_src, const T *imag_src) {
+                V res;
+                return res.load_unaligned(real_src, imag_src);
+            }
+
+            inline static void load_unaligned(const T *real_src, const T *imag_src, V &dst) {
+                dst.load_unaligned(real_src, imag_src);
+            }
+
+            inline static void store_aligned(T *real_dst, T *imag_dst, const V &src) {
+                src.store_aligned(real_dst, imag_dst);
+            }
+
+            inline static void store_unaligned(T *real_dst, T *imag_dst, const V &src) {
+                src.store_unaligned(real_dst, imag_dst);
             }
         };
 
@@ -279,6 +449,16 @@ namespace xsimd
         detail::simd_function_invoker<T1, simd_type<T2>>::load_aligned(src, dst);
     }
 
+    template<class T1, class T2>
+    inline simd_return_type<T1, T2> load_aligned(const T1 *real_src, const T1 *imag_src) {
+        return detail::simd_complex_invoker<T1, simd_type<T2>>::load_aligned(real_src, imag_src);
+    }
+
+    template<class T1, class T2>
+    inline void load_aligned(const T1 *real_src, const T1 *imag_src, simd_type<T2> &dst) {
+        detail::simd_complex_invoker<T1, simd_type<T2>>::load_aligned(real_src, imag_src, dst);
+    }
+
     template <class T1, class T2>
     inline simd_return_type<T1, T2> load_unaligned(const T1* src)
     {
@@ -289,6 +469,16 @@ namespace xsimd
     inline void load_unaligned(const T1* src, simd_type<T2>& dst)
     {
         detail::simd_function_invoker<T1, simd_type<T2>>::load_unaligned(src, dst);
+    }
+
+    template<class T1, class T2>
+    inline simd_return_type<T1, T2> load_unaligned(const T1 *real_src, const T1 *imag_src) {
+        return detail::simd_complex_invoker<T1, simd_type<T2>>::load_unaligned(real_src, imag_src);
+    }
+
+    template<class T1, class T2>
+    inline void load_unaligned(const T1 *real_src, const T1 *imag_src, simd_type<T2> &dst) {
+        detail::simd_complex_invoker<T1, simd_type<T2>>::load_unaligned(real_src, imag_src, dst);
     }
 
     template <class T1, class T2>
@@ -303,6 +493,15 @@ namespace xsimd
         detail::simd_function_invoker<T1, simd_type<T2>>::store_unaligned(dst, src);
     }
 
+    template<class T1, class T2>
+    inline void store_aligned(T1 *real_dst, T1 *imag_dst, const simd_type<T2> &src) {
+        detail::simd_complex_invoker<T1, simd_type<T2>>::store_aligned(real_dst, imag_dst, src);
+    }
+
+    template<class T1, class T2>
+    inline void store_unaligned(T1 *real_dst, T1 *imag_dst, const simd_type<T2> &src) {
+        detail::simd_complex_invoker<T1, simd_type<T2>>::store_unaligned(real_dst, imag_dst, src);
+    }
 
     /***************************************************
      * Load / store generic functions implementation
@@ -320,6 +519,16 @@ namespace xsimd
         load_aligned<T1, T2>(src, dst);
     }
 
+    template<class T1, class T2>
+    inline simd_return_type<T1, T2> load_simd(const T1 *real_src, const T1 *imag_src, aligned_mode) {
+        return load_aligned<T1, T2>(real_src, imag_src);
+    }
+
+    template<class T1, class T2>
+    inline void load_simd(const T1 *real_src, const T1 *imag_src, simd_type<T2> &dst, aligned_mode) {
+        load_aligned<T1, T2>(real_src, imag_src, dst);
+    }
+
     template <class T1, class T2>
     inline simd_return_type<T1, T2> load_simd(const T1* src, unaligned_mode)
     {
@@ -330,6 +539,16 @@ namespace xsimd
     inline void load_simd(const T1* src, simd_type<T2>& dst, unaligned_mode)
     {
         load_unaligned<T1, T2>(src, dst);
+    }
+
+    template<class T1, class T2>
+    inline simd_return_type<T1, T2> load_simd(const T1 *real_src, const T1 *imag_src, unaligned_mode) {
+        return load_unaligned<T1, T2>(real_src, imag_src);
+    }
+
+    template<class T1, class T2>
+    inline void load_simd(const T1 *real_src, const T1 *imag_src, simd_type<T2> &dst, unaligned_mode) {
+        load_unaligned<T1, T2>(real_src, imag_src, dst);
     }
 
     template <class T1, class T2>
@@ -344,6 +563,15 @@ namespace xsimd
         store_unaligned<T1, T2>(dst, src);
     }
 
+    template<class T1, class T2>
+    inline void store_simd(T1 *real_dst, T1 *imag_dst, const simd_type<T2> &src, aligned_mode) {
+        store_aligned<T1, T2>(real_dst, imag_dst, src);
+    }
+
+    template<class T1, class T2>
+    inline void store_simd(T1 *real_dst, T1 *imag_dst, const simd_type<T2> &src, unaligned_mode) {
+        store_unaligned<T1, T2>(real_dst, imag_dst, src);
+    }
 
     /*****************************
      * Prefetch implementation

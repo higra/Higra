@@ -95,7 +95,8 @@ namespace xt
     namespace detail
     {
         template <class E, class F>
-        std::ostream& xoutput(std::ostream& out, const E& e, slice_vector& slices, F& printer, std::size_t blanks,
+        std::ostream &xoutput(std::ostream &out, const E &e,
+                              xstrided_slice_vector &slices, F &printer, std::size_t blanks,
                               std::streamsize element_width, std::size_t edgeitems, std::size_t line_width)
         {
             using size_type = typename E::size_type;
@@ -115,7 +116,7 @@ namespace xt
                 size_type line_lim = static_cast<size_type>(std::floor(line_width / ewp2));
 
                 out << '{';
-                for (; i != view.shape()[0] - 1; ++i)
+                for (; i != size_type(view.shape()[0] - 1); ++i)
                 {
                     if (edgeitems && size_type(view.shape()[0]) > (edgeitems * 2) && i == edgeitems)
                     {
@@ -126,7 +127,7 @@ namespace xt
                             out << std::endl
                                 << indents;
                         }
-                        i = view.shape()[0] - edgeitems;
+                        i = size_type(view.shape()[0]) - edgeitems;
                     }
                     if (view.dimension() == 1 && line_lim != 0 && elems_on_line >= line_lim)
                     {
@@ -162,7 +163,7 @@ namespace xt
         }
 
         template <class F, class E>
-        static void recurser_run(F& fn, const E& e, slice_vector& slices, std::size_t lim = 0)
+        static void recurser_run(F &fn, const E &e, xstrided_slice_vector &slices, std::size_t lim = 0)
         {
             using size_type = typename E::size_type;
             const auto view = strided_view(e, slices);
@@ -173,11 +174,11 @@ namespace xt
             else
             {
                 size_type i = 0;
-                for (; i != view.shape()[0] - 1; ++i)
+                for (; i != static_cast<size_type>(view.shape()[0] - 1); ++i)
                 {
                     if (lim && size_type(view.shape()[0]) > (lim * 2) && i == lim)
                     {
-                        i = view.shape()[0] - lim;
+                        i = static_cast<size_type>(view.shape()[0]) - lim;
                     }
                     slices.push_back(static_cast<int>(i));
                     recurser_run(fn, e, slices, lim);
@@ -612,7 +613,7 @@ namespace xt
 
         detail::printer<E> p(precision);
 
-        slice_vector sv;
+        xstrided_slice_vector sv;
         detail::recurser_run(p, d, sv, lim);
         p.init();
         sv.clear();
@@ -628,6 +629,337 @@ namespace xt
     {
         return pretty_print(e, out);
     }
+
+#ifdef __CLING__
+
+    template <class P>
+    void compute_1d_row(std::stringstream& out, P& printer, const std::size_t& row_idx)
+    {
+        out << "<tr><td style='font-family:monospace;' title='" << row_idx << "'><pre>";
+        printer.print_next(out);
+        out << "</pre></td></tr>";
+    }
+
+    template <class P, class T>
+    void compute_1d_table(std::stringstream& out, P& printer, const T& expr,
+                          const std::size_t& edgeitems)
+    {
+        const auto& dim = expr.shape()[0];
+
+        out << "<table style='border-style:solid;border-width:1px;'><tbody>";
+        if (edgeitems == 0 || 2 * edgeitems >= dim)
+        {
+            for (std::size_t row_idx = 0; row_idx < dim; ++row_idx)
+            {
+                compute_1d_row(out, printer, row_idx);
+            }
+        }
+        else
+        {
+            for (std::size_t row_idx = 0; row_idx < edgeitems; ++row_idx)
+            {
+                compute_1d_row(out, printer, row_idx);
+            }
+            out << "<tr><td><center>...</center></td></tr>";
+            for (std::size_t row_idx = dim - edgeitems; row_idx < dim; ++row_idx)
+            {
+                compute_1d_row(out, printer, row_idx);
+            }
+        }
+        out << "</tbody></table>";
+    }
+
+    template <class P>
+    void compute_2d_element(std::stringstream& out, P& printer, const std::string& idx_str,
+                            const std::size_t& row_idx, const std::size_t& column_idx)
+    {
+        out << "<td style='font-family:monospace;' title='("
+            << idx_str << row_idx << ", " << column_idx << ")'><pre>";
+        printer.print_next(out);
+        out << "</pre></td>";
+    }
+
+    template <class P, class T>
+    void compute_2d_row(std::stringstream& out, P& printer, const T& expr,
+                        const std::size_t& edgeitems, const std::string& idx_str,
+                        const std::size_t& row_idx)
+    {
+        const auto& dim = expr.shape()[expr.dimension() - 1];
+
+        out << "<tr>";
+        if (edgeitems == 0 || 2 * edgeitems >= dim)
+        {
+            for (std::size_t column_idx = 0; column_idx < dim; ++column_idx)
+            {
+                compute_2d_element(out, printer, idx_str, row_idx, column_idx);
+            }
+        }
+        else
+        {
+            for (std::size_t column_idx = 0; column_idx < edgeitems; ++column_idx)
+            {
+                compute_2d_element(out, printer, idx_str, row_idx, column_idx);
+            }
+            out << "<td><center>...</center></td>";
+            for (std::size_t column_idx = dim - edgeitems; column_idx < dim; ++column_idx)
+            {
+                compute_2d_element(out, printer, idx_str, row_idx, column_idx);
+            }
+        }
+        out << "</tr>";
+    }
+
+    template <class P, class T, class I>
+    void compute_2d_table(std::stringstream& out, P& printer, const T& expr,
+                               const std::size_t& edgeitems, const std::vector<I>& idx)
+    {
+        const auto& dim = expr.shape()[expr.dimension() - 2];
+        std::string idx_str;
+        std::for_each(idx.cbegin(), idx.cend(), [&idx_str](const auto& i) {
+            idx_str += std::to_string(i) + ", ";
+        });
+
+        out << "<table style='border-style:solid;border-width:1px;'><tbody>";
+        if (edgeitems == 0 || 2 * edgeitems >= dim)
+        {
+            for (std::size_t row_idx = 0; row_idx < dim; ++row_idx)
+            {
+                compute_2d_row(out, printer, expr, edgeitems, idx_str, row_idx);
+            }
+        }
+        else
+        {
+            for (std::size_t row_idx = 0; row_idx < edgeitems; ++row_idx)
+            {
+                compute_2d_row(out, printer, expr, edgeitems, idx_str, row_idx);
+            }
+            out << "<tr>";
+            for (std::size_t column_idx = 0; column_idx < 2 * edgeitems + 1; ++column_idx)
+            {
+                out << "<td><center>...</center></td>";
+            }
+            out << "</tr>";
+            for (std::size_t row_idx = dim - edgeitems; row_idx < dim; ++row_idx)
+            {
+                compute_2d_row(out, printer, expr, edgeitems, idx_str, row_idx);
+            }
+        }
+        out << "</tbody></table>";
+    }
+
+    template <class P, class T, class I>
+    void compute_nd_row(std::stringstream& out, P& printer, const T& expr,
+                         const std::size_t& edgeitems, const std::vector<I>& idx)
+    {
+        out << "<tr><td>";
+        compute_nd_table_impl(out, printer, expr, edgeitems, idx);
+        out << "</td></tr>";
+    }
+
+    template <class P, class T, class I>
+    void compute_nd_table_impl(std::stringstream& out, P& printer, const T& expr,
+                               const std::size_t& edgeitems, const std::vector<I>& idx)
+    {
+        const auto& displayed_dimension = idx.size();
+        const auto& expr_dim = expr.dimension();
+        const auto& dim = expr.shape()[displayed_dimension];
+
+        if (expr_dim - displayed_dimension == 2)
+        {
+            return compute_2d_table(out, printer, expr, edgeitems, idx);
+        }
+
+        std::vector<I> idx2 = idx;
+        idx2.resize(displayed_dimension + 1);
+
+        out << "<table style='border-style:solid;border-width:1px;'>";
+        if (edgeitems == 0 || 2 * edgeitems >= dim)
+        {
+            for (std::size_t i = 0; i < dim; ++i)
+            {
+                idx2[displayed_dimension] = i;
+                compute_nd_row(out, printer, expr, edgeitems, idx2);
+            }
+        }
+        else
+        {
+            for (std::size_t i = 0; i < edgeitems; ++i)
+            {
+                idx2[displayed_dimension] = i;
+                compute_nd_row(out, printer, expr, edgeitems, idx2);
+            }
+            out << "<tr><td><center>...</center></td></tr>";
+            for (std::size_t i = dim - edgeitems; i < dim; ++i)
+            {
+                idx2[displayed_dimension] = i;
+                compute_nd_row(out, printer, expr, edgeitems, idx2);
+            }
+        }
+        out << "</table>";
+    }
+
+    template <class P, class T>
+    void compute_nd_table(std::stringstream& out, P& printer, const T& expr,
+                          const std::size_t& edgeitems)
+    {
+        if (expr.dimension() == 1)
+        {
+            compute_1d_table(out, printer, expr, edgeitems);
+        }
+        else
+        {
+            std::vector<std::size_t> empty_vector;
+            compute_nd_table_impl(out, printer, expr, edgeitems, empty_vector);
+        }
+    }
+
+    template <class E>
+    xeus::xjson mime_bundle_repr_impl(const E& expr)
+    {
+        std::stringstream out;
+
+        std::size_t edgeitems = 0;
+        std::size_t size = compute_size(expr.shape());
+        if (size > print_options::print_options().threshold)
+        {
+            edgeitems = print_options::print_options().edgeitems;
+        }
+
+        if (print_options::print_options().precision != -1)
+        {
+            out.precision(print_options::print_options().precision);
+        }
+
+        detail::printer<E> printer(out.precision());
+
+        xstrided_slice_vector slice_vector;
+        detail::recurser_run(printer, expr, slice_vector, edgeitems);
+        printer.init();
+
+        compute_nd_table(out, printer, expr, edgeitems);
+
+        auto bundle = xeus::xjson::object();
+        bundle["text/html"] = out.str();
+        return bundle;
+    }
+
+    template <class F, class CT>
+    class xfunctor_view;
+
+    template <class F, class CT>
+    xeus::xjson mime_bundle_repr(const xfunctor_view<F, CT>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class F, class R, class... CT>
+    class xfunction;
+
+    template <class F, class R, class... CT>
+    xeus::xjson mime_bundle_repr(const xfunction<F, R, CT...>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class EC, layout_type L, class SC, class Tag>
+    class xarray_container;
+
+    template <class EC, layout_type L, class SC, class Tag>
+    xeus::xjson mime_bundle_repr(const xarray_container<EC, L, SC, Tag>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class EC, size_t N, layout_type L, class Tag>
+    class xtensor_container;
+
+    template <class EC, size_t N, layout_type L, class Tag>
+    xeus::xjson mime_bundle_repr(const xtensor_container<EC, N, L, Tag>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class ET, class S, layout_type L, class Tag>
+    class xfixed_container;
+
+    template <class ET, class S, layout_type L, class Tag>
+    xeus::xjson mime_bundle_repr(const xfixed_container<ET, S, L, Tag>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class F, class CT, class X>
+    class xreducer;
+
+    template <class F, class CT, class X>
+    xeus::xjson mime_bundle_repr(const xreducer<F, CT, X>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class VE, class FE>
+    class xoptional_assembly;
+
+    template <class VE, class FE>
+    xeus::xjson mime_bundle_repr(const xoptional_assembly<VE, FE>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class VEC, class FEC>
+    class xoptional_assembly_adaptor;
+
+    template <class VEC, class FEC>
+    xeus::xjson mime_bundle_repr(const xoptional_assembly_adaptor<VEC, FEC>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class CT>
+    class xscalar;
+
+    template <class CT>
+    xeus::xjson mime_bundle_repr(const xscalar<CT>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class CT, class X>
+    class xbroadcast;
+
+    template <class CT, class X>
+    xeus::xjson mime_bundle_repr(const xbroadcast<CT, X>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class F, class R, class S>
+    class xgenerator;
+
+    template <class F, class R, class S>
+    xeus::xjson mime_bundle_repr(const xgenerator<F, R, S>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class CT, class... S>
+    class xview;
+
+    template <class CT, class... S>
+    xeus::xjson mime_bundle_repr(const xview<CT, S...>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class CT, class S, layout_type L, class FST>
+    class xstrided_view;
+
+    template <class CT, class S, layout_type L, class FST>
+    xeus::xjson mime_bundle_repr(const xstrided_view<CT, S, L, FST>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+#endif
 }
 
 #endif

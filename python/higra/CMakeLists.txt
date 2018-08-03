@@ -9,8 +9,10 @@
 ############################################################################
 
 find_package(PythonInterp 2.7 REQUIRED)
-find_package(NumPy REQUIRED)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/" "${CMAKE_SOURCE_DIR}/lib/lib/cmake/pybind11/")
 
+find_package(NumPy REQUIRED)
+include("${CMAKE_SOURCE_DIR}/lib/lib/cmake/pybind11/pybind11Tools.cmake")
 
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIRS})
 

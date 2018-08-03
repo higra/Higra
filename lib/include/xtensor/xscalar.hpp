@@ -43,6 +43,7 @@ namespace xt
     {
         using value_type = std::decay_t<CT>;
         using inner_shape_type = std::array<std::size_t, 0>;
+        using shape_type = inner_shape_type;
         using const_stepper = xscalar_stepper<true, CT>;
         using stepper = xscalar_stepper<false, CT>;
     };
@@ -346,6 +347,11 @@ namespace xt
 
         void to_begin() noexcept;
         void to_end(layout_type l) noexcept;
+
+        template<class R>
+        R step_simd();
+
+        value_type step_leading();
 
     private:
 
@@ -1011,6 +1017,18 @@ namespace xt
     template <bool is_const, class CT>
     inline void xscalar_stepper<is_const, CT>::to_end(layout_type /*l*/) noexcept
     {
+    }
+
+    template<bool is_const, class CT>
+    template<class R>
+    inline R xscalar_stepper<is_const, CT>::step_simd() {
+        return R(p_c->operator()());
+    }
+
+    template<bool is_const, class CT>
+    inline auto xscalar_stepper<is_const, CT>::step_leading()
+    -> value_type {
+        return p_c->operator()();
     }
 
     /**********************************

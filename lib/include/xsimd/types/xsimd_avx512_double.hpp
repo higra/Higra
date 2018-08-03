@@ -22,9 +22,10 @@ namespace xsimd
     template <>
     struct simd_batch_traits<batch_bool<double, 8>>
     {
-        using value_type = bool;
+        using value_type = double;
         static constexpr std::size_t size = 8;
         using batch_type = batch<double, 8>;
+        static constexpr std::size_t align = 0;
     };
 
     template <>
@@ -42,7 +43,12 @@ namespace xsimd
         }
     };
 
-    GENERATE_AVX512_BOOL_OPS(double, 8);
+    namespace detail {
+        template<>
+        struct batch_bool_kernel<double, 8>
+                : batch_bool_kernel_avx512<double, 8> {
+        };
+    }
 
     /********************
      * batch<double, 8> *
@@ -54,12 +60,16 @@ namespace xsimd
         using value_type = double;
         static constexpr std::size_t size = 8;
         using batch_bool_type = batch_bool<double, 8>;
+        static constexpr std::size_t align = 64;
     };
 
     template <>
     class batch<double, 8> : public simd_batch<batch<double, 8>>
     {
     public:
+
+        using self_type = batch<double, 8>;
+        using base_type = simd_batch<self_type>;
 
         batch();
         explicit batch(double d);
@@ -84,6 +94,14 @@ namespace xsimd
         batch& load_aligned(const int64_t* src);
         batch& load_unaligned(const int64_t* src);
 
+        batch &load_aligned(const int8_t *src);
+
+        batch &load_unaligned(const int8_t *src);
+
+        batch &load_aligned(const uint8_t *src);
+
+        batch &load_unaligned(const uint8_t *src);
+
         void store_aligned(double* dst) const;
         void store_unaligned(double* dst) const;
 
@@ -96,50 +114,25 @@ namespace xsimd
         void store_aligned(int64_t* dst) const;
         void store_unaligned(int64_t* dst) const;
 
+        void store_aligned(int8_t *dst) const;
+
+        void store_unaligned(int8_t *dst) const;
+
+        void store_aligned(uint8_t *dst) const;
+
+        void store_unaligned(uint8_t *dst) const;
+
+        using base_type::load_aligned;
+        using base_type::load_unaligned;
+        using base_type::store_aligned;
+        using base_type::store_unaligned;
+
         double operator[](std::size_t index) const;
 
     private:
 
         __m512d m_value;
     };
-
-    batch<double, 8> operator-(const batch<double, 8>& rhs);
-    batch<double, 8> operator+(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch<double, 8> operator-(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch<double, 8> operator*(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch<double, 8> operator/(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-
-    batch_bool<double, 8> operator==(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch_bool<double, 8> operator!=(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch_bool<double, 8> operator<(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch_bool<double, 8> operator<=(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-
-    batch<double, 8> operator&(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch<double, 8> operator|(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch<double, 8> operator^(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch<double, 8> operator~(const batch<double, 8>& rhs);
-    batch<double, 8> bitwise_andnot(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-
-    batch<double, 8> min(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch<double, 8> max(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch<double, 8> fmin(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-    batch<double, 8> fmax(const batch<double, 8>& lhs, const batch<double, 8>& rhs);
-
-    batch<double, 8> abs(const batch<double, 8>& rhs);
-    batch<double, 8> fabs(const batch<double, 8>& rhs);
-    batch<double, 8> sqrt(const batch<double, 8>& rhs);
-
-    batch<double, 8> fma(const batch<double, 8>& x, const batch<double, 8>& y, const batch<double, 8>& z);
-    batch<double, 8> fms(const batch<double, 8>& x, const batch<double, 8>& y, const batch<double, 8>& z);
-    batch<double, 8> fnma(const batch<double, 8>& x, const batch<double, 8>& y, const batch<double, 8>& z);
-    batch<double, 8> fnms(const batch<double, 8>& x, const batch<double, 8>& y, const batch<double, 8>& z);
-
-    double hadd(const batch<double, 8>& rhs);
-    batch<double, 8> haddp(const batch<double, 8>* row);
-
-    batch<double, 8> select(const batch_bool<double, 8>& cond, const batch<double, 8>& a, const batch<double, 8>& b);
-
-    batch_bool<double, 8> isnan(const batch<double, 8>& x);
 
     /***********************************
      * batch<double, 8> implementation *
@@ -246,6 +239,28 @@ namespace xsimd
         return load_aligned(src);
     }
 
+    inline batch<double, 8> &batch<double, 8>::load_aligned(const int8_t *src) {
+        __m128i tmp = _mm_loadl_epi64((const __m128i *) src);
+        __m512i tmp2 = _mm512_cvtepi8_epi64(tmp);
+        m_value = _mm512_cvtepi64_pd(tmp2);
+        return *this;
+    }
+
+    inline batch<double, 8> &batch<double, 8>::load_unaligned(const int8_t *src) {
+        return load_aligned(src);
+    }
+
+    inline batch<double, 8> &batch<double, 8>::load_aligned(const uint8_t *src) {
+        __m128i tmp = _mm_loadl_epi64((const __m128i *) src);
+        __m512i tmp2 = _mm512_cvtepu8_epi64(tmp);
+        m_value = _mm512_cvtepi64_pd(tmp2);
+        return *this;
+    }
+
+    inline batch<double, 8> &batch<double, 8>::load_unaligned(const uint8_t *src) {
+        return load_aligned(src);
+    }
+
     inline void batch<double, 8>::store_aligned(double* dst) const
     {
         _mm512_store_pd(dst, m_value);
@@ -296,6 +311,26 @@ namespace xsimd
         store_aligned(dst);
     }
 
+    inline void batch<double, 8>::store_aligned(int8_t *dst) const {
+        __m512i tmp = _mm512_cvtpd_epi64(m_value);
+        __m128i tmp2 = _mm512_cvtepi64_epi8(tmp);
+        _mm_storel_epi64((__m128i *) dst, tmp2);
+    }
+
+    inline void batch<double, 8>::store_unaligned(int8_t *dst) const {
+        store_aligned(dst);
+    }
+
+    inline void batch<double, 8>::store_aligned(uint8_t *dst) const {
+        __m512i tmp = _mm512_cvtpd_epi64(m_value);
+        __m128i tmp2 = _mm512_cvtusepi64_epi8(tmp);
+        _mm_storel_epi64((__m128i *) dst, tmp2);
+    }
+
+    inline void batch<double, 8>::store_unaligned(uint8_t *dst) const {
+        store_aligned(dst);
+    }
+
     inline double batch<double, 8>::operator[](std::size_t index) const
     {
         alignas(64) double x[8];
@@ -303,153 +338,124 @@ namespace xsimd
         return x[index & 7];
     }
 
-    inline batch<double, 8> operator-(const batch<double, 8>& rhs)
+    namespace detail
     {
-        return _mm512_xor_pd(rhs, _mm512_castsi512_pd(_mm512_set1_epi64(0x8000000000000000)));
-    }
+        template<>
+        struct batch_kernel<double, 8> {
+            using batch_type = batch<double, 8>;
+            using value_type = double;
+            using batch_bool_type = batch_bool<double, 8>;
 
-    inline batch<double, 8> operator+(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_add_pd(lhs, rhs);
-    }
+            static batch_type neg(const batch_type &rhs) {
+                return _mm512_xor_pd(rhs, _mm512_castsi512_pd(_mm512_set1_epi64(0x8000000000000000)));
+            }
 
-    inline batch<double, 8> operator-(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_sub_pd(lhs, rhs);
-    }
+            static batch_type add(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_add_pd(lhs, rhs);
+            }
 
-    inline batch<double, 8> operator*(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_mul_pd(lhs, rhs);
-    }
+            static batch_type sub(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_sub_pd(lhs, rhs);
+            }
 
-    inline batch<double, 8> operator/(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_div_pd(lhs, rhs);
-    }
+            static batch_type mul(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_mul_pd(lhs, rhs);
+            }
 
-    inline batch_bool<double, 8> operator==(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_cmp_pd_mask(lhs, rhs, _CMP_EQ_OQ);
-    }
+            static batch_type div(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_div_pd(lhs, rhs);
+            }
 
-    inline batch_bool<double, 8> operator!=(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_cmp_pd_mask(lhs, rhs, _CMP_NEQ_OQ);
-    }
+            static batch_bool_type eq(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_cmp_pd_mask(lhs, rhs, _CMP_EQ_OQ);
+            }
 
-    inline batch_bool<double, 8> operator<(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_cmp_pd_mask(lhs, rhs, _CMP_LT_OQ);
-    }
+            static batch_bool_type neq(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_cmp_pd_mask(lhs, rhs, _CMP_NEQ_OQ);
+            }
 
-    inline batch_bool<double, 8> operator<=(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_cmp_pd_mask(lhs, rhs, _CMP_LE_OQ);
-    }
+            static batch_bool_type lt(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_cmp_pd_mask(lhs, rhs, _CMP_LT_OQ);
+            }
 
-    inline batch<double, 8> operator&(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_and_pd(lhs, rhs);
-    }
+            static batch_bool_type lte(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_cmp_pd_mask(lhs, rhs, _CMP_LE_OQ);
+            }
 
-    inline batch<double, 8> operator|(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_or_pd(lhs, rhs);
-    }
+            static batch_type bitwise_and(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_and_pd(lhs, rhs);
+            }
 
-    inline batch<double, 8> operator^(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_xor_pd(lhs, rhs);
-    }
+            static batch_type bitwise_or(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_or_pd(lhs, rhs);
+            }
 
-    inline batch<double, 8> operator~(const batch<double, 8>& rhs)
-    {
-        return _mm512_xor_pd(rhs, _mm512_castsi512_pd(_mm512_set1_epi32(-1)));
-    }
+            static batch_type bitwise_xor(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_xor_pd(lhs, rhs);
+            }
 
-    inline batch<double, 8> bitwise_andnot(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_andnot_pd(lhs, rhs);
-    }
+            static batch_type bitwise_not(const batch_type &rhs) {
+                return _mm512_xor_pd(rhs, _mm512_castsi512_pd(_mm512_set1_epi32(-1)));
+            }
 
-    inline batch<double, 8> min(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_min_pd(lhs, rhs);
-    }
+            static batch_type bitwise_andnot(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_andnot_pd(lhs, rhs);
+            }
 
-    inline batch<double, 8> max(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return _mm512_max_pd(lhs, rhs);
-    }
+            static batch_type min(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_min_pd(lhs, rhs);
+            }
 
-    inline batch<double, 8> fmin(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return min(lhs, rhs);
-    }
+            static batch_type max(const batch_type &lhs, const batch_type &rhs) {
+                return _mm512_max_pd(lhs, rhs);
+            }
 
-    inline batch<double, 8> fmax(const batch<double, 8>& lhs, const batch<double, 8>& rhs)
-    {
-        return max(lhs, rhs);
-    }
+            static batch_type fmin(const batch_type &lhs, const batch_type &rhs) {
+                return min(lhs, rhs);
+            }
 
-    inline batch<double, 8> abs(const batch<double, 8>& rhs)
-    {
-        // return _mm512_abs_pd(rhs);
-        return (__m512d) (_mm512_and_epi64(_mm512_set1_epi64(0x7FFFFFFFFFFFFFFF),
-                                           (__m512i)((__m512d)(rhs))));
-    }
+            static batch_type fmax(const batch_type &lhs, const batch_type &rhs) {
+                return max(lhs, rhs);
+            }
 
-    inline batch<double, 8> fabs(const batch<double, 8>& rhs)
-    {
-        return abs(rhs);
-    }
+            static batch_type abs(const batch_type &rhs) {
+                return (__m512d)(_mm512_and_epi64(_mm512_set1_epi64(0x7FFFFFFFFFFFFFFF),
+                                                  (__m512i)((__m512d)(rhs))));
+            }
 
-    inline batch<double, 8> sqrt(const batch<double, 8>& rhs)
-    {
-        return _mm512_sqrt_pd(rhs);
-    }
+            static batch_type fabs(const batch_type &rhs) {
+                return abs(rhs);
+            }
 
-    inline batch<double, 8> fma(const batch<double, 8>& x, const batch<double, 8>& y, const batch<double, 8>& z)
-    {
-        return _mm512_fmadd_pd(x, y, z);
-    }
+            static batch_type sqrt(const batch_type &rhs) {
+                return _mm512_sqrt_pd(rhs);
+            }
 
-    inline batch<double, 8> fms(const batch<double, 8>& x, const batch<double, 8>& y, const batch<double, 8>& z)
-    {
-        return _mm512_fmsub_pd(x, y, z);
-    }
+            static batch_type fma(const batch_type &x, const batch_type &y, const batch_type &z) {
+                return _mm512_fmadd_pd(x, y, z);
+            }
 
-    inline batch<double, 8> fnma(const batch<double, 8>& x, const batch<double, 8>& y, const batch<double, 8>& z)
-    {
-        return _mm512_fnmadd_pd(x, y, z);
-    }
+            static batch_type fms(const batch_type &x, const batch_type &y, const batch_type &z) {
+                return _mm512_fmsub_pd(x, y, z);
+            }
 
-    inline batch<double, 8> fnms(const batch<double, 8>& x, const batch<double, 8>& y, const batch<double, 8>& z)
-    {
-        return _mm512_fnmsub_pd(x, y, z);
-    }
+            static batch_type fnma(const batch_type &x, const batch_type &y, const batch_type &z) {
+                return _mm512_fnmadd_pd(x, y, z);
+            }
 
-    inline double hadd(const batch<double, 8>& rhs)
-    {
-        // return _mm512_reduce_add_pd(rhs);
-        __m256d tmp1 = _mm512_extractf64x4_pd(rhs, 1);
-        __m256d tmp2 = _mm512_extractf64x4_pd(rhs, 0);
-        __m256d res1 = tmp1 + tmp2;
-        return hadd(batch<double, 4>(res1));
-    }
+            static batch_type fnms(const batch_type &x, const batch_type &y, const batch_type &z) {
+                return _mm512_fnmsub_pd(x, y, z);
+            }
 
-    // inline batch<double, 8> step1(batch<double, 8> a, batch<double, 8> b)
-    // {
-    //     auto tmp1 = _mm512_shuffle_f64x2(a, b, _MM_SHUFFLE(1, 0, 1, 0));
-    //     auto tmp2 = _mm512_shuffle_f64x2(a, b, _MM_SHUFFLE(3, 2, 3, 2));
-    //     auto res = (tmp1 + tmp2);
-    //     return res;
-    // }
+            static value_type hadd(const batch_type &rhs) {
+                __m256d tmp1 = _mm512_extractf64x4_pd(rhs, 1);
+                __m256d tmp2 = _mm512_extractf64x4_pd(rhs, 0);
+                __m256d res1 = tmp1 + tmp2;
+                return xsimd::hadd(batch<double, 4>(res1));
+            }
 
-    inline batch<double, 8> haddp(const batch<double, 8>* row)
-    {
-    #define step1(I, a, b)                                                   \
+            static batch_type haddp(const simd_batch<batch_type> *row) {
+#define step1(I, a, b)                                                   \
         batch<double, 8> res ## I;                                           \
         {                                                                    \
             auto tmp1 = _mm512_shuffle_f64x2(a, b, _MM_SHUFFLE(1, 0, 1, 0)); \
@@ -457,37 +463,37 @@ namespace xsimd
             res ## I = (tmp1 + tmp2);                                        \
         }                                                                    \
 
-        step1(1, row[0], row[2]);
-        step1(2, row[4], row[6]);
-        step1(3, row[1], row[3]);
-        step1(4, row[5], row[7]);
+                step1(1, row[0](), row[2]());
+                step1(2, row[4](), row[6]());
+                step1(3, row[1](), row[3]());
+                step1(4, row[5](), row[7]());
 
-    #undef step1
+#undef step1
 
-        batch<double, 8> tmp5 = _mm512_shuffle_f64x2(res1, res2, _MM_SHUFFLE(2, 0, 2, 0));
-        batch<double, 8> tmp6 = _mm512_shuffle_f64x2(res1, res2, _MM_SHUFFLE(3, 1, 3, 1));
+                batch<double, 8> tmp5 = _mm512_shuffle_f64x2(res1, res2, _MM_SHUFFLE(2, 0, 2, 0));
+                batch<double, 8> tmp6 = _mm512_shuffle_f64x2(res1, res2, _MM_SHUFFLE(3, 1, 3, 1));
 
-        batch<double, 8> resx1 = (tmp5 + tmp6);
+                batch<double, 8> resx1 = (tmp5 + tmp6);
 
-        batch<double, 8> tmp7 = _mm512_shuffle_f64x2(res3, res4, _MM_SHUFFLE(2, 0, 2, 0));
-        batch<double, 8> tmp8 = _mm512_shuffle_f64x2(res3, res4, _MM_SHUFFLE(3, 1, 3, 1));
+                batch<double, 8> tmp7 = _mm512_shuffle_f64x2(res3, res4, _MM_SHUFFLE(2, 0, 2, 0));
+                batch<double, 8> tmp8 = _mm512_shuffle_f64x2(res3, res4, _MM_SHUFFLE(3, 1, 3, 1));
 
-        batch<double, 8> resx2 = (tmp7 + tmp8);
+                batch<double, 8> resx2 = (tmp7 + tmp8);
 
-        batch<double, 8> tmpx = _mm512_shuffle_pd(resx1, resx2, 0b00000000);
-        batch<double, 8> tmpy = _mm512_shuffle_pd(resx1, resx2, 0b11111111);
+                batch<double, 8> tmpx = _mm512_shuffle_pd(resx1, resx2, 0b00000000);
+                batch<double, 8> tmpy = _mm512_shuffle_pd(resx1, resx2, 0b11111111);
 
-        return tmpx + tmpy;
-    }
+                return tmpx + tmpy;
+            }
 
-    inline batch<double, 8> select(const batch_bool<double, 8>& cond, const batch<double, 8>& a, const batch<double, 8>& b)
-    {
-        return _mm512_mask_blend_pd(cond, b, a);
-    }
+            static batch_type select(const batch_bool_type &cond, const batch_type &a, const batch_type &b) {
+                return _mm512_mask_blend_pd(cond, b, a);
+            }
 
-    inline batch_bool<double, 8> isnan(const batch<double, 8>& x)
-    {
-        return _mm512_cmp_pd_mask(x, x, _CMP_UNORD_Q);
+            static batch_bool_type isnan(const batch_type &x) {
+                return _mm512_cmp_pd_mask(x, x, _CMP_UNORD_Q);
+            }
+        };
     }
 }
 

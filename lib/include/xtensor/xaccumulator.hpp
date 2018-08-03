@@ -88,14 +88,54 @@ namespace xt
             using type = xarray<R>;
         };
 
-        template <class T, std::size_t N, class R>
-        struct xaccumulator_return_type<xtensor<T, N>, R>
+        template<class T, layout_type L, class R>
+        struct xaccumulator_return_type<xarray < T, L>, R> {
+        using type = xarray<R, L>;
+    };
+
+    template<class T, std::size_t N, layout_type L, class R>
+    struct xaccumulator_return_type<xtensor < T, N, L>, R>
         {
-            using type = xtensor<R, N>;
+    using type = xtensor<R, N, L>;
+};
+
+template<class T, std::size_t... I, layout_type L, class R>
+struct xaccumulator_return_type<xtensor_fixed < T, xshape < I...>, L>, R>
+{
+using type = xtensor_fixed <R, xshape<I...>, L>;
         };
 
         template <class T, class R>
         using xaccumulator_return_type_t = typename xaccumulator_return_type<T, R>::type;
+
+template<class T>
+struct fixed_compute_size;
+
+template<class T, class R>
+struct xaccumulator_linear_return_type {
+    using type = xtensor<R, 1>;
+};
+
+template<class T, layout_type L, class R>
+struct xaccumulator_linear_return_type<xarray < T, L>, R>
+{
+using type = xtensor<R, 1, L>;
+};
+
+template<class T, std::size_t N, layout_type L, class R>
+struct xaccumulator_linear_return_type<xtensor < T, N, L>, R>
+{
+using type = xtensor<R, 1, L>;
+};
+
+template<class T, std::size_t... I, layout_type L, class R>
+struct xaccumulator_linear_return_type<xtensor_fixed < T, xshape < I...>, L>, R>
+{
+using type = xtensor_fixed <R, xshape<fixed_compute_size<xshape < I...>>::value>, L>;
+};
+
+template<class T, class R>
+using xaccumulator_linear_return_type_t = typename xaccumulator_linear_return_type<T, R>::type;
 
         template <class F, class E>
         inline auto accumulator_init_with_f(F&& f, E& e, std::size_t axis)
@@ -104,7 +144,10 @@ namespace xt
             // e[:, 0, :, :, ...] = f(e[:, 0, :, :, ...])
             // so that all "first" values are initialized in a first pass
 
-            std::size_t outer_loop_size, inner_loop_size, outer_stride, inner_stride, pos = 0;
+            std::size_t outer_loop_size, inner_loop_size, pos = 0;
+            // Note using size_t for strides because we're sure to always have positive strides
+            // for now!
+            std::size_t outer_stride, inner_stride;
 
             auto set_loop_sizes = [&outer_loop_size, &inner_loop_size](auto first, auto last, std::ptrdiff_t ax) {
                 outer_loop_size = std::accumulate(first, first + ax,
@@ -114,8 +157,9 @@ namespace xt
             };
 
             auto set_loop_strides = [&outer_stride, &inner_stride](auto first, auto last, std::ptrdiff_t ax) {
-                outer_stride = ax == 0 ? 1 : *std::min_element(first, first + ax);
-                inner_stride = (ax == std::distance(first, last) - 1) ? 1 : *std::min_element(first + ax + 1, last);
+                outer_stride = static_cast<std::size_t>(ax == 0 ? 1 : *std::min_element(first, first + ax));
+                inner_stride = static_cast<std::size_t>((ax == std::distance(first, last) - 1) ? 1 : *std::min_element(
+                        first + ax + 1, last));
             };
 
             set_loop_sizes(e.shape().begin(), e.shape().end(), static_cast<std::ptrdiff_t>(axis));
@@ -153,7 +197,7 @@ namespace xt
 
             result_type result = e;  // assign + make a copy, we need it anyways
 
-            std::size_t inner_stride = result.strides()[axis];
+            std::size_t inner_stride = static_cast<std::size_t>(result.strides()[axis]);
             std::size_t outer_stride = 1;  // this is either going row- or column-wise (strides.back / strides.front)
             std::size_t outer_loop_size = 0;
             std::size_t inner_loop_size = 0;
@@ -208,7 +252,7 @@ namespace xt
             using accumulate_functor = std::decay_t<decltype(std::get<0>(f))>;
             using T = typename accumulate_functor::result_type;
 
-            using result_type = xtensor<T, 1>;
+            using result_type = xaccumulator_linear_return_type_t<std::decay_t<E>, T>;
             std::size_t sz = e.size();
             auto result = result_type::from_shape({sz});
 

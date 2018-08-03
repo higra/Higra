@@ -15,7 +15,12 @@
 #include <utility>
 
 #include "xsimd_base.hpp"
+#include "xsimd_complex_base.hpp"
 #include "xsimd_utils.hpp"
+
+#ifdef XSIMD_ENABLE_XTL_COMPLEX
+#include "xtl/xcomplex.hpp"
+#endif
 
 namespace xsimd
 {
@@ -68,27 +73,6 @@ namespace xsimd
         std::array<bool, N> m_value;
     };
 
-    template <typename T, std::size_t N>
-    batch_bool<T, N> operator&(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch_bool<T, N> operator|(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch_bool<T, N> operator^(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch_bool<T, N> operator~(const batch_bool<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch_bool<T, N> bitwise_andnot(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs);
-
-    template <typename T, std::size_t N>
-    batch_bool<T, N> operator==(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch_bool<T, N> operator!=(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs);
-
-    template <typename T, std::size_t N>
-    bool all(const batch_bool<T, N>& rhs);
-    template <typename T, std::size_t N>
-    bool any(const batch_bool<T, N>& rhs);
-
     /***************
      * batch<T, N> *
      ***************/
@@ -137,6 +121,14 @@ namespace xsimd
         batch& load_aligned(const int64_t* src);
         batch& load_unaligned(const int64_t* src);
 
+        batch &load_aligned(const char *src);
+
+        batch &load_unaligned(const char *src);
+
+        batch &load_aligned(const unsigned char *src);
+
+        batch &load_unaligned(const unsigned char *src);
+
         void store_aligned(float* dst) const;
         void store_unaligned(float* dst) const;
 
@@ -149,9 +141,16 @@ namespace xsimd
         void store_aligned(int64_t* dst) const;
         void store_unaligned(int64_t* dst) const;
 
+        void store_aligned(char *dst) const;
+
+        void store_unaligned(char *dst) const;
+
+        void store_aligned(unsigned char *dst) const;
+
+        void store_unaligned(unsigned char *dst) const;
+
         const T& operator[](std::size_t index) const;
         T& operator[](std::size_t index);
-
 
     private:
 
@@ -164,76 +163,217 @@ namespace xsimd
     };
 
     template <typename T, std::size_t N>
-    batch<T, N> operator-(const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> operator+(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> operator-(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> operator*(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> operator/(const batch<T, N>& lhs, const batch<T, N>& rhs);
-
-    template <typename T, std::size_t N>
-    batch_bool<T, N> operator==(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch_bool<T, N> operator!=(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch_bool<T, N> operator<(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch_bool<T, N> operator<=(const batch<T, N>& lhs, const batch<T, N>& rhs);
-
-    template <typename T, std::size_t N>
-    batch<T, N> operator&(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> operator|(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> operator^(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> operator~(const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> bitwise_andnot(const batch<T, N>& lhs, const batch<T, N>& rhs);
-
-    template <typename T, std::size_t N>
-    batch<T, N> min(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> max(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> fmin(const batch<T, N>& lhs, const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> fmax(const batch<T, N>& lhs, const batch<T, N>& rhs);
-
-    template <typename T, std::size_t N>
-    batch<T, N> abs(const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> fabs(const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> sqrt(const batch<T, N>& rhs);
-
-    template <typename T, std::size_t N>
-    batch<T, N> fma(const batch<T, N>& x, const batch<T, N>& y, const batch<T, N>& z);
-    template <typename T, std::size_t N>
-    batch<T, N> fms(const batch<T, N>& x, const batch<T, N>& y, const batch<T, N>& z);
-    template <typename T, std::size_t N>
-    batch<T, N> fnma(const batch<T, N>& x, const batch<T, N>& y, const batch<T, N>& z);
-    template <typename T, std::size_t N>
-    batch<T, N> fnms(const batch<T, N>& x, const batch<T, N>& y, const batch<T, N>& z);
-
-    template <typename T, std::size_t N>
-    T hadd(const batch<T, N>& rhs);
-    template <typename T, std::size_t N>
-    batch<T, N> haddp(const batch<T, N>* row);
-
-    template <typename T, std::size_t N>
-    batch<T, N> select(const batch_bool<T, N>& cond, const batch<T, N>& a, const batch<T, N>& b);
-
-    template <typename T, std::size_t N>
-    batch_bool<T, N> isnan(const batch<T, N>& x);
-
-    template <typename T, std::size_t N>
     batch<T, N> operator<<(const batch<T, N>& lhs, int32_t rhs);
     template <typename T, std::size_t N>
     batch<T, N> operator>>(const batch<T, N>& lhs, int32_t rhs);
+
+    /**********************************
+     * batch_bool<std::complex<T>, N> *
+     **********************************/
+
+    template<class T, std::size_t N>
+    struct simd_batch_traits<batch_bool<std::complex < T>, N>>
+    : complex_batch_bool_traits<std::complex < T>, T, N, XSIMD_DEFAULT_ALIGNMENT> {
+};
+
+template<class T, std::size_t N>
+class batch_bool<std::complex < T>
+
+, N>
+: public simd_complex_batch_bool <batch_bool<std::complex < T>, N>>
+{
+public:
+
+using self_type = batch_bool<std::complex < T>, N>;
+using base_type = simd_complex_batch_bool<self_type>;
+using real_batch = batch_bool<T, N>;
+
+batch_bool() = default;
+
+using base_type::base_type;
+
+// Constructor from N boolean parameters
+template<
+        typename... Args,
+        typename Enable = detail::is_array_initializer_t<bool, N, Args...>
+>
+batch_bool(Args
+... exactly_N_bools)
+:
+base_type(real_batch{exactly_N_bools...})
+        {
+        }
+};
+
+/*****************************
+ * batch<std::complex<T>, N> *
+ *****************************/
+
+template<class T, std::size_t N>
+struct simd_batch_traits<batch < std::complex < T>, N>>
+: complex_batch_traits <std::complex<T>, T, N, XSIMD_DEFAULT_ALIGNMENT>
+{
+};
+
+template<class T, std::size_t N>
+class batch<std::complex < T>
+
+, N>
+: public simd_complex_batch<batch<std::complex < T>, N>>
+{
+public:
+
+using self_type = batch<std::complex < T>, N>;
+using base_type = simd_complex_batch<self_type>;
+using value_type = std::complex<T>;
+using real_batch = batch<T, N>;
+using real_value_type = T;
+
+batch() = default;
+
+using base_type::base_type;
+
+// Constructor from N scalar parameters
+template<
+        typename... Args,
+        typename Enable = typename detail::is_array_initializer<T, N, Args...>::type
+>
+batch(Args
+... exactly_N_scalars)
+:
+base_type(real_batch{exactly_N_scalars.real()...},
+        real_batch{exactly_N_scalars.imag()...}
+)
+{
+}
+
+using base_type::load_aligned;
+using base_type::load_unaligned;
+using base_type::store_aligned;
+using base_type::store_unaligned;
+
+template<class U>
+typename std::enable_if<detail::is_complex<U>::value, self_type &>::type
+load_aligned(const U *src);
+
+template<class U>
+typename std::enable_if<detail::is_complex<U>::value, self_type &>::type
+load_unaligned(const U *src);
+
+template<class U>
+typename std::enable_if<!detail::is_complex<U>::value, self_type &>::type
+load_aligned(const U *src);
+
+template<class U>
+typename std::enable_if<!detail::is_complex<U>::value, self_type &>::type
+load_unaligned(const U *src);
+
+template<class U>
+void store_aligned(U *dst) const;
+
+template<class U>
+void store_unaligned(U *dst) const;
+
+};
+
+#ifdef XSIMD_ENABLE_XTL_COMPLEX
+
+/********************************************
+ * batch_bool<xtl::xcomplex<T, T, i3ec>, N> *
+ ********************************************/
+
+template <class T, std::size_t N, bool i3ec>
+struct simd_batch_traits<batch_bool<xtl::xcomplex<T, T, i3ec>, N>>
+    : complex_batch_bool_traits<xtl::xcomplex<T, T, i3ec>, T, N, XSIMD_DEFAULT_ALIGNMENT>
+{
+};
+
+template<class T, std::size_t N, bool i3ec>
+class batch_bool<xtl::xcomplex<T, T, i3ec>, N>
+    : public simd_complex_batch_bool<batch_bool<xtl::xcomplex<T, T, i3ec>, N>>
+{
+public:
+
+    using self_type = batch_bool<xtl::xcomplex<T, T, i3ec>, N>;
+    using base_type = simd_complex_batch_bool<self_type>;
+    using real_batch = batch_bool<T, N>;
+
+    batch_bool() = default;
+    using base_type::base_type;
+
+    // VS2015 has a bug with inheriting constructors involving SFINAE
+    // Constructor from N boolean parameters
+    template <
+        typename... Args,
+        typename Enable = detail::is_array_initializer_t<bool, N, Args...>
+    >
+    batch_bool(Args... exactly_N_bools)
+        : base_type(real_batch{ exactly_N_bools... })
+    {
+    }
+};
+
+/***************************************
+ * batch<xtl::xcomplex<T, T, i3ec>, N> *
+ ***************************************/
+
+template <class T, std::size_t N, bool i3ec>
+struct simd_batch_traits<batch<xtl::xcomplex<T, T, i3ec>, N>>
+    : complex_batch_traits<xtl::xcomplex<T, T, i3ec>, T, N, XSIMD_DEFAULT_ALIGNMENT>
+{
+};
+
+template <class T, std::size_t N, bool i3ec>
+class batch<xtl::xcomplex<T, T, i3ec>, N>
+    : public simd_complex_batch<batch<xtl::xcomplex<T, T, i3ec>, N>>
+{
+public:
+
+    using self_type = batch<xtl::xcomplex<T, T, i3ec>, N>;
+    using base_type = simd_complex_batch<self_type>;
+    using value_type = xtl::xcomplex<T, T, i3ec>;
+    using real_batch = batch<T, N>;
+    using real_value_type = T;
+
+    batch() = default;
+    using base_type::base_type;
+
+    // Constructor from N scalar parameters
+    template <
+        typename... Args,
+        typename Enable = typename detail::is_array_initializer<T, N, Args...>::type
+    >
+    batch(Args... exactly_N_scalars)
+        : base_type(real_batch{ exactly_N_scalars.real()... },
+                    real_batch{ exactly_N_scalars.imag()... })
+    {
+    }
+
+    using base_type::load_aligned;
+    using base_type::load_unaligned;
+    using base_type::store_aligned;
+    using base_type::store_unaligned;
+
+    template <class U>
+    typename std::enable_if<detail::is_complex<U>::value, self_type&>::type
+    load_aligned(const U* src);
+    template <class U>
+    typename std::enable_if<detail::is_complex<U>::value, self_type&>::type
+    load_unaligned(const U* src);
+
+    template <class U>
+    typename std::enable_if<!detail::is_complex<U>::value, self_type&>::type
+    load_aligned(const U* src);
+    template <class U>
+    typename std::enable_if<!detail::is_complex<U>::value, self_type&>::type
+    load_unaligned(const U* src);
+
+    template <class U>
+    void store_aligned(U* dst) const;
+    template <class U>
+    void store_unaligned(U* dst) const;
+};
+#endif
 
     /************************
      * conversion functions *
@@ -373,64 +513,54 @@ namespace xsimd
         return m_value[index];
     }
 
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> operator&(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs)
+namespace detail
     {
-        XSIMD_FALLBACK_BINARY_OP(batch_bool, &, lhs, rhs)
-    }
+    template<class T, std::size_t N>
+    struct batch_bool_kernel {
+        using batch_type = batch_bool<T, N>;
 
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> operator|(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch_bool, |, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> operator^(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch_bool, ^, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> operator~(const batch_bool<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_UNARY_OP(batch_bool, ~, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> bitwise_andnot(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_MAPPING_LOOP(batch_bool, (~(lhs[i] & rhs[i])))
-    }
-
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> operator==(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch_bool, ==, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> operator!=(const batch_bool<T, N>& lhs, const batch_bool<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch_bool, !=, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline bool all(const batch_bool<T, N>& rhs)
-    {
-        for(std::size_t i = 0; i < N; ++i) {
-            if(!rhs[i]) return false;
+        static batch_type bitwise_and(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch_bool, &, lhs, rhs)
         }
-        return true;
-    }
 
-    template <typename T, std::size_t N>
-    inline bool any(const batch_bool<T, N>& rhs)
-    {
-        for(std::size_t i = 0; i < N; ++i) {
-            if(rhs[i]) return true;
+        static batch_type bitwise_or(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch_bool, |, lhs, rhs)
         }
-        return false;
+
+        static batch_type bitwise_xor(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch_bool, ^, lhs, rhs)
+        }
+
+        static batch_type bitwise_not(const batch_type &rhs) {
+            XSIMD_FALLBACK_UNARY_OP(batch_bool, ~, rhs)
+        }
+
+        static batch_type bitwise_andnot(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_MAPPING_LOOP(batch_bool, (~(lhs[i] & rhs[i])))
+        }
+
+        static batch_type equal(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch_bool, ==, lhs, rhs)
+        }
+
+        static batch_type not_equal(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch_bool, !=, lhs, rhs)
+        }
+
+        static bool all(const batch_type &rhs) {
+            for (std::size_t i = 0; i < N; ++i) {
+                if (!rhs[i]) return false;
+            }
+            return true;
+        }
+
+        static bool any(const batch_type &rhs) {
+            for (std::size_t i = 0; i < N; ++i) {
+                if (rhs[i]) return true;
+            }
+            return false;
+        }
+    };
     }
 
     /**********************************
@@ -540,6 +670,26 @@ namespace xsimd
         return this->load_unaligned_impl(src);
     }
 
+template<typename T, std::size_t N>
+inline batch<T, N> &batch<T, N>::load_aligned(const char *src) {
+    return this->load_unaligned_impl(src);
+}
+
+template<typename T, std::size_t N>
+inline batch<T, N> &batch<T, N>::load_unaligned(const char *src) {
+    return this->load_unaligned_impl(src);
+}
+
+template<typename T, std::size_t N>
+inline batch<T, N> &batch<T, N>::load_aligned(const unsigned char *src) {
+    return this->load_unaligned_impl(src);
+}
+
+template<typename T, std::size_t N>
+inline batch<T, N> &batch<T, N>::load_unaligned(const unsigned char *src) {
+    return this->load_unaligned_impl(src);
+}
+
     template <typename T, std::size_t N>
     inline void batch<T, N>::store_aligned(float* dst) const
     {
@@ -588,6 +738,26 @@ namespace xsimd
         this->store_unaligned_impl(dst);
     }
 
+template<typename T, std::size_t N>
+inline void batch<T, N>::store_aligned(char *dst) const {
+    this->store_unaligned_impl(dst);
+}
+
+template<typename T, std::size_t N>
+inline void batch<T, N>::store_unaligned(char *dst) const {
+    this->store_unaligned_impl(dst);
+}
+
+template<typename T, std::size_t N>
+inline void batch<T, N>::store_aligned(unsigned char *dst) const {
+    this->store_unaligned_impl(dst);
+}
+
+template<typename T, std::size_t N>
+inline void batch<T, N>::store_unaligned(unsigned char *dst) const {
+    this->store_unaligned_impl(dst);
+}
+
     template <typename T, std::size_t N>
     inline const T& batch<T, N>::operator[](std::size_t index) const
     {
@@ -619,191 +789,143 @@ namespace xsimd
         }
     }
 
-    template <typename T, std::size_t N>
-    inline batch<T, N> operator-(const batch<T, N>& rhs)
+namespace detail
     {
-        XSIMD_FALLBACK_UNARY_OP(batch, -, rhs)
-    }
+    template<class T, std::size_t N>
+    struct batch_kernel {
+        using batch_type = batch<T, N>;
+        using value_type = T;
+        using batch_bool_type = batch_bool<T, N>;
 
-    template <typename T, std::size_t N>
-    inline batch<T, N> operator+(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch, +, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> operator-(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch, -, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> operator*(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch, *, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> operator/(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch, /, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> operator==(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch_bool, ==, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> operator!=(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch_bool, !=, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> operator<(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch_bool, <, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> operator<=(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BINARY_OP(batch_bool, <=, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> operator&(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BATCH_BITWISE_BINARY_OP(&, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> operator|(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BATCH_BITWISE_BINARY_OP(|, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> operator^(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BATCH_BITWISE_BINARY_OP(^, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> operator~(const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BATCH_BITWISE_UNARY_OP(~, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> bitwise_andnot(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_MAPPING_LOOP(
-            batch,
-            detail::from_unsigned_integer<T>(
-                ~(
-                    detail::to_unsigned_integer(lhs[i])
-                    &
-                    detail::to_unsigned_integer(rhs[i])
-                )
-            )
-        )
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> min(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BATCH_BINARY_FUNC(std::min, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> max(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BATCH_BINARY_FUNC(std::max, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> fmin(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BATCH_BINARY_FUNC(std::fmin, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> fmax(const batch<T, N>& lhs, const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BATCH_BINARY_FUNC(std::fmax, lhs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> abs(const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BATCH_UNARY_FUNC(std::abs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> fabs(const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BATCH_UNARY_FUNC(std::fabs, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> sqrt(const batch<T, N>& rhs)
-    {
-        XSIMD_FALLBACK_BATCH_UNARY_FUNC(std::sqrt, rhs)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> fma(const batch<T, N>& x, const batch<T, N>& y, const batch<T, N>& z)
-    {
-        XSIMD_FALLBACK_BATCH_TERNARY_FUNC(std::fma, x, y, z)
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> fms(const batch<T, N>& x, const batch<T, N>& y, const batch<T, N>& z)
-    {
-        return fma(x, y, -z);
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> fnma(const batch<T, N>& x, const batch<T, N>& y, const batch<T, N>& z)
-    {
-        return fma(-x, y, z);
-    }
-
-    template <typename T, std::size_t N>
-    inline batch<T, N> fnms(const batch<T, N>& x, const batch<T, N>& y, const batch<T, N>& z)
-    {
-        return fma(-x, y, -z);
-    }
-
-    template <typename T, std::size_t N>
-    inline T hadd(const batch<T, N>& rhs)
-    {
-        T result = 0;
-        for(std::size_t i = 0; i < N; ++i) {
-            result += rhs[i];
+        static batch_type neg(const batch_type &rhs) {
+            XSIMD_FALLBACK_UNARY_OP(batch, -, rhs)
         }
-        return result;
-    }
 
-    template <typename T, std::size_t N>
-    inline batch<T, N> haddp(const batch<T, N>* row)
-    {
-        XSIMD_FALLBACK_MAPPING_LOOP(batch, hadd(row[i]))
-    }
+        static batch_type add(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch, +, lhs, rhs)
+        }
 
-    template <typename T, std::size_t N>
-    inline batch<T, N> select(const batch_bool<T, N>& cond, const batch<T, N>& a, const batch<T, N>& b)
-    {
-        XSIMD_FALLBACK_MAPPING_LOOP(batch, (cond[i] ? a[i] : b[i]))
-    }
+        static batch_type sub(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch, -, lhs, rhs)
+        }
 
-    template <typename T, std::size_t N>
-    inline batch_bool<T, N> isnan(const batch<T, N>& x)
-    {
-        XSIMD_FALLBACK_MAPPING_LOOP(batch_bool, std::isnan(x[i]))
+        static batch_type mul(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch, *, lhs, rhs)
+        }
+
+        static batch_type div(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch, /, lhs, rhs)
+        }
+
+        static batch_bool_type eq(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch_bool, ==, lhs, rhs)
+        }
+
+        static batch_bool_type neq(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch_bool, !=, lhs, rhs)
+        }
+
+        static batch_bool_type lt(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch_bool, <, lhs, rhs)
+        }
+
+        static batch_bool_type lte(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BINARY_OP(batch_bool, <=, lhs, rhs)
+        }
+
+        static batch_type bitwise_and(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BATCH_BITWISE_BINARY_OP(&, lhs, rhs)
+        }
+
+        static batch_type bitwise_or(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BATCH_BITWISE_BINARY_OP(|, lhs, rhs)
+        }
+
+        static batch_type bitwise_xor(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BATCH_BITWISE_BINARY_OP(^, lhs, rhs)
+        }
+
+        static batch_type bitwise_not(const batch_type &rhs) {
+            XSIMD_FALLBACK_BATCH_BITWISE_UNARY_OP(~, rhs)
+        }
+
+        static batch_type bitwise_andnot(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_MAPPING_LOOP(
+                    batch,
+                    detail::from_unsigned_integer<T>(
+                            ~(
+                                    detail::to_unsigned_integer(lhs[i])
+                                    &
+                                    detail::to_unsigned_integer(rhs[i])
+                            )
+                    )
+            )
+        }
+
+        static batch_type min(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BATCH_BINARY_FUNC(std::min, lhs, rhs)
+        }
+
+        static batch_type max(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BATCH_BINARY_FUNC(std::max, lhs, rhs)
+        }
+
+        static batch_type fmin(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BATCH_BINARY_FUNC(std::fmin, lhs, rhs)
+        }
+
+        static batch_type fmax(const batch_type &lhs, const batch_type &rhs) {
+            XSIMD_FALLBACK_BATCH_BINARY_FUNC(std::fmax, lhs, rhs)
+        }
+
+        static batch_type abs(const batch_type &rhs) {
+            XSIMD_FALLBACK_BATCH_UNARY_FUNC(std::abs, rhs)
+        }
+
+        static batch_type fabs(const batch_type &rhs) {
+            XSIMD_FALLBACK_BATCH_UNARY_FUNC(std::fabs, rhs)
+        }
+
+        static batch_type sqrt(const batch_type &rhs) {
+            XSIMD_FALLBACK_BATCH_UNARY_FUNC(std::sqrt, rhs)
+        }
+
+        static batch_type fma(const batch_type &x, const batch_type &y, const batch_type &z) {
+            XSIMD_FALLBACK_BATCH_TERNARY_FUNC(std::fma, x, y, z)
+        }
+
+        static batch_type fms(const batch_type &x, const batch_type &y, const batch_type &z) {
+            return fma(x, y, -z);
+        }
+
+        static batch_type fnma(const batch_type &x, const batch_type &y, const batch_type &z) {
+            return fma(-x, y, z);
+        }
+
+        static batch_type fnms(const batch_type &x, const batch_type &y, const batch_type &z) {
+            return fma(-x, y, -z);
+        }
+
+        static value_type hadd(const batch_type &rhs) {
+            value_type result = 0;
+            for (std::size_t i = 0; i < N; ++i) {
+                result += rhs[i];
+            }
+            return result;
+        }
+
+        static batch_type haddp(const simd_batch <batch_type> *row) {
+            XSIMD_FALLBACK_MAPPING_LOOP(batch, hadd(row[i]()))
+        }
+
+        static batch_type select(const batch_bool_type &cond, const batch_type &a, const batch_type &b) {
+            XSIMD_FALLBACK_MAPPING_LOOP(batch, (cond[i] ? a[i] : b[i]))
+        }
+
+        static batch_bool_type isnan(const batch_type &x) {
+            XSIMD_FALLBACK_MAPPING_LOOP(batch_bool, std::isnan(x[i]))
+        }
+    };
     }
 
     template <typename T, std::size_t N>
@@ -815,6 +937,176 @@ namespace xsimd
     inline batch<T, N> operator>>(const batch<T, N>& lhs, int32_t rhs) {
         XSIMD_FALLBACK_MAPPING_LOOP(batch, (lhs[i] >> rhs))
     }
+
+/***********************************************
+ * utility functions to avoid code duplication *
+ ***********************************************/
+
+namespace detail {
+    template<std::size_t N, class B, class U>
+    inline std::pair <B, B> load_complex_impl(const U *src) {
+        using value_type = typename U::value_type;
+        using dst_value_type = typename B::value_type;
+        const value_type *buf = reinterpret_cast<const value_type *>(src);
+        B real, imag;
+        for (std::size_t i = 0; i < N; ++i) {
+            real[i] = static_cast<dst_value_type>(buf[2 * i]);
+            imag[i] = static_cast<dst_value_type>(buf[2 * i + 1]);
+        }
+        return std::make_pair(real, imag);
+    }
+
+    template<std::size_t N, class B, class U>
+    inline void store_complex_impl(const B &real, const B &imag, U *dst) {
+        using value_type = typename U::value_type;
+        value_type *buf = reinterpret_cast<value_type *>(dst);
+        for (std::size_t i = 0; i < N; ++i) {
+            buf[2 * i] = static_cast<value_type>(real[i]);
+            buf[2 * i + 1] = static_cast<value_type>(imag[i]);
+        }
+    }
+}
+
+/********************************************
+ * batch<std::complex<T, N>> implementation *
+ ********************************************/
+
+template<class T, std::size_t N>
+template<class U>
+inline auto batch<std::complex < T>, N
+>::load_aligned(
+const U *src
+)
+-> typename std::enable_if<detail::is_complex<U>::value, self_type &>::type
+{
+std::tie(this->m_real, this->m_imag) =
+detail::load_complex_impl<N, real_batch>(src);
+return *this;
+}
+
+template<class T, std::size_t N>
+template<class U>
+inline auto batch<std::complex < T>, N
+>::load_unaligned(
+const U *src
+)
+-> typename std::enable_if<detail::is_complex<U>::value, self_type &>::type
+{
+return
+load_aligned(src);
+}
+
+template<class T, std::size_t N>
+template<class U>
+inline auto batch<std::complex < T>, N
+>::load_aligned(
+const U *src
+)
+-> typename std::enable_if<!detail::is_complex<U>::value, self_type &>::type
+{
+for (
+std::size_t i = 0;
+i<N;
+++i)
+{
+this->m_real[i] = static_cast
+<real_value_type>(src[i]);
+this->m_imag[i] = real_value_type(0);
+}
+return *this;
+}
+
+template<class T, std::size_t N>
+template<class U>
+inline auto batch<std::complex < T>, N
+>::load_unaligned(
+const U *src
+)
+-> typename std::enable_if<!detail::is_complex<U>::value, self_type &>::type
+{
+return
+load_aligned(src);
+}
+
+template<class T, std::size_t N>
+template<class U>
+inline void batch<std::complex < T>, N
+>
+::store_aligned(U
+* dst) const
+{
+detail::store_complex_impl<N>(this->m_real, this->m_imag, dst);
+}
+
+template<class T, std::size_t N>
+template<class U>
+inline void batch<std::complex < T>, N
+>
+::store_unaligned(U
+* dst) const
+{
+store_aligned(dst);
+}
+
+/******************************************************
+ * batch<xtl::xcomplex<T, T, i3ec>, N> implementation *
+ ******************************************************/
+
+#ifdef XSIMD_ENABLE_XTL_COMPLEX
+
+template <class T, std::size_t N, bool i3ec>
+template <class U>
+inline auto batch<xtl::xcomplex<T, T, i3ec>, N>::load_aligned(const U* src)
+    -> typename std::enable_if<detail::is_complex<U>::value, self_type&>::type
+{
+    std::tie(this->m_real, this->m_imag) = detail::load_complex_impl<N, real_batch>(src);
+    return *this;
+}
+
+template <class T, std::size_t N, bool i3ec>
+template <class U>
+inline auto batch<xtl::xcomplex<T, T, i3ec>, N>::load_unaligned(const U* src)
+    -> typename std::enable_if<detail::is_complex<U>::value, self_type&>::type
+{
+    return load_aligned(src);
+}
+
+template <class T, std::size_t N, bool i3ec>
+template <class U>
+inline auto batch<xtl::xcomplex<T, T, i3ec>, N>::load_aligned(const U* src)
+    -> typename std::enable_if<!detail::is_complex<U>::value, self_type&>::type
+{
+    for (std::size_t i = 0; i < N; ++i)
+    {
+        this->m_real[i] = static_cast<real_value_type>(src[i]);
+        this->m_imag[i] = real_value_type(0);
+    }
+    return *this;
+}
+
+template <class T, std::size_t N, bool i3ec>
+template <class U>
+inline auto batch<xtl::xcomplex<T, T, i3ec>, N>::load_unaligned(const U* src)
+    -> typename std::enable_if<!detail::is_complex<U>::value, self_type&>::type
+{
+    return load_aligned(src);
+}
+
+template <class T, std::size_t N, bool i3ec>
+template <class U>
+inline void batch<xtl::xcomplex<T, T, i3ec>, N>::store_aligned(U* dst) const
+{
+    detail::store_complex_impl<N>(this->m_real, this->m_imag, dst);
+}
+
+template <class T, std::size_t N, bool i3ec>
+template <class U>
+inline void batch<xtl::xcomplex<T, T, i3ec>, N>::store_unaligned(U* dst) const
+{
+    store_unaligned(dst);
+}
+
+#endif
 
     /***************************************
      * conversion functions implementation *
