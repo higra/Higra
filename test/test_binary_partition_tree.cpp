@@ -1,3 +1,13 @@
+/***************************************************************************
+* Copyright ESIEE Paris (2018)                                             *
+*                                                                          *
+* Contributor(s) : Benjamin Perret                                         *
+*                                                                          *
+* Distributed under the terms of the CECILL-B License.                     *
+*                                                                          *
+* The full license is in the file LICENSE, distributed with this software. *
+****************************************************************************/
+
 #include <boost/test/unit_test.hpp>
 #include "test_utils.hpp"
 #include "higra/hierarchy/binary_partition_tree.hpp"
@@ -5,9 +15,6 @@
 #include "xtensor/xrandom.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/algo/tree.hpp"
-//
-// Created by user on 3/9/18.
-//
 
 
 using namespace hg;

@@ -1,7 +1,12 @@
-//
-// Created by user on 3/9/18.
-//
-
+/***************************************************************************
+* Copyright ESIEE Paris (2018)                                             *
+*                                                                          *
+* Contributor(s) : Benjamin Perret                                         *
+*                                                                          *
+* Distributed under the terms of the CECILL-B License.                     *
+*                                                                          *
+* The full license is in the file LICENSE, distributed with this software. *
+****************************************************************************/
 #pragma once
 
 #include "utils.hpp"
@@ -198,7 +203,7 @@ namespace hg {
         auto &index = xindex.derived_cast();
         auto f = xt::flatten(index);
         array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
-        for (index_t i = 0; i < (index_t)res.size(); ++i) {
+        for (index_t i = 0; i < (index_t) res.size(); ++i) {
             res(i) = degree(f(i), g);
         }
         res.reshape(index.shape());
@@ -220,7 +225,7 @@ namespace hg {
         auto &index = xindex.derived_cast();
         auto f = xt::flatten(index);
         array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
-        for (index_t i = 0; i < (index_t)res.size(); ++i) {
+        for (index_t i = 0; i < (index_t) res.size(); ++i) {
             res(i) = in_degree(f(i), g);
         }
         res.reshape(index.shape());
@@ -242,7 +247,7 @@ namespace hg {
         auto &index = xindex.derived_cast();
         auto f = xt::flatten(index);
         array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
-        for (index_t i = 0; i < (index_t)res.size(); ++i) {
+        for (index_t i = 0; i < (index_t) res.size(); ++i) {
             res(i) = out_degree(f(i), g);
         }
         res.reshape(index.shape());

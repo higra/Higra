@@ -1,3 +1,13 @@
+/***************************************************************************
+* Copyright ESIEE Paris (2018)                                             *
+*                                                                          *
+* Contributor(s) : Benjamin Perret                                         *
+*                                                                          *
+* Distributed under the terms of the CECILL-B License.                     *
+*                                                                          *
+* The full license is in the file LICENSE, distributed with this software. *
+****************************************************************************/
+
 #include <boost/test/unit_test.hpp>
 #include "test_utils.hpp"
 #include "higra/structure/embedding.hpp"
@@ -5,11 +15,6 @@
 #include "xtensor/xgenerator.hpp"
 #include "xtensor/xinfo.hpp"
 #include "xtensor/xeval.hpp"
-//
-// Created by user on 3/9/18.
-//
-
-
 
 
 BOOST_AUTO_TEST_SUITE(embedding);

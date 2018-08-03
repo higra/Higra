@@ -1,6 +1,13 @@
+############################################################################
+# Copyright ESIEE Paris (2018)                                             #
+#                                                                          #
+# Contributor(s) : Benjamin Perret                                         #
+#                                                                          #
+# Distributed under the terms of the CECILL-B License.                     #
+#                                                                          #
+# The full license is in the file LICENSE, distributed with this software. #
+############################################################################
 
-find_package(PythonInterp 2.7 REQUIRED)
-find_package(NumPy REQUIRED)
-
-add_subdirectory(test)
 add_subdirectory(higra)
+add_subdirectory(test)
+

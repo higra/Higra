@@ -1,6 +1,12 @@
-//
-// Created by user on 3/15/18.
-//
+/***************************************************************************
+* Copyright ESIEE Paris (2018)                                             *
+*                                                                          *
+* Contributor(s) : Benjamin Perret                                         *
+*                                                                          *
+* Distributed under the terms of the CECILL-B License.                     *
+*                                                                          *
+* The full license is in the file LICENSE, distributed with this software. *
+****************************************************************************/
 
 #include "pybind11/pybind11.h"
 
@@ -30,7 +36,7 @@ PYBIND11_MODULE(higram, m) {
     m.doc() = R"pbdoc(
         Higra: Hierarchical Graph Analysis
         -----------------------
-        .. currentmodule:: higram
+        .. currentmodule:: higra
         .. autosummary::
            :toctree: _generate
     )pbdoc";
