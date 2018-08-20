@@ -23,7 +23,7 @@ struct def_bptCanonical {
     static
     void def(C &m, const char *doc) {
         m.def("_bpt_canonical", [](const graph_t &graph, const xt::pyarray<value_t> &edge_weights) {
-                  return hg::bptCanonical(graph, edge_weights);
+                  return hg::bpt_canonical(graph, edge_weights);
               },
               doc,
               py::arg("graph"),

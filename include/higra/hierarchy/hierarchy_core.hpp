@@ -39,7 +39,7 @@ namespace hg {
      * @return
      */
     template<typename graph_t, typename T>
-    auto bptCanonical(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+    auto bpt_canonical(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
         HG_TRACE();
         auto &edge_weights = xedge_weights.derived_cast();
         hg_assert(edge_weights.dimension() == 1, "Edge weights must be scalar.");

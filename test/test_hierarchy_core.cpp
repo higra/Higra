@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
 
         xt::xarray<double> edge_weights{2};
 
-        auto res = bptCanonical(graph, edge_weights);
+        auto res = bpt_canonical(graph, edge_weights);
         auto tree = std::get<0>(res);
         auto altitude = std::get<1>(res);
         auto mst = std::get<2>(res);
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
 
         xt::xarray<double> edge_weights{1, 0, 2, 1, 1, 1, 2};
 
-        auto res = bptCanonical(graph, edge_weights);
+        auto res = bpt_canonical(graph, edge_weights);
         auto tree = std::get<0>(res);
         auto altitude = std::get<1>(res);
         auto mst = std::get<2>(res);
