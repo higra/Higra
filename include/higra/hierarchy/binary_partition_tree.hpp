@@ -282,7 +282,7 @@ namespace hg {
         T &weights;
 
         binary_partition_tree_min_linkage(T &_weights) : weights(_weights) {
-
+            HG_LOG_INFO("Please consider using bpt_canonical to compute the minimum linkage binary partition tree for improved performances.");
         }
 
         template<typename graph_t, typename neighbours_t>
