@@ -45,8 +45,6 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 endif()
 
 
-
-
 find_package(Boost QUIET COMPONENTS unit_test_framework)
 if (Boost_FOUND)
     option(DO_TEST
@@ -57,10 +55,8 @@ else ()
             "Execute test suit." OFF)
 endif ()
 
-if (DO_TEST)
-    enable_testing()
-endif(DO_TEST)
 
+enable_testing()
 
 option (USE_SIMD
         "Enabled SIMD support for xtensor." ON)
@@ -93,7 +89,6 @@ endif ()
 #add_subdirectory(lib/pybind11)
 
 add_subdirectory(python)
-
 
 if (DO_TEST)
     add_subdirectory(${PROJECT_SOURCE_DIR}/test)

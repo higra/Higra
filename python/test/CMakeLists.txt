@@ -30,4 +30,3 @@ import unittest;\
 result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('${CMAKE_CURRENT_BINARY_DIR}'));
 exit(0 if result.wasSuccessful() else 1)"
         )
-#${CMAKE_CURRENT_BINARY_DIR} import os;print(os.getcwd());
