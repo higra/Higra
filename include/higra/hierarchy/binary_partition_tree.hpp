@@ -159,12 +159,17 @@ namespace hg {
         auto num_points = num_vertices(g);
         auto num_nodes_tree = num_points * 2 - 1;
 
-        array_1d<index_t> new_neighbour_indices({num_nodes_tree}, invalid_index);
-
         array_1d<index_t> parents = xt::arange(num_nodes_tree);
         array_1d<weight_t> levels = xt::zeros<weight_t>({num_nodes_tree});
+
+        // optimization to detect already visited neighbours during neighbour search
+        array_1d<index_t> new_neighbour_indices({num_nodes_tree}, invalid_index);
+
+        // active edges are in the heap and still present in the graph (removed edges are leazily left in the heap)
+        // TODO: check for performance impact
         array_1d<bool> active = xt::zeros<bool>({num_edges(g)});
 
+        // special structure to store the list of neighbours adjacent to the fused regions.
         std::vector<binary_partition_tree_internal::new_neighbour<weight_t> > new_neighbours;
         const decltype(new_neighbours) &const_new_neighbours = new_neighbours;
 
@@ -173,20 +178,15 @@ namespace hg {
         array_1d<typename heap_t::value_handle> heap_handles({num_edges(g)}, nullptr);
 
         for (auto v: vertex_iterator(graph)) {
-            auto min_value = std::numeric_limits<weight_t>::max();
-            auto index = invalid_index;
             for (auto ei: out_edge_index_iterator(v, g)) {
-                if (edge_weights[ei] < min_value) {
-                    min_value = edge_weights[ei];
-                    index = ei;
+                if (!active[ei]) {
+                    heap_handles[ei] = heap.push({edge_weights[ei], ei});
+                    active[ei] = true;
                 }
-            }
-            if (!active[index]) {
-                heap_handles[index] = heap.push({min_value, index});
-                active[index] = true;
             }
         }
 
+        // main loop
         size_t current_num_nodes_tree = num_points;
         while (!heap.empty() && current_num_nodes_tree < num_nodes_tree) {
 
@@ -197,8 +197,8 @@ namespace hg {
             auto fusion_edge_weight = min_element.value;
 
             heap.pop();
-
             heap_handles[fusion_edge_index] = nullptr;
+
             if (active[fusion_edge_index]) {
                 active[fusion_edge_index] = false;
                 // create new region, update tree
@@ -215,9 +215,9 @@ namespace hg {
                 remove_edge(fusion_edge_index, g);
                 active[fusion_edge_index] = false;
 
-                // search for neighbours of region1 and region2, deactivate edges
+                // search for neighbours of region1 and region2 and store them in new_neighbours
                 new_neighbours.clear();
-                auto explore_region = [&g, &new_neighbours, &new_neighbour_indices, &active, &heap, &heap_handles](
+                auto explore_region = [&g, &new_neighbours, &new_neighbour_indices, &active](
                         index_t region) {
                     for (auto ei: out_edge_index_iterator(region, g)) {
                         auto e = edge(ei, g);
@@ -228,11 +228,6 @@ namespace hg {
                             new_neighbour_indices[n] = new_neighbours.size();
                             new_neighbours.emplace_back(n, ei);
                         }
-                        active[ei] = false;
-                        if (heap_handles[ei] != nullptr) {
-                            heap.erase(heap_handles[ei]);
-                            heap_handles[ei] = nullptr;
-                        }
                     }
                 };
 
@@ -242,26 +237,22 @@ namespace hg {
                     new_neighbour_indices[n.neighbour_vertex()] = invalid_index;
                 }
 
+                // update edge weights
                 if (!new_neighbours.empty()) { // should only happen at last iteration
                     // external callback : compute new edge weights
                     weight_function(g, fusion_edge_index, new_parent, region1, region2, const_new_neighbours);
 
                     // process new weights, update heap and things
-                    auto min_value = std::numeric_limits<weight_t>::max();
-                    auto index = invalid_index;
                     for (auto &nn: new_neighbours) {
                         if (nn.num_edges() > 1) {
+                            active[nn.second_edge_index()] = false;
+                            // not removed from heap: maybe not necessary
                             remove_edge(nn.second_edge_index(), g);
                         }
                         set_edge(nn.first_edge_index(), nn.neighbour_vertex(), new_parent, g);
-
-                        if (nn.new_edge_weight() < min_value) {
-                            min_value = nn.new_edge_weight();
-                            index = nn.first_edge_index();
-                        }
+                        heap.update(heap_handles[nn.first_edge_index()], {nn.new_edge_weight(), nn.first_edge_index()});
+                        active[nn.first_edge_index()] = true;
                     }
-                    heap_handles[index] = heap.push({min_value, index});
-                    active[index] = true;
                 }
                 /**std::cout << "parents " << parents << std::endl;
                 std::cout << "graph ";
