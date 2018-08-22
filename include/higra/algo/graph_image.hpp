@@ -116,12 +116,12 @@ namespace hg {
         auto w = res_embedding.shape()[1];
         auto flat_res = xt::flatten(res);
 
-        if(add_extra_border && extra_border_value != 0){
-            for (long x = 1; x < w; x += 2){
+        if (add_extra_border && extra_border_value != 0) {
+            for (long x = 1; x < w; x += 2) {
                 res(0, x) = extra_border_value;
                 res(h - 1, x) = extra_border_value;
             }
-            for (long y = 1; y < h; y += 2){
+            for (long y = 1; y < h; y += 2) {
                 res(y, 0) = extra_border_value;
                 res(y, w - 1) = extra_border_value;
             }
@@ -202,11 +202,11 @@ namespace hg {
                                                                           std::end(contour_elements)) {
         }
 
-        const auto begin() {
+        const auto begin() const {
             return m_contour_elements.cbegin();
         }
 
-        const auto end() {
+        const auto end() const {
             return m_contour_elements.cend();
         }
     };
@@ -224,11 +224,11 @@ namespace hg {
             m_contour_segments.push_back(contour_elements);
         }
 
-        const auto begin() {
+        const auto begin() const {
             return m_contour_segments.cbegin();
         }
 
-        const auto end() {
+        const auto end() const {
             return m_contour_segments.cend();
         }
     };
@@ -242,15 +242,15 @@ namespace hg {
             return m_polyline_contours[m_polyline_contours.size() - 1];
         }
 
-        auto size(){
+        auto size() {
             return m_polyline_contours.size();
         }
 
-        auto begin(){
+        const auto begin() const {
             return m_polyline_contours.begin();
         }
 
-        auto end(){
+        const auto end() const {
             return m_polyline_contours.end();
         }
     };
@@ -277,19 +277,12 @@ namespace hg {
             else positive_edge_index[i] = invalid_index;
         }
 
-
-
         auto contours_khalimsky = contour2d_2_khalimsky(graph, embedding, positive_edge_index, true, invalid_index);
-
-        std::cout << contours_khalimsky << std::endl;
 
         array_2d<bool> processed = xt::zeros<bool>(contours_khalimsky.shape());
 
         auto height = contours_khalimsky.shape()[0];
         auto width = contours_khalimsky.shape()[1];
-        //embedding_grid_2d embedding_khalimsky{height, width};
-        //auto adj4_khalimsky = get_4_adjacency_implicit_graph(embedding_khalimsky);
-
 
         auto is_intersection = [&contours_khalimsky, &height, &width](
                 index_t y,
@@ -316,7 +309,7 @@ namespace hg {
                 index_t y,
                 index_t x,
                 direction dir) {
-            auto & polyline = result.new_polyline_contour_2d();
+            auto &polyline = result.new_polyline_contour_2d();
             direction previous = dir;
             bool flag;
 
@@ -389,27 +382,5 @@ namespace hg {
         }
 
         return result;
-
-/*
-        array_1d<bool> processed = xt::zeros<bool>({num_edges(graph)});
-
-        auto count_non_zero_out_edge = [&graph, &edge_weights](index_t vertex){
-            int count = 0;
-            for(auto ei: out_edge_index_iterator(vertex, graph)){
-                if(edge_weights[ei] > 0){
-                    count++;
-                }
-            }
-            return count;
-        };
-
-        for(auto ei: edge_index_iterator(graph)){
-            if(edge_weights[ei] > 0 && !processed[ei]){
-                auto & e = edge(ei, graph);
-                if(count_non_zero_out_edge(source(e, graph)) > 2){
-
-                }
-            }
-        }*/
     }
 }
