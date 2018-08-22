@@ -141,6 +141,18 @@ namespace hg {
      */
     using size_t = std::size_t;
 
+    /**
+     * Insert all elements of collection b at the end of collection a.
+     * @tparam T1 must have an insert method (STL like) and a range interface (begin, end)
+     * @tparam T2 must have a range interface (begin, end)
+     * @param a
+     * @param b
+     */
+    template <typename T1, typename T2>
+    void extend(T1 & a, const T2 & b){
+        a.insert(std::end(a), std::begin(b), std::end(b));
+    };
+
 }
 
 

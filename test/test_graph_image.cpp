@@ -185,6 +185,39 @@ BOOST_AUTO_TEST_SUITE(graphImage);
         BOOST_CHECK(xt::allclose(embedding2.shape(), ref_shape));
         BOOST_CHECK(xt::allclose(data, weights2));
     }
+/*
+    BOOST_AUTO_TEST_CASE(fit_contour_2d_empty) {
 
+        auto g = get_4_adjacency_graph({4, 5});
+
+        xt::xarray<int> data{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             0};
+
+        auto r = fit_contour_2d(g, {4, 5}, data);
+
+        BOOST_CHECK(r.size() == 0);
+    }
+*/
+    BOOST_AUTO_TEST_CASE(fit_contour_2d_simple) {
+
+
+        auto g = get_4_adjacency_graph({4, 5});
+
+        xt::xarray<int> data{0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 0, 2,
+                             3};
+
+        /*
+        xt::xarray<int> ref{{0, 0, 0, 1, 0, 2, 0, 3, 0},
+                            {0, 0, 0, 1, 0, 2, 0, 3, 0},
+                            {0, 0, 0, 1, 0, 2, 0, 3, 0},
+                            {0, 0, 0, 1, 0, 2, 0, 3, 0},
+                            {0, 0, 0, 1, 0, 2, 0, 3, 0},
+                            {1, 1, 1, 1, 0, 2, 0, 3, 0},
+                            {0, 0, 0, 0, 0, 2, 0, 3, 0}};
+                            */
+        auto r = fit_contour_2d(g, {4, 5}, data);
+
+        BOOST_CHECK(r.size() == 3);
+    }
 
 BOOST_AUTO_TEST_SUITE_END();
