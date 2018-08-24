@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include <boost/test/unit_test.hpp>
-#include "higra/algo/graph_image.hpp"
+#include "higra/image/graph_image.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "test_utils.hpp"
 #include "xtensor/xindex_view.hpp"

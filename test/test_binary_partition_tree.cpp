@@ -11,7 +11,7 @@
 #include <boost/test/unit_test.hpp>
 #include "test_utils.hpp"
 #include "higra/hierarchy/binary_partition_tree.hpp"
-#include "higra/algo/graph_image.hpp"
+#include "higra/image/graph_image.hpp"
 #include "xtensor/xrandom.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/algo/tree.hpp"

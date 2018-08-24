@@ -10,7 +10,7 @@
 
 #include "py_graph_image.hpp"
 #include "py_common_graph.hpp"
-#include "higra/algo/graph_image.hpp"
+#include "higra/image/graph_image.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"

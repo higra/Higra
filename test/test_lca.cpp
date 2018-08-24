@@ -11,7 +11,7 @@
 #include <boost/test/unit_test.hpp>
 #include "xtensor/xio.hpp"
 #include "higra/graph.hpp"
-#include "higra/algo/graph_image.hpp"
+#include "higra/image/graph_image.hpp"
 #include "higra/structure/lca_fast.hpp"
 #include "test_utils.hpp"
 

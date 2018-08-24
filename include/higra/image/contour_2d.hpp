@@ -11,183 +11,15 @@
 #pragma once
 
 #include "../graph.hpp"
+#include "graph_image.hpp"
 #include <stack>
 
 namespace hg {
 
     /**
-     * Create a 4 adjacency implicit regular graph for the given embedding
-     * @param embedding
-     * @return
-     */
-    inline
-    auto get_4_adjacency_implicit_graph(const embedding_grid_2d &embedding) {
-        std::vector<point_2d_i> neighbours{{{-1, 0}},
-                                           {{0,  -1}},
-                                           {{0,  1}},
-                                           {{1,  0}}}; // 4 adjacency
-
-        return regular_grid_graph_2d(embedding, std::move(neighbours));
-    }
-
-    /**
-     * Create of 4 adjacency implicit regular graph for the given embedding
-     * @param embedding
-     * @return
-     */
-    inline
-    auto get_8_adjacency_implicit_graph(const embedding_grid_2d &embedding) {
-        std::vector<point_2d_i> neighbours{{{-1, -1}},
-                                           {{-1, 0}},
-                                           {{-1, 1}},
-                                           {{0,  -1}},
-                                           {{0,  1}},
-                                           {{1,  -1}},
-                                           {{1,  0}},
-                                           {{1,  1}}}; // 8 adjacency
-
-        return regular_grid_graph_2d(embedding, std::move(neighbours));
-    }
-
-    /**
-     * Create of 4 adjacency explicit regular graph for the given embedding
-     * @param embedding
-     * @return
-     */
-    inline
-    auto get_4_adjacency_graph(const embedding_grid_2d &embedding) {
-        return hg::copy_graph<ugraph>(get_4_adjacency_implicit_graph(embedding));
-    }
-
-    /**
-     * Create of 8 adjacency explicit regular graph for the given embedding
-     * @param embedding
-     * @return
-     */
-    inline
-    auto get_8_adjacency_graph(const embedding_grid_2d &embedding) {
-        return hg::copy_graph<ugraph>(get_8_adjacency_implicit_graph(embedding));
-    }
-
-
-    /**
-     * Represents a 4 adjacency edge weighted regular graph in 2d Khalimsky space
-     * @param embedding
-     * @return
-     */
-    template<typename graph_t, typename T, typename result_type = typename T::value_type>
-    auto
-    contour2d_2_khalimsky(const graph_t &graph, const embedding_grid_2d &embedding,
-                          const xt::xexpression<T> &xedge_weights,
-                          bool add_extra_border = false,
-                          result_type extra_border_value = 0) {
-        HG_TRACE();
-        const auto &weight = xedge_weights.derived_cast();
-        hg_assert(weight.dimension() == 1, "Edge weights must be scalar.");
-        hg_assert(num_edges(graph) == weight.size(),
-                  "Edge weights size does not match the number of edge in the graph.");
-        hg_assert(num_vertices(graph) == embedding.size(),
-                  "Graph number of vertices does not match the size of the embedding.");
-        auto &shape = embedding.shape();
-
-        long border = (add_extra_border) ? 1 : -1;
-
-        std::array<long, 2> res_shape{shape[0] * 2 + border, shape[1] * 2 + border};
-
-        array_2d <result_type> res = xt::zeros<result_type>(res_shape);
-
-        point_2d_i one{{1, 1}};
-        for (auto ei: edge_index_iterator(graph)) {
-            auto e = edge(ei, graph);
-            auto s = source(e, graph);
-            auto t = target(e, graph);
-            if (t > s) {
-                auto ti = embedding.lin2grid(t);
-                auto si = embedding.lin2grid(s);
-                if (add_extra_border)
-                    res[ti + si + one] = weight(ei);
-                else
-                    res[ti + si] = weight(ei);
-            }
-        }
-
-        embedding_grid_2d res_embedding(res_shape);
-        auto adj4 = get_4_adjacency_implicit_graph(res_embedding);
-        auto h = res_embedding.shape()[0];
-        auto w = res_embedding.shape()[1];
-        auto flat_res = xt::flatten(res);
-
-        if (add_extra_border && extra_border_value != 0) {
-            for (long x = 1; x < w; x += 2) {
-                res(0, x) = extra_border_value;
-                res(h - 1, x) = extra_border_value;
-            }
-            for (long y = 1; y < h; y += 2) {
-                res(y, 0) = extra_border_value;
-                res(y, w - 1) = extra_border_value;
-            }
-        }
-
-        long ymin = (add_extra_border) ? 0 : 1;
-        long ymax = (add_extra_border) ? h : h - 1;
-        long xmin = (add_extra_border) ? 0 : 1;
-        long xmax = (add_extra_border) ? w : w - 1;
-
-        for (long y = ymin; y < ymax; y += 2) {
-            for (long x = xmin; x < xmax; x += 2) {
-                auto v = res_embedding.grid2lin({y, x});
-                result_type max_v = std::numeric_limits<result_type>::lowest();
-                for (auto av: adjacent_vertex_iterator(v, adj4)) {
-                    max_v = std::max(max_v, flat_res(av));
-                }
-                res(y, x) = max_v;
-            }
-        }
-
-        return res;
-    };
-
-    /**
-     * Transforms a contour map represented in 2d Khalimsky space into a weighted 4 adjacency edge weighted regular graph
-     * (0-face and 2-face of the Khalimsky space are ignored).
-     * @param embedding
-     * @return
-     */
-    template<typename T, typename result_type = typename T::value_type>
-    auto
-    khalimsky_2_contour2d(const xt::xexpression<T> &xkhalimsky, bool extra_border = false) {
-        HG_TRACE();
-        const auto &khalimsky = xkhalimsky.derived_cast();
-        hg_assert(khalimsky.dimension() == 2, "Only 2d khalimsky grids are supported!");
-
-        auto &shape = khalimsky.shape();
-
-        long border = (extra_border) ? 0 : 1;
-
-        std::array<long, 2> res_shape{(long) shape[0] / 2 + border, (long) shape[1] / 2 + border};
-        embedding_grid_2d res_embedding(res_shape);
-
-        auto g = get_4_adjacency_graph(res_embedding);
-        array_1d <result_type> weights = xt::zeros<result_type>({num_edges(g)});
-
-        point_2d_i one{{1, 1}};
-        for (auto ei : edge_index_iterator(g)) {
-            auto e = edge(ei, g);
-            auto s = res_embedding.lin2grid(source(e, g));
-            auto t = res_embedding.lin2grid(target(e, g));
-            if (extra_border) {
-                weights(ei) = khalimsky[s + t + one];
-            } else {
-                weights(ei) = khalimsky[s + t];
-            }
-        }
-
-        return std::make_tuple(std::move(g), std::move(res_embedding), std::move(weights));
-    };
-
-
-    /**
-     *
+     *  Represent a (pseudo) line segment of a contour.
+     *  A contour segment is composed of a list of elements composing the segment.
+     *  Note that the elements of a contour segment do not necessarily form a line segment in the geometric meaning.
      */
     class contour_segment_2d {
         using container_type = std::vector<index_t>;
@@ -195,9 +27,18 @@ namespace hg {
 
     public:
 
+        /**
+         * Create an empty contour segment
+         */
         contour_segment_2d() {
         }
 
+        /**
+         * Create a segment composed of the given elements
+         * @tparam input_iterator
+         * @param begin
+         * @param end
+         */
         template<typename input_iterator>
         contour_segment_2d(input_iterator begin, input_iterator end) : m_contour_elements(begin, end) {
         }
@@ -218,18 +59,34 @@ namespace hg {
             return m_contour_elements.cend();
         }
 
+        /**
+         * First element of the contour segment
+         * @return
+         */
         auto first(){
             return m_contour_elements.front();
         }
 
+        /**
+         * Last element of the contour segment
+         * @return
+         */
         auto last(){
             return m_contour_elements.back();
         }
 
+        /**
+         * Number of elements in the contour segment
+         * @return
+         */
         auto size() const{
             return m_contour_elements.size();
         }
 
+        /**
+         * Add an element at the end of the contour segment
+         * @param element
+         */
         void add_element(index_t element){
             m_contour_elements.push_back(element);
         }
@@ -243,6 +100,9 @@ namespace hg {
         }
     };
 
+    /**
+     * A polyline contour is a set of contour segments that represent a connected frontier between two regions.
+     */
     class polyline_contour_2d {
         std::vector<contour_segment_2d> m_contour_segments;
 
@@ -301,16 +161,6 @@ namespace hg {
             polyline.clear();
         }
 
-
-
-        auto first(){
-            return m_contour_segments.front().first();
-        }
-
-        auto last(){
-            return m_contour_segments.back().last();
-        }
-
         auto size() const{
             return m_contour_segments.size();
         }
@@ -336,6 +186,9 @@ namespace hg {
         }
     };
 
+    /**
+     * A contour is a set of polyline contours that represent the frontiers separating regions.
+     */
     class contour_2d {
         std::vector<polyline_contour_2d> m_polyline_contours;
 
@@ -376,6 +229,15 @@ namespace hg {
         }
     };
 
+    /**
+     * Construct a contour_2d object from a graph cut of a 2d image with a 4 adjacency (non zero edges are part of the cut).
+     * @tparam graph_t
+     * @tparam T
+     * @param graph
+     * @param embedding
+     * @param xedge_weights
+     * @return
+     */
     template<typename graph_t, typename T>
     auto
     fit_contour_2d(const graph_t &graph,
@@ -506,13 +368,33 @@ namespace hg {
         return result;
     }
 
+    /**
+    * Subdivide the contour segment such that the distance between the line
+    * joining the extremities of the contour segment and each of its elements is lower than the threshold (
+    * Ramer–Douglas–Peucker algorithm)
+    *
+    * The threshold is equal to
+    *  - epsilon if relative_epsilon is false
+    *  - epsilon times the distance between the segment extremities if relative_epsilon is true
+    *
+    * If the distance between the segment extremities is smaller than minSize, the segment is never subdivided.
+    * @tparam graph_t
+    * @tparam embedding_t
+    * @param polyline
+    * @param graph
+    * @param embedding
+    * @param epsilon
+    * @param relative_epsilon
+    * @param minSize
+    * @return
+    */
     template<typename graph_t, typename embedding_t>
     auto subdivide_contour(const contour_segment_2d &segment,
-                          const graph_t &graph,
-                          const embedding_t &embedding,
-                          double epsilon = 0.05,
-                          bool relative_epsilon = true,
-                          int minSize = 2) {
+                           const graph_t &graph,
+                           const embedding_t &embedding,
+                           double epsilon = 0.05,
+                           bool relative_epsilon = true,
+                           int minSize = 2) {
         using point_type = point_2d_f;
         //auto num_elements = polyline.number_of_contour_elements();
         //std::vector<point_type> points(num_elements);
@@ -610,6 +492,26 @@ namespace hg {
         return result;
     }
 
+    /**
+     * Subdivide the each segment of the given polyline  such that the distance between the line
+     * joining the extremities of the contour segment and each of its elements is lower than the threshold (
+     * Ramer–Douglas–Peucker algorithm)
+     *
+     * The threshold is equal to
+     *  - epsilon if relative_epsilon is false
+     *  - epsilon times the distance between the segment extremities if relative_epsilon is true
+     *
+     * If the distance between the segment extremities is smaller than minSize, the segment is never subdivided.
+     * @tparam graph_t
+     * @tparam embedding_t
+     * @param polyline
+     * @param graph
+     * @param embedding
+     * @param epsilon
+     * @param relative_epsilon
+     * @param minSize
+     * @return
+     */
     template<typename graph_t, typename embedding_t>
     auto subdivide_contour(const polyline_contour_2d &polyline,
                            const graph_t &graph,
@@ -632,6 +534,27 @@ namespace hg {
         }
     };
 
+    /**
+     * Subdivide the each segment of each polyline of the given contours such that the distance between the line
+     * joining the extremities of the contour segment and each of its elements is lower than the threshold (
+     * Ramer–Douglas–Peucker algorithm)
+     *
+     * The threshold is equal to
+     *  - epsilon if relative_epsilon is false
+     *  - epsilon times the distance between the segment extremities if relative_epsilon is true
+     *
+     * If the distance between the segment extremities is smaller than minSize, the segment is never subdivided.
+     *
+     * @tparam graph_t
+     * @tparam embedding_t
+     * @param contour
+     * @param graph
+     * @param embedding
+     * @param epsilon
+     * @param relative_epsilon
+     * @param minSize
+     * @return
+     */
     template<typename graph_t, typename embedding_t>
     auto subdivide_contour(const contour_2d &contour,
                            const graph_t &graph,

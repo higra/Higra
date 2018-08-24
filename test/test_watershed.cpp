@@ -11,7 +11,7 @@
 #include <boost/test/unit_test.hpp>
 #include "test_utils.hpp"
 #include "higra/algo/watershed.hpp"
-#include "higra/algo/graph_image.hpp"
+#include "higra/image/graph_image.hpp"
 
 using namespace hg;
 
