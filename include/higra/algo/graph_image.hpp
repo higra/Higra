@@ -11,6 +11,7 @@
 #pragma once
 
 #include "../graph.hpp"
+#include <stack>
 
 namespace hg {
 
@@ -189,17 +190,24 @@ namespace hg {
      *
      */
     class contour_segment_2d {
-        std::vector<index_t> m_contour_elements;
+        using container_type = std::vector<index_t>;
+        container_type m_contour_elements;
 
     public:
 
-        contour_segment_2d(index_t contour_element) {
-            m_contour_elements.push_back(contour_element);
+        contour_segment_2d() {
         }
 
-        template<typename T>
-        contour_segment_2d(const T &contour_elements): m_contour_elements(std::begin(contour_elements),
-                                                                          std::end(contour_elements)) {
+        template<typename input_iterator>
+        contour_segment_2d(input_iterator begin, input_iterator end) : m_contour_elements(begin, end) {
+        }
+
+        auto begin() {
+            return m_contour_elements.begin();
+        }
+
+        auto end() {
+            return m_contour_elements.end();
         }
 
         const auto begin() const {
@@ -208,6 +216,30 @@ namespace hg {
 
         const auto end() const {
             return m_contour_elements.cend();
+        }
+
+        auto first(){
+            return m_contour_elements.front();
+        }
+
+        auto last(){
+            return m_contour_elements.back();
+        }
+
+        auto size() const{
+            return m_contour_elements.size();
+        }
+
+        void add_element(index_t element){
+            m_contour_elements.push_back(element);
+        }
+
+        decltype(auto) operator[](index_t i) const{
+            return m_contour_elements[i];
+        }
+
+        decltype(auto) operator[](index_t i){
+            return m_contour_elements[i];
         }
     };
 
@@ -219,9 +251,12 @@ namespace hg {
 
         }
 
-        template<typename T>
-        void add_segment(const T &contour_elements) {
-            m_contour_segments.push_back(contour_elements);
+        auto begin() {
+            return m_contour_segments.begin();
+        }
+
+        auto end() {
+            return m_contour_segments.end();
         }
 
         const auto begin() const {
@@ -230,6 +265,74 @@ namespace hg {
 
         const auto end() const {
             return m_contour_segments.cend();
+        }
+
+        auto & add_segment() {
+            m_contour_segments.emplace_back();
+            return m_contour_segments.back();
+        }
+
+        auto & add_segment(contour_segment_2d & segment) {
+            m_contour_segments.push_back(segment);
+            return m_contour_segments.back();
+        }
+
+        auto & add_segment(contour_segment_2d && segment) {
+            m_contour_segments.push_back(std::forward<contour_segment_2d>(segment));
+            return m_contour_segments.back();
+        }
+
+        template<typename input_iterator>
+        auto & add_segment(input_iterator begin, input_iterator end) {
+            m_contour_segments.emplace_back(begin, end);
+            return m_contour_segments.back();
+        }
+
+        void concatenate(polyline_contour_2d & polyline){
+            for(auto & segment: polyline){
+                add_segment(segment);
+            }
+        }
+
+        void concatenate(polyline_contour_2d && polyline){
+            for(auto & segment: polyline){
+                add_segment(std::move(segment));
+            }
+            polyline.clear();
+        }
+
+
+
+        auto first(){
+            return m_contour_segments.front().first();
+        }
+
+        auto last(){
+            return m_contour_segments.back().last();
+        }
+
+        auto size() const{
+            return m_contour_segments.size();
+        }
+
+        auto number_of_contour_elements() const{
+            size_t count = 0;
+            for(const auto & segment: m_contour_segments){
+                count += segment.size();
+            }
+            return count;
+        }
+
+        decltype(auto) operator[](index_t i) const{
+            return m_contour_segments[i];
+        }
+
+        decltype(auto) operator[](index_t i){
+            return m_contour_segments[i];
+        }
+
+        void clear(){
+            m_contour_segments.clear();
         }
     };
 
@@ -242,8 +345,26 @@ namespace hg {
             return m_polyline_contours[m_polyline_contours.size() - 1];
         }
 
+        auto &add_polyline_contour_2d(polyline_contour_2d & polyline) {
+            m_polyline_contours.push_back(polyline);
+            return m_polyline_contours.back();
+        }
+
+        auto &add_polyline_contour_2d(polyline_contour_2d && polyline) {
+            m_polyline_contours.push_back(std::forward<polyline_contour_2d>(polyline));
+            return m_polyline_contours.back();
+        }
+
         auto size() {
             return m_polyline_contours.size();
+        }
+
+        auto begin() {
+            return m_polyline_contours.begin();
+        }
+
+        auto end() {
+            return m_polyline_contours.end();
         }
 
         const auto begin() const {
@@ -310,13 +431,14 @@ namespace hg {
                 index_t x,
                 direction dir) {
             auto &polyline = result.new_polyline_contour_2d();
+            auto &segment = polyline.add_segment();
             direction previous = dir;
             bool flag;
 
             do {
                 processed(y, x) = true;
                 index_t edge_index = contours_khalimsky(y, x);
-                polyline.add_segment(edge_index);
+                segment.add_element(edge_index);
                 if (x % 2 == 0) // horizontal edge
                 {
                     if (previous == NORTH) {
@@ -383,4 +505,145 @@ namespace hg {
 
         return result;
     }
+
+    template<typename graph_t, typename embedding_t>
+    auto subdivide_contour(const contour_segment_2d &segment,
+                          const graph_t &graph,
+                          const embedding_t &embedding,
+                          double epsilon = 0.05,
+                          bool relative_epsilon = true,
+                          int minSize = 2) {
+        using point_type = point_2d_f;
+        //auto num_elements = polyline.number_of_contour_elements();
+        //std::vector<point_type> points(num_elements);
+        auto norm = [](const point_type & v, const point_type & w){
+            return std::sqrt((v[0]-w[0])*(v[0]-w[0]) + (v[1]-w[1])*(v[1]-w[1]));
+        };
+
+
+        // Return minimum distance between line vw and point p
+        auto distance_to_line = [&norm](const point_type & v, const point_type & w, const point_type & p){
+            auto l2 = norm(v, w);
+            if (l2 == 0.0) return norm(p, v);   // v == w case
+            return std::abs((w[0]-v[0])*p[1] - (w[1] - v[1])*p[0] + w[1]*v[0] - w[0]*v[1]) / l2;
+        };
+
+        // stack elements are the portions of the segment that have to be checked for subdivision
+        std::stack<std::pair<index_t, index_t>> stack;
+        stack.push({0, segment.size() - 1});
+
+        // if i-th element true the segment has to be subdivided at this element
+        std::vector<bool> is_subdivision_element(segment.size(), false);
+
+        // pre-computed elements coordinates
+        std::vector<point_type> coordinates;
+        coordinates.reserve(segment.size());
+        for(index_t i = 0; i < segment.size(); i++){
+            auto edge_index = segment[i];
+            auto e = edge(edge_index, graph);
+            auto s = source(e, graph);
+            auto t = target(e, graph);
+            point_type coordinate = embedding.lin2grid(s);
+            if(s+1 == t) { // horizontal edge
+                coordinate[1] += 0.5;
+            }
+            else{ // vertical edge
+                coordinate[0] += 0.5;
+            }
+            coordinates.push_back(coordinate);
+        }
+
+        // recursive identification of subdivision elements
+        while(!stack.empty()){
+            auto element_index = stack.top();
+            stack.pop();
+            auto first_element = element_index.first;
+            auto last_element = element_index.second;
+
+            auto & coordinate_first = coordinates[first_element];
+            auto & coordinate_last = coordinates[last_element];
+
+            auto distance_first_last = norm(coordinate_first, coordinate_last);
+
+            // segment to small to be subdivided
+            if(distance_first_last <= minSize)
+                continue;
+
+            double distance_threshold;
+            if(relative_epsilon){
+                distance_threshold = epsilon * distance_first_last;
+            }else{
+                distance_threshold = epsilon;
+            }
+
+            auto max_distance = distance_threshold;
+            auto max_distance_element = invalid_index;
+
+            for(index_t i = first_element + 1; i < last_element; i++){
+                auto & coordinate_element = coordinates[i];
+                auto d = distance_to_line(coordinate_first, coordinate_last, coordinate_element);
+                if(d >= max_distance){
+                    max_distance = d;
+                    max_distance_element = i;
+                }
+            }
+
+            if(max_distance_element != invalid_index){
+                is_subdivision_element[max_distance_element] = true;
+                stack.push({first_element, max_distance_element});
+                stack.push({max_distance_element + 1, last_element});
+            }
+        }
+
+        // final subdivision
+        polyline_contour_2d result;
+        index_t last_subdivision = 0;
+        for(index_t i = 1; i < segment.size(); i++){
+            if(is_subdivision_element[i]){
+                result.add_segment(segment.begin() + last_subdivision, segment.begin() + i + 1);
+                last_subdivision = i + 1;
+                i++;
+            }
+        }
+        result.add_segment(segment.begin() + last_subdivision, segment.end());
+
+        return result;
+    }
+
+    template<typename graph_t, typename embedding_t>
+    auto subdivide_contour(const polyline_contour_2d &polyline,
+                           const graph_t &graph,
+                           const embedding_t &embedding,
+                           double epsilon = 0.05,
+                           bool relative_epsilon = true,
+                           int minSize = 2) {
+
+        if(polyline.size()==0)
+        {
+            return polyline;
+        }else if(polyline.size() == 1){
+            return subdivide_contour(polyline[0], graph, embedding, epsilon, relative_epsilon, minSize);
+        }else{
+            polyline_contour_2d result;
+            for(auto & segment: polyline){
+                result.concatenate(subdivide_contour(segment, graph, embedding, epsilon, relative_epsilon, minSize));
+            }
+            return result;
+        }
+    };
+
+    template<typename graph_t, typename embedding_t>
+    auto subdivide_contour(const contour_2d &contour,
+                           const graph_t &graph,
+                           const embedding_t &embedding,
+                           double epsilon = 0.05,
+                           bool relative_epsilon = true,
+                           int minSize = 2) {
+
+        contour_2d result;
+        for(auto & polyline: contour){
+            result.add_polyline_contour_2d(subdivide_contour(polyline, graph, embedding, epsilon, relative_epsilon, minSize));
+        }
+        return result;
+    };
 }
