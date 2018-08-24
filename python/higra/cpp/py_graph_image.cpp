@@ -23,9 +23,9 @@ struct def_kalhimsky_2_contour {
     template<typename value_t>
     static
     void def(pybind11::module &m, const char *doc) {
-        m.def("_khalimsky2contour", [](const xt::pyarray<value_t> &khalimsky,
+        m.def("_khalimsky_2_graph_4_adjacency", [](const xt::pyarray<value_t> &khalimsky,
                                        bool extra_border) {
-                  return hg::khalimsky_2_contour2d(khalimsky, extra_border);
+                  return hg::khalimsky_2_graph_4_adjacency(khalimsky, extra_border);
               },
               doc,
               py::arg("khalimsky"),
@@ -37,12 +37,12 @@ struct def_contour2Khalimsky {
     template<typename value_t>
     static
     void def(pybind11::module &m, const char *doc) {
-        m.def("_contour2khalimsky", [](const hg::ugraph &graph,
+        m.def("_graph_4_adjacency_2_khalimsky", [](const hg::ugraph &graph,
                                        const std::vector<size_t> &shape,
                                        const xt::pyarray<value_t> &weights,
                                        bool add_extra_border) {
                   hg::embedding_grid_2d embedding(shape);
-                  return hg::contour2d_2_khalimsky(graph, embedding, weights, add_extra_border);
+                  return hg::graph_4_adjacency_2_khalimsky(graph, embedding, weights, add_extra_border);
               },
               doc,
               py::arg("graph"),

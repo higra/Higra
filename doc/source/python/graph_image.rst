@@ -3,9 +3,9 @@
 Utility functions for graph and images
 ======================================
 
-.. autofunction:: higra.contour2khalimsky
+.. autofunction:: higra.graph_4_adjacency_2_khalimsky
 
-.. autofunction:: higra.khalimsky2contour
+.. autofunction:: higra.khalimsky_2_graph_4_adjacency
 
 .. autofunction:: higra.get_4_adjacency_graph
 

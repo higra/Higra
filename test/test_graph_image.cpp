@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_SUITE(graphImage);
                             {0, 0, 0, 1, 0, 2, 0, 3, 0},
                             {1, 1, 1, 1, 0, 2, 0, 3, 0},
                             {0, 0, 0, 0, 0, 2, 0, 3, 0}};
-        auto r = contour2d_2_khalimsky(g, {4, 5}, data);
+        auto r = graph_4_adjacency_2_khalimsky(g, {4, 5}, data);
         BOOST_CHECK(xt::allclose(ref, r));
 
         xt::xarray<int> ref2{{0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_SUITE(graphImage);
                              {1, 1, 1, 1, 1, 0, 2, 0, 3, 0, 0},
                              {0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0},
                              {0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0}};
-        auto r2 = contour2d_2_khalimsky(g, {4, 5}, data, true);
+        auto r2 = graph_4_adjacency_2_khalimsky(g, {4, 5}, data, true);
         BOOST_CHECK(xt::allclose(ref2, r2));
     }
 
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_SUITE(graphImage);
                             {0, 0, 0, 1, 0, 2, 0, 3, 0},
                             {1, 1, 1, 1, 0, 2, 0, 3, 0},
                             {0, 0, 0, 0, 0, 2, 0, 3, 0}};
-        auto r = khalimsky_2_contour2d(ref);
+        auto r = khalimsky_2_graph_4_adjacency(ref);
         //auto & graph = std::get<0>(r);
         auto &embedding = std::get<1>(r);
         auto &weights = std::get<2>(r);
@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_SUITE(graphImage);
                              {1, 1, 1, 1, 1, 0, 2, 0, 3, 0, 0},
                              {0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0},
                              {0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0}};
-        auto r2 = khalimsky_2_contour2d(ref2, true);
+        auto r2 = khalimsky_2_graph_4_adjacency(ref2, true);
         //auto & graph2 = std::get<0>(r2);
         auto &embedding2 = std::get<1>(r2);
         auto &weights2 = std::get<2>(r2);

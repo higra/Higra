@@ -260,7 +260,7 @@ namespace hg {
             else positive_edge_index[i] = invalid_index;
         }
 
-        auto contours_khalimsky = contour2d_2_khalimsky(graph, embedding, positive_edge_index, true, invalid_index);
+        auto contours_khalimsky = graph_4_adjacency_2_khalimsky(graph, embedding, positive_edge_index, true, invalid_index);
 
         array_2d<bool> processed = xt::zeros<bool>(contours_khalimsky.shape());
 

@@ -178,8 +178,6 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
         xt::xarray<int> data{0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                              0};
 
-        auto c = contour2d_2_khalimsky(g, {shape}, data);
-
         xt::xarray<int> ref{{0, 0, 0, 0, 0, 0, 0, 0, 0},
                             {1, 0, 0, 0, 2, 0, 0, 0, 4},
                             {0, 1, 0, 2, 0, 3, 0, 4, 0},

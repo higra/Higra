@@ -77,7 +77,7 @@ namespace hg {
      */
     template<typename graph_t, typename T, typename result_type = typename T::value_type>
     auto
-    contour2d_2_khalimsky(const graph_t &graph, const embedding_grid_2d &embedding,
+    graph_4_adjacency_2_khalimsky(const graph_t &graph, const embedding_grid_2d &embedding,
                           const xt::xexpression<T> &xedge_weights,
                           bool add_extra_border = false,
                           result_type extra_border_value = 0) {
@@ -155,7 +155,7 @@ namespace hg {
      */
     template<typename T, typename result_type = typename T::value_type>
     auto
-    khalimsky_2_contour2d(const xt::xexpression<T> &xkhalimsky, bool extra_border = false) {
+    khalimsky_2_graph_4_adjacency(const xt::xexpression<T> &xkhalimsky, bool extra_border = false) {
         HG_TRACE();
         const auto &khalimsky = xkhalimsky.derived_cast();
         hg_assert(khalimsky.dimension() == 2, "Only 2d khalimsky grids are supported!");

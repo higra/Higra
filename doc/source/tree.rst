@@ -285,7 +285,7 @@ The parallel accumulator pseudo-code could be:
     The following example demonstrates the application of a parallel sum accumulator on a simple tree:
 
 .. image:: fig/tree_demo_accumulate_parallel.svg
-:align: center
+    :align: center
 
 
 .. tabs::
@@ -343,7 +343,7 @@ The sequential accumulator pseudo-code could be:
     The following example demonstrates the application of a sequential sum accumulator on a simple tree:
 
 .. image:: fig/tree_demo_accumulate_sequential.svg
-:align: center
+    :align: center
 
 
 .. tabs::
@@ -403,7 +403,7 @@ The sequential accumulator pseudo-code could be:
     The following example demonstrates the application of sequential max accumulator with a sum combiner on a simple tree:
 
 .. image:: fig/tree_demo_accumulate_and_combine_sequential.svg
-:align: center
+    :align: center
 
 
 .. tabs::
@@ -445,10 +445,10 @@ The sequential accumulator pseudo-code could be:
     and the library offers several statically bound functions:
 
     - ``accumulate_and_add_sequential``
-- ``accumulate_and_sum_sequential``
-- ``accumulate_and_multiply_sequential``
-- ``accumulate_and_min_sequential``
-- ``accumulate_and_max_sequential``
+    - ``accumulate_and_sum_sequential``
+    - ``accumulate_and_multiply_sequential``
+    - ``accumulate_and_min_sequential``
+    - ``accumulate_and_max_sequential``
 
 Propagators
 -----------
@@ -484,7 +484,7 @@ The conditional parallel propagator pseudo-code could be:
     The following example demonstrates the application of a conditional parallel propagation:
 
 .. image:: fig/tree_demo_propagate_parallel.svg
-:align: center
+    :align: center
 
 
 .. tabs::
@@ -543,7 +543,7 @@ The conditional sequential propagator pseudo-code could be:
     The following example demonstrates the application of a conditional sequential propagation:
 
 .. image:: fig/tree_demo_propagate_sequential.svg
-:align: center
+    :align: center
 
 
 .. tabs::

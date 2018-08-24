@@ -12,7 +12,7 @@ import higra as hg
 
 
 @hg.data_consumer("shape", "edge_weights")
-def contour2khalimsky(graph, shape, edge_weights, add_extra_border=False):
+def graph_4_adjacency_2_khalimsky(graph, shape, edge_weights, add_extra_border=False):
     """
     Create a contour image in the Khalimsky grid from a 4 adjacency edge-weighted graph.
 
@@ -23,10 +23,10 @@ def contour2khalimsky(graph, shape, edge_weights, add_extra_border=False):
     :return:
     """
 
-    return hg._contour2khalimsky(graph, shape, edge_weights, add_extra_border)
+    return hg._graph_4_adjacency_2_khalimsky(graph, shape, edge_weights, add_extra_border)
 
 
-def khalimsky2contour(khalimsky, extra_border=False):
+def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False):
     """
     Create a 4 adjacency edge-weighted graph from a contour image in the Khalimsky grid.
 
@@ -35,7 +35,7 @@ def khalimsky2contour(khalimsky, extra_border=False):
     :return: Graph (with attributes "edge_weights" and "shape")
     """
 
-    graph, embedding, edge_weights = hg._khalimsky2contour(khalimsky, extra_border)
+    graph, embedding, edge_weights = hg._khalimsky_2_graph_4_adjacency(khalimsky, extra_border)
 
     hg.set_attribute(graph, "shape", embedding.shape())
     hg.set_attribute(graph, "edge_weights", edge_weights)
