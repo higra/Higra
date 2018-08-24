@@ -373,8 +373,8 @@ inline batch<int64_t, 2> &batch<int64_t, 2>::load_aligned(const uint8_t *src) {
 #if XSIMD_X86_INSTR_SET >= XSIMD_X86_SSE4_1_VERSION
     m_value = _mm_cvtepu8_epi64(tmp);
 #else
-    __m128i tmp1 = _mm_unpacklo_epi8(tmp, _mm_set1_epi8(0));
-    __m128i tmp2 = _mm_unpacklo_epi16(tmp, _mm_set1_epi16(0));
+    _mm_unpacklo_epi8(tmp, _mm_set1_epi8(0));
+    _mm_unpacklo_epi16(tmp, _mm_set1_epi16(0));
     m_value = _mm_unpacklo_epi32(tmp, _mm_set1_epi32(0));
 #endif
     return *this;
