@@ -12,136 +12,174 @@
 
 #include "../graph.hpp"
 #include "graph_image.hpp"
+#include "../structure/details/iterators.hpp"
 #include <stack>
 
 namespace hg {
 
-    /**
-     *  Represent a (pseudo) line segment of a contour.
-     *  A contour segment is composed of a list of elements composing the segment.
-     *  Note that the elements of a contour segment do not necessarily form a line segment in the geometric meaning.
-     */
+    // forward declaration
+    template <typename point_type>
+    class polyline_contour_2d;
+
+    template <typename point_type>
+    class contour_segment_2d_iterator;
+
+    template<typename point_type=point_2d_f>
     class contour_segment_2d {
-        using container_type = std::vector<index_t>;
-        container_type m_contour_elements;
+        const polyline_contour_2d<point_type> &m_polyline;
+        const index_t m_first_control_point;
+        const index_t m_second_control_point;
+        const index_t m_size;
 
     public:
+        using value_type = std::pair<index_t, point_2d_f>;
 
-        /**
-         * Create an empty contour segment
-         */
-        contour_segment_2d() {
+        contour_segment_2d(const polyline_contour_2d<point_type> &polyline,
+                           index_t first_control_point,
+                           index_t second_control_point) :
+                m_polyline(polyline),
+                m_first_control_point(first_control_point),
+                m_second_control_point(second_control_point),
+                m_size(m_second_control_point - m_first_control_point + 1) {
         }
 
-        /**
-         * Create a segment composed of the given elements
-         * @tparam input_iterator
-         * @param begin
-         * @param end
-         */
-        template<typename input_iterator>
-        contour_segment_2d(input_iterator begin, input_iterator end) : m_contour_elements(begin, end) {
-        }
-
-        auto begin() {
-            return m_contour_elements.begin();
-        }
-
-        auto end() {
-            return m_contour_elements.end();
-        }
 
         const auto begin() const {
-            return m_contour_elements.cbegin();
+            return contour_segment_2d_iterator<point_type>(*this, 0);
         }
 
         const auto end() const {
-            return m_contour_elements.cend();
+            return contour_segment_2d_iterator<point_type>(*this, m_size);
+        }
+
+        decltype(auto) operator[](index_t i) const {
+            return std::make_pair(m_polyline.m_contour_elements[i + m_first_control_point],
+                                  m_polyline.m_contour_points[i + m_first_control_point]);
         }
 
         /**
          * First element of the contour segment
          * @return
          */
-        auto first(){
-            return m_contour_elements.front();
+        decltype(auto) first() const {
+            return (*this)[0];
         }
 
         /**
          * Last element of the contour segment
          * @return
          */
-        auto last(){
-            return m_contour_elements.back();
+        decltype(auto) last() const {
+            return (*this)[m_size - 1];
         }
 
         /**
          * Number of elements in the contour segment
          * @return
          */
-        auto size() const{
-            return m_contour_elements.size();
+        auto size() const {
+            return m_size;
         }
 
-        /**
-         * Add an element at the end of the contour segment
-         * @param element
-         */
-        void add_element(index_t element){
-            m_contour_elements.push_back(element);
-        }
-
-        decltype(auto) operator[](index_t i) const{
-            return m_contour_elements[i];
-        }
-
-        decltype(auto) operator[](index_t i){
-            return m_contour_elements[i];
-        }
     };
+
+    template<typename point_type=point_2d_f>
+    class contour_segment_2d_iterator :
+            public forward_iterator_facade<contour_segment_2d_iterator<point_type>,
+                    typename contour_segment_2d<point_type>::value_type,
+                    typename contour_segment_2d<point_type>::value_type> {
+    public:
+
+        contour_segment_2d_iterator(const contour_segment_2d<point_type> &segment, index_t position = 0) :
+                m_segment(segment),
+                m_position(position) {}
+
+        void increment() {
+            m_position++;
+        }
+
+        bool equal(contour_segment_2d_iterator<point_type> const &other) const {
+            return this->m_position == other.m_position;
+        }
+
+        decltype(auto) dereference() const {
+            return m_segment[m_position];
+        }
+
+    private:
+        const contour_segment_2d<point_type> &m_segment;
+        index_t m_position;
+
+    };
+
+
+    // forward declaration
+    template<typename point_type>
+    class polyline_contour_2d_iterator;
 
     /**
      * A polyline contour is a set of contour segments that represent a connected frontier between two regions.
      */
+    template<typename point_type=point_2d_f>
     class polyline_contour_2d {
-        std::vector<contour_segment_2d> m_contour_segments;
+        std::vector<index_t> m_contour_elements;
+        std::vector<point_type> m_contour_points;
+        std::vector<index_t> m_control_points;
+
+        friend class contour_segment_2d<point_type>;
 
     public:
+        using value_type = contour_segment_2d<point_type>;
+
         polyline_contour_2d() {
 
         }
 
-        auto begin() {
-            return m_contour_segments.begin();
+        void add_contour_element(index_t element, point_type coordinates) {
+            m_contour_elements.push_back(element);
+            m_contour_points.push_back(coordinates);
+            if (m_contour_points.size() == 1) {
+                m_control_points.push_back(0);
+                m_control_points.push_back(0);
+            } else {
+                m_control_points.back() = m_contour_points.size() - 1;
+            }
         }
 
-        auto end() {
-            return m_contour_segments.end();
+        auto operator[](index_t i) const {
+            return contour_segment_2d<point_type>(*this, m_control_points[i], m_control_points[i + 1]);
         }
+
+        auto size() const {
+            return m_control_points.size() - 1;
+        }
+
 
         const auto begin() const {
-            return m_contour_segments.cbegin();
+            return polyline_contour_2d_iterator<point_type>(*this, 0);
         }
 
         const auto end() const {
-            return m_contour_segments.cend();
+            return polyline_contour_2d_iterator<point_type>(*this, size());
         }
 
-        auto & add_segment() {
-            m_contour_segments.emplace_back();
-            return m_contour_segments.back();
-        }
+        /*
 
-        auto & add_segment(contour_segment_2d & segment) {
-            m_contour_segments.push_back(segment);
-            return m_contour_segments.back();
-        }
+          auto & add_segment() {
+              m_contour_segments.emplace_back();
+              return m_contour_segments.back();
+          }
 
-        auto & add_segment(contour_segment_2d && segment) {
-            m_contour_segments.push_back(std::forward<contour_segment_2d>(segment));
-            return m_contour_segments.back();
-        }
+          auto & add_segment(contour_segment_2d & segment) {
+              m_contour_segments.push_back(segment);
+              return m_contour_segments.back();
+          }
 
+          auto & add_segment(contour_segment_2d && segment) {
+              m_contour_segments.push_back(std::forward<contour_segment_2d>(segment));
+              return m_contour_segments.back();
+          }*/
+/*
         template<typename input_iterator>
         auto & add_segment(input_iterator begin, input_iterator end) {
             m_contour_segments.emplace_back(begin, end);
@@ -173,9 +211,7 @@ namespace hg {
             return count;
         }
 
-        decltype(auto) operator[](index_t i) const{
-            return m_contour_segments[i];
-        }
+
 
         decltype(auto) operator[](index_t i){
             return m_contour_segments[i];
@@ -183,14 +219,45 @@ namespace hg {
 
         void clear(){
             m_contour_segments.clear();
-        }
+        }*/
     };
+
+    template<typename point_type=point_2d_f>
+    class polyline_contour_2d_iterator :
+            public forward_iterator_facade<polyline_contour_2d_iterator<point_type>,
+                    typename polyline_contour_2d<point_type>::value_type,
+                    typename polyline_contour_2d<point_type>::value_type> {
+    public:
+
+        polyline_contour_2d_iterator(const polyline_contour_2d<point_type> &polyline, index_t position = 0) :
+                m_polyline(polyline),
+                m_position(position) {}
+
+        void increment() {
+            m_position++;
+        }
+
+        bool equal(polyline_contour_2d_iterator<point_type> const &other) const {
+            return this->m_position == other.m_position;
+        }
+
+        decltype(auto) dereference() const {
+            return m_polyline[m_position];
+        }
+
+    private:
+        const polyline_contour_2d<point_type> &m_polyline;
+        index_t m_position;
+
+    };
+
 
     /**
      * A contour is a set of polyline contours that represent the frontiers separating regions.
      */
+    template<typename point_type=point_2d_f>
     class contour_2d {
-        std::vector<polyline_contour_2d> m_polyline_contours;
+        std::vector<polyline_contour_2d<point_type>> m_polyline_contours;
 
     public:
         auto &new_polyline_contour_2d() {
@@ -198,15 +265,15 @@ namespace hg {
             return m_polyline_contours[m_polyline_contours.size() - 1];
         }
 
-        auto &add_polyline_contour_2d(polyline_contour_2d & polyline) {
+        /*auto &add_polyline_contour_2d(polyline_contour_2d &polyline) {
             m_polyline_contours.push_back(polyline);
             return m_polyline_contours.back();
         }
 
-        auto &add_polyline_contour_2d(polyline_contour_2d && polyline) {
+        auto &add_polyline_contour_2d(polyline_contour_2d &&polyline) {
             m_polyline_contours.push_back(std::forward<polyline_contour_2d>(polyline));
             return m_polyline_contours.back();
-        }
+        }*/
 
         auto size() {
             return m_polyline_contours.size();
@@ -244,6 +311,7 @@ namespace hg {
                    const embedding_grid_2d &embedding,
                    const xt::xexpression<T> &xedge_weights) {
         HG_TRACE();
+        using point_type = point_2d_f;
         const auto &edge_weights = xedge_weights.derived_cast();
         hg_assert(edge_weights.dimension() == 1, "Edge weights must be scalar.");
         hg_assert(num_edges(graph) == edge_weights.size(),
@@ -251,16 +319,30 @@ namespace hg {
         hg_assert(num_vertices(graph) == embedding.size(),
                   "Graph number of vertices does not match the size of the embedding.");
 
-        contour_2d result;
+        contour_2d<point_type> result;
 
-        array_1d <index_t> positive_edge_index = xt::empty<index_t>({num_edges(graph)});
+        array_1d<index_t> positive_edge_index = xt::empty<index_t>({num_edges(graph)});
         for (index_t i = 0; i < positive_edge_index.size(); i++) {
             if (edge_weights[i] > 0)
                 positive_edge_index[i] = i;
             else positive_edge_index[i] = invalid_index;
         }
 
-        auto contours_khalimsky = graph_4_adjacency_2_khalimsky(graph, embedding, positive_edge_index, true, invalid_index);
+        auto contours_khalimsky = graph_4_adjacency_2_khalimsky(graph, embedding, positive_edge_index, true,
+                                                                invalid_index);
+
+        auto edge_coordinates = [&embedding, &graph](index_t edge_index) {
+            auto e = edge(edge_index, graph);
+            auto s = source(e, graph);
+            auto t = target(e, graph);
+            point_type coordinates = embedding.lin2grid(s);
+            if (s + 1 == t) { // horizontal edge
+                coordinates[1] += 0.5;
+            } else { // vertical edge
+                coordinates[0] += 0.5;
+            }
+            return coordinates;
+        };
 
         array_2d<bool> processed = xt::zeros<bool>(contours_khalimsky.shape());
 
@@ -288,19 +370,19 @@ namespace hg {
             NORTH, EAST, SOUTH, WEST
         };
 
-        auto explore_contour_part = [&result, &contours_khalimsky, &processed, &is_intersection](
+        auto explore_contour_part = [&result, &contours_khalimsky, &processed, &is_intersection, &edge_coordinates](
                 index_t y,
                 index_t x,
                 direction dir) {
             auto &polyline = result.new_polyline_contour_2d();
-            auto &segment = polyline.add_segment();
+
             direction previous = dir;
             bool flag;
 
             do {
                 processed(y, x) = true;
                 index_t edge_index = contours_khalimsky(y, x);
-                segment.add_element(edge_index);
+                polyline.add_contour_element(edge_index, edge_coordinates(edge_index));
                 if (x % 2 == 0) // horizontal edge
                 {
                     if (previous == NORTH) {
@@ -388,6 +470,7 @@ namespace hg {
     * @param minSize
     * @return
     */
+/*
     template<typename graph_t, typename embedding_t>
     auto subdivide_contour(const contour_segment_2d &segment,
                            const graph_t &graph,
@@ -491,7 +574,7 @@ namespace hg {
 
         return result;
     }
-
+*/
     /**
      * Subdivide the each segment of the given polyline  such that the distance between the line
      * joining the extremities of the contour segment and each of its elements is lower than the threshold (
@@ -512,7 +595,7 @@ namespace hg {
      * @param minSize
      * @return
      */
-    template<typename graph_t, typename embedding_t>
+/*    template<typename graph_t, typename embedding_t>
     auto subdivide_contour(const polyline_contour_2d &polyline,
                            const graph_t &graph,
                            const embedding_t &embedding,
@@ -532,7 +615,7 @@ namespace hg {
             }
             return result;
         }
-    };
+    };*/
 
     /**
      * Subdivide the each segment of each polyline of the given contours such that the distance between the line
@@ -555,18 +638,18 @@ namespace hg {
      * @param minSize
      * @return
      */
-    template<typename graph_t, typename embedding_t>
-    auto subdivide_contour(const contour_2d &contour,
-                           const graph_t &graph,
-                           const embedding_t &embedding,
-                           double epsilon = 0.05,
-                           bool relative_epsilon = true,
-                           int minSize = 2) {
+    /*  template<typename graph_t, typename embedding_t>
+      auto subdivide_contour(const contour_2d &contour,
+                             const graph_t &graph,
+                             const embedding_t &embedding,
+                             double epsilon = 0.05,
+                             bool relative_epsilon = true,
+                             int minSize = 2) {
 
-        contour_2d result;
-        for(auto & polyline: contour){
-            result.add_polyline_contour_2d(subdivide_contour(polyline, graph, embedding, epsilon, relative_epsilon, minSize));
-        }
-        return result;
-    };
+          contour_2d result;
+          for(auto & polyline: contour){
+              result.add_polyline_contour_2d(subdivide_contour(polyline, graph, embedding, epsilon, relative_epsilon, minSize));
+          }
+          return result;
+      };*/
 }
