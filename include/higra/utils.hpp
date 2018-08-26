@@ -14,6 +14,7 @@
 #include <exception>
 #include <string>
 #include <iostream>
+#include <stack>
 #include "xtensor/xstrided_view.hpp"
 #include "xtensor/xio.hpp"
 #include "detail/log.hpp"
@@ -152,6 +153,9 @@ namespace hg {
     void extend(T1 & a, const T2 & b){
         a.insert(std::end(a), std::begin(b), std::end(b));
     };
+
+    template <typename T>
+    using stackv = std::stack<T, std::vector<T>>;
 
 }
 
