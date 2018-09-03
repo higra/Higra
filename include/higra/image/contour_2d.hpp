@@ -97,6 +97,12 @@ namespace hg {
                 return std::abs((w[0] - v[0]) * p[1] - (w[1] - v[1]) * p[0] + w[1] * v[0] - w[0] * v[1]) / l2;
             };
 
+            auto angle() const{
+                auto v = first().second;
+                auto w = last().second;
+                return std::atan2(v[0] - w[0], v[1] - w[1]);
+            }
+
         };
 
         template<typename point_type=point_2d_f>
@@ -338,6 +344,10 @@ namespace hg {
                 return m_polyline_contours.end();
             }
 
+            auto operator[](index_t i)  {
+                return m_polyline_contours[i];
+            }
+
             /**
              * Subdivide each polyline of the given contours such that the distance between the line
              * joining the extremities of the contour segment and each of its elements is lower than the threshold (
@@ -370,7 +380,9 @@ namespace hg {
 
     using contour_2d = contour_2d_internal::contour_2d<point_2d_f>;
 
-    using poyline_contour_2d = contour_2d_internal::polyline_contour_2d<point_2d_f>;
+    using polyline_contour_2d = contour_2d_internal::polyline_contour_2d<point_2d_f>;
+
+    using contour_segment_2d = contour_2d_internal::contour_segment_2d<point_2d_f>;
 
     /**
      * Construct a contour_2d object from a graph cut of a 2d image with a 4 adjacency (non zero edges are part of the cut).

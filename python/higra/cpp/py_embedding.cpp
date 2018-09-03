@@ -94,7 +94,7 @@ void py_init_embedding_impl(pybind11::module &m) {
              "Takes a n1 x n2 x ... nk  array, with nk = self.dimension(), and returns a boolean array of dimension n1 x n2 x ... n(k-1) "
                      "indicating if each point is contained in the embedding.");
 
-
+    // ::TODO:: remove cast to xt::pyarray when xtesnor python supports xtensor_fixed
     c.def("lin2grid", [](const class_t &e, const index_t a) { return xt::pyarray<long>(e.lin2grid(a)); },
           "Compute the nd coordinates of a point given its linear coordinate.",
           py::arg("index"));
