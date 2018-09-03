@@ -95,3 +95,61 @@ def compute_bpt_merge_attribute(tree, attribute, altitudes):
     persistence = hg.accumulate_parallel(tree, extinction, hg.Accumulators.min)
     persistence[:tree.num_leaves()] = 0
     return persistence
+
+
+@hg.data_consumer("edge_weights")
+def binary_partition_tree_complete_linkage(graph, edge_weights):
+    """
+    Compute a binary partition tree with complete linkage distance.
+
+    Given a graph G, with initial edge weights W,
+    the distance d(X,Y) between any two regions X, Y is defined as :\n
+    d(X,Y) = max {W({x,y}) | x in X, y in Y, {x,y} in G }
+
+    :param graph:
+    :param edge_weights:
+    :return:
+    """
+
+    tree, altitudes = hg._binary_partition_tree_complete_linking(graph, edge_weights)
+
+    hg.set_attribute(tree, "leaf_graph", graph)
+    hg.set_attribute(tree, "altitudes", altitudes)
+
+    return tree
+
+
+def binary_partition_tree_average_linkage(graph, edge_values, edge_weights):
+    """
+    Compute a binary partition tree with average linkage distance.
+
+    Given a graph G, with initial edge values V with associated weights W,
+    the distance d(X,Y) between any two regions X, Y is defined as:
+    d(X,Y) = (1 / Z) + sum_{x in X, y in Y, {x,y} in G} V({x,y}) x W({x,y})
+    with Z = sum_{x in X, y in Y, {x,y} in G} W({x,y})
+
+    :param graph:
+    :param edge_values:
+    :param edge_weights:
+    :return:
+    """
+
+    tree, altitudes = hg._binary_partition_tree_average_linking(graph, edge_values,  edge_weights)
+
+    hg.set_attribute(tree, "leaf_graph", graph)
+    hg.set_attribute(tree, "altitudes", altitudes)
+
+    return tree
+
+
+@hg.data_consumer("edge_weights")
+def binary_partition_tree_single_linkage(graph, edge_weights):
+    """
+    Alias for bpt_canonical
+
+    :param graph:
+    :param edge_weights:
+    :return:
+    """
+
+    return bpt_canonical(graph, edge_weights)

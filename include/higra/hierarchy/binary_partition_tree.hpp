@@ -37,6 +37,11 @@ namespace hg {
 
         };
 
+        /**
+         * This structure is provided by the binary partition algorithm when two nodes are merged in order to
+         * compute the edge weight between the newly created node and one of its neighbouring node.
+         * @tparam T Value type of edge weights
+         */
         template<typename T>
         struct new_neighbour {
             using value_type = T;
@@ -47,43 +52,87 @@ namespace hg {
             mutable T m_new_edge_weight;
 
         public:
+
+            /**
+             *
+             * @param neighbour_vertex The index of the existing neighbour of the newly created node
+             * @param edge1_index The index of the edge linking the first merged node with the neighbouring node
+             * @param edge2_index The index of the edge linking the second merged node with the neighbouring node:
+             * might be set to invalid_index (default value) if no such edge exists.
+             */
             new_neighbour(index_t neighbour_vertex, index_t edge1_index, index_t edge2_index = invalid_index) :
                     m_neighbour_vertex(neighbour_vertex), m_edge1_index(edge1_index), m_edge2_index(edge2_index) {
 
             }
 
+            /**
+             * Number of edges between the merged nodes and the neighbour node.
+             * @return
+             */
             auto num_edges() const {
                 return (m_edge2_index == invalid_index) ? 1 : 2;
             }
 
+            /**
+             * The index of the edge linking the first merged node with the neighbouring node.
+             * @return
+             */
             const auto &first_edge_index() const {
                 return m_edge1_index;
             }
 
+            /**
+             * The index of the edge linking the first merged node with the neighbouring node.
+             * @return
+             */
             auto &first_edge_index() {
                 return m_edge1_index;
             }
 
+            /**
+             * The index of the edge linking the second merged node with the neighbouring node (invalid_index if num_edges() < 2).
+             * @return
+             */
             const auto &second_edge_index() const {
                 return m_edge2_index;
             }
 
+            /**
+            * The index of the edge linking the second merged node with the neighbouring node (invalid_index if num_edges() < 2).
+            * @return
+            */
             auto &second_edge_index() {
                 return m_edge2_index;
             }
 
+            /**
+             * The index of the neighbour node.
+             * @return
+             */
             const auto &neighbour_vertex() const {
                 return m_neighbour_vertex;
             }
 
+            /**
+             * The index of the neighbour node.
+             * @return
+             */
             auto &neighbour_vertex() {
                 return m_neighbour_vertex;
             }
 
+            /**
+             * The new value of the edge linking the new node to the new neighbour.
+             * @return
+             */
             auto &new_edge_weight() const {
                 return m_new_edge_weight;
             }
 
+            /**
+             * The index of the edge linking the new node to the neighbour node.
+             * @return
+             */
             auto new_edge_index() const {
                 return m_edge1_index;
             }

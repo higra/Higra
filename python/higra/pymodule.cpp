@@ -12,6 +12,7 @@
 
 #include "cpp/py_accumulators.hpp"
 #include "cpp/py_algo_tree.hpp"
+#include "cpp/py_binary_partition_tree.hpp"
 #include "cpp/py_embedding.hpp"
 #include "cpp/py_graph_weights.hpp"
 #include "cpp/py_graph_image.hpp"
@@ -50,6 +51,7 @@ PYBIND11_MODULE(higram, m) {
     xt::import_numpy();
     py_init_accumulators(m);
     py_init_algo_tree(m);
+    py_init_binary_partition_tree(m);
     py_init_embedding(m);
     py_init_graph_image(m);
     py_init_graph_weights(m);
