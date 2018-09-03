@@ -38,6 +38,34 @@ class TestBinaryPartitionTree(unittest.TestCase):
         self.assertTrue(np.all(expected_parents == tree.parents()))
         self.assertTrue(np.all(expected_levels == levels))
 
+    def test_binary_partition_tree_custom_linkage(self):
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_values = np.asarray((1, 7, 2, 10, 16, 3, 11, 4, 12, 14, 5, 6), np.float32)
+        edge_weights = np.asarray((7, 1, 7, 3, 2, 8, 2, 2, 2, 1, 5, 9), np.float32)
+
+        def weighting_function_average_linkage(graph, fusion_edge_index, new_region, merged_region1, merged_region2, new_neighbours):
+            for n in new_neighbours:
+                if n.num_edges() > 1:
+                    new_weight = edge_weights[n.first_edge_index()] + edge_weights[n.second_edge_index()]
+                    new_value = (edge_values[n.first_edge_index()] * edge_weights[n.first_edge_index()] \
+                        + edge_values[n.second_edge_index()] * edge_weights[n.second_edge_index()]) \
+                        / new_weight
+                else:
+                    new_weight = edge_weights[n.first_edge_index()]
+                    new_value = edge_values[n.first_edge_index()]
+
+                n.set_new_edge_weight(new_value)
+                edge_values[n.new_edge_index()] = new_value
+                edge_weights[n.new_edge_index()] = new_weight
+
+        tree, levels = hg._binary_partition_tree(graph, edge_values, weighting_function_average_linkage)
+
+        expected_parents = np.asarray((9, 9, 10, 11, 11, 12, 13, 13, 14, 10, 15, 12, 15, 14, 16, 16, 16), np.uint32)
+        expected_levels = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 11.5, 12), np.float32)
+
+        self.assertTrue(np.all(expected_parents == tree.parents()))
+        self.assertTrue(np.all(expected_levels == levels))
+
 
 if __name__ == '__main__':
     unittest.main()
