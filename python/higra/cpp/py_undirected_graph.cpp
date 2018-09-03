@@ -13,14 +13,12 @@
 
 namespace py = pybind11;
 
-using graph_t = hg::undirected_graph<>;
-using edge_t = typename hg::graph_traits<graph_t>::edge_descriptor;
-using vertex_t = typename hg::graph_traits<graph_t>::vertex_descriptor;
+template<typename graph_t, typename class_t>
+void init_graph(class_t &c){
 
-void py_init_undirected_graph(py::module &m) {
-    xt::import_numpy();
-
-    auto c = py::class_<graph_t>(m, "UndirectedGraph");
+    using edge_t = typename hg::graph_traits<graph_t>::edge_descriptor;
+    using vertex_t = typename hg::graph_traits<graph_t>::vertex_descriptor;
+    using edge_index_t = typename hg::graph_traits<graph_t>::edge_index;
 
     c.def(py::init<const hg::size_t>(), "Create a new graph with no edge.",
           py::arg("number_of_vertices") = 0);
@@ -45,6 +43,24 @@ void py_init_undirected_graph(py::module &m) {
               return hg::add_vertex(g);
           },
           "Add a vertex to the graph, the index of the new vertex is returned");
+    c.def("set_edge", &graph_t::set_edge,
+          py::arg("edge_index"),
+          py::arg("source"),
+          py::arg("target"),
+          "Modify the source and the target of the given edge.");
+    c.def("remove_edge", &graph_t::remove_edge,
+          py::arg("edge_index"),
+          "Remove the given edge from the graph (the edge is not really removed: "
+                  "its source and target are attached to a virtual node of index -1).");
+}
+
+void py_init_undirected_graph(py::module &m) {
+    xt::import_numpy();
+    auto c = py::class_<hg::undirected_graph<hg::vecS> >(m, "UndirectedGraph");
+    init_graph<hg::ugraph>(c);
+
+    auto c2 = py::class_<hg::undirected_graph<hg::hash_setS>>(m, "UndirectedGraphOptimizedDelete");
+    init_graph<hg::undirected_graph<hg::hash_setS >>(c2);
 }
 
 
