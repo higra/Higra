@@ -458,19 +458,23 @@ namespace hg {
             NORTH, EAST, SOUTH, WEST
         };
 
-        auto explore_contour_part = [&result, &contours_khalimsky, &processed, &is_intersection, &edge_coordinates](
+        // store the result of explore_contour_part (below)
+        std::vector<index_t> contour_part;
+
+        auto explore_contour_part = [&contours_khalimsky, &processed, &is_intersection, &contour_part](
                 index_t y,
                 index_t x,
                 direction dir) {
-            auto &polyline = result.new_polyline_contour_2d();
-
+            //auto &polyline = result.new_polyline_contour_2d();
+            contour_part.clear();
             direction previous = dir;
             bool flag;
 
             do {
                 processed(y, x) = true;
                 index_t edge_index = contours_khalimsky(y, x);
-                polyline.add_contour_element(edge_index, edge_coordinates(edge_index));
+                contour_part.push_back(edge_index);
+                //polyline.add_contour_element(edge_index, edge_coordinates(edge_index));
                 if (x % 2 == 0) // horizontal edge
                 {
                     if (previous == NORTH) {
@@ -486,7 +490,7 @@ namespace hg {
                     }
                 }
 
-                flag = is_intersection(y, x);
+                flag = processed(y, x) || is_intersection(y, x);
                 if (!flag) {
                     processed(y, x) = true;
                     if (previous != NORTH &&
@@ -511,25 +515,88 @@ namespace hg {
 
         };
 
+        auto add_contour_parts_to_polyline = [&contour_part, &edge_coordinates](polyline_contour_2d & polyline, bool reverse = false){
+            if(reverse){
+                for(auto edge_index = contour_part.rbegin(); edge_index != contour_part.rend(); edge_index++){
+                    polyline.add_contour_element(*edge_index, edge_coordinates(*edge_index));
+                }
+            }else{
+                for(auto edge_index = contour_part.begin(); edge_index != contour_part.end(); edge_index++){
+                    polyline.add_contour_element(*edge_index, edge_coordinates(*edge_index));
+                }
+            }
+
+        };
+
         for (index_t y = 0; y < height; y += 2) {
             for (index_t x = 0; x < width; x += 2) {
                 auto edge_index = contours_khalimsky(y, x);
                 if (edge_index != invalid_index && // is there a non zero edge around this 0 face
-                    !processed(y, x) && // if so did we already processed it ?
-                    is_intersection(y, x)) {
+                    !processed(y, x)){ // if so did we already processed it ?
                     processed(y, x) = true;
-                    if (x != 0 && contours_khalimsky(y, x - 1) != invalid_index && !processed(y, x - 1)) {
-                        explore_contour_part(y, x - 1, EAST);
+                    if(is_intersection(y, x)){ // explore each polyline starting from this point
+                        if (x != 0 && contours_khalimsky(y, x - 1) != invalid_index && !processed(y, x - 1)) {
+                            explore_contour_part(y, x - 1, EAST);
+                            auto &polyline = result.new_polyline_contour_2d();
+                            add_contour_parts_to_polyline(polyline);
+                        }
+                        if (x != width - 1 && contours_khalimsky(y, x + 1) != invalid_index && !processed(y, x + 1)) {
+                            explore_contour_part(y, x + 1, WEST);
+                            auto &polyline = result.new_polyline_contour_2d();
+                            add_contour_parts_to_polyline(polyline);
+                        }
+                        if (y != 0 && contours_khalimsky(y - 1, x) != invalid_index && !processed(y - 1, x)) {
+                            explore_contour_part(y - 1, x, SOUTH);
+                            auto &polyline = result.new_polyline_contour_2d();
+                            add_contour_parts_to_polyline(polyline);
+                        }
+                        if (y != height - 1 && contours_khalimsky(y + 1, x) != invalid_index && !processed(y + 1, x)) {
+                            explore_contour_part(y + 1, x, NORTH);
+                            auto &polyline = result.new_polyline_contour_2d();
+                            add_contour_parts_to_polyline(polyline);
+                        }
+                    }else{ // explore the two ends of the polyline passing by this point and join them
+                        auto &polyline = result.new_polyline_contour_2d();
+                        bool first = true;
+                        if (x != 0 && contours_khalimsky(y, x - 1) != invalid_index && !processed(y, x - 1)) {
+                            explore_contour_part(y, x - 1, EAST);
+                            //if(first){ // impossible at first case
+                                add_contour_parts_to_polyline(polyline, true);
+                                first = false;
+                            //}else{
+                            //    add_contour_parts_to_polyline(polyline);
+                            //}
+
+                        }
+                        if (x != width - 1 && contours_khalimsky(y, x + 1) != invalid_index && !processed(y, x + 1)) {
+                            explore_contour_part(y, x + 1, WEST);
+                            if(first){
+                                add_contour_parts_to_polyline(polyline, true);
+                                first = false;
+                            }else{
+                                add_contour_parts_to_polyline(polyline);
+                            }
+                        }
+                        if (y != 0 && contours_khalimsky(y - 1, x) != invalid_index && !processed(y - 1, x)) {
+                            explore_contour_part(y - 1, x, SOUTH);
+                            if(first){
+                                add_contour_parts_to_polyline(polyline, true);
+                                first = false;
+                            }else{
+                                add_contour_parts_to_polyline(polyline);
+                            }
+                        }
+                        if (y != height - 1 && contours_khalimsky(y + 1, x) != invalid_index && !processed(y + 1, x)) {
+                            explore_contour_part(y + 1, x, NORTH);
+                            if(first){
+                                add_contour_parts_to_polyline(polyline, true);
+                                first = false;
+                            }else{
+                                add_contour_parts_to_polyline(polyline);
+                            }
+                        }
                     }
-                    if (x != width - 1 && contours_khalimsky(y, x + 1) != invalid_index && !processed(y, x + 1)) {
-                        explore_contour_part(y, x + 1, WEST);
-                    }
-                    if (y != 0 && contours_khalimsky(y - 1, x) != invalid_index && !processed(y - 1, x)) {
-                        explore_contour_part(y - 1, x, SOUTH);
-                    }
-                    if (y != height - 1 && contours_khalimsky(y + 1, x) != invalid_index && !processed(y + 1, x)) {
-                        explore_contour_part(y + 1, x, NORTH);
-                    }
+
 
                 }
             }

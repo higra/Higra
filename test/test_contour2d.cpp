@@ -103,6 +103,33 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
         BOOST_CHECK(is_in_bijection(ref, contours_khalimsky));
     }
 
+    BOOST_AUTO_TEST_CASE(fit_contour_2d_no_intersection) {
+
+        std::array<size_t, 2> shape{5, 5};
+        auto g = get_4_adjacency_graph(shape);
+
+        xt::xarray<int> data = xt::zeros<int>({40});
+        data(14) = 1;
+        data(20) = 1;
+        data(22) = 1;
+        data(23) = 1;
+
+        xt::xarray<int> ref{{0, 0, 0, 0, 0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 1, 0, 0, 0, 0},
+                            {0, 0, 0, 1, 0, 2, 0, 0, 0},
+                            {0, 0, 0, 0, 2, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0, 0, 0, 0, 0}};
+
+        auto contours = fit_contour_2d(g, shape, data);
+        auto contours_khalimsky = contour_2_khalimsky(g, shape, contours);
+
+        BOOST_CHECK(is_in_bijection(ref, contours_khalimsky));
+    }
+
     BOOST_AUTO_TEST_CASE(fit_contour_2d_more_complex) {
 
         std::array<size_t, 2> shape{4, 5};
