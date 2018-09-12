@@ -189,23 +189,21 @@ namespace hg {
             }
 
             /**
-             * Subdivide teh line such that the distance between the line
+             * Subdivide the line such that the distance between the line
              * joining the extremities of the contour segment and each of its elements is lower than the threshold (
-             * Ramer–Douglas–Peucker algorithm)
+             * Ramer–Douglas–Peucker algorithm) aor smaller than the minimal specified size.
              *
              * The threshold is equal to
              *  - epsilon if relative_epsilon is false
              *  - epsilon times the distance between the segment extremities if relative_epsilon is true
              *
-             * If the distance between the segment extremities is smaller than minSize, the segment is never subdivided.
-             *
              * @param epsilon
              * @param relative_epsilon
              * @param minSize
              */
-            void subdivide(double epsilon = 0.05,
+            void subdivide(double epsilon = 0.1,
                            bool relative_epsilon = true,
-                           int minSize = 2) {
+                           int min_size = 2) {
 
                 // stack elements are the portions of the segment that have to be checked for subdivision
                 stackv<std::pair<index_t, index_t>> stack;
@@ -236,10 +234,6 @@ namespace hg {
 
                         auto norm_segment = segment.norm();
 
-                        // segment to small to be subdivided
-                        if (norm_segment <= minSize)
-                            continue;
-
                         double distance_threshold;
                         if (relative_epsilon) {
                             distance_threshold = epsilon * norm_segment;
@@ -253,7 +247,7 @@ namespace hg {
                         for (index_t i = first_element + 1; i < last_element; i++) {
                             auto &coordinate_element = m_contour_points[i];
                             auto d = segment.distance_to_point(coordinate_element);
-                            if (d >= max_distance) {
+                            if (d >= max_distance && d > min_size) {
                                 max_distance = d;
                                 max_distance_element = i;
                             }
@@ -351,26 +345,24 @@ namespace hg {
             /**
              * Subdivide each polyline of the given contours such that the distance between the line
              * joining the extremities of the contour segment and each of its elements is lower than the threshold (
-             * Ramer–Douglas–Peucker algorithm)
+             * Ramer–Douglas–Peucker algorithm) or smaller than the minimal specified size
              *
              * The threshold is equal to
              *  - epsilon if relative_epsilon is false
              *  - epsilon times the distance between the segment extremities if relative_epsilon is true
              *
-             * If the distance between the segment extremities is smaller than minSize, the segment is never subdivided.
-             *
              * Implementation note: simply call subdivide on each polyline of the contour.
              *
              * @param epsilon
              * @param relative_epsilon
-             * @param minSize
+             * @param min_size
              */
             void subdivide(
-                    double epsilon = 0.05,
+                    double epsilon = 0.1,
                     bool relative_epsilon = true,
-                    int minSize = 2) {
+                    int min_size = 2) {
                 for (auto &polyline: m_polyline_contours) {
-                    polyline.subdivide(epsilon, relative_epsilon, minSize);
+                    polyline.subdivide(epsilon, relative_epsilon, min_size);
                 }
             };
 
