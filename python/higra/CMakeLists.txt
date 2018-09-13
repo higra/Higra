@@ -42,6 +42,7 @@ set(MODULE_FILES
         graph_image.py
         graph_weights.py
         hierarchy_core.py
+        image_utils.py
         pink_io.py
         rag.py
         tree_attributes.py
