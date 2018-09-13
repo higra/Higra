@@ -25,8 +25,20 @@ def weight_graph(graph, vertex_weights, weight_function):
     :param weight_function: in WeightFunction enumeration
     :return: edge_weights
     """
-    assert vertex_weights.shape[0] == graph.num_vertices(), \
-        "The size of vertex_weights must be equal to the number of vertices of the graph."
+
+    shape = vertex_weights.shape
+    num_vertices = graph.num_vertices()
+    collapse = 0
+    curSize = shape[0]
+    while curSize < num_vertices:
+        collapse += 1
+        curSize *= shape[collapse]
+
+    assert curSize == num_vertices, \
+        "The shape of vertex_weights is not compatible with the number of vertices of the graph."
+
+    if collapse != 0:
+        vertex_weights = vertex_weights.reshape([num_vertices] + [shape[i] for i in range(collapse + 1, len(shape))])
 
     edge_weights = hg._weight_graph(graph, vertex_weights, weight_function)
     hg.set_attribute(graph, "vertex_weights", vertex_weights)

@@ -11,6 +11,7 @@
 import higra as hg
 import numpy as np
 
+
 def triangular_filter(image, size):
     """
     Compute a triangular filter on the given 2d image.
@@ -48,3 +49,33 @@ def gradient_orientation(gradient_image, scale=4):
     dyy, dxy = np.gradient(dy)
     angle = np.mod(np.arctan2(dyy * np.sign(-dxy), dxx), np.pi)
     return angle
+
+
+@hg.data_consumer("shape", "edge_weights")
+def mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations=None):
+    """
+    Compute the mean pb hierarchy as described in :
+        P. Arbelaez, M. Maire, C. Fowlkes and J. Malik, "Contour Detection and Hierarchical Image Segmentation,"
+        in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 33, no. 5, pp. 898-916, May 2011.
+        doi: 10.1109/TPAMI.2010.161
+
+    This does not include gradient estimation.
+
+    :param graph: must be a 4 adjacency graph
+    :param shape: (height, width)
+    :param edge_weights: gradient value on edges
+    :param edge_orientations: estimates orientation of the gradient on edges
+    :return: the hierarchy defined on the gradient watershed super-pixels
+    """
+
+    rag, vertex_map, edge_map, tree, altitudes = hg._mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations)
+
+
+    hg.set_attribute(rag, "vertex_map", vertex_map)
+    hg.set_attribute(rag, "edge_map", edge_map)
+    hg.set_attribute(rag, "pre_graph", graph)
+
+    hg.set_attribute(tree, "leaf_graph", rag)
+    hg.set_attribute(tree, "altitudes", altitudes)
+
+    return tree

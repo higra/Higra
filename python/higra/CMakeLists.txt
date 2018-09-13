@@ -25,6 +25,7 @@ set(PYMODULE_COMPONENTS
         cpp/py_graph_image.cpp
         cpp/py_graph_weights.cpp
         cpp/py_hierarchy_core.cpp
+        cpp/py_hierarchy_mean_pb.cpp
         cpp/py_lca_fast.cpp
         cpp/py_log.cpp
         cpp/py_pink_io.cpp

@@ -18,6 +18,7 @@
 #include "cpp/py_graph_weights.hpp"
 #include "cpp/py_graph_image.hpp"
 #include "cpp/py_hierarchy_core.hpp"
+#include "cpp/py_hierarchy_mean_pb.hpp"
 #include "cpp/py_lca_fast.hpp"
 #include "cpp/py_log.hpp"
 #include "cpp/py_pink_io.hpp"
@@ -58,6 +59,7 @@ PYBIND11_MODULE(higram, m) {
     py_init_graph_image(m);
     py_init_graph_weights(m);
     py_init_hierarchy_core(m);
+    py_init_hierarchy_mean_pb(m);
     py_init_lca_fast(m);
     py_init_log(m);
     py_init_pink_io(m);
