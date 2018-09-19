@@ -19,6 +19,7 @@ if (DO_TEST)
             test_algo_tree.cpp
             test_binary_partition_tree.cpp
             test_contour2d.cpp
+            test_cut.cpp
             test_embedding.cpp
             test_fibonacci_heap.cpp
             test_graph_image.cpp

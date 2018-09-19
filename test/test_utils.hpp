@@ -74,7 +74,7 @@ bool is_in_bijection(const xt::xexpression<T1> & a, const xt::xexpression<T2> & 
     std::map<vt1, vt2> equiv1;
     std::map<vt2, vt1> equiv2;
 
-    for(long i = 0; i < aa.size(); i++){
+    for(long i = 0; i < (long)aa.size(); i++){
         auto v1 = aa[i];
         auto v2 = bb[i];
         if (equiv1.count(v1) != 0){
