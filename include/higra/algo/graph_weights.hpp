@@ -41,7 +41,7 @@ namespace hg {
      * @param fun
      * @return an array of weights
      */
-    template<typename graph_t, typename result_value_t=double>
+    template<typename result_value_t=double, typename graph_t>
     auto weight_graph(const graph_t &graph, const std::function<result_value_t(
             typename graph_t::vertex_descriptor,
             typename graph_t::vertex_descriptor)> &fun) {
@@ -66,7 +66,7 @@ namespace hg {
      * @param weight
      * @return
      */
-    template<typename graph_t, typename T, typename result_value_t=double>
+    template<typename result_value_t=double, typename graph_t, typename T>
     auto weight_graph(const graph_t &graph, const xt::xexpression<T> &xvertex_weights, weight_functions weight) {
         HG_TRACE();
         using vertex_t = typename graph_t::vertex_descriptor;
