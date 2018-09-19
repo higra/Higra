@@ -10,7 +10,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include "test_utils.hpp"
-#include "higra/algo/cut.hpp"
+#include "higra/algo/graph_core.hpp"
 #include "higra/utils.hpp"
 #include "higra/image/graph_image.hpp"
 
