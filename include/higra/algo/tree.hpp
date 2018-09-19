@@ -13,8 +13,32 @@
 #include "xtensor/xgenerator.hpp"
 #include "xtensor/xeval.hpp"
 #include "../structure/tree_graph.hpp"
+#include "../accumulator/tree_accumulator.hpp"
 
 namespace hg {
+
+    /**
+     * Each leaf of the tree takes the weight of its closest non deleted ancestor.
+     *
+     * @tparam tree_t
+     * @tparam T1
+     * @tparam T2
+     * @param tree
+     * @param altitudes
+     * @param deleted_nodes
+     * @return
+     */
+    template<typename tree_t,
+            typename T1,
+            typename T2>
+    auto reconstruct_leaf_data(const tree_t &tree,
+                               const xt::xexpression<T1> &altitudes,
+                               const xt::xexpression<T2> &deleted_nodes) {
+        auto reconstruction = propagate_sequential(tree,
+                                                   altitudes,
+                                                   deleted_nodes);
+        return xt::eval(xt::strided_view(reconstruction, {xt::range(0, num_leaves(tree)), xt::ellipsis()}));
+    };
 
     /**
      * Test if 2 trees are isomorph assuming that they share the same leaves.

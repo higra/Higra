@@ -18,6 +18,38 @@ using namespace hg;
 
 BOOST_AUTO_TEST_SUITE(algo_tree);
 
+    struct _data {
+
+        hg::tree t;
+
+        _data() : t(xt::xarray<long>{5, 5, 6, 6, 6, 7, 7, 7}) {
+        }
+
+    } data;
+
+    BOOST_AUTO_TEST_CASE(test_reconstruct_leaf_data) {
+
+            auto tree = data.t;
+            array_2d<int> input{{1, 8},
+                                {2, 7},
+                                {3, 6},
+                                {4, 5},
+                                {5, 4},
+                                {6, 3},
+                                {7, 2},
+                                {8, 1}};
+
+            array_1d<bool> condition{true, false, true, false, true, true, false, false};
+
+            auto output = reconstruct_leaf_data(tree, input, condition);
+            array_2d<int> ref{{8, 1},
+                               {2, 7},
+                               {7, 2},
+                               {4, 5},
+                               {7, 2}};
+            BOOST_CHECK(xt::allclose(ref, output));
+
+    }
 
     BOOST_AUTO_TEST_CASE(tree_isomorphism) {
 
