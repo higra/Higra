@@ -11,6 +11,7 @@
 #pragma once
 
 #include "../graph.hpp"
+#include "../algo/graph_weights.hpp"
 
 namespace hg {
 
@@ -65,7 +66,30 @@ namespace hg {
         return labels;
     };
 
+    /**
+     * Determine the graph cut that corresponds to a given labeling
+     * of the graph vertices.
+     * The result is a weighting of the graph edges where edges with
+     * a non zero weight are part of the cut.
+     *
+     * @tparam graph_t
+     * @tparam T
+     * @param graph
+     * @param xvertex_labels
+     * @return
+     */
+    template< typename graph_t,
+            typename T>
+    auto labelisation_2_graph_cut(const graph_t & graph,
+                                  const xt::xexpression<T> & xvertex_labels){
+        HG_TRACE();
+        auto & vertex_labels = xvertex_labels.derived_cast();
+        hg_assert(vertex_labels.dimension() == 1, "Vertex labels must be scalar.");
+        hg_assert(num_vertices(graph) == vertex_labels.size(),
+                  "Vertex labels size does not match graph number of vertices.");
 
+        return weight_graph<char>(graph, vertex_labels, weight_functions::L0);
+    };
 
 
 }
