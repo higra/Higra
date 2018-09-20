@@ -19,7 +19,8 @@ __all__.append("__data_providers")
 globals()["__higra_global_cache"] = None
 __all__.append("__higra_global_cache")
 
-for loader, name, is_pkg in pkgutil.walk_packages(__path__):
+
+def __import_module(loader, name):
     if name not in sys.modules:
         module = loader.find_module(name).load_module(name)
 
@@ -30,8 +31,22 @@ for loader, name, is_pkg in pkgutil.walk_packages(__path__):
             globals()[name] = value
             __all__.append(name)
 
+modules = {}
+for loader, name, is_pkg in pkgutil.walk_packages(__path__):
+    modules[name] = loader
+
+# list of modules that have to be loaded before the others
+# (required for correct file parsing, eg. defining top level decorators)
+pre_load = ("data_cache",)
+
+for name in pre_load:
+    __import_module(modules[name], name)
+    del modules[name]
+
 _data_cache__init()
 
+for name in modules:
+    __import_module(modules[name], name)
 
 def __logger_printer(m):
     print(m)
