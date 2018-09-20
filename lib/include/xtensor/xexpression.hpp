@@ -24,7 +24,7 @@
 namespace xt
 {
 
-    template<class E>
+    template <class E>
     class xshared_expression;
 
     /***************************
@@ -102,21 +102,30 @@ namespace xt
     }
     //@}
 
+    /* is_crtp_base_of<B, E>
+    * Resembles std::is_base_of, but adresses the problem of whether _some_ instatntiation
+    * of a CRTP templated class B is a base of class E. A CRTP templated class is correctly
+    * templated with the most derived type in the CRTP hierarchy. Using this assumption,
+    * this implementation deals with either CRTP final classes (checks for inheritance
+    * with E as the CRTP parameter of B) or CRTP base classes (which are singly templated
+    * by the most derived class, and that's pulled out to use as a templete parameter for B).
+    */
+
     namespace detail
     {
-        template <class E>
-        struct is_xexpression_impl : std::is_base_of<xexpression<std::decay_t<E>>, std::decay_t<E>>
-        {
-        };
+        template <template <class> class B, class E>
+        struct is_crtp_base_of_impl : std::is_base_of<B<E>, E> {};
 
-        template <class E>
-        struct is_xexpression_impl<xexpression<E>> : std::true_type
-        {
-        };
+        template <template <class> class B, class E, template <class> class F>
+        struct is_crtp_base_of_impl<B, F<E>> :
+        xtl::disjunction< std::is_base_of<B<E>, F<E>>, std::is_base_of<B<F<E>>, F<E>>> {};
     }
 
+    template <template <class> class B, class E>
+    using is_crtp_base_of = detail::is_crtp_base_of_impl<B, std::decay_t<E>>;
+
     template <class E>
-    using is_xexpression = detail::is_xexpression_impl<E>;
+    using is_xexpression = is_crtp_base_of<xexpression, E>;
 
     template <class E, class R = void>
     using enable_xexpression = typename std::enable_if<is_xexpression<E>::value, R>::type;
@@ -140,8 +149,9 @@ namespace xt
         using type = xtl::closure_type_t<E>;
     };
 
-    template<class E>
-    struct xclosure<xshared_expression<E>, std::enable_if_t<true>> {
+    template <class E>
+    struct xclosure<xshared_expression<E>, std::enable_if_t<true>>
+    {
         using type = xshared_expression<E>; // force copy
     };
 
@@ -166,8 +176,9 @@ namespace xt
         using type = xscalar<xtl::const_closure_type_t<E>>;
     };
 
-    template<class E>
-    struct const_xclosure<xshared_expression<E> &, std::enable_if_t<true>> {
+    template <class E>
+    struct const_xclosure<xshared_expression<E>&, std::enable_if_t<true>>
+    {
         using type = xshared_expression<E>; // force copy
     };
 
@@ -325,25 +336,36 @@ namespace xt
         return m_ptr->name();                  \
     }
 
-    namespace detail {
-        template<class E>
-        struct expr_strides_type {
+    namespace detail
+    {
+        template <class E>
+        struct expr_strides_type
+        {
             using type = typename E::strides_type;
         };
 
-        template<class E>
-        struct expr_inner_strides_type {
+        template <class E>
+        struct expr_inner_strides_type
+        {
             using type = typename E::inner_strides_type;
         };
 
-        template<class E>
-        struct expr_backstrides_type {
+        template <class E>
+        struct expr_backstrides_type
+        {
             using type = typename E::backstrides_type;
         };
 
-        template<class E>
-        struct expr_inner_backstrides_type {
+        template <class E>
+        struct expr_inner_backstrides_type
+        {
             using type = typename E::inner_backstrides_type;
+        };
+
+        template <class E>
+        struct expr_storage_type
+        {
+            using type = typename E::storage_type;
         };
     }
 
@@ -372,9 +394,10 @@ namespace xt
      * }
      * \endcode
      */
-    template<class E>
+    template <class E>
     class xshared_expression
-            : public xexpression<xshared_expression<E>> {
+        : public xexpression<xshared_expression<E>>
+    {
     public:
 
         using base_class = xexpression<xshared_expression<E>>;
@@ -391,17 +414,20 @@ namespace xt
         using shape_type = typename E::shape_type;
 
         using strides_type = xtl::mpl::eval_if_t<has_strides<E>,
-                detail::expr_strides_type<E>,
-                get_strides_type<shape_type>>;
+                                                 detail::expr_strides_type<E>,
+                                                 get_strides_type<shape_type>>;
         using backstrides_type = xtl::mpl::eval_if_t<has_strides<E>,
-                detail::expr_backstrides_type<E>,
-                get_strides_type<shape_type>>;
+                                                     detail::expr_backstrides_type<E>,
+                                                     get_strides_type<shape_type>>;
         using inner_strides_type = xtl::mpl::eval_if_t<has_strides<E>,
-                detail::expr_inner_strides_type<E>,
-                get_strides_type<shape_type>>;
+                                                       detail::expr_inner_strides_type<E>,
+                                                       get_strides_type<shape_type>>;
         using inner_backstrides_type = xtl::mpl::eval_if_t<has_strides<E>,
-                detail::expr_inner_backstrides_type<E>,
-                get_strides_type<shape_type>>;
+                                                           detail::expr_inner_backstrides_type<E>,
+                                                           get_strides_type<shape_type>>;
+        using storage_type = xtl::mpl::eval_if_t<has_data_interface<E>,
+                                                 detail::expr_storage_type<E>,
+                                                 make_invalid_type<>>;
 
         using stepper = typename E::stepper;
         using const_stepper = typename E::const_stepper;
@@ -412,120 +438,123 @@ namespace xt
         static constexpr layout_type static_layout = E::static_layout;
         static constexpr bool contiguous_layout = static_layout != layout_type::dynamic;
 
-        explicit xshared_expression(std::shared_ptr<E> &&ptr);
-
+        explicit xshared_expression(std::shared_ptr<E>&& ptr);
         long use_count() const noexcept;
 
-        template<class... Args>
+        template <class... Args>
         auto operator()(Args... args)
-        -> decltype(std::declval<E>()(args...)) {
+            -> decltype(std::declval<E>()(args...))
+        {
             return m_ptr->operator()(args...);
         }
 
         XTENSOR_FORWARD_METHOD(shape);
-
         XTENSOR_FORWARD_METHOD(dimension);
-
         XTENSOR_FORWARD_METHOD(size);
-
         XTENSOR_FORWARD_METHOD(begin);
-
         XTENSOR_FORWARD_METHOD(cbegin);
-
         XTENSOR_FORWARD_METHOD(storage_begin);
-
         XTENSOR_FORWARD_METHOD(storage_cbegin);
-
         XTENSOR_FORWARD_METHOD(storage_end);
-
         XTENSOR_FORWARD_METHOD(storage_cend);
-
         XTENSOR_FORWARD_METHOD(layout);
 
-        template<class T = E>
-        std::enable_if_t<has_strides<T>::value, const inner_strides_type &>
-        strides() const {
+        template <class T = E>
+        std::enable_if_t<has_strides<T>::value, const inner_strides_type&>
+        strides() const
+        {
             return m_ptr->strides();
         }
 
-        template<class T = E>
-        std::enable_if_t<has_strides<T>::value, const inner_strides_type &>
-        backstrides() const {
+        template <class T = E>
+        std::enable_if_t<has_strides<T>::value, const inner_strides_type&>
+        backstrides() const
+        {
             return m_ptr->backstrides();
         }
 
-        template<class T = E>
+        template <class T = E>
         std::enable_if_t<has_data_interface<T>::value, pointer>
-        data() noexcept {
+        data() noexcept
+        {
             return m_ptr->data();
         }
 
-        template<class T = E>
+        template <class T = E>
         std::enable_if_t<has_data_interface<T>::value, pointer>
-        data() const noexcept {
+        data() const noexcept
+        {
             return m_ptr->data();
         }
 
-        template<class T = E>
+        template <class T = E>
         std::enable_if_t<has_data_interface<T>::value, size_type>
-        data_offset() const noexcept {
+        data_offset() const noexcept
+        {
             return m_ptr->data_offset();
         }
 
-        template<class T = E>
-        std::enable_if_t<has_data_interface<T>::value, typename T::storage_type &>
-        storage() noexcept {
+        template <class T = E>
+        std::enable_if_t<has_data_interface<T>::value, typename T::storage_type&>
+        storage() noexcept
+        {
             return m_ptr->storage();
         }
 
-        template<class T = E>
-        std::enable_if_t<has_data_interface<T>::value, const typename T::storage_type &>
-        storage() const noexcept {
+        template <class T = E>
+        std::enable_if_t<has_data_interface<T>::value, const typename T::storage_type&>
+        storage() const noexcept
+        {
             return m_ptr->storage();
         }
 
-        template<class It>
+        template <class It>
         auto element(It first, It last) {
             return m_ptr->element(first, last);
         }
 
-        template<class It>
+        template <class It>
         auto element(It first, It last) const {
             return m_ptr->element(first, last);
         }
 
-        template<class S>
-        bool broadcast_shape(S &shape, bool reuse_cache = false) const {
+        template <class S>
+        bool broadcast_shape(S& shape, bool reuse_cache = false) const
+        {
             return m_ptr->broadcast_shape(shape, reuse_cache);
         }
 
-        template<class S>
-        bool is_trivial_broadcast(const S &strides) const noexcept {
+        template <class S>
+        bool is_trivial_broadcast(const S& strides) const noexcept
+        {
             return m_ptr->is_trivial_broadcast(strides);
         }
 
-        template<class S>
-        auto stepper_begin(const S &shape) noexcept
-        -> decltype(std::declval<E>().stepper_begin(shape)) {
+        template <class S>
+        auto stepper_begin(const S& shape) noexcept
+            -> decltype(std::declval<E>().stepper_begin(shape))
+        {
             return m_ptr->stepper_begin(shape);
         }
 
-        template<class S>
-        auto stepper_end(const S &shape, layout_type l) noexcept
-        -> decltype(std::declval<E>().stepper_end(shape, l)) {
+        template <class S>
+        auto stepper_end(const S& shape, layout_type l) noexcept
+            -> decltype(std::declval<E>().stepper_end(shape, l))
+        {
             return m_ptr->stepper_end(shape, l);
         }
 
-        template<class S>
-        auto stepper_begin(const S &shape) const noexcept
-        -> decltype(std::declval<const E>().stepper_begin(shape)) {
-            return static_cast<const E *>(m_ptr.get())->stepper_begin(shape);
+        template <class S>
+        auto stepper_begin(const S& shape) const noexcept
+            -> decltype(std::declval<const E>().stepper_begin(shape))
+        {
+            return static_cast<const E*>(m_ptr.get())->stepper_begin(shape);
         }
-
-        template<class S>
-        auto stepper_end(const S &shape, layout_type l) const noexcept
-        -> decltype(std::declval<const E>().stepper_end(shape, l)) {
-            return static_cast<const E *>(m_ptr.get())->stepper_end(shape, l);
+        template <class S>
+        auto stepper_end(const S& shape, layout_type l) const noexcept
+            -> decltype(std::declval<const E>().stepper_end(shape, l))
+        {
+            return static_cast<const E*>(m_ptr.get())->stepper_end(shape, l);
         }
 
     private:
@@ -540,17 +569,19 @@ namespace xt
      * @param ptr shared ptr that contains the expression
      * @sa make_xshared
      */
-    template<class E>
-    inline xshared_expression<E>::xshared_expression(std::shared_ptr<E> &&ptr)
-            : m_ptr(std::move(ptr)) {
+    template <class E>
+    inline xshared_expression<E>::xshared_expression(std::shared_ptr<E>&& ptr)
+        : m_ptr(std::move(ptr))
+    {
     }
 
     /**
      * Return the number of times this expression is referenced.
      * Internally calls the use_count() function of the std::shared_ptr.
      */
-    template<class E>
-    inline long xshared_expression<E>::use_count() const noexcept {
+    template <class E>
+    inline long xshared_expression<E>::use_count() const noexcept
+    {
         return m_ptr.use_count();
     }
 
@@ -560,8 +591,9 @@ namespace xt
      * @param expr rvalue expression that will be shared
      * @return xshared expression
      */
-    template<class E>
-    auto make_xshared(xexpression<E> &&expr) {
+    template <class E>
+    auto make_xshared(xexpression<E>&& expr)
+    {
         return xshared_expression<E>(std::make_shared<E>(std::move(expr).derived_cast()));
     }
 

@@ -31,8 +31,8 @@ namespace xt
     {
         using storage_type = EC;
         using shape_type = std::array<typename storage_type::size_type, N>;
-    using strides_type = get_strides_t<shape_type>;
-    using backstrides_type = get_strides_t<shape_type>;
+        using strides_type = get_strides_t<shape_type>;
+        using backstrides_type = get_strides_t<shape_type>;
         using inner_shape_type = shape_type;
         using inner_strides_type = strides_type;
         using inner_backstrides_type = backstrides_type;
@@ -60,7 +60,7 @@ namespace xt
      * @tparam Tag The expression tag.
      * @sa xtensor
      */
-    template <class EC, size_t N, layout_type L, class Tag>
+    template <class EC, std::size_t N, layout_type L, class Tag>
     class xtensor_container : public xstrided_container<xtensor_container<EC, N, L, Tag>>,
                               public xcontainer_semantic<xtensor_container<EC, N, L, Tag>>
     {
@@ -80,6 +80,7 @@ namespace xt
         using inner_shape_type = typename base_type::inner_shape_type;
         using strides_type = typename base_type::strides_type;
         using backstrides_type = typename base_type::backstrides_type;
+        using inner_backstrides_type = typename base_type::inner_backstrides_type;
         using inner_strides_type = typename base_type::inner_strides_type;
         using temporary_type = typename semantic_base::temporary_type;
         using expression_tag = Tag;
@@ -102,6 +103,11 @@ namespace xt
 
         xtensor_container(xtensor_container&&) = default;
         xtensor_container& operator=(xtensor_container&&) = default;
+
+        template <class SC>
+        explicit xtensor_container(xarray_container<EC, L, SC, Tag>&&);
+        template <class SC>
+        xtensor_container& operator=(xarray_container<EC, L, SC, Tag>&&);
 
         template <class E>
         xtensor_container(const xexpression<E>& e);
@@ -128,8 +134,8 @@ namespace xt
     {
         using storage_type = std::remove_reference_t<EC>;
         using shape_type = std::array<typename storage_type::size_type, N>;
-using strides_type = get_strides_t<shape_type>;
-using backstrides_type = get_strides_t<shape_type>;
+        using strides_type = get_strides_t<shape_type>;
+        using backstrides_type = get_strides_t<shape_type>;
         using inner_shape_type = shape_type;
         using inner_strides_type = strides_type;
         using inner_backstrides_type = backstrides_type;
@@ -221,7 +227,7 @@ using backstrides_type = get_strides_t<shape_type>;
      */
     template <class EC, std::size_t N, layout_type L, class Tag>
     inline xtensor_container<EC, N, L, Tag>::xtensor_container()
-        : base_type(), m_storage(1, value_type())
+        : base_type(), m_storage(N == 0 ? 1 : 0, value_type())
     {
     }
 
@@ -305,13 +311,35 @@ using backstrides_type = get_strides_t<shape_type>;
     }
 
     template <class EC, std::size_t N, layout_type L, class Tag>
+    template <class SC>
+    inline xtensor_container<EC, N, L, Tag>::xtensor_container(xarray_container<EC, L, SC, Tag>&& rhs)
+        : base_type(xtl::forward_sequence<inner_shape_type>(rhs.shape()),
+                    xtl::forward_sequence<inner_strides_type>(rhs.strides()),
+                    xtl::forward_sequence<inner_backstrides_type>(rhs.backstrides()),
+                    std::move(rhs.layout())),
+          m_storage(std::move(rhs.storage()))
+    {
+    }
+
+    template <class EC, std::size_t N, layout_type L, class Tag>
+    template <class SC>
+    inline xtensor_container<EC, N, L, Tag>& xtensor_container<EC, N, L, Tag>::operator=(xarray_container<EC, L, SC, Tag>&& rhs)
+    {
+        XTENSOR_ASSERT_MSG(N == rhs.dimension(), "Cannot change dimension of xtensor.");
+        std::copy(rhs.shape().begin(), rhs.shape().end(), this->shape_impl().begin());
+        std::copy(rhs.strides().cbegin(), rhs.strides().cend(), this->strides_impl().begin());
+        std::copy(rhs.backstrides().cbegin(), rhs.backstrides().cend(), this->backstrides_impl().begin());
+        this->mutable_layout() = std::move(rhs.layout());
+        m_storage = std::move(std::move(rhs.storage()));
+        return *this;
+    }
+
+
+    template <class EC, std::size_t N, layout_type L, class Tag>
     template <class S>
     inline xtensor_container<EC, N, L, Tag> xtensor_container<EC, N, L, Tag>::from_shape(S&& s)
     {
-        if (s.size() != N)
-        {
-            throw std::runtime_error("Cannot change dimension of xtensor.");
-        }
+        XTENSOR_ASSERT_MSG(s.size() == N, "Cannot change dimension of xtensor.");
         shape_type shape = xtl::forward_sequence<shape_type>(s);
         return self_type(shape);
     }
@@ -329,11 +357,10 @@ using backstrides_type = get_strides_t<shape_type>;
     inline xtensor_container<EC, N, L, Tag>::xtensor_container(const xexpression<E>& e)
         : base_type()
     {
+        XTENSOR_ASSERT_MSG(N == e.derived_cast().dimension(), "Cannot change dimension of xtensor.");
         // Avoids unintialized data because of (m_shape == shape) condition
-        // in resize (called by assign), which is always true when size() == 1.
-        // The condition dimension() == 0 as in xarray is not sufficient because
-        // the shape is always initialized since it has a static number of dimensions.
-        if (e.derived_cast().size() == 1)
+        // in resize (called by assign), which is always true when dimension() == 0.
+        if (e.derived_cast().dimension() == 0)
         {
             detail::resize_data_container(m_storage, std::size_t(1));
         }

@@ -39,7 +39,7 @@ endmacro()
 
 ####################################################################################
 
-set(PN xtensor-python)
-set_and_check(${PN}_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include")
-set(${PN}_LIBRARY "")
-check_required_components(${PN})
+if(NOT TARGET xtensor-python)
+  include("${CMAKE_CURRENT_LIST_DIR}/xtensor-pythonTargets.cmake")
+  get_target_property(xtensor-python_INCLUDE_DIRS xtensor-python INTERFACE_INCLUDE_DIRECTORIES)
+endif()

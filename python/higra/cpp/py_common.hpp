@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #pragma once
-
+#include "xtl/xmeta_utils.hpp"
 #include "pybind11/stl.h"
 #include "pybind11/functional.h"
 #include "higra/utils.hpp"

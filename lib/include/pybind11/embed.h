@@ -68,22 +68,21 @@ NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 NAMESPACE_BEGIN(detail)
 
 /// Python 2.7/3.x compatible version of `PyImport_AppendInittab` and error checks.
-    struct embedded_module {
+struct embedded_module {
 #if PY_MAJOR_VERSION >= 3
-        using init_t = PyObject *(*)();
+    using init_t = PyObject *(*)();
 #else
-        using init_t = void (*)();
+    using init_t = void (*)();
 #endif
+    embedded_module(const char *name, init_t init) {
+        if (Py_IsInitialized())
+            pybind11_fail("Can't add new modules after the interpreter has been initialized");
 
-        embedded_module(const char *name, init_t init) {
-            if (Py_IsInitialized())
-                pybind11_fail("Can't add new modules after the interpreter has been initialized");
-
-            auto result = PyImport_AppendInittab(name, init);
-            if (result == -1)
-                pybind11_fail("Insufficient memory to add a new module");
-        }
-    };
+        auto result = PyImport_AppendInittab(name, init);
+        if (result == -1)
+            pybind11_fail("Insufficient memory to add a new module");
+    }
+};
 
 NAMESPACE_END(detail)
 
@@ -94,15 +93,15 @@ NAMESPACE_END(detail)
     Python documentation for details). Calling this function again after the interpreter
     has already been initialized is a fatal error.
  \endrst */
-    inline void initialize_interpreter(bool init_signal_handlers = true) {
-        if (Py_IsInitialized())
-            pybind11_fail("The interpreter is already running");
+inline void initialize_interpreter(bool init_signal_handlers = true) {
+    if (Py_IsInitialized())
+        pybind11_fail("The interpreter is already running");
 
-        Py_InitializeEx(init_signal_handlers ? 1 : 0);
+    Py_InitializeEx(init_signal_handlers ? 1 : 0);
 
-        // Make .py files in the working directory available by default
-        module::import("sys").attr("path").cast<list>().append(".");
-    }
+    // Make .py files in the working directory available by default
+    module::import("sys").attr("path").cast<list>().append(".");
+}
 
 /** \rst
     Shut down the Python interpreter. No pybind11 or CPython API functions can be called
@@ -139,25 +138,25 @@ NAMESPACE_END(detail)
         freed, either due to reference cycles or user-created global data.
 
  \endrst */
-    inline void finalize_interpreter() {
-        handle builtins(PyEval_GetBuiltins());
-        const char *id = PYBIND11_INTERNALS_ID;
+inline void finalize_interpreter() {
+    handle builtins(PyEval_GetBuiltins());
+    const char *id = PYBIND11_INTERNALS_ID;
 
-        // Get the internals pointer (without creating it if it doesn't exist).  It's possible for the
-        // internals to be created during Py_Finalize() (e.g. if a py::capsule calls `get_internals()`
-        // during destruction), so we get the pointer-pointer here and check it after Py_Finalize().
-        detail::internals **internals_ptr_ptr = &detail::get_internals_ptr();
-        // It could also be stashed in builtins, so look there too:
-        if (builtins.contains(id) && isinstance<capsule>(builtins[id]))
-            internals_ptr_ptr = capsule(builtins[id]);
+    // Get the internals pointer (without creating it if it doesn't exist).  It's possible for the
+    // internals to be created during Py_Finalize() (e.g. if a py::capsule calls `get_internals()`
+    // during destruction), so we get the pointer-pointer here and check it after Py_Finalize().
+    detail::internals **internals_ptr_ptr = detail::get_internals_pp();
+    // It could also be stashed in builtins, so look there too:
+    if (builtins.contains(id) && isinstance<capsule>(builtins[id]))
+        internals_ptr_ptr = capsule(builtins[id]);
 
-        Py_Finalize();
+    Py_Finalize();
 
-        if (internals_ptr_ptr) {
-            delete *internals_ptr_ptr;
-            *internals_ptr_ptr = nullptr;
-        }
+    if (internals_ptr_ptr) {
+        delete *internals_ptr_ptr;
+        *internals_ptr_ptr = nullptr;
     }
+}
 
 /** \rst
     Scope guard version of `initialize_interpreter` and `finalize_interpreter`.
@@ -172,27 +171,24 @@ NAMESPACE_END(detail)
             py::print(Hello, World!);
         } // <-- interpreter shutdown
  \endrst */
-    class scoped_interpreter {
-    public:
-        scoped_interpreter(bool init_signal_handlers = true) {
-            initialize_interpreter(init_signal_handlers);
-        }
+class scoped_interpreter {
+public:
+    scoped_interpreter(bool init_signal_handlers = true) {
+        initialize_interpreter(init_signal_handlers);
+    }
 
-        scoped_interpreter(const scoped_interpreter &) = delete;
+    scoped_interpreter(const scoped_interpreter &) = delete;
+    scoped_interpreter(scoped_interpreter &&other) noexcept { other.is_valid = false; }
+    scoped_interpreter &operator=(const scoped_interpreter &) = delete;
+    scoped_interpreter &operator=(scoped_interpreter &&) = delete;
 
-        scoped_interpreter(scoped_interpreter &&other) noexcept { other.is_valid = false; }
+    ~scoped_interpreter() {
+        if (is_valid)
+            finalize_interpreter();
+    }
 
-        scoped_interpreter &operator=(const scoped_interpreter &) = delete;
-
-        scoped_interpreter &operator=(scoped_interpreter &&) = delete;
-
-        ~scoped_interpreter() {
-            if (is_valid)
-                finalize_interpreter();
-        }
-
-    private:
-        bool is_valid = true;
-    };
+private:
+    bool is_valid = true;
+};
 
 NAMESPACE_END(PYBIND11_NAMESPACE)

@@ -1,8 +1,8 @@
-prefix=/home/user/Higra/lib
+prefix=/home/perretb/Higra/lib
 libdir=${prefix}/lib
 includedir=${prefix}/include
 
 Name: xtensor
 Description: xtensor is a C++ library meant for numerical analysis with multi-dimensional array expressions.
-Version: 0.17.0
+Version: 0.17.4
 Cflags: -I${includedir}

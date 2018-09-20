@@ -97,8 +97,8 @@ namespace xt
         {
         }
 
-        template<class S, std::size_t dim, class T, class... Args>
-        inline void check_index_impl(const S &shape, T arg, Args... args)
+        template <class S, std::size_t dim, class T, class... Args>
+        inline void check_index_impl(const S& shape, T arg, Args... args)
         {
             if (sizeof...(Args) + 1 > shape.size())
             {

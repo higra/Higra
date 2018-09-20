@@ -95,8 +95,8 @@ namespace xt
     namespace detail
     {
         template <class E, class F>
-        std::ostream &xoutput(std::ostream &out, const E &e,
-                              xstrided_slice_vector &slices, F &printer, std::size_t blanks,
+        std::ostream& xoutput(std::ostream& out, const E& e,
+                              xstrided_slice_vector& slices, F& printer, std::size_t blanks,
                               std::streamsize element_width, std::size_t edgeitems, std::size_t line_width)
         {
             using size_type = typename E::size_type;
@@ -163,7 +163,7 @@ namespace xt
         }
 
         template <class F, class E>
-        static void recurser_run(F &fn, const E &e, xstrided_slice_vector &slices, std::size_t lim = 0)
+        static void recurser_run(F& fn, const E& e, xstrided_slice_vector& slices, std::size_t lim = 0)
         {
             using size_type = typename E::size_type;
             const auto view = strided_view(e, slices);
@@ -508,6 +508,7 @@ namespace xt
         template <class T>
         struct printer<T, std::enable_if_t<!std::is_fundamental<typename T::value_type>::value && !xtl::is_complex<typename T::value_type>::value>>
         {
+            using const_reference = typename T::const_reference;
             using value_type = std::decay_t<typename T::value_type>;
             using cache_type = std::vector<std::string>;
             using cache_iterator = typename cache_type::const_iterator;
@@ -533,7 +534,7 @@ namespace xt
                 return out;
             }
 
-            void update(const value_type& val)
+            void update(const_reference val)
             {
                 std::stringstream buf;
                 buf << val;
@@ -591,7 +592,7 @@ namespace xt
     {
         const E& d = e.derived_cast();
 
-        size_t lim = 0;
+        std::size_t lim = 0;
         std::size_t sz = compute_size(d.shape());
         if (sz > print_options::print_options().threshold)
         {
@@ -870,10 +871,10 @@ namespace xt
         return mime_bundle_repr_impl(expr);
     }
 
-    template <class EC, size_t N, layout_type L, class Tag>
+    template <class EC, std::size_t N, layout_type L, class Tag>
     class xtensor_container;
 
-    template <class EC, size_t N, layout_type L, class Tag>
+    template <class EC, std::size_t N, layout_type L, class Tag>
     xeus::xjson mime_bundle_repr(const xtensor_container<EC, N, L, Tag>& expr)
     {
         return mime_bundle_repr_impl(expr);
@@ -959,6 +960,29 @@ namespace xt
     {
         return mime_bundle_repr_impl(expr);
     }
+
+    template <class CTD, class CTM>
+    class xmasked_view;
+
+    template <class CTD, class CTM>
+    xeus::xjson mime_bundle_repr(const xmasked_view<CTD, CTM>& expr)
+    {
+        return mime_bundle_repr_impl(expr);
+    }
+
+    template <class T, class B>
+    class xmasked_value;
+
+    template <class T, class B>
+    xeus::xjson mime_bundle_repr(const xmasked_value<T, B>& v)
+    {
+        auto bundle = xeus::xjson::object();
+        std::stringstream tmp;
+        tmp << v;
+        bundle["text/plain"] = tmp.str();
+        return bundle;
+    }
+
 #endif
 }
 

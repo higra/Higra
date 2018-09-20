@@ -79,19 +79,27 @@ namespace xt
         void shuffle(xexpression<T>& e, E& engine = random::get_default_random_engine());
 
         template <class T, class E = random::default_engine_type>
-        xtensor<typename T::value_type, 1> choice(const xexpression <T> &e, std::size_t n, bool replace = true,
+        std::enable_if_t<std::is_integral<T>::value, xtensor<T, 1>>
+        permutation(T e, E& engine = random::get_default_random_engine());
+
+        template <class T, class E = random::default_engine_type>
+        std::enable_if_t<is_xexpression<std::decay_t<T>>::value, std::decay_t<T>>
+        permutation(T&& e, E& engine = random::get_default_random_engine());
+
+        template <class T, class E = random::default_engine_type>
+        xtensor<typename T::value_type, 1> choice(const xexpression<T>& e, std::size_t n, bool replace = true,
                                                   E& engine = random::get_default_random_engine());
     }
 
     namespace detail
     {
-        template<class T, class E, class D>
+        template <class T, class E, class D>
         struct random_impl
         {
             using value_type = T;
 
-            random_impl(E &engine, D &&dist)
-                    : m_engine(engine), m_dist(std::move(dist))
+            random_impl(E& engine, D&& dist)
+                : m_engine(engine), m_dist(std::move(dist))
             {
             }
 
@@ -107,17 +115,20 @@ namespace xt
                 return m_dist(m_engine);
             }
 
-            template<class EX>
-            inline void assign_to(xexpression <EX> &e) const noexcept {
-                auto &ed = e.derived_cast();
-                for (auto &el : ed.storage()) {
+            template <class EX>
+            inline void assign_to(xexpression<EX>& e) const noexcept
+            {
+                // Note: we're not going row/col major here
+                auto& ed = e.derived_cast();
+                for (auto& el : ed.storage())
+                {
                     el = m_dist(m_engine);
                 }
             }
 
         private:
 
-            E &m_engine;
+            E& m_engine;
             mutable D m_dist;
         };
     }
@@ -258,14 +269,24 @@ namespace xt
 
             if (de.dimension() == 1)
             {
-                std::shuffle(de.storage().begin(), de.storage().end(), engine);
+                using size_type = typename T::size_type;
+                auto first = de.begin();
+                auto last = de.end();
+
+                for (size_type i = std::size_t((last - first) - 1); i > 0; --i)
+                {
+                    std::uniform_int_distribution<size_type> dist(0, i);
+                    auto j = dist(engine);
+                    using std::swap;
+                    swap(first[i], first[j]);
+                }
             }
             else
             {
                 using size_type = typename T::size_type;
                 decltype(auto) buf = empty_like(view(de, 0));
 
-                for (std::size_t i = de.shape()[0] - 1; i > 0; --i)
+                for (size_type i = de.shape()[0] - 1; i > 0; --i)
                 {
                     std::uniform_int_distribution<size_type> dist(0, i);
                     size_type j = dist(engine);
@@ -276,6 +297,40 @@ namespace xt
                 }
             }
         }
+
+        /**
+         * Randomly permute a sequence, or return a permuted range.
+         *
+         * If the first parameter is an integer, this function creates a new
+         * ``arange(e)`` and returns it randomly permuted. Otherwise, this
+         * function creates a copy of the input, passes it to @sa shuffle and
+         * returns the result.
+         *
+         * @param e input xexpression or integer
+         * @param engine random number engine to use (optional)
+         *
+         * @return randomly permuted copy of container or arange.
+         */
+        template <class T, class E>
+        std::enable_if_t<std::is_integral<T>::value, xtensor<T, 1>>
+        permutation(T e, E& engine)
+        {
+            xt::xtensor<T, 1> res = xt::arange<T>(e);
+            shuffle(res, engine);
+            return res;
+        }
+
+        /// @cond DOXYGEN_INCLUDE_SFINAE
+        template <class T, class E>
+        std::enable_if_t<is_xexpression<std::decay_t<T>>::value, std::decay_t<T>>
+        permutation(T&& e, E& engine)
+        {
+            using copy_type = std::decay_t<T>;
+            copy_type res = e;
+            shuffle(res, engine);
+            return res;
+        }
+        /// @endcond
 
         /**
          * Randomly select n unique elements from xexpression e.
@@ -289,34 +344,44 @@ namespace xt
          * @return xtensor containing 1D container of sampled elements
          */
         template <class T, class E>
-        xtensor<typename T::value_type, 1> choice(const xexpression <T> &e, std::size_t n, bool replace, E &engine)
+        xtensor<typename T::value_type, 1> choice(const xexpression<T>& e, std::size_t n, bool replace, E& engine)
         {
             const auto& de = e.derived_cast();
-            if (de.dimension() != 1) {
+            if (de.dimension() != 1)
+            {
                 throw std::runtime_error("Sample expression must be 1 dimensional");
             }
-            if (de.size() < n && !replace) {
+            if (de.size() < n && !replace)
+            {
                 throw std::runtime_error("If replace is false, then the sample expression's size must be > n");
             }
-            xtensor<typename T::value_type, 1> result;
+            using result_type = xtensor<typename T::value_type, 1>;
+            using size_type = typename result_type::size_type;
+            result_type result;
             result.resize({n});
 
-            if (replace) {
-                auto dist = std::uniform_int_distribution<std::size_t>(0, de.size() - 1);
-                for (std::size_t i = 0; i < n; i++) {
+            if (replace)
+            {
+                auto dist = std::uniform_int_distribution<size_type>(0, de.size() - 1);
+                for (size_type i = 0; i < n; ++i)
+                {
                     result[i] = de.storage()[dist(engine)];
                 }
-            } else {
+            }
+            else
+            {
                 // Naive resevoir sampling without weighting:
                 std::copy(de.storage().begin(), de.storage().begin() + n, result.begin());
-                std::size_t i = n;
-                for (auto it = de.storage().begin() + n; it != de.storage().end(); ++it, ++i) {
-                    auto idx = std::uniform_int_distribution<std::size_t>(0, i)(engine);
-                    if (idx < n) {
+                size_type i = n;
+                for(auto it = de.storage().begin() + n; it != de.storage().end(); ++it, ++i)
+                {
+                    auto idx = std::uniform_int_distribution<size_type>(0, i)(engine);
+                    if (idx < n)
+                    {
                         result.storage()[idx] = *it;
                     }
                 }
-            } 
+            }
             return result;
         }
     }

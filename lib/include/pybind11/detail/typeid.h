@@ -44,8 +44,7 @@ PYBIND11_NOINLINE inline void clean_type_id(std::string &name) {
 NAMESPACE_END(detail)
 
 /// Return a string representation of a C++ type
-    template<typename T>
-    static std::string type_id() {
+template <typename T> static std::string type_id() {
     std::string name(typeid(T).name());
     detail::clean_type_id(name);
     return name;

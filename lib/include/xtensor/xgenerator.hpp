@@ -76,7 +76,7 @@ namespace xt
         using stepper = typename iterable_base::stepper;
         using const_stepper = typename iterable_base::const_stepper;
 
-        static constexpr layout_type static_layout = layout_type::any;
+        static constexpr layout_type static_layout = layout_type::dynamic;
         static constexpr bool contiguous_layout = false;
 
         template <class Func>
@@ -113,8 +113,8 @@ namespace xt
         template <class O>
         const_stepper stepper_end(const O& shape, layout_type) const noexcept;
 
-        template<class E, class FE = F, class = std::enable_if_t<has_assign_to<E, FE>::value>>
-        void assign_to(xexpression <E> &e) const noexcept;
+        template <class E, class FE = F, class = std::enable_if_t<has_assign_to<E, FE>::value>>
+        void assign_to(xexpression<E>& e) const noexcept;
 
     private:
 
@@ -335,9 +335,10 @@ namespace xt
         return const_stepper(this, offset, true);
     }
 
-    template<class F, class R, class S>
-    template<class E, class, class>
-    inline void xgenerator<F, R, S>::assign_to(xexpression <E> &e) const noexcept {
+    template <class F, class R, class S>
+    template <class E, class, class>
+    inline void xgenerator<F, R, S>::assign_to(xexpression<E>& e) const noexcept
+    {
         e.derived_cast().resize(m_shape);
         m_f.assign_to(e);
     }

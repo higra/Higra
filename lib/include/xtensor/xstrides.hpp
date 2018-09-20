@@ -26,26 +26,26 @@ namespace xt
      * data offset *
      ***************/
 
-    template<class offset_type, class S>
-    offset_type data_offset(const S &strides) noexcept;
+    template <class offset_type, class S>
+    offset_type data_offset(const S& strides) noexcept;
 
-    template<class offset_type, class S, class Arg, class... Args>
-    offset_type data_offset(const S &strides, Arg arg, Args... args) noexcept;
+    template <class offset_type, class S, class Arg, class... Args>
+    offset_type data_offset(const S& strides, Arg arg, Args... args) noexcept;
 
-    template<class offset_type, class S, class... Args>
-    offset_type unchecked_data_offset(const S &strides, Args... args) noexcept;
+    template <class offset_type, layout_type L = layout_type::dynamic, class S, class... Args>
+    offset_type unchecked_data_offset(const S& strides, Args... args) noexcept;
 
-    template<class offset_type, class S, class It>
-    offset_type element_offset(const S &strides, It first, It last) noexcept;
+    template <class offset_type, class S, class It>
+    offset_type element_offset(const S& strides, It first, It last) noexcept;
 
     /*******************
      * strides builder *
      *******************/
 
-    template <class shape_type, class strides_type>
+    template <layout_type L = layout_type::dynamic, class shape_type, class strides_type>
     std::size_t compute_strides(const shape_type& shape, layout_type l, strides_type& strides);
 
-    template <class shape_type, class strides_type, class backstrides_type>
+    template <layout_type L = layout_type::dynamic, class shape_type, class strides_type, class backstrides_type>
     std::size_t compute_strides(const shape_type& shape, layout_type l,
                                 strides_type& strides, backstrides_type& backstrides);
 
@@ -64,7 +64,7 @@ namespace xt
     S unravel_from_strides(typename S::value_type index, const S& strides, layout_type l);
 
     template <class S>
-    get_strides_t<S> unravel_index(typename S::value_type index, const S &shape, layout_type l);
+    get_strides_t<S> unravel_index(typename S::value_type index, const S& shape, layout_type l);
 
     /***********************
      * broadcast functions *
@@ -80,7 +80,7 @@ namespace xt
      * check strides overlap *
      *************************/
 
-    template<layout_type L>
+    template <layout_type L>
     struct check_strides_overlap;
 
     /********************************************
@@ -106,37 +106,118 @@ namespace xt
      * Implementation *
      ******************/
 
+    namespace detail
+    {
+        template <class shape_type>
+        inline std::size_t compute_size_impl(const shape_type& shape, std::true_type /* is signed */) {
+            using size_type = std::decay_t<typename shape_type::value_type>;
+            return static_cast<std::size_t>(std::abs(std::accumulate(shape.cbegin(), shape.cend(), size_type(1), std::multiplies<size_type>())));
+        }
+
+        template <class shape_type>
+        inline std::size_t compute_size_impl(const shape_type& shape, std::false_type /* is not signed */) {
+            using size_type = std::decay_t<typename shape_type::value_type>;
+            return static_cast<std::size_t>(std::accumulate(shape.cbegin(), shape.cend(), size_type(1), std::multiplies<size_type>()));
+        }
+    }
+
     template <class shape_type>
     inline std::size_t compute_size(const shape_type& shape) noexcept
     {
-        using size_type = std::decay_t<typename shape_type::value_type>;
-        return static_cast<std::size_t>(std::accumulate(shape.cbegin(), shape.cend(), size_type(1), std::multiplies<size_type>()));
+        return detail::compute_size_impl(shape, std::is_signed<std::decay_t<typename std::decay_t<shape_type>::value_type>>());
     }
 
     namespace detail
     {
-        template<std::size_t dim, class S>
-        inline auto raw_data_offset(const S &) noexcept
+        template <std::size_t dim, class S>
+        inline auto raw_data_offset(const S&) noexcept
         {
             using strides_value_type = std::decay_t<decltype(std::declval<S>()[0])>;
             return strides_value_type(0);
         }
 
-        template<std::size_t dim, class S, class Arg, class... Args>
-        inline auto raw_data_offset(const S &strides, Arg arg, Args... args) noexcept
+        template <std::size_t dim, class S, class Arg, class... Args>
+        inline auto raw_data_offset(const S& strides, Arg arg, Args... args) noexcept
         {
             return arg * strides[dim] + raw_data_offset<dim + 1>(strides, args...);
         }
+
+        template <layout_type L, std::ptrdiff_t static_dim>
+        struct layout_data_offset
+        {
+            template <std::size_t dim, class S, class Arg, class... Args>
+            static inline auto run(const S& strides, Arg arg, Args... args) noexcept
+            {
+                return raw_data_offset<dim>(strides, arg, args...);
+            }
+        };
+
+        template <std::ptrdiff_t static_dim>
+        struct layout_data_offset<layout_type::row_major, static_dim>
+        {
+            using self_type = layout_data_offset<layout_type::row_major, static_dim>;
+
+            template <std::size_t dim, class S, class Arg>
+            static inline auto run(const S& strides, Arg arg) noexcept
+            {
+                if (std::ptrdiff_t(dim) + 1 == static_dim)
+                {
+                    return arg;
+                }
+                else
+                {
+                    return arg * strides[dim];
+                }
+            }
+
+            template <std::size_t dim, class S, class Arg, class... Args>
+            static inline auto run(const S& strides, Arg arg, Args... args) noexcept
+            {
+                return arg * strides[dim] + self_type::template run<dim + 1>(strides, args...);
+            }
+        };
+
+        template <std::ptrdiff_t static_dim>
+        struct layout_data_offset<layout_type::column_major, static_dim>
+        {
+            using self_type = layout_data_offset<layout_type::column_major, static_dim>;
+
+            template <std::size_t dim, class S, class Arg>
+            static inline auto run(const S& strides, Arg arg) noexcept
+            {
+                if (dim == 0)
+                {
+                    return arg;
+                }
+                else
+                {
+                    return arg * strides[dim];
+                }
+            }
+
+            template <std::size_t dim, class S, class Arg, class... Args>
+            static inline auto run(const S& strides, Arg arg, Args... args) noexcept
+            {
+                if (dim == 0)
+                {
+                    return arg + self_type::template run<dim + 1>(strides, args...);
+                }
+                else
+                {
+                    return arg * strides[dim] + self_type::template run<dim + 1>(strides, args...);
+                }
+            }
+        };
     }
 
-    template<class offset_type, class S>
-    inline offset_type data_offset(const S &) noexcept
+    template <class offset_type, class S>
+    inline offset_type data_offset(const S&) noexcept
     {
         return offset_type(0);
     }
 
-    template<class offset_type, class S, class Arg, class... Args>
-    inline offset_type data_offset(const S &strides, Arg arg, Args... args) noexcept
+    template <class offset_type, class S, class Arg, class... Args>
+    inline offset_type data_offset(const S& strides, Arg arg, Args... args) noexcept
     {
         constexpr std::size_t nargs = sizeof...(Args) + 1;
         if (nargs == strides.size())
@@ -157,14 +238,14 @@ namespace xt
         }
     }
 
-    template<class offset_type, class S, class... Args>
-    inline offset_type unchecked_data_offset(const S &strides, Args... args) noexcept
+    template <class offset_type, layout_type L, class S, class... Args>
+    inline offset_type unchecked_data_offset(const S& strides, Args... args) noexcept
     {
-        return static_cast<offset_type>(detail::raw_data_offset<0>(strides.cbegin(), args...));
+        return static_cast<offset_type>(detail::layout_data_offset<L, static_dimension<S>::value>::template run<0>(strides.cbegin(), args...));
     }
 
-    template<class offset_type, class S, class It>
-    inline offset_type element_offset(const S &strides, It first, It last) noexcept
+    template <class offset_type, class S, class It>
+    inline offset_type element_offset(const S& strides, It first, It last) noexcept
     {
         using difference_type = typename std::iterator_traits<It>::difference_type;
         auto size = static_cast<difference_type>((std::min)(static_cast<typename S::size_type>(std::distance(first, last)), strides.size()));
@@ -194,15 +275,15 @@ namespace xt
             }
         }
 
-        template <class shape_type, class strides_type, class bs_ptr>
+        template <layout_type L, class shape_type, class strides_type, class bs_ptr>
         inline std::size_t compute_strides(const shape_type& shape, layout_type l,
                                            strides_type& strides, bs_ptr bs)
         {
             using strides_value_type = std::decay_t<decltype(strides[0])>;
             strides_value_type data_size = 1;
-            if (l == layout_type::row_major)
+            if (L == layout_type::row_major || l == layout_type::row_major)
             {
-                for (std::size_t i = strides.size(); i != 0; --i)
+                for (std::size_t i = shape.size(); i != 0; --i)
                 {
                     strides[i - 1] = data_size;
                     data_size = strides[i - 1] * static_cast<strides_value_type>(shape[i - 1]);
@@ -211,7 +292,7 @@ namespace xt
             }
             else
             {
-                for (std::size_t i = 0; i < strides.size(); ++i)
+                for (std::size_t i = 0; i < shape.size(); ++i)
                 {
                     strides[i] = data_size;
                     data_size = strides[i] * static_cast<strides_value_type>(shape[i]);
@@ -222,18 +303,18 @@ namespace xt
         }
     }
 
-    template <class shape_type, class strides_type>
+    template <layout_type L, class shape_type, class strides_type>
     inline std::size_t compute_strides(const shape_type& shape, layout_type l, strides_type& strides)
     {
-        return detail::compute_strides(shape, l, strides, nullptr);
+        return detail::compute_strides<L>(shape, l, strides, nullptr);
     }
 
-    template <class shape_type, class strides_type, class backstrides_type>
+    template <layout_type L, class shape_type, class strides_type, class backstrides_type>
     inline std::size_t compute_strides(const shape_type& shape, layout_type l,
                                        strides_type& strides,
                                        backstrides_type& backstrides)
     {
-        return detail::compute_strides(shape, l, strides, &backstrides);
+        return detail::compute_strides<L>(shape, l, strides, &backstrides);
     }
 
     template <class shape_type, class strides_type>
@@ -333,7 +414,7 @@ namespace xt
     }
 
     template <class S>
-    inline get_strides_t<S> unravel_index(typename S::value_type index, const S &shape, layout_type l)
+    inline get_strides_t<S> unravel_index(typename S::value_type index, const S& shape, layout_type l)
     {
         get_strides_t<S> strides = xtl::make_sequence<get_strides_t<S>>(shape.size(), 0);
         using strides_value_type = std::decay_t<decltype(strides[0])>;
@@ -349,7 +430,9 @@ namespace xt
         using value_type = typename S2::value_type;
         auto output_index = output.size();
         auto input_index = input.size();
-        if (output_index < input_index) {
+
+        if (output_index < input_index)
+        {
             throw_broadcast_error(output, input);
         }
         for (; input_index != 0; --input_index, --output_index)
@@ -397,17 +480,21 @@ namespace xt
         return res;
     }
 
-    template<>
-    struct check_strides_overlap<layout_type::row_major> {
-        template<class S1, class S2>
-        static std::size_t get(const S1 &s1, const S2 &s2) {
+    template <>
+    struct check_strides_overlap<layout_type::row_major>
+    {
+        template <class S1, class S2>
+        static std::size_t get(const S1& s1, const S2& s2)
+        {
             using value_type = typename S1::value_type;
             // Indices are faster than reverse iterators
             auto s1_index = s1.size();
             auto s2_index = s2.size();
 
-            for (; s2_index != 0; --s1_index, --s2_index) {
-                if (static_cast<value_type>(s1[s1_index - 1]) != static_cast<value_type>(s2[s2_index - 1])) {
+            for (; s2_index != 0; --s1_index, --s2_index)
+            {
+                if (static_cast<value_type>(s1[s1_index - 1]) != static_cast<value_type>(s2[s2_index - 1]))
+                {
                     break;
                 }
             }
@@ -415,10 +502,12 @@ namespace xt
         }
     };
 
-    template<>
-    struct check_strides_overlap<layout_type::column_major> {
-        template<class S1, class S2>
-        static std::size_t get(const S1 &s1, const S2 &s2) {
+    template <>
+    struct check_strides_overlap<layout_type::column_major>
+    {
+        template <class S1, class S2>
+        static std::size_t get(const S1& s1, const S2& s2)
+        {
             // Indices are faster than reverse iterators
             using size_type = typename S1::size_type;
             using value_type = typename S1::value_type;
@@ -431,8 +520,10 @@ namespace xt
 
             auto size = s2.size();
 
-            for (; index < size; ++index) {
-                if (static_cast<value_type>(s1[index]) != static_cast<value_type>(s2[index])) {
+            for (; index < size; ++index)
+            {
+                if (static_cast<value_type>(s1[index]) != static_cast<value_type>(s2[index]))
+                {
                     break;
                 }
             }

@@ -21,7 +21,8 @@ namespace xsimd
      *********************/
 
     template <>
-    struct simd_batch_traits<batch<int32_t, 4>> {
+    struct simd_batch_traits<batch<int32_t, 4>>
+    {
         using value_type = int32_t;
         static constexpr std::size_t size = 4;
         using batch_bool_type = batch_bool<int32_t, 4>;
@@ -63,13 +64,11 @@ namespace xsimd
         batch& load_aligned(const int64_t* src);
         batch& load_unaligned(const int64_t* src);
 
-        batch &load_aligned(const int8_t *src);
+        batch& load_aligned(const int8_t* src);
+        batch& load_unaligned(const int8_t* src);
 
-        batch &load_unaligned(const int8_t *src);
-
-        batch &load_aligned(const uint8_t *src);
-
-        batch &load_unaligned(const uint8_t *src);
+        batch& load_aligned(const uint8_t* src);
+        batch& load_unaligned(const uint8_t* src);
 
         void store_aligned(float* dst) const;
         void store_unaligned(float* dst) const;
@@ -83,13 +82,11 @@ namespace xsimd
         void store_aligned(int64_t* dst) const;
         void store_unaligned(int64_t* dst) const;
 
-        void store_aligned(int8_t *dst) const;
+        void store_aligned(int8_t* dst) const;
+        void store_unaligned(int8_t* dst) const;
 
-        void store_unaligned(int8_t *dst) const;
-
-        void store_aligned(uint8_t *dst) const;
-
-        void store_unaligned(uint8_t *dst) const;
+        void store_aligned(uint8_t* dst) const;
+        void store_unaligned(uint8_t* dst) const;
 
         using base_type::load_aligned;
         using base_type::load_unaligned;
@@ -103,9 +100,8 @@ namespace xsimd
         simd_type m_value;
     };
 
-    batch<int32_t, 4> operator<<(const batch<int32_t, 4> &lhs, int32_t rhs);
-
-    batch<int32_t, 4> operator>>(const batch<int32_t, 4> &lhs, int32_t rhs);
+    batch<int32_t, 4> operator<<(const batch<int32_t, 4>& lhs, int32_t rhs);
+    batch<int32_t, 4> operator>>(const batch<int32_t, 4>& lhs, int32_t rhs);
 
     /************************************
      * batch<int32_t, 4> implementation *
@@ -215,27 +211,31 @@ namespace xsimd
         return *this;
     }
 
-    inline batch<int32_t, 4> &batch<int32_t, 4>::load_aligned(const int8_t *src) {
-        int8x8_t tmp = vld1_s8((const int8_t *) src);
+    inline batch<int32_t, 4>& batch<int32_t, 4>::load_aligned(const int8_t* src)
+    {
+        int8x8_t tmp = vld1_s8((const int8_t*)src);
         int16x8_t tmp2 = vmovl_s8(tmp);
         int16x4_t tmp3 = vget_low_s16(tmp2);
         m_value = vmovl_s16(tmp3);
         return *this;
     }
 
-    inline batch<int32_t, 4> &batch<int32_t, 4>::load_unaligned(const int8_t *src) {
+    inline batch<int32_t, 4>& batch<int32_t, 4>::load_unaligned(const int8_t* src)
+    {
         return load_aligned(src);
     }
 
-    inline batch<int32_t, 4> &batch<int32_t, 4>::load_aligned(const uint8_t *src) {
-        uint8x8_t tmp = vld1_u8((const uint8_t *) src);
+    inline batch<int32_t, 4>& batch<int32_t, 4>::load_aligned(const uint8_t* src)
+    {
+        uint8x8_t tmp = vld1_u8((const uint8_t*)src);
         uint16x8_t tmp2 = vmovl_u8(tmp);
         uint16x4_t tmp3 = vget_low_u16(tmp2);
         m_value = vmovl_u16(tmp3);
         return *this;
     }
 
-    inline batch<int32_t, 4> &batch<int32_t, 4>::load_unaligned(const uint8_t *src) {
+    inline batch<int32_t, 4>& batch<int32_t, 4>::load_unaligned(const uint8_t* src)
+    {
         return load_aligned(src);
     }
 
@@ -279,25 +279,29 @@ namespace xsimd
         store_aligned(dst);
     }
 
-    inline void batch<int32_t, 4>::store_aligned(int8_t *dst) const {
+    inline void batch<int32_t, 4>::store_aligned(int8_t* dst) const
+    {
         int16x4_t tmp2 = vmovn_s32(m_value);
         int16x8_t tmp3 = vcombine_s16(tmp2, vdup_n_s16(0));
         int8x8_t tmp4 = vmovn_s16(tmp3);
-        vst1_s8((int8_t *) dst, tmp4);
+        vst1_s8((int8_t*)dst, tmp4);
     }
 
-    inline void batch<int32_t, 4>::store_unaligned(int8_t *dst) const {
+    inline void batch<int32_t, 4>::store_unaligned(int8_t* dst) const
+    {
         store_aligned(dst);
     }
 
-    inline void batch<int32_t, 4>::store_aligned(uint8_t *dst) const {
+    inline void batch<int32_t, 4>::store_aligned(uint8_t* dst) const
+    {
         uint16x4_t tmp2 = vmovn_u32(m_value);
         uint16x8_t tmp3 = vcombine_u16(tmp2, vdup_n_u16(0));
         uint8x8_t tmp4 = vmovn_u16(tmp3);
-        vst1_u8((uint8_t *) dst, tmp4);
+        vst1_u8((uint8_t*)dst, tmp4);
     }
 
-    inline void batch<int32_t, 4>::store_unaligned(uint8_t *dst) const {
+    inline void batch<int32_t, 4>::store_unaligned(uint8_t* dst) const
+    {
         store_aligned(dst);
     }
 
@@ -312,113 +316,138 @@ namespace xsimd
     }
 
 
+
     namespace detail
     {
-        template<>
-        struct batch_kernel<int32_t, 4> {
+        template <>
+        struct batch_kernel<int32_t, 4>
+        {
             using batch_type = batch<int32_t, 4>;
             using value_type = int32_t;
             using batch_bool_type = batch_bool<int32_t, 4>;
 
-            static batch_type neg(const batch_type &rhs) {
+            static batch_type neg(const batch_type& rhs)
+            {
                 return vnegq_s32(rhs);
             }
 
-            static batch_type add(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type add(const batch_type& lhs, const batch_type& rhs)
+            {
                 return vaddq_s32(lhs, rhs);
             }
 
-            static batch_type sub(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type sub(const batch_type& lhs, const batch_type& rhs)
+            {
                 return vsubq_s32(lhs, rhs);
             }
 
-            static batch_type mul(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type mul(const batch_type& lhs, const batch_type& rhs)
+            {
                 return vmulq_s32(lhs, rhs);
             }
 
-            static batch_type div(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type div(const batch_type& lhs, const batch_type& rhs)
+            {
 #if defined(XSIMD_FAST_INTEGER_DIVISION)
                 return vcvtq_s32_f32(vcvtq_f32_s32(lhs) / vcvtq_f32_s32(rhs));
 #else
                 return int32x4_t{
-                        lhs[0] / rhs[0], lhs[1] / rhs[1],
-                        lhs[2] / rhs[2], lhs[3] / rhs[3]
+                    lhs[0] / rhs[0], lhs[1] / rhs[1],
+                    lhs[2] / rhs[2], lhs[3] / rhs[3]
                 };
 #endif
             }
 
-            static batch_type mod(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type mod(const batch_type& lhs, const batch_type& rhs)
+            {
                 return int32x4_t{
-                        lhs[0] % rhs[0], lhs[1] % rhs[1],
-                        lhs[2] % rhs[2], lhs[3] % rhs[3]
+                    lhs[0] % rhs[0], lhs[1] % rhs[1],
+                    lhs[2] % rhs[2], lhs[3] % rhs[3]
                 };
             }
 
-            static batch_bool_type eq(const batch_type &lhs, const batch_type &rhs) {
+            static batch_bool_type eq(const batch_type& lhs, const batch_type& rhs)
+            {
                 return vceqq_s32(lhs, rhs);
             }
 
-            static batch_bool_type neq(const batch_type &lhs, const batch_type &rhs) {
+            static batch_bool_type neq(const batch_type& lhs, const batch_type& rhs)
+            {
                 return !(lhs == rhs);
             }
 
-            static batch_bool_type lt(const batch_type &lhs, const batch_type &rhs) {
+            static batch_bool_type lt(const batch_type& lhs, const batch_type& rhs)
+            {
                 return vcltq_s32(lhs, rhs);
             }
 
-            static batch_bool_type lte(const batch_type &lhs, const batch_type &rhs) {
+            static batch_bool_type lte(const batch_type& lhs, const batch_type& rhs)
+            {
                 return vcleq_s32(lhs, rhs);
             }
 
-            static batch_type bitwise_and(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type bitwise_and(const batch_type& lhs, const batch_type& rhs)
+            {
                 return vandq_s32(lhs, rhs);
             }
 
-            static batch_type bitwise_or(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type bitwise_or(const batch_type& lhs, const batch_type& rhs)
+            {
                 return vorrq_s32(lhs, rhs);
             }
 
-            static batch_type bitwise_xor(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type bitwise_xor(const batch_type& lhs, const batch_type& rhs)
+            {
                 return veorq_s32(lhs, rhs);
             }
 
-            static batch_type bitwise_not(const batch_type &rhs) {
+            static batch_type bitwise_not(const batch_type& rhs)
+            {
                 return vmvnq_s32(rhs);
             }
 
-            static batch_type bitwise_andnot(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type bitwise_andnot(const batch_type& lhs, const batch_type& rhs)
+            {
                 return vbicq_s32(lhs, rhs);
             }
 
-            static batch_type min(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type min(const batch_type& lhs, const batch_type& rhs)
+            {
                 return vminq_s32(lhs, rhs);
             }
 
-            static batch_type max(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type max(const batch_type& lhs, const batch_type& rhs)
+            {
                 return vmaxq_s32(lhs, rhs);
             }
 
-            static batch_type abs(const batch_type &rhs) {
+            static batch_type abs(const batch_type& rhs)
+            {
                 return vabsq_s32(rhs);
             }
 
-            static batch_type fma(const batch_type &x, const batch_type &y, const batch_type &z) {
+            static batch_type fma(const batch_type& x, const batch_type& y, const batch_type& z)
+            {
                 return x * y + z;
             }
 
-            static batch_type fms(const batch_type &x, const batch_type &y, const batch_type &z) {
+            static batch_type fms(const batch_type& x, const batch_type& y, const batch_type& z)
+            {
                 return x * y - z;
             }
 
-            static batch_type fnma(const batch_type &x, const batch_type &y, const batch_type &z) {
+            static batch_type fnma(const batch_type& x, const batch_type& y, const batch_type& z)
+            {
                 return -x * y + z;
             }
 
-            static batch_type fnms(const batch_type &x, const batch_type &y, const batch_type &z) {
+            static batch_type fnms(const batch_type& x, const batch_type& y, const batch_type& z)
+            {
                 return -x * y - z;
             }
 
-            static value_type hadd(const batch_type &rhs) {
+            static value_type hadd(const batch_type& rhs)
+            {
 #if XSIMD_ARM_INSTR_SET >= XSIMD_ARM8_64_NEON_VERSION
                 return vaddvq_s32(rhs);
 #else
@@ -428,7 +457,8 @@ namespace xsimd
 #endif
             }
 
-            static batch_type select(const batch_bool_type &cond, const batch_type &a, const batch_type &b) {
+            static batch_type select(const batch_bool_type& cond, const batch_type& a, const batch_type& b)
+            {
                 return vbslq_s32(cond, a, b);
             }
         };

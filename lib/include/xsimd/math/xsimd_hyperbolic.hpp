@@ -168,21 +168,24 @@ namespace xsimd
             }
         };
 
-        template<class B>
-        struct sinh_kernel {
-            static inline B compute(const B &a) {
+        template <class B>
+        struct sinh_kernel
+        {
+            static inline B compute(const B& a)
+            {
                 using b_type = B;
                 b_type half = b_type(0.5);
                 b_type x = abs(a);
                 auto lt1 = x < b_type(1.);
                 b_type bts = bitofsign(a);
                 b_type z(0.);
-                if (any(lt1)) {
+                if (any(lt1))
+                {
                     z = sinh_kernel_impl<b_type>::compute(x);
                     if (all(lt1))
                         return z ^ bts;
                 }
-                auto test1 = x > (maxlog<b_type>() - log_2<b_type>());
+                auto test1 = x >(maxlog<b_type>() - log_2<b_type>());
                 b_type fac = select(test1, half, b_type(1.));
                 b_type tmp = exp(x * fac);
                 b_type tmp1 = half * tmp;
@@ -201,8 +204,9 @@ namespace xsimd
      * (See copy at http://boost.org/LICENSE_1_0.txt)
      * ====================================================
      */
-    template<class T, std::size_t N>
-    inline batch<T, N> sinh(const batch<T, N> &a) {
+    template <class T, std::size_t N>
+    inline batch<T, N> sinh(const batch<T, N>& a)
+    {
         return detail::sinh_kernel<batch<T, N>>::compute(a);
     }
 
@@ -222,9 +226,11 @@ namespace xsimd
 
     namespace detail
     {
-        template<class B>
-        struct cosh_kernel {
-            static inline B compute(const B &a) {
+        template <class B>
+        struct cosh_kernel
+        {
+            static inline B compute(const B& a)
+            {
                 using b_type = B;
                 b_type x = abs(a);
                 auto test1 = x > (maxlog<b_type>() - log_2<b_type>());
@@ -236,8 +242,9 @@ namespace xsimd
         };
     }
 
-    template<class T, std::size_t N>
-    inline batch<T, N> cosh(const batch<T, N> &a) {
+    template <class T, std::size_t N>
+    inline batch<T, N> cosh(const batch<T, N>& a)
+    {
         return detail::cosh_kernel<batch<T, N>>::compute(a);
     }
 
@@ -317,16 +324,19 @@ namespace xsimd
             }
         };
 
-        template<class B>
-        struct tanh_kernel {
-            static inline B compute(const B &a) {
+        template <class B>
+        struct tanh_kernel
+        {
+            static inline B compute(const B& a)
+            {
                 using b_type = B;
                 b_type one(1.);
                 b_type x = abs(a);
                 auto test = x < (b_type(5.) / b_type(8.));
                 b_type bts = bitofsign(a);
                 b_type z = one;
-                if (any(test)) {
+                if (any(test))
+                {
                     z = tanh_kernel_impl<b_type>::tanh(x);
                     if (all(test))
                         return z ^ bts;
@@ -347,8 +357,9 @@ namespace xsimd
      * ====================================================
      */
 
-    template<class T, std::size_t N>
-    inline batch<T, N> tanh(const batch<T, N> &a) {
+    template <class T, std::size_t N>
+    inline batch<T, N> tanh(const batch<T, N>& a)
+    {
         return detail::tanh_kernel<batch<T, N>>::compute(a);
     }
 
@@ -442,9 +453,11 @@ namespace xsimd
 
     namespace detail
     {
-        template<class B>
-        struct acosh_kernel {
-            static inline B compute(const B &a) {
+        template <class B>
+        struct acosh_kernel
+        {
+            static inline B compute(const B& a)
+            {
                 using b_type = B;
                 b_type x = a - b_type(1.);
                 auto test = x > oneotwoeps<b_type>();
@@ -455,8 +468,9 @@ namespace xsimd
         };
     }
 
-    template<class T, std::size_t N>
-    inline batch<T, N> acosh(const batch<T, N> &a) {
+    template <class T, std::size_t N>
+    inline batch<T, N> acosh(const batch<T, N>& a)
+    {
         return detail::acosh_kernel<batch<T, N>>::compute(a);
     }
 
@@ -476,9 +490,11 @@ namespace xsimd
 
     namespace detail
     {
-        template<class B>
-        struct atanh_kernel {
-            static inline B compute(const B &a) {
+        template <class B>
+        struct atanh_kernel
+        {
+            static inline B compute(const B& a)
+            {
                 using b_type = B;
                 b_type x = abs(a);
                 b_type t = x + x;
@@ -490,8 +506,9 @@ namespace xsimd
         };
     }
 
-    template<class T, std::size_t N>
-    inline batch<T, N> atanh(const batch<T, N> &a) {
+    template <class T, std::size_t N>
+    inline batch<T, N> atanh(const batch<T, N>& a)
+    {
         return detail::atanh_kernel<batch<T, N>>::compute(a);
     }
 }

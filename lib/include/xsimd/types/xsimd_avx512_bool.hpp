@@ -25,8 +25,7 @@ namespace xsimd
 
         batch_bool_avx512();
         explicit batch_bool_avx512(bool b);
-
-        template<class... Args, class Enable = detail::is_array_initializer_t<bool, sizeof(MASK) * 8, Args...>>
+        template <class... Args, class Enable = detail::is_array_initializer_t<bool, sizeof(MASK) * 8, Args...>>
         batch_bool_avx512(Args... args);
         batch_bool_avx512(const bool (&init)[sizeof(MASK) * 8]);
 
@@ -47,10 +46,11 @@ namespace xsimd
     {
     }
 
-    template<class MASK, class T>
-    template<class... Args, class>
+    template <class MASK, class T>
+    template <class... Args, class>
     inline batch_bool_avx512<MASK, T>::batch_bool_avx512(Args... args)
-            : batch_bool_avx512({{static_cast<bool>(args)...}}) {
+        : batch_bool_avx512({{static_cast<bool>(args)...}})
+    {
     }
 
     template <class MASK, class T>
@@ -104,63 +104,77 @@ namespace xsimd
         return (m_value & (1 << idx)) != 0;
     }
 
-    namespace detail {
-        template<std::size_t N>
+    namespace detail
+    {
+        template <std::size_t N>
         struct mask_type;
 
-        template<>
-        struct mask_type<8> {
+        template <>
+        struct mask_type<8>
+        {
             using type = __mmask8;
         };
 
-        template<>
-        struct mask_type<16> {
+        template <>
+        struct mask_type<16>
+        {
             using type = __mmask16;
         };
 
-        template<>
-        struct mask_type<64> {
+        template <>
+        struct mask_type<64>
+        {
             using type = __mmask64;
         };
 
-        template<class T, std::size_t N>
-        struct batch_bool_kernel_avx512 {
+        template <class T, std::size_t N>
+        struct batch_bool_kernel_avx512
+        {
             using batch_type = batch_bool<T, N>;
             using mt = typename mask_type<N>::type;
 
-            static batch_type bitwise_and(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type bitwise_and(const batch_type& lhs, const batch_type& rhs)
+            {
                 return mt(lhs) & mt(rhs);
             }
 
-            static batch_type bitwise_or(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type bitwise_or(const batch_type& lhs, const batch_type& rhs)
+            {
                 return mt(lhs) | mt(rhs);
             }
 
-            static batch_type bitwise_xor(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type bitwise_xor(const batch_type& lhs, const batch_type& rhs)
+            {
                 return mt(lhs) ^ mt(rhs);
             }
 
-            static batch_type bitwise_not(const batch_type &rhs) {
+            static batch_type bitwise_not(const batch_type& rhs)
+            {
                 return ~mt(rhs);
             }
 
-            static batch_type bitwise_andnot(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type bitwise_andnot(const batch_type& lhs, const batch_type& rhs)
+            {
                 return mt(lhs) ^ mt(rhs);
             }
 
-            static batch_type equal(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type equal(const batch_type& lhs, const batch_type& rhs)
+            {
                 return (~mt(lhs)) ^ mt(rhs);
             }
 
-            static batch_type not_equal(const batch_type &lhs, const batch_type &rhs) {
+            static batch_type not_equal(const batch_type& lhs, const batch_type& rhs)
+            {
                 return mt(lhs) ^ mt(rhs);
             }
 
-            static bool all(const batch_type &rhs) {
+            static bool all(const batch_type& rhs)
+            {
                 return mt(rhs) == mt(-1);
             }
 
-            static bool any(const batch_type &rhs) {
+            static bool any(const batch_type& rhs)
+            {
                 return mt(rhs) != mt(0);
             }
         };

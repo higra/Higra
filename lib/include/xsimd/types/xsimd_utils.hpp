@@ -17,7 +17,7 @@ namespace xsimd
     template <class T, size_t N>
     class batch;
 
-    template<class T, std::size_t N>
+    template <class T, std::size_t N>
     class batch_bool;
 
     /**************
@@ -267,13 +267,15 @@ namespace xsimd
     });                                                                                                   \
     return batch_type(&tmp_res[0], aligned_mode());
 
-    template<class F, std::size_t... I>
-    inline void unroller_impl(F &&f, detail::index_sequence<I...>) {
+    template <class F, std::size_t... I>
+    inline void unroller_impl(F&& f, detail::index_sequence<I...>)
+    {
         static_cast<void>(std::initializer_list<int>{(f(I), 0)...});
     }
 
-    template<std::size_t N, class F>
-    inline void unroller(F &&f) {
+    template <std::size_t N, class F>
+    inline void unroller(F&& f)
+    {
         unroller_impl(f, detail::make_index_sequence<N>{});
     }
 
@@ -330,7 +332,7 @@ namespace xsimd
 
         template <typename T, std::size_t N, typename... Args>
         using is_array_initializer = std::enable_if<
-                (sizeof...(Args) == N) && is_all_convertible<T, Args...>::value
+            (sizeof...(Args) == N) && is_all_convertible<T, Args...>::value
         >;
 
         // Check that a variadic argument pack is a list of N values of type T,

@@ -35,9 +35,11 @@ namespace xt
     struct NAME                                                                 \
     {                                                                           \
         template <class U, class RT>                                            \
+        using fvt_t = xt::detail::functor_value_type_t<U, RT>;                  \
+        template <class U, class RT>                                            \
         using fst_t = xt::detail::functor_batch_simd_type_t<U, RT>;             \
         using argument_type = T;                                                \
-        using result_type = R;                                                  \
+        using result_type = fvt_t<T, R>;                                        \
         using simd_value_type = xsimd::simd_type<T>;                            \
         using simd_result_type = fst_t<simd_value_type, R>;                     \
         constexpr result_type operator()(const T& arg) const                    \
@@ -71,10 +73,12 @@ namespace xt
     struct NAME                                                                  \
     {                                                                            \
         template <class U, class RT>                                             \
+        using fvt_t = xt::detail::functor_value_type_t<U, RT>;                   \
+        template <class U, class RT>                                             \
         using fst_t = xt::detail::functor_batch_simd_type_t<U, RT>;              \
         using first_argument_type = T;                                           \
         using second_argument_type = T;                                          \
-        using result_type = R;                                                   \
+        using result_type = fvt_t<T, R>;                                         \
         using simd_value_type = xsimd::simd_type<T>;                             \
         using simd_result_type = fst_t<simd_value_type, R>;                      \
         template <class T1, class T2>                                            \
@@ -132,7 +136,7 @@ namespace xt
             using simd_bool_type = xsimd::simd_bool_type<T>;
             using simd_result_type = simd_value_type;
 
-            template<class B>
+            template <class B>
             using get_batch_bool = typename xsimd::simd_traits<typename xsimd::revert_simd_traits<B>::type>::bool_type;
 
             constexpr result_type operator()(bool t1, const T& t2, const T& t3) const noexcept
@@ -140,9 +144,9 @@ namespace xt
                 return t1 ? t2 : t3;
             }
             template <class B>
-            constexpr B simd_apply(const get_batch_bool<B> &t1,
-                                   const B &t2,
-                                   const B &t3) const noexcept
+            constexpr B simd_apply(const get_batch_bool<B>& t1,
+                                   const B& t2,
+                                   const B& t3) const noexcept
             {
                 return xsimd::select(t1, t2, t3);
             }

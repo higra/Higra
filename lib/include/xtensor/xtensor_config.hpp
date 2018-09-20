@@ -11,7 +11,7 @@
 
 #define XTENSOR_VERSION_MAJOR 0
 #define XTENSOR_VERSION_MINOR 17
-#define XTENSOR_VERSION_PATCH 0
+#define XTENSOR_VERSION_PATCH 4
 
 // DETECT 3.6 <= clang < 3.8 for compiler bug workaround.
 #ifdef __clang__
@@ -23,15 +23,15 @@
 #endif
 
 // Workaround for some missing constexpr functionality in MSVC 2015 and MSVC 2017 x86
-#if defined(_MSC_VER) && (_MSC_VER < 1910 || !defined(_WIN64))
-#define XTENSOR_CONSTEXPR_ENHANCED const
-#define XTENSOR_CONSTEXPR_ENHANCED_STATIC const
-#define XTENSOR_CONSTEXPR_RETURN inline
+#if defined(_MSC_VER)
+    #define XTENSOR_CONSTEXPR_ENHANCED const
+    #define XTENSOR_CONSTEXPR_ENHANCED_STATIC const
+    #define XTENSOR_CONSTEXPR_RETURN inline
 #else
-#define XTENSOR_CONSTEXPR_ENHANCED constexpr
-#define XTENSOR_CONSTEXPR_RETURN constexpr
-#define XTENSOR_CONSTEXPR_ENHANCED_STATIC constexpr static
-#define XTENSOR_HAS_CONSTEXPR_ENHANCED
+    #define XTENSOR_CONSTEXPR_ENHANCED constexpr
+    #define XTENSOR_CONSTEXPR_RETURN constexpr
+    #define XTENSOR_CONSTEXPR_ENHANCED_STATIC constexpr static
+    #define XTENSOR_HAS_CONSTEXPR_ENHANCED
 #endif
 
 #ifndef XTENSOR_DEFAULT_DATA_CONTAINER

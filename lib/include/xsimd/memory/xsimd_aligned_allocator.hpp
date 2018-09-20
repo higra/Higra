@@ -196,9 +196,10 @@ namespace xsimd
      * call allocate(n, 0) could succeed.
      * @return the maximum supported allocated size.
      */
-    template<class T, size_t A>
+    template <class T, size_t A>
     inline auto
-    aligned_allocator<T, A>::max_size() const noexcept -> size_type {
+    aligned_allocator<T, A>::max_size() const noexcept -> size_type
+    {
         return size_type(-1) / sizeof(T);
     }
 
@@ -207,12 +208,13 @@ namespace xsimd
      */
     template <class T, size_t A>
     inline auto
-    aligned_allocator<T, A>::size_max() const noexcept -> size_type {
+    aligned_allocator<T, A>::size_max() const noexcept -> size_type
+    {
         return size_type(-1) / sizeof(T);
     }
 
     /**
-     * Constructs an object of type \c T in allocated uninitialized memory 
+     * Constructs an object of type \c T in allocated uninitialized memory
      * pointed to by \c p, using placement-new.
      * @param p pointer to allocated uninitialized memory.
      * @param args the constructor arguments to use.
@@ -332,7 +334,7 @@ namespace xsimd
                 (block_size - ((size_t(p) / sizeof(T)) & block_mask)) & block_mask,
                 size);
         }
-    };
+    }
 }
 
 #endif

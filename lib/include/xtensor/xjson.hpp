@@ -41,7 +41,7 @@ namespace xt
     namespace detail
     {
         template <class D>
-        void to_json_impl(nlohmann::json &j, const xexpression<D> &e, xstrided_slice_vector &slices)
+        void to_json_impl(nlohmann::json& j, const xexpression<D>& e, xstrided_slice_vector& slices)
         {
             const auto view = strided_view(e.derived_cast(), slices);
             if (view.dimension() == 0)
@@ -65,7 +65,7 @@ namespace xt
         }
 
         template <class D>
-        inline void from_json_impl(const nlohmann::json &j, xexpression<D> &e, xstrided_slice_vector &slices)
+        inline void from_json_impl(const nlohmann::json& j, xexpression<D>& e, xstrided_slice_vector& slices)
         {
             auto view = strided_view(e.derived_cast(), slices);
 

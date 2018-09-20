@@ -57,37 +57,37 @@ namespace hg {
 
             template<typename T1=self_type>
             auto begin(typename std::enable_if_t<T1::is_vectorial> * = 0) {
-                return m_data.storage_begin() + m_position * m_stride;
+                return m_data.begin() + m_position * m_stride;
             }
 
             template<typename T1=self_type>
             auto begin(typename std::enable_if_t<!T1::is_vectorial> * = 0) {
-                return m_data.storage_begin() + m_position;
+                return m_data.begin() + m_position;
             }
 
             template<typename T1=self_type>
             auto end(typename std::enable_if_t<T1::is_vectorial> * = 0) {
-                return m_data.storage_begin() + (m_position + 1) * m_stride;
+                return m_data.begin() + (m_position + 1) * m_stride;
             }
 
             template<typename T1=self_type>
             auto end(typename std::enable_if_t<!T1::is_vectorial> * = 0) {
-                return m_data.storage_begin() + (m_position + 1);
+                return m_data.begin() + (m_position + 1);
             }
 
             template<typename T1=self_type>
             auto begin(typename std::enable_if_t<T1::is_vectorial> * = 0) const {
-                return m_data.storage_begin() + m_position * m_stride;
+                return m_data.begin() + m_position * m_stride;
             }
 
             template<typename T1=self_type>
             auto begin(typename std::enable_if_t<!T1::is_vectorial> * = 0) const {
-                return m_data.storage_begin() + m_position;
+                return m_data.begin() + m_position;
             }
 
             template<typename T1=self_type>
             auto end(typename std::enable_if_t<T1::is_vectorial> * = 0) const {
-                return m_data.storage_begin() + (m_position + 1) * m_stride;
+                return m_data.begin() + (m_position + 1) * m_stride;
             }
 
             template<typename T1=self_type>

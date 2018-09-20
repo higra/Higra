@@ -28,9 +28,9 @@ namespace xt
     struct xcontainer_inner_types<xoptional_assembly<VE, FE>>
     {
         using value_expression = VE;
-        using value_storage_type = typename value_expression::storage_type &;
+        using value_storage_type = typename value_expression::storage_type&;
         using flag_expression = FE;
-        using flag_storage_type = typename flag_expression::storage_type &;
+        using flag_storage_type = typename flag_expression::storage_type&;
         using storage_type = xoptional_assembly_storage<value_storage_type, flag_storage_type>;
         using temporary_type = xoptional_assembly<VE, FE>;
     };
@@ -103,13 +103,11 @@ namespace xt
 
         ~xoptional_assembly() = default;
 
-        xoptional_assembly(const xoptional_assembly &);
+        xoptional_assembly(const xoptional_assembly&);
+        xoptional_assembly& operator=(const xoptional_assembly&);
 
-        xoptional_assembly &operator=(const xoptional_assembly &);
-
-        xoptional_assembly(xoptional_assembly &&);
-
-        xoptional_assembly &operator=(xoptional_assembly &&);
+        xoptional_assembly(xoptional_assembly&&);
+        xoptional_assembly& operator=(xoptional_assembly&&);
 
         template <class E>
         xoptional_assembly(const xexpression<E>& e);
@@ -119,9 +117,8 @@ namespace xt
 
     private:
 
-        storage_type &storage_impl() noexcept;
-
-        const storage_type &storage_impl() const noexcept;
+        storage_type& storage_impl() noexcept;
+        const storage_type& storage_impl() const noexcept;
 
         value_expression& value_impl() noexcept;
         const value_expression& value_impl() const noexcept;
@@ -148,12 +145,12 @@ namespace xt
     {
         using value_expression = std::remove_reference_t<VEC>;
         using value_storage_type = std::conditional_t<std::is_const<value_expression>::value,
-                const typename value_expression::storage_type &,
-                typename value_expression::storage_type &>;
+                                                      const typename value_expression::storage_type&,
+                                                      typename value_expression::storage_type&>;
         using flag_expression = std::remove_reference_t<FEC>;
         using flag_storage_type = std::conditional_t<std::is_const<flag_expression>::value,
-                const typename flag_expression::storage_type &,
-                typename flag_expression::storage_type &>;
+                                                     const typename flag_expression::storage_type&,
+                                                     typename flag_expression::storage_type&>;
         using storage_type = xoptional_assembly_storage<value_storage_type, flag_storage_type>;
         using temporary_type = xoptional_assembly<value_expression, flag_expression>;
     };
@@ -207,10 +204,10 @@ namespace xt
 
         ~xoptional_assembly_adaptor() = default;
 
-        xoptional_assembly_adaptor(const xoptional_assembly_adaptor &);
+        xoptional_assembly_adaptor(const xoptional_assembly_adaptor&);
         xoptional_assembly_adaptor& operator=(const xoptional_assembly_adaptor&);
 
-        xoptional_assembly_adaptor(xoptional_assembly_adaptor &&);
+        xoptional_assembly_adaptor(xoptional_assembly_adaptor&&);
         xoptional_assembly_adaptor& operator=(xoptional_assembly_adaptor&&);
         xoptional_assembly_adaptor& operator=(temporary_type&&);
 
@@ -219,9 +216,8 @@ namespace xt
 
     private:
 
-        storage_type &storage_impl() noexcept;
-
-        const storage_type &storage_impl() const noexcept;
+        storage_type& storage_impl() noexcept;
+        const storage_type& storage_impl() const noexcept;
 
         value_expression& value_impl() noexcept;
         const value_expression& value_impl() const noexcept;
@@ -269,7 +265,7 @@ namespace xt
      */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly()
-            : m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
+        : m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
     }
 
@@ -281,7 +277,7 @@ namespace xt
      */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(const shape_type& shape, layout_type l)
-            : m_value(shape, l), m_has_value(shape, l), m_storage(m_value.storage(), m_has_value.storage())
+        : m_value(shape, l), m_has_value(shape, l), m_storage(m_value.storage(), m_has_value.storage())
     {
     }
 
@@ -294,8 +290,7 @@ namespace xt
      */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(const shape_type& shape, const value_type& value, layout_type l)
-            : m_value(shape, value.value(), l), m_has_value(shape, value.has_value(), l),
-              m_storage(m_value.storage(), m_has_value.storage())
+        : m_value(shape, value.value(), l), m_has_value(shape, value.has_value(), l), m_storage(m_value.storage(), m_has_value.storage())
     {
     }
 
@@ -306,7 +301,7 @@ namespace xt
      */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(const shape_type& shape, const strides_type& strides)
-            : m_value(shape, strides), m_has_value(shape, strides), m_storage(m_value.storage(), m_has_value.storage())
+        : m_value(shape, strides), m_has_value(shape, strides), m_storage(m_value.storage(), m_has_value.storage())
     {
     }
 
@@ -319,8 +314,7 @@ namespace xt
      */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(const shape_type& shape, const strides_type& strides, const value_type& value)
-            : m_value(shape, strides, value.value()), m_has_value(shape, strides, value.has_value()),
-              m_storage(m_value.storage(), m_has_value.storage())
+        : m_value(shape, strides, value.value()), m_has_value(shape, strides, value.has_value()), m_storage(m_value.storage(), m_has_value.storage())
     {
     }
 
@@ -331,8 +325,7 @@ namespace xt
      */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(const value_type& value)
-            : m_value(value.value()), m_has_value(value.has_value()),
-              m_storage(m_value.storage(), m_has_value.storage())
+        : m_value(value.value()), m_has_value(value.has_value()), m_storage(m_value.storage(), m_has_value.storage())
     {
     }
 
@@ -343,8 +336,7 @@ namespace xt
      */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(const VE& ve)
-            : m_value(ve), m_has_value(ve.shape(), true, ve.layout()),
-              m_storage(m_value.storage(), m_has_value.storage())
+        : m_value(ve), m_has_value(ve.shape(), true, ve.layout()), m_storage(m_value.storage(), m_has_value.storage())
     {
     }
 
@@ -357,8 +349,7 @@ namespace xt
      */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(VE&& ve)
-            : m_value(std::move(ve)), m_has_value(ve.shape(), true, ve.layout()),
-              m_storage(m_value.storage(), m_has_value.storage())
+        : m_value(std::move(ve)), m_has_value(ve.shape(), true, ve.layout()), m_storage(m_value.storage(), m_has_value.storage())
     {
     }
 
@@ -371,8 +362,7 @@ namespace xt
     template <class VE, class FE>
     template <class OVE, class OFE, typename>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(OVE&& ove, OFE&& ofe)
-            : m_value(std::forward<OVE>(ove)), m_has_value(std::forward<OFE>(ofe)),
-              m_storage(m_value.storage(), m_has_value.storage())
+        : m_value(std::forward<OVE>(ove)), m_has_value(std::forward<OFE>(ofe)), m_storage(m_value.storage(), m_has_value.storage())
     {
     }
     //@}
@@ -387,7 +377,7 @@ namespace xt
     */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(nested_initializer_list_t<value_type, 1> t)
-            : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
+        : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
         base_type::resize(xt::shape<shape_type>(t));
         bool condition = VE::static_layout == layout_type::row_major && FE::static_layout == layout_type::row_major;
@@ -401,7 +391,7 @@ namespace xt
     */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(nested_initializer_list_t<value_type, 2> t)
-            : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
+        : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
         base_type::resize(xt::shape<shape_type>(t));
         bool condition = VE::static_layout == layout_type::row_major && FE::static_layout == layout_type::row_major;
@@ -415,7 +405,7 @@ namespace xt
     */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(nested_initializer_list_t<value_type, 3> t)
-            : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
+        : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
         base_type::resize(xt::shape<shape_type>(t));
         bool condition = VE::static_layout == layout_type::row_major && FE::static_layout == layout_type::row_major;
@@ -429,7 +419,7 @@ namespace xt
     */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(nested_initializer_list_t<value_type, 4> t)
-            : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
+        : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
         base_type::resize(xt::shape<shape_type>(t));
         bool condition = VE::static_layout == layout_type::row_major && FE::static_layout == layout_type::row_major;
@@ -443,7 +433,7 @@ namespace xt
     */
     template <class VE, class FE>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(nested_initializer_list_t<value_type, 5> t)
-            : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
+        : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
         base_type::resize(xt::shape<shape_type>(t));
         bool condition = VE::static_layout == layout_type::row_major && FE::static_layout == layout_type::row_major;
@@ -464,28 +454,30 @@ namespace xt
         return self_type(shape);
     }
 
-    template<class VE, class FE>
-    inline xoptional_assembly<VE, FE>::xoptional_assembly(const self_type &rhs)
-            : base_type(), semantic_base(), m_value(rhs.m_value), m_has_value(rhs.m_has_value),
-              m_storage(m_value.storage(), m_has_value.storage()) {
+    template <class VE, class FE>
+    inline xoptional_assembly<VE, FE>::xoptional_assembly(const self_type& rhs)
+        : base_type(), semantic_base(), m_value(rhs.m_value), m_has_value(rhs.m_has_value), m_storage(m_value.storage(), m_has_value.storage())
+    {
     }
 
-    template<class VE, class FE>
-    inline xoptional_assembly<VE, FE>::xoptional_assembly(self_type &&rhs)
-            : base_type(), semantic_base(), m_value(rhs.m_value), m_has_value(rhs.m_has_value),
-              m_storage(m_value.storage(), m_has_value.storage()) {
+    template <class VE, class FE>
+    inline xoptional_assembly<VE, FE>::xoptional_assembly(self_type&& rhs)
+        : base_type(), semantic_base(), m_value(rhs.m_value), m_has_value(rhs.m_has_value), m_storage(m_value.storage(), m_has_value.storage())
+    {
     }
 
-    template<class VE, class FE>
-    inline auto xoptional_assembly<VE, FE>::operator=(const self_type &rhs) -> self_type & {
+    template <class VE, class FE>
+    inline auto xoptional_assembly<VE, FE>::operator=(const self_type& rhs) -> self_type&
+    {
         base_type::operator=(rhs);
         m_value = rhs.m_value;
         m_has_value = rhs.m_has_value;
         return *this;
     }
 
-    template<class VE, class FE>
-    inline auto xoptional_assembly<VE, FE>::operator=(self_type &&rhs) -> self_type & {
+    template <class VE, class FE>
+    inline auto xoptional_assembly<VE, FE>::operator=(self_type&& rhs) -> self_type&
+    {
         base_type::operator=(rhs);
         m_value = std::move(rhs.m_value);
         m_has_value = std::move(rhs.m_has_value);
@@ -502,7 +494,7 @@ namespace xt
     template <class VE, class FE>
     template <class E>
     inline xoptional_assembly<VE, FE>::xoptional_assembly(const xexpression<E>& e)
-            : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
+        : base_type(), m_value(), m_has_value(), m_storage(m_value.storage(), m_has_value.storage())
     {
         semantic_base::assign(e);
     }
@@ -518,13 +510,15 @@ namespace xt
     }
     //@}
 
-    template<class VE, class FE>
-    inline auto xoptional_assembly<VE, FE>::storage_impl() noexcept -> storage_type & {
+    template <class VE, class FE>
+    inline auto xoptional_assembly<VE, FE>::storage_impl() noexcept -> storage_type&
+    {
         return m_storage;
     }
 
-    template<class VE, class FE>
-    inline auto xoptional_assembly<VE, FE>::storage_impl() const noexcept -> const storage_type & {
+    template <class VE, class FE>
+    inline auto xoptional_assembly<VE, FE>::storage_impl() const noexcept -> const storage_type&
+    {
         return m_storage;
     }
 
@@ -569,16 +563,15 @@ namespace xt
     template <class VEC, class FEC>
     template <class OVE, class OFE>
     inline xoptional_assembly_adaptor<VEC, FEC>::xoptional_assembly_adaptor(OVE&& ve, OFE&& fe)
-            : m_value(std::forward<OVE>(ve)), m_has_value(std::forward<OFE>(fe)),
-              m_storage(m_value.storage(), m_has_value.storage())
+        : m_value(std::forward<OVE>(ve)), m_has_value(std::forward<OFE>(fe)), m_storage(m_value.storage(), m_has_value.storage())
     {
     }
     //@}
 
-    template<class VEC, class FEC>
-    inline xoptional_assembly_adaptor<VEC, FEC>::xoptional_assembly_adaptor(const self_type &rhs)
-            : base_type(), semantic_base(), m_value(rhs.m_value), m_has_value(rhs.m_has_value),
-              m_storage(m_value.storage(), m_has_value.storage()) {
+    template <class VEC, class FEC>
+    inline xoptional_assembly_adaptor<VEC, FEC>::xoptional_assembly_adaptor(const self_type& rhs)
+        : base_type(), semantic_base(), m_value(rhs.m_value), m_has_value(rhs.m_has_value), m_storage(m_value.storage(), m_has_value.storage())
+    {
     }
 
     template <class VEC, class FEC>
@@ -590,10 +583,10 @@ namespace xt
         return *this;
     }
 
-    template<class VEC, class FEC>
-    inline xoptional_assembly_adaptor<VEC, FEC>::xoptional_assembly_adaptor(self_type &&rhs)
-            : base_type(), semantic_base(), m_value(rhs.m_value), m_has_value(rhs.m_has_value),
-              m_storage(m_value.storage(), m_has_value.storage()) {
+    template <class VEC, class FEC>
+    inline xoptional_assembly_adaptor<VEC, FEC>::xoptional_assembly_adaptor(self_type&& rhs)
+        : base_type(), semantic_base(), m_value(rhs.m_value), m_has_value(rhs.m_has_value), m_storage(m_value.storage(), m_has_value.storage())
+    {
     }
 
     template <class VEC, class FEC>
@@ -628,13 +621,15 @@ namespace xt
     }
     //@}
 
-    template<class VEC, class FEC>
-    inline auto xoptional_assembly_adaptor<VEC, FEC>::storage_impl() noexcept -> storage_type & {
+    template <class VEC, class FEC>
+    inline auto xoptional_assembly_adaptor<VEC, FEC>::storage_impl() noexcept -> storage_type&
+    {
         return m_storage;
     }
 
-    template<class VEC, class FEC>
-    inline auto xoptional_assembly_adaptor<VEC, FEC>::storage_impl() const noexcept -> const storage_type & {
+    template <class VEC, class FEC>
+    inline auto xoptional_assembly_adaptor<VEC, FEC>::storage_impl() const noexcept -> const storage_type&
+    {
         return m_storage;
     }
 

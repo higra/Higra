@@ -25,6 +25,7 @@
 #include <xtl/xsequence.hpp>
 
 #include "xbuilder.hpp"
+#include "xeval.hpp"
 #include "xexpression.hpp"
 #include "xgenerator.hpp"
 #include "xiterable.hpp"
@@ -58,7 +59,7 @@ namespace xt
     template <class ST, class X>
     struct xreducer_shape_type;
 
-    template<class S1, class S2>
+    template <class S1, class S2>
     struct fixed_xreducer_shape_type;
 
     template <class E, class X, class result_type>
@@ -79,8 +80,9 @@ namespace xt
         using type = xtensor<result_type, sizeof...(N) - NX, L>;
     };
 
-    template<class T, std::size_t... I, layout_type L, std::size_t... X, class result_type>
-    struct xreducer_result_container<xtensor_fixed<T, xshape<I...>, L>, xshape<X...>, result_type> {
+    template <class T, std::size_t... I, layout_type L, std::size_t... X, class result_type>
+    struct xreducer_result_container<xtensor_fixed<T, xshape<I...>, L>, xshape<X...>, result_type>
+    {
         using type = xtensor_fixed<result_type, typename fixed_xreducer_shape_type<fixed_shape<I...>, fixed_shape<X...>>::type, L>;
     };
 
@@ -147,7 +149,8 @@ namespace xt
         auto strides_finder = e.strides().begin() + static_cast<std::ptrdiff_t>(leading_ax);
         // The computed strides contain "0" where the shape is 1 -- therefore find the next none-zero number
         std::size_t inner_stride = static_cast<std::size_t>(*strides_finder);
-        while (inner_stride == 0) {
+        while (inner_stride == 0)
+        {
             (e.layout() == layout_type::row_major) ? --strides_finder : ++strides_finder;
             inner_stride = static_cast<std::size_t>(*strides_finder);
         }
@@ -280,7 +283,7 @@ namespace xt
             while (idx_res.first != true)
             {
                 std::transform(out, out + inner_loop_size, begin, out,
-                               [merge, &init_fct, &reduce_fct](auto &&v1, auto &&v2) {
+                               [merge, &init_fct, &reduce_fct](auto&& v1, auto&& v2) {
                                     return merge ?
                                         reduce_fct(v1, v2) :
                                         // cast because return type of identity function is not upcasted
@@ -496,14 +499,17 @@ namespace xt
         template <class F, class E, class X>
         inline auto reduce_impl(F&& f, E&& e, X&& axes, evaluation_strategy::lazy)
         {
-            using reducer_type = xreducer<F, const_xclosure_t<E>, xtl::const_closure_type_t<X>>;
-            return reducer_type(std::forward<F>(f), std::forward<E>(e), std::forward<X>(axes));
+            decltype(auto) normalized_axes = normalize_axis(e, std::forward<X>(axes));
+            using reducer_type = xreducer<F, const_xclosure_t<E>, xtl::const_closure_type_t<decltype(normalized_axes)>>;
+            return reducer_type(std::forward<F>(f), std::forward<E>(e), std::forward<decltype(normalized_axes)>(normalized_axes));
         }
+
 
         template <class F, class E, class X>
         inline auto reduce_impl(F&& f, E&& e, X&& axes, evaluation_strategy::immediate)
         {
-            return reduce_immediate(std::forward<F>(f), std::forward<E>(e), std::forward<X>(axes));
+            decltype(auto) normalized_axes = normalize_axis(e, std::forward<X>(axes));
+            return reduce_immediate(std::forward<F>(f), eval(std::forward<E>(e)), std::forward<decltype(normalized_axes)>(normalized_axes));
         }
     }
 
@@ -539,16 +545,18 @@ namespace xt
     template <class F, class E, class I, class EVS>
     inline auto reduce(F&& f, E&& e, std::initializer_list<I> axes, EVS evaluation_strategy)
     {
-        using axes_type = std::vector<typename std::decay_t<E>::size_type>;
+        using axes_type = std::vector<std::size_t>;
+        auto ax = xt::forward_normalize<axes_type>(e, axes);
         using reducer_type = xreducer<F, const_xclosure_t<E>, axes_type>;
-        return detail::reduce_impl(std::forward<F>(f), std::forward<E>(e), xtl::forward_sequence<axes_type>(axes), evaluation_strategy);
+        return detail::reduce_impl(std::forward<F>(f), std::forward<E>(e), std::move(ax), evaluation_strategy);
     }
 #else
     template <class F, class E, class I, std::size_t N, class EVS>
     inline auto reduce(F&& f, E&& e, const I (&axes)[N], EVS evaluation_strategy)
     {
-        using axes_type = std::array<typename std::decay_t<E>::size_type, N>;
-        return detail::reduce_impl(std::forward<F>(f), std::forward<E>(e), xtl::forward_sequence<axes_type>(axes), evaluation_strategy);
+        using axes_type = std::array<std::size_t, N>;
+        auto ax = xt::forward_normalize<axes_type>(e, axes);
+        return detail::reduce_impl(std::forward<F>(f), std::forward<E>(e), std::move(ax), evaluation_strategy);
     }
 #endif
 
@@ -607,41 +615,46 @@ namespace xt
      * xreducer utils *
      ******************/
 
-    namespace detail {
-        template<std::size_t X, std::size_t... I>
-        struct in {
+    namespace detail
+    {
+        template <std::size_t X, std::size_t... I>
+        struct in
+        {
             constexpr static bool value = xtl::disjunction<std::integral_constant<bool, X == I>...>::value;
         };
 
-        template<std::size_t Z, class S1, class S2, class R>
+        template <std::size_t Z, class S1, class S2, class R>
         struct fixed_xreducer_shape_type_impl;
 
-        template<std::size_t Z, std::size_t... I, std::size_t... J, std::size_t... R>
-        struct fixed_xreducer_shape_type_impl<Z, fixed_shape<I...>, fixed_shape<J...>, fixed_shape<R...>> {
+        template <std::size_t Z, std::size_t... I, std::size_t... J, std::size_t... R>
+        struct fixed_xreducer_shape_type_impl<Z, fixed_shape<I...>, fixed_shape<J...>, fixed_shape<R...>>
+        {
             using type = std::conditional_t<in<Z, J...>::value,
-                    typename fixed_xreducer_shape_type_impl<Z - 1, fixed_shape<I...>, fixed_shape<J...>,
-                            fixed_shape<R...>>::type,
-                    typename fixed_xreducer_shape_type_impl<Z - 1, fixed_shape<I...>, fixed_shape<J...>,
-                            fixed_shape<detail::at<Z, I...>::value, R...>>::type>;
+                                            typename fixed_xreducer_shape_type_impl<Z - 1, fixed_shape<I...>, fixed_shape<J...>,
+                                                                                    fixed_shape<R...>>::type,
+                                            typename fixed_xreducer_shape_type_impl<Z - 1, fixed_shape<I...>, fixed_shape<J...>,
+                                                                                    fixed_shape<detail::at<Z, I...>::value, R...>>::type>;
         };
 
-        template<std::size_t... I, std::size_t... J, std::size_t... R>
-        struct fixed_xreducer_shape_type_impl<0, fixed_shape<I...>, fixed_shape<J...>, fixed_shape<R...>> {
+        template <std::size_t... I, std::size_t... J, std::size_t... R>
+        struct fixed_xreducer_shape_type_impl<0, fixed_shape<I...>, fixed_shape<J...>, fixed_shape<R...>>
+        {
             using type = std::conditional_t<in<0, J...>::value,
-                    fixed_shape<R...>,
-                    fixed_shape<detail::at<0, I...>::value, R...>>;
+                                            fixed_shape<R...>,
+                                            fixed_shape<detail::at<0, I...>::value, R...>>;
         };
     }
 
-    template<class S1, class S2>
+    template <class S1, class S2>
     struct fixed_xreducer_shape_type;
 
-    template<std::size_t... I, std::size_t... J>
-    struct fixed_xreducer_shape_type<fixed_shape<I...>, fixed_shape<J...>> {
-        using type = typename detail::fixed_xreducer_shape_type_impl<sizeof...(I) - 1,
-                fixed_shape<I...>,
-                fixed_shape<J...>,
-                fixed_shape<>>::type;
+    template <std::size_t... I, std::size_t... J>
+    struct fixed_xreducer_shape_type<fixed_shape<I...>, fixed_shape<J...>>
+    {
+        using type = typename detail::fixed_xreducer_shape_type_impl<sizeof...(I) - 1, 
+                                                                    fixed_shape<I...>,
+                                                                    fixed_shape<J...>,
+                                                                    fixed_shape<>>::type;
     };
 
 
@@ -658,14 +671,16 @@ namespace xt
         using type = std::array<I2, N1 - N2>;
     };
 
-    template<std::size_t... I, class I2, std::size_t N2>
-    struct xreducer_shape_type<fixed_shape<I...>, std::array<I2, N2>> {
+    template <std::size_t... I, class I2, std::size_t N2>
+    struct xreducer_shape_type<fixed_shape<I...>, std::array<I2, N2>>
+    {
         using type = std::array<I2, sizeof...(I) - N2>;
     };
 
     // Note adding "A" to prevent compilation in case nothing else matches 
-    template<std::size_t... I, std::size_t... J>
-    struct xreducer_shape_type<fixed_shape<I...>, fixed_shape<J...>> {
+    template <std::size_t... I, std::size_t... J>
+    struct xreducer_shape_type<fixed_shape<I...>, fixed_shape<J...>>
+    {
         using type = std::array<std::size_t, sizeof...(I) - sizeof...(J)>;
     };
 

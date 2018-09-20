@@ -31,6 +31,7 @@ namespace pybind11
 {
     namespace detail
     {
+#ifdef PYBIND11_DESCR // The macro is removed from pybind11 since 2.3
         template <class T, xt::layout_type L>
         struct handle_type_name<xt::pyarray<T, L>>
         {
@@ -39,6 +40,7 @@ namespace pybind11
                 return _("numpy.ndarray[") + npy_format_descriptor<T>::name() + _("]");
             }
         };
+#endif
 
         template <typename T, xt::layout_type L>
         struct pyobject_caster<xt::pyarray<T, L>>
@@ -63,7 +65,11 @@ namespace pybind11
                 return src.inc_ref();
             }
 
+#ifdef PYBIND11_DESCR // The macro is removed from pybind11 since 2.3
             PYBIND11_TYPE_CASTER(type, handle_type_name<type>::name());
+#else
+            PYBIND11_TYPE_CASTER(type, _("numpy.ndarray[") + npy_format_descriptor<T>::name + _("]"));
+#endif
         };
 
         // Type caster for casting ndarray to xexpression<pyarray>
@@ -322,6 +328,7 @@ namespace xt
         using const_reference = typename base_type::const_reference;
         using pointer = typename base_type::pointer;
         using size_type = typename base_type::size_type;
+        using difference_type = typename base_type::difference_type;
         using shape_type = typename base_type::shape_type;
         using strides_type = typename base_type::strides_type;
         using backstrides_type = typename base_type::backstrides_type;
@@ -346,8 +353,8 @@ namespace xt
         explicit pyarray(const shape_type& shape, const strides_type& strides, const_reference value);
         explicit pyarray(const shape_type& shape, const strides_type& strides);
 
-        template<class S = shape_type>
-        static pyarray from_shape(S &&s);
+        template <class S = shape_type>
+        static pyarray from_shape(S&& s);
 
         pyarray(const self_type& rhs);
         self_type& operator=(const self_type& rhs);
@@ -613,9 +620,10 @@ namespace xt
      * Allocates and returns an pyarray with the specified shape.
      * @param shape the shape of the pyarray
      */
-    template<class T, layout_type L>
-    template<class S>
-    inline pyarray<T, L> pyarray<T, L>::from_shape(S &&shape) {
+    template <class T, layout_type L>
+    template <class S>
+    inline pyarray<T, L> pyarray<T, L>::from_shape(S&& shape)
+    {
         auto shp = xtl::forward_sequence<shape_type>(shape);
         return self_type(shp);
     }
@@ -738,10 +746,11 @@ namespace xt
     {
         m_shape = inner_shape_type(reinterpret_cast<size_type*>(PyArray_SHAPE(this->python_array())),
                                    static_cast<size_type>(PyArray_NDIM(this->python_array())));
-        m_strides = inner_strides_type(reinterpret_cast<size_type*>(PyArray_STRIDES(this->python_array())),
+        m_strides = inner_strides_type(reinterpret_cast<difference_type*>(PyArray_STRIDES(this->python_array())),
                                        static_cast<size_type>(PyArray_NDIM(this->python_array())));
 
-        if (L != layout_type::dynamic && !do_strides_match(m_shape, m_strides, L)) {
+        if (L != layout_type::dynamic && !do_strides_match(m_shape, m_strides, L))
+        {
             throw std::runtime_error("NumPy: passing container with bad strides for layout (is it a view?).");
         }
 

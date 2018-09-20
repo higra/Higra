@@ -39,8 +39,8 @@ namespace xsimd
      * @param si the sine of x.
      * @param co the cosine of x.
      */
-    template<class T, std::size_t N>
-    void sincos(const batch<T, N> &x, batch<T, N> &si, batch<T, N> &co);
+    template <class T, std::size_t N>
+    void sincos(const batch<T, N>& x, batch<T, N>& si, batch<T, N>& co);
 
     /**
      * Computes the tangent of the batch \c x.
@@ -96,17 +96,18 @@ namespace xsimd
          * ====================================================
          */
 
-        template<class B>
+        template <class B>
         struct trigo_kernel
         {
-            template<class Tag = trigo_radian_tag>
-            static inline B sin(const B &a, Tag = Tag()) {
+            template <class Tag = trigo_radian_tag>
+            static inline B sin(const B& a, Tag = Tag())
+            {
                 const B x = abs(a);
                 B xr = nan<B>();
                 const B n = trigo_reducer<B, Tag>::reduce(x, xr);
                 auto tmp = select(n >= B(2.), B(1.), B(0.));
                 auto swap_bit = fma(B(-2.), tmp, n);
-                auto sign_bit = bitofsign(a) ^select(tmp != B(0.), signmask<B>(), B(0.));
+                auto sign_bit = bitofsign(a) ^ select(tmp != B(0.), signmask<B>(), B(0.));
                 const B z = xr * xr;
                 const B se = trigo_evaluation<B>::sin_eval(z, xr);
                 const B ce = trigo_evaluation<B>::cos_eval(z);
@@ -114,7 +115,8 @@ namespace xsimd
                 return z1 ^ sign_bit;
             }
 
-            static inline B cos(const B &a) {
+            static inline B cos(const B& a)
+            {
                 const B x = abs(a);
                 B xr = nan<B>();
                 const B n = trigo_reducer<B>::reduce(x, xr);
@@ -128,7 +130,8 @@ namespace xsimd
                 return z1 ^ sign_bit;
             }
 
-            static inline B tan(const B &a) {
+            static inline B tan(const B& a)
+            {
                 const B x = abs(a);
                 B xr = nan<B>();
                 const B n = trigo_reducer<B>::reduce(x, xr);
@@ -139,7 +142,8 @@ namespace xsimd
                 return y ^ bitofsign(a);
             }
 
-            static inline void sincos(const B &a, B &si, B &co) {
+            static inline void sincos(const B& a, B& si, B& co)
+            {
                 const B x = abs(a);
                 B xr = nan<B>();
                 const B n = trigo_reducer<B>::reduce(x, xr);
@@ -148,7 +152,7 @@ namespace xsimd
                 const B z = xr * xr;
                 const B se = trigo_evaluation<B>::sin_eval(z, xr);
                 const B ce = trigo_evaluation<B>::cos_eval(z);
-                auto sin_sign_bit = bitofsign(a) ^select(tmp != B(0.), signmask<B>(), B(0.));
+                auto sin_sign_bit = bitofsign(a) ^ select(tmp != B(0.), signmask<B>(), B(0.));
                 const B sin_z1 = select(swap_bit == B(0.), se, ce);
                 si = sin_z1 ^ sin_sign_bit;
                 auto cos_sign_bit = select((swap_bit ^ tmp) != B(0.), signmask<B>(), B(0.));
@@ -170,8 +174,9 @@ namespace xsimd
         return detail::trigo_kernel<batch<T, N>>::cos(x);
     }
 
-    template<class T, std::size_t N>
-    inline void sincos(const batch<T, N> &x, batch<T, N> &si, batch<T, N> &co) {
+    template <class T, std::size_t N>
+    inline void sincos(const batch<T, N>& x, batch<T, N>& si, batch<T, N>& co)
+    {
         detail::trigo_kernel<batch<T, N>>::sincos(x, si, co);
     }
 

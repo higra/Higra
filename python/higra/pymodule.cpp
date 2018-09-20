@@ -29,7 +29,7 @@
 #include "cpp/py_tree_io.hpp"
 #include "cpp/py_undirected_graph.hpp"
 #include "cpp/py_watershed.hpp"
-
+#include "xtl/xmeta_utils.hpp"
 #define FORCE_IMPORT_ARRAY
 
 #include "xtensor-python/pyarray.hpp"

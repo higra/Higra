@@ -29,6 +29,9 @@
 // Required because pyconfig.hpp defines copysign to _copysign
 #undef copysign
 
+// TODO: remove this workaround when xtensor 0.18 is released
+#include "xtl/xmeta_utils.hpp"
+
 #include <cmath>
 #include "xtensor/xcontainer.hpp"
 
@@ -315,18 +318,24 @@ namespace xt
         return *static_cast<const derived_type*>(this);
     }
 
-    namespace detail {
-        template<class S>
-        struct check_dims {
-            static bool run(std::size_t) {
+    namespace detail
+    {
+        template <class S>
+        struct check_dims
+        {
+            static bool run(std::size_t)
+            {
                 return true;
             }
         };
 
-        template<class T, std::size_t N>
-        struct check_dims<std::array<T, N>> {
-            static bool run(std::size_t new_dim) {
-                if (new_dim != N) {
+        template <class T, std::size_t N>
+        struct check_dims<std::array<T, N>>
+        {
+            static bool run(std::size_t new_dim)
+            {
+                if(new_dim != N)
+                {
                     throw std::runtime_error("Dims not matching.");
                 }
                 return new_dim == N;
@@ -382,9 +391,7 @@ namespace xt
     {
         if (compute_size(shape) != this->size())
         {
-            throw std::runtime_error(
-                    "Cannot reshape with incorrect number of elements (" + std::to_string(this->size()) + " vs " +
-                    std::to_string(compute_size(shape)) + ")");
+            throw std::runtime_error("Cannot reshape with incorrect number of elements (" + std::to_string(this->size()) + " vs " + std::to_string(compute_size(shape)) + ")");
         }
         detail::check_dims<shape_type>::run(shape.size());
         layout = default_assignable_layout(layout);
@@ -404,8 +411,7 @@ namespace xt
         }
 
         using shape_ptr = typename std::decay_t<S>::pointer;
-        PyArray_Dims dims = {reinterpret_cast<npy_intp *>(const_cast<shape_ptr>(shape.data())),
-                             static_cast<int>(shape.size())};
+        PyArray_Dims dims = {reinterpret_cast<npy_intp*>(const_cast<shape_ptr>(shape.data())), static_cast<int>(shape.size())};
         auto new_ptr = PyArray_Newshape((PyArrayObject*) this->ptr(), &dims, npy_layout);
         auto old_ptr = this->ptr();
         this->ptr() = new_ptr;

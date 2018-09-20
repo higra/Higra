@@ -55,7 +55,7 @@
 #endif
 
 #if defined(__AVX512BW__)
-#define XSIMD_AVX512BW_AVAILABLE 1
+    #define XSIMD_AVX512BW_AVAILABLE 1
 #endif
 
 #if !defined(XSIMD_X86_INSTR_SET) && defined(__AVX2__)
