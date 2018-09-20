@@ -12,6 +12,7 @@
 
 #include "xtensor/xgenerator.hpp"
 #include "xtensor/xeval.hpp"
+#include "xtensor/xindex_view.hpp"
 #include "../structure/tree_graph.hpp"
 #include "../accumulator/tree_accumulator.hpp"
 
@@ -38,6 +39,33 @@ namespace hg {
                                                    altitudes,
                                                    deleted_nodes);
         return xt::eval(xt::strided_view(reconstruction, {xt::range(0, num_leaves(tree)), xt::ellipsis()}));
+    };
+
+    /**
+     * Labelize tree leaves according to an horizontal cut in the tree.
+     *
+     * Two leaves are in the same region (ie. have the same label) if
+     * the altitude of their lowest common ancestor is strictly greater
+     * than the specified threshold.
+     *
+     * @tparam tree_t
+     * @tparam T
+     * @tparam value_t
+     * @param tree
+     * @param xaltitudes
+     * @param threshold
+     * @return
+     */
+    template<typename tree_t,
+            typename T,
+            typename value_t>
+    auto labelisation_horizontal_cut(const tree_t &tree,
+                                     const xt::xexpression<T> &xaltitudes,
+                                     const value_t threshold) {
+        auto & altitudes = xaltitudes.derived_cast();
+        return reconstruct_leaf_data(tree,
+                                     xt::arange(num_vertices(tree)),
+                                     xt::index_view(altitudes, tree.parents()) <= threshold);
     };
 
     /**

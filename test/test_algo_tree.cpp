@@ -29,26 +29,43 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
 
     BOOST_AUTO_TEST_CASE(test_reconstruct_leaf_data) {
 
-            auto tree = data.t;
-            array_2d<int> input{{1, 8},
-                                {2, 7},
-                                {3, 6},
-                                {4, 5},
-                                {5, 4},
-                                {6, 3},
-                                {7, 2},
-                                {8, 1}};
+        auto tree = data.t;
+        array_2d<int> input{{1, 8},
+                            {2, 7},
+                            {3, 6},
+                            {4, 5},
+                            {5, 4},
+                            {6, 3},
+                            {7, 2},
+                            {8, 1}};
 
-            array_1d<bool> condition{true, false, true, false, true, true, false, false};
+        array_1d<bool> condition{true, false, true, false, true, true, false, false};
 
-            auto output = reconstruct_leaf_data(tree, input, condition);
-            array_2d<int> ref{{8, 1},
-                               {2, 7},
-                               {7, 2},
-                               {4, 5},
-                               {7, 2}};
-            BOOST_CHECK(xt::allclose(ref, output));
+        auto output = reconstruct_leaf_data(tree, input, condition);
+        array_2d<int> ref{{8, 1},
+                          {2, 7},
+                          {7, 2},
+                          {4, 5},
+                          {7, 2}};
+        BOOST_CHECK(xt::allclose(ref, output));
+    }
 
+    BOOST_AUTO_TEST_CASE(test_labelisation_horizontal_cut) {
+
+        auto tree = data.t;
+        array_1d<double> altitudes{0, 0, 0, 0, 0, 1, 0, 2};
+
+        array_1d<int> ref_t0{1, 2, 3, 3, 3};
+        array_1d<int> ref_t1{1, 1, 2, 2, 2};
+        array_1d<int> ref_t2{1, 1, 1, 1, 1};
+
+        auto output_t0 = labelisation_horizontal_cut(tree, altitudes, 0);
+        auto output_t1 = labelisation_horizontal_cut(tree, altitudes, 1);
+        auto output_t2 = labelisation_horizontal_cut(tree, altitudes, 2);
+
+        BOOST_CHECK(is_in_bijection(ref_t0, output_t0));
+        BOOST_CHECK(is_in_bijection(ref_t1, output_t1));
+        BOOST_CHECK(is_in_bijection(ref_t2, output_t2));
     }
 
     BOOST_AUTO_TEST_CASE(tree_isomorphism) {
@@ -72,8 +89,6 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
         BOOST_CHECK(!testTreeIsomorphism(t4, t1));
         BOOST_CHECK(!testTreeIsomorphism(t4, t2));
         BOOST_CHECK(!testTreeIsomorphism(t4, t3));
-
     }
-
 
 BOOST_AUTO_TEST_SUITE_END();
