@@ -114,13 +114,4 @@ namespace hg {
         return true;
     }
 
-    template<typename tree_t,
-            typename T1,
-            typename T2>
-    auto project_saliency_to_rag(const tree_t & tree,
-    const xt::xexpression<T1> & altitudes,
-    const region_adjacency_graph & rag,
-                                 const xt::xexpression<T2> & rag_2_tree_map){
-
-    };
 }

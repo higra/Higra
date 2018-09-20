@@ -48,6 +48,7 @@ set(MODULE_FILES
         pink_io.py
         rag.py
         tree_attributes.py
+        tree_algo.py
         tree_io.py
         utils.py
         watershed.py)

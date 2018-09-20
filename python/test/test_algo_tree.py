@@ -15,6 +15,46 @@ import numpy as np
 
 class TestAlgorithmTree(unittest.TestCase):
 
+    def test_reconstruct_leaf_data(self):
+        tree = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
+
+        input = np.asarray(((1, 8),
+                            (2, 7),
+                            (3, 6),
+                            (4, 5),
+                            (5, 4),
+                            (6, 3),
+                            (7, 2),
+                            (8, 1)), dtype=np.int32)
+
+        condition = np.asarray((True, False, True, False, True, True, False, False), np.bool_)
+
+        output = hg.reconstruct_leaf_data(tree, condition, input)
+        ref = np.asarray(((8, 1),
+                          (2, 7),
+                          (7, 2),
+                          (4, 5),
+                          (7, 2)), dtype=np.int32)
+
+        self.assertTrue(np.all(ref==output))
+
+    def test_labelisation_horizontal_cut(self):
+        tree = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 0, 2))
+
+        ref_t0 = np.asarray((1, 2, 3, 3, 3), dtype=np.int32)
+        ref_t1 = np.asarray((1, 1, 2, 2, 2), dtype=np.int32)
+        ref_t2 = np.asarray((1, 1, 1, 1, 1), dtype=np.int32)
+
+        output_t0 = hg.labelisation_horizontal_cut(tree, 0, altitudes)
+        output_t1 = hg.labelisation_horizontal_cut(tree, 1, altitudes)
+        output_t2 = hg.labelisation_horizontal_cut(tree, 2, altitudes)
+
+        self.assertTrue(hg.is_in_bijection(ref_t0, output_t0))
+        self.assertTrue(hg.is_in_bijection(ref_t1, output_t1))
+        self.assertTrue(hg.is_in_bijection(ref_t2, output_t2))
+
     def test_tree_isomorphism(self):
         t1 = hg.Tree(np.asarray((5, 5, 6, 6, 7, 8, 7, 8, 8)))
         t2 = hg.Tree(np.asarray((6, 6, 5, 5, 7, 7, 8, 8, 8)))

@@ -17,6 +17,23 @@
 
 namespace py = pybind11;
 
+struct labelisation_horizontal_cut {
+    template<typename value_t>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_labelisation_horizontal_cut", [](const hg::tree &tree,
+                                                 const xt::pyarray<value_t> &altitudes,
+                                                 const value_t threshold) {
+
+                  return hg::labelisation_horizontal_cut(tree, altitudes, threshold);
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("altitudes"),
+              py::arg("threshold"));
+    }
+};
+
 void py_init_algo_tree(pybind11::module &m) {
     xt::import_numpy();
 
@@ -31,4 +48,12 @@ void py_init_algo_tree(pybind11::module &m) {
           "  for the root node r1 of t1, f(r1) = t2.parent(f(r1)), i.e. f(r1) is the root node of t2",
           py::arg("tree1"),
           py::arg("tree2"));
+
+    add_type_overloads<labelisation_horizontal_cut, HG_TEMPLATE_NUMERIC_TYPES>
+            (m,
+             "Labelize tree leaves according to an horizontal cut in the tree. \n"
+             "Two leaves are in the same region (ie. have the same label) if "
+             "the altitude of their lowest common ancestor is strictly greater "
+             "than the specified threshold."
+            );
 }
