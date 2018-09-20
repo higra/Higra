@@ -18,6 +18,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/incl
 
 set(PYMODULE_COMPONENTS
         cpp/py_accumulators.cpp
+        cpp/py_algo_graph_core.cpp
         cpp/py_algo_tree.cpp
         cpp/py_binary_partition_tree.cpp
         cpp/py_contour_2d.cpp
@@ -48,6 +49,7 @@ set(MODULE_FILES
         rag.py
         tree_attributes.py
         tree_io.py
+        utils.py
         watershed.py)
 
 pybind11_add_module(higram pymodule.cpp ${PYMODULE_COMPONENTS})

@@ -46,35 +46,7 @@ class TestContour2d(unittest.TestCase):
        
         return result
 
-    @staticmethod
-    def is_in_bijection(a, b):
-        
-        aa = a.flatten()
-        bb = b.flatten()
 
-        if aa.size != bb.size:
-            return False
-
-        equiv1 = {}
-        equiv2 = {}
-
-        for i in range(aa.size):
-            v1 = aa[i]
-            v2 = bb[i]
-            
-            if v1 in equiv1:
-                if equiv1[v1] != v2:
-                    return False
-            else:
-                equiv1[v1] = v2
-
-            if v2 in equiv2:
-                if equiv2[v2] != v1:
-                    return False
-            else:
-                equiv2[v2] = v1
-
-        return True
 
     def test_fit_contour_2d(self):
         shape = (4, 5)
@@ -94,7 +66,7 @@ class TestContour2d(unittest.TestCase):
         contours = hg.fit_contour_2d(g, shape, data)
         contours.subdivide(0.000001, False, 0)
         contours_khalimsky = TestContour2d.contour_2_khalimsky(g, shape, contours)
-        self.assertTrue(TestContour2d.is_in_bijection(ref, contours_khalimsky))
+        self.assertTrue(hg.is_in_bijection(ref, contours_khalimsky))
 
 if __name__ == '__main__':
     unittest.main()

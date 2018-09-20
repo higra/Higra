@@ -11,6 +11,7 @@
 #include "pybind11/pybind11.h"
 
 #include "cpp/py_accumulators.hpp"
+#include "cpp/py_algo_graph_core.hpp"
 #include "cpp/py_algo_tree.hpp"
 #include "cpp/py_binary_partition_tree.hpp"
 #include "cpp/py_contour_2d.hpp"
@@ -52,6 +53,7 @@ PYBIND11_MODULE(higram, m) {
 #endif
     xt::import_numpy();
     py_init_accumulators(m);
+    py_init_algo_graph_core(m);
     py_init_algo_tree(m);
     py_init_binary_partition_tree(m);
     py_init_contour_2d(m);
