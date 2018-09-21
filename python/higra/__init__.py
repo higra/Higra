@@ -37,7 +37,7 @@ for loader, name, is_pkg in pkgutil.walk_packages(__path__):
 
 # list of modules that have to be loaded before the others
 # (required for correct file parsing, eg. defining top level decorators)
-pre_load = ("data_cache",)
+pre_load = ("data_cache", "hg_utils")
 
 for name in pre_load:
     __import_module(modules[name], name)

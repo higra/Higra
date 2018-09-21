@@ -11,7 +11,6 @@
 import higra as hg
 import numpy as np
 
-
 def triangular_filter(image, size):
     """
     Compute a triangular filter on the given 2d image.
@@ -68,9 +67,8 @@ def mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations=None):
     :return: the hierarchy defined on the gradient watershed super-pixels
     """
 
-    shape = hg.__normalize_shape(shape)
+    shape = hg.normalize_shape(shape)
     rag, vertex_map, edge_map, tree, altitudes = hg._mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations)
-
 
     hg.set_attribute(rag, "vertex_map", vertex_map)
     hg.set_attribute(rag, "edge_map", edge_map)

@@ -8,9 +8,8 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-import higra as hg
 
-def __normalize_shape(shape):
+def normalize_shape(shape):
     """
     This function ensure that the given shape will be easily convertible
     in a c++ callback (ie. that it won't interfere badly in pybind11
@@ -18,7 +17,8 @@ def __normalize_shape(shape):
     :param shape:
     :return:
     """
-    return (int(i) for i in shape)
+    return tuple(int(i) for i in shape)
+
 
 def is_in_bijection(a, b):
     """

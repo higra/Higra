@@ -44,6 +44,7 @@ set(MODULE_FILES
         graph_core.py
         graph_image.py
         graph_weights.py
+        hg_utils.py
         hierarchy_core.py
         image_utils.py
         pink_io.py
@@ -51,7 +52,6 @@ set(MODULE_FILES
         tree_attributes.py
         tree_algo.py
         tree_io.py
-        utils.py
         watershed.py)
 
 pybind11_add_module(higram pymodule.cpp ${PYMODULE_COMPONENTS})
