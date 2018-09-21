@@ -243,6 +243,8 @@ namespace hg {
      *  range(xlabelisation_fine) = [0..num_regions_fine[
      *  range(xlabelisation_coarse) = [0..num_regions_coarse[
      *
+     * If num_regions_fine or num_regions_coarse are not provided, they will
+     * be determined as max(xlabelisation_fine) + 1 and max(xlabelisation_coarse) + 1
      * @tparam T1
      * @tparam T2
      * @param xlabelisation_fine
@@ -254,9 +256,9 @@ namespace hg {
     template<typename T1, typename T2>
     auto project_fine_to_coarse_labelisation
             (const xt::xexpression<T1> &xlabelisation_fine,
-             size_t num_regions_fine,
              const xt::xexpression<T2> &xlabelisation_coarse,
-             size_t num_regions_coarse) {
+             size_t num_regions_fine = 0,
+             size_t num_regions_coarse = 0) {
 
         auto &labelisation_fine = xlabelisation_fine.derived_cast();
         auto &labelisation_coarse = xlabelisation_coarse.derived_cast();
@@ -269,6 +271,14 @@ namespace hg {
                   "Labelisation must be a 1d array.");
         hg_assert(labelisation_fine.size() == labelisation_coarse.size(),
                   "Labelisations must have the same size.");
+
+        if(num_regions_fine == 0){
+            num_regions_fine = xt::amax(labelisation_fine)(0) + 1;
+        }
+
+        if(num_regions_coarse == 0){
+            num_regions_coarse = xt::amax(labelisation_coarse)(0) + 1;
+        }
 
         array_2d <size_t> intersections = xt::zeros<size_t>({num_regions_fine, num_regions_coarse});
 
@@ -293,8 +303,8 @@ namespace hg {
             (const region_adjacency_graph &fine_rag,
              const region_adjacency_graph &coarse_rag) {
         return project_fine_to_coarse_labelisation(fine_rag.vertex_map,
-                                                   num_vertices(fine_rag.rag),
                                                    coarse_rag.vertex_map,
+                                                   num_vertices(fine_rag.rag),
                                                    num_vertices(coarse_rag.rag));
     }
 }

@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
         array_1d<int> fine_labels{0,1,2,3,4,2,3,4,2};
         array_1d<int> coarse_labels{0,1,1,0,2,2,0,2,2};
 
-        auto map = project_fine_to_coarse_labelisation(fine_labels, 5, coarse_labels, 3);
+        auto map = project_fine_to_coarse_labelisation(fine_labels, coarse_labels);
 
         array_1d<int> ref_map{0, 1, 2, 0, 2};
         BOOST_CHECK(ref_map == map);

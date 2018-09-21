@@ -21,9 +21,11 @@
 
 BOOST_AUTO_TEST_SUITE(xp);
 
+    using namespace hg;
+    using namespace xt;
+    using namespace std;
 
     BOOST_AUTO_TEST_CASE(xpp) {
-
 
     }
 
