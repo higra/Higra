@@ -94,6 +94,15 @@ class TestRag(unittest.TestCase):
 
         self.assertTrue(np.allclose(rag_edge_weights, expected_rag_edge_weights))
 
+    def test_project_rag_regions(self):
+        fine_labels = np.asarray((0, 1, 2, 3, 4, 2, 3, 4, 2), dtype=np.int32)
+        coarse_labels = np.asarray((0, 1, 1, 0, 2, 2, 0, 2, 2), dtype=np.int32)
+
+        map = hg.project_fine_to_coarse_labelisation(fine_labels, coarse_labels);
+
+        ref_map = np.asarray((0, 1, 2, 0, 2), dtype=np.int32)
+        self.assertTrue(np.all(map == ref_map))
+
 
 if __name__ == '__main__':
     unittest.main()

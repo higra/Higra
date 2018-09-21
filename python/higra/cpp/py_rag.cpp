@@ -84,6 +84,29 @@ struct def_rag_accumulate {
 };
 
 
+struct def_project_fine_to_coarse_labelisation {
+    template<typename value_t, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("project_fine_to_coarse_labelisation",
+              [](const xt::pyarray<value_t> &labelisation_fine,
+                 const xt::pyarray<value_t> &labelisation_coarse,
+                 size_t num_regions_fine,
+                 size_t num_regions_coarse) {
+                  return hg::project_fine_to_coarse_labelisation(
+                          labelisation_fine,
+                          labelisation_coarse,
+                          num_regions_fine,
+                          num_regions_coarse);
+              },
+              doc,
+              py::arg("labelisation_fine"),
+              py::arg("labelisation_coarse"),
+              py::arg("num_regions_fine") = 0,
+              py::arg("num_regions_coarse") = 0);
+    }
+};
+
 void py_init_rag(pybind11::module &m) {
     xt::import_numpy();
 
@@ -98,6 +121,20 @@ void py_init_rag(pybind11::module &m) {
     add_type_overloads<def_rag_accumulate, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
              "Accumulate vertex/edge weights of the original graph on vertex/edge of a region adjacency graph.");
+
+    add_type_overloads<def_project_fine_to_coarse_labelisation, HG_TEMPLATE_INTEGRAL_TYPES>
+            (m,
+             "Given two labelisations, a fine and a coarse one, of a same set of elements.\n"
+             "Find for each label (ie. region) of the fine labelisation, the label of the region in the\n"
+             "coarse labelisation that maximises the intersection with the \"fine\" region.\n"
+             "\n"
+             "Pre-condition:\n"
+             "\trange(labelisation_fine) = [0..num_regions_fine[\n"
+             "\trange(labelisation_coarse) = [0..num_regions_coarse[\n"
+             "\n"
+             "If num_regions_fine or num_regions_coarse are not provided, they will\n"
+             "be determined as max(labelisation_fine) + 1 and max(labelisation_coarse) + 1");
+
 }
 
 
