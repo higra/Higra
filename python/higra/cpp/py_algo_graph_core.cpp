@@ -21,7 +21,7 @@ struct def_graph_cut_2_labelisation {
     template<typename value_t>
     static
     void def(pybind11::module &m, const char *doc) {
-        m.def("graph_cut_2_labelisation", [](const graph_t &graph,
+        m.def("_graph_cut_2_labelisation", [](const graph_t &graph,
                                              const xt::pyarray<value_t> &edge_weights) {
                   return hg::graph_cut_2_labelisation(graph, edge_weights);
               },
@@ -36,7 +36,7 @@ struct def_labelisation_2_graph_cut {
     template<typename value_t>
     static
     void def(pybind11::module &m, const char *doc) {
-        m.def("labelisation_2_graph_cut", [](const graph_t &graph,
+        m.def("_labelisation_2_graph_cut", [](const graph_t &graph,
                                              const xt::pyarray<value_t> &vertex_labels) {
                   return hg::labelisation_2_graph_cut(graph, vertex_labels);
               },

@@ -68,6 +68,7 @@ def mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations=None):
     :return: the hierarchy defined on the gradient watershed super-pixels
     """
 
+    shape = hg.__normalize_shape(shape)
     rag, vertex_map, edge_map, tree, altitudes = hg._mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations)
 
 

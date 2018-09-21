@@ -22,7 +22,7 @@ def graph_4_adjacency_2_khalimsky(graph, shape, edge_weights, add_extra_border=F
     :param add_extra_border: if False result size is 2 * shape - 1 and 2 * shape +1 otherwise
     :return:
     """
-
+    shape = hg.__normalize_shape(shape)
     return hg._graph_4_adjacency_2_khalimsky(graph, shape, edge_weights, add_extra_border)
 
 

@@ -40,4 +40,4 @@ def labelisation_horizontal_cut(tree, threshold, altitudes):
     :param altitudes:
     :return:
     """
-    return hg._labelisation_horizontal_cut(tree, altitudes, threshold)
+    return hg._labelisation_horizontal_cut(tree, float(threshold), altitudes)

@@ -10,6 +10,15 @@
 
 import higra as hg
 
+def __normalize_shape(shape):
+    """
+    This function ensure that the given shape will be easily convertible
+    in a c++ callback (ie. that it won't interfere badly in pybind11
+    overload resolution algorithm)
+    :param shape:
+    :return:
+    """
+    return (int(i) for i in shape)
 
 def is_in_bijection(a, b):
     """

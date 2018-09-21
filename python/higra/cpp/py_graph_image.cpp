@@ -24,7 +24,7 @@ struct def_kalhimsky_2_contour {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_khalimsky_2_graph_4_adjacency", [](const xt::pyarray<value_t> &khalimsky,
-                                       bool extra_border) {
+                                                   bool extra_border) {
                   return hg::khalimsky_2_graph_4_adjacency(khalimsky, extra_border);
               },
               doc,
@@ -38,9 +38,9 @@ struct def_contour2Khalimsky {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_graph_4_adjacency_2_khalimsky", [](const hg::ugraph &graph,
-                                       const std::vector<size_t> &shape,
-                                       const xt::pyarray<value_t> &weights,
-                                       bool add_extra_border) {
+                                                   const std::vector<size_t> &shape,
+                                                   const xt::pyarray<value_t> &weights,
+                                                   bool add_extra_border) {
                   hg::embedding_grid_2d embedding(shape);
                   return hg::graph_4_adjacency_2_khalimsky(graph, embedding, weights, add_extra_border);
               },
@@ -89,7 +89,7 @@ void py_init_graph_image(pybind11::module &m) {
     add_type_overloads<def_kalhimsky_2_contour, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
              "Create a 4 adjacency edge-weighted graph from a contour image in the Khalimsky grid. "
-                     "Returns a tuple of three elements (graph, embedding, edge_weights)."
+             "Returns a tuple of three elements (graph, embedding, edge_weights)."
             );
 
 }

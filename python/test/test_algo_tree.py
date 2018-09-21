@@ -41,15 +41,15 @@ class TestAlgorithmTree(unittest.TestCase):
     def test_labelisation_horizontal_cut(self):
         tree = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
 
-        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 0, 2))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0.5, 0, 0.7), dtype=np.double)
 
         ref_t0 = np.asarray((1, 2, 3, 3, 3), dtype=np.int32)
         ref_t1 = np.asarray((1, 1, 2, 2, 2), dtype=np.int32)
         ref_t2 = np.asarray((1, 1, 1, 1, 1), dtype=np.int32)
 
         output_t0 = hg.labelisation_horizontal_cut(tree, 0, altitudes)
-        output_t1 = hg.labelisation_horizontal_cut(tree, 1, altitudes)
-        output_t2 = hg.labelisation_horizontal_cut(tree, 2, altitudes)
+        output_t1 = hg.labelisation_horizontal_cut(tree, 0.5, altitudes)
+        output_t2 = hg.labelisation_horizontal_cut(tree, 0.7, altitudes)
 
         self.assertTrue(hg.is_in_bijection(ref_t0, output_t0))
         self.assertTrue(hg.is_in_bijection(ref_t1, output_t1))

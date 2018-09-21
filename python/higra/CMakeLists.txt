@@ -41,6 +41,7 @@ set(PYMODULE_COMPONENTS
 set(MODULE_FILES
         __init__.py
         data_cache.py
+        graph_core.py
         graph_image.py
         graph_weights.py
         hierarchy_core.py
