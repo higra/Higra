@@ -63,10 +63,11 @@ namespace hg {
     auto labelisation_horizontal_cut(const tree_t &tree,
                                      const xt::xexpression<T> &xaltitudes,
                                      const value_t threshold) {
-        auto & altitudes = xaltitudes.derived_cast();
+        auto &altitudes = xaltitudes.derived_cast();
         return reconstruct_leaf_data(tree,
                                      xt::arange(num_vertices(tree)),
-                                     xt::index_view(altitudes, tree.parents()) <= threshold);
+                                     xt::index_view(altitudes, tree.parents())
+                                     <= static_cast<typename T::value_type>(threshold));
     };
 
     /**
