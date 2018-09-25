@@ -11,6 +11,7 @@
 #pragma once
 
 #include <functional>
+#include "details/indexed_edge.hpp"
 #include "details/graph_concepts.hpp"
 #include "higra/structure/details/iterators.hpp"
 #include <vector>
@@ -48,9 +49,10 @@ namespace hg {
 
             // Graph associated types
             using vertex_descriptor = index_t;
+            using edge_index_t = index_t;
             using children_list_t = std::vector<vertex_descriptor>;
             using children_iterator = children_list_t::const_iterator;
-            using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
+            using edge_descriptor = indexed_edge<vertex_descriptor, edge_index_t>;
             using directed_category = graph::undirected_tag;
             using edge_parallel_category = graph::disallow_parallel_edge_tag;
             using traversal_category = tree_graph_traversal_category;
@@ -63,10 +65,10 @@ namespace hg {
             using adjacency_iterator = tree_graph_adjacent_vertex_iterator<false>;
 
             // custom edge index iterators
-            using edge_index_t = index_t;
+
             using edge_index_iterator = counting_iterator<edge_index_t>;
-            using out_edge_index_iterator = tree_graph_adjacent_vertex_iterator<true>;
-            using in_edge_index_iterator = out_edge_index_iterator;
+            //using out_edge_index_iterator = tree_graph_adjacent_vertex_iterator<true>;
+            //using in_edge_index_iterator = out_edge_index_iterator;
 
             // EdgeListGraph associated types
             using edges_size_type = size_t;
@@ -176,8 +178,8 @@ namespace hg {
                 return irange<long>(start, end, -1);
             }
 
-            auto edge(edge_index_t ei) const{
-                return std::make_pair(ei, parent(ei));
+            auto edge_from_index(edge_index_t ei) const{
+                return edge_descriptor(ei, parent(ei), ei);
             }
 
 
@@ -342,44 +344,11 @@ namespace hg {
     leaves_iterator(const tree &t){
         return t.leaves_iterator();
     }
-    /*num_leaves
-    num_children
-    root
-    children
-    parent
-    iterate_from_leaves_to_root
-    iterate_from_root_to_leaves
-    iterate_on_leaves*/
 
     inline
     tree::edge_descriptor
-    edge(tree::edge_index_t ei, const tree &g){
-        return g.edge(ei);
-    }
-
-    inline
-    std::pair<tree::edge_index_iterator, tree::edge_index_iterator>
-    edge_indexes(const tree &g) {
-        using it = tree::edge_index_iterator;
-        return std::make_pair(
-                it(0),
-                it(g.num_edges()));
-    }
-
-    inline
-    std::pair<tree::out_edge_index_iterator, tree::out_edge_index_iterator>
-    out_edge_indexes(const tree::vertex_descriptor v, const tree &g) {
-        using it = typename hg::tree::out_edge_index_iterator;
-        auto par = g.parent(v);
-        return std::make_pair(
-                it(v, par, g.children_cbegin(v)),
-                it(par, par, g.children_cend(v)));
-    }
-
-    inline
-    std::pair<tree::out_edge_index_iterator, tree::out_edge_index_iterator>
-    in_edge_indexes(const tree::vertex_descriptor v, const tree &g) {
-        return out_edge_indexes(v, g);
+    edge_from_index(tree::edge_index_t ei, const tree &g){
+        return g.edge_from_index(ei);
     }
 
     inline
@@ -435,7 +404,7 @@ namespace hg {
     edges(const hg::tree &g) {
         using it = hg::tree::edge_iterator;
         auto fun = [&g](hg::tree::edge_index_t i) {
-            return std::make_pair(i, g.parent(i));
+            return g.edge_from_index(i);
         };
         return std::make_pair(
                 it(counting_iterator<hg::tree::vertex_descriptor>(0),
@@ -459,7 +428,7 @@ namespace hg {
     std::pair<hg::tree::out_edge_iterator, hg::tree::out_edge_iterator>
     out_edges(hg::tree::vertex_descriptor v, const hg::tree &g) {
         auto fun = [v](const typename hg::tree::vertex_descriptor t) {
-            return std::make_pair(v, t);
+            return hg::tree::edge_descriptor(v, t, std::min(v, t));
         };
         using it = typename hg::tree::out_edge_iterator;
         using ita = typename hg::tree::adjacency_iterator;
@@ -473,7 +442,7 @@ namespace hg {
     std::pair<hg::tree::out_edge_iterator, hg::tree::out_edge_iterator>
     in_edges(hg::tree::vertex_descriptor v, const hg::tree &g) {
         auto fun = [v](const typename hg::tree::vertex_descriptor t) {
-            return std::make_pair(t, v);
+            return hg::tree::edge_descriptor(t, v, std::min(v, t));
         };
         using it = typename hg::tree::out_edge_iterator;
         using ita = typename hg::tree::adjacency_iterator;

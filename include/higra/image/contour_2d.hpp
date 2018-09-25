@@ -412,7 +412,7 @@ namespace hg {
                                                                 invalid_index);
 
         auto edge_coordinates = [&embedding, &graph](index_t edge_index) {
-            auto e = edge(edge_index, graph);
+            auto & e = edge_from_index(edge_index, graph);
             auto s = source(e, graph);
             auto t = target(e, graph);
             point_type coordinates = embedding.lin2grid(s);

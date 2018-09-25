@@ -228,10 +228,10 @@ namespace hg {
         array_1d<typename heap_t::value_handle> heap_handles({num_edges(g)}, nullptr);
 
         for (auto v: vertex_iterator(graph)) {
-            for (auto ei: out_edge_index_iterator(v, g)) {
-                if (!active[ei]) {
-                    heap_handles[ei] = heap.push({edge_weights[ei], ei});
-                    active[ei] = true;
+            for (auto &e: out_edge_iterator(v, g)) {
+                if (!active(e)) {
+                    heap_handles(e) = heap.push({edge_weights(e), e});
+                    active(e) = true;
                 }
             }
         }
@@ -253,7 +253,7 @@ namespace hg {
                 active[fusion_edge_index] = false;
                 // create new region, update tree
                 auto new_parent = g.add_vertex();
-                auto fusion_edge = edge(fusion_edge_index, g);
+                auto fusion_edge = edge_from_index(fusion_edge_index, g);
                 auto region1 = source(fusion_edge, g);
                 auto region2 = target(fusion_edge, g);
                 parents[region1] = new_parent;
@@ -269,14 +269,13 @@ namespace hg {
                 new_neighbours.clear();
                 auto explore_region = [&g, &new_neighbours, &new_neighbour_indices](
                         index_t region) {
-                    for (auto ei: out_edge_index_iterator(region, g)) {
-                        auto e = edge(ei, g);
+                    for (auto e: out_edge_iterator(region, g)) {
                         auto n = other_vertex(e, region, g);
                         if (new_neighbour_indices[n] != invalid_index) {
-                            new_neighbours[new_neighbour_indices[n]].second_edge_index() = ei;
+                            new_neighbours[new_neighbour_indices[n]].second_edge_index() = e;
                         } else {
                             new_neighbour_indices[n] = new_neighbours.size();
-                            new_neighbours.emplace_back(n, ei);
+                            new_neighbours.emplace_back(n, e);
                         }
                     }
                 };

@@ -65,13 +65,13 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         BOOST_CHECK(xt::allclose(altitude, xt::xarray<double>({0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2})));
         BOOST_CHECK(num_vertices(mst) == 6);
         BOOST_CHECK(num_edges(mst) == 5);
-        std::vector<std::pair<index_t, index_t> > ref = {{0, 3},
-                                                     {0, 1},
-                                                     {1, 4},
-                                                     {2, 5},
-                                                     {1, 2}};
+        std::vector<ugraph::edge_descriptor> ref = {{0, 3, 0},
+                                                     {0, 1, 1},
+                                                     {1, 4, 2},
+                                                     {2, 5, 3},
+                                                     {1, 2, 4}};
         for (index_t i = 0; i < (index_t)ref.size(); i++) {
-            auto e = edge(i, mst);
+            auto e = edge_from_index(i, mst);
             BOOST_CHECK(e == ref[i]);
         }
     }

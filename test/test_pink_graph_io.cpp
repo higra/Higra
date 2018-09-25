@@ -65,14 +65,14 @@ BOOST_AUTO_TEST_SUITE(pinkGraphIO);
 
         std::vector<size_t> shape = {3, 5};
 
-        std::vector<std::pair<index_t, index_t> > edges;
+        std::vector<ugraph::edge_descriptor > edges;
         for (index_t i = 0; i < 14; ++i)
-            edges.push_back({i, i + 1});
+            edges.emplace_back(i, i + 1, i);
 
         array_1d<double> vertex_weights = xt::arange<double>(1, 16);
         array_1d<double> edge_weights = {3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0};
 
-        std::vector<std::pair<index_t, index_t> > res_edges;
+        std::vector<ugraph::edge_descriptor> res_edges;
         for (auto e : edge_iterator(res.graph))
             res_edges.push_back(e);
 

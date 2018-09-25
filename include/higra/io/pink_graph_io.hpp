@@ -144,9 +144,8 @@ namespace hg {
                 out << source(e, graph) << " " << target(e, graph) << " 1\n";
             }
         } else {
-            for (std::size_t i = 0; i < num_edges(graph); ++i) {
-                auto e = edge(i, graph);
-                out << source(e, graph) << " " << target(e, graph) << " " << edge_values(i) << "\n";
+            for (auto & e: edge_iterator(graph)) {
+                out << source(e, graph) << " " << target(e, graph) << " " << edge_values(e) << "\n";
             }
         }
 
