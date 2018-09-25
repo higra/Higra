@@ -35,7 +35,7 @@ class TestRag(unittest.TestCase):
 
         i = 0
         for e in rag.edges():
-            self.assertTrue(e == expected_edges[i])
+            self.assertTrue((e[0], e[1]) == expected_edges[i])
             i += 1
 
         expected_vertex_map = np.asarray((0, 0, 1, 1,

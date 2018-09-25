@@ -51,7 +51,7 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("num_leaves", &graph_t::num_leaves, "Get the number of leaves nodes.");
     c.def("num_children", &graph_t::num_children, "Get the number of children nodes of the given node.",
           py::arg("node"));
-    c.def("children_iterator",
+    c.def("children",
           [](const graph_t &g, vertex_t v) {
               auto it = hg::children(v, g);
               return pybind11::make_iterator(it.first, it.second);

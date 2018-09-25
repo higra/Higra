@@ -9,6 +9,7 @@
 ****************************************************************************/
 
 #pragma once
+#include "graph_concepts.hpp"
 
 namespace hg {
 

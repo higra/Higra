@@ -68,7 +68,7 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
 
         for e in g.edges():
-            test.append(e)
+            test.append((e[0], e[1]))
 
         self.assertTrue(test == ref)
 
@@ -82,7 +82,7 @@ class TestUndirectedGraph(unittest.TestCase):
         for v in g.vertices():
             test.append([])
             for e in g.out_edges(v):
-                test[v].append(e)
+                test[v].append((e[0], e[1]))
 
         self.assertTrue(test == ref)
 
@@ -96,7 +96,7 @@ class TestUndirectedGraph(unittest.TestCase):
         for v in g.vertices():
             test.append([])
             for e in g.in_edges(v):
-                test[v].append(e)
+                test[v].append((e[0], e[1]))
 
         self.assertTrue(test == ref)
 
@@ -143,12 +143,12 @@ class TestUndirectedGraph(unittest.TestCase):
         ref = [0, 1, 2]
         test = []
 
-        for e in g.edge_index_iterator():
-            test.append(e)
+        for e in g.edges():
+            test.append(e[2])
 
         self.assertTrue(test == ref)
 
-    def test_out_edge_index_iterator(self):
+    def test_out_edge_iterator(self):
         g = TestUndirectedGraph.test_graph()
         ref = [[0, 2],
                [0, 1],
@@ -157,8 +157,8 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
         for v in g.vertices():
             test.append([])
-            for e in g.out_edge_index_iterator(v):
-                test[v].append(e)
+            for e in g.out_edges(v):
+                test[v].append(e[2])
 
         self.assertTrue(test == ref)
 
@@ -171,8 +171,8 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
         for v in g.vertices():
             test.append([])
-            for e in g.in_edge_index_iterator(v):
-                test[v].append(e)
+            for e in g.in_edges(v):
+                test[v].append(e[2])
 
         self.assertTrue(test == ref)
 

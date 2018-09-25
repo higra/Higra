@@ -55,7 +55,7 @@ class TestHierarchyCore(unittest.TestCase):
                (1, 2)]
         test = []
         for e in mst.edges():
-            test.append(e)
+            test.append((e[0], e[1]))
         self.assertTrue(ref == test)
 
     def test_simplifyTree(self):
