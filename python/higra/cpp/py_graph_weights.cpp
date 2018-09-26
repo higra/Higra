@@ -13,6 +13,10 @@
 #include "higra/algo/graph_weights.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
+template <typename T>
+using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
+template <typename T, std::size_t N>
+using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
 #include "pybind11/functional.h"
 
 
@@ -23,7 +27,7 @@ struct def_weight_graph {
     template<typename type, typename C>
     static
     void def(C &m, const char *doc) {
-        m.def("_weight_graph", [](const graph_t &graph, const xt::pyarray<type> &data, hg::weight_functions weight_f) {
+        m.def("_weight_graph", [](const graph_t &graph, const pyarray<type> &data, hg::weight_functions weight_f) {
                   return hg::weight_graph(graph, data, weight_f);
               },
               doc,

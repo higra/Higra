@@ -259,7 +259,7 @@ namespace hg {
         HG_TRACE();
         output_graph_type g(num_vertices(graph));
         auto edge_it = edges(graph);
-        for (auto eb = edge_it.first, ee = edge_it.second; eb != ee; eb++) {
+        for (auto eb = edge_it.first; eb != edge_it.second; eb++) {
             g.add_edge(source(*eb, graph), target(*eb, graph));
         }
         return g;

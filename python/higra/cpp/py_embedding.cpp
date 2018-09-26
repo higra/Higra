@@ -17,6 +17,11 @@
 #include "xtensor/xeval.hpp"
 #include <string>
 
+template<typename T>
+using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
+template<typename T, std::size_t N>
+using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+
 using namespace hg;
 namespace py = pybind11;
 
@@ -26,7 +31,7 @@ struct def_lin2grid {
     static
     void def(C &c, const char *doc) {
         c.def("lin2grid",
-              [](const class_t &e, const xt::pyarray<type> &a) {
+              [](const class_t &e, const pyarray<type> &a) {
                   return xt::eval(e.lin2grid(a));
               },
               doc,
@@ -40,7 +45,7 @@ struct def_contains {
     static
     void def(C &c, const char *doc) {
         c.def("contains",
-              [](const class_t &e, const xt::pyarray<type> &a) {
+              [](const class_t &e, const pyarray<type> &a) {
                   return xt::eval(e.contains(a));
               },
               doc,
@@ -54,7 +59,7 @@ struct def_grid2lin {
     static
     void def(C &c, const char *doc) {
         c.def("grid2lin",
-              [](const class_t &e, const xt::pyarray<type> &a) {
+              [](const class_t &e, const pyarray<type> &a) {
                   return xt::eval(e.grid2lin(a));
               },
               doc,
@@ -73,11 +78,11 @@ void py_init_embedding_impl(pybind11::module &m) {
           "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
           py::arg("shape"));
 
-    c.def(py::init<const xt::pyarray<long> &>(),
+    c.def(py::init<const pytensor<long, 1> &>(),
           "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
           py::arg("shape"));
 
-    c.def("shape", [](const class_t &e) { return xt::pyarray<long>(e.shape()); },
+    c.def("shape", [](const class_t &e) { return pytensor<long, 1>(e.shape()); },
           "Get the shape/dimensions of the grid embedding");
 
     c.def("size", &class_t::size, "Get the total number of points contained in the embedding.");
@@ -95,7 +100,7 @@ void py_init_embedding_impl(pybind11::module &m) {
                      "indicating if each point is contained in the embedding.");
 
     // ::TODO:: remove cast to xt::pyarray when xtesnor python supports xtensor_fixed
-    c.def("lin2grid", [](const class_t &e, const index_t a) { return xt::pyarray<long>(e.lin2grid(a)); },
+    c.def("lin2grid", [](const class_t &e, const index_t a) { return pytensor<long, 1>(e.lin2grid(a)); },
           "Compute the nd coordinates of a point given its linear coordinate.",
           py::arg("index"));
 

@@ -35,7 +35,7 @@ namespace hg {
                 index(_index) {
         }
 
-        indexed_edge(std::pair<vertex_descriptor, vertex_descriptor> edge,
+        indexed_edge(const std::pair<vertex_descriptor, vertex_descriptor> & edge,
                      edge_index_t _index) :
                 source(edge.first),
                 target(edge.second),
@@ -56,7 +56,7 @@ namespace hg {
      * @return
      */
     template<typename graph_t>
-    auto source(
+    auto & source(
             const indexed_edge<typename graph::graph_traits<graph_t>::vertex_descriptor,
                     typename graph::graph_traits<graph_t>::edge_index> &e,
             const graph_t &) {
@@ -70,7 +70,7 @@ namespace hg {
      * @return
      */
     template<typename graph_t>
-    auto target(
+    auto & target(
             const indexed_edge<typename graph::graph_traits<graph_t>::vertex_descriptor,
                     typename graph::graph_traits<graph_t>::edge_index> &e,
             const graph_t &) {
@@ -84,7 +84,7 @@ namespace hg {
     * @return
     */
     template<typename graph_t>
-    auto index(
+    auto & index(
             const indexed_edge<typename graph::graph_traits<graph_t>::vertex_descriptor,
                     typename graph::graph_traits<graph_t>::edge_index> &e,
             const graph_t &) {

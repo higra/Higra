@@ -15,6 +15,10 @@
 #include "xtensor-python/pytensor.hpp"
 #include <fstream>
 
+template<typename T>
+using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
+template<typename T, std::size_t N>
+using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
 
 void py_init_tree_io(pybind11::module &m) {
     xt::import_numpy();
@@ -27,7 +31,7 @@ void py_init_tree_io(pybind11::module &m) {
           pybind11::arg("filename"));
 
     m.def("save_tree", [](const std::string &filename, const hg::tree &tree,
-                          const std::map<std::string, xt::pyarray<double>> &attributes) {
+                          const std::map<std::string, pyarray<double>> &attributes) {
               std::ofstream file(filename);
               auto s = hg::save_tree(file, tree);
               for (auto e: attributes) {
@@ -39,6 +43,6 @@ void py_init_tree_io(pybind11::module &m) {
           "Attributes must be numpy 1d arrays stored in a dictionary with string keys (attribute names).",
           pybind11::arg("filename"),
           pybind11::arg("tree"),
-          pybind11::arg("attributes") = std::map<std::string, xt::pyarray<double>>());
+          pybind11::arg("attributes") = std::map<std::string, pytensor<double, 1>>());
 }
 

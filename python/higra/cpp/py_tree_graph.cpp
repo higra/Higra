@@ -14,6 +14,11 @@
 #include "xtensor-python/pytensor.hpp"
 
 
+template<typename T>
+using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
+template<typename T, std::size_t N>
+using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+
 namespace py = pybind11;
 
 using graph_t = hg::tree;
@@ -25,7 +30,7 @@ struct def_tree_ctr {
     template<typename type, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def(py::init([](const xt::pyarray<type> &parent) { return graph_t(parent); }),
+        c.def(py::init([](const pytensor<type, 1> &parent) { return graph_t(parent); }),
               doc,
               py::arg("parent_relation")
         );
@@ -71,8 +76,9 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("leaves_to_root_iterator",
           [](const graph_t &tree, bool includeLeaves, bool includeRoot) {
               auto range = hg::leaves_to_root_iterator(tree,
-                      (includeLeaves) ? hg::leaves_it::include : hg::leaves_it::exclude,
-                      (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
+                                                       (includeLeaves) ? hg::leaves_it::include
+                                                                       : hg::leaves_it::exclude,
+                                                       (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
               return py::make_iterator(range.begin(), range.end());
           }, "Returns an iterator on the node indices going from the leaves to the root of the tree.",
           py::arg("include_leaves") = true,
@@ -81,8 +87,8 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("root_to_leaves_iterator",
           [](const graph_t &tree, bool includeLeaves, bool includeRoot) {
               auto range = root_to_leaves_iterator(tree,
-                      (includeLeaves) ? hg::leaves_it::include : hg::leaves_it::exclude,
-                      (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
+                                                   (includeLeaves) ? hg::leaves_it::include : hg::leaves_it::exclude,
+                                                   (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
               return py::make_iterator(range.begin(), range.end());
           }, "Returns an iterator on the node indices going from the root to the leaves of the tree.",
           py::arg("include_leaves") = true,

@@ -16,6 +16,11 @@
 #include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"
 
+template<typename T>
+using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
+template<typename T, std::size_t N>
+using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+
 namespace py = pybind11;
 
 template<typename graph_t>
@@ -25,12 +30,12 @@ struct def_hierarchy_mean_pb {
     void def(C &m, const char *doc) {
         m.def("_mean_pb_hierarchy", [](const graph_t &graph,
                                        const std::vector<size_t> &shape,
-                                       const xt::pyarray<value_t> &edge_weights,
-                                       const xt::pyarray<value_t> &edge_orientations) {
+                                       const pytensor<value_t, 1> &edge_weights,
+                                       const pytensor<value_t, 1> &edge_orientations) {
                   auto res = hg::mean_pb_hierarchy(graph,
                                                    hg::embedding_grid_2d(shape),
-                  edge_weights,
-                  edge_orientations);
+                                                   edge_weights,
+                                                   edge_orientations);
                   return py::make_tuple(std::move(res.first.rag),
                                         std::move(res.first.vertex_map),
                                         std::move(res.first.edge_map),
@@ -42,7 +47,7 @@ struct def_hierarchy_mean_pb {
               py::arg("graph"),
               py::arg("shape"),
               py::arg("edge_weights"),
-              py::arg("edge_orientations")=xt::pyarray<value_t>()
+              py::arg("edge_orientations") = pytensor<value_t, 1>()
         );
     }
 };

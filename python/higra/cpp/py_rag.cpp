@@ -14,6 +14,11 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
+template<typename T>
+using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
+template<typename T, std::size_t N>
+using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+
 namespace py = pybind11;
 
 template<typename graph_t>
@@ -21,7 +26,7 @@ struct def_make_rag {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("_make_region_adjacency_graph", [](const graph_t &graph, const xt::pyarray<value_t> &input) {
+        c.def("_make_region_adjacency_graph", [](const graph_t &graph, const pyarray<value_t> &input) {
                   auto res = hg::make_region_adjacency_graph(graph, input);
                   return py::make_tuple(std::move(res.rag), std::move(res.vertex_map), std::move(res.edge_map));
               },
@@ -36,7 +41,7 @@ struct def_rag_back_project_weights {
     static
     void def(C &c, const char *doc) {
         c.def("_rag_back_project_weights",
-              [](const xt::pyarray<hg::index_t> &rag_map, const xt::pyarray<value_t> &rag_weights) {
+              [](const xt::pyarray<hg::index_t> &rag_map, const pytensor<value_t, 1> &rag_weights) {
                   return hg::rag_back_project_weights(rag_map, rag_weights);
               },
               doc,
@@ -50,8 +55,8 @@ struct def_rag_accumulate {
     static
     void def(C &c, const char *doc) {
         c.def("_rag_accumulate",
-              [](const xt::pyarray<hg::index_t> &rag_map,
-                 const xt::pyarray<value_t> &weights,
+              [](const pytensor<hg::index_t, 1> &rag_map,
+                 const pyarray<value_t> &weights,
                  hg::accumulators accumulator) {
                   switch (accumulator) {
                       case hg::accumulators::min:
@@ -89,8 +94,8 @@ struct def_project_fine_to_coarse_labelisation {
     static
     void def(C &c, const char *doc) {
         c.def("project_fine_to_coarse_labelisation",
-              [](const xt::pyarray<value_t> &labelisation_fine,
-                 const xt::pyarray<value_t> &labelisation_coarse,
+              [](const pyarray<value_t> &labelisation_fine,
+                 const pyarray<value_t> &labelisation_coarse,
                  size_t num_regions_fine,
                  size_t num_regions_coarse) {
                   return hg::project_fine_to_coarse_labelisation(

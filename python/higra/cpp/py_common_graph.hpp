@@ -15,13 +15,18 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
+template<typename T>
+using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
+template<typename T, std::size_t N>
+using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+
 template<typename graph_t>
 struct def_out_degree {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
         c.def("out_degree", [](graph_t &g,
-                               xt::pyarray<value_t> vertices) {
+                               pyarray<value_t> vertices) {
                   return hg::out_degree(vertices, g);
               },
               doc,
@@ -30,17 +35,17 @@ struct def_out_degree {
 };
 
 template<typename T>
-auto cpp_edge_2_python(const T & e);
+auto cpp_edge_2_python(const T &e);
 
 template<>
 inline
-auto cpp_edge_2_python(const std::pair<hg::index_t, hg::index_t> & e){
+auto cpp_edge_2_python(const std::pair<hg::index_t, hg::index_t> &e) {
     return pybind11::make_tuple(e.first, e.second);
 }
 
 template<>
 inline
-auto cpp_edge_2_python(const hg::indexed_edge<hg::index_t, hg::index_t> & e){
+auto cpp_edge_2_python(const hg::indexed_edge<hg::index_t, hg::index_t> &e) {
     return pybind11::make_tuple(e.first, e.second, e.index);
 }
 
@@ -83,7 +88,7 @@ struct def_degree {
     static
     void def(C &c, const char *doc) {
         c.def("degree", [](graph_t &g,
-                           xt::pyarray<value_t> vertices) {
+                           pyarray<value_t> vertices) {
                   return hg::degree(vertices, g);
               },
               doc,
@@ -97,7 +102,7 @@ struct def_in_degree {
     static
     void def(C &c, const char *doc) {
         c.def("in_degree", [](graph_t &g,
-                              xt::pyarray<value_t> vertices) {
+                              pyarray<value_t> vertices) {
                   return hg::in_degree(vertices, g);
               },
               doc,
@@ -193,14 +198,14 @@ void add_edge_list_graph_concept(pyc &c) {
 template<typename graph_t, typename pyc>
 void add_edge_accessor_graph_concept(pyc &c) {
 
-    c.def("source", [](const graph_t &g, const pybind11::tuple * v) {
+    c.def("source", [](const graph_t &g, const pybind11::tuple *v) {
               return (*v)[0];
           },
 
           "Get the source vertex of an edge.",
           pybind11::arg("edge"));
 
-    c.def("target", [](const graph_t &g, const pybind11::tuple * v) {
+    c.def("target", [](const graph_t &g, const pybind11::tuple *v) {
               return (*v)[1];
           },
 
@@ -221,7 +226,7 @@ void add_edge_index_graph_concept(pyc &c) {
           "Get an edge from its index.",
           pybind11::arg("edge_index"));
 
-    c.def("index", [](const graph_t &g, const pybind11::tuple * v) {
+    c.def("index", [](const graph_t &g, const pybind11::tuple *v) {
               return (*v)[2];
           },
 
