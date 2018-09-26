@@ -9,16 +9,14 @@
 ****************************************************************************/
 
 #include "py_graph_image.hpp"
-#include "py_common_graph.hpp"
+#include "py_common.hpp"
 #include "higra/image/graph_image.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"
 
 template<typename T>
-using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template<typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+using pyarray = xt::pyarray<T>;
 
 namespace py = pybind11;
 

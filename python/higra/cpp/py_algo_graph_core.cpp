@@ -15,9 +15,7 @@
 #include "xtensor-python/pytensor.hpp"
 
 template<typename T>
-using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template<typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+using pyarray = xt::pyarray<T>;
 
 namespace py = pybind11;
 
@@ -27,7 +25,7 @@ struct def_graph_cut_2_labelisation {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_graph_cut_2_labelisation", [](const graph_t &graph,
-                                              const pytensor<value_t, 1> &edge_weights) {
+                                              const pyarray<value_t> &edge_weights) {
                   return hg::graph_cut_2_labelisation(graph, edge_weights);
               },
               doc,

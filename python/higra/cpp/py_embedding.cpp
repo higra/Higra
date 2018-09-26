@@ -18,9 +18,7 @@
 #include <string>
 
 template<typename T>
-using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template<typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+using pyarray = xt::pyarray<T>;
 
 using namespace hg;
 namespace py = pybind11;
@@ -78,11 +76,11 @@ void py_init_embedding_impl(pybind11::module &m) {
           "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
           py::arg("shape"));
 
-    c.def(py::init<const pytensor<long, 1> &>(),
+    c.def(py::init<const pyarray<long> &>(),
           "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
           py::arg("shape"));
 
-    c.def("shape", [](const class_t &e) { return pytensor<long, 1>(e.shape()); },
+    c.def("shape", [](const class_t &e) { return pyarray<long>(e.shape()); },
           "Get the shape/dimensions of the grid embedding");
 
     c.def("size", &class_t::size, "Get the total number of points contained in the embedding.");
@@ -100,7 +98,7 @@ void py_init_embedding_impl(pybind11::module &m) {
                      "indicating if each point is contained in the embedding.");
 
     // ::TODO:: remove cast to xt::pyarray when xtesnor python supports xtensor_fixed
-    c.def("lin2grid", [](const class_t &e, const index_t a) { return pytensor<long, 1>(e.lin2grid(a)); },
+    c.def("lin2grid", [](const class_t &e, const index_t a) { return pyarray<long>(e.lin2grid(a)); },
           "Compute the nd coordinates of a point given its linear coordinate.",
           py::arg("index"));
 

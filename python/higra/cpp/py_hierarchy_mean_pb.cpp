@@ -17,9 +17,7 @@
 #include "pybind11/functional.h"
 
 template<typename T>
-using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template<typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+using pyarray = xt::pyarray<T>;
 
 namespace py = pybind11;
 
@@ -30,8 +28,8 @@ struct def_hierarchy_mean_pb {
     void def(C &m, const char *doc) {
         m.def("_mean_pb_hierarchy", [](const graph_t &graph,
                                        const std::vector<size_t> &shape,
-                                       const pytensor<value_t, 1> &edge_weights,
-                                       const pytensor<value_t, 1> &edge_orientations) {
+                                       const pyarray<value_t> &edge_weights,
+                                       const pyarray<value_t> &edge_orientations) {
                   auto res = hg::mean_pb_hierarchy(graph,
                                                    hg::embedding_grid_2d(shape),
                                                    edge_weights,
@@ -47,7 +45,7 @@ struct def_hierarchy_mean_pb {
               py::arg("graph"),
               py::arg("shape"),
               py::arg("edge_weights"),
-              py::arg("edge_orientations") = pytensor<value_t, 1>()
+              py::arg("edge_orientations") = pyarray<value_t>()
         );
     }
 };

@@ -9,15 +9,14 @@
 ****************************************************************************/
 
 #include "py_tree_accumulators.hpp"
-#include "py_common_graph.hpp"
+#include "py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 
+// @TODO Remove layout_type when xtensor solves the issue with iterators
 template<typename T>
 using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template<typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
 
 namespace py = pybind11;
 

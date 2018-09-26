@@ -16,9 +16,7 @@
 #include "higra/hierarchy/binary_partition_tree.hpp"
 
 template<typename T>
-using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template<typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+using pyarray = xt::pyarray<T>;
 
 using namespace hg;
 namespace py = pybind11;
@@ -49,7 +47,7 @@ struct def_binary_partition_tree_average_linkage {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_binary_partition_tree_average_linkage",
-              [](const hg::ugraph &graph, pytensor<T, 1> &edge_values, pytensor<T, 1> &edge_weights) {
+              [](const hg::ugraph &graph, pyarray<T> &edge_values, pyarray<T> &edge_weights) {
                   return hg::binary_partition_tree(graph,
                                                    edge_values,
                                                    hg::make_binary_partition_tree_average_linkage(
@@ -68,7 +66,7 @@ struct def_binary_partition_tree_custom_linkage {
     void def(pybind11::module &m, const char *doc) {
         m.def("_binary_partition_tree",
               [](const hg::ugraph &graph,
-                 pytensor<T, 1> &edge_weights,
+                 pyarray<T> &edge_weights,
                  py::object weighting_function) {
                   using new_neighbours_type = const std::vector<binary_partition_tree_internal::new_neighbour<T> >;
                   auto weighter = [&weighting_function](
@@ -97,7 +95,7 @@ struct def_binary_partition_tree_complete_linkage {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_binary_partition_tree_complete_linkage",
-              [](const hg::ugraph &graph, pytensor<T, 1> &edge_weights) {
+              [](const hg::ugraph &graph, pyarray<T> &edge_weights) {
                   return hg::binary_partition_tree(graph,
                                                    edge_weights,
                                                    hg::make_binary_partition_tree_complete_linkage(

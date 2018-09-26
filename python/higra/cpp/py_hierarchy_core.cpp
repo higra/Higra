@@ -16,9 +16,8 @@
 #include "pybind11/functional.h"
 
 template<typename T>
-using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template<typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+using pyarray = xt::pyarray<T>;
+
 namespace py = pybind11;
 
 template<typename graph_t>
@@ -26,7 +25,7 @@ struct def_bptCanonical {
     template<typename value_t, typename C>
     static
     void def(C &m, const char *doc) {
-        m.def("_bpt_canonical", [](const graph_t &graph, const pytensor<value_t, 1> &edge_weights) {
+        m.def("_bpt_canonical", [](const graph_t &graph, const pyarray<value_t> &edge_weights) {
                   return hg::bpt_canonical(graph, edge_weights);
               },
               doc,
@@ -42,7 +41,7 @@ struct def_simplify_tree {
     static
     void def(C &m, const char *doc) {
         m.def("_simplify_tree",
-              [](const hg::tree &t, pytensor<value_t, 1> &criterion) {
+              [](const hg::tree &t, pyarray<value_t> &criterion) {
                   return hg::simplify_tree(t, criterion);
               },
               doc,

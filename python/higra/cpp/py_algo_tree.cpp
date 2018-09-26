@@ -16,9 +16,7 @@
 #include "xtensor-python/pytensor.hpp"
 
 template<typename T>
-using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template<typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+using pyarray = xt::pyarray<T>;
 
 namespace py = pybind11;
 
@@ -28,7 +26,7 @@ struct labelisation_horizontal_cut {
     void def(pybind11::module &m, const char *doc) {
         m.def("_labelisation_horizontal_cut", [](const hg::tree &tree,
                                                  double threshold,
-                                                 const pytensor<value_t, 1> &altitudes) {
+                                                 const pyarray<value_t> &altitudes) {
                   return hg::labelisation_horizontal_cut(tree, altitudes, threshold);
               },
               doc,

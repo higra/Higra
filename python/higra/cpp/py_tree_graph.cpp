@@ -10,14 +10,6 @@
 
 #include "py_tree_graph.hpp"
 #include "py_common_graph.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
-
-
-template<typename T>
-using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template<typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
 
 namespace py = pybind11;
 
@@ -30,7 +22,7 @@ struct def_tree_ctr {
     template<typename type, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def(py::init([](const pytensor<type, 1> &parent) { return graph_t(parent); }),
+        c.def(py::init([](const pyarray<type> &parent) { return graph_t(parent); }),
               doc,
               py::arg("parent_relation")
         );

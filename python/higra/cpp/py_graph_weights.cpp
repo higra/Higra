@@ -9,14 +9,15 @@
 ****************************************************************************/
 
 #include "py_graph_weights.hpp"
-#include "py_common_graph.hpp"
+#include "py_common.hpp"
 #include "higra/algo/graph_weights.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
+
+// @TODO Remove layout_type when xtensor solves the issue with iterators
 template <typename T>
 using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template <typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+
 #include "pybind11/functional.h"
 
 

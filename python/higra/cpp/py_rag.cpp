@@ -14,10 +14,9 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
+// @TODO Remove layout_type when xtensor solves the issue with iterators
 template<typename T>
 using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template<typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
 
 namespace py = pybind11;
 
@@ -41,7 +40,7 @@ struct def_rag_back_project_weights {
     static
     void def(C &c, const char *doc) {
         c.def("_rag_back_project_weights",
-              [](const xt::pyarray<hg::index_t> &rag_map, const pytensor<value_t, 1> &rag_weights) {
+              [](const xt::pyarray<hg::index_t> &rag_map, const pyarray<value_t> &rag_weights) {
                   return hg::rag_back_project_weights(rag_map, rag_weights);
               },
               doc,
@@ -55,7 +54,7 @@ struct def_rag_accumulate {
     static
     void def(C &c, const char *doc) {
         c.def("_rag_accumulate",
-              [](const pytensor<hg::index_t, 1> &rag_map,
+              [](const pyarray<hg::index_t> &rag_map,
                  const pyarray<value_t> &weights,
                  hg::accumulators accumulator) {
                   switch (accumulator) {

@@ -16,9 +16,7 @@
 #include "xtensor-python/pytensor.hpp"
 
 template<typename T>
-using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-template<typename T, std::size_t N>
-using pytensor = xt::pytensor<T, N, xt::layout_type::row_major>;
+using pyarray = xt::pyarray<T>;
 
 template<typename graph_t>
 struct def_out_degree {
