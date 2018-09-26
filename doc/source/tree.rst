@@ -241,7 +241,7 @@ Currently, the following accumulators are defined:
 
 Default values and results of the accumulators have the same shape/dimension of the input values, except for the counter accumulator which is always a scalar integer.
 
-Accumulators are created wrapped into *factories* in C++ while the Python interface only exposes an enumeration (real accumulator types are currently not exported in Python).
+Accumulators are wrapped into *factories* in C++ while the Python interface only exposes an enumeration (real accumulator types are currently not exported in Python).
 
 .. tabs::
 
@@ -250,14 +250,14 @@ Accumulators are created wrapped into *factories* in C++ while the Python interf
         .. code-block:: cpp
             :linenos:
 
-                auto acc = accumulator_sum();
+            auto acc = accumulator_sum();
 
-        .. tab:: python
+    .. tab:: python
 
         .. code-block:: python
             :linenos:
 
-                 acc = hg.Accumulators.sum
+             acc = hg.Accumulators.sum
 
 
 Parallel accumulator
@@ -271,18 +271,18 @@ The parallel accumulator pseudo-code could be:
 .. code-block:: python
     :linenos:
 
-        # input: a tree t
-        # input: an attribute att on the nodes of t
-        # input: an accumulator acc
+    # input: a tree t
+    # input: an attribute att on the nodes of t
+    # input: an accumulator acc
 
-        output = empty_like(input)
+    output = empty_like(input)
 
-        for each node n of t:
-            output[n] = acc(input[t.children(n)])
+    for each node n of t:
+        output[n] = acc(input[t.children(n)])
 
-        return output
+    return output
 
-    The following example demonstrates the application of a parallel sum accumulator on a simple tree:
+The following example demonstrates the application of a parallel sum accumulator on a simple tree:
 
 .. image:: fig/tree_demo_accumulate_parallel.svg
     :align: center
@@ -295,26 +295,26 @@ The parallel accumulator pseudo-code could be:
         .. code-block:: cpp
             :linenos:
 
-                // tree in the above example
-                tree t({5, 5, 6, 6, 6, 7, 7, 7});
-                array_1d<ulong> input = xt::ones({num_vertices(t)});
+            // tree in the above example
+            tree t({5, 5, 6, 6, 6, 7, 7, 7});
+            array_1d<index_t> input = xt::ones({num_vertices(t)});
 
-                auto result = accumulate_parallel(t, input, hg::accumulator_sum());
+            auto result = accumulate_parallel(t, input, hg::accumulator_sum());
 
-                // result = {0, 0, 0, 0, 0, 2, 3, 2};
+            // result = {0, 0, 0, 0, 0, 2, 3, 2};
 
-        .. tab:: python
+    .. tab:: python
 
         .. code-block:: python
             :linenos:
 
-                # tree in the above example
-                t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
-                input = numpy.ones(t.num_vertices())
+            # tree in the above example
+            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+            input = numpy.ones((t.num_vertices(),))
 
-                result = hg.accumulate_parallel(t, input, hg.Accumulators.sum)
+            result = hg.accumulate_parallel(t, input, hg.Accumulators.sum)
 
-                # result = (0, 0, 0, 0, 0, 2, 3, 2)
+            # result = (0, 0, 0, 0, 0, 2, 3, 2)
 
 
 Sequential accumulator
@@ -328,19 +328,19 @@ The sequential accumulator pseudo-code could be:
 .. code-block:: python
     :linenos:
 
-        # input: a tree t
-        # input: an attribute att on the leaves of t
-        # input: an accumulator acc
+    # input: a tree t
+    # input: an attribute att on the leaves of t
+    # input: an accumulator acc
 
-        output = empty(t.num_vertices())
-        output[0:t.num_leaves()] = input
+    output = empty(t.num_vertices())
+    output[0:t.num_leaves()] = input
 
-        for each non-leaf node n of t from the leaves to the root:
-            output[n] = acc(output[t.children(n)])
+    for each non-leaf node n of t from the leaves to the root:
+        output[n] = acc(output[t.children(n)])
 
-        return output
+    return output
 
-    The following example demonstrates the application of a sequential sum accumulator on a simple tree:
+The following example demonstrates the application of a sequential sum accumulator on a simple tree:
 
 .. image:: fig/tree_demo_accumulate_sequential.svg
     :align: center
@@ -353,26 +353,26 @@ The sequential accumulator pseudo-code could be:
         .. code-block:: cpp
             :linenos:
 
-                // tree in the above example
-                tree t({5, 5, 6, 6, 6, 7, 7, 7});
-                array_1d<ulong> input = xt::ones({num_leaves(t)});
+            // tree in the above example
+            tree t({5, 5, 6, 6, 6, 7, 7, 7});
+            array_1d<index_t> input = xt::ones({num_leaves(t)});
 
-                auto result = accumulate_sequential(t, input, hg::accumulator_sum());
+            auto result = accumulate_sequential(t, input, hg::accumulator_sum());
 
-                // result = {1, 1, 1, 1, 1, 2, 3, 5};
+            // result = {1, 1, 1, 1, 1, 2, 3, 5};
 
-        .. tab:: python
+    .. tab:: python
 
         .. code-block:: python
             :linenos:
 
-                # tree in the above example
-                t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
-                input = numpy.ones(t.num_leaves())
+            # tree in the above example
+            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+            input = numpy.ones((t.num_leaves(),))
 
-                result = hg.accumulate_sequential(t, input, hg.Accumulators.sum)
+            result = hg.accumulate_sequential(t, input, hg.Accumulators.sum)
 
-                # result = (1, 1, 1, 1, 1, 2, 3, 5)
+            # result = (1, 1, 1, 1, 1, 2, 3, 5)
 
 
 Sequential and combine accumulator
@@ -386,21 +386,21 @@ The sequential accumulator pseudo-code could be:
 .. code-block:: python
     :linenos:
 
-        # input: a tree t
-        # input: an attribute att1 on the leaves of t
-        # input: an attribute att2 on the nodes of t
-        # input: an accumulator acc
-        # input: a function combine
+    # input: a tree t
+    # input: an attribute att1 on the leaves of t
+    # input: an attribute att2 on the nodes of t
+    # input: an accumulator acc
+    # input: a function combine
 
-        output = empty(t.num_vertices())
-        output[0:t.num_leaves()] = att1
+    output = empty(t.num_vertices())
+    output[0:t.num_leaves()] = att1
 
-        for each non-leaf node n of t from the leaves to the root:
-            output[n] = combine(acc(output[t.children(n)]), att2[n])
+    for each non-leaf node n of t from the leaves to the root:
+        output[n] = combine(acc(output[t.children(n)]), att2[n])
 
-        return output
+    return output
 
-    The following example demonstrates the application of sequential max accumulator with a sum combiner on a simple tree:
+The following example demonstrates the application of sequential max accumulator with a sum combiner on a simple tree:
 
 .. image:: fig/tree_demo_accumulate_and_combine_sequential.svg
     :align: center
@@ -413,42 +413,42 @@ The sequential accumulator pseudo-code could be:
         .. code-block:: cpp
             :linenos:
 
-                    // tree in the above example
-                    tree t({5, 5, 6, 6, 6, 7, 7, 7});
-                    array_1d<ulong> leaf_attribute = xt::ones({num_leaves(t)});
-                    array_1d<ulong> tree_attribute = xt::ones({num_vertices(t)});
+            // tree in the above example
+            tree t({5, 5, 6, 6, 6, 7, 7, 7});
+            array_1d<index_t> leaf_attribute = xt::ones({num_leaves(t)});
+            array_1d<index_t> tree_attribute = xt::ones({num_vertices(t)});
 
-                    auto result = accumulate_and_combine_sequential(tree,
-                                                                    tree_attribute,
-                                                                    leaf_attribute,
-                                                                    hg::accumulator_max(),
-                                                                    std::plus<ulong>());
+            auto result = accumulate_and_combine_sequential(tree,
+                                                            tree_attribute,
+                                                            leaf_attribute,
+                                                            hg::accumulator_max(),
+                                                            std::plus<index_t>());
 
-                    // result = {1, 1, 1, 1, 1, 2, 2, 3};
+            // result = {1, 1, 1, 1, 1, 2, 2, 3};
 
-        .. tab:: python
+    .. tab:: python
 
         .. code-block:: python
             :linenos:
 
-                    # tree in the above example
-                    t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
-                    leaf_attribute = numpy.ones(t.num_leaves())
-                    tree_attribute = numpy.ones(t.num_vertices())
+            # tree in the above example
+            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+            leaf_attribute = numpy.ones((t.num_leaves(),))
+            tree_attribute = numpy.ones((t.num_vertices(),))
 
-                    result = hg.accumulate_and_add_sequential(tree, tree_attribute, leaf_attribute, hg.Accumulators.max)
+            result = hg.accumulate_and_add_sequential(tree, tree_attribute, leaf_attribute, hg.Accumulators.max)
 
-                    # result = (1, 1, 1, 1, 1, 2, 2, 3)
+            # result = (1, 1, 1, 1, 1, 2, 2, 3)
 
 
-    Note that currently, to ease the binding of this accumulator to Python, the combining function cannot be specified at runtime
-    and the library offers several statically bound functions:
+Note that currently, to ease the binding of this accumulator to Python, the combining function cannot be specified at runtime
+and the library offers several statically bound functions:
 
-    - ``accumulate_and_add_sequential``
-    - ``accumulate_and_sum_sequential``
-    - ``accumulate_and_multiply_sequential``
-    - ``accumulate_and_min_sequential``
-    - ``accumulate_and_max_sequential``
+- ``accumulate_and_add_sequential``
+- ``accumulate_and_sum_sequential``
+- ``accumulate_and_multiply_sequential``
+- ``accumulate_and_min_sequential``
+- ``accumulate_and_max_sequential``
 
 Propagators
 -----------
@@ -469,19 +469,19 @@ The conditional parallel propagator pseudo-code could be:
 .. code-block:: python
     :linenos:
 
-            # input: a tree t
-            # input: an attribute att on the nodes of t
-            # input: a condition cond on the nodes of t
+    # input: a tree t
+    # input: an attribute att on the nodes of t
+    # input: a condition cond on the nodes of t
 
-            output = copy(input)
+    output = copy(input)
 
-            for each node n of t:
-                if(cond(n)):
-                    output[n] = input[t.parent(n)]
+    for each node n of t:
+        if(cond(n)):
+            output[n] = input[t.parent(n)]
 
-            return output
+    return output
 
-    The following example demonstrates the application of a conditional parallel propagation:
+The following example demonstrates the application of a conditional parallel propagation:
 
 .. image:: fig/tree_demo_propagate_parallel.svg
     :align: center
@@ -494,28 +494,28 @@ The conditional parallel propagator pseudo-code could be:
         .. code-block:: cpp
             :linenos:
 
-                // tree in the above example
-                tree t({5, 5, 6, 6, 6, 7, 7, 7});
-                array_1d<ulong> input{1, 2, 3, 4, 5, 6, 7, 8};
-                array_1d<bool> condition{true, false, true, false, true, true, false, false};
+            // tree in the above example
+            tree t({5, 5, 6, 6, 6, 7, 7, 7});
+            array_1d<index_t> input{1, 2, 3, 4, 5, 6, 7, 8};
+            array_1d<bool> condition{true, false, true, false, true, true, false, false};
 
-                auto result = propagate_parallel(t, input, condition);
+            auto result = propagate_parallel(t, input, condition);
 
-                // result = {6, 2, 7, 4, 7, 8, 7, 8};
+            // result = {6, 2, 7, 4, 7, 8, 7, 8};
 
-        .. tab:: python
+    .. tab:: python
 
         .. code-block:: python
             :linenos:
 
-                # tree in the above example
-                t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
-                input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
-                condition = numpy.asarray((True, False, True, False, True, True, False, False))
+            # tree in the above example
+            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+            input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
+            condition = numpy.asarray((True, False, True, False, True, True, False, False))
 
-                result = hg.propagate_parallel(t, input, condition)
+            result = hg.propagate_parallel(t, input, condition)
 
-                # result = (6, 2, 7, 4, 7, 8, 7, 8)
+            # result = (6, 2, 7, 4, 7, 8, 7, 8)
 
 Conditional sequential propagator
 *********************************
@@ -528,19 +528,19 @@ The conditional sequential propagator pseudo-code could be:
 .. code-block:: python
     :linenos:
 
-        # input: a tree t
-        # input: an attribute att on the nodes of t
-        # input: a condition cond on the nodes of t
+    # input: a tree t
+    # input: an attribute att on the nodes of t
+    # input: a condition cond on the nodes of t
 
-        output = copy(input)
+    output = copy(input)
 
-        for each node n of t:
-            if(cond(n)):
-                output[n] = output[t.parent(n)]
+    for each node n of t:
+        if(cond(n)):
+            output[n] = output[t.parent(n)]
 
-        return output
+    return output
 
-    The following example demonstrates the application of a conditional sequential propagation:
+The following example demonstrates the application of a conditional sequential propagation:
 
 .. image:: fig/tree_demo_propagate_sequential.svg
     :align: center
@@ -553,25 +553,25 @@ The conditional sequential propagator pseudo-code could be:
         .. code-block:: cpp
             :linenos:
 
-                // tree in the above example
-                tree t({5, 5, 6, 6, 6, 7, 7, 7});
-                array_1d<ulong> input{1, 2, 3, 4, 5, 6, 7, 8};
-                array_1d<bool> condition{true, false, true, false, true, true, false, false};
+            // tree in the above example
+            tree t({5, 5, 6, 6, 6, 7, 7, 7});
+            array_1d<index_t> input{1, 2, 3, 4, 5, 6, 7, 8};
+            array_1d<bool> condition{true, false, true, false, true, true, false, false};
 
-                auto result = propagate_sequential(t, input, condition);
+            auto result = propagate_sequential(t, input, condition);
 
-                // result = {8, 2, 7, 4, 7, 8, 7, 8};
+            // result = {8, 2, 7, 4, 7, 8, 7, 8};
 
-        .. tab:: python
+    .. tab:: python
 
         .. code-block:: python
             :linenos:
 
-                # tree in the above example
-                t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
-                input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
-                condition = numpy.asarray((True, False, True, False, True, True, False, False))
+            # tree in the above example
+            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+            input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
+            condition = numpy.asarray((True, False, True, False, True, True, False, False))
 
-                result = hg.propagate_sequential(t, input, condition)
+            result = hg.propagate_sequential(t, input, condition)
 
-                # result = (8, 2, 7, 4, 7, 8, 7, 8)
+            # result = (8, 2, 7, 4, 7, 8, 7, 8)
