@@ -23,7 +23,7 @@ void init_graph(class_t &c){
     c.def(py::init<const hg::size_t>(), "Create a new graph with no edge.",
           py::arg("number_of_vertices") = 0);
 
-
+    add_edge_accessor_graph_concept<graph_t, decltype(c)>(c);
     add_incidence_graph_concept<graph_t, decltype(c)>(c);
     add_bidirectionnal_graph_concept<graph_t, decltype(c)>(c);
     add_adjacency_graph_concept<graph_t, decltype(c)>(c);
@@ -34,11 +34,11 @@ void init_graph(class_t &c){
     c.def("add_edge", [](graph_t &g,
                          const vertex_t source,
                          const vertex_t target) {
-              hg::add_edge(source, target, g);
+              return cpp_edge_2_python(hg::add_edge(source, target, g));
           },
-          "Add an (undirected) edge between 'vertex1' and 'vertex2'",
-          py::arg("vertex1"),
-          py::arg("vertex2"));
+          "Add an (undirected) edge between 'vertex1' and 'vertex2'. Returns the new edge.",
+          py::arg("source"),
+          py::arg("target"));
     c.def("add_vertex", [](graph_t &g) {
               return hg::add_vertex(g);
           },

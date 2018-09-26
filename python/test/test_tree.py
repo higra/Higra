@@ -71,7 +71,7 @@ class TestTree(unittest.TestCase):
         res = []
 
         for e in t.edges():
-            res.append((e[0], e[1]))
+            res.append((t.source(e), t.target(e)))
 
         self.assertTrue(res == ref)
 
@@ -134,7 +134,7 @@ class TestTree(unittest.TestCase):
         res = []
 
         for e in t.edges():
-            res.append(e[2])
+            res.append(t.index(e))
 
         self.assertTrue(res == ref)
 

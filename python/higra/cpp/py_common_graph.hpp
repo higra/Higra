@@ -191,32 +191,40 @@ void add_edge_list_graph_concept(pyc &c) {
 
 
 template<typename graph_t, typename pyc>
+void add_edge_accessor_graph_concept(pyc &c) {
+
+    c.def("source", [](const graph_t &g, const pybind11::tuple * v) {
+              return (*v)[0];
+          },
+
+          "Get the source vertex of an edge.",
+          pybind11::arg("edge"));
+
+    c.def("target", [](const graph_t &g, const pybind11::tuple * v) {
+              return (*v)[1];
+          },
+
+          "Get the target vertex of an edge.",
+          pybind11::arg("edge"));
+}
+
+template<typename graph_t, typename pyc>
 void add_edge_index_graph_concept(pyc &c) {
     using vertex_t = typename hg::graph_traits<graph_t>::vertex_descriptor;
     using edge_index_t = typename hg::graph_traits<graph_t>::edge_index;
-/*
-    c.def("edge_index_iterator", [](graph_t &g) {
-              auto it = hg::edge_indexes(g);
-              return pybind11::make_iterator(it.first, it.second);
-          },
-          "Iterator over all edge indexes of the graph.");
-    c.def("out_edge_index_iterator", [](graph_t &g, vertex_t v) {
-              auto it = hg::out_edge_indexes(v, g);
-              return pybind11::make_iterator(it.first, it.second);
-          },
-          "Iterator over all out edge indexes of the given vertex.",
-          pybind11::arg("vertex"));
-    c.def("in_edge_index_iterator", [](graph_t &g, vertex_t v) {
-              auto it = hg::in_edge_indexes(v, g);
-              return pybind11::make_iterator(it.first, it.second);
-          },
-          "Iterator over all in edge indexes of the given vertex.",
-          pybind11::arg("vertex"));
-          */
+
     c.def("edge_from_index", [](graph_t &g, edge_index_t v) {
               auto e = hg::edge_from_index(v, g);
               return cpp_edge_2_python(e);
           },
+
           "Get an edge from its index.",
           pybind11::arg("edge_index"));
+
+    c.def("index", [](const graph_t &g, const pybind11::tuple * v) {
+              return (*v)[2];
+          },
+
+          "Get the index of an edge.",
+          pybind11::arg("edge"));
 }

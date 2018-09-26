@@ -68,7 +68,7 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
 
         for e in g.edges():
-            test.append((e[0], e[1]))
+            test.append((g.source(e), g.target(e)))
 
         self.assertTrue(test == ref)
 
@@ -144,7 +144,7 @@ class TestUndirectedGraph(unittest.TestCase):
         test = []
 
         for e in g.edges():
-            test.append(e[2])
+            test.append(g.index(e))
 
         self.assertTrue(test == ref)
 

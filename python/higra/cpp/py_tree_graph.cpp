@@ -39,7 +39,7 @@ void py_init_tree_graph(pybind11::module &m) {
 
     add_type_overloads<def_tree_ctr<graph_t>, HG_TEMPLATE_INTEGRAL_TYPES>
             (c, "Create a tree from the given parent relation.");
-
+    add_edge_accessor_graph_concept<graph_t, decltype(c)>(c);
     add_incidence_graph_concept<graph_t, decltype(c)>(c);
     add_bidirectionnal_graph_concept<graph_t, decltype(c)>(c);
     add_adjacency_graph_concept<graph_t, decltype(c)>(c);
