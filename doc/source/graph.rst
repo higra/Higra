@@ -16,11 +16,10 @@ Graphs come in three flavours in Higra:
 This page presents common functions for the manipulation of graphs.
 A dedicated page for the ``tree`` structure, see :ref:`tree`.
 
-
-In C++ graph realted methods are free functions (as in the `Boost Graph Library BGL <https://www.boost.org/doc/libs/1_67_0/libs/graph/doc/index.html>`_),
-while in Python they are member functions.
+All functions acting on graphs have the same name in C++ and in Python, except for iterators to avoid name collisions with the `Boost Graph Library (BGL) <https://www.boost.org/doc/libs/1_67_0/libs/graph/doc/index.html>`_.
+In c++, graph related methods are free functions (as in BGL), while in Python they are member functions.
 For example, the function ``num_vertices`` that returns the number of vertices in a graph, will be called:
-All functions acting on graphs have the same name in C++ and in Python, except for iterators to avoid name collisions with BGL.
+
 
 .. tabs::
 
@@ -157,7 +156,7 @@ Graphs which have indexed edges provide the following guaranties:
 * edge indices of a graph ``g`` are integers (type ``index_t``) comprised between 0 (included) and ``num_edges(g)`` (excluded);
 * the index of a given edge will never change during the object lifetime.
 
-However, note that in an undirected graph, the edges ``(x, y)`` and ``(x, y)`` have the same index.
+However, note that in an undirected graph, the edges ``(x, y)`` and ``(y, x)`` have the same index.
 
 All operations are done in constant time.
 

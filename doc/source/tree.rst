@@ -13,7 +13,7 @@ matching the usual semantic of trees.
 
 As with any graph in Higra, the vertices of a tree (also called *nodes*) are represented by positive integers suitable
 for array indexing.
-Higra's tree ensure that vertices are are topologically sorted, i.e. that for any vertices :math:`v1` and :math:`v2`, if
+Higra's trees ensure that vertices are are topologically sorted, i.e. that for any vertices :math:`v1` and :math:`v2`, if
 :math:`v2` is an ancestor of :math:`v1`, then :math:`v1\le v2`. Moreover, whenever a tree :math:`t` is a hierarchical
 representation of a graph :math:`(V, E)`, then the leaves of :math:`t` are equal to :math:`V`: i.e. there is a direct
 mapping between the leaves of the tree and the vertices of the graph represented by this tree.
@@ -51,7 +51,7 @@ Example:
             using namespace hg;
 
             // creates the tree shown in the figure above
-            tree t{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11};
+            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11});
 
 
 
@@ -103,7 +103,7 @@ Example:
             :linenos:
 
             // creates the tree shown in the figure above
-            tree t{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11};
+            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11});
 
             num_leaves(t);      //  7
             root(t);            // 11
@@ -159,7 +159,7 @@ Iterators
             :linenos:
 
             // creates the tree shown in the figure above
-            tree t{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11};
+            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11});
 
             for(auto n: children_iterator(t, 8)){
                 ... // 2, 3, 4
