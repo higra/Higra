@@ -9,12 +9,14 @@
 ****************************************************************************/
 
 #include "py_graph_image.hpp"
-#include "py_common_graph.hpp"
+#include "py_common.hpp"
 #include "higra/image/graph_image.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"
 
+template<typename T>
+using pyarray = xt::pyarray<T>;
 
 namespace py = pybind11;
 
@@ -23,7 +25,7 @@ struct def_kalhimsky_2_contour {
     template<typename value_t>
     static
     void def(pybind11::module &m, const char *doc) {
-        m.def("_khalimsky_2_graph_4_adjacency", [](const xt::pyarray<value_t> &khalimsky,
+        m.def("_khalimsky_2_graph_4_adjacency", [](const pyarray<value_t> &khalimsky,
                                                    bool extra_border) {
                   return hg::khalimsky_2_graph_4_adjacency(khalimsky, extra_border);
               },
@@ -39,7 +41,7 @@ struct def_contour2Khalimsky {
     void def(pybind11::module &m, const char *doc) {
         m.def("_graph_4_adjacency_2_khalimsky", [](const hg::ugraph &graph,
                                                    const std::vector<size_t> &shape,
-                                                   const xt::pyarray<value_t> &weights,
+                                                   const pyarray<value_t> &weights,
                                                    bool add_extra_border) {
                   hg::embedding_grid_2d embedding(shape);
                   return hg::graph_4_adjacency_2_khalimsky(graph, embedding, weights, add_extra_border);

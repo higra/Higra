@@ -55,7 +55,8 @@ class TestRegularGraph(unittest.TestCase):
         for v in g.vertices():
             res = []
             for e in g.out_edges(v):
-                res.append(e)
+                res.append((g.source(e), g.target(e)))
+
             self.assertTrue(res == ref[v])
 
     def test_out_edge_iterator8(self):

@@ -20,14 +20,14 @@
 
 
 namespace hg {
-    template <typename graph_t, typename T>
+    template <typename graph_t, typename T1, typename T2>
     auto mean_pb_hierarchy(const graph_t & graph,
                  const embedding_grid_2d &embedding,
-                 const xt::xexpression<T> & xedge_weights,
-                 const xt::xexpression<T> & xedge_orientations = array_nd<int>()){
+                 const xt::xexpression<T1> & xedge_weights,
+                 const xt::xexpression<T2> & xedge_orientations = array_nd<int>()){
         HG_TRACE();
 
-        using value_t = typename T::value_type;
+        using value_t = typename T1::value_type;
         const auto &edge_weights = xedge_weights.derived_cast();
         const auto &edge_orientations = xedge_orientations.derived_cast();
 

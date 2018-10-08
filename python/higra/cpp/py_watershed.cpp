@@ -8,14 +8,14 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-
-
-
 #include "py_watershed.hpp"
 #include "higra/algo/watershed.hpp"
 #include "py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
+
+template<typename T>
+using pyarray = xt::pyarray<T>;
 
 namespace py = pybind11;
 
@@ -25,7 +25,7 @@ struct def_labelisation_watershed {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("_labelisation_watershed", [](const graph_t &graph, const xt::pyarray<value_t> &edge_weights) {
+        c.def("_labelisation_watershed", [](const graph_t &graph, const pyarray<value_t> &edge_weights) {
                   return hg::labelisation_watershed(graph, edge_weights);
               },
               doc,

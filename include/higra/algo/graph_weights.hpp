@@ -46,9 +46,9 @@ namespace hg {
             typename graph_t::vertex_descriptor,
             typename graph_t::vertex_descriptor)> &fun) {
         auto result = array_1d<result_value_t>::from_shape({num_edges(graph)});
-        index_t i = 0;
+
         for (const auto e: edge_iterator(graph)) {
-            result(i++) = fun(source(e, graph), target(e, graph));
+            result(e) = fun(source(e, graph), target(e, graph));
         }
         return result;
     };

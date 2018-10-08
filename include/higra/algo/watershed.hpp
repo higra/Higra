@@ -46,8 +46,8 @@ namespace hg {
 
         for (auto v: vertex_iterator(graph)) {
             auto minValue = std::numeric_limits<value_type>::max();
-            for (auto ei: out_edge_index_iterator(v, graph)) {
-                minValue = std::min(minValue, edge_weights[ei]);
+            for (auto e: out_edge_iterator(v, graph)) {
+                minValue = std::min(minValue, edge_weights(e));
             }
             fminus[v] = minValue;
         }
@@ -74,10 +74,9 @@ namespace hg {
                 auto y = LL[LL.size() - 1];
                 LL.pop_back();
 
-                for (auto ei: out_edge_index_iterator(y, graph)) {
-                    auto e = edge(ei, graph);
-                    auto adjacent_vertex = (source(e, graph) == y) ? target(e, graph) : source(e, graph);
-                    if (notInL[adjacent_vertex] && edge_weights[ei] == fminus[y]) {
+                for (auto e: out_edge_iterator(y, graph)) {
+                    auto adjacent_vertex = target(e, graph);
+                    if (notInL[adjacent_vertex] && edge_weights(e) == fminus[y]) {
                         if (labels[adjacent_vertex] != no_label) {
                             return std::make_pair(std::move(L), labels[adjacent_vertex]);
                         } else if (fminus[adjacent_vertex] < fminus[y]) {

@@ -58,6 +58,7 @@ void py_init_regular_graph_impl(pybind11::module &m) {
           py::arg("shape"),
           py::arg("neighbour_list"));
 
+    add_edge_accessor_graph_concept<graph_t, decltype(c)>(c);
     add_incidence_graph_concept<graph_t, decltype(c)>(c);
     add_bidirectionnal_graph_concept<graph_t, decltype(c)>(c);
     add_adjacency_graph_concept<graph_t, decltype(c)>(c);

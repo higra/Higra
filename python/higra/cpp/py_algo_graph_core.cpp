@@ -14,6 +14,9 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
+template<typename T>
+using pyarray = xt::pyarray<T>;
+
 namespace py = pybind11;
 
 template<typename graph_t>
@@ -22,7 +25,7 @@ struct def_graph_cut_2_labelisation {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_graph_cut_2_labelisation", [](const graph_t &graph,
-                                             const xt::pyarray<value_t> &edge_weights) {
+                                              const pyarray<value_t> &edge_weights) {
                   return hg::graph_cut_2_labelisation(graph, edge_weights);
               },
               doc,
@@ -37,7 +40,7 @@ struct def_labelisation_2_graph_cut {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_labelisation_2_graph_cut", [](const graph_t &graph,
-                                             const xt::pyarray<value_t> &vertex_labels) {
+                                              const pyarray<value_t> &vertex_labels) {
                   return hg::labelisation_2_graph_cut(graph, vertex_labels);
               },
               doc,
@@ -57,12 +60,12 @@ void py_init_algo_graph_core(pybind11::module &m) {
              "are assumed to be part of the cut."
             );
 
-    add_type_overloads<def_labelisation_2_graph_cut <hg::ugraph>,
-    HG_TEMPLATE_INTEGRAL_TYPES >
-                               (m,
-                                       "Determine the graph cut that corresponds to a given labeling "
-                                       "of the graph vertices. "
-                                       "The result is a weighting of the graph edges where edges with "
-                                       "a non zero weight are part of the cut."
-                               );
+    add_type_overloads<def_labelisation_2_graph_cut<hg::ugraph>,
+            HG_TEMPLATE_INTEGRAL_TYPES>
+            (m,
+             "Determine the graph cut that corresponds to a given labeling "
+             "of the graph vertices. "
+             "The result is a weighting of the graph edges where edges with "
+             "a non zero weight are part of the cut."
+            );
 }

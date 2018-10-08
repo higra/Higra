@@ -68,7 +68,7 @@ namespace hg {
 
         while (num_edge_found < num_edge_mst && i < (index_t)sorted_edges_indices.size()) {
             auto ei = sorted_edges_indices[i];
-            auto e = edge(ei, graph);
+            auto e = edge_from_index(ei, graph);
             auto c1 = uf.find(source(e, graph));
             auto c2 = uf.find(target(e, graph));
             if (c1 != c2) {

@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
         long count = 0;
 
         auto edge_to_k = [&graph, &embedding](index_t edge_index){
-            auto e = edge(edge_index, graph);
+            auto & e = edge_from_index(edge_index, graph);
             auto s = source(e, graph);
             auto t = target(e, graph);
 

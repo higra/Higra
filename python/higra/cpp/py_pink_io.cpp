@@ -14,21 +14,24 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
+template<typename T>
+using pyarray = xt::pyarray<T>;
+
 namespace py = pybind11;
 
 template<typename graph_t>
 void def_save(pybind11::module &m) {
     m.def("save_graph_pink", [](const std::string &filename,
                                 const graph_t &graph,
-                                const xt::pyarray<double> &vertex_values = {0},
-                                const xt::pyarray<double> &edge_values = {0},
+                                const pyarray<double> &vertex_values = {0},
+                                const pyarray<double> &edge_values = {0},
                                 const std::vector<size_t> &shape = {}) {
               hg::save_pink_graph(filename, graph, vertex_values, edge_values, shape);
           },
           py::arg("filename"),
           py::arg("graph"),
-          py::arg("vertex_weights") = xt::pyarray<double>(),
-          py::arg("edge_weights") = xt::pyarray<double>(),
+          py::arg("vertex_weights") = pyarray<double>(),
+          py::arg("edge_weights") = pyarray<double>(),
           py::arg("shape") = std::vector<size_t>());
 }
 

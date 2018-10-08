@@ -149,14 +149,20 @@ namespace hg {
      * @param a
      * @param b
      */
-    template <typename T1, typename T2>
-    void extend(T1 & a, const T2 & b){
+    template<typename T1, typename T2>
+    void extend(T1 &a, const T2 &b) {
         a.insert(std::end(a), std::begin(b), std::end(b));
     };
 
-    template <typename T>
+    template<typename T>
     using stackv = std::stack<T, std::vector<T>>;
 
+    /**
+     * Do not use except if you want a compile error showing the type of the provided template parameter !
+     * @tparam T
+     */
+    template<typename T>
+    struct COMPILE_ERROR;
 }
 
 

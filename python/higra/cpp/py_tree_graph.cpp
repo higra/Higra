@@ -10,9 +10,6 @@
 
 #include "py_tree_graph.hpp"
 #include "py_common_graph.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
-
 
 namespace py = pybind11;
 
@@ -25,7 +22,7 @@ struct def_tree_ctr {
     template<typename type, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def(py::init([](const xt::pyarray<type> &parent) { return graph_t(parent); }),
+        c.def(py::init([](const pyarray<type> &parent) { return graph_t(parent); }),
               doc,
               py::arg("parent_relation")
         );
@@ -39,7 +36,7 @@ void py_init_tree_graph(pybind11::module &m) {
 
     add_type_overloads<def_tree_ctr<graph_t>, HG_TEMPLATE_INTEGRAL_TYPES>
             (c, "Create a tree from the given parent relation.");
-
+    add_edge_accessor_graph_concept<graph_t, decltype(c)>(c);
     add_incidence_graph_concept<graph_t, decltype(c)>(c);
     add_bidirectionnal_graph_concept<graph_t, decltype(c)>(c);
     add_adjacency_graph_concept<graph_t, decltype(c)>(c);
@@ -51,7 +48,7 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("num_leaves", &graph_t::num_leaves, "Get the number of leaves nodes.");
     c.def("num_children", &graph_t::num_children, "Get the number of children nodes of the given node.",
           py::arg("node"));
-    c.def("children_iterator",
+    c.def("children",
           [](const graph_t &g, vertex_t v) {
               auto it = hg::children(v, g);
               return pybind11::make_iterator(it.first, it.second);
@@ -71,8 +68,9 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("leaves_to_root_iterator",
           [](const graph_t &tree, bool includeLeaves, bool includeRoot) {
               auto range = hg::leaves_to_root_iterator(tree,
-                      (includeLeaves) ? hg::leaves_it::include : hg::leaves_it::exclude,
-                      (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
+                                                       (includeLeaves) ? hg::leaves_it::include
+                                                                       : hg::leaves_it::exclude,
+                                                       (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
               return py::make_iterator(range.begin(), range.end());
           }, "Returns an iterator on the node indices going from the leaves to the root of the tree.",
           py::arg("include_leaves") = true,
@@ -81,8 +79,8 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("root_to_leaves_iterator",
           [](const graph_t &tree, bool includeLeaves, bool includeRoot) {
               auto range = root_to_leaves_iterator(tree,
-                      (includeLeaves) ? hg::leaves_it::include : hg::leaves_it::exclude,
-                      (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
+                                                   (includeLeaves) ? hg::leaves_it::include : hg::leaves_it::exclude,
+                                                   (includeRoot) ? hg::root_it::include : hg::root_it::exclude);
               return py::make_iterator(range.begin(), range.end());
           }, "Returns an iterator on the node indices going from the root to the leaves of the tree.",
           py::arg("include_leaves") = true,

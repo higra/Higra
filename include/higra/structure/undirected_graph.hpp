@@ -12,6 +12,7 @@
 
 #include <functional>
 #include "details/graph_concepts.hpp"
+#include "details/indexed_edge.hpp"
 #include "higra/structure/details/iterators.hpp"
 #include <vector>
 #include <list>
@@ -81,22 +82,21 @@ namespace hg {
 
             // Graph associated types
             using vertex_descriptor = index_t;
-            using edge_descriptor = std::pair<vertex_descriptor, vertex_descriptor>;
+            using edge_index_t = index_t;
+            using edge_descriptor = indexed_edge<vertex_descriptor, edge_index_t>;
             using out_edge_t = std::pair<vertex_descriptor, vertex_descriptor>; // (edge_index, adjacent vertex)
             using directed_category = graph::undirected_tag;
             using edge_parallel_category = graph::allow_parallel_edge_tag;
             using traversal_category = undirected_graph_traversal_category;
 
-            // custom edge index iterators
-            using edge_index_t = index_t;
-            using out_edge_container_type = typename container_gen<edgeS, edge_index_t>::type;
-            using edge_index_iterator = counting_iterator<edge_index_t>;
-            using out_edge_index_iterator = typename out_edge_container_type::const_iterator;
-            using in_edge_index_iterator = out_edge_index_iterator;
-
             // VertexListGraph associated types
             using vertex_iterator = counting_iterator<vertex_descriptor>;
             using vertices_size_type = size_t;
+
+            // custom edge index iterators
+            using out_edge_container_type = typename container_gen<edgeS, edge_index_t>::type;
+            using out_edge_index_iterator = typename out_edge_container_type::const_iterator;
+            using in_edge_index_iterator = out_edge_index_iterator;
 
             // EdgeListGraph associated types
             using edges_size_type = size_t;
@@ -120,7 +120,7 @@ namespace hg {
 
 
             undirected_graph(const size_t num_vertices = 0) : _num_vertices(num_vertices),
-                                                                   out_edges(num_vertices) {};
+                                                              out_edges(num_vertices) {};
 
             vertices_size_type num_vertices() const {
                 return _num_vertices;
@@ -142,13 +142,13 @@ namespace hg {
             }
 
             void remove_edge(edge_index_t ei) {
-                auto source = edges[ei].first;
-                auto target = edges[ei].second;
+                auto &source = edges[ei].source;
+                auto &target = edges[ei].target;
                 remove_from_container(out_edges[source], ei);
                 if (source != target)
                     remove_from_container(out_edges[target], ei);
-                edges[ei].first = invalid_index;
-                edges[ei].second = invalid_index;
+                edges[ei].source = invalid_index;
+                edges[ei].target = invalid_index;
             }
 
             void set_edge(edge_index_t ei, vertex_descriptor v1, vertex_descriptor v2) {
@@ -161,11 +161,11 @@ namespace hg {
                 add_to_container(out_edges[v1], ei);
                 if (v1 != v2)
                     add_to_container(out_edges[v2], ei);
-                edges[ei].first = v1;
-                edges[ei].second = v2;
+                edges[ei].source = v1;
+                edges[ei].target = v2;
             }
 
-            auto edge(vertex_descriptor v) const {
+            const auto &edge_from_index(index_t v) const {
                 return edges[v];
             }
 
@@ -185,22 +185,23 @@ namespace hg {
                 return out_edges[v].cend();
             }
 
-            edge_descriptor add_edge(vertex_descriptor v1, vertex_descriptor v2) {
+            const edge_descriptor &add_edge(vertex_descriptor v1, vertex_descriptor v2) {
                 if (v1 > v2) {
                     std::swap(v1, v2);
                 }
 
                 vertex_descriptor index = edges.size();
-                edges.push_back(std::make_pair(v1, v2));
+                edges.emplace_back(v1, v2, index);
 
                 add_to_container(out_edges[v1], index);
                 if (v1 != v2)
                     add_to_container(out_edges[v2], index);
 
-                return std::make_pair(v1, v2);
+                return edges[index];
             }
 
-            edge_descriptor add_edge(edge_descriptor e) {
+            template<typename T>
+            edge_descriptor add_edge(const T &e) {
                 return add_edge(e.first, e.second);
             }
 
@@ -250,32 +251,8 @@ namespace hg {
     }
 
     template<typename T>
-    std::pair<typename undirected_graph<T>::edge_index_iterator, typename undirected_graph<T>::edge_index_iterator>
-    edge_indexes(const undirected_graph<T> &g) {
-        using it = typename hg::undirected_graph<T>::edge_index_iterator;
-        return std::make_pair(
-                it(0),
-                it(g.num_edges()));
-    }
-
-    template<typename T>
-    std::pair<typename undirected_graph<T>::out_edge_index_iterator, typename undirected_graph<T>::out_edge_index_iterator>
-    out_edge_indexes(const typename undirected_graph<T>::vertex_descriptor v, const undirected_graph<T> &g) {
-
-        return std::make_pair(
-                g.out_edges_cbegin(v),
-                g.out_edges_cend(v));
-    }
-
-    template<typename T>
-    std::pair<typename undirected_graph<T>::out_edge_index_iterator, typename undirected_graph<T>::out_edge_index_iterator>
-    in_edge_indexes(const typename undirected_graph<T>::vertex_descriptor v, const undirected_graph<T> &g) {
-        return out_edge_indexes(v, g);
-    }
-
-    template<typename T>
-    auto edge(const typename undirected_graph<T>::vertex_descriptor v, const undirected_graph<T> &g) {
-        return g.edge(v);
+    const auto &edge_from_index(const typename undirected_graph<T>::vertex_descriptor v, const undirected_graph<T> &g) {
+        return g.edge_from_index(v);
     }
 
     template<typename T>
@@ -299,7 +276,6 @@ namespace hg {
                                                                  const hg::undirected_graph<T> &g) {
         return g.degree(v);
     }
-
 
     template<typename T>
     typename hg::undirected_graph<T>::degree_size_type out_degree(typename hg::undirected_graph<T>::vertex_descriptor v,
@@ -353,8 +329,9 @@ namespace hg {
     std::pair<typename hg::undirected_graph<T>::out_edge_iterator, typename hg::undirected_graph<T>::out_edge_iterator>
     out_edges(typename hg::undirected_graph<T>::vertex_descriptor v, const hg::undirected_graph<T> &g) {
         auto fun = [v, &g](const typename hg::undirected_graph<T>::edge_index_t &oei) {
-            auto oe = g.edge(oei);
-            return std::make_pair(v, (v == oe.first) ? oe.second : oe.first);
+            const auto &oe = g.edge_from_index(oei);
+            return typename hg::undirected_graph<T>::edge_descriptor(v, (v == oe.source) ? oe.target : oe.source,
+                                                                     oe.index);
         };
         using it = typename hg::undirected_graph<T>::out_edge_iterator;
         return std::make_pair(
@@ -366,8 +343,9 @@ namespace hg {
     std::pair<typename hg::undirected_graph<T>::out_edge_iterator, typename hg::undirected_graph<T>::out_edge_iterator>
     in_edges(typename hg::undirected_graph<T>::vertex_descriptor v, const hg::undirected_graph<T> &g) {
         auto fun = [v, &g](const typename hg::undirected_graph<T>::edge_index_t &oei) {
-            const auto &oe = g.edge(oei);
-            return std::make_pair((v == oe.first) ? oe.second : oe.first, v);
+            const auto &oe = g.edge_from_index(oei);
+            return typename hg::undirected_graph<T>::edge_descriptor((v == oe.source) ? oe.target : oe.source, v,
+                                                                     oe.index);
         };
         using it = typename hg::undirected_graph<T>::out_edge_iterator;
         return std::make_pair(
@@ -379,8 +357,8 @@ namespace hg {
     std::pair<typename hg::undirected_graph<T>::adjacency_iterator, typename hg::undirected_graph<T>::adjacency_iterator>
     adjacent_vertices(typename hg::undirected_graph<T>::vertex_descriptor v, const hg::undirected_graph<T> &g) {
         auto fun = [v, &g](const typename hg::undirected_graph<T>::edge_index_t &oei) {
-            const auto &oe = g.edge(oei);
-            return (v == oe.first) ? oe.second : oe.first;
+            const auto &oe = g.edge_from_index(oei);
+            return  (v == oe.source) ? oe.target : oe.source;
         };
         using it = typename hg::undirected_graph<T>::adjacency_iterator;
         return std::make_pair(

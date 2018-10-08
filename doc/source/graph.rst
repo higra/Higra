@@ -16,10 +16,11 @@ Graphs come in three flavours in Higra:
 This page presents common functions for the manipulation of graphs.
 A dedicated page for the ``tree`` structure, see :ref:`tree`.
 
-All functions acting on graphs have the same name in C++ and in Python.
-In C++ graph methods are free functions (as in the `Boost Graph Library BGL <https://www.boost.org/doc/libs/1_67_0/libs/graph/doc/index.html>`_),
+
+In C++ graph realted methods are free functions (as in the `Boost Graph Library BGL <https://www.boost.org/doc/libs/1_67_0/libs/graph/doc/index.html>`_),
 while in Python they are member functions.
 For example, the function ``num_vertices`` that returns the number of vertices in a graph, will be called:
+All functions acting on graphs have the same name in C++ and in Python, except for iterators to avoid name collisions with BGL.
 
 .. tabs::
 
@@ -103,11 +104,11 @@ Iterating on vertices
         - Returns
         - Description
         - Available
-    *   - ``vertex_iterator``
+    *   - ``vertex_iterator`` (c++) ``vertices`` (python)
         - a range of iterators
         - iterator on all graph vertices
         - ``regular_graph``, ``ugraph``, ``tree``
-    *   - ``adjacent_vertex_iterator``
+    *   - ``adjacent_vertex_iterator`` (c++) ``adjacent_vertices`` (python)
         - a range of iterators
         - iterator on all vertices adjacent to the given vertex
         - ``regular_graph``, ``ugraph``, ``tree``
@@ -132,7 +133,7 @@ Iterating on vertices
                 }
 
 
-        .. tab:: python
+    .. tab:: python
 
         .. code-block:: python
             :linenos:
@@ -140,16 +141,24 @@ Iterating on vertices
                 g = hg.UndirectedGraph()
                 ...
 
-                for v in g.vertex_iterator():
+                for v in g.vertices():
                     ... # all vertices of g
 
-                for v in g.adjacent_vertex_iterator(1):
+                for v in g.adjacent_vertices(1):
                     ... # all vertices adjacent to vertex 1 in g
 
 Edges
 -----
 
-Graph edges are represented by pairs of vertices, i.e. pairs of positive integers (``index_t`` in c++), whose first element is the source and second element is the target.
+Graph edges are composed of a source vertex, a target vertex, and, optionally, an index.
+
+Graphs which have indexed edges provide the following guaranties:
+
+* edge indices of a graph ``g`` are integers (type ``index_t``) comprised between 0 (included) and ``num_edges(g)`` (excluded);
+* the index of a given edge will never change during the object lifetime.
+
+However, note that in an undirected graph, the edges ``(x, y)`` and ``(x, y)`` have the same index.
+
 All operations are done in constant time.
 
 .. list-table::
@@ -175,6 +184,17 @@ All operations are done in constant time.
         - vertex index
         - target vertex of an edge
         - ``regular_graph``, ``ugraph``, ``tree``
+    *   - ``index``
+        - edge index
+        - the index of the given edge in the current graph
+        - ``ugraph``, ``tree``
+    *   - ``edge_from_index``
+        - edge
+        - the edge with given index (in an undirected graph, always returns the edge whose source vertex is smaller than the target vertex)
+        - ``ugraph``, ``tree``
+
+Note that python's edges are simply tuples whose first value is the source vertex, second value is the target vertex,
+and third (optional) value is the index.
 
 Example:
 
@@ -194,10 +214,13 @@ Example:
             // add an edge, between vertex 0 and 1
             add_edge(0, 1, g);
             // add an edge, between vertex 0 and 1
-            add_edge(1, 2, g);
+            auto e = add_edge(1, 2, g);
+
+            auto s = source(e, g); // 1
+            auto t = target(e, g); // 2
+            auto ei = index(e, g); // 1
 
             auto ne = num_edges(g); // 2
-
 
     .. tab:: python
 
@@ -210,9 +233,13 @@ Example:
             g = hg.UndirectedGraph(3)
 
             # add an edge, between vertex 0 and 1
-            g.add_edge(0, 1);
+            g.add_edge(0, 1)
             # add an edge, between vertex 0 and 1
-            g.add_edge(1, 2);
+            e = g.add_edge(1, 2)
+
+            s = g.source(e) # 1 or equivalently e[0]
+            t = g.target(e) # 2 or equivalently e[1]
+            ei = g.index(e) # 1 or equivalently e[2]
 
             ne = g.num_edges() # 2
 
@@ -227,15 +254,15 @@ Iterating on edges
         - Returns
         - Description
         - Available
-    *   - ``edge_iterator``
+    *   - ``edge_iterator``  (c++) ``edges`` (python)
         - a range of iterators
         - iterator on graph edges
         - ``regular_graph``, ``ugraph``, ``tree``
-    *   - ``in_edge_iterator``
+    *   - ``in_edge_iterator``  (c++) ``in_edges`` (python)
         - a range of iterators
         - iterators on all edges whose target is the given vertex
         - ``regular_graph``, ``ugraph``, ``tree``
-    *   - ``out_edge_iterator``
+    *   - ``out_edge_iterator``  (c++) ``out_edges`` (python)
         - a range of iterators
         - iterators on all edges whose source is the given vertex
         - ``regular_graph``, ``ugraph``, ``tree``
@@ -273,89 +300,14 @@ Iterating on edges
             g = hg.UndirectedGraph()
             ...
 
-            for e in g.edge_iterator():
-                print(e[0], e[1]) # e[0] is the source, e[1] is the target
+            for e in g.edges():
+                print(g.source(e), g.target(e))
 
-            for e in g.in_edge_iterator(1):
-                ... # all edges e such that e[1] == 1
+            for e in g.in_edges(1):
+                ... # all edges e such that g.target(e) == 1
 
-            for e in g.out_edge_iterator(1):
-                ... # all edges e such that e[0] == 1
-
-Edge indexes
-************
-
-``regular_graph`` and ``tree`` are also able to represent their edges by positive integers (``index_t`` in c++), suitable for array indexing.
-Operations are done in constant time.
-
-.. list-table::
-    :header-rows: 1
-
-    *   - Function
-        - Returns
-        - Description
-        - Available
-    *   - ``edge``
-        - a pair of vertex indices
-        - get an edge from its index
-        - ``ugraph``, ``tree``
-    *   - ``edge_index_iterator``
-        - a range of iterators
-        - iterator on the indices of every edge of the graph
-        - ``ugraph``, ``tree``
-    *   - ``out_edge_index_iterator``
-        - a range of iterators
-        - iterator on the every edge index ei that is an out-edge of the given vertex
-        - ``ugraph``, ``tree``
-    *   - ``in_edge_index_iterator``
-        - a range of iterators
-        - iterator on the every edge index ei that is an in-edge of the given vertex
-        - ``ugraph``, ``tree``
-
-
-.. tabs::
-
-    .. tab:: c++
-
-        .. code-block:: cpp
-            :linenos:
-
-            ugraph g;
-            ...
-
-            auto e = edge(0, g); // first edge of g
-
-            for(auto ei: edge_index_iterator(g){
-                ... // indices of every edge of g
-            }
-
-            for(auto ei: out_edge_index_iterator(1, g)){
-                ... // indices of every edge of g whose source is vertex 1
-            }
-
-            for(auto ei: in_edge_index_iterator(1, g)){
-                ... // indices of every edge of g whose target is vertex 1
-            }
-
-
-    .. tab:: python
-
-        .. code-block:: python
-            :linenos:
-
-            g = hg.UndirectedGraph()
-            ...
-
-            e = g.edge(0) // first edge of g
-
-            for ei in g.edge_index_iterator():
-                ... # indices of every edge of g
-
-            for ei in g.out_edge_index_iterator(1):
-                ... # indices of every edge of g whose source is vertex 1
-
-            for ei in g.in_edge_index_iterator(1):
-                ... # indices of every edge of g whose target is vertex 1
+            for e in g.out_edges(1):
+                ... # all edges e such that g.source(e) == 1
 
 
 Degrees
@@ -440,10 +392,9 @@ arrays in python.
             :linenos:
 
             // compute the sum of vertex weights adjacent to given vertex
-            auto sum_adjacent_vertices_weights(
-                const ugraph &g,
-                const array_1d<double> &vertex_weights,
-                index_t vertex){
+            auto sum_adjacent_vertices_weights(const ugraph &g,
+                                               const array_1d<double> &vertex_weights,
+                                               index_t vertex){
                 double result = 0;
                 for(auto v: adjacent_vertex_iterator(vertex, g)){
                     result += vertex_weights[v];
@@ -459,6 +410,6 @@ arrays in python.
 
             def sum_adjacent_vertices_weights(graph, vertex_weights, vertex):
                 result = 0
-                for v in g.adjacent_vertex_iterator(vertex);
+                for v in g.adjacent_vertices(vertex);
                     result += vertex_weights[v]
                 return result

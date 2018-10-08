@@ -71,7 +71,7 @@ class TestTree(unittest.TestCase):
         res = []
 
         for e in t.edges():
-            res.append(e)
+            res.append((t.source(e), t.target(e)))
 
         self.assertTrue(res == ref)
 
@@ -107,7 +107,7 @@ class TestTree(unittest.TestCase):
         for v in t.vertices():
             res = []
             for e in t.out_edges(v):
-                res.append(e)
+                res.append((e[0], e[1]))
             self.assertTrue(res == ref[v])
 
     def test_in_edge_iterator(self):
@@ -124,7 +124,7 @@ class TestTree(unittest.TestCase):
         for v in t.vertices():
             res = []
             for e in t.in_edges(v):
-                res.append(e)
+                res.append((e[0], e[1]))
             self.assertTrue(res == ref[v])
 
     def test_edge_index_iterator(self):
@@ -133,8 +133,8 @@ class TestTree(unittest.TestCase):
         ref = [0, 1, 2, 3, 4, 5, 6]
         res = []
 
-        for ei in t.edge_index_iterator():
-            res.append(ei)
+        for e in t.edges():
+            res.append(t.index(e))
 
         self.assertTrue(res == ref)
 
@@ -152,8 +152,8 @@ class TestTree(unittest.TestCase):
 
         for v in t.vertices():
             res = []
-            for ei in t.out_edge_index_iterator(v):
-                res.append(ei)
+            for e in t.out_edges(v):
+                res.append(e[2])
             self.assertTrue(res == ref[v])
 
     def test_in_edge_index_iterator(self):
@@ -170,8 +170,8 @@ class TestTree(unittest.TestCase):
 
         for v in t.vertices():
             res = []
-            for ei in t.in_edge_index_iterator(v):
-                res.append(ei)
+            for e in t.in_edges(v):
+                res.append(e[2])
             self.assertTrue(res == ref[v])
 
     def test_num_children(self):
@@ -198,7 +198,7 @@ class TestTree(unittest.TestCase):
 
         for v in t.vertices():
             res = []
-            for c in t.children_iterator(v):
+            for c in t.children(v):
                 res.append(c)
             self.assertTrue(res == ref[v])
 

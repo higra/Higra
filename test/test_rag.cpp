@@ -44,11 +44,11 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
         BOOST_CHECK(num_vertices(rag) == 4);
         BOOST_CHECK(num_edges(rag) == 5);
 
-        std::vector<std::pair<index_t, index_t>> expected_edges = {{0, 1},
-                                                                           {1, 2},
-                                                                           {0, 2},
-                                                                           {2, 3},
-                                                                           {0, 3}};
+        std::vector<ugraph::edge_descriptor> expected_edges = {{0, 1, 0},
+                                                               {1, 2, 1},
+                                                               {0, 2, 2},
+                                                               {2, 3, 3},
+                                                               {0, 3, 4}};
         index_t i = 0;
         for (auto e: edge_iterator(rag)) {
             BOOST_CHECK(e == expected_edges[i++]);
@@ -199,8 +199,8 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
 
     BOOST_AUTO_TEST_CASE(project_rag_regions) {
 
-        array_1d<int> fine_labels{0,1,2,3,4,2,3,4,2};
-        array_1d<int> coarse_labels{0,1,1,0,2,2,0,2,2};
+        array_1d<int> fine_labels{0, 1, 2, 3, 4, 2, 3, 4, 2};
+        array_1d<int> coarse_labels{0, 1, 1, 0, 2, 2, 0, 2, 2};
 
         auto map = project_fine_to_coarse_labelisation(fine_labels, coarse_labels);
 

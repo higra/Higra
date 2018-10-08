@@ -97,17 +97,16 @@ namespace hg {
         array_2d <result_type> res = xt::zeros<result_type>(res_shape);
 
         point_2d_i one{{1, 1}};
-        for (auto ei: edge_index_iterator(graph)) {
-            auto e = edge(ei, graph);
+        for (auto e: edge_iterator(graph)) {
             auto s = source(e, graph);
             auto t = target(e, graph);
             if (t > s) {
                 auto ti = embedding.lin2grid(t);
                 auto si = embedding.lin2grid(s);
                 if (add_extra_border)
-                    res[ti + si + one] = weight(ei);
+                    res[ti + si + one] = weight(e);
                 else
-                    res[ti + si] = weight(ei);
+                    res[ti + si] = weight(e);
             }
         }
 
@@ -171,14 +170,13 @@ namespace hg {
         array_1d <result_type> weights = xt::zeros<result_type>({num_edges(g)});
 
         point_2d_i one{{1, 1}};
-        for (auto ei : edge_index_iterator(g)) {
-            auto e = edge(ei, g);
+        for (auto e : edge_iterator(g)) {
             auto s = res_embedding.lin2grid(source(e, g));
             auto t = res_embedding.lin2grid(target(e, g));
             if (extra_border) {
-                weights(ei) = khalimsky[s + t + one];
+                weights(e) = khalimsky[s + t + one];
             } else {
-                weights(ei) = khalimsky[s + t];
+                weights(e) = khalimsky[s + t];
             }
         }
 

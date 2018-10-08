@@ -82,9 +82,8 @@ namespace hg {
                         auto v = s.top();
                         s.pop();
 
-                        for (auto ei: out_edge_index_iterator(v, graph)) {
-                            auto e = edge(ei, graph);
-                            auto adjv = other_vertex(e, v, graph);
+                        for (auto e: out_edge_iterator(v, graph)) {
+                            auto adjv = target(e, graph);
                             if (vertex_labels[adjv] == label_region) {
                                 if (vertex_map[adjv] == invalid_index) {
                                     vertex_map[adjv] = num_regions;
@@ -96,11 +95,11 @@ namespace hg {
                                     auto num_region_adjacent = vertex_map[adjv];
                                     if (canonical_edge_indexes[num_region_adjacent] < lowest_edge) {
                                         add_edge(num_region_adjacent, num_regions, rag);
-                                        edge_map[ei] = num_edges;
+                                        edge_map(e) = num_edges;
                                         canonical_edge_indexes[num_region_adjacent] = num_edges;
                                         num_edges++;
                                     } else {
-                                        edge_map[ei] = canonical_edge_indexes[num_region_adjacent];
+                                        edge_map(e) = canonical_edge_indexes[num_region_adjacent];
                                     }
                                 }
                             }

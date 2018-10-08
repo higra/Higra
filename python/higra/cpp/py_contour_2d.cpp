@@ -15,6 +15,9 @@
 #include "xtensor-python/pytensor.hpp"
 #include "higra/image/contour_2d.hpp"
 
+template<typename T>
+using pyarray = xt::pyarray<T>;
+
 using namespace hg;
 namespace py = pybind11;
 
@@ -121,7 +124,7 @@ struct def_fit_contour_2d {
     void def(pybind11::module &m, const char *doc) {
         m.def("fit_contour_2d", [](const hg::ugraph &graph,
                                    const std::vector<size_t> &shape,
-                                   const xt::pyarray<T> &weights) {
+                                   const pyarray<T> &weights) {
                   hg::embedding_grid_2d embedding(shape);
                   return hg::fit_contour_2d(graph, embedding, weights);
               },

@@ -9,10 +9,14 @@
 ****************************************************************************/
 
 #include "py_tree_accumulators.hpp"
-#include "py_common_graph.hpp"
+#include "py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
+
+// @TODO Remove layout_type when xtensor solves the issue with iterators
+template<typename T>
+using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
 
 namespace py = pybind11;
 
@@ -26,7 +30,7 @@ struct def_accumulate_parallel {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("accumulate_parallel", [](const graph_t &tree, const xt::pyarray<value_t> &input,
+        c.def("accumulate_parallel", [](const graph_t &tree, const pyarray<value_t> &input,
                                         hg::accumulators accumulator) {
                   switch (accumulator) {
                       case hg::accumulators::min:
@@ -63,7 +67,7 @@ struct def_accumulate_sequential {
     static
     void def(C &c, const char *doc) {
         c.def("accumulate_sequential",
-              [](const graph_t &tree, const xt::pyarray<value_t> &vertex_data, hg::accumulators accumulator) {
+              [](const graph_t &tree, const pyarray<value_t> &vertex_data, hg::accumulators accumulator) {
                   switch (accumulator) {
                       case hg::accumulators::min:
                           return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_min());
@@ -129,7 +133,7 @@ struct def_accumulate_and_combine_sequential {
     static
     void def(C &c, const char *doc, const char *name, const F &f) {
         c.def(name,
-              [&f](const graph_t &tree, const xt::pyarray<value_t> &input, const xt::pyarray<value_t> &vertex_data,
+              [&f](const graph_t &tree, const pyarray<value_t> &input, const pyarray<value_t> &vertex_data,
                    hg::accumulators accumulator) {
                   switch (accumulator) {
                       case hg::accumulators::min:
@@ -180,8 +184,8 @@ struct def_propagate_sequential {
     static
     void def(C &c, const char *doc) {
         c.def("propagate_sequential",
-              [](const graph_t &tree, const xt::pyarray<value_t> &input,
-                 const xt::pyarray<bool> &condition) {
+              [](const graph_t &tree, const pyarray<value_t> &input,
+                 const pyarray<bool> &condition) {
                   return hg::propagate_sequential(tree, input, condition);
               },
               doc,
@@ -197,8 +201,8 @@ struct def_propagate_parallel {
     static
     void def(C &c, const char *doc) {
         c.def("propagate_parallel",
-              [](const graph_t &tree, const xt::pyarray<value_t> &input,
-                 const xt::pyarray<bool> &condition) {
+              [](const graph_t &tree, const pyarray<value_t> &input,
+                 const pyarray<bool> &condition) {
                   if (condition.dimension() == 0) {
                       return hg::propagate_parallel(tree, input);
                   } else {
@@ -208,7 +212,7 @@ struct def_propagate_parallel {
               doc,
               py::arg("tree"),
               py::arg("input"),
-              py::arg("condition") = xt::pyarray<bool>{});
+              py::arg("condition") = pyarray<bool>{});
     }
 };
 

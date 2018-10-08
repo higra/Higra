@@ -138,44 +138,6 @@ namespace hg {
     }
 
     /**
-     * Range over the indices of all edges of the given graph
-     * @tparam graph_t
-     * @param g
-     * @return
-     */
-    template<typename graph_t>
-    auto edge_index_iterator(const graph_t &g) {
-        using it_t = typename graph_t::edge_index_iterator;
-        return iterator_wrapper<it_t>(hg::edge_indexes(g));
-    }
-
-    /**
-     * Range over all the edge indices whose source is the given vertex in the given graph
-     * @tparam graph_t
-     * @param v
-     * @param g
-     * @return
-     */
-    template<typename graph_t>
-    auto out_edge_index_iterator(typename graph_t::vertex_descriptor v, const graph_t &g) {
-        using it_t = typename graph_t::out_edge_index_iterator;
-        return iterator_wrapper<it_t>(out_edge_indexes(v, g));
-    }
-
-    /**
-     * Range over all the edge indices whose target is the given vertex in the given graph
-     * @tparam graph_t
-     * @param v
-     * @param g
-     * @return
-     */
-    template<typename graph_t>
-    auto in_edge_index_iterator(typename graph_t::vertex_descriptor v, const graph_t &g) {
-        using it_t = typename graph_t::in_edge_index_iterator;
-        return iterator_wrapper<it_t>(in_edge_indexes(v, g));
-    }
-
-    /**
      * Range over the children vertices of the given node in the given tree
      * @tparam graph_t
      * @param v
@@ -297,8 +259,8 @@ namespace hg {
         HG_TRACE();
         output_graph_type g(num_vertices(graph));
         auto edge_it = edges(graph);
-        for (auto eb = edge_it.first, ee = edge_it.second; eb != ee; eb++) {
-            g.add_edge((*eb).first, (*eb).second);
+        for (auto eb = edge_it.first; eb != edge_it.second; eb++) {
+            g.add_edge(source(*eb, graph), target(*eb, graph));
         }
         return g;
     };

@@ -49,10 +49,9 @@ namespace hg {
                 while(!stack.empty()){
                     auto cv = stack.top();
                     stack.pop();
-                    for(auto edge_index: out_edge_index_iterator(cv, graph)){
-                        if(edge_weights(edge_index) == 0){
-                            auto e = edge(edge_index, graph);
-                            auto n = other_vertex(e, cv, graph);
+                    for(auto e: out_edge_iterator(cv, graph)){
+                        if(edge_weights(e) == 0){
+                            auto n = target(e, graph);
                             if(labels(n) == invalid_index){
                                 labels(n) = current_label;
                                 stack.push(n);

@@ -24,7 +24,7 @@ class TestContour2d(unittest.TestCase):
         count = 0
 
         def edge_to_k(edge_index):
-            e = graph.edge(edge_index)
+            e = graph.edge_from_index(edge_index)
             s = e[0]
             t = e[1]
 

@@ -15,7 +15,6 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
-
 namespace py = pybind11;
 using namespace hg;
 

@@ -37,7 +37,7 @@ class TestPinkGraphIO(unittest.TestCase):
 
         edges = []
         for e in graph.edges():
-            edges.append(e)
+            edges.append((e[0], e[1]))
 
         self.assertTrue(shape == [3, 5])
         self.assertTrue(edges == edges_ref)
