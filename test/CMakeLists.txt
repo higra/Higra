@@ -28,6 +28,7 @@ if (DO_TEST)
             test_lca.cpp
             test_light_axis_view.cpp
             test_pink_graph_io.cpp
+            test_pnm_io.cpp
             test_point.cpp
             test_rag.cpp
             test_regular_graph.cpp
