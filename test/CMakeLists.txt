@@ -34,6 +34,7 @@ if (DO_TEST)
             test_regular_graph.cpp
             test_tree.cpp
             test_tree_accumulator.cpp
+            test_tree_attributes.cpp
             test_tree_io.cpp
             test_undirected_graph.cpp
             test_utils.cpp
