@@ -50,5 +50,32 @@ BOOST_AUTO_TEST_SUITE(tree_attributes);
         BOOST_CHECK(ref == res);
     }
 
+    BOOST_AUTO_TEST_CASE(test_attribute_depth) {
+        auto t = data.t;
+
+        array_1d<long> ref{2, 2, 2, 2, 2, 1, 1, 0};
+        auto res = attribute_depth(t);
+        BOOST_CHECK(ref == res);
+    }
+
+    BOOST_AUTO_TEST_CASE(test_attribute_height) {
+        auto t = data.t;
+
+        array_1d<double> node_altitude{1, 2, 0, 3, 2, 5, 9, 12};
+        array_1d<long> ref{0, 0, 0, 0, 0, 4, 9, 12};
+        auto res = attribute_height(t, node_altitude);
+        BOOST_CHECK(ref == res);
+    }
+
+    BOOST_AUTO_TEST_CASE(test_attribute_extinction) {
+        auto t = data.t;
+
+        array_1d<double> base_attribute{0, 0, 0, 0, 0, 4, 9, 12};
+        array_1d<long> ref{4, 4, 12, 12, 12, 4, 12, 12};
+        auto res = attribute_extinction(t, base_attribute);
+        BOOST_CHECK(ref == res);
+    }
+
+
 
 BOOST_AUTO_TEST_SUITE_END();

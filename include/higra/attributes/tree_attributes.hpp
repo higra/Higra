@@ -131,10 +131,10 @@ namespace hg {
                   "node_altitude size does not match the number of nodes in the tree.");
 
         if (increasing_altitude) {
-            auto extrema = accumulate_sequential(tree, node_altitude, accumulator_min());
+            auto extrema = accumulate_sequential(tree, xt::view(node_altitude, xt::range(0, num_leaves(tree))), accumulator_min());
             return xt::eval(node_altitude - extrema);
         } else {
-            auto extrema = accumulate_sequential(tree, node_altitude, accumulator_max());
+            auto extrema = accumulate_sequential(tree, xt::view(node_altitude, xt::range(0, num_leaves(tree))), accumulator_max());
             return xt::eval(extrema - node_altitude);
         }
     };
