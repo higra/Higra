@@ -101,7 +101,7 @@ namespace hg {
     /// \param criterion
     /// \return std::pair<tree, node_map>
     template<typename criterion_t>
-    auto simplify_tree(const tree &t, criterion_t &criterion) {
+    auto simplify_tree(const tree &t, const criterion_t &criterion) {
         HG_TRACE();
         auto n_nodes = num_vertices(t);
         auto copy_parent = parents(t);
@@ -133,7 +133,7 @@ namespace hg {
         count = 0;
 
         for (auto i: leaves_to_root_iterator(t, leaves_it::include, root_it::exclude)) {
-            if (!criterion(i)) {
+            if (i < num_leaves(t) || !criterion(i)) {
                 auto par = copy_parent(i);
                 auto new_par = par - deleted_map(par);
                 node_map(count) = i;
@@ -141,6 +141,7 @@ namespace hg {
                 count++;
             }
         }
+
         node_map(node_map.size() - 1) = root(t);
         return std::make_pair(tree(new_parent), std::move(node_map));
     };
