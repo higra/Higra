@@ -86,7 +86,7 @@ namespace hg {
         return watershed_hierarchy_by_attribute(
                 graph,
                 edge_weights,
-                [&vertex_area](const tree & t, const array_1d<typename T1::value_type> & altitudes){
+                [&vertex_area](const tree &t, const array_1d<typename T1::value_type> &altitude) {
                     return attribute_area(t, vertex_area);
                 });
     };
@@ -96,6 +96,40 @@ namespace hg {
             const graph_t &graph,
             const xt::xexpression<T1> &xedge_weights) {
         return watershed_hierarchy_by_area(graph, xedge_weights, xt::ones<long>({num_vertices(graph)}));
+    };
+
+    template<typename graph_t, typename T1, typename T2>
+    auto watershed_hierarchy_by_volume(
+            const graph_t &graph,
+            const xt::xexpression<T1> &edge_weights,
+            const xt::xexpression<T2> &vertex_area) {
+
+        return watershed_hierarchy_by_attribute(
+                graph,
+                edge_weights,
+                [&vertex_area](const tree &t, const array_1d<typename T1::value_type> &altitude) {
+                    return attribute_volume(t, altitude, vertex_area);
+                });
+    };
+
+    template<typename graph_t, typename T1>
+    auto watershed_hierarchy_by_volume(
+            const graph_t &graph,
+            const xt::xexpression<T1> &xedge_weights) {
+        return watershed_hierarchy_by_volume(graph, xedge_weights, xt::ones<long>({num_vertices(graph)}));
+    };
+
+    template<typename graph_t, typename T>
+    auto watershed_hierarchy_by_dynamics(
+            const graph_t &graph,
+            const xt::xexpression<T> &edge_weights) {
+
+        return watershed_hierarchy_by_attribute(
+                graph,
+                edge_weights,
+                [](const tree &t, const array_1d<typename T::value_type> &altitude) {
+                    return attribute_extinction(t, altitude);
+                });
     };
 
 }
