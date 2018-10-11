@@ -38,7 +38,8 @@ if (DO_TEST)
             test_tree_io.cpp
             test_undirected_graph.cpp
             test_utils.cpp
-            test_watershed.cpp)
+            test_watershed.cpp
+            test_watershed_hierarchy.cpp)
 
     add_executable(test_exe ${HIGRA_TESTS_SRC})
 
