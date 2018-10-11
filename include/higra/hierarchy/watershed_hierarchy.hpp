@@ -43,28 +43,24 @@ namespace hg {
         };
     }
 
-    template<typename graph_t, typename T1, typename T2>
-    auto watershed_hierarchy_by_area(
+    template<typename graph_t, typename T, typename F>
+    auto watershed_hierarchy_by_attribute(
             const graph_t &graph,
-            const xt::xexpression<T1> &xedge_weights,
-            const xt::xexpression<T2> &xvertex_area) {
+            const xt::xexpression<T> &xedge_weights,
+            const F &attribute_functor) {
         auto &edge_weights = xedge_weights.derived_cast();
-        auto &vertex_area = xvertex_area.derived_cast();
         hg_assert(edge_weights.dimension() == 1, "edge_weights must be a 1d array.");
         hg_assert(edge_weights.size() == num_edges(graph),
                   "edge_weights size does not match the number of edges of the graph.");
-        hg_assert(vertex_area.dimension() == 1, "vertex_area must be a 1d array.");
-        hg_assert(vertex_area.size() == num_vertices(graph),
-                  "vertex_area size does not match the number of vertices of the graph.");
 
         auto bptc = bpt_canonical(graph, edge_weights);
         auto &bpt = std::get<0>(bptc);
         auto &altitude = std::get<1>(bptc);
         auto &mst = std::get<2>(bptc);
 
-        auto bpt_area = attribute_area(bpt, vertex_area);
-        auto corrected_area = watershed_hierarchy_internal::correct_attribute_BPT(bpt, altitude, bpt_area);
-        auto persistence = accumulate_parallel(bpt, corrected_area, accumulator_min());
+        auto bpt_attribute = attribute_functor(bpt, altitude);
+        auto corrected_attribute = watershed_hierarchy_internal::correct_attribute_BPT(bpt, altitude, bpt_attribute);
+        auto persistence = accumulate_parallel(bpt, corrected_attribute, accumulator_min());
         xt::view(persistence, xt::range(0, num_leaves(bpt))) = 0;
 
         auto mst_edge_weights = xt::view(persistence, xt::range(num_leaves(bpt), num_vertices(bpt)));
@@ -79,6 +75,20 @@ namespace hg {
         auto canonical_altitude = xt::eval(xt::index_view(altitude2, canonical_tree.second));
 
         return std::make_pair(std::move(canonical_tree.first), std::move(canonical_altitude));
+    };
+
+    template<typename graph_t, typename T1, typename T2>
+    auto watershed_hierarchy_by_area(
+            const graph_t &graph,
+            const xt::xexpression<T1> &edge_weights,
+            const xt::xexpression<T2> &vertex_area) {
+
+        return watershed_hierarchy_by_attribute(
+                graph,
+                edge_weights,
+                [&vertex_area](const tree & t, const array_1d<typename T1::value_type> & altitudes){
+                    return attribute_area(t, vertex_area);
+                });
     };
 
     template<typename graph_t, typename T1>
