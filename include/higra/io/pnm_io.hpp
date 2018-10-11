@@ -181,12 +181,38 @@ namespace hg {
 
     }
 
+    /**
+     * Read the given pnm image (pbm, pgm or ppm formats).
+     * Current the following pnm specification are supported
+     * P1 binary ascii: supported
+     * P2 byte ascii: supported (max value <= 255)
+     * P3 RGB ascii: supported (max value <= 255)
+     * P4 binary raw: NOT supported
+     * P5 byte raw: supported (max value <= 255)
+     * P6 RGB rax: supported (max value <= 255)
+     *
+     * @param filename Path to the file to read
+     * @return an array with pixel data
+     */
     inline
     array_nd<unsigned char> read_image_pnm(const char *filename) {
         std::ifstream s(filename);
         return pnm_io_internal::read_image_pnm(s);
     }
 
+    /**
+     * Save an array as a pnm file (pgm or ppm).
+     * The array value_type MUST be unsigned char.
+     * If the array has 2 dimensions it is saved as a pgm raw file (format P5).
+     * If the array has 3 dimensions, the size of the third dimension must be 3
+     * and it is saved as a ppm raw file (format P6).
+     *
+     * If the provided filename already exists, it will be overwritten !
+     *
+     * @tparam T xexpression derived type for ximage
+     * @param filename Path to the file to write.
+     * @param ximage The array containing the data to save.
+     */
     template<typename T>
     void save_image_pnm(const char *filename, const xt::xexpression<T> &ximage) {
         std::ofstream s(filename);
