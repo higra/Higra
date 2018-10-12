@@ -78,7 +78,7 @@ Basic functions
         - Description
     *   - ``num_leaves``
         - positive integer
-        - number of leaves in the tree
+        - Number of leaves in the tree
     *   - ``root``
         - vertex
         - Root node (last node of the parent array)
@@ -87,11 +87,13 @@ Basic functions
         - Parent of the given node
     *   - ``parents``
         - array of vertices
-        - the parent array
+        - The parent array
     *   - ``num_children``
         - positive integer
-        - number of children of the given node
-
+        - Number of children of the given node
+    *   - ``is_leaf``
+        - boolean
+        - True if given node is a leaf, False otherwise
 
 Example:
 
@@ -110,7 +112,8 @@ Example:
             parent(2, t);       //  8
             parents(t);         //  array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11}
             num_children(8, t); //  3
-
+            is_leaf(4, t);      // true
+            is_leaf(5, T);      // false
 
     .. tab:: python
 
@@ -120,11 +123,13 @@ Example:
             # creates the tree shown in the figure above
             g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11))
 
-            t.num_leaves();     #  7
-            t.root();           # 11
-            t.parent(2);        #  8
-            t.parents();        #  array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11}
-            t.num_children(8);  #  3
+            t.num_leaves()      #  7
+            t.root()            # 11
+            t.parent(2)         #  8
+            t.parents()         #  array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11}
+            t.num_children(8)   #  3
+            t.is_leaf(4)        # True
+            t.is_leaf(5)        # False
 
 
 Iterators
@@ -257,7 +262,7 @@ Accumulators are wrapped into *factories* in C++ while the Python interface only
         .. code-block:: python
             :linenos:
 
-             acc = hg.Accumulators.sum
+            acc = hg.Accumulators.sum
 
 
 Parallel accumulator

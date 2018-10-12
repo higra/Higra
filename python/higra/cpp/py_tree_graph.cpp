@@ -46,6 +46,8 @@ void py_init_tree_graph(pybind11::module &m) {
 
     c.def("root", &graph_t::root, "Get the index of the root node (i.e. self.num_vertices() - 1)");
     c.def("num_leaves", &graph_t::num_leaves, "Get the number of leaves nodes.");
+    c.def("is_leaf", &graph_t::is_leaf, "Returns true if the given node is a leaf of true and false otherwise.");
+
     c.def("num_children", &graph_t::num_children, "Get the number of children nodes of the given node.",
           py::arg("node"));
     c.def("children",

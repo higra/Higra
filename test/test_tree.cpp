@@ -35,6 +35,9 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         BOOST_CHECK(hg::num_vertices(t) == 8);
         BOOST_CHECK(hg::num_edges(t) == 7);
         BOOST_CHECK(hg::num_leaves(t) == 5);
+
+        BOOST_CHECK(hg::is_leaf(4, t));
+        BOOST_CHECK(!hg::is_leaf(5, t));
     }
 
     BOOST_AUTO_TEST_CASE(vertexIteratorTree) {
