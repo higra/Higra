@@ -86,7 +86,7 @@ namespace hg {
         return watershed_hierarchy_by_attribute(
                 graph,
                 edge_weights,
-                [&vertex_area](const tree &t, const array_1d<typename T1::value_type> &altitude) {
+                [&vertex_area](const tree &t, const auto &altitude) {
                     return attribute_area(t, vertex_area);
                 });
     };
@@ -107,8 +107,8 @@ namespace hg {
         return watershed_hierarchy_by_attribute(
                 graph,
                 edge_weights,
-                [&vertex_area](const tree &t, const array_1d<typename T1::value_type> &altitude) {
-                    return attribute_volume(t, altitude, vertex_area);
+                [&vertex_area](const tree &t, const auto &altitude) {
+                    return attribute_volume(t, altitude, attribute_area(t, vertex_area));
                 });
     };
 
@@ -127,7 +127,7 @@ namespace hg {
         return watershed_hierarchy_by_attribute(
                 graph,
                 edge_weights,
-                [](const tree &t, const array_1d<typename T::value_type> &altitude) {
+                [](const tree &t, const auto &altitude) {
                     return attribute_dynamics(t, altitude);
                 });
     };
