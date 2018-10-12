@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_SUITE(tree_attributes);
 
         array_1d<long> node_area{2, 1, 1, 3, 2, 3, 6, 9};
         array_1d<double> node_altitude{0, 0, 0, 0, 0, 2, 1, 4};
-        array_1d<long> ref{4, 2, 1, 3, 2, 12, 24, 36};
+        array_1d<long> ref{0, 0, 0, 0, 0, 6, 18, 24};
         auto res = attribute_volume(t, node_altitude, node_area);
         BOOST_CHECK(ref == res);
     }

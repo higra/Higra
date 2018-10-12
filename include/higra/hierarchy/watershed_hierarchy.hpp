@@ -128,7 +128,7 @@ namespace hg {
                 graph,
                 edge_weights,
                 [](const tree &t, const array_1d<typename T::value_type> &altitude) {
-                    return attribute_extinction(t, altitude);
+                    return attribute_dynamics(t, altitude);
                 });
     };
 

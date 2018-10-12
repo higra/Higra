@@ -76,7 +76,8 @@ namespace hg {
 
         auto &parent = tree.parents();
         array_1d<double> volume = xt::empty<double>({tree.num_vertices()});
-        for (auto i: leaves_to_root_iterator(tree)) {
+        xt::view(volume, xt::range(0, num_leaves(tree))) = 0;
+        for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             volume(i) = std::fabs(node_altitude(i) - node_altitude(parent(i))) * node_area(i);
             for (auto c: tree.children(i)) {
                 volume(i) += volume(c);
@@ -158,6 +159,10 @@ namespace hg {
     auto attribute_dynamics(const tree_t &tree, const xt::xexpression<T> &xaltitude) {
         auto &altitude = xaltitude.derived_cast();
         using value_type = typename T::value_type;
+        hg_assert(altitude.dimension() == 1, "node_altitude must be a 1d array");
+        hg_assert(altitude.shape()[0] == num_vertices(tree),
+                  "node_altitude size does not match the number of nodes in the tree.");
+
 
         auto min_depth = xt::empty_like(altitude);
         for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
@@ -166,7 +171,7 @@ namespace hg {
             for (auto c: children_iterator(n, tree)) {
                 if (!is_leaf(c, tree)) {
                     flag = true;
-                    min_children = std::min(min_children, altitude(c));
+                    min_children = std::min(min_children, min_depth(c));
                 }
             }
             if (flag) {
@@ -181,7 +186,7 @@ namespace hg {
         xt::view(dynamics, xt::range(0, num_leaves(tree))) = 0;
         for (auto n: root_to_leaves_iterator(tree, leaves_it::exclude, root_it::exclude)) {
             auto pn = parent(n, tree);
-            if (min_depth(n) == min_depth()) {
+            if (min_depth(n) == min_depth(pn)) {
                 dynamics(n) = dynamics(pn);
             } else {
                 dynamics(n) = altitude(pn) - min_depth(n);
