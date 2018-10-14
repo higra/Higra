@@ -13,6 +13,7 @@
 #include "../graph.hpp"
 #include "../accumulator/tree_accumulator.hpp"
 #include "../structure/array.hpp"
+#include "xtensor/xview.hpp"
 #include "xtensor/xindex_view.hpp"
 
 namespace hg {
