@@ -14,6 +14,7 @@
 #include "cpp/py_algo_graph_core.hpp"
 #include "cpp/py_algo_tree.hpp"
 #include "cpp/py_binary_partition_tree.hpp"
+#include "cpp/py_common_hierarchy.hpp"
 #include "cpp/py_contour_2d.hpp"
 #include "cpp/py_embedding.hpp"
 #include "cpp/py_graph_weights.hpp"
@@ -30,6 +31,8 @@
 #include "cpp/py_tree_io.hpp"
 #include "cpp/py_undirected_graph.hpp"
 #include "cpp/py_watershed.hpp"
+#include "cpp/py_watershed_hierarchy.hpp"
+
 #include "xtl/xmeta_utils.hpp"
 #define FORCE_IMPORT_ARRAY
 
@@ -56,6 +59,7 @@ PYBIND11_MODULE(higram, m) {
     py_init_algo_graph_core(m);
     py_init_algo_tree(m);
     py_init_binary_partition_tree(m);
+    py_init_common_hierarchy(m);
     py_init_contour_2d(m);
     py_init_embedding(m);
     py_init_graph_image(m);
@@ -72,4 +76,5 @@ PYBIND11_MODULE(higram, m) {
     py_init_tree_io(m);
     py_init_undirected_graph(m);
     py_init_watershed(m);
+    py_init_watershed_hierarchy(m);
 }

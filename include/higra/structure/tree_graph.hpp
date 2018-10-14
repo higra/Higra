@@ -182,6 +182,9 @@ namespace hg {
                 return edge_descriptor(ei, parent(ei), ei);
             }
 
+            auto is_leaf(vertex_descriptor v) const{
+                return v < _num_leaves;
+            }
 
         private:
 
@@ -315,6 +318,12 @@ namespace hg {
     auto
     parent(tree::vertex_descriptor v, const tree & t){
         return t.parent(v);
+    }
+
+    inline
+    auto
+    is_leaf(tree::vertex_descriptor v, const tree & t){
+        return t.is_leaf(v);
     }
 
     inline

@@ -13,6 +13,7 @@
 #include "../graph.hpp"
 #include "../accumulator/tree_accumulator.hpp"
 #include "../structure/array.hpp"
+#include "xtensor/xview.hpp"
 #include "xtensor/xindex_view.hpp"
 
 namespace hg {
@@ -76,7 +77,8 @@ namespace hg {
 
         auto &parent = tree.parents();
         array_1d<double> volume = xt::empty<double>({tree.num_vertices()});
-        for (auto i: leaves_to_root_iterator(tree)) {
+        xt::view(volume, xt::range(0, num_leaves(tree))) = 0;
+        for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             volume(i) = std::fabs(node_altitude(i) - node_altitude(parent(i))) * node_area(i);
             for (auto c: tree.children(i)) {
                 volume(i) += volume(c);
@@ -131,49 +133,67 @@ namespace hg {
                   "node_altitude size does not match the number of nodes in the tree.");
 
         if (increasing_altitude) {
-            auto extrema = accumulate_sequential(tree, xt::view(node_altitude, xt::range(0, num_leaves(tree))), accumulator_min());
+            auto extrema = accumulate_sequential(tree, xt::view(node_altitude, xt::range(0, num_leaves(tree))),
+                                                 accumulator_min());
             return xt::eval(node_altitude - extrema);
         } else {
-            auto extrema = accumulate_sequential(tree, xt::view(node_altitude, xt::range(0, num_leaves(tree))), accumulator_max());
+            auto extrema = accumulate_sequential(tree, xt::view(node_altitude, xt::range(0, num_leaves(tree))),
+                                                 accumulator_max());
             return xt::eval(extrema - node_altitude);
         }
     };
 
     /**
-     * The extinction value of a node n of the tree t for the base attribute b is equal to extinction(parent(n))
-     * if n has the largest base value among its siblings and to b(n) otherwise.
-     * The extinction value of the root node is equal to its base value.
-     *
-     * PRE-CONDITION: the base attribute b is increasing from the leaves to the root
-     * (ie. for any node n, b(n) <= b(parent(n)).
+     * Given a node n of the tree t, the dynamics of n is the difference between
+     * the altitude of the deepest minima of the subtree rooted in n and the altitude
+     * of the closest ancestor of n that has a deeper minima in its subtree. If no such
+     * ancestor exists then, the dynamics of n is equal to the difference between the
+     * altitude of the highest node of the tree (the root) and the depth of the deepest minima.
      *
      * @tparam tree_t tree type
-     * @tparam T xexpression derived type of xnode_base_attribute
+     * @tparam T xexpression derived type of xaltitude
      * @param tree input tree
-     * @param xnode_base_attribute base attribute to compute the extinction values
-     * @return an array with the extinction value of each node of the tree for the base attribute
+     * @param xaltitude altitude of the nodes of the input tree
+     * @return an array with the dynamics of each node of the tree
      */
     template<typename tree_t, typename T>
-    auto attribute_extinction(const tree_t &tree, const xt::xexpression<T> &xnode_base_attribute) {
-        auto &node_base_attribute = xnode_base_attribute.derived_cast();
-        hg_assert(node_base_attribute.dimension() == 1, "node_base_attribute must be a 1d array");
-        hg_assert(node_base_attribute.shape()[0] == num_vertices(tree),
-                  "node_base_attribute size does not match the number of nodes in the tree.");
-
+    auto attribute_dynamics(const tree_t &tree, const xt::xexpression<T> &xaltitude) {
+        auto &altitude = xaltitude.derived_cast();
         using value_type = typename T::value_type;
-        array_1d <value_type> extinction = xt::empty<value_type>({tree.num_vertices()});
+        hg_assert(altitude.dimension() == 1, "node_altitude must be a 1d array");
+        hg_assert(altitude.shape()[0] == num_vertices(tree),
+                  "node_altitude size does not match the number of nodes in the tree.");
 
-        auto max_children = accumulate_parallel(tree, node_base_attribute, accumulator_max());
 
-        extinction(tree.root()) = node_base_attribute(tree.root());
-        for (auto i: root_to_leaves_iterator(tree, leaves_it::include, root_it::exclude)) {
-            if (node_base_attribute(i) == max_children(parent(i, tree))) {
-                extinction(i) = extinction(parent(i, tree));
+        auto min_depth = xt::empty_like(altitude);
+        for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
+            value_type min_children = std::numeric_limits<value_type>::max();
+            bool flag = false;
+            for (auto c: children_iterator(n, tree)) {
+                if (!is_leaf(c, tree)) {
+                    flag = true;
+                    min_children = std::min(min_children, min_depth(c));
+                }
+            }
+            if (flag) {
+                min_depth(n) = min_children;
             } else {
-                extinction(i) = node_base_attribute(i);
+                min_depth(n) = altitude(n);
             }
         }
 
-        return extinction;
+        auto dynamics = xt::empty_like(altitude);
+        dynamics(root(tree)) = altitude(root(tree)) - min_depth(root(tree));
+        xt::view(dynamics, xt::range(0, num_leaves(tree))) = 0;
+        for (auto n: root_to_leaves_iterator(tree, leaves_it::exclude, root_it::exclude)) {
+            auto pn = parent(n, tree);
+            if (min_depth(n) == min_depth(pn)) {
+                dynamics(n) = dynamics(pn);
+            } else {
+                dynamics(n) = altitude(pn) - min_depth(n);
+            }
+        }
+
+        return dynamics;
     };
 }

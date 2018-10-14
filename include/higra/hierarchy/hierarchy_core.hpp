@@ -10,8 +10,7 @@
 
 #pragma once
 
-#include "xtensor/xarray.hpp"
-#include "xtensor/xgenerator.hpp"
+#include "common.hpp"
 #include "higra/structure/unionfind.hpp"
 #include "higra/graph.hpp"
 #include <algorithm>
@@ -19,6 +18,29 @@
 #include <tuple>
 
 namespace hg {
+
+    /**
+     * A simple structure to hold the result of canonical bpt function.
+     *
+     * See make_node_weighted_tree_and_mst for construction
+     *
+     * @tparam tree_t
+     * @tparam altitude_t
+     * @tparam mst_t
+     */
+    template<typename tree_t, typename altitude_t, typename mst_t>
+    struct node_weighted_tree_and_mst {
+        tree_t tree;
+        altitude_t node_altitude;
+        mst_t mst;
+    };
+
+    template<typename tree_t, typename altitude_t, typename mst_t>
+    decltype(auto) make_node_weighted_tree_and_mst(tree_t &&tree, altitude_t &&node_altitude, mst_t &&mst) {
+        return node_weighted_tree_and_mst<tree_t, altitude_t, mst_t>{std::forward<tree_t>(tree),
+                                                                     std::forward<altitude_t>(node_altitude),
+                                                                     std::forward<mst_t>(mst)};
+    }
 
     /**
      * Compute the canonical binary partition tree (or binary partition tree by altitude ordering) of the given
@@ -66,7 +88,7 @@ namespace hg {
         size_t num_edge_found = 0;
         index_t i = 0;
 
-        while (num_edge_found < num_edge_mst && i < (index_t)sorted_edges_indices.size()) {
+        while (num_edge_found < num_edge_mst && i < (index_t) sorted_edges_indices.size()) {
             auto ei = sorted_edges_indices[i];
             auto e = edge_from_index(ei, graph);
             auto c1 = uf.find(source(e, graph));
@@ -86,8 +108,22 @@ namespace hg {
         }
         hg_assert(num_edge_found == num_edge_mst, "Input graph must be connected.");
 
-        return std::make_tuple(tree(parents), std::move(levels), std::move(mst));
+        return make_node_weighted_tree_and_mst(tree(parents), std::move(levels), std::move(mst));
 
+    };
+
+    /**
+     * A simple structure to hold the result of simplify_tree algorithm.
+     *
+     * See make_node_weighted_tree for construction
+     *
+     * @tparam tree_t
+     * @tparam node_map_t
+     */
+    template<typename tree_t, typename node_map_t>
+    struct simplified_tree {
+        tree_t tree;
+        node_map_t node_map;
     };
 
     /// Creates a copy of the current Tree and deletes the nodes such that the criterion function is true.
@@ -101,7 +137,7 @@ namespace hg {
     /// \param criterion
     /// \return std::pair<tree, node_map>
     template<typename criterion_t>
-    auto simplify_tree(const tree &t, criterion_t &criterion) {
+    auto simplify_tree(const tree &t, const criterion_t &criterion) {
         HG_TRACE();
         auto n_nodes = num_vertices(t);
         auto copy_parent = parents(t);
@@ -133,7 +169,7 @@ namespace hg {
         count = 0;
 
         for (auto i: leaves_to_root_iterator(t, leaves_it::include, root_it::exclude)) {
-            if (!criterion(i)) {
+            if (i < num_leaves(t) || !criterion(i)) {
                 auto par = copy_parent(i);
                 auto new_par = par - deleted_map(par);
                 node_map(count) = i;
@@ -141,8 +177,9 @@ namespace hg {
                 count++;
             }
         }
+
         node_map(node_map.size() - 1) = root(t);
-        return std::make_pair(tree(new_parent), std::move(node_map));
+        return simplified_tree<tree, decltype(node_map)>{tree(new_parent), std::move(node_map)};
     };
 
 }

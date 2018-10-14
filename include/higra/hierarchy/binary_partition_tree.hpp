@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "common.hpp"
 #include "../graph.hpp"
 #include "../structure/fibonacci_heap.hpp"
 
@@ -313,7 +314,7 @@ namespace hg {
 
             }
         }
-        return std::make_pair(tree(parents), std::move(levels));
+        return make_node_weighted_tree(tree(parents), std::move(levels));
     }
 
 

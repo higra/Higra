@@ -15,6 +15,7 @@ import higra as hg
 def reconstruct_leaf_data(tree, deleted_nodes, altitudes):
     """
     Each leaf of the tree takes the altitude of its closest non deleted ancestor.
+
     :param tree:
     :param deleted_nodes:
     :param altitudes:

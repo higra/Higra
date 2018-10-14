@@ -29,8 +29,8 @@ BOOST_AUTO_TEST_SUITE(test_binary_partition_tree);
                                              edge_weights,
                                              hg::make_binary_partition_tree_min_linkage(
                                                      edge_weights));
-        auto &tree = res.first;
-        auto &levels = res.second;
+        auto &tree = res.tree;
+        auto &levels = res.node_altitude;
 
         array_1d<index_t> expected_parents({9, 9, 13, 15, 12, 12, 10, 10, 11, 14, 11, 16, 13, 14, 15, 16, 16});
         array_1d<double> expected_levels({0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 8, 10});
@@ -46,11 +46,11 @@ BOOST_AUTO_TEST_SUITE(test_binary_partition_tree);
         auto res = hg::binary_partition_tree(graph,
                                              edge_weights,
                                              hg::make_binary_partition_tree_min_linkage(edge_weights));
-        auto &tree = res.first;
+        auto &tree = res.tree;
 
 
         auto res2 = hg::bpt_canonical(graph, edge_weights);
-        auto &tree2 = std::get<0>(res2);
+        auto &tree2 = res2.tree;
 
         BOOST_CHECK(hg::testTreeIsomorphism(tree, tree2));
     }
@@ -62,8 +62,8 @@ BOOST_AUTO_TEST_SUITE(test_binary_partition_tree);
                                              edge_weights,
                                              hg::make_binary_partition_tree_complete_linkage(
                                                      edge_weights));
-        auto &tree = res.first;
-        auto &levels = res.second;
+        auto &tree = res.tree;
+        auto &levels = res.node_altitude;
 
         array_1d<index_t> expected_parents({9, 9, 10, 11, 11, 12, 13, 13, 14, 10, 16, 12, 15, 14, 15, 16, 16});
         array_1d<double> expected_levels({0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 13, 15});
@@ -80,8 +80,8 @@ BOOST_AUTO_TEST_SUITE(test_binary_partition_tree);
                                              edge_values,
                                              hg::make_binary_partition_tree_average_linkage(
                                                      edge_values, edge_weights));
-        auto &tree = res.first;
-        auto &levels = res.second;
+        auto &tree = res.tree;
+        auto &levels = res.node_altitude;
 
         array_1d<index_t> expected_parents({9, 9, 10, 11, 11, 12, 13, 13, 14, 10, 15, 12, 15, 14, 16, 16, 16});
         array_1d<double> expected_levels({0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 11.5, 12});
