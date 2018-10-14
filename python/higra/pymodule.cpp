@@ -30,6 +30,8 @@
 #include "cpp/py_tree_io.hpp"
 #include "cpp/py_undirected_graph.hpp"
 #include "cpp/py_watershed.hpp"
+#include "cpp/py_watershed_hierarchy.hpp"
+
 #include "xtl/xmeta_utils.hpp"
 #define FORCE_IMPORT_ARRAY
 
@@ -72,4 +74,5 @@ PYBIND11_MODULE(higram, m) {
     py_init_tree_io(m);
     py_init_undirected_graph(m);
     py_init_watershed(m);
+    py_init_watershed_hierarchy(m);
 }

@@ -36,7 +36,8 @@ set(PYMODULE_COMPONENTS
         cpp/py_tree_graph.cpp
         cpp/py_tree_io.cpp
         cpp/py_undirected_graph.cpp
-        cpp/py_watershed.cpp)
+        cpp/py_watershed.cpp
+        cpp/py_watershed_hierarchy.cpp)
 
 set(MODULE_FILES
         __init__.py
@@ -52,7 +53,8 @@ set(MODULE_FILES
         tree_attributes.py
         tree_algo.py
         tree_io.py
-        watershed.py)
+        watershed.py
+        watershed_hierarchy.py)
 
 pybind11_add_module(higram pymodule.cpp ${PYMODULE_COMPONENTS})
 set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} higram CACHE INTERNAL "" FORCE)
