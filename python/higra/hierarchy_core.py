@@ -22,7 +22,10 @@ def bpt_canonical(graph, edge_weights):
     :return: Tree (with attributes "leaf_graph", "altitudes" and "mst")
     """
 
-    tree, altitudes, mst = hg._bpt_canonical(graph, edge_weights)
+    res = hg._bpt_canonical(graph, edge_weights)
+    tree = res.tree()
+    altitudes = res.node_altitude()
+    mst = res.mst()
 
     original_graph = hg.get_attribute(graph, "original_graph")
     if original_graph:
@@ -51,7 +54,9 @@ def simplify_tree(tree, deleted_vertices):
     :return: simplified tree (with attributes "node_map")
     """
 
-    new_tree, node_map = hg._simplify_tree(tree, deleted_vertices)
+    res = hg._simplify_tree(tree, deleted_vertices)
+    new_tree = res.tree()
+    node_map = res.node_map()
 
     hg.set_attribute(new_tree, "leaf_graph", hg.getAttribute(tree, "leaf_graph"))
     hg.set_attribute(new_tree, "node_map", node_map)
@@ -111,7 +116,9 @@ def binary_partition_tree_complete_linkage(graph, edge_weights):
     :return:
     """
 
-    tree, altitudes = hg._binary_partition_tree_complete_linkage(graph, edge_weights)
+    res = hg._binary_partition_tree_complete_linkage(graph, edge_weights)
+    tree = res.tree()
+    altitudes = res.node_altitude()
 
     hg.set_attribute(tree, "leaf_graph", graph)
     hg.set_attribute(tree, "altitudes", altitudes)
@@ -134,7 +141,9 @@ def binary_partition_tree_average_linkage(graph, edge_values, edge_weights):
     :return:
     """
 
-    tree, altitudes = hg._binary_partition_tree_average_linkage(graph, edge_values,  edge_weights)
+    res = hg._binary_partition_tree_average_linkage(graph, edge_values,  edge_weights)
+    tree = res.tree()
+    altitudes = res.node_altitude()
 
     hg.set_attribute(tree, "leaf_graph", graph)
     hg.set_attribute(tree, "altitudes", altitudes)
@@ -225,7 +234,9 @@ def binary_partition_tree(graph, weight_function, edge_weights):
     :param weight_function:
     :return:
     """
-    tree, altitudes = hg._binary_partition_tree_custom_linking(graph, edge_weights, weight_function)
+    res = hg._binary_partition_tree_custom_linking(graph, edge_weights, weight_function)
+    tree = res.tree()
+    altitudes = res.node_altitude()
 
     hg.set_attribute(tree, "leaf_graph", graph)
     hg.set_attribute(tree, "altitudes", altitudes)

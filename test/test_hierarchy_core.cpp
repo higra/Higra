@@ -36,9 +36,9 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         xt::xarray<double> edge_weights{2};
 
         auto res = bpt_canonical(graph, edge_weights);
-        auto tree = std::get<0>(res);
-        auto altitude = std::get<1>(res);
-        auto mst = std::get<2>(res);
+        auto &tree = res.tree;
+        auto &altitude = res.node_altitude;
+        auto &mst = res.mst;
         BOOST_CHECK(num_vertices(tree) == 3);
         BOOST_CHECK(num_edges(tree) == 2);
         BOOST_CHECK(xt::allclose(tree.parents(), xt::xarray<unsigned int>({2, 2, 2})));
@@ -56,9 +56,9 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         xt::xarray<double> edge_weights{1, 0, 2, 1, 1, 1, 2};
 
         auto res = bpt_canonical(graph, edge_weights);
-        auto tree = std::get<0>(res);
-        auto altitude = std::get<1>(res);
-        auto mst = std::get<2>(res);
+        auto tree = res.tree;
+        auto altitude = res.node_altitude;
+        auto mst = res.mst;
         BOOST_CHECK(num_vertices(tree) == 11);
         BOOST_CHECK(num_edges(tree) == 10);
         BOOST_CHECK(xt::allclose(hg::parents(tree), xt::xarray<unsigned int>({6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10})));
@@ -86,8 +86,8 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         auto criterion = xt::equal(altitudes, xt::index_view(altitudes, t.parents()));
 
         auto res = hg::simplify_tree(t, criterion);
-        auto nt = res.first;
-        auto nm = res.second;
+        auto nt = res.tree;
+        auto nm = res.node_map;
 
         BOOST_CHECK(num_vertices(nt) == 7);
 

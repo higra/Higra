@@ -22,8 +22,8 @@ class TestWatershedHierarchy(unittest.TestCase):
         res = hg._watershed_hierarchy_by_attribute(g, edge_weights,
                                                   lambda tree, altitudes:
                                                   hg.accumulate_sequential(tree, np.ones((tree.num_leaves(),)), hg.Accumulators.sum))
-        t = res[0]
-        altitudes = res[1]
+        t = res.tree()
+        altitudes = res.node_altitude()
 
         ref_parents = np.asarray((
             19, 19, 20, 20, 20, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 24, 24, 25,

@@ -21,6 +21,7 @@ set(PYMODULE_COMPONENTS
         cpp/py_algo_graph_core.cpp
         cpp/py_algo_tree.cpp
         cpp/py_binary_partition_tree.cpp
+        cpp/py_common_hierarchy.cpp
         cpp/py_contour_2d.cpp
         cpp/py_embedding.cpp
         cpp/py_graph_image.cpp

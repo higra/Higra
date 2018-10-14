@@ -37,8 +37,8 @@ struct def_hierarchy_mean_pb {
                   return py::make_tuple(std::move(res.first.rag),
                                         std::move(res.first.vertex_map),
                                         std::move(res.first.edge_map),
-                                        std::move(res.second.first),
-                                        std::move(res.second.second)
+                                        std::move(res.second.tree),
+                                        std::move(res.second.node_altitude)
                   );
               },
               doc,

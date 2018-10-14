@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "common.hpp"
 #include "higra/graph.hpp"
 #include "hierarchy_core.hpp"
 #include "../attributes/tree_attributes.hpp"
@@ -54,9 +55,9 @@ namespace hg {
                   "edge_weights size does not match the number of edges of the graph.");
 
         auto bptc = bpt_canonical(graph, edge_weights);
-        auto &bpt = std::get<0>(bptc);
-        auto &altitude = std::get<1>(bptc);
-        auto &mst = std::get<2>(bptc);
+        auto &bpt = bptc.tree;
+        auto &altitude = bptc.node_altitude;
+        auto &mst = bptc.mst;
 
         auto bpt_attribute = attribute_functor(bpt, altitude);
         auto corrected_attribute = watershed_hierarchy_internal::correct_attribute_BPT(bpt, altitude, bpt_attribute);
@@ -66,15 +67,15 @@ namespace hg {
         auto mst_edge_weights = xt::view(persistence, xt::range(num_leaves(bpt), num_vertices(bpt)));
 
         auto bptc2 = bpt_canonical(mst, mst_edge_weights);
-        auto &bpt2 = std::get<0>(bptc2);
-        auto &altitude2 = std::get<1>(bptc2);
+        auto &bpt2 = bptc2.tree;
+        auto &altitude2 = bptc2.node_altitude;
 
         auto canonical_tree = simplify_tree(bpt2, [&altitude2, &bpt2](index_t i) {
             return altitude2(i) == altitude2(parent(i, bpt2));
         });
-        auto canonical_altitude = xt::eval(xt::index_view(altitude2, canonical_tree.second));
+        auto canonical_altitude = xt::eval(xt::index_view(altitude2, canonical_tree.node_map));
 
-        return std::make_pair(std::move(canonical_tree.first), std::move(canonical_altitude));
+        return make_node_weighted_tree(std::move(canonical_tree.tree), std::move(canonical_altitude));
     };
 
     template<typename graph_t, typename T1, typename T2>
