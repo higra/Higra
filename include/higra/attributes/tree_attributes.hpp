@@ -165,19 +165,21 @@ namespace hg {
                   "node_altitude size does not match the number of nodes in the tree.");
 
 
+        array_1d <index_t> min_son({num_vertices(tree)}, invalid_index);
         auto min_depth = xt::empty_like(altitude);
         for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
-            value_type min_children = std::numeric_limits<value_type>::max();
-            bool flag = false;
+            min_depth(n) = std::numeric_limits<value_type>::max();
+            bool flag = true;
             for (auto c: children_iterator(n, tree)) {
                 if (!is_leaf(c, tree)) {
-                    flag = true;
-                    min_children = std::min(min_children, min_depth(c));
+                    flag = false;
+                    if(min_depth(c) < min_depth(n)){
+                        min_depth(n) = min_depth(c);
+                        min_son(n) = c;
+                    }
                 }
             }
             if (flag) {
-                min_depth(n) = min_children;
-            } else {
                 min_depth(n) = altitude(n);
             }
         }
@@ -187,7 +189,7 @@ namespace hg {
         xt::view(dynamics, xt::range(0, num_leaves(tree))) = 0;
         for (auto n: root_to_leaves_iterator(tree, leaves_it::exclude, root_it::exclude)) {
             auto pn = parent(n, tree);
-            if (min_depth(n) == min_depth(pn)) {
+            if (n == min_son(pn)) {
                 dynamics(n) = dynamics(pn);
             } else {
                 dynamics(n) = altitude(pn) - min_depth(n);

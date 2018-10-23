@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_SUITE(tree_attributes);
     BOOST_AUTO_TEST_CASE(test_attribute_dynamics) {
         tree t(xt::xarray<long>{8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12});
 
-        array_1d<double> node_altitude{0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 4, 8, 10};
+        array_1d<double> node_altitude{0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 8, 10};
         array_1d<long> ref{0, 0, 0, 0, 0, 0, 0, 10, 3, 10, 10, 2, 10};
         auto res = attribute_dynamics(t, node_altitude);
         BOOST_CHECK(ref == res);
