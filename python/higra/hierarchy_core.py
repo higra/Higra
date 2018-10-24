@@ -40,6 +40,26 @@ def bpt_canonical(graph, edge_weights):
 
     return tree
 
+@hg.data_consumer("edge_weights")
+def quasi_flat_zones_hierarchy(graph, edge_weights):
+    """
+    Compute the quasi flat zones hierarchy of the given weighted graph.
+
+
+    :param graph:
+    :param edge_weights:
+    :return: Tree (with attributes "leaf_graph" and "altitudes")
+    """
+
+    res = hg._quasi_flat_zones_hierarchy(graph, edge_weights)
+    tree = res.tree()
+    altitudes = res.node_altitude()
+
+    hg.set_attribute(tree, "leaf_graph", graph)
+    hg.set_attribute(tree, "altitudes", altitudes)
+
+    return tree
+
 
 @hg.data_consumer("deleted_vertices")
 def simplify_tree(tree, deleted_vertices):

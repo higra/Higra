@@ -65,6 +65,20 @@ class TestHierarchyCore(unittest.TestCase):
             test.append((e[0], e[1]))
         self.assertTrue(ref == test)
 
+    def test_QFZ(self):
+        graph = hg._get_4_adjacency_graph((2, 3))
+
+        edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
+
+        res = hg._quasi_flat_zones_hierarchy(graph, edge_weights)
+        tree = res.tree()
+        altitudes = res.node_altitude()
+
+        tref = hg.Tree(np.asarray((6, 7, 8, 6, 7, 8, 7, 9, 9, 9), dtype=np.int64))
+
+        self.assertTrue(hg.test_tree_isomorphism(tree, tref))
+        self.assertTrue(np.allclose(altitudes, (0, 0, 0, 0, 0, 0, 0, 1, 1, 2)))
+
     def test_simplifyTree(self):
         t = TestHierarchyCore.getTree()
 

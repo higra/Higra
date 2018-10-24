@@ -11,6 +11,7 @@
 #include <boost/test/unit_test.hpp>
 #include "higra/image/graph_image.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
+#include "higra/algo/tree.hpp"
 #include "test_utils.hpp"
 #include "xtensor/xindex_view.hpp"
 
@@ -66,11 +67,11 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         BOOST_CHECK(num_vertices(mst) == 6);
         BOOST_CHECK(num_edges(mst) == 5);
         std::vector<ugraph::edge_descriptor> ref = {{0, 3, 0},
-                                                     {0, 1, 1},
-                                                     {1, 4, 2},
-                                                     {2, 5, 3},
-                                                     {1, 2, 4}};
-        for (index_t i = 0; i < (index_t)ref.size(); i++) {
+                                                    {0, 1, 1},
+                                                    {1, 4, 2},
+                                                    {2, 5, 3},
+                                                    {1, 2, 4}};
+        for (index_t i = 0; i < (index_t) ref.size(); i++) {
             auto e = edge_from_index(i, mst);
             BOOST_CHECK(e == ref[i]);
         }
@@ -96,6 +97,20 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
 
         hg::array_1d<index_t> refnm{0, 1, 2, 3, 4, 5, 7};
         BOOST_CHECK(refnm == nm);
+    }
+
+    BOOST_AUTO_TEST_CASE(testQuasiFlatZoneHierarchy) {
+
+        auto graph = get_4_adjacency_graph({2, 3});
+
+        xt::xarray<double> edge_weights{1, 0, 2, 1, 1, 1, 2};
+
+        auto res = quasi_flat_zones_hierarchy(graph, edge_weights);
+        auto rtree = res.tree;
+        auto altitude = res.node_altitude;
+        tree tref(array_1d<index_t>{6, 7, 8, 6, 7, 8, 7, 9, 9, 9});
+        BOOST_CHECK(testTreeIsomorphism(rtree, tref));
+        BOOST_CHECK(xt::allclose(altitude, xt::xarray<double>({0, 0, 0, 0, 0, 0, 0, 1, 1, 2})));
     }
 
 BOOST_AUTO_TEST_SUITE_END();

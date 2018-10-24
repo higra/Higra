@@ -13,6 +13,8 @@
 #include "common.hpp"
 #include "higra/structure/unionfind.hpp"
 #include "higra/graph.hpp"
+#include "higra/accumulator/tree_accumulator.hpp"
+#include "xtensor/xindex_view.hpp"
 #include <algorithm>
 #include <utility>
 #include <tuple>
@@ -181,5 +183,28 @@ namespace hg {
         node_map(node_map.size() - 1) = root(t);
         return simplified_tree<tree, decltype(node_map)>{tree(new_parent), std::move(node_map)};
     };
+
+    template<typename graph_t, typename T>
+    auto quasi_flat_zones_hierarchy(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+        HG_TRACE();
+        auto &edge_weights = xedge_weights.derived_cast();
+        hg_assert(edge_weights.dimension() == 1, "Edge weights must be scalar.");
+        hg_assert(num_edges(graph) == edge_weights.size(),
+                  "Edge weights size does not match the number of edge in the graph.");
+        auto bpt = bpt_canonical(graph, edge_weights);
+        auto &tree = bpt.tree;
+        auto &altitudes = bpt.node_altitude;
+
+        auto altitude_parents = propagate_parallel(tree, altitudes);
+
+        auto qfz = simplify_tree(tree, xt::equal(altitudes, altitude_parents));
+        auto &qfz_tree = qfz.tree;
+        auto &node_map = qfz.node_map;
+
+        auto qfz_altitude = xt::eval(xt::index_view(altitudes, node_map));
+
+        return make_node_weighted_tree(std::move(qfz_tree), std::move(qfz_altitude));
+    }
+
 
 }
