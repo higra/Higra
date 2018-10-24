@@ -55,6 +55,20 @@ class TestAlgorithmTree(unittest.TestCase):
         self.assertTrue(hg.is_in_bijection(ref_t1, output_t1))
         self.assertTrue(hg.is_in_bijection(ref_t2, output_t2))
 
+    def test_labelisation_hierarchy_supervertices(self):
+        tree = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0.5, 0, 0.7), dtype=np.double)
+
+        ref = np.asarray((0, 1, 2, 2, 2), dtype=np.int32)
+
+        output = hg.labelisation_hierarchy_supervertices(tree, altitudes)
+
+        self.assertTrue(hg.is_in_bijection(ref, output))
+        self.assertTrue(np.amax(output) == 2)
+        self.assertTrue(np.amin(output) == 0)
+
+
     def test_tree_isomorphism(self):
         t1 = hg.Tree(np.asarray((5, 5, 6, 6, 7, 8, 7, 8, 8)))
         t2 = hg.Tree(np.asarray((6, 6, 5, 5, 7, 7, 8, 8, 8)))

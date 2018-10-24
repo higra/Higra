@@ -42,3 +42,21 @@ def labelisation_horizontal_cut(tree, threshold, altitudes):
     :return:
     """
     return hg._labelisation_horizontal_cut(tree, float(threshold), altitudes)
+
+
+@hg.data_consumer(altitudes="altitudes")
+def labelisation_hierarchy_supervertices(tree, altitudes):
+    """
+    Labelize the tree leaves into supervertices.
+
+    Two leaves are in the same supervertex if they have a common ancestor of altitude 0.
+
+    This functions guaranties that the labels are in the range [0, num_supervertices-1].
+
+    :param tree:
+    :param altitudes:
+    :return:
+    """
+    return hg._labelisation_hierarchy_supervertices(tree, altitudes)
+
+

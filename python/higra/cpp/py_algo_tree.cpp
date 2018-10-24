@@ -31,8 +31,22 @@ struct labelisation_horizontal_cut {
               },
               doc,
               py::arg("tree"),
-              py::arg("altitudes"),
-              py::arg("threshold"));
+              py::arg("threshold"),
+              py::arg("altitudes"));
+    }
+};
+
+struct labelisation_hierarchy_supervertices {
+    template<typename value_t>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_labelisation_hierarchy_supervertices", [](const hg::tree &tree,
+                                                          const pyarray<value_t> &altitudes) {
+                  return hg::labelisation_hierarchy_supervertices(tree, altitudes);
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("altitudes"));
     }
 };
 
@@ -57,5 +71,12 @@ void py_init_algo_tree(pybind11::module &m) {
              "Two leaves are in the same region (ie. have the same label) if "
              "the altitude of their lowest common ancestor is strictly greater "
              "than the specified threshold."
+            );
+    add_type_overloads<labelisation_hierarchy_supervertices, HG_TEMPLATE_NUMERIC_TYPES>
+            (m,
+             "Labelize the tree leaves into supervertices.\n"
+             "Two leaves are in the same supervertex if they have a common ancestor "
+             "of altitude 0.\n"
+             "This functions guaranties that the labels are in the range [0, num_supervertices-1]."
             );
 }

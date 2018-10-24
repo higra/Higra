@@ -68,6 +68,20 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
         BOOST_CHECK(is_in_bijection(ref_t2, output_t2));
     }
 
+    BOOST_AUTO_TEST_CASE(test_labelisation_supervertices) {
+
+        auto tree = data.t;
+        array_1d<double> altitudes{0, 0, 0, 0, 0, 1, 0, 2};
+
+        array_1d<int> ref{0, 1, 2, 2, 2};
+
+        auto output = labelisation_hierarchy_supervertices(tree, altitudes);
+
+        BOOST_CHECK(is_in_bijection(ref, output));
+        BOOST_CHECK(xt::amin(output)() == 0);
+        BOOST_CHECK(xt::amax(output)() == 2);
+    }
+
     BOOST_AUTO_TEST_CASE(tree_isomorphism) {
 
         tree t1(array_1d<index_t>{5, 5, 6, 6, 7, 8, 7, 8, 8});

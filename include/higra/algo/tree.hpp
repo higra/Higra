@@ -73,7 +73,38 @@ namespace hg {
                                      <= static_cast<typename T::value_type>(threshold));
     };
 
-
+    /**
+     * Labelize the tree leaves into supervertices.
+     *
+     * Two leaves are in the same supervertex if they have a common ancestor of altitude 0.
+     *
+     * This functions guaranties that the labels are in the range [0, num_supervertices-1].
+     *
+     * @tparam tree_t
+     * @tparam T
+     * @param tree
+     * @param xaltitudes
+     * @return
+     */
+    template<typename tree_t,
+            typename T>
+    auto labelisation_hierarchy_supervertices(const tree_t &tree,
+                                     const xt::xexpression<T> &xaltitudes) {
+        auto &altitudes = xaltitudes.derived_cast();
+        auto labels = labelisation_horizontal_cut(tree, altitudes, 0);
+        // remap labels to 0...num_labels - 1
+        array_1d<index_t> map({num_vertices(tree)}, invalid_index);
+        index_t current_label = 0;
+        for(auto n: leaves_iterator(tree)){
+            auto lbl = labels(n);
+            if(map(lbl) == invalid_index){
+                map(lbl) = current_label;
+                current_label++;
+            }
+            labels(n) = map(lbl);
+        }
+        return labels;
+    };
 
     /**
      * Test if 2 trees are isomorph assuming that they share the same leaves.
