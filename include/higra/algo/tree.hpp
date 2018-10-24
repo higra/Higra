@@ -49,6 +49,9 @@ namespace hg {
      * the altitude of their lowest common ancestor is strictly greater
      * than the specified threshold.
      *
+     * The label of a leave l is equal to the index of smallest node containing l
+     * and whose altitude is strictly greater than the specified threshold.
+     *
      * @tparam tree_t
      * @tparam T
      * @tparam value_t
@@ -69,6 +72,8 @@ namespace hg {
                                      xt::index_view(altitudes, tree.parents())
                                      <= static_cast<typename T::value_type>(threshold));
     };
+
+
 
     /**
      * Test if 2 trees are isomorph assuming that they share the same leaves.
