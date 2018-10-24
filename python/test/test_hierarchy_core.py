@@ -101,16 +101,5 @@ class TestHierarchyCore(unittest.TestCase):
         refnm = np.asarray((0, 1, 2, 3, 4, 5, 7))
         self.assertTrue(np.all(refnm == node_map))
 
-    def test_compute_bpt_merge_attribute(self):
-        parent = np.asarray((6, 6, 7, 8, 9, 10, 7, 8, 9, 10, 10), dtype=np.int32)
-        tree = hg.Tree(parent)
-        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2), dtype=np.float32)
-        attribute = np.asarray((2, 3, 6, 5, 5, 1, 5, 11, 16, 21, 22), dtype=np.float32)
-
-        # ref = (2, 3, 6, 5, 5, 1, 3, 6, 6, 21, 22) extinction
-        ref = (0, 0, 0, 0, 0, 0, 2, 3, 5, 5, 1)  # persistence
-        merge_attribute = hg.compute_bpt_merge_attribute(tree, attribute, altitudes)
-        self.assertTrue(np.allclose(ref, merge_attribute))
-
 if __name__ == '__main__':
     unittest.main()

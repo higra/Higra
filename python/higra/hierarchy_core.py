@@ -85,41 +85,22 @@ def simplify_tree(tree, deleted_vertices):
 
 
 @hg.data_consumer("altitudes", "lca_map")
-def saliency(tree, altitudes, lca_map):
+def saliency(tree, altitudes, lca_map, propagate_if_rag=True):
     """
-    Compute the saliency map of the given tree
+    Compute the saliency map (ultra-metric distance) of the given tree
     :param tree:
     :param altitudes: altitudes of the vertices of the tree
     :param lca_map: array containing the lowest common ancestor of the source and target vertices of each edge
     where saliency need to be computed
-    :return: altitudes[lca_map]
+    :param propagate_if_rag: if tree has been constructed on a rag, then saliency values will be propagated to the
+    original graph, hence leading to a saliency on the original graph and not on the rag
+    :return: edge saliency corresponding to the given tree
     """
-
-    return altitudes[lca_map]
-
-
-@hg.data_consumer("altitudes")
-def compute_bpt_merge_attribute(tree, attribute, altitudes):
-    """
-    In the context of watershed hierarchy by attributes, computes for each node n,
-    the level at which n disappears according to the given attribute of the canonical
-    binary partition tree.
-
-    :param tree: canonical binary partition tree of an edge-weighted graph
-    :param attribute: raw attribute computed on the bpt
-    :param altitudes: altitudes of the nodes of the bpt
-    :return: array giving the level of disappearance of each node of the bpt
-    """
-    non_qfz_nodes = altitudes == altitudes[tree.parents()]
-    non_qfz_nodes[-1] = False
-    qfz_nodes_altitudes = attribute.copy()
-    # TODO generalize for possibly negative attributes !
-    qfz_nodes_altitudes[non_qfz_nodes] = 0
-    extinction = hg.accumulate_and_max_sequential(tree, qfz_nodes_altitudes, attribute[:tree.num_leaves()],
-                                                  hg.Accumulators.max)
-    persistence = hg.accumulate_parallel(tree, extinction, hg.Accumulators.min)
-    persistence[:tree.num_leaves()] = 0
-    return persistence
+    sm = altitudes[lca_map]
+    graph = hg.get_attribute(tree, "leaf_graph")
+    if hg.get_attribute(graph, "pre_graph") and propagate_if_rag:
+        sm = hg.rag_back_project_edge_weights(graph, sm)
+    return sm
 
 
 @hg.data_consumer("edge_weights")

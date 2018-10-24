@@ -15,6 +15,10 @@ import higra as hg
 
 @hg.data_provider("vertex_area")
 def attribute_vertex_area(graph):
+    pre_graph = hg.get_attribute(graph, "pre_graph")
+    if pre_graph: # this is a rag like graph
+        pre_graph_vertex_area = attribute_vertex_area(pre_graph)
+        return hg.rag_accumulate_on_vertices(graph, hg.Accumulators.sum, vertex_weights=pre_graph_vertex_area)
     return np.ones((graph.num_vertices(),), dtype=np.int64)
 
 
