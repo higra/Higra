@@ -82,7 +82,6 @@ class DataProvider:
 
 
 def data_provider(name, description=""):
-
     def decorator(fun):
 
         @functools.wraps(fun)
@@ -110,6 +109,10 @@ def data_provider(name, description=""):
     return decorator
 
 
+class __CacheLookupException(Exception):
+    pass
+
+
 def __cache_lookup(obj, dep_path, data_cache):
     name, *tail = dep_path.split('.', maxsplit=1)
     obj_cache = data_cache.get_data(obj)
@@ -119,8 +122,11 @@ def __cache_lookup(obj, dep_path, data_cache):
     elif name in hg.__data_providers:  # look in providers
         name_data = hg.__data_providers[name](obj)
     else:
-        err = "Dynamic resolution of dependency '" + name + "' failed (no cache data or attribute provider with this name)."
-        raise Exception(err)
+        raise __CacheLookupException("Lookup of "
+                                     + dep_path
+                                     + " in data cache of "
+                                     + str(obj)
+                                     + " and in data provider list failed.")
 
     if len(tail) > 0:
         name_data = __cache_lookup(name_data, tail[0], data_cache)
@@ -130,6 +136,7 @@ def __cache_lookup(obj, dep_path, data_cache):
 
 def __resolve_dependency(obj, dep_name, dep_path, data_cache, kwargs):
     # if user has provided an explicit initialization for current dependency
+
     if dep_name in kwargs:
         provided_dep = kwargs[dep_name]
         # if user has provided a path
@@ -139,7 +146,21 @@ def __resolve_dependency(obj, dep_name, dep_path, data_cache, kwargs):
             __resolve_dependency(obj, dep_name, provided_dep, data_cache, kwargs)
         # else use provided_dep as depName argument value
     else:
-        kwargs[dep_name] = __cache_lookup(obj, dep_path, data_cache)
+        try:
+            kwargs[dep_name] = __cache_lookup(obj, dep_path, data_cache)
+        except __CacheLookupException as e:
+            err = "Lookup for the following argument failed: '" \
+                  + dep_name \
+                  + "' with associated data path '" \
+                  + dep_path \
+                  + "' as:\n" \
+                    "\t-the caller function did not provide an explicit value for this argument, and\n" \
+                    "\t-the reference object '" \
+                  + str(obj) \
+                  + "' does not contain any attribute at this path, and\n" \
+                    "\t-there is no automatic data provider for this path.\n\n" \
+                    "Did you forget to specify an argument in the function call?"
+            raise __CacheLookupException(err) from e
 
 
 def __transfer_to_kw_arguments(signature, args, kwargs):
@@ -162,14 +183,27 @@ def data_consumer(*dependencies, **dependencies_path):
         def wrapper(*args, **kwargs):
             obj = args[0]
             args = __transfer_to_kw_arguments(signature, args, kwargs)
-
+            data_debug = kwargs.pop("data_debug", False)
             data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
 
-            for dep_name in dependencies:
-                __resolve_dependency(obj, dep_name, dep_name, data_cache, kwargs)
+            try:
+                for dep_name in dependencies:
+                    __resolve_dependency(obj, dep_name, dep_name, data_cache, kwargs)
 
-            for dep_name in dependencies_path:
-                __resolve_dependency(obj, dep_name, dependencies_path[dep_name], data_cache, kwargs)
+                for dep_name in dependencies_path:
+                    __resolve_dependency(obj, dep_name, dependencies_path[dep_name], data_cache, kwargs)
+            except __CacheLookupException as e:
+
+                if data_debug:
+                    err = "Error during the resolution of the arguments of the function '" \
+                          + fun.__name__
+                    raise Exception(err) from e
+                else:  # swallow exception chain for readability
+                    err = "Error during the resolution of the arguments of the function '" + fun.__name__ + "'.\n" \
+                          + str(e) \
+                          + "\nYou can call your function with the extra parameter 'data_debug=True' to " \
+                            "get more information about this error."
+                    raise Exception(err) from None
 
             return fun(*args, **kwargs)
 
