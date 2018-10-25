@@ -13,9 +13,10 @@
 #include "xtensor/xgenerator.hpp"
 #include "xtensor/xeval.hpp"
 #include "xtensor/xindex_view.hpp"
+#include "xtensor/xview.hpp"
 #include "../structure/tree_graph.hpp"
 #include "../accumulator/tree_accumulator.hpp"
-#include "rag.hpp"
+#include <queue>
 
 namespace hg {
 
@@ -89,23 +90,143 @@ namespace hg {
     template<typename tree_t,
             typename T>
     auto labelisation_hierarchy_supervertices(const tree_t &tree,
-                                     const xt::xexpression<T> &xaltitudes) {
+                                              const xt::xexpression<T> &xaltitudes) {
         auto &altitudes = xaltitudes.derived_cast();
         hg_assert_node_weights(tree, altitudes);
-        
+
         auto labels = labelisation_horizontal_cut(tree, altitudes, 0);
         // remap labels to 0...num_labels - 1
         array_1d<index_t> map({num_vertices(tree)}, invalid_index);
         index_t current_label = 0;
-        for(auto n: leaves_iterator(tree)){
+        for (auto n: leaves_iterator(tree)) {
             auto lbl = labels(n);
-            if(map(lbl) == invalid_index){
+            if (map(lbl) == invalid_index) {
                 map(lbl) = current_label;
                 current_label++;
             }
             labels(n) = map(lbl);
         }
         return labels;
+    };
+
+    /**
+     * A simple structure to hold the result of supervertices_hierarchy algorithm.
+     *
+     * @tparam node_map_t
+     * @tparam tree_t
+     * @tparam node_map_t
+     *
+     */
+    template<typename supervertex_labels_t, typename tree_t, typename node_map_t>
+    struct supervertex_hierarchy {
+        supervertex_labels_t supervertex_labelisation;
+        tree_t tree;
+        node_map_t node_map;
+    };
+
+    /**
+     * Extract the supervertices associated to the given and create the equivalent tree on this supervertices.
+     *
+     * Two leaves are in the same supervertex if they have a common ancestor of altitude 0.
+     *
+     * The equivalent tree is obtained by removing all nodes of the given tree which does not contain
+     * any of the supervertices. Its leaves are thus the supervertices.
+     *
+     * Also returns an array that maps any node index i of the new tree, to the index of this node in the original tree.
+     *
+     * @tparam tree_t
+     * @tparam T
+     * @param tree
+     * @param xaltitudes
+     * @return
+     */
+    template<typename tree_t,
+            typename T>
+    auto supervertices_hierarchy(const tree_t &tree,
+                            const xt::xexpression<T> &xaltitudes) {
+        auto &altitudes = xaltitudes.derived_cast();
+        hg_assert_node_weights(tree, altitudes);
+
+        // new index of each node (deleted node contains the index of the node they are merged into)
+        array_1d<index_t> new_order({num_vertices(tree)}, invalid_index);
+
+        // *******************************
+        // Identification of supervertices
+        // (with bottom-up propagation)
+        // *******************************
+
+        // number of identified supervertices
+        index_t current_label = 0;
+        // indexes of the supervertex nodes (largest node in a supervertex)
+        std::vector<index_t> super_vertex_nodes;
+        // number of nodes smaller than a supervertex
+        index_t removed = 0;
+
+        stackv<index_t> stack;
+        for (auto n: leaves_iterator(tree)) {
+            auto e = n;
+            index_t lbl = invalid_index;
+            // move up until we find the top node of the supervertex of an already labeled node is found
+            do {
+                stack.push(e);
+                e = parent(e, tree);
+                if(new_order(e) != invalid_index){
+                    lbl = new_order(e);
+                }
+            } while(altitudes(e) == 0 && lbl == invalid_index);
+
+            removed += stack.size();
+
+            // we have found a new supervertex node
+            if(lbl == invalid_index){
+                super_vertex_nodes.push_back(stack.top());
+                lbl = current_label++;
+                removed--;
+            }
+
+            // labelize visited nodes
+            while(!stack.empty()){
+                new_order(stack.top()) = lbl;
+                stack.pop();
+            }
+        }
+
+        // *******************************
+        // Topological sort of remaining vertices
+        // (with top-down traversal)
+        // *******************************
+        auto num_nodes_new_tree = num_vertices(tree) - removed;
+        array_1d<index_t> parents = xt::empty<index_t>({num_nodes_new_tree});
+        array_1d<index_t> node_map = xt::empty<index_t>({num_nodes_new_tree});
+        index_t node_number = num_nodes_new_tree - 1;
+        std::queue<index_t> queue;
+        queue.push(root(tree));
+        while(!queue.empty()){
+            auto e = queue.front();
+            queue.pop();
+            new_order(e) = node_number;
+            parents(node_number) = new_order(parent(e, tree));
+            node_map(node_number) = e;
+            node_number--;
+            for(auto c: children_iterator(e, tree)){
+                if(new_order(c) == invalid_index){
+                    queue.push(c);
+                }
+            }
+        }
+
+        index_t i = 0;
+        for(auto n: super_vertex_nodes){
+            parents(i) = new_order(parent(n, tree));
+            node_map(i) = n;
+            i++;
+        }
+
+        auto supervertex_labels = xt::eval(xt::view(new_order, xt::range(0, num_leaves(tree))));
+
+        return supervertex_hierarchy<array_1d<index_t>, hg::tree, array_1d<index_t>>{
+            std::move(supervertex_labels), hg::tree{parents}, std::move(node_map)
+        };
     };
 
     /**

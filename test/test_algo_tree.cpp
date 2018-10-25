@@ -82,6 +82,26 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
         BOOST_CHECK(xt::amax(output)() == 2);
     }
 
+    BOOST_AUTO_TEST_CASE(test_supervertices_hierarchy) {
+
+        tree t(array_1d<index_t>{9, 9, 9, 10, 10, 12, 13, 11, 11, 14, 12, 15, 13, 14, 15, 15});
+        array_1d<int> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3};
+        auto res = supervertices_hierarchy(t, altitudes);
+        auto &tree_res = res.tree;
+        auto &supervertex_labelisation_res = res.supervertex_labelisation;
+        auto &node_map_res = res.node_map;
+
+        tree tree_ref(array_1d<index_t>{5, 4, 4, 6, 5, 6, 6});
+        BOOST_CHECK(testTreeIsomorphism(tree_res, tree_ref));
+
+        array_1d<index_t> supervertex_labelisation_ref{0, 0, 0, 1, 1, 1, 2, 3, 3};
+        BOOST_CHECK(is_in_bijection(supervertex_labelisation_ref, supervertex_labelisation_res));
+
+        array_1d<index_t> node_map_ref{9, 12, 6, 11, 13, 14, 15};
+        BOOST_CHECK(node_map_ref == node_map_res);
+
+    }
+
     BOOST_AUTO_TEST_CASE(tree_isomorphism) {
 
         tree t1(array_1d<index_t>{5, 5, 6, 6, 7, 8, 7, 8, 8});
