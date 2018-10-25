@@ -199,11 +199,9 @@ namespace hg {
     binary_partition_tree(const graph_t &graph, const xt::xexpression<T> &xedge_weights, weighter weight_function) {
         using weight_t = typename T::value_type;
         using heap_t = fibonacci_heap<binary_partition_tree_internal::heap_element<weight_t> >;
-
-
+        
         auto &edge_weights = xedge_weights.derived_cast();
-        hg_assert(num_edges(graph) == edge_weights.shape()[0],
-                  "Graph number of edges and edge weight size do not match");
+        hg_assert_edge_weights(graph, edge_weights);
 
         auto g = copy_graph<undirected_graph<hash_setS> >(graph); // optimized for removal
 
@@ -304,14 +302,6 @@ namespace hg {
                         active[nn.first_edge_index()] = true;
                     }
                 }
-                /**std::cout << "parents " << parents << std::endl;
-                std::cout << "graph ";
-                for(auto e: edge_iterator(g)){
-                    std::cout << "{" << e.first << ", " << e.second << "}, ";
-                }
-                std::cout << std::endl;
-                std::cout << "weights " << edge_weights << std::endl << std::endl;*/
-
             }
         }
         return make_node_weighted_tree(tree(parents), std::move(levels));

@@ -52,12 +52,10 @@ namespace hg {
     auto
     make_region_adjacency_graph(const graph_t &graph, const xt::xexpression<T> &xvertex_labels) {
         HG_TRACE();
-        static_assert(std::is_integral<typename T::value_type>::value, "Labels must have an integral type.");
         auto &vertex_labels = xvertex_labels.derived_cast();
-        hg_assert(vertex_labels.dimension() == 1, "Vertex labels must be scalar numbers.");
-        hg_assert(vertex_labels.size() == num_vertices(graph),
-                  "Vertex labels size does not match graph number of vertices.");
-
+        hg_assert_vertex_weights(graph, vertex_labels);
+        hg_assert_integral_value_type(vertex_labels);
+        
         ugraph rag;
 
         array_1d <index_t> vertex_map({num_vertices(graph)}, invalid_index);

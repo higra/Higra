@@ -32,8 +32,8 @@ namespace hg {
     template<typename tree_t, typename T>
     auto attribute_area(const tree_t &tree, const xt::xexpression<T> &xleaf_area) {
         auto &leaf_area = xleaf_area.derived_cast();
-        hg_assert(leaf_area.shape()[0] == num_leaves(tree),
-                  "leaf_area size does not match the number of leaves in the tree.");
+        hg_assert_leaf_weights(tree, leaf_area);
+        
         return accumulate_sequential(tree, leaf_area, accumulator_sum());
     }
 
@@ -68,13 +68,11 @@ namespace hg {
                           const xt::xexpression<T2> &xnode_area) {
         auto &node_area = xnode_area.derived_cast();
         auto &node_altitude = xnode_altitude.derived_cast();
-        hg_assert(node_area.dimension() == 1, "node_area must be a 1d array");
-        hg_assert(node_altitude.dimension() == 1, "node_altitude must be a 1d array");
-        hg_assert(node_area.size() == num_vertices(tree),
-                  "node_area size does not match the number of nodes in the tree.");
-        hg_assert(node_altitude.size() == num_vertices(tree),
-                  "node_altitude size does not match the number of nodes in the tree.");
-
+        hg_assert_node_weights(tree, node_area);
+        hg_assert_1d_array(node_area);
+        hg_assert_node_weights(tree, node_altitude);
+        hg_assert_1d_array(node_altitude);
+        
         auto &parent = tree.parents();
         array_1d<double> volume = xt::empty<double>({tree.num_vertices()});
         xt::view(volume, xt::range(0, num_leaves(tree))) = 0;
@@ -128,10 +126,9 @@ namespace hg {
     auto
     attribute_height(const tree_t &tree, const xt::xexpression<T> &xnode_altitude, bool increasing_altitude = true) {
         auto &node_altitude = xnode_altitude.derived_cast();
-        hg_assert(node_altitude.dimension() == 1, "node_altitude must be a 1d array");
-        hg_assert(node_altitude.shape()[0] == num_vertices(tree),
-                  "node_altitude size does not match the number of nodes in the tree.");
-
+        hg_assert_node_weights(tree, node_altitude);
+        hg_assert_1d_array(node_altitude);
+        
         if (increasing_altitude) {
             auto extrema = accumulate_sequential(tree, xt::view(node_altitude, xt::range(0, num_leaves(tree))),
                                                  accumulator_min());
@@ -160,11 +157,9 @@ namespace hg {
     auto attribute_dynamics(const tree_t &tree, const xt::xexpression<T> &xaltitude) {
         auto &altitude = xaltitude.derived_cast();
         using value_type = typename T::value_type;
-        hg_assert(altitude.dimension() == 1, "node_altitude must be a 1d array");
-        hg_assert(altitude.shape()[0] == num_vertices(tree),
-                  "node_altitude size does not match the number of nodes in the tree.");
-
-
+        hg_assert_node_weights(tree, altitude);
+        hg_assert_1d_array(altitude);
+        
         array_1d <index_t> min_son({num_vertices(tree)}, invalid_index);
         auto min_depth = xt::empty_like(altitude);
         for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {

@@ -75,13 +75,11 @@ namespace hg {
         HG_TRACE();
         using vertex_t = typename graph_t::vertex_descriptor;
         const auto &vertex_weights = xvertex_weights.derived_cast();
-        hg_assert(vertex_weights.dimension() > 0, "Vertex weights cannot have 0 dimension.");
-        hg_assert(num_vertices(graph) == vertex_weights.shape()[0],
-                  "Vertex weights dimension does not match graph number of vertices.");
-
+        hg_assert_vertex_weights(graph, vertex_weights);
+        
         switch (weight) {
             case weight_functions::mean: {
-                hg_assert(vertex_weights.dimension() == 1, "Weight is only defined for scalar data.");
+                hg_assert_1d_array(vertex_weights);
                 std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
                                                                                           vertex_t j)
                         -> result_value_t {
@@ -93,7 +91,7 @@ namespace hg {
                 return weight_graph(graph, fun);
             }
             case weight_functions::min: {
-                hg_assert(vertex_weights.dimension() == 1, "Weight is only defined for scalar data.");
+                hg_assert_1d_array(vertex_weights);
                 std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](
                         vertex_t i, vertex_t j) -> result_value_t {
                     return std::min(vertex_weights(i), vertex_weights(j));
@@ -101,7 +99,7 @@ namespace hg {
                 return weight_graph(graph, fun);
             }
             case weight_functions::max: {
-                hg_assert(vertex_weights.dimension() == 1, "Weight is only defined for scalar data.");
+                hg_assert_1d_array(vertex_weights);
                 std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
                                                                                           vertex_t j) -> result_value_t {
                     return std::max(vertex_weights(i), vertex_weights(j));

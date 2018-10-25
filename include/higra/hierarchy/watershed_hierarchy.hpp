@@ -50,9 +50,8 @@ namespace hg {
             const xt::xexpression<T> &xedge_weights,
             const F &attribute_functor) {
         auto &edge_weights = xedge_weights.derived_cast();
-        hg_assert(edge_weights.dimension() == 1, "edge_weights must be a 1d array.");
-        hg_assert(edge_weights.size() == num_edges(graph),
-                  "edge_weights size does not match the number of edges of the graph.");
+        hg_assert_edge_weights(graph, edge_weights);
+        hg_assert_1d_array(edge_weights);
 
         auto bptc = bpt_canonical(graph, edge_weights);
         auto &bpt = bptc.tree;

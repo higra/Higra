@@ -43,12 +43,10 @@ namespace hg {
         auto &labelisation_fine = xlabelisation_fine.derived_cast();
         auto &labelisation_coarse = xlabelisation_coarse.derived_cast();
 
-        static_assert(std::is_integral<typename T1::value_type>::value,
-                      "Labelisation must have integral value type.");
-        static_assert(std::is_integral<typename T2::value_type>::value,
-                      "Labelisation must have integral value type.");
-        hg_assert(labelisation_fine.dimension() == 1 && labelisation_coarse.dimension() == 1,
-                  "Labelisation must be a 1d array.");
+        hg_assert_integral_value_type(labelisation_fine);
+        hg_assert_integral_value_type(labelisation_coarse);
+        hg_assert_1d_array(labelisation_fine);
+        hg_assert_1d_array(labelisation_coarse);
         hg_assert(labelisation_fine.size() == labelisation_coarse.size(),
                   "Labelisations must have the same size.");
 

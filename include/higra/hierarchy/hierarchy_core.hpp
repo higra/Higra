@@ -66,9 +66,8 @@ namespace hg {
     auto bpt_canonical(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
         HG_TRACE();
         auto &edge_weights = xedge_weights.derived_cast();
-        hg_assert(edge_weights.dimension() == 1, "Edge weights must be scalar.");
-        hg_assert(num_edges(graph) == edge_weights.size(),
-                  "Edge weights size does not match the number of edge in the graph.");
+        hg_assert_edge_weights(graph, edge_weights);
+        hg_assert_1d_array(edge_weights);
 
         array_1d<index_t> sorted_edges_indices = xt::arange(num_edges(graph));
         std::stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
@@ -100,7 +99,6 @@ namespace hg {
                 levels[num_nodes] = edge_weights[ei];
                 parents[roots[c1]] = num_nodes;
                 parents[roots[c2]] = num_nodes;
-                parents[num_nodes] = num_nodes;
                 auto newRoot = uf.link(c1, c2);
                 roots[newRoot] = num_nodes;
                 mst.add_edge(e);
@@ -188,9 +186,9 @@ namespace hg {
     auto quasi_flat_zones_hierarchy(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
         HG_TRACE();
         auto &edge_weights = xedge_weights.derived_cast();
-        hg_assert(edge_weights.dimension() == 1, "Edge weights must be scalar.");
-        hg_assert(num_edges(graph) == edge_weights.size(),
-                  "Edge weights size does not match the number of edge in the graph.");
+        hg_assert_edge_weights(graph, edge_weights);
+        hg_assert_1d_array(edge_weights);
+    
         auto bpt = bpt_canonical(graph, edge_weights);
         auto &tree = bpt.tree;
         auto &altitudes = bpt.node_altitude;

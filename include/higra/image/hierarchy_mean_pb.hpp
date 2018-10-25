@@ -30,10 +30,8 @@ namespace hg {
         using value_t = typename T1::value_type;
         const auto &edge_weights = xedge_weights.derived_cast();
         const auto &edge_orientations = xedge_orientations.derived_cast();
-
-        hg_assert(edge_weights.dimension() == 1, "Edge weights must be scalar.");
-        hg_assert(num_edges(graph) == edge_weights.size(),
-                  "Edge weights size does not match the number of edges in the graph.");
+        hg_assert_edge_weights(graph, edge_weights);
+        hg_assert_1d_array(edge_weights);
         hg_assert(num_vertices(graph) == embedding.size(),
                   "Graph number of vertices does not match the size of the embedding.");
 
@@ -44,9 +42,8 @@ namespace hg {
 
         if(edge_orientations.dimension() != 0){
             // reweighting contours according to contour orientations
-            hg_assert(edge_orientations.dimension() == 1, "Edge orientations must be scalar.");
-            hg_assert(num_edges(graph) == edge_orientations.size(),
-                      "Edge orientations size does not match the number of edges in the graph.");
+            hg_assert_edge_weights(graph, edge_orientations);
+            hg_assert_1d_array(edge_orientations);
 
             auto watershed_cut =  weight_graph(graph, watershed_labels, weight_functions::L0);
             auto contour2d = fit_contour_2d(graph, embedding, watershed_cut);

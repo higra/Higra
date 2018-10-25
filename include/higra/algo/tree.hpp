@@ -91,6 +91,8 @@ namespace hg {
     auto labelisation_hierarchy_supervertices(const tree_t &tree,
                                      const xt::xexpression<T> &xaltitudes) {
         auto &altitudes = xaltitudes.derived_cast();
+        hg_assert_node_weights(tree, altitudes);
+        
         auto labels = labelisation_horizontal_cut(tree, altitudes, 0);
         // remap labels to 0...num_labels - 1
         array_1d<index_t> map({num_vertices(tree)}, invalid_index);

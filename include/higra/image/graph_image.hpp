@@ -83,9 +83,8 @@ namespace hg {
                           result_type extra_border_value = 0) {
         HG_TRACE();
         const auto &weight = xedge_weights.derived_cast();
-        hg_assert(weight.dimension() == 1, "Edge weights must be scalar.");
-        hg_assert(num_edges(graph) == weight.size(),
-                  "Edge weights size does not match the number of edge in the graph.");
+        hg_assert_edge_weights(graph, weight);
+        hg_assert_1d_array(weight);
         hg_assert(num_vertices(graph) == embedding.size(),
                   "Graph number of vertices does not match the size of the embedding.");
         auto &shape = embedding.shape();

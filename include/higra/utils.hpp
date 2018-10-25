@@ -19,7 +19,7 @@
 #include "xtensor/xio.hpp"
 #include "detail/log.hpp"
 
-#define HG_DEBUG
+#define HG_MAIN_ASSERT
 
 #ifndef __FUNCTION_NAME__
 #ifdef WIN32   //WINDOWS
@@ -29,13 +29,55 @@
 #endif
 #endif
 
-#ifdef HG_DEBUG
+#ifdef HG_MAIN_ASSERT
 #define hg_assert(test, msg) do { \
     if(!(test)) {\
     throw std::runtime_error(std::string() + __FUNCTION_NAME__ + " in file " + __FILE__ + "(line:" + std::to_string(__LINE__) + "): "  + msg);} \
   } while (0)
+
+#define hg_assert_edge_weights(graph, edge_weights) do { \
+    hg_assert(edge_weights.dimension() > 0, \
+              "The dimension of the array '" #edge_weights "', representing edge data of the graph '" #graph "' must be at least 1.");\
+    hg_assert(num_edges(graph) == edge_weights.shape()[0], "The dimension of the provided edge data array '" #edge_weights "' does "\
+                                                           "not match the number of edges in the provided graph '" #graph "'.");\
+    } while (0)
+
+#define hg_assert_vertex_weights(graph, vertex_weights) do { \
+    hg_assert(vertex_weights.dimension() > 0, \
+              "The dimension of the array '" #vertex_weights "', representing vertex data of the graph '" #graph "' must be at least 1.");\
+    hg_assert(num_vertices(graph) == vertex_weights.shape()[0], "The dimension of the provided vertex data array '" #vertex_weights "' does "\
+                                                           "not match the number of vertices in the provided graph '" #graph "'.");\
+    } while (0)
+
+#define hg_assert_node_weights(tree, node_weights) do { \
+    hg_assert(node_weights.dimension() > 0, \
+              "The dimension of the array '" #node_weights "', representing node data of the tree '" #tree "' must be at least 1.");\
+    hg_assert(num_vertices(tree) == node_weights.shape()[0], "The dimension of the provided node data array '" #node_weights "' does "\
+                                                           "not match the number of nodes in the provided tree '" #tree "'.");\
+    } while (0)
+
+#define hg_assert_leaf_weights(tree, leaf_weights) do { \
+    hg_assert(leaf_weights.dimension() > 0, \
+              "The dimension of the array '" #leaf_weights "', representing leaves data of the tree '" #tree "' must be at least 1.");\
+    hg_assert(num_leaves(tree) == leaf_weights.shape()[0], "The dimension of the provided leaf data array '" #leaf_weights "' does "\
+                                                           "not match the number of leaves in the provided tree '" #tree "'.");\
+    } while (0)
+
+#define hg_assert_1d_array(array) do { \
+    hg_assert(array.dimension() == 1, "The array '" #array "' must be 1d."); \
+    } while (0)
+
+#define hg_assert_integral_value_type(array) do { \
+   static_assert(std::is_integral<typename std::decay_t<decltype(array)>::value_type>::value, "Array values of '" #array "' must be integral (char, short, int, long...)."); \
+    } while (0)
 #else
 #define hg_assert(test, msg) ((void)0)
+#define hg_assert_vertex_weights(graph, vertex_weights) ((void)0)
+#define hg_assert_edge_weights(graph, vertex_weights) ((void)0)
+#define hg_assert_node_weights(tree, node_weights) ((void)0)
+#define hg_assert_leaf_weights(tree, leaf_weights) ((void)0)
+#define hg_assert_1d_array(array) ((void)0)
+#define hg_assert_integral_value_type(array) ((void)0)
 #endif
 
 
@@ -163,6 +205,24 @@ namespace hg {
      */
     template<typename T>
     struct COMPILE_ERROR;
+
+
+    template<bool scalar = false, typename graph_t, typename T>
+    void ensure_edge_weight(const graph_t &graph,
+                            const T &edge_weights) {
+        hg_assert(edge_weights.dimension() > 0,
+                  "The dimension of the array of edge weights of a graph must be at least 1.");
+        hg_assert(num_edges(graph) == edge_weights.shape()[0], "The dimension of provided edge weights does "
+                                                               "not match the number of edges in the provided graph.");
+        if (scalar) {
+            hg_assert(edge_weights.dimension() == 1, "This method does not handle multivariate weights");
+
+            static_assert(std::is_integral<typename T::value_type>::value,
+                          "Labelisation must have integral value type.");
+        }
+    }
+
+
 }
 
 

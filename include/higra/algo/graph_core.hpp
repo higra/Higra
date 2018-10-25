@@ -33,9 +33,9 @@ namespace hg {
                                   const xt::xexpression<T> & xedge_weights){
         HG_TRACE();
         auto & edge_weights = xedge_weights.derived_cast();
-        hg_assert(edge_weights.dimension() == 1, "Edge weights must be scalar.");
-        hg_assert(num_edges(graph) == edge_weights.size(),
-                  "Edge weights size does not match graph number of edges.");
+        hg_assert_edge_weights(graph, edge_weights);
+        hg_assert_1d_array(edge_weights);
+
         stackv<index_t> stack;
         array_1d<index_t> labels = xt::empty<index_t>({num_vertices(graph)});
         labels.fill(invalid_index);
@@ -83,9 +83,8 @@ namespace hg {
                                   const xt::xexpression<T> & xvertex_labels){
         HG_TRACE();
         auto & vertex_labels = xvertex_labels.derived_cast();
-        hg_assert(vertex_labels.dimension() == 1, "Vertex labels must be scalar.");
-        hg_assert(num_vertices(graph) == vertex_labels.size(),
-                  "Vertex labels size does not match graph number of vertices.");
+        hg_assert_vertex_weights(graph, vertex_labels);
+        hg_assert_1d_array(vertex_labels);
 
         return weight_graph<char>(graph, vertex_labels, weight_functions::L0);
     };

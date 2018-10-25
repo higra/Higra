@@ -10,6 +10,9 @@
 
 #pragma once
 
+#include <functional>
+#include <limits>
+#include <vector>
 
 namespace hg {
 

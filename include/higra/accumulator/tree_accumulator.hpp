@@ -29,9 +29,8 @@ namespace hg {
                                       const accumulator_t accumulator) {
             HG_TRACE();
             auto &input = xinput.derived_cast();
-            hg_assert(input.dimension() > 0, "Input cannot be a scalar.");
-            hg_assert(num_vertices(tree) == input.shape()[0],
-                      "Size of input first dimension must be equal to the number of nodes in the tree.");
+            hg_assert_node_weights(tree, input);
+
             auto data_shape = std::vector<size_t>(input.shape().begin() + 1, input.shape().end());
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(tree));
@@ -73,9 +72,7 @@ namespace hg {
                                         const accumulator_t &accumulator) {
             HG_TRACE();
             auto &vertex_data = xvertex_data.derived_cast();
-            hg_assert(vertex_data.dimension() > 0, "Vertex data cannot be a scalar.");
-            hg_assert(num_leaves(tree) == vertex_data.shape()[0],
-                      "Size of vertex data first dimension must be equal to the number of leaves in the tree.");
+            hg_assert_leaf_weights(tree, vertex_data);
 
             auto data_shape = std::vector<size_t>(vertex_data.shape().begin() + 1, vertex_data.shape().end());
             auto output_shape = accumulator_t::get_output_shape(data_shape);
@@ -121,14 +118,10 @@ namespace hg {
                                                     combination_fun_t combine) {
             HG_TRACE();
             auto &input = xinput.derived_cast();
-            hg_assert(input.dimension() > 0, "Input cannot be a scalar.");
-            hg_assert(num_vertices(tree) == input.shape()[0],
-                      "Size of input first dimension must be equal to the number of nodes in the tree.");
+            hg_assert_node_weights(tree, input);
 
             auto &vertex_data = xvertex_data.derived_cast();
-            hg_assert(vertex_data.dimension() > 0, "Vertex data cannot be a scalar.");
-            hg_assert(num_leaves(tree) == vertex_data.shape()[0],
-                      "Size of vertex data first dimension must be equal to the number of leaves in the tree.");
+            hg_assert_leaf_weights(tree, vertex_data);
 
             auto data_shape = std::vector<size_t>(input.shape().begin() + 1, input.shape().end());
             auto output_shape = accumulator_t::get_output_shape(data_shape);
@@ -182,9 +175,7 @@ namespace hg {
                                      const xt::xexpression<T1> &xinput) {
             HG_TRACE();
             auto &input = xinput.derived_cast();
-            hg_assert(input.dimension() > 0, "Input cannot be a scalar.");
-            hg_assert(num_vertices(tree) == input.shape()[0],
-                      "Size of input first dimension must be equal to the number of nodes in the tree.");
+            hg_assert_node_weights(tree, input);
 
             array_nd<output_t> output = array_nd<output_t>::from_shape(input.shape());
 
@@ -212,10 +203,7 @@ namespace hg {
             HG_TRACE();
             auto &input = xinput.derived_cast();
             auto &condition = xcondition.derived_cast();
-            hg_assert(input.dimension() > 0, "Input cannot be a scalar.");
-            hg_assert(num_vertices(tree) == input.shape()[0],
-                      "Size of input first dimension must be equal to the number of nodes in the tree.");
-
+            hg_assert_node_weights(tree, input);
 
             array_nd<output_t> output = array_nd<output_t>::from_shape(input.shape());
 
@@ -246,9 +234,7 @@ namespace hg {
                                        const xt::xexpression<T2> &xcondition) {
             HG_TRACE();
             auto &input = xinput.derived_cast();
-            hg_assert(input.dimension() > 0, "Input cannot be a scalar.");
-            hg_assert(num_vertices(tree) == input.shape()[0],
-                      "Size of input first dimension must be equal to the number of nodes in the tree.");
+            hg_assert_node_weights(tree, input);
 
             array_nd<output_t> output = array_nd<output_t>::from_shape(input.shape());
 
@@ -257,9 +243,7 @@ namespace hg {
             auto inout_view = make_light_axis_view<vectorial>(output);
 
             auto &condition = xcondition.derived_cast();
-            hg_assert(condition.dimension() == 1, "Condition must be a 1d array.");
-            hg_assert(num_vertices(tree) == condition.size(),
-                      "Size of condition must be equal to the number of nodes in the tree.");
+            hg_assert_node_weights(tree, input);
 
             auto aparents = parents(tree).storage_begin();
 
