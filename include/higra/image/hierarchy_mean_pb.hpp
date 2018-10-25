@@ -36,7 +36,7 @@ namespace hg {
                   "Graph number of vertices does not match the size of the embedding.");
 
         auto watershed_labels = labelisation_watershed(graph, edge_weights);
-        auto rag = make_region_adjacency_graph(graph, watershed_labels);
+        auto rag = make_region_adjacency_graph_from_labelisation(graph, watershed_labels);
 
         array_1d<value_t> final_weights = xt::zeros<value_t>({num_edges(graph)});
 

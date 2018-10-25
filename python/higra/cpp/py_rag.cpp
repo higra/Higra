@@ -10,6 +10,7 @@
 
 #include "py_rag.hpp"
 #include "higra/algo/rag.hpp"
+#include "higra/algo/alignement.hpp"
 #include "py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
@@ -25,13 +26,28 @@ struct def_make_rag {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("_make_region_adjacency_graph", [](const graph_t &graph, const pyarray<value_t> &input) {
-                  auto res = hg::make_region_adjacency_graph(graph, input);
+        c.def("_make_region_adjacency_graph_from_labelisation", [](const graph_t &graph, const pyarray<value_t> &input) {
+                  auto res = hg::make_region_adjacency_graph_from_labelisation(graph, input);
                   return py::make_tuple(std::move(res.rag), std::move(res.vertex_map), std::move(res.edge_map));
               },
               doc,
               py::arg("graph"),
               py::arg("vertex_labels"));
+    }
+};
+
+template<typename graph_t>
+struct def_make_rag_cut {
+    template<typename value_t, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("_make_region_adjacency_graph_from_graph_cut", [](const graph_t &graph, const pyarray<value_t> &input) {
+                  auto res = hg::make_region_adjacency_graph_from_graph_cut(graph, input);
+                  return py::make_tuple(std::move(res.rag), std::move(res.vertex_map), std::move(res.edge_map));
+              },
+              doc,
+              py::arg("graph"),
+              py::arg("edge_weights"));
     }
 };
 
@@ -111,12 +127,17 @@ struct def_project_fine_to_coarse_labelisation {
     }
 };
 
+
 void py_init_rag(pybind11::module &m) {
     xt::import_numpy();
 
     add_type_overloads<def_make_rag<hg::ugraph>, HG_TEMPLATE_INTEGRAL_TYPES>
             (m,
              "Create a region adjacency graph of the input graph with regions identified by the provided vertex labels.");
+
+    add_type_overloads<def_make_rag_cut<hg::ugraph>, HG_TEMPLATE_INTEGRAL_TYPES>
+            (m,
+             "Create a region adjacency graph of the input graph with regions identified by the provided graph cut.");
 
     add_type_overloads<def_rag_back_project_weights, HG_TEMPLATE_NUMERIC_TYPES>
             (m,

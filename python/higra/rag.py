@@ -12,7 +12,7 @@ import higra as hg
 
 
 @hg.data_consumer(vertex_labels="vertex_labels")
-def make_region_adjacency_graph(graph, vertex_labels):
+def make_region_adjacency_graph_from_labelisation(graph, vertex_labels):
     """
     Create a region adjacency graph (rag) of a vertex labelled graph.
     Each maximal connected set of vertices having the same label is a region.
@@ -33,7 +33,38 @@ def make_region_adjacency_graph(graph, vertex_labels):
     :param vertex_labels:
     :return:
     """
-    rag, vertex_map, edge_map = hg._make_region_adjacency_graph(graph, vertex_labels)
+    rag, vertex_map, edge_map = hg._make_region_adjacency_graph_from_labelisation(graph, vertex_labels)
+
+    hg.set_attribute(rag, "vertex_map", vertex_map)
+    hg.set_attribute(rag, "edge_map", edge_map)
+    hg.set_attribute(rag, "pre_graph", graph)
+
+    return rag
+
+
+@hg.data_consumer(edge_weights="edge_weights")
+def make_region_adjacency_graph_from_graph_cut(graph, edge_weights):
+    """
+    Create a region adjacency graph (rag) from a graph cut.
+    Two vertices v1, v2 are in the same region if there exists a v1v2-path composed of edges weighted 0.
+    Each region is represented by a vertex in the rag.
+    There is an edge between two regions of labels l1 and l2 in the rag iff there exists an edge linking 2
+    vertices of labels l1 and l2 int he original graph.
+
+    The returned rag is equipped with three attributes:
+
+    * vertex_map: an array of size graph.num_vertices() which indicates for each vertex v of the graph
+    the index of the vertex of the rag that represents the region containing v;
+    * edge_map: an array of size graph.num_edges() which indicates for each edge e of the graph
+    the index of the edge of the rag that links the two regions containing the extremities of e. If no such edge exists
+    (if both extremities of e are in the same region), the value -1 is used.
+    * original_graph: the graph from which this rag has been computed
+
+    :param graph:
+    :param edge_weights:
+    :return:
+    """
+    rag, vertex_map, edge_map = hg._make_region_adjacency_graph_from_labelisation(graph, vertex_labels)
 
     hg.set_attribute(rag, "vertex_map", vertex_map)
     hg.set_attribute(rag, "edge_map", edge_map)
