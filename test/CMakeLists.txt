@@ -17,6 +17,7 @@ if (DO_TEST)
             test.cpp
             test_accumulator.cpp
             test_algo_tree.cpp
+            test_alignement.cpp
             test_binary_partition_tree.cpp
             test_contour2d.cpp
             test_embedding.cpp
