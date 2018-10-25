@@ -115,8 +115,6 @@ namespace hg {
     /**
      * A simple structure to hold the result of simplify_tree algorithm.
      *
-     * See make_node_weighted_tree for construction
-     *
      * @tparam tree_t
      * @tparam node_map_t
      */
@@ -126,16 +124,20 @@ namespace hg {
         node_map_t node_map;
     };
 
-    /// Creates a copy of the current Tree and deletes the nodes such that the criterion function is true.
-    /// Also returns an array that maps any node index i of the new tree, to the index of this node in the original tree
-    ///
-    /// The criterion function is a predicate that associates true (this node must be deleted) or
-    /// false (do not delete this node) to a node index (with operator ()).
-    ///
-    /// \tparam criterion_t
-    /// \param tree
-    /// \param criterion
-    /// \return std::pair<tree, node_map>
+    /**
+     * Creates a copy of the current Tree and deletes the inner nodes such that the criterion function is true.
+     * Also returns an array that maps any node index i of the new tree, to the index of this node in the original tree.
+     *
+     * The criterion function is a predicate that associates true (this node must be deleted) or
+     * false (do not delete this node) to a node index (with operator ()).
+     *
+     * A leaf can NOT be deleted with this function !
+     *
+     * @tparam criterion_t
+     * @param t
+     * @param criterion
+     * @return
+     */
     template<typename criterion_t>
     auto simplify_tree(const tree &t, const criterion_t &criterion) {
         HG_TRACE();
@@ -169,7 +171,7 @@ namespace hg {
         count = 0;
 
         for (auto i: leaves_to_root_iterator(t, leaves_it::include, root_it::exclude)) {
-            if (i < num_leaves(t) || !criterion(i)) {
+            if (is_leaf(i, t) || !criterion(i)) {
                 auto par = copy_parent(i);
                 auto new_par = par - deleted_map(par);
                 node_map(count) = i;
