@@ -139,7 +139,7 @@ namespace hg {
     class hierarchy_aligner {
     public:
 
-        hierarchy_aligner(const region_adjacency_graph &rag) : m_fine_rag(rag) {
+        hierarchy_aligner(region_adjacency_graph &&rag) : m_fine_rag(std::forward<region_adjacency_graph>(rag)) {
 
         }
 
@@ -195,7 +195,7 @@ namespace hg {
     template<typename graph_t, typename tree_t, typename T>
     auto make_hierarchy_aligner_from_hierarchy(const graph_t &graph, const tree_t &tree,
                                                const xt::xexpression<T> &altitudes) {
-        m_fine_rag(make_region_adjacency_graph_from_labelisation(graph, labelisation_hierarchy_supervertices(tree,
+        return hierarchy_aligner(make_region_adjacency_graph_from_labelisation(graph, labelisation_hierarchy_supervertices(tree,
                                                                                                              altitudes)));
     }
 

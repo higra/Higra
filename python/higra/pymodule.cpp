@@ -13,6 +13,7 @@
 #include "cpp/py_accumulators.hpp"
 #include "cpp/py_algo_graph_core.hpp"
 #include "cpp/py_algo_tree.hpp"
+#include "cpp/py_alignement.hpp"
 #include "cpp/py_binary_partition_tree.hpp"
 #include "cpp/py_common_hierarchy.hpp"
 #include "cpp/py_contour_2d.hpp"
@@ -58,6 +59,7 @@ PYBIND11_MODULE(higram, m) {
     py_init_accumulators(m);
     py_init_algo_graph_core(m);
     py_init_algo_tree(m);
+    py_init_alignement(m);
     py_init_binary_partition_tree(m);
     py_init_common_hierarchy(m);
     py_init_contour_2d(m);
