@@ -59,6 +59,8 @@ BOOST_AUTO_TEST_SUITE(accumulator);
         BOOST_CHECK((applyAccG(values, hg::accumulator_min()))() == -5);
         BOOST_CHECK((applyAccG(values, hg::accumulator_sum()))() == 10);
         BOOST_CHECK((applyAccG(values, hg::accumulator_counter()))() == 5);
+        BOOST_CHECK((applyAccG(values, hg::accumulator_first()))() == -5);
+        BOOST_CHECK((applyAccG(values, hg::accumulator_last()))() == -2);
         BOOST_CHECK((isclose(applyAccG(values, hg::accumulator_mean())(), 2)));
         BOOST_CHECK((isclose(applyAccG(values, hg::accumulator_prod())(), 1000)));
 
@@ -85,6 +87,16 @@ BOOST_AUTO_TEST_SUITE(accumulator);
         hg::array_nd<double> ref3{{0,  18},
                                   {-1, -8}};
         BOOST_CHECK(xt::allclose(res3, ref3));
+
+        auto res4 = applyAccG(values, hg::accumulator_first());
+        hg::array_nd<double> ref4{{0,  1},
+                                  {1, 2}};
+        BOOST_CHECK(xt::allclose(res4, ref4));
+
+        auto res5 = applyAccG(values, hg::accumulator_last());
+        hg::array_nd<double> ref5{{-2,  2},
+                                  {1, -1}};
+        BOOST_CHECK(xt::allclose(res5, ref5));
 
     }
 

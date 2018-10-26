@@ -51,6 +51,12 @@ struct def_accumulate_parallel {
                       case hg::accumulators::prod:
                           return hg::accumulate_parallel(tree, input, hg::accumulator_prod());
                           break;
+                      case hg::accumulators::first:
+                          return hg::accumulate_parallel(tree, input, hg::accumulator_first());
+                          break;
+                      case hg::accumulators::last:
+                          return hg::accumulate_parallel(tree, input, hg::accumulator_last());
+                          break;
                   }
                   throw std::runtime_error("Unknown accumulator.");
               },
@@ -86,6 +92,12 @@ struct def_accumulate_sequential {
                           break;
                       case hg::accumulators::prod:
                           return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_prod());
+                          break;
+                      case hg::accumulators::first:
+                          return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_first());
+                          break;
+                      case hg::accumulators::last:
+                          return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_last());
                           break;
                   }
                   throw std::runtime_error("Unknown accumulator.");
@@ -164,6 +176,16 @@ struct def_accumulate_and_combine_sequential {
                       case hg::accumulators::prod:
                           return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
                                                                        hg::accumulator_prod(),
+                                                                       f);
+                          break;
+                      case hg::accumulators::first:
+                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
+                                                                       hg::accumulator_first(),
+                                                                       f);
+                          break;
+                      case hg::accumulators::last:
+                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
+                                                                       hg::accumulator_last(),
                                                                        f);
                           break;
                   }

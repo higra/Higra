@@ -92,6 +92,12 @@ struct def_rag_accumulate {
                       case hg::accumulators::prod:
                           return hg::rag_accumulate(rag_map, weights, hg::accumulator_prod());
                           break;
+                      case hg::accumulators::first:
+                          return hg::rag_accumulate(rag_map, weights, hg::accumulator_first());
+                          break;
+                      case hg::accumulators::last:
+                          return hg::rag_accumulate(rag_map, weights, hg::accumulator_last());
+                          break;
                   }
                   throw std::runtime_error("Unknown accumulator.");
               },

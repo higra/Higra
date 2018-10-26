@@ -16,9 +16,11 @@
 
 namespace hg {
 
-#define HG_ACCUMULATORS (min)(max)(mean)(counter)(sum)(prod)
+#define HG_ACCUMULATORS (min)(max)(mean)(counter)(sum)(prod)(first)(last)
 
     enum class accumulators {
+        first,
+        last,
         mean,
         min,
         max,
@@ -151,7 +153,7 @@ namespace hg {
         template<typename S, bool vectorial = true>
         struct acc_mean_impl {
 
-            using self_type = acc_marginal_impl<S, vectorial>;
+            using self_type = acc_mean_impl<S, vectorial>;
             using value_type = typename std::iterator_traits<S>::value_type;
             static const bool is_vectorial = vectorial;
 
@@ -229,7 +231,7 @@ namespace hg {
         template<typename S, bool vectorial = true>
         struct acc_counter_impl {
             using value_type = typename std::iterator_traits<S>::value_type;
-            using self_type = acc_marginal_impl<S, vectorial>;
+            using self_type = acc_counter_impl<S, vectorial>;
             static const bool is_vectorial = vectorial;
 
             acc_counter_impl(S storage_begin, S storage_end) :
@@ -245,6 +247,115 @@ namespace hg {
             template<typename T, typename ...Args>
             void accumulate(const T &, Args &&...) {
                 (*m_storage_begin)++;
+            }
+
+            template<typename ...Args>
+            void finalize(Args &&...) const {}
+
+
+            void set_storage(S storage_begin, S storage_end) {
+                m_storage_begin = storage_begin;
+                m_storage_end = storage_end;
+            }
+
+            template<typename T>
+            void set_storage(T &range) {
+                m_storage_begin = range.begin();
+                m_storage_end = range.end();
+            }
+
+        private:
+            S m_storage_begin;
+            S m_storage_end;
+        };
+
+        /**
+         * First accumulator
+         * @tparam S the storage type
+         * @tparam vectorial bool: is dimension of storage > 0 (different from scalar)
+         */
+        template<typename S, bool vectorial = true>
+        struct acc_first_impl {
+            using value_type = typename std::iterator_traits<S>::value_type;
+            using self_type = acc_first_impl<S, vectorial>;
+            static const bool is_vectorial = vectorial;
+
+            acc_first_impl(S storage_begin, S storage_end) :
+                    m_storage_begin(storage_begin),
+                    m_storage_end(storage_end) {
+            }
+
+            template<typename ...Args>
+            void initialize(Args &&...) {
+                m_first = true;
+            }
+
+            template<typename T, typename ...Args>
+            void accumulate(T value_begin, Args &&...) {
+                if (m_first) {
+                    m_first = false;
+                    auto s = m_storage_begin;
+                    for (; s != m_storage_end; s++, value_begin++) {
+                        *s = *value_begin;
+                    }
+                }
+            }
+
+            template<typename ...Args>
+            void finalize(Args &&...) const {}
+
+
+            void set_storage(S storage_begin, S storage_end) {
+                m_storage_begin = storage_begin;
+                m_storage_end = storage_end;
+            }
+
+            template<typename T>
+            void set_storage(T &range) {
+                m_storage_begin = range.begin();
+                m_storage_end = range.end();
+            }
+
+        private:
+            bool m_first;
+            S m_storage_begin;
+            S m_storage_end;
+        };
+
+        /**
+         * Last accumulator
+         * @tparam S the storage type
+         * @tparam vectorial bool: is dimension of storage > 0 (different from scalar)
+         */
+        template<typename S, bool vectorial = true>
+        struct acc_last_impl {
+            using value_type = typename std::iterator_traits<S>::value_type;
+            using self_type = acc_last_impl<S, vectorial>;
+            static const bool is_vectorial = vectorial;
+
+            acc_last_impl(S storage_begin, S storage_end) :
+                    m_storage_begin(storage_begin),
+                    m_storage_end(storage_end) {
+            }
+
+            template<typename ...Args>
+            void initialize(Args &&...) {
+
+            }
+
+            template<typename T1 = self_type, typename T, typename ...Args>
+            std::enable_if_t<T1::is_vectorial>
+            accumulate(T value_begin, Args &&...) {
+                auto s = m_storage_begin;
+                for (; s != m_storage_end; s++, value_begin++) {
+                    *s = *value_begin;
+                }
+            }
+
+            template<typename T1 = self_type, typename T, typename ...Args>
+            std::enable_if_t<!T1::is_vectorial>
+            accumulate(const T value_begin, Args &&...) {
+                *m_storage_begin = *value_begin;
             }
 
             template<typename ...Args>
@@ -378,6 +489,42 @@ namespace hg {
         static
         auto get_output_shape(const shape_t &) {
             return std::vector<std::size_t>();
+        }
+    };
+
+    struct accumulator_first {
+
+        template<bool vectorial = true, typename S>
+        auto make_accumulator(S &storage) const {
+            using value_type = typename S::value_type;
+            using iterator_type = decltype(storage.begin());
+            return accumulator_detail::acc_first_impl<iterator_type, vectorial>(
+                    storage.begin(),
+                    storage.end());
+        }
+
+        template<typename shape_t>
+        static
+        auto get_output_shape(const shape_t &input_shape) {
+            return input_shape;
+        }
+    };
+
+    struct accumulator_last {
+
+        template<bool vectorial = true, typename S>
+        auto make_accumulator(S &storage) const {
+            using value_type = typename S::value_type;
+            using iterator_type = decltype(storage.begin());
+            return accumulator_detail::acc_last_impl<iterator_type, vectorial>(
+                    storage.begin(),
+                    storage.end());
+        }
+
+        template<typename shape_t>
+        static
+        auto get_output_shape(const shape_t &input_shape) {
+            return input_shape;
         }
     };
 }
