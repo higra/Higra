@@ -184,6 +184,23 @@ namespace hg {
         return simplified_tree<tree, decltype(node_map)>{tree(new_parent), std::move(node_map)};
     };
 
+    /**
+     * Compute the quasi-flat zones hierarchy of an edge weighted graph.
+     * For a given positive real value lamba:
+     *  - a set of vertices X is lambda-connected if, for any two vertices x, y in X there exists an xy-path in X
+     *    composed of edges of weights smaller of equal than lambda;
+     *  - a lambda-connected component is a lambda-connected set of maximal extent;
+     *  - the set of lambda-connected components forms a partition, called lambda-partition, of the graph vertices.
+     *
+     * The quasi-flat zones hierarchy is composed of the sequence of lambda-partitions obtained
+     * for all lambda in edge_weights.
+     *
+     * @tparam graph_t Input graph type
+     * @tparam T xepression derived type of edge weights
+     * @param graph Input graph
+     * @param xedge_weights Input graph weights
+     * @return A node weighted tree
+     */
     template<typename graph_t, typename T>
     auto quasi_flat_zones_hierarchy(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
         HG_TRACE();
