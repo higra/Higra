@@ -38,7 +38,7 @@ struct def_hierarchy_mean_pb {
                                         std::move(res.first.vertex_map),
                                         std::move(res.first.edge_map),
                                         std::move(res.second.tree),
-                                        std::move(res.second.node_altitude)
+                                        std::move(res.second.altitudes)
                   );
               },
               doc,

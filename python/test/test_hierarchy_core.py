@@ -28,7 +28,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         res = hg._bpt_canonical(graph, edge_weights)
         tree = res.tree()
-        altitudes = res.node_altitude()
+        altitudes = res.altitudes()
         mst = res.mst()
 
         self.assertTrue(tree.num_vertices() == 5)
@@ -45,7 +45,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         res = hg._bpt_canonical(graph, edge_weights)
         tree = res.tree()
-        altitudes = res.node_altitude()
+        altitudes = res.altitudes()
         mst = res.mst()
 
         self.assertTrue(tree.num_vertices() == 11)
@@ -72,7 +72,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         res = hg._quasi_flat_zones_hierarchy(graph, edge_weights)
         tree = res.tree()
-        altitudes = res.node_altitude()
+        altitudes = res.altitudes()
 
         tref = hg.Tree(np.asarray((6, 7, 8, 6, 7, 8, 7, 9, 9, 9), dtype=np.int64))
 

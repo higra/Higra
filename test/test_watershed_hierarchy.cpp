@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_SUITE(algo_watershed_hierarchy);
 
         auto res = watershed_hierarchy_by_area(g, edge_weights);
         auto &t = res.tree;
-        auto &altitudes = res.node_altitude;
+        auto &altitudes = res.altitudes;
 
         array_1d<index_t> ref_parents{19, 19, 20, 20, 20, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 24,
                                       24, 25, 26, 26, 25, 27, 27, 27};
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_SUITE(algo_watershed_hierarchy);
 
         auto res = watershed_hierarchy_by_dynamics(g, edge_weights);
         auto &t = res.tree;
-        auto &altitudes = res.node_altitude;
+        auto &altitudes = res.altitudes;
 
         array_1d<index_t> ref_parents{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11};
         tree ref_tree(ref_parents);
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_SUITE(algo_watershed_hierarchy);
 
         auto res = watershed_hierarchy_by_volume(g, edge_weights);
         auto &t = res.tree;
-        auto &altitudes = res.node_altitude;
+        auto &altitudes = res.altitudes;
 
         array_1d<index_t> ref_parents{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11};
         tree ref_tree(ref_parents);

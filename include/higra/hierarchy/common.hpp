@@ -24,7 +24,7 @@ namespace hg {
     template <typename tree_t, typename altitude_t>
     struct node_weighted_tree{
         tree_t tree;
-        altitude_t node_altitude;
+        altitude_t altitudes;
     };
 
     template <typename tree_t, typename altitude_t>

@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_SUITE(test_binary_partition_tree);
                                              hg::make_binary_partition_tree_min_linkage(
                                                      edge_weights));
         auto &tree = res.tree;
-        auto &levels = res.node_altitude;
+        auto &levels = res.altitudes;
 
         array_1d<index_t> expected_parents({9, 9, 13, 15, 12, 12, 10, 10, 11, 14, 11, 16, 13, 14, 15, 16, 16});
         array_1d<double> expected_levels({0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 8, 10});
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_SUITE(test_binary_partition_tree);
                                              hg::make_binary_partition_tree_complete_linkage(
                                                      edge_weights));
         auto &tree = res.tree;
-        auto &levels = res.node_altitude;
+        auto &levels = res.altitudes;
 
         array_1d<index_t> expected_parents({9, 9, 10, 11, 11, 12, 13, 13, 14, 10, 16, 12, 15, 14, 15, 16, 16});
         array_1d<double> expected_levels({0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 13, 15});
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_SUITE(test_binary_partition_tree);
                                              hg::make_binary_partition_tree_average_linkage(
                                                      edge_values, edge_weights));
         auto &tree = res.tree;
-        auto &levels = res.node_altitude;
+        auto &levels = res.altitudes;
 
         array_1d<index_t> expected_parents({9, 9, 10, 11, 11, 12, 13, 13, 14, 10, 15, 12, 15, 14, 16, 16, 16});
         array_1d<double> expected_levels({0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 11.5, 12});

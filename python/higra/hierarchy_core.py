@@ -24,7 +24,7 @@ def bpt_canonical(graph, edge_weights):
 
     res = hg._bpt_canonical(graph, edge_weights)
     tree = res.tree()
-    altitudes = res.node_altitude()
+    altitudes = res.altitudes()
     mst = res.mst()
 
     original_graph = hg.get_attribute(graph, "original_graph")
@@ -53,7 +53,7 @@ def quasi_flat_zones_hierarchy(graph, edge_weights):
 
     res = hg._quasi_flat_zones_hierarchy(graph, edge_weights)
     tree = res.tree()
-    altitudes = res.node_altitude()
+    altitudes = res.altitudes()
 
     hg.set_attribute(tree, "leaf_graph", graph)
     hg.set_attribute(tree, "altitudes", altitudes)
@@ -119,7 +119,7 @@ def binary_partition_tree_complete_linkage(graph, edge_weights):
 
     res = hg._binary_partition_tree_complete_linkage(graph, edge_weights)
     tree = res.tree()
-    altitudes = res.node_altitude()
+    altitudes = res.altitudes()
 
     hg.set_attribute(tree, "leaf_graph", graph)
     hg.set_attribute(tree, "altitudes", altitudes)
@@ -144,7 +144,7 @@ def binary_partition_tree_average_linkage(graph, edge_values, edge_weights):
 
     res = hg._binary_partition_tree_average_linkage(graph, edge_values,  edge_weights)
     tree = res.tree()
-    altitudes = res.node_altitude()
+    altitudes = res.altitudes()
 
     hg.set_attribute(tree, "leaf_graph", graph)
     hg.set_attribute(tree, "altitudes", altitudes)
@@ -237,7 +237,7 @@ def binary_partition_tree(graph, weight_function, edge_weights):
     """
     res = hg._binary_partition_tree_custom_linking(graph, edge_weights, weight_function)
     tree = res.tree()
-    altitudes = res.node_altitude()
+    altitudes = res.altitudes()
 
     hg.set_attribute(tree, "leaf_graph", graph)
     hg.set_attribute(tree, "altitudes", altitudes)

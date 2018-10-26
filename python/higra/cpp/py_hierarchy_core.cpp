@@ -31,7 +31,7 @@ struct def_node_weighted_tree_and_mst {
                                      "A simple structure to hold the result of canonical bpt construction algorithms, "
                                      "namely a tree, its associated node altitude array, and its associated MST.");
         c.def("tree", [](class_t &self) -> tree_t & { return self.tree; }, "The binary partition tree!");
-        c.def("node_altitude", [](class_t &self) -> hg::array_1d<value_t> & { return self.node_altitude; },
+        c.def("altitudes", [](class_t &self) -> hg::array_1d<value_t> & { return self.altitudes; },
               "An array of tree node altitude.");
         c.def("mst", [](class_t &self) -> hg::ugraph & { return self.mst; },
               "A minimum spanning tree associated to the binary partition tree.");

@@ -55,7 +55,7 @@ namespace hg {
 
         auto bptc = bpt_canonical(graph, edge_weights);
         auto &bpt = bptc.tree;
-        auto &altitude = bptc.node_altitude;
+        auto &altitude = bptc.altitudes;
         auto &mst = bptc.mst;
 
         auto bpt_attribute = attribute_functor(bpt, altitude);
@@ -67,7 +67,7 @@ namespace hg {
 
         auto bptc2 = bpt_canonical(mst, mst_edge_weights);
         auto &bpt2 = bptc2.tree;
-        auto &altitude2 = bptc2.node_altitude;
+        auto &altitude2 = bptc2.altitudes;
 
         auto canonical_tree = simplify_tree(bpt2, [&altitude2, &bpt2](index_t i) {
             return altitude2(i) == altitude2(parent(i, bpt2));

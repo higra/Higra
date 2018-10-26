@@ -34,7 +34,7 @@ struct def_node_weighted_tree {
                                      "A simple structure to hold the result of hierarchy construction algorithms, "
                                      "namely a tree and its associated node altitude array.");
         c.def("tree", [](class_t &self) -> tree_t& {return self.tree;}, "The tree!");
-        c.def("node_altitude", [](class_t &self) -> array_1d<value_t>& {return self.node_altitude;}, "An array of tree node altitude.");
+        c.def("altitudes", [](class_t &self) -> array_1d<value_t>& {return self.altitudes;}, "An array of tree node altitude.");
     }
 };
 

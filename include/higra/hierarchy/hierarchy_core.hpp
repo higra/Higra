@@ -34,7 +34,7 @@ namespace hg {
     template<typename tree_t, typename altitude_t, typename mst_t>
     struct node_weighted_tree_and_mst {
         tree_t tree;
-        altitude_t node_altitude;
+        altitude_t altitudes;
         mst_t mst;
     };
 
@@ -211,7 +211,7 @@ namespace hg {
     
         auto bpt = bpt_canonical(graph, edge_weights);
         auto &tree = bpt.tree;
-        auto &altitudes = bpt.node_altitude;
+        auto &altitudes = bpt.altitudes;
 
         auto altitude_parents = propagate_parallel(tree, altitudes);
 

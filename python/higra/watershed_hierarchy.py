@@ -15,7 +15,7 @@ import higra as hg
 def watershed_hierarchy_by_area(graph, edge_weights, vertex_area):
     res = hg._watershed_hierarchy_by_area(graph, edge_weights, vertex_area)
     tree = res.tree()
-    altitudes = res.node_altitude()
+    altitudes = res.altitudes()
 
     hg.set_attribute(tree, "leaf_graph", graph)
     hg.set_attribute(tree, "altitudes", altitudes)
@@ -27,7 +27,7 @@ def watershed_hierarchy_by_area(graph, edge_weights, vertex_area):
 def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area):
     res = hg._watershed_hierarchy_by_volume(graph, edge_weights, vertex_area)
     tree = res.tree()
-    altitudes = res.node_altitude()
+    altitudes = res.altitudes()
 
     hg.set_attribute(tree, "leaf_graph", graph)
     hg.set_attribute(tree, "altitudes", altitudes)
@@ -39,7 +39,7 @@ def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area):
 def watershed_hierarchy_by_dynamics(graph, edge_weights):
     res = hg._watershed_hierarchy_by_dynamics(graph, edge_weights)
     tree = res.tree()
-    altitudes = res.node_altitude()
+    altitudes = res.altitudes()
 
     hg.set_attribute(tree, "leaf_graph", graph)
     hg.set_attribute(tree, "altitudes", altitudes)
@@ -77,7 +77,7 @@ def watershed_hierarchy_by_attribute(graph, attribute_functor, edge_weights):
 
     res = hg._watershed_hierarchy_by_attribute(graph, edge_weights, helper_functor)
     tree = res.tree()
-    altitudes = res.node_altitude()
+    altitudes = res.altitudes()
 
     hg.set_attribute(tree, "leaf_graph", graph)
     hg.set_attribute(tree, "altitudes", altitudes)
