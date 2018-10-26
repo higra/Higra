@@ -14,6 +14,7 @@
 #include "higra/structure/unionfind.hpp"
 #include "higra/graph.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
+#include "higra/structure/lca_fast.hpp"
 #include "xtensor/xindex_view.hpp"
 #include <algorithm>
 #include <utility>
@@ -196,7 +197,7 @@ namespace hg {
      * for all lambda in edge_weights.
      *
      * @tparam graph_t Input graph type
-     * @tparam T xepression derived type of edge weights
+     * @tparam T xepression derived type of input edge weights
      * @param graph Input graph
      * @param xedge_weights Input graph weights
      * @return A node weighted tree
@@ -223,5 +224,27 @@ namespace hg {
         return make_node_weighted_tree(std::move(qfz_tree), std::move(qfz_altitude));
     }
 
-
+    /**
+     * Compute the saliency map of the given hierarchy for the given graph.
+     * The saliency map is a weighting of the graph edges.
+     * The weight of an edge {x, y} is the altitude of the lowest common ancestor of x and y in the
+     * hierarchy.
+     *
+     * @tparam graph_t Input graph type
+     * @tparam tree_t Input tree type
+     * @tparam T xepression derived type of input altitudes
+     * @param graph Input graph
+     * @param tree Input tree
+     * @param xaltitudes Input node altitudes of the given tree
+     * @return An array of shape (num_edges(graph)) and with the same value type as T.
+     */
+    template<typename graph_t, typename tree_t, typename T>
+    auto saliency_map(const graph_t & graph,
+            const tree_t & tree,
+            const xt::xexpression<T> & xaltitudes){
+        auto & altitudes = xaltitudes.derived_cast();
+        lca_fast lca(tree);
+        auto lca_edges = lca.lca(edge_iterator(graph));
+        return xt::eval(xt::index_view(altitudes, lca_edges));
+    }
 }

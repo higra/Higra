@@ -14,6 +14,7 @@
 #include "higra/algo/tree.hpp"
 #include "test_utils.hpp"
 #include "xtensor/xindex_view.hpp"
+#include "xtensor/xrandom.hpp"
 
 BOOST_AUTO_TEST_SUITE(hierarchyCore);
 
@@ -57,9 +58,9 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         xt::xarray<double> edge_weights{1, 0, 2, 1, 1, 1, 2};
 
         auto res = bpt_canonical(graph, edge_weights);
-        auto tree = res.tree;
-        auto altitude = res.node_altitude;
-        auto mst = res.mst;
+        auto &tree = res.tree;
+        auto &altitude = res.node_altitude;
+        auto &mst = res.mst;
         BOOST_CHECK(num_vertices(tree) == 11);
         BOOST_CHECK(num_edges(tree) == 10);
         BOOST_CHECK(xt::allclose(hg::parents(tree), xt::xarray<unsigned int>({6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10})));
@@ -111,6 +112,34 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         tree tref(array_1d<index_t>{6, 7, 8, 6, 7, 8, 7, 9, 9, 9});
         BOOST_CHECK(testTreeIsomorphism(rtree, tref));
         BOOST_CHECK(xt::allclose(altitude, xt::xarray<double>({0, 0, 0, 0, 0, 0, 0, 1, 1, 2})));
+    }
+
+    BOOST_AUTO_TEST_CASE(testSaliencyMap) {
+
+        auto graph = get_4_adjacency_graph({2, 4});
+
+        tree t(xt::xarray<long>{8, 8, 9, 9, 10, 10, 11, 11, 12, 13, 12, 14, 13, 14, 14});
+        xt::xarray<double> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3};
+
+        auto sm = saliency_map(graph, t, altitudes);
+        xt::xarray<double> sm_ref = {0, 1, 2, 1, 0, 3, 3, 0, 3, 0};
+
+        BOOST_CHECK(sm == sm_ref);
+    }
+
+    BOOST_AUTO_TEST_CASE(testSaliencyMap_bpt_qzf_equiv) {
+
+        index_t size = 25;
+        auto graph = get_4_adjacency_graph({size, size});
+        auto edge_weights = xt::eval(xt::random::randint<int>({num_edges(graph)}, 0, 25));
+
+        auto bpt = bpt_canonical(graph, edge_weights);
+        auto qfz = quasi_flat_zones_hierarchy(graph, edge_weights);
+
+        auto sm_bpt = saliency_map(graph, bpt.tree, bpt.node_altitude);
+        auto sm_qfz = saliency_map(graph, qfz.tree, qfz.node_altitude);
+
+        BOOST_CHECK(sm_bpt == sm_qfz);
     }
 
 BOOST_AUTO_TEST_SUITE_END();
