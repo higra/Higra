@@ -75,6 +75,7 @@ namespace hg {
                     auto label_region = vertex_labels[start_vertex];
                     s.push(start_vertex);
                     vertex_map[start_vertex] = num_regions;
+                    canonical_edge_indexes.push_back(-1);
                     add_vertex(rag);
                     auto lowest_edge = num_edges;
                     while (!s.empty()) {
@@ -87,7 +88,6 @@ namespace hg {
                                 if (vertex_map[adjv] == invalid_index) {
                                     vertex_map[adjv] = num_regions;
                                     s.push(adjv);
-                                    canonical_edge_indexes.push_back(-1);
                                 }
                             } else {
                                 if (vertex_map[adjv] != invalid_index) {
@@ -156,6 +156,7 @@ namespace hg {
                     s.push(start_vertex);
                     vertex_map[start_vertex] = num_regions;
                     add_vertex(rag);
+                    canonical_edge_indexes.push_back(-1);
                     auto lowest_edge = num_edges;
                     while (!s.empty()) {
                         auto v = s.top();
@@ -167,7 +168,6 @@ namespace hg {
                                 if (vertex_map[adjv] == invalid_index) {
                                     vertex_map[adjv] = num_regions;
                                     s.push(adjv);
-                                    canonical_edge_indexes.push_back(-1);
                                 }
                             } else {
                                 if (vertex_map[adjv] != invalid_index) {
