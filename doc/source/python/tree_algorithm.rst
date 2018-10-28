@@ -1,7 +1,7 @@
 .. _tree_algorithm:
 
 Algorithm for trees
-======================================
+===================
 
 .. autofunction:: higra.reconstruct_leaf_data
 

@@ -16,7 +16,6 @@ def bpt_canonical(graph, edge_weights):
     """
     Compute the canonical binary partition tree (binary tree by altitude ordering) of the given weighted graph.
 
-
     :param graph:
     :param edge_weights:
     :return: Tree (with attributes "leaf_graph", "altitudes" and "mst")
@@ -40,11 +39,11 @@ def bpt_canonical(graph, edge_weights):
 
     return tree
 
+
 @hg.data_consumer("edge_weights")
 def quasi_flat_zones_hierarchy(graph, edge_weights):
     """
     Compute the quasi flat zones hierarchy of the given weighted graph.
-
 
     :param graph:
     :param edge_weights:
@@ -87,13 +86,12 @@ def simplify_tree(tree, deleted_vertices):
 @hg.data_consumer("altitudes", "lca_map")
 def saliency(tree, altitudes, lca_map, propagate_if_rag=True):
     """
-    Compute the saliency map (ultra-metric distance) of the given tree
+    Compute the saliency map (ultra-metric distance) of the given tree.
+
     :param tree:
     :param altitudes: altitudes of the vertices of the tree
-    :param lca_map: array containing the lowest common ancestor of the source and target vertices of each edge
-    where saliency need to be computed
-    :param propagate_if_rag: if tree has been constructed on a rag, then saliency values will be propagated to the
-    original graph, hence leading to a saliency on the original graph and not on the rag
+    :param lca_map: array containing the lowest common ancestor of the source and target vertices of each edge where saliency need to be computed
+    :param propagate_if_rag: if tree has been constructed on a rag, then saliency values will be propagated to the original graph, hence leading to a saliency on the original graph and not on the rag
     :return: edge saliency corresponding to the given tree
     """
     sm = altitudes[lca_map]
@@ -142,7 +140,7 @@ def binary_partition_tree_average_linkage(graph, edge_values, edge_weights):
     :return:
     """
 
-    res = hg._binary_partition_tree_average_linkage(graph, edge_values,  edge_weights)
+    res = hg._binary_partition_tree_average_linkage(graph, edge_values, edge_weights)
     tree = res.tree()
     altitudes = res.altitudes()
 

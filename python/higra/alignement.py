@@ -23,14 +23,12 @@ def align_hierarchies(vertex_labels, other_hierarchies, graph):
         - the altitudes a of the nodes of t.
     Let us denote:
         - given a vertex x of g and a labelisation l, l(x) is the region of l that contains x
-        - given a region r of l1, s(r, l2) is the region R of l2 that has the largest intersection with r:
-                  s(r, l2) = arg_max(R in l2) |R \cap r|
+        - given a region r of l1, s(r, l2) is the region R of l2 that has the largest intersection with r, ie, s(r, l2) = arg_max(R in l2) #(R \cap r)
     The projection of t onto l1 is a hierarchy given by the saliency map sm on g defined by:
            for all {x,y} in edges(g), sm({x,y}) = a(lca_t(s(l1(x), l2), s(l1(y), l2)))
 
     :param vertex_labels: labeling of the graph vertices into super-vertices
-    :param other_hierarchies: a hierarchy or a list of hierarchies: hierarchies can be given either as trees
-    or as saliency maps, defined on the pixel graph or on a region adjacency graph.
+    :param other_hierarchies: a hierarchy or a list of hierarchies: hierarchies can be given either as trees or as saliency maps, defined on the pixel graph or on a region adjacency graph.
     :param graph: the domain graph
     :return: a hierarchy or a list of hierarchies as saliency maps.
     """
