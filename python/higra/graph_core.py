@@ -24,7 +24,9 @@ def labelisation_2_graph_cut(graph, vertex_labels):
     :param vertex_labels:
     :return:
     """
-    return hg._labelisation_2_graph_cut(graph, vertex_labels)
+    graph_cut = hg._labelisation_2_graph_cut(graph, vertex_labels)
+    hg.set_attribute(graph_cut, "domain", graph)
+    return graph_cut
 
 
 @hg.data_consumer(edge_weights="edge_weights")
@@ -39,4 +41,6 @@ def graph_cut_2_labelisation(graph, edge_weights):
     :param edge_weights:
     :return:
     """
-    return hg._graph_cut_2_labelisation(graph, edge_weights)
+    vertex_labels = hg._graph_cut_2_labelisation(graph, edge_weights)
+    hg.set_attribute(vertex_labels, "domain", graph)
+    return vertex_labels

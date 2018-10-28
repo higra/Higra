@@ -15,6 +15,55 @@ import inspect
 import higra as hg
 
 
+class WeakKeyDictionary:
+    """
+    Useful weak key dictionary (compared to the one provided by python...)
+
+    Uses solely object id as key.
+    """
+    def __init__(self):
+        self._data = {}
+
+    def __get__(self, obj, owner):
+        _, val = self._data[id(obj)]
+        return val
+
+    def __set__(self, obj, value):
+        key = id(obj)
+        try:
+            ref, _ = self._data[key]
+        except KeyError:
+            def on_destroy(_):
+                del self._data[key]
+            ref = weakref.ref(obj, on_destroy)
+        self._data[key] = ref, value
+
+    def __delete__(self, obj):
+        del self._data[id(obj)]
+
+    def setdefault(self, obj, default=None):
+        """
+        If obj is in the dictionary, return its value.
+        If not, insert key with a value of default and return default.
+
+        :param default:
+        :return:
+        """
+        key = id(obj)
+        try:
+            _, val = self._data[key]
+            return val
+        except KeyError:
+            def on_destroy(_):
+                del self._data[key]
+            ref = weakref.ref(obj, on_destroy)
+            self._data[key] = ref, default
+            return default
+
+    def clear(self):
+        self._data.clear()
+
+
 def _data_cache__init():
     hg.__higra_global_cache = DataCache()
 
@@ -22,7 +71,7 @@ def _data_cache__init():
 class DataCache:
 
     def __init__(self):
-        self.__data = weakref.WeakKeyDictionary()
+        self.__data = WeakKeyDictionary()
 
     def get_data(self, key):
         return self.__data.setdefault(key, {})
@@ -33,6 +82,9 @@ class DataCache:
 
     def clear_all_data(self):
         self.__data.clear()
+
+
+
 
 
 def list_data_providers():
