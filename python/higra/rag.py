@@ -142,19 +142,3 @@ def rag_accumulate_on_edges(rag, accumulator, edge_weights):
     return hg._rag_accumulate(hg.get_attribute(rag, "edge_map"), edge_weights, accumulator)
 
 
-def project_fine_to_coarse_rag(fine_rag, coarse_rag):
-    """
-    Given two region adjacency graphs, a fine and a coarse one, of a same set of elements.
-    Find for each region of the fine rag, the region of the
-    coarse rag that maximises the intersection with the "fine" region.
-
-    :param fine_rag:
-    :param coarse_rag:
-    :return: a 1d array of size num_vertices fine_rag.num_vertices()
-    """
-    return hg.project_fine_to_coarse_labelisation(
-        hg.get_attribute(fine_rag, "vertex_map"),
-        hg.get_attribute(coarse_rag, "vertex_map"),
-        fine_rag.num_vertices(),
-        coarse_rag.num_vertices())
-
