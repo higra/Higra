@@ -17,6 +17,7 @@
 #include <vector>
 
 #include <xtl/xiterator_base.hpp>
+#include <xtl/xmeta_utils.hpp>
 #include <xtl/xsequence.hpp>
 
 #include "xexception.hpp"
@@ -383,9 +384,9 @@ namespace xt
     bool operator<(const xbounded_iterator<It, BIt>& lhs,
                    const xbounded_iterator<It, BIt>& rhs);
 
-    /*******************************
-    * trivial_begin / trivial_end *
-    *******************************/
+    /*****************************
+     * linear_begin / linear_end *
+     *****************************/
 
     namespace detail
     {
@@ -401,7 +402,7 @@ namespace xt
         };
 
         template <class C>
-        XTENSOR_CONSTEXPR_RETURN auto trivial_begin(C& c) noexcept
+        XTENSOR_CONSTEXPR_RETURN auto linear_begin(C& c) noexcept
         {
             return xtl::mpl::static_if<has_storage_iterator<C>::value>([&](auto self)
             {
@@ -413,7 +414,7 @@ namespace xt
         }
 
         template <class C>
-        XTENSOR_CONSTEXPR_RETURN auto trivial_end(C& c) noexcept
+        XTENSOR_CONSTEXPR_RETURN auto linear_end(C& c) noexcept
         {
             return xtl::mpl::static_if<has_storage_iterator<C>::value>([&](auto self)
             {
@@ -425,7 +426,7 @@ namespace xt
         }
 
         template <class C>
-        XTENSOR_CONSTEXPR_RETURN auto trivial_begin(const C& c) noexcept
+        XTENSOR_CONSTEXPR_RETURN auto linear_begin(const C& c) noexcept
         {
             return xtl::mpl::static_if<has_storage_iterator<C>::value>([&](auto self)
             {
@@ -437,7 +438,7 @@ namespace xt
         }
 
         template <class C>
-        XTENSOR_CONSTEXPR_RETURN auto trivial_end(const C& c) noexcept
+        XTENSOR_CONSTEXPR_RETURN auto linear_end(const C& c) noexcept
         {
             return xtl::mpl::static_if<has_storage_iterator<C>::value>([&](auto self)
             {

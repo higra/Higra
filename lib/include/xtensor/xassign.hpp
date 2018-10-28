@@ -95,17 +95,17 @@ namespace xt
         template <class E1, class E2>
         static bool resize(E1& e1, const E2& e2);
 
-        template <class E1, class F, class R, class... CT>
-        static bool resize(E1& e1, const xfunction<F, R, CT...>& e2);
+        template <class E1, class F, class... CT>
+        static bool resize(E1& e1, const xfunction<F, CT...>& e2);
 
     };
 
-    /*****************
-     * data_assigner *
-     *****************/
+    /********************
+     * stepper_assigner *
+     ********************/
 
     template <class E1, class E2, layout_type L>
-    class data_assigner
+    class stepper_assigner
     {
     public:
 
@@ -116,7 +116,7 @@ namespace xt
         using size_type = typename lhs_iterator::size_type;
         using difference_type = typename lhs_iterator::difference_type;
 
-        data_assigner(E1& e1, const E2& e2);
+        stepper_assigner(E1& e1, const E2& e2);
 
         void run();
 
@@ -136,13 +136,45 @@ namespace xt
         index_type m_index;
     };
 
-    /********************
-     * trivial_assigner *
-     ********************/
+    /*******************
+     * linear_assigner *
+     *******************/
 
     template <bool simd_assign>
-    struct trivial_assigner
+    class linear_assigner
     {
+    public:
+
+        template <class E1, class E2>
+        static void run(E1& e1, const E2& e2);
+    };
+
+    template <>
+    class linear_assigner<false>
+    {
+    public:
+
+        template <class E1, class E2>
+        static void run(E1& e1, const E2& e2);
+
+    private:
+
+        template <class E1, class E2>
+        static void run_impl(E1& e1, const E2& e2, std::true_type);
+
+        template <class E1, class E2>
+        static void run_impl(E1& e1, const E2& e2, std::false_type);
+    };
+
+    /*************************
+     * strided_loop_assigner *
+     *************************/
+
+    template <bool simd>
+    class strided_loop_assigner
+    {
+    public:
+
         template <class E1, class E2>
         static void run(E1& e1, const E2& e2);
     };
@@ -199,7 +231,7 @@ namespace xt
     namespace detail
     {
         template <class E1, class E2>
-        constexpr bool trivial_static_layout()
+        constexpr bool linear_static_layout()
         {
             // A row_major or column_major container with a dimension <= 1 is computed as
             // layout any, leading to some performance improvements, for example when
@@ -209,53 +241,11 @@ namespace xt
         }
 
         template <class E1, class E2>
-        inline bool is_trivial_broadcast(const E1& e1, const E2& e2)
+        inline bool is_linear_assign(const E1& e1, const E2& e2)
         {
-            return (E1::contiguous_layout && E2::contiguous_layout && trivial_static_layout<E1, E2>()) ||
-                   (e1.layout() != layout_type::dynamic && e2.is_trivial_broadcast(e1.strides()));
+            return (E1::contiguous_layout && E2::contiguous_layout && linear_static_layout<E1, E2>()) ||
+                   (e1.layout() != layout_type::dynamic && e2.has_linear_assign(e1.strides()));
         }
-
-        // TODO refactor with has_simd_interface
-        template <class E, class = void_t<>>
-        struct forbid_simd_assign
-        {
-            static constexpr bool value = true;
-        };
-
-        // Double steps check for xfunction because the default
-        // parameter void_t of forbid_simd_assign prevents additional
-        // specializations.
-        template <class E>
-        struct xfunction_forbid_simd;
-
-        template <class E>
-        struct forbid_simd_assign<E,
-            void_t<decltype(std::declval<E>().template load_simd<aligned_mode>(typename E::size_type(0)))>>
-        {
-            static constexpr bool value = false || xfunction_forbid_simd<E>::value;
-        };
-
-        template <class E>
-        struct xfunction_forbid_simd
-        {
-            static constexpr bool value = false;
-        };
-
-        template <class F, class R, class... CT>
-        struct xfunction_forbid_simd<xfunction<F, R, CT...>>
-        {
-            static constexpr bool value = xtl::disjunction<
-                std::integral_constant<bool, forbid_simd_assign<typename std::decay<CT>::type>::value>...>::value;
-        };
-
-        template <class F, class B, class = void>
-        struct has_simd_apply : std::false_type {};
-
-        template <class F, class B>
-        struct has_simd_apply<F, B, void_t<decltype(&F::template simd_apply<B>)>>
-            : std::true_type
-        {
-        };
 
         template <class E, class = void>
         struct has_step_leading : std::false_type
@@ -281,12 +271,12 @@ namespace xt
             static constexpr bool value = true;
         };
 
-        template <class F, class R, class... CT>
-        struct use_strided_loop<xfunction<F, R, CT...>>
+        template <class F, class... CT>
+        struct use_strided_loop<xfunction<F, CT...>>
         {
-            using simd_arg_type = typename xfunction<F, R, CT...>::simd_argument_type;
+            using simd_arg_type = typename xfunction<F, CT...>::simd_argument_type;
             static constexpr bool value = xtl::conjunction<use_strided_loop<std::decay_t<CT>>...>::value &&
-                                          has_simd_apply<F, simd_arg_type>::value;
+                                          xfunction<F, CT...>::has_simd_interface::value;
         };
     }
 
@@ -300,8 +290,8 @@ namespace xt
         static constexpr bool lhs_simd_size() { return xsimd::simd_traits<typename E1::value_type>::size > 1; }
         static constexpr bool rhs_simd_size() { return xsimd::simd_traits<typename E2::value_type>::size > 1; }
         static constexpr bool simd_size() { return lhs_simd_size() && rhs_simd_size(); }
-        static constexpr bool forbid_simd() { return detail::forbid_simd_assign<E2>::value; }
-        static constexpr bool simd_assign() { return contiguous_layout() && convertible_types() && simd_size() && !forbid_simd(); }
+        static constexpr bool forbid_simd() { return !has_simd_interface<E2>::value; }
+        static constexpr bool simd_assign() { return contiguous_layout() && convertible_types() && simd_size() && has_simd_interface<E2>::value; }
         static constexpr bool simd_strided_loop() { return convertible_types() && simd_size() &&
                                                            detail::use_strided_loop<E2>::value &&
                                                            detail::use_strided_loop<E1>::value; }
@@ -313,20 +303,20 @@ namespace xt
         E1& de1 = e1.derived_cast();
         const E2& de2 = e2.derived_cast();
 
-        bool trivial_broadcast = trivial && detail::is_trivial_broadcast(de1, de2);
-
-        if (trivial_broadcast)
+        bool linear_assign = trivial && detail::is_linear_assign(de1, de2);
+        constexpr bool simd_assign = xassign_traits<E1, E2>::simd_assign();
+        constexpr bool strided_simd_assign = xassign_traits<E1, E2>::simd_strided_loop();
+        if (linear_assign)
         {
-            constexpr bool simd_assign = xassign_traits<E1, E2>::simd_assign();
-            trivial_assigner<simd_assign>::run(de1, de2);
+            linear_assigner<simd_assign>::run(de1, de2);
         }
-        else if (xassign_traits<E1, E2>::simd_strided_loop())
+        else if (strided_simd_assign)
         {
-            strided_assign(de1, de2, std::integral_constant<bool, xassign_traits<E1, E2>::simd_strided_loop()>{});
+            strided_loop_assigner<strided_simd_assign>::run(de1, de2);
         }
         else
         {
-            data_assigner<E1, E2, default_assignable_layout(E1::static_layout)> assigner(de1, de2);
+            stepper_assigner<E1, E2, default_assignable_layout(E1::static_layout)> assigner(de1, de2);
             assigner.run();
         }
     }
@@ -421,18 +411,18 @@ namespace xt
     }
 
     template <class Tag>
-    template <class E1, class F, class R, class... CT>
-    inline bool xexpression_assigner<Tag>::resize(E1& e1, const xfunction<F, R, CT...>& e2)
+    template <class E1, class F, class... CT>
+    inline bool xexpression_assigner<Tag>::resize(E1& e1, const xfunction<F, CT...>& e2)
     {
-        return xtl::mpl::static_if<detail::is_fixed<typename xfunction<F, R, CT...>::shape_type>::value>(
+        return xtl::mpl::static_if<detail::is_fixed<typename xfunction<F, CT...>::shape_type>::value>(
             [&](auto /*self*/) {
                 /*
                  * If the shape of the xfunction is statically known, we can compute the broadcast triviality
                  * at compile time plus we can resize right away.
                  */
                 // resize in case LHS is not a fixed size container. If it is, this is a NOP
-                e1.resize(typename xfunction<F, R, CT...>::shape_type{});
-                return detail::static_trivial_broadcast<detail::is_fixed<typename xfunction<F, R, CT...>::shape_type>::value, CT...>::value;
+                e1.resize(typename xfunction<F, CT...>::shape_type{});
+                return detail::static_trivial_broadcast<detail::is_fixed<typename xfunction<F, CT...>::shape_type>::value, CT...>::value;
             },
             /* else */ [&](auto /*self*/)
             {
@@ -447,12 +437,12 @@ namespace xt
         );
     }
 
-    /********************************
-     * data_assigner implementation *
-     ********************************/
+    /***********************************
+     * stepper_assigner implementation *
+     ***********************************/
 
     template <class E1, class E2, layout_type L>
-    inline data_assigner<E1, E2, L>::data_assigner(E1& e1, const E2& e2)
+    inline stepper_assigner<E1, E2, L>::stepper_assigner(E1& e1, const E2& e2)
         : m_e1(e1), m_lhs(e1.stepper_begin(e1.shape())),
           m_rhs(e2.stepper_begin(e1.shape())),
           m_index(xtl::make_sequence<index_type>(e1.shape().size(), size_type(0)))
@@ -460,7 +450,7 @@ namespace xt
     }
 
     template <class E1, class E2, layout_type L>
-    inline void data_assigner<E1, E2, L>::run()
+    inline void stepper_assigner<E1, E2, L>::run()
     {
         using size_type = typename E1::size_type;
         using argument_type = std::decay_t<decltype(*m_rhs)>;
@@ -476,40 +466,40 @@ namespace xt
     }
 
     template <class E1, class E2, layout_type L>
-    inline void data_assigner<E1, E2, L>::step(size_type i)
+    inline void stepper_assigner<E1, E2, L>::step(size_type i)
     {
         m_lhs.step(i);
         m_rhs.step(i);
     }
 
     template <class E1, class E2, layout_type L>
-    inline void data_assigner<E1, E2, L>::step(size_type i, size_type n)
+    inline void stepper_assigner<E1, E2, L>::step(size_type i, size_type n)
     {
         m_lhs.step(i, n);
         m_rhs.step(i, n);
     }
 
     template <class E1, class E2, layout_type L>
-    inline void data_assigner<E1, E2, L>::reset(size_type i)
+    inline void stepper_assigner<E1, E2, L>::reset(size_type i)
     {
         m_lhs.reset(i);
         m_rhs.reset(i);
     }
 
     template <class E1, class E2, layout_type L>
-    inline void data_assigner<E1, E2, L>::to_end(layout_type l)
+    inline void stepper_assigner<E1, E2, L>::to_end(layout_type l)
     {
         m_lhs.to_end(l);
         m_rhs.to_end(l);
     }
 
-    /***********************************
-     * trivial_assigner implementation *
-     ***********************************/
+    /**********************************
+     * linear_assigner implementation *
+     **********************************/
 
     template <bool simd_assign>
     template <class E1, class E2>
-    inline void trivial_assigner<simd_assign>::run(E1& e1, const E2& e2)
+    inline void linear_assigner<simd_assign>::run(E1& e1, const E2& e2)
     {
         using lhs_align_mode = xsimd::container_alignment_t<E1>;
         constexpr bool is_aligned = std::is_same<lhs_align_mode, aligned_mode>::value;
@@ -531,12 +521,12 @@ namespace xt
         #if defined(XTENSOR_USE_TBB)
         tbb::parallel_for(align_begin, align_end, simd_size, [&](size_t i)
         {
-            e1.template store_simd<lhs_align_mode, simd_type>(i, e2.template load_simd<rhs_align_mode, simd_type>(i));
+            e1.template store_simd<lhs_align_mode>(i, e2.template load_simd<rhs_align_mode, value_type>(i));
         });
         #else
         for (size_type i = align_begin; i < align_end; i += simd_size)
         {
-            e1.template store_simd<lhs_align_mode, simd_type>(i, e2.template load_simd<rhs_align_mode, simd_type>(i));
+            e1.template store_simd<lhs_align_mode>(i, e2.template load_simd<rhs_align_mode, value_type>(i));
         }
         #endif
         for (size_type i = align_end; i < size; ++i)
@@ -545,57 +535,52 @@ namespace xt
         }
     }
 
-    namespace assigner_detail
-    {
-        template <class C, class It, class Ot>
-        inline void assign_loop(It src, Ot dst, std::size_t n)
-        {
-        #if defined(XTENSOR_USE_TBB)
-            tbb::parallel_for(std::ptrdiff_t(0), static_cast<std::ptrdiff_t>(n), [&](std::ptrdiff_t i)
-            {
-                *(dst + i) = static_cast<C>(*(src + i));
-            });
-        #else
-            for(; n > 0; --n)
-            {
-                *dst = static_cast<C>(*src);
-                ++src;
-                ++dst;
-            }
-        #endif
-        }
-
-        template <class E1, class E2>
-        inline void trivial_assigner_run_impl(E1& e1, const E2& e2, std::true_type)
-        {
-            auto src = detail::trivial_begin(e2);
-            auto dst = detail::trivial_begin(e1);
-            assign_loop<typename E1::value_type>(src, dst, e1.size());
-        }
-
-        template <class E1, class E2>
-        inline void trivial_assigner_run_impl(E1&, const E2&, std::false_type)
-        {
-            XTENSOR_PRECONDITION(false,
-                "Internal error: trivial_assigner called with unrelated types.");
-        }
-    }
-
-    template <>
     template <class E1, class E2>
-    inline void trivial_assigner<false>::run(E1& e1, const E2& e2)
+    inline void linear_assigner<false>::run(E1& e1, const E2& e2)
     {
         using is_convertible = std::is_convertible<typename std::decay_t<E2>::value_type,
                                                    typename std::decay_t<E1>::value_type>;
         // If the types are not compatible, this function is still instantiated but never called.
         // To avoid compilation problems in effectively unused code trivial_assigner_run_impl is
         // empty in this case.
-        assigner_detail::trivial_assigner_run_impl(e1, e2, is_convertible());
+        run_impl(e1, e2, is_convertible());
     }
 
-    /***********************
-     * Strided assign loop *
-     ***********************/
+    template <class E1, class E2>
+    inline void linear_assigner<false>::run_impl(E1& e1, const E2& e2, std::true_type /*is_convertible*/)
+    {
+        using value_type = typename E1::value_type;
+        using size_type = typename E1::size_type;
+        auto src = detail::linear_begin(e2);
+        auto dst = detail::linear_begin(e1);
+        size_type n = e1.size();
+
+#if defined(XTENSOR_USE_TBB)
+        tbb::parallel_for(std::ptrdiff_t(0), static_cast<std::ptrdiff_t>(n), [&](std::ptrdiff_t i)
+        {
+            *(dst + i) = static_cast<value_type>(*(src + i));
+        });
+#else
+        for (; n > size_type(0); --n)
+        {
+            *dst = static_cast<value_type>(*src);
+            ++src;
+            ++dst;
+        }
+#endif
+    }
+
+    template <class E1, class E2>
+    inline void linear_assigner<false>::run_impl(E1&, const E2&, std::false_type /*is_convertible*/)
+    {
+        XTENSOR_PRECONDITION(false,
+            "Internal error: linear_assigner called with unrelated types.");
+
+    }
+
+    /****************************************
+     * strided_loop_assigner implementation *
+     ****************************************/
 
     namespace strided_assign_detail
     {
@@ -689,8 +674,8 @@ namespace xt
                 return m_cut;
             }
 
-            template <class F, class R, class... CT>
-            std::size_t operator()(const xt::xfunction<F, R, CT...>& xf)
+            template <class F, class... CT>
+            std::size_t operator()(const xt::xfunction<F, CT...>& xf)
             {
                 xt::for_each(*this, xf.arguments());
                 return m_cut;
@@ -736,11 +721,12 @@ namespace xt
         }
     }
 
+    template <bool simd>
     template <class E1, class E2>
-    void strided_assign(E1& e1, const E2& e2, std::true_type /*enable*/)
+    inline void strided_loop_assigner<simd>::run(E1& e1, const E2& e2)
     {
         bool is_row_major = true;
-        using fallback_assigner = data_assigner<E1, E2, default_assignable_layout(E1::static_layout)>;
+        using fallback_assigner = stepper_assigner<E1, E2, default_assignable_layout(E1::static_layout)>;
 
         if (E1::static_layout == layout_type::dynamic)
         {
@@ -850,8 +836,9 @@ namespace xt
         }
     }
 
+    template <>
     template <class E1, class E2>
-    inline void strided_assign(E1& /*e1*/, const E2& /*e2*/, std::false_type /*disable*/)
+    inline void strided_loop_assigner<false>::run(E1& /*e1*/, const E2& /*e2*/)
     {
     }
 }

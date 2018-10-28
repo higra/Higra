@@ -13,6 +13,7 @@
 
 #include "xsimd_base.hpp"
 #include "xsimd_neon_bool.hpp"
+#include "xsimd_neon_utils.hpp"
 
 namespace xsimd
 {
@@ -36,6 +37,8 @@ namespace xsimd
 
     public:
 
+        using base_type = simd_batch<batch<uint8_t, 16>>;
+
         batch();
         explicit batch(uint8_t d);
 
@@ -51,11 +54,25 @@ namespace xsimd
 
         operator simd_type() const;
 
+        batch& load_aligned(const int8_t* src);
+        batch& load_unaligned(const int8_t* src);
+
         batch& load_aligned(const uint8_t* src);
         batch& load_unaligned(const uint8_t* src);
 
+        void store_aligned(int8_t* dst) const;
+        void store_unaligned(int8_t* dst) const;
+
         void store_aligned(uint8_t* dst) const;
         void store_unaligned(uint8_t* dst) const;
+
+        using base_type::load_aligned;
+        using base_type::load_unaligned;
+        using base_type::store_aligned;
+        using base_type::store_unaligned;
+
+        XSIMD_DECLARE_LOAD_STORE_INT8(uint8_t, 16);
+        XSIMD_DECLARE_LOAD_STORE_LONG(uint8_t, 16);
 
         uint8_t operator[](std::size_t index) const;
 
@@ -82,7 +99,7 @@ namespace xsimd
 
     template <class... Args, class>
     inline batch<uint8_t, 16>::batch(Args... args)
-        : m_value{args...}
+        : m_value{static_cast<uint8_t>(args)...}
     {
     }
 
@@ -112,6 +129,18 @@ namespace xsimd
         return *this;
     }
 
+    inline batch<uint8_t, 16>& batch<uint8_t, 16>::load_aligned(const int8_t* src)
+    {
+        m_value = vld1q_s8(src);
+        return *this;
+    }
+
+    inline batch<uint8_t, 16>& batch<uint8_t, 16>::load_unaligned(const int8_t* src)
+    {
+        return load_aligned(src);
+    }
+
+
     inline batch<uint8_t, 16>& batch<uint8_t, 16>::load_aligned(const uint8_t* src)
     {
         m_value = vld1q_u8(src);
@@ -123,6 +152,16 @@ namespace xsimd
         return load_aligned(src);
     }
 
+    inline void batch<uint8_t, 16>::store_aligned(int8_t* dst) const
+    {
+        vst1q_s8(dst, m_value);
+    }
+
+    inline void batch<uint8_t, 16>::store_unaligned(int8_t* dst) const
+    {
+        store_aligned(dst);
+    }
+
     inline void batch<uint8_t, 16>::store_aligned(uint8_t* dst) const
     {
         vst1q_u8(dst, m_value);
@@ -132,6 +171,9 @@ namespace xsimd
     {
         store_aligned(dst);
     }
+
+    XSIMD_DEFINE_LOAD_STORE_INT8(uint8_t, 16, 16)
+    XSIMD_DEFINE_LOAD_STORE_LONG(uint8_t, 16, 16)
 
     inline batch<uint8_t, 16>::operator uint8x16_t() const
     {
@@ -145,27 +187,6 @@ namespace xsimd
 
     namespace detail
     {
-
-#define XSIMD_INLINE_UNROLL_OP(op, i)  \
-    static_cast<uint8_t>(lhs[i] op rhs[i])
-
-#define XSIMD_INLINE_UNROLL_OP_16(op)  \
-    XSIMD_INLINE_UNROLL_OP(op, 0),     \
-    XSIMD_INLINE_UNROLL_OP(op, 1),     \
-    XSIMD_INLINE_UNROLL_OP(op, 2),     \
-    XSIMD_INLINE_UNROLL_OP(op, 3),     \
-    XSIMD_INLINE_UNROLL_OP(op, 4),     \
-    XSIMD_INLINE_UNROLL_OP(op, 5),     \
-    XSIMD_INLINE_UNROLL_OP(op, 6),     \
-    XSIMD_INLINE_UNROLL_OP(op, 7),     \
-    XSIMD_INLINE_UNROLL_OP(op, 8),     \
-    XSIMD_INLINE_UNROLL_OP(op, 9),     \
-    XSIMD_INLINE_UNROLL_OP(op, 10),    \
-    XSIMD_INLINE_UNROLL_OP(op, 11),    \
-    XSIMD_INLINE_UNROLL_OP(op, 12),    \
-    XSIMD_INLINE_UNROLL_OP(op, 13),    \
-    XSIMD_INLINE_UNROLL_OP(op, 14),    \
-    XSIMD_INLINE_UNROLL_OP(op, 15)     \
 
         template <>
         struct batch_kernel<uint8_t, 16>
@@ -196,20 +217,17 @@ namespace xsimd
 
             static batch_type div(const batch_type& lhs, const batch_type& rhs)
             {
-                return uint8x16_t{
-                    XSIMD_INLINE_UNROLL_OP_16(/)
-                };
+                return neon_detail::unroll_op<16, uint8x16_t, uint8_t>([&lhs, &rhs] (std::size_t idx) {
+                    return lhs[idx] / rhs[idx];
+                });
             }
 
             static batch_type mod(const batch_type& lhs, const batch_type& rhs)
             {
-                return uint8x16_t{
-                    XSIMD_INLINE_UNROLL_OP_16(%)
-                };
+                return neon_detail::unroll_op<16, uint8x16_t, uint8_t>([&lhs, &rhs] (std::size_t idx) {
+                    return lhs[idx] % rhs[idx];
+                });
             }
-
-#undef XSIMD_INLINE_UNROLL_OP
-#undef XSIMD_INLINE_UNROLL_OP_16
 
             static batch_bool_type eq(const batch_type& lhs, const batch_type& rhs)
             {
@@ -321,7 +339,7 @@ namespace xsimd
             switch(n)
             {
                 case 0: return lhs;
-                REPEAT_8(vshlq_n_u8, 0);
+                XSIMD_REPEAT_8(vshlq_n_u8);
                 default: break;
             }
             return batch<uint8_t, 16>(uint8_t(0));
@@ -332,7 +350,7 @@ namespace xsimd
             switch(n)
             {
                 case 0: return lhs;
-                REPEAT_8(vshrq_n_u8, 0);
+                XSIMD_REPEAT_8(vshrq_n_u8);
                 default: break;
             }
             return batch<uint8_t, 16>(uint8_t(0));

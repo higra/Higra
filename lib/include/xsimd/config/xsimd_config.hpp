@@ -11,8 +11,8 @@
 
 #include "xsimd_align.hpp"
 
-#define XSIMD_VERSION_MAJOR 6
-#define XSIMD_VERSION_MINOR 2
+#define XSIMD_VERSION_MAJOR 7
+#define XSIMD_VERSION_MINOR 1
 #define XSIMD_VERSION_PATCH 0
 
 #ifndef XSIMD_DEFAULT_ALLOCATOR
@@ -25,6 +25,12 @@
 
 #ifndef XSIMD_STACK_ALLOCATION_LIMIT
     #define XSIMD_STACK_ALLOCATION_LIMIT 20000
+#endif
+
+#if defined(__LP64__) || defined(_WIN64)
+    #define XSIMD_64_BIT_ABI
+#else
+    #define XSIMD_32_BIT_ABI
 #endif
 
 #endif

@@ -129,7 +129,7 @@ namespace xt
         bool broadcast_shape(O& shape, bool reuse_cache = false) const;
 
         template <class O>
-        bool is_trivial_broadcast(const O& strides) const noexcept;
+        bool has_linear_assign(const O& strides) const noexcept;
 
     protected:
 
@@ -738,13 +738,13 @@ namespace xt
     }
 
     /**
-     * Compares the specified strides with those of the view to see whether
-     * the broadcasting is trivial.
-     * @return a boolean indicating whether the broadcasting is trivial
+     * Checks whether the xstrided_view_base can be linearly assigned to an expression
+     * with the specified strides.
+     * @return a boolean indicating whether a linear assign is possible
      */
     template <class CT, class S, layout_type L, class FST>
     template <class O>
-    inline bool xstrided_view_base<CT, S, L, FST>::is_trivial_broadcast(const O& str) const noexcept
+    inline bool xstrided_view_base<CT, S, L, FST>::has_linear_assign(const O& str) const noexcept
     {
         return has_data_interface<std::decay_t<CT>>::value && str.size() == strides().size() &&
             std::equal(str.cbegin(), str.cend(), strides().begin());
@@ -868,6 +868,7 @@ namespace xt
         {
             const S& m_shape;
             mutable std::size_t idx;
+            using array_type = std::array<std::ptrdiff_t, 3>;
 
             explicit slice_getter_impl(const S& shape)
                 : m_shape(shape), idx(0)
@@ -875,16 +876,28 @@ namespace xt
             }
 
             template <class T>
-            std::array<std::ptrdiff_t, 3> operator()(const T& /*t*/) const
+            array_type operator()(const T& /*t*/) const
             {
-                return std::array<std::ptrdiff_t, 3>{{0, 0, 0}};
+                return array_type{{0, 0, 0}};
             }
 
             template <class A, class B, class C>
-            std::array<std::ptrdiff_t, 3> operator()(const xrange_adaptor<A, B, C>& range) const
+            array_type operator()(const xrange_adaptor<A, B, C>& range) const
             {
                 auto sl = range.get(static_cast<std::size_t>(m_shape[idx]));
-                return std::array<std::ptrdiff_t, 3>({sl(0), sl.size(), sl.step_size()});
+                return array_type({sl(0), sl.size(), sl.step_size()});
+            }
+
+            template <class T>
+            array_type operator()(const xrange<T>& range) const
+            {
+                return array_type({ range(T(0)), range.size(), T(1) });
+            }
+
+            template <class T>
+            array_type operator()(const xstepped_range<T>& range) const
+            {
+                return array_type({ range(T(0)), range.size(), range.step_size(T(0)) });
             }
         };
 

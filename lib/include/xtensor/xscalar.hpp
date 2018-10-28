@@ -150,7 +150,7 @@ namespace xt
         bool broadcast_shape(S& shape, bool reuse_cache = false) const noexcept;
 
         template <class S>
-        bool is_trivial_broadcast(const S& strides) const noexcept;
+        bool has_linear_assign(const S& strides) const noexcept;
 
         template <layout_type L = DL>
         iterator begin() noexcept;
@@ -246,8 +246,10 @@ namespace xt
 
         template <class align, class simd = simd_value_type>
         void store_simd(size_type i, const simd& e);
-        template <class align, class simd = simd_value_type>
-        simd load_simd(size_type i) const;
+        template <class align, class requested_type = value_type,
+                  std::size_t N = xsimd::simd_traits<requested_type>::size>
+        xsimd::simd_return_type<value_type, requested_type>
+        load_simd(size_type i) const;
 
     private:
 
@@ -422,32 +424,32 @@ namespace xt
     {
     };
 
-    /*******************************
-     * trivial_begin / trivial_end *
-     *******************************/
+    /*****************************
+     * linear_begin / linear_end *
+     *****************************/
 
     namespace detail
     {
         template <class CT>
-        constexpr auto trivial_begin(xscalar<CT>& c) noexcept -> decltype(c.dummy_begin())
+        constexpr auto linear_begin(xscalar<CT>& c) noexcept -> decltype(c.dummy_begin())
         {
             return c.dummy_begin();
         }
 
         template <class CT>
-        constexpr auto trivial_end(xscalar<CT>& c) noexcept -> decltype(c.dummy_end())
+        constexpr auto linear_end(xscalar<CT>& c) noexcept -> decltype(c.dummy_end())
         {
             return c.dummy_end();
         }
 
         template <class CT>
-        constexpr auto trivial_begin(const xscalar<CT>& c) noexcept -> decltype(c.dummy_begin())
+        constexpr auto linear_begin(const xscalar<CT>& c) noexcept -> decltype(c.dummy_begin())
         {
             return c.dummy_begin();
         }
 
         template <class CT>
-        constexpr auto trivial_end(const xscalar<CT>& c) noexcept -> decltype(c.dummy_end())
+        constexpr auto linear_end(const xscalar<CT>& c) noexcept -> decltype(c.dummy_end())
         {
             return c.dummy_end();
         }
@@ -620,7 +622,7 @@ namespace xt
 
     template <class CT>
     template <class S>
-    inline bool xscalar<CT>::is_trivial_broadcast(const S&) const noexcept
+    inline bool xscalar<CT>::has_linear_assign(const S&) const noexcept
     {
         return true;
     }
@@ -941,10 +943,11 @@ namespace xt
     }
 
     template <class CT>
-    template <class align, class simd>
-    inline auto xscalar<CT>::load_simd(size_type) const -> simd
+    template <class align, class requested_type, std::size_t N>
+    inline auto xscalar<CT>::load_simd(size_type) const
+        -> xsimd::simd_return_type<value_type, requested_type>
     {
-        return xsimd::set_simd<value_type, typename simd::value_type>(m_value);
+        return xsimd::set_simd<value_type, requested_type>(m_value);
     }
 
     template <class T>

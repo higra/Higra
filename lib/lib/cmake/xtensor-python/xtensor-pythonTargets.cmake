@@ -54,7 +54,7 @@ endif()
 add_library(xtensor-python INTERFACE IMPORTED)
 
 set_target_properties(xtensor-python PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "/home/perretb/Higra/lib/tmp/xtensor-python-0.20.1/;${_IMPORT_PREFIX}/include"
+  INTERFACE_INCLUDE_DIRECTORIES "/home/perretb/Higra/lib/tmp/xtensor-python-0.21.0/;${_IMPORT_PREFIX}/include"
   INTERFACE_LINK_LIBRARIES "xtensor"
 )
 

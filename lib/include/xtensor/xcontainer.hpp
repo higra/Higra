@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <iostream>
 #include <numeric>
 #include <stdexcept>
 
@@ -168,7 +167,7 @@ namespace xt
         bool broadcast_shape(S& shape, bool reuse_cache = false) const;
 
         template <class S>
-        bool is_trivial_broadcast(const S& strides) const noexcept;
+        bool has_linear_assign(const S& strides) const noexcept;
         template <class S>
 
         stepper stepper_begin(const S& shape) noexcept;
@@ -183,13 +182,14 @@ namespace xt
         reference data_element(size_type i);
         const_reference data_element(size_type i) const;
 
-        template <class simd>
-        using simd_return_type = xsimd::simd_return_type<value_type, typename simd::value_type>;
+        template <class requested_type>
+        using simd_return_type = xsimd::simd_return_type<value_type, requested_type>;
 
-        template <class align, class simd = simd_value_type>
+        template <class align, class simd>
         void store_simd(size_type i, const simd& e);
-        template <class align, class simd = simd_value_type>
-        simd_return_type<simd> load_simd(size_type i) const;
+        template <class align, class requested_type = value_type,
+                  std::size_t N = xsimd::simd_traits<requested_type>::size>
+        simd_return_type<requested_type> load_simd(size_type i) const;
 
         storage_iterator storage_begin() noexcept;
         storage_iterator storage_end() noexcept;
@@ -697,13 +697,13 @@ namespace xt
     }
 
     /**
-     * Compares the specified strides with those of the container to see whether
-     * the broadcasting is trivial.
-     * @return a boolean indicating whether the broadcasting is trivial
+     * Checks whether the xcontainer can be linearly assigned to an expression
+     * with the specified strides.
+     * @return a boolean indicating whether a linear assign is possible
      */
     template <class D>
     template <class S>
-    inline bool xcontainer<D>::is_trivial_broadcast(const S& str) const noexcept
+    inline bool xcontainer<D>::has_linear_assign(const S& str) const noexcept
     {
         return str.size() == strides().size() &&
             std::equal(str.cbegin(), str.cend(), strides().begin());
@@ -803,11 +803,12 @@ namespace xt
     }
 
     template <class D>
-    template <class alignment, class simd>
-    inline auto xcontainer<D>::load_simd(size_type i) const -> simd_return_type<simd>
+    template <class alignment, class requested_type, std::size_t N>
+    inline auto xcontainer<D>::load_simd(size_type i) const
+        -> simd_return_type<requested_type>
     {
         using align_mode = driven_align_mode_t<alignment, data_alignment>;
-        return xsimd::load_simd<value_type, typename simd::value_type>(&(storage()[i]), align_mode());
+        return xsimd::load_simd<value_type, requested_type>(&(storage()[i]), align_mode());
     }
 
     template <class D>
