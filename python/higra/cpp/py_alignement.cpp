@@ -108,6 +108,17 @@ struct def_align_hierarchy {
               doc,
               py::arg("graph"),
               py::arg("saliency_map"));
+        c.def("align_hierarchy", [](
+                      const hg::hierarchy_aligner &a,
+                      const pyarray<hg::index_t> &super_vertices,
+                      const hg::tree &t,
+                      const pyarray<value_t> &altitudes) {
+                  return a.align_hierarchy(super_vertices, t, altitudes);
+              },
+              doc,
+              py::arg("super_vertices"),
+              py::arg("tree"),
+              py::arg("altitudes"));
     }
 };
 

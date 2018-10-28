@@ -98,7 +98,8 @@ namespace hg {
             hg_assert_node_weights(tree_coarse, tree_coarse_node_altitudes);
             hg_assert_1d_array(tree_coarse_node_altitudes);
             hg_assert_1d_array(coarse_supervertices);
-            hg_assert(rag_fine.vertex_map.size() == coarse_supervertices.size(), "Dimensions of the two labelisations do not match.");
+            hg_assert(rag_fine.vertex_map.size() == coarse_supervertices.size(),
+                      "Dimensions of the two labelisations do not match.");
 
             auto &fine_supervertices = rag_fine.vertex_map;
             auto &rag = rag_fine.rag;
@@ -180,11 +181,34 @@ namespace hg {
             auto coarse_rag_edge_weights = rag_accumulate(coarse_rag.edge_map, saliency_map, accumulator_first());
             auto bpt_coarse_rag = bpt_canonical(coarse_rag.rag, coarse_rag_edge_weights);
 
-           auto coarse_sm_on_fine_rag =
+            auto coarse_sm_on_fine_rag =
                     alignement_internal::project_hierarchy(m_fine_rag,
                                                            coarse_rag.vertex_map,
                                                            bpt_coarse_rag.tree,
                                                            bpt_coarse_rag.altitudes);
+
+            return rag_back_project_weights(m_fine_rag.edge_map, coarse_sm_on_fine_rag);
+        }
+
+        template<typename T1, typename T2>
+        auto align_hierarchy(const xt::xexpression<T1> &xcoarse_supervertices,
+                             const hg::tree &tree,
+                             const xt::xexpression<T2> &xaltitudes) const {
+            HG_TRACE();
+            auto &coarse_supervertices = xcoarse_supervertices.derived_cast();
+            auto &altitudes = xaltitudes.derived_cast();
+            hg_assert_node_weights(tree, altitudes);
+            hg_assert_1d_array(altitudes);
+            hg_assert_1d_array(coarse_supervertices);
+            hg_assert_integral_value_type(coarse_supervertices);
+            hg_assert(coarse_supervertices.size() == m_fine_rag.vertex_map.size(),
+                      "Cannot align given hierarchy: incompatible sizes!");
+
+            auto coarse_sm_on_fine_rag =
+                    alignement_internal::project_hierarchy(m_fine_rag,
+                                                           coarse_supervertices,
+                                                           tree,
+                                                           altitudes);
 
             return rag_back_project_weights(m_fine_rag.edge_map, coarse_sm_on_fine_rag);
         }
@@ -206,8 +230,9 @@ namespace hg {
     template<typename graph_t, typename tree_t, typename T>
     auto make_hierarchy_aligner_from_hierarchy(const graph_t &graph, const tree_t &tree,
                                                const xt::xexpression<T> &altitudes) {
-        return hierarchy_aligner(make_region_adjacency_graph_from_labelisation(graph, labelisation_hierarchy_supervertices(tree,
-                                                                                                             altitudes)));
+        return hierarchy_aligner(
+                make_region_adjacency_graph_from_labelisation(graph, labelisation_hierarchy_supervertices(tree,
+                                                                                                          altitudes)));
     }
 
 }
