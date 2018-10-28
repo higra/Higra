@@ -37,6 +37,7 @@ namespace hg {
     auto reconstruct_leaf_data(const tree_t &tree,
                                const xt::xexpression<T1> &altitudes,
                                const xt::xexpression<T2> &deleted_nodes) {
+        HG_TRACE();
         auto reconstruction = propagate_sequential(tree,
                                                    altitudes,
                                                    deleted_nodes);
@@ -67,6 +68,7 @@ namespace hg {
     auto labelisation_horizontal_cut(const tree_t &tree,
                                      const xt::xexpression<T> &xaltitudes,
                                      const value_t threshold) {
+        HG_TRACE();
         auto &altitudes = xaltitudes.derived_cast();
         return reconstruct_leaf_data(tree,
                                      xt::arange(num_vertices(tree)),
@@ -91,6 +93,7 @@ namespace hg {
             typename T>
     auto labelisation_hierarchy_supervertices(const tree_t &tree,
                                               const xt::xexpression<T> &xaltitudes) {
+        HG_TRACE();
         auto &altitudes = xaltitudes.derived_cast();
         hg_assert_node_weights(tree, altitudes);
 
@@ -144,6 +147,7 @@ namespace hg {
             typename T>
     auto supervertices_hierarchy(const tree_t &tree,
                             const xt::xexpression<T> &xaltitudes) {
+        HG_TRACE();
         auto &altitudes = xaltitudes.derived_cast();
         hg_assert_node_weights(tree, altitudes);
 

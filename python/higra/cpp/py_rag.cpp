@@ -117,7 +117,7 @@ void py_init_rag(pybind11::module &m) {
             (m,
              "Create a region adjacency graph of the input graph with regions identified by the provided vertex labels.");
 
-    add_type_overloads<def_make_rag_cut<hg::ugraph>, HG_TEMPLATE_INTEGRAL_TYPES>
+    add_type_overloads<def_make_rag_cut<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
              "Create a region adjacency graph of the input graph with regions identified by the provided graph cut.");
 

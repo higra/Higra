@@ -64,7 +64,7 @@ def make_region_adjacency_graph_from_graph_cut(graph, edge_weights):
     :param edge_weights:
     :return:
     """
-    rag, vertex_map, edge_map = hg._make_region_adjacency_graph_from_labelisation(graph, vertex_labels)
+    rag, vertex_map, edge_map = hg._make_region_adjacency_graph_from_graph_cut(graph, edge_weights)
 
     hg.set_attribute(rag, "vertex_map", vertex_map)
     hg.set_attribute(rag, "edge_map", edge_map)

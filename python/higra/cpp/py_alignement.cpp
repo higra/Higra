@@ -130,7 +130,7 @@ void py_init_alignement(pybind11::module &m) {
 
     auto c = py::class_<hg::hierarchy_aligner>(m, "HierarchyAligner");
 
-    add_type_overloads<def_from_cut, HG_TEMPLATE_INTEGRAL_TYPES>
+    add_type_overloads<def_from_cut, HG_TEMPLATE_NUMERIC_TYPES>
             (c, "Create a hierarchy aligner based on a graph cut.");
 
     add_type_overloads<def_from_labelisation, HG_TEMPLATE_INTEGRAL_TYPES>

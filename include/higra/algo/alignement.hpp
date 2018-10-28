@@ -42,7 +42,7 @@ namespace hg {
              const xt::xexpression<T2> &xlabelisation_coarse,
              size_t num_regions_fine = 0,
              size_t num_regions_coarse = 0) {
-
+        HG_TRACE();
         auto &labelisation_fine = xlabelisation_fine.derived_cast();
         auto &labelisation_coarse = xlabelisation_coarse.derived_cast();
 
@@ -94,6 +94,12 @@ namespace hg {
         template<typename rag_t, typename T, typename tree_t, typename T2>
         auto project_hierarchy(const rag_t &rag_fine, const T &coarse_supervertices, const tree_t &tree_coarse,
                                const T2 &tree_coarse_node_altitudes) {
+            HG_TRACE();
+            hg_assert_node_weights(tree_coarse, tree_coarse_node_altitudes);
+            hg_assert_1d_array(tree_coarse_node_altitudes);
+            hg_assert_1d_array(coarse_supervertices);
+            hg_assert(rag_fine.vertex_map.size() == coarse_supervertices.size(), "Dimensions of the two labelisations do not match.");
+
             auto &fine_supervertices = rag_fine.vertex_map;
             auto &rag = rag_fine.rag;
 
@@ -102,6 +108,7 @@ namespace hg {
                     {num_edges(rag_fine.rag)});
 
             lca_fast lca(tree_coarse);
+
             for (auto e: edge_iterator(rag)) {
                 auto projected_lca = lca.lca(fine_to_coarse_map[source(e, rag)], fine_to_coarse_map[target(e, rag)]);
                 coarse_sm_on_fine_rag(index(e, rag)) = tree_coarse_node_altitudes(projected_lca);
@@ -145,6 +152,7 @@ namespace hg {
 
         template<typename T>
         auto align_hierarchy(const hg::tree &tree, const xt::xexpression<T> &xaltitudes) const {
+            HG_TRACE();
             auto &altitudes = xaltitudes.derived_cast();
             hg_assert_node_weights(tree, altitudes);
             hg_assert_1d_array(altitudes);
@@ -162,6 +170,7 @@ namespace hg {
 
         template<typename graph_t, typename T>
         auto align_hierarchy(const graph_t &graph, const xt::xexpression<T> &xsaliency_map) const {
+            HG_TRACE();
             auto &saliency_map = xsaliency_map.derived_cast();
             hg_assert_edge_weights(graph, saliency_map);
             hg_assert_1d_array(saliency_map);
@@ -170,11 +179,13 @@ namespace hg {
             auto coarse_rag = make_region_adjacency_graph_from_graph_cut(graph, saliency_map);
             auto coarse_rag_edge_weights = rag_accumulate(coarse_rag.edge_map, saliency_map, accumulator_first());
             auto bpt_coarse_rag = bpt_canonical(coarse_rag.rag, coarse_rag_edge_weights);
-            auto coarse_sm_on_fine_rag =
+
+           auto coarse_sm_on_fine_rag =
                     alignement_internal::project_hierarchy(m_fine_rag,
                                                            coarse_rag.vertex_map,
                                                            bpt_coarse_rag.tree,
                                                            bpt_coarse_rag.altitudes);
+
             return rag_back_project_weights(m_fine_rag.edge_map, coarse_sm_on_fine_rag);
         }
 
