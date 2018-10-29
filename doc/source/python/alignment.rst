@@ -1,7 +1,7 @@
-.. _alignement:
+.. _alignment:
 
-Algorithm for alignement problems
-=================================
+Algorithm for alignment problems
+================================
 
 .. autofunction:: higra.align_hierarchies
 

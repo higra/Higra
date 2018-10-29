@@ -19,7 +19,7 @@ Python modules
     :maxdepth: 2
     :caption: Algorithms:
 
-    Alignement </python/alignement.rst>
+    Alignment </python/alignment.rst>
     Graph core </python/graph_core.rst>
     Hierarchy core </python/hierarchy_core.rst>
     Tree accumulators </python/tree_accumulators.rst>

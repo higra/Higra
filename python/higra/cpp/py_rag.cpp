@@ -10,7 +10,7 @@
 
 #include "py_rag.hpp"
 #include "higra/algo/rag.hpp"
-#include "higra/algo/alignement.hpp"
+#include "higra/algo/alignment.hpp"
 #include "py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"

@@ -89,7 +89,7 @@ namespace hg {
                                                    num_vertices(coarse_rag.rag));
     }
 
-    namespace alignement_internal {
+    namespace alignment_internal {
 
         template<typename rag_t, typename T, typename tree_t, typename T2>
         auto project_hierarchy(const rag_t &rag_fine, const T &coarse_supervertices, const tree_t &tree_coarse,
@@ -162,7 +162,7 @@ namespace hg {
             auto sv_hierarchy = supervertices_hierarchy(tree, altitudes);
             auto altitudes_sv_hierarchy = xt::index_view(altitudes, sv_hierarchy.node_map);
             auto coarse_sm_on_fine_rag =
-                    alignement_internal::project_hierarchy(m_fine_rag,
+                    alignment_internal::project_hierarchy(m_fine_rag,
                                                            sv_hierarchy.supervertex_labelisation,
                                                            sv_hierarchy.tree,
                                                            altitudes_sv_hierarchy);
@@ -182,7 +182,7 @@ namespace hg {
             auto bpt_coarse_rag = bpt_canonical(coarse_rag.rag, coarse_rag_edge_weights);
 
             auto coarse_sm_on_fine_rag =
-                    alignement_internal::project_hierarchy(m_fine_rag,
+                    alignment_internal::project_hierarchy(m_fine_rag,
                                                            coarse_rag.vertex_map,
                                                            bpt_coarse_rag.tree,
                                                            bpt_coarse_rag.altitudes);
@@ -205,7 +205,7 @@ namespace hg {
                       "Cannot align given hierarchy: incompatible sizes!");
 
             auto coarse_sm_on_fine_rag =
-                    alignement_internal::project_hierarchy(m_fine_rag,
+                    alignment_internal::project_hierarchy(m_fine_rag,
                                                            coarse_supervertices,
                                                            tree,
                                                            altitudes);

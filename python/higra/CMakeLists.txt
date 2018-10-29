@@ -43,7 +43,7 @@ set(PYMODULE_COMPONENTS
 
 set(MODULE_FILES
         __init__.py
-        alignement.py
+        alignment.py
         data_cache.py
         graph_core.py
         graph_image.py

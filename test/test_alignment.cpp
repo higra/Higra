@@ -9,14 +9,14 @@
 ****************************************************************************/
 
 #include <boost/test/unit_test.hpp>
-#include "higra/algo/alignement.hpp"
+#include "higra/algo/alignment.hpp"
 #include "higra/image/graph_image.hpp"
 #include "test_utils.hpp"
 
 
 using namespace hg;
 
-BOOST_AUTO_TEST_SUITE(alignement_test);
+BOOST_AUTO_TEST_SUITE(alignment_test);
 
     BOOST_AUTO_TEST_CASE(test_project_fine_to_coarse_labelisation) {
 
@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_SUITE(alignement_test);
         BOOST_CHECK(ref_map == map);
     }
 
-    BOOST_AUTO_TEST_CASE(test_hierarchy_alignement) {
+    BOOST_AUTO_TEST_CASE(test_hierarchy_alignment) {
 
         auto g = get_4_adjacency_graph({3, 3});
         array_1d<int> fine_labels{0, 1, 2, 3, 4, 2, 3, 4, 2};
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_SUITE(alignement_test);
         BOOST_CHECK(sm2_k == sm_k_ref);
     }
 
-    BOOST_AUTO_TEST_CASE(test_hierarchy_alignement2) {
+    BOOST_AUTO_TEST_CASE(test_hierarchy_alignment2) {
 
         auto g = get_4_adjacency_graph({3, 3});
         array_1d<int> edge_weights{1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1};
