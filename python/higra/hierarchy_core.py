@@ -84,19 +84,19 @@ def simplify_tree(tree, deleted_vertices):
 
 
 @hg.data_consumer("altitudes", "lca_map")
-def saliency(tree, altitudes, lca_map, propagate_if_rag=True):
+def saliency(tree, altitudes, lca_map, handle_rag=True):
     """
     Compute the saliency map (ultra-metric distance) of the given tree.
 
     :param tree:
     :param altitudes: altitudes of the vertices of the tree
     :param lca_map: array containing the lowest common ancestor of the source and target vertices of each edge where saliency need to be computed
-    :param propagate_if_rag: if tree has been constructed on a rag, then saliency values will be propagated to the original graph, hence leading to a saliency on the original graph and not on the rag
+    :param handle_rag: if tree has been constructed on a rag, then saliency values will be propagated to the original graph, hence leading to a saliency on the original graph and not on the rag
     :return: edge saliency corresponding to the given tree
     """
     sm = altitudes[lca_map]
     graph = hg.get_attribute(tree, "leaf_graph")
-    if hg.get_attribute(graph, "pre_graph") and propagate_if_rag:
+    if hg.get_attribute(graph, "pre_graph") is not None and handle_rag:
         sm = hg.rag_back_project_edge_weights(graph, sm)
     return sm
 

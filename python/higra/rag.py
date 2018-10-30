@@ -68,6 +68,8 @@ def make_region_adjacency_graph_from_graph_cut(graph, edge_weights):
 
     hg.set_attribute(rag, "vertex_map", vertex_map)
     hg.set_attribute(rag, "edge_map", edge_map)
+    hg.set_attribute(vertex_map, "domain", graph)
+    hg.set_attribute(edge_map, "domain", graph)
     hg.set_attribute(rag, "pre_graph", graph)
 
     return rag

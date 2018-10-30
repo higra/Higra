@@ -33,34 +33,36 @@ def align_hierarchies(vertex_labels, other_hierarchies, graph):
     :return: a hierarchy or a list of hierarchies as saliency maps.
     """
     result = []
+    list_input = True
     try:
         _ = iter(other_hierarchies)
-    except TypeError: # other_hierachies is not iterable
-        other_hierarchies = (other_hierarchies, )
+    except TypeError:  # other_hierachies is not iterable
+        list_input = False
+        other_hierarchies = (other_hierarchies,)
 
     aligner = hg.HierarchyAligner.from_labelisation(graph, vertex_labels)
 
     for hierarchy in other_hierarchies:
         r = None
         if type(hierarchy) is hg.Tree:
-            super_vertices=None
+            super_vertices = None
             leaf_graph = hg.get_attribute(hierarchy, "leaf_graph")
-            if leaf_graph:
+            if leaf_graph is not None:
                 super_vertices = hg.get_attribute(leaf_graph, "vertex_map")
-            if super_vertices: #tree on rag
+            if super_vertices is not None:  # tree on rag
                 r = aligner.align_hierarchy(super_vertices, hierarchy, hg.get_attribute(hierarchy, "altitudes"))
             else:
                 r = aligner.align_hierarchy(hierarchy, hg.get_attribute(hierarchy, "altitudes"))
-        else: # saliency map
+        else:  # saliency map
             super_vertices = hg.get_attribute(hierarchy, "vertex_map")
-            if super_vertices: # defined on rag
+            if super_vertices is not None:  # defined on rag
                 bpt = hg.bpt_canonical(hierarchy)
                 r = aligner.align_hierarchy(super_vertices, bpt, hg.get_attribute(bpt, "altitudes"))
             else:
                 r = aligner.align_hierarchy(hierarchy, hg.get_attribute(hierarchy, "edge_weights"))
         hg.set_attribute(r, "domain", graph)
         result.append(r)
-    if len(result) == 1:
+    if not list_input:
         return result[0]
     return result
 

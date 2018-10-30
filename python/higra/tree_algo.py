@@ -45,18 +45,24 @@ def labelisation_horizontal_cut(tree, threshold, altitudes):
 
 
 @hg.data_consumer(altitudes="altitudes")
-def labelisation_hierarchy_supervertices(tree, altitudes):
+def labelisation_hierarchy_supervertices(tree, altitudes, handle_rag=True):
     """
     Labelize the tree leaves into supervertices.
 
     Two leaves are in the same supervertex if they have a common ancestor of altitude 0.
 
+    If handle_rag is True and the provided has been built on a region adjacency graph, then the labelisation
+    corresponding to the rag regions is returned.
+
     This functions guaranties that the labels are in the range [0, num_supervertices-1].
 
     :param tree:
     :param altitudes:
+    :param handle_rag:
     :return:
     """
+    graph = hg.get_attribute(tree, "leaf_graph")
+    if graph is not None and hg.get_attribute(graph, "vertex_map") is not None and handle_rag:
+        return hg.get_attribute(graph, "vertex_map")
+
     return hg._labelisation_hierarchy_supervertices(tree, altitudes)
-
-

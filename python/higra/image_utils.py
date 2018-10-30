@@ -11,6 +11,7 @@
 import higra as hg
 import numpy as np
 
+
 def triangular_filter(image, size):
     """
     Compute a triangular filter on the given 2d image.
@@ -59,6 +60,7 @@ def mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations=None):
         doi: 10.1109/TPAMI.2010.161
 
     This does not include gradient estimation.
+    The final sigmoid scaling of the hierarchy altitude is not performed.
 
     :param graph: must be a 4 adjacency graph
     :param shape: (height, width)
@@ -73,8 +75,53 @@ def mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations=None):
     hg.set_attribute(rag, "vertex_map", vertex_map)
     hg.set_attribute(rag, "edge_map", edge_map)
     hg.set_attribute(rag, "pre_graph", graph)
+    hg.set_attribute(vertex_map, "domain", graph)
+    hg.set_attribute(edge_map, "domain", graph)
 
     hg.set_attribute(tree, "leaf_graph", rag)
     hg.set_attribute(tree, "altitudes", altitudes)
 
     return tree
+
+
+@hg.data_consumer("shape")
+def multiscale_mean_pb_hierarchy(graph, shape, fine_edge_weights, others_edge_weights, edge_orientations=None):
+    """
+    Compute the multiscale mean pb hierarchy as described in :
+    J. Pont-Tuset, P. Arbeláez, J. Barron, F. Marques, and J. Malik
+    Multiscale Combinatorial Grouping for Image Segmentation and Object Proposal Generation
+    IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI), vol. 39, no. 1, pp. 128 - 140, 2017.
+    and in:
+    K.K. Maninis, J. Pont-Tuset, P. Arbeláez and L. Van Gool
+    Convolutional Oriented Boundaries: From Image Segmentation to High-Level Tasks
+    IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI), vol. 40, no. 4, pp. 819 - 833, 2018.
+
+    This does not include gradient estimation.
+    The final sigmoid scaling of the hierarchy altitude is not performed.
+
+    :param graph: must be a 4 adjacency graph
+    :param shape: (height, width)
+    :param fine_edge_weights: edge weights of the finest gradient
+    :param others_edge_weights: tuple of gradient value on edges
+    :param edge_orientations: estimates orientation of the gradient on edges
+    :return: the hierarchy defined on the finest gradient watershed super-pixels
+    """
+
+    shape = hg.normalize_shape(shape)
+    tree_fine = hg.mean_pb_hierarchy(graph, shape, fine_edge_weights, edge_orientations)
+    saliency_fine = hg.saliency(tree_fine)
+    super_vertex_fine = hg.labelisation_hierarchy_supervertices(tree_fine)
+
+    other_hierarchies = []
+    for edge_weights in others_edge_weights:
+        tree_coarse = hg.mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations)
+        other_hierarchies.append(tree_coarse)
+
+    aligned_saliencies = hg.align_hierarchies(super_vertex_fine, other_hierarchies)
+
+    for saliency in aligned_saliencies:
+        saliency_fine += saliency
+
+    saliency_fine *= (1.0 / (1 + len(others_edge_weights)))
+
+    return hg.mean_pb_hierarchy(graph, shape, saliency_fine)
