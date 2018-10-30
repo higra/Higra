@@ -36,7 +36,7 @@ class TestAlgorithmTree(unittest.TestCase):
                           (4, 5),
                           (7, 2)), dtype=np.int32)
 
-        self.assertTrue(np.all(ref==output))
+        self.assertTrue(np.all(ref == output))
 
     def test_labelisation_horizontal_cut(self):
         tree = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
@@ -68,7 +68,6 @@ class TestAlgorithmTree(unittest.TestCase):
         self.assertTrue(np.amax(output) == 2)
         self.assertTrue(np.amin(output) == 0)
 
-
     def test_tree_isomorphism(self):
         t1 = hg.Tree(np.asarray((5, 5, 6, 6, 7, 8, 7, 8, 8)))
         t2 = hg.Tree(np.asarray((6, 6, 5, 5, 7, 7, 8, 8, 8)))
@@ -89,6 +88,18 @@ class TestAlgorithmTree(unittest.TestCase):
         self.assertTrue(not hg.test_tree_isomorphism(t4, t1))
         self.assertTrue(not hg.test_tree_isomorphism(t4, t2))
         self.assertTrue(not hg.test_tree_isomorphism(t4, t3))
+
+    def test_filter_binary_partition_tree(self):
+        g = hg.get_4_adjacency_graph((1, 8))
+        edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
+        tree = hg.bpt_canonical(g, edge_weights=edge_weights)
+        area = hg.attribute_area(tree)
+        area_min_children = hg.accumulate_parallel(tree, area, hg.Accumulators.min)
+        res = hg.filter_binary_partition_tree(tree, area_min_children <= 2)
+
+        sm = hg.saliency(res)
+        sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
+        self.assertTrue(np.all(sm == sm_ref))
 
 
 if __name__ == '__main__':

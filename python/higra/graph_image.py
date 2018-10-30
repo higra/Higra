@@ -38,6 +38,7 @@ def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False):
 
     hg.set_attribute(graph, "shape", embedding.shape())
     hg.set_attribute(graph, "edge_weights", edge_weights)
+    hg.set_attribute(edge_weights, "domain", graph)
 
     return graph
 

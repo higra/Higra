@@ -66,3 +66,23 @@ def labelisation_hierarchy_supervertices(tree, altitudes, handle_rag=True):
         return hg.get_attribute(graph, "vertex_map")
 
     return hg._labelisation_hierarchy_supervertices(tree, altitudes)
+
+
+@hg.data_consumer("mst", "altitudes")
+def filter_binary_partition_tree(tree, deleted_frontier_nodes, mst, altitudes):
+    """
+    Filter the given binary partition tree according to the given list of frontiers to remove.
+
+    In a binary a tree, each inner node (non leaf node) is associated to the frontier separating its two children.
+    If this node frontier is marked for deletion then the corresponding frontier is removed
+    effectively merging its two children.
+
+    :param tree: input binary partition tree (should be constructed with the function `bpt_canonical`)
+    :param deleted_frontier_nodes: a boolean array indicating for each node of the tree is its children must be merged (True) or not (False)
+    :return: a filtered binary partition tree
+    """
+
+    mst_edge_weights = altitudes[tree.num_leaves():]
+    mst_edge_weights[deleted_frontier_nodes[tree.num_leaves():]] = 0
+    return hg.bpt_canonical(mst, edge_weights=mst_edge_weights)
+
