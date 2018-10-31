@@ -84,9 +84,6 @@ class DataCache:
         self.__data.clear()
 
 
-
-
-
 def list_data_providers():
     for p in hg.__data_providers:
         print(hg.__data_providers[p])
@@ -102,6 +99,25 @@ def get_attribute(key, attribute_name):
 
 def set_attribute(key, attribute_name, attribute):
     hg.__higra_global_cache.get_data(key)[attribute_name] = attribute
+
+
+def get_tags(key):
+    return hg.__higra_global_cache.get_data(key).setdefault("__tags__", set())
+
+
+def add_tag(key, tag):
+    tags = get_tags(key)
+    tags.add(tag)
+
+
+def remove_tag(key, tag):
+    tags = get_tags(key)
+    tags.remove(tag)
+
+
+def has_tag(key, tag):
+    tags = get_tags(key)
+    return tag in tags
 
 
 def clear_attributes(key, *attribute_name):
