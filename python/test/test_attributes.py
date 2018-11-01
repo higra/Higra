@@ -59,70 +59,70 @@ class TestAttributes(unittest.TestCase):
 
         g = hg.get_4_adjacency_graph((3, 3))
         edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
-        hg.set_attribute(g, "edge_weights", edge_weights)
+        hg.CptEdgeWeightedGraph.link(edge_weights, g)
 
-        return hg.bpt_canonical(g)
+        return hg.bpt_canonical(edge_weights)
 
     def setUp(self):
         hg.clear_all_attributes()
 
-    def test_create_area(self):
-        t = TestAttributes.get_test_tree()
+    def test_area(self):
+        tree, altitudes = TestAttributes.get_test_tree()
 
         ref_area = [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 4, 7, 9]
-        area = hg.attribute_area(t)
+        area = hg.attribute_area(tree)
         self.assertTrue(np.allclose(ref_area, area))
 
         leaf_area = np.asarray([1, 2, 1, 1, 2, 1, 1, 1, 3])
         ref_area = [1, 2, 1, 1, 2, 1, 1, 1, 3, 3, 2, 3, 2, 5, 5, 10, 13]
-        area = hg.attribute_area(t, leaf_area=leaf_area, force_recompute=True)
+        area = hg.attribute_area(tree, leaf_area=leaf_area, force_recompute=True)
         self.assertTrue(np.allclose(ref_area, area))
 
     def test_volume(self):
-        t = TestAttributes.get_test_tree()
+        tree, altitudes = TestAttributes.get_test_tree()
 
         ref_attribute = [0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 4, 8, 2, 9, 12, 28, 36]
-        attribute = hg.attribute_volume(t)
+        attribute = hg.attribute_volume(altitudes)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_lca_map(self):
-        t = TestAttributes.get_test_tree()
+        tree, altitudes = TestAttributes.get_test_tree()
 
         ref_attribute = [9, 16, 14, 16, 10, 11, 16, 16, 16, 15, 12, 13]
-        attribute = hg.attribute_lca_map(t)
+        attribute = hg.attribute_lca_map(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_frontier_length(self):
-        t = TestAttributes.get_test_tree()
+        tree, altitudes = TestAttributes.get_test_tree()
 
         ref_attribute = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 5]
-        attribute = hg.attribute_frontier_length(t)
+        attribute = hg.attribute_frontier_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_perimeter_length(self):
-        t = TestAttributes.get_test_tree()
+        tree, altitudes = TestAttributes.get_test_tree()
 
         ref_attribute = [2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 0]
-        attribute = hg.attribute_perimeter_length(t)
+        attribute = hg.attribute_perimeter_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
-        leaf_perimeter = 4 + np.zeros((t.num_leaves(),))
+        leaf_perimeter = 4 + np.zeros((tree.num_leaves(),))
         ref_attribute = [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 8, 10, 16, 12]
-        attribute = hg.attribute_perimeter_length(t, leaf_perimeter=leaf_perimeter, force_recompute=True)
+        attribute = hg.attribute_perimeter_length(tree, leaf_perimeter=leaf_perimeter, force_recompute=True)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_compactness(self):
-        t = TestAttributes.get_test_tree()
+        tree, altitudes = TestAttributes.get_test_tree()
 
-        hg.set_attribute(hg.get_attribute(t, "leaf_graph"), "vertex_perimeter",
-                         4 + np.zeros((t.num_leaves(),), dtype=np.int64))
+        hg.set_attribute(hg.get_attribute(tree, "leaf_graph"), "vertex_perimeter",
+                         4 + np.zeros((tree.num_leaves(),), dtype=np.int64))
         ref_attribute = [1., 1., 1., 1., 1., 1., 1., 1., 1., 0.88888889, 0.88888889, 0.88888889, 0.88888889, 0.75, 0.64,
                          0.4375, 1.]
-        attribute = hg.attribute_compactness(t)
+        attribute = hg.attribute_compactness(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_mean_weights(self):
-        t = TestAttributes.get_test_tree()
+        tree, altitudes = TestAttributes.get_test_tree()
 
         leaf_data = np.asarray(((0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8)),
                                dtype=np.float64)
@@ -130,7 +130,7 @@ class TestAttributes(unittest.TestCase):
                                     (1. / 2, 1. / 2), (7. / 2, 7. / 2), (7. / 2, 7. / 2), (13. / 2, 13. / 2), (7., 7.),
                                     (2., 2.), (29. / 7, 29. / 7), (4., 4.)))
 
-        attribute = hg.attribute_mean_weights(t, leaf_data=leaf_data)
+        attribute = hg.attribute_mean_weights(tree, leaf_data=leaf_data)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
 

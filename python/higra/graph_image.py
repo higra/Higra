@@ -10,8 +10,9 @@
 
 import higra as hg
 
-@hg.data_consumer("shape", "edge_weights")
-def graph_4_adjacency_2_khalimsky(graph, shape, edge_weights, add_extra_border=False):
+
+@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", hg.CptGridGraph))
+def graph_4_adjacency_2_khalimsky(edge_weights, graph, shape, add_extra_border=False):
     """
     Create a contour image in the Khalimsky grid from a 4 adjacency edge-weighted graph.
 
@@ -36,9 +37,8 @@ def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False):
 
     graph, embedding, edge_weights = hg._khalimsky_2_graph_4_adjacency(khalimsky, extra_border)
 
-    hg.set_attribute(graph, "shape", embedding.shape())
-    hg.set_attribute(graph, "edge_weights", edge_weights)
-    hg.set_attribute(edge_weights, "domain", graph)
+    hg.CptEdgeWeightedGraph.link(edge_weights, graph)
+    hg.CptGridGraph.link(graph, embedding.shape())
 
     return graph
 
@@ -50,7 +50,7 @@ def get_4_adjacency_graph(shape):
     :return: Graph (with attribute "shape")
     """
     graph = hg._get_4_adjacency_graph(shape)
-    hg.set_attribute(graph, "shape", shape)
+    hg.CptGridGraph.link(graph, shape)
     return graph
 
 
@@ -61,7 +61,7 @@ def get_8_adjacency_graph(shape):
     :return: Graph (with attribute "shape")
     """
     graph = hg._get_8_adjacency_graph(shape)
-    hg.set_attribute(graph, "shape", shape)
+    hg.CptGridGraph.link(graph, shape)
     return graph
 
 
@@ -72,7 +72,7 @@ def get_4_adjacency_implicit_graph(shape):
     :return: Graph (with attribute "shape")
     """
     graph = hg._get_4_adjacency_implicit_graph(shape)
-    hg.set_attribute(graph, "shape", shape)
+    hg.CptGridGraph.link(graph, shape)
     return graph
 
 
@@ -83,5 +83,5 @@ def get_8_adjacency_implicit_graph(shape):
     :return: Graph (with attribute "shape")
     """
     graph = hg._get_8_adjacency_implicit_graph(shape)
-    hg.set_attribute(graph, "shape", shape)
+    hg.CptGridGraph.link(graph, shape)
     return graph

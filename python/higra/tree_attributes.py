@@ -35,8 +35,8 @@ def attribute_area(tree, leaf_area):
 
 
 @hg.data_provider("volume")
-@hg.data_consumer("area", "altitudes")
-def attribute_volume(tree, area, altitudes):
+@hg.argument_helper(hg.CptValuedHierarchy, ("tree", "area"))
+def attribute_volume(altitudes, tree, area):
     height = np.abs(altitudes[tree.parents()] - altitudes)
     height = height * area
     volume_leaves = height[:tree.num_leaves()]
@@ -44,7 +44,7 @@ def attribute_volume(tree, area, altitudes):
 
 
 @hg.data_provider("lca_map")
-@hg.data_consumer("leaf_graph")
+@hg.argument_helper(hg.CptHierarchy)
 def attribute_lca_map(tree, leaf_graph):
     lca = hg.LCAFast(tree)
     return lca.lca(leaf_graph)

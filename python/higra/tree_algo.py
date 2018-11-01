@@ -68,8 +68,8 @@ def labelisation_hierarchy_supervertices(tree, altitudes, handle_rag=True):
     return hg._labelisation_hierarchy_supervertices(tree, altitudes)
 
 
-@hg.data_consumer("mst", "altitudes")
-def filter_binary_partition_tree(tree, deleted_frontier_nodes, mst, altitudes):
+@hg.argument_helper(hg.CptValuedHierarchy, ("tree", hg.CptBinaryHierarchy))
+def filter_binary_partition_tree(altitudes, deleted_frontier_nodes, tree, mst):
     """
     Filter the given binary partition tree according to the given list of frontiers to remove.
 
@@ -84,5 +84,5 @@ def filter_binary_partition_tree(tree, deleted_frontier_nodes, mst, altitudes):
 
     mst_edge_weights = altitudes[tree.num_leaves():]
     mst_edge_weights[deleted_frontier_nodes[tree.num_leaves():]] = 0
-    return hg.bpt_canonical(mst, edge_weights=mst_edge_weights)
+    return hg.bpt_canonical(mst_edge_weights, mst)
 

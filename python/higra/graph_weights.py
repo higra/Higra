@@ -11,8 +11,8 @@
 import higra as hg
 
 
-@hg.data_consumer("vertex_weights")
-def weight_graph(graph, vertex_weights, weight_function):
+@hg.argument_helper(hg.CptVertexWeightedGraph)
+def weight_graph(vertex_weights, graph, weight_function):
     """
     Compute the edge weights of a graph using source and target vertices values
     and specified weighting function (see WeightFunction enumeration).
@@ -41,8 +41,8 @@ def weight_graph(graph, vertex_weights, weight_function):
         vertex_weights = vertex_weights.reshape([num_vertices] + [shape[i] for i in range(collapse + 1, len(shape))])
 
     edge_weights = hg._weight_graph(graph, vertex_weights, weight_function)
-    hg.set_attribute(graph, "vertex_weights", vertex_weights)
-    hg.set_attribute(graph, "edge_weights", edge_weights)
+
+    hg.CptEdgeWeightedGraph.link(edge_weights, graph)
 
     return edge_weights
 
@@ -61,6 +61,6 @@ def weight_graph_function(graph, weight_function):
 
     edge_weights = hg._weight_graph(graph, weight_function)
 
-    hg.set_attribute(graph, "edge_weights", edge_weights)
+    hg.CptEdgeWeightedGraph.link(edge_weights, graph)
 
     return edge_weights

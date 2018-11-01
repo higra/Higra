@@ -11,8 +11,8 @@
 import higra as hg
 
 
-@hg.data_consumer("edge_weights")
-def bpt_canonical(graph, edge_weights):
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def bpt_canonical(edge_weights, graph):
     """
     Compute the canonical binary partition tree (binary tree by altitude ordering) of the given weighted graph.
 
@@ -26,18 +26,17 @@ def bpt_canonical(graph, edge_weights):
     altitudes = res.altitudes()
     mst = res.mst()
 
-    original_graph = hg.get_attribute(graph, "original_graph")
-    if original_graph:
-        hg.set_attribute(tree, "leaf_graph", original_graph)
-        hg.set_attribute(mst, "original_graph", original_graph)
+    if hg.CptMinimumSpanningTree.validate(graph):
+        leaf_graph = hg.CptMinimumSpanningTree.construct(graph)["base_graph"]
     else:
-        hg.set_attribute(tree, "leaf_graph", graph)
-        hg.set_attribute(mst, "original_graph", graph)
+        leaf_graph = graph
 
-    hg.set_attribute(tree, "altitudes", altitudes)
-    hg.set_attribute(tree, "mst", mst)
+    hg.CptMinimumSpanningTree.link(mst, leaf_graph)
+    hg.CptHierarchy.link(tree, leaf_graph)
+    hg.CptBinaryHierarchy.link(tree, mst)
+    hg.CptValuedHierarchy.link(altitudes, tree)
 
-    return tree
+    return tree, altitudes
 
 
 @hg.data_consumer("edge_weights")
@@ -83,21 +82,22 @@ def simplify_tree(tree, deleted_vertices):
     return new_tree
 
 
-@hg.data_consumer("altitudes", "lca_map")
-def saliency(tree, altitudes, lca_map, handle_rag=True):
+@hg.argument_helper(hg.CptValuedHierarchy, ("tree", "lca_map"))
+def saliency(altitudes, leaf_graph, lca_map, handle_rag=True):
     """
     Compute the saliency map (ultra-metric distance) of the given tree.
 
-    :param tree:
     :param altitudes: altitudes of the vertices of the tree
     :param lca_map: array containing the lowest common ancestor of the source and target vertices of each edge where saliency need to be computed
     :param handle_rag: if tree has been constructed on a rag, then saliency values will be propagated to the original graph, hence leading to a saliency on the original graph and not on the rag
     :return: edge saliency corresponding to the given tree
     """
     sm = altitudes[lca_map]
-    graph = hg.get_attribute(tree, "leaf_graph")
-    if hg.get_attribute(graph, "pre_graph") is not None and handle_rag:
-        sm = hg.rag_back_project_edge_weights(graph, sm)
+    if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and handle_rag:
+        sm = hg.rag_back_project_edge_weights(leaf_graph, sm)
+        hg.CptSaliencyMap.link(sm, hg.CptRegionAdjacencyGraph.construct(leaf_graph)["pre_graph"])
+    else:
+        hg.CptSaliencyMap.link(sm, leaf_graph)
     return sm
 
 
@@ -160,7 +160,7 @@ def binary_partition_tree_single_linkage(graph, edge_weights):
     :return:
     """
 
-    return bpt_canonical(graph, edge_weights)
+    return bpt_canonical(edge_weights, graph)
 
 
 @hg.data_consumer("edge_weights")

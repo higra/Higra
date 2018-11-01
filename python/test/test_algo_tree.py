@@ -92,12 +92,12 @@ class TestAlgorithmTree(unittest.TestCase):
     def test_filter_binary_partition_tree(self):
         g = hg.get_4_adjacency_graph((1, 8))
         edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
-        tree = hg.bpt_canonical(g, edge_weights=edge_weights)
+        tree, altitudes = hg.bpt_canonical(edge_weights, g)
         area = hg.attribute_area(tree)
         area_min_children = hg.accumulate_parallel(tree, area, hg.Accumulators.min)
-        res = hg.filter_binary_partition_tree(tree, area_min_children <= 2)
+        res_tree, res_altitudes = hg.filter_binary_partition_tree(altitudes, area_min_children <= 2)
 
-        sm = hg.saliency(res)
+        sm = hg.saliency(res_altitudes)
         sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
         self.assertTrue(np.all(sm == sm_ref))
 

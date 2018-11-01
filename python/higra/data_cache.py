@@ -280,3 +280,77 @@ def data_consumer(*dependencies, **dependencies_path):
         return wrapper
 
     return decorator
+
+
+def __resolve_concept(arg_name, concept, all_parameters_name,all_data_found,kwargs,data_cache):
+    if not type(concept) is type:
+        concept_type = type(concept)
+        concept_name_to_arg_name_map = concept.name_mapping
+    else:
+        concept_type = concept
+        concept_name_to_arg_name_map = {}
+
+    if not issubclass(concept_type, hg.Concept):
+        raise Exception(str(concept_type) + " is not a subclass of the abstract Concept class.")
+    if arg_name in all_data_found:
+        arg_value = all_data_found[arg_name]
+        concept_elements = concept_type.construct(arg_value, strict=False)
+
+        for data_element_name, data_element in concept_elements.items():
+            argument_name = concept_name_to_arg_name_map.get(data_element_name, data_element_name)
+            if argument_name not in kwargs and argument_name in all_parameters_name:
+                kwargs[argument_name] = data_element
+
+        all_data_found.update(concept_elements)
+
+
+def argument_helper(*concepts):
+    def decorator(fun):
+
+        signature = inspect.signature(fun)
+        all_parameters_name = set()
+        for p in signature.parameters.values():
+            all_parameters_name.add(p.name)
+
+        @functools.wraps(fun)
+        def wrapper(*args, **kwargs):
+            args = __transfer_to_kw_arguments(signature, args, kwargs)
+            data_debug = kwargs.pop("data_debug", False)
+            data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
+            all_data_found = dict(kwargs)
+            for concept_elem in concepts:
+
+                try:
+                    arg_name, concept = concept_elem
+                except:  # failed to unpack, use first parameter name
+                    concept = concept_elem
+                    arg_name = signature.parameters.values().__iter__().__next__().name
+
+                if type(concept) is type or issubclass(type(concept), hg.Concept):
+                    __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache)
+                else:
+                    try:
+                        if arg_name in all_data_found:
+                            arg_value = all_data_found[arg_name]
+                        else:
+                            arg_value = None
+                        __resolve_dependency(arg_value, concept, concept, data_cache, kwargs)
+
+                    except __CacheLookupException as e:
+                        if data_debug:
+                            err = "Error during the resolution of the arguments of the function '" \
+                                  + fun.__name__
+                            raise Exception(err) from e
+                        else:  # swallow exception chain for readability
+                            err = "Error during the resolution of the arguments of the function '" + fun.__name__ + "'.\n" \
+                                  + str(e) \
+                                  + "\nYou can call your function with the extra parameter 'data_debug=True' to " \
+                                    "get more information about this error."
+                            raise Exception(err) from None
+            return fun(*args, **kwargs)
+
+        wrapper.original = fun
+
+        return wrapper
+
+    return decorator

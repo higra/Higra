@@ -74,24 +74,24 @@ class CptC(hg.Concept):
 
 
 # simple implicit arg name
-@hg.data_concepts(CptA)
+@hg.argument_helper(CptA)
 def concept_consumer1(obj, ea1):
     return ea1
 
 
 #  renamed argument
-@hg.data_concepts(CptA(ea1="new_name"))
+@hg.argument_helper(CptA(ea1="new_name"))
 def concept_consumer2(obj, new_name):
     return new_name
 
 
 # missing concepts elements in arguments
-@hg.data_concepts(CptB)
+@hg.argument_helper(CptB)
 def concept_consumer3(obj, ea1):
     return ea1
 
 # chained concepts
-@hg.data_concepts(CptA, ("ea1", CptC))
+@hg.argument_helper(CptA, ("ea1", CptC))
 def concept_consumer4(obj, ec1):
     return ec1
 

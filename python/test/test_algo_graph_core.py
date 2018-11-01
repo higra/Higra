@@ -19,7 +19,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph = hg.get_4_adjacency_graph((3, 3))
         edge_weights = np.asarray((1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0), dtype=np.int32)
 
-        labels = hg.graph_cut_2_labelisation(graph, edge_weights)
+        labels = hg.graph_cut_2_labelisation(edge_weights, graph)
 
         ref_labels = np.asarray((1, 2, 2, 1, 1, 3, 1, 3, 3), dtype=np.int32)
         self.assertTrue(hg.is_in_bijection(labels, ref_labels))
@@ -28,7 +28,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph = hg.get_4_adjacency_graph((3, 3))
         labels = np.asarray((1, 2, 2, 1, 1, 3, 1, 3, 3), dtype=np.int32)
 
-        edge_weights = hg.labelisation_2_graph_cut(graph, labels)
+        edge_weights = hg.labelisation_2_graph_cut(labels, graph)
 
         ref_edge_weights = np.asarray((1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0), dtype=np.int32)
 

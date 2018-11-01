@@ -11,8 +11,8 @@
 import higra as hg
 
 
-@hg.data_consumer(vertex_labels="vertex_labels")
-def labelisation_2_graph_cut(graph, vertex_labels):
+@hg.argument_helper(hg.CptVertexLabeledGraph)
+def labelisation_2_graph_cut(vertex_labels, graph):
     """
     Determine the graph cut that corresponds to a given labeling
     of the graph vertices.
@@ -25,12 +25,12 @@ def labelisation_2_graph_cut(graph, vertex_labels):
     :return:
     """
     graph_cut = hg._labelisation_2_graph_cut(graph, vertex_labels)
-    hg.set_attribute(graph_cut, "domain", graph)
+    hg.CptEdgeWeightedGraph.link(graph_cut, graph)
     return graph_cut
 
 
-@hg.data_consumer(edge_weights="edge_weights")
-def graph_cut_2_labelisation(graph, edge_weights):
+@hg.argument_helper(hg.CptGraphCut)
+def graph_cut_2_labelisation(edge_weights, graph):
     """
     Labelize graph vertices according to the given graph cut.
 
@@ -42,5 +42,5 @@ def graph_cut_2_labelisation(graph, edge_weights):
     :return:
     """
     vertex_labels = hg._graph_cut_2_labelisation(graph, edge_weights)
-    hg.set_attribute(vertex_labels, "domain", graph)
+    hg.CptVertexLabeledGraph.link(vertex_labels, graph)
     return vertex_labels
