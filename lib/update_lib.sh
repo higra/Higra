@@ -12,7 +12,7 @@
 # To update various libs: bump their version number below and run the script
 
 xtl_target_version="0.4.16"
-xtensor_target_version="0.18.1"
+xtensor_target_version="0.18.2"
 xsimd_target_version="7.1.0"
 xtensor_python_target_version="0.21.0"
 pybind11_target_version="2.2.4"

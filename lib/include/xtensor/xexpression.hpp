@@ -103,7 +103,7 @@ namespace xt
     //@}
 
     /* is_crtp_base_of<B, E>
-    * Resembles std::is_base_of, but adresses the problem of whether _some_ instatntiation
+    * Resembles std::is_base_of, but adresses the problem of whether _some_ instantiation
     * of a CRTP templated class B is a base of class E. A CRTP templated class is correctly
     * templated with the most derived type in the CRTP hierarchy. Using this assumption,
     * this implementation deals with either CRTP final classes (checks for inheritance
@@ -214,10 +214,6 @@ namespace xt
      * expression tag system *
      *************************/
 
-    struct xscalar_expression_tag
-    {
-    };
-
     struct xtensor_expression_tag
     {
     };
@@ -226,18 +222,23 @@ namespace xt
     {
     };
 
-    namespace detail
+    namespace extension
     {
         template <class E, class = void_t<int>>
-        struct get_expression_tag
+        struct get_expression_tag_impl
         {
             using type = xtensor_expression_tag;
         };
 
         template <class E>
-        struct get_expression_tag<E, void_t<typename std::decay_t<E>::expression_tag>>
+        struct get_expression_tag_impl<E, void_t<typename std::decay_t<E>::expression_tag>>
         {
             using type = typename std::decay_t<E>::expression_tag;
+        };
+
+        template <class E>
+        struct get_expression_tag : get_expression_tag_impl<E>
+        {
         };
 
         template <class E>
@@ -245,6 +246,12 @@ namespace xt
 
         template <class... T>
         struct expression_tag_and;
+
+        template <>
+        struct expression_tag_and<>
+        {
+            using type = xtensor_expression_tag;
+        };
 
         template <class T>
         struct expression_tag_and<T>
@@ -258,34 +265,22 @@ namespace xt
             using type = T;
         };
 
-        template <>
-        struct expression_tag_and<xscalar_expression_tag, xscalar_expression_tag>
-        {
-            using type = xscalar_expression_tag;
-        };
-
         template <class T>
-        struct expression_tag_and<xscalar_expression_tag, T>
+        struct expression_tag_and<xtensor_expression_tag, T>
         {
             using type = T;
         };
 
         template <class T>
-        struct expression_tag_and<T, xscalar_expression_tag>
-            : expression_tag_and<xscalar_expression_tag, T>
+        struct expression_tag_and<T, xtensor_expression_tag>
+            : expression_tag_and<xtensor_expression_tag, T>
         {
         };
 
         template <>
-        struct expression_tag_and<xtensor_expression_tag, xoptional_expression_tag>
+        struct expression_tag_and<xtensor_expression_tag, xtensor_expression_tag>
         {
-            using type = xoptional_expression_tag;
-        };
-
-        template <>
-        struct expression_tag_and<xoptional_expression_tag, xtensor_expression_tag>
-            : expression_tag_and<xtensor_expression_tag, xoptional_expression_tag>
-        {
+            using type = xtensor_expression_tag;
         };
 
         template <class T1, class... T>
@@ -296,12 +291,17 @@ namespace xt
 
         template <class... T>
         using expression_tag_and_t = typename expression_tag_and<T...>::type;
+
+        struct xtensor_empty_base
+        {
+            using expression_tag = xtensor_expression_tag;
+        };
     }
 
     template <class... T>
     struct xexpression_tag
     {
-        using type = detail::expression_tag_and_t<detail::get_expression_tag_t<std::decay_t<const_xclosure_t<T>>>...>;
+        using type = extension::expression_tag_and_t<extension::get_expression_tag_t<std::decay_t<const_xclosure_t<T>>>...>;
     };
 
     template <class... T>
