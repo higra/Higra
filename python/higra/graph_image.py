@@ -40,7 +40,7 @@ def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False):
     hg.CptEdgeWeightedGraph.link(edge_weights, graph)
     hg.CptGridGraph.link(graph, embedding.shape())
 
-    return graph
+    return graph, edge_weights
 
 
 def get_4_adjacency_graph(shape):

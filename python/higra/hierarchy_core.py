@@ -94,7 +94,7 @@ def saliency(altitudes, leaf_graph, lca_map, handle_rag=True):
     """
     sm = altitudes[lca_map]
     if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and handle_rag:
-        sm = hg.rag_back_project_edge_weights(leaf_graph, sm)
+        sm = hg.rag_back_project_edge_weights(sm, leaf_graph)
         hg.CptSaliencyMap.link(sm, hg.CptRegionAdjacencyGraph.construct(leaf_graph)["pre_graph"])
     else:
         hg.CptSaliencyMap.link(sm, leaf_graph)

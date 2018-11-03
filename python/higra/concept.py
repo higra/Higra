@@ -154,7 +154,6 @@ class CptVertexLabeledGraph(CptVertexWeightedGraph):
     def link(vertex_labels, graph):
         CptVertexWeightedGraph.link(vertex_labels, graph)
         hg.add_tag(vertex_labels, CptVertexLabeledGraph)
-        hg.set_attribute(vertex_labels, "domain", graph)
 
 
 class CptGridGraph(Concept):

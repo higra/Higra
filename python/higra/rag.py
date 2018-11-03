@@ -41,7 +41,7 @@ def make_region_adjacency_graph_from_labelisation(vertex_labels, graph):
 
 
 @hg.argument_helper(hg.CptGraphCut)
-def make_region_adjacency_graph_from_graph_cut( edge_weights, graph):
+def make_region_adjacency_graph_from_graph_cut(edge_weights, graph):
     """
     Create a region adjacency graph (rag) from a graph cut.
     Two vertices v1, v2 are in the same region if there exists a v1v2-path composed of edges weighted 0.
@@ -70,7 +70,7 @@ def make_region_adjacency_graph_from_graph_cut( edge_weights, graph):
 
 
 @hg.argument_helper(hg.CptVertexWeightedGraph)
-def rag_back_project_vertex_weights(rag_vertex_weights, rag):
+def rag_back_project_vertex_weights(vertex_weights, graph):
     """
     Projects rag vertex weights onto original graph vertices.
     The result is an array weighting the vertices of the original graph of the rag such that:
@@ -80,22 +80,22 @@ def rag_back_project_vertex_weights(rag_vertex_weights, rag):
     For any vertex index i,
     result[i] = rag_vertex_weight[rag_vertex_map[i]]
 
-    :param rag:
-    :param rag_vertex_weights:
+    :param graph:
+    :param vertex_weights:
     :return:
     """
 
-    detail = hg.CptRegionAdjacencyGraph.construct(rag)
+    rag = hg.CptRegionAdjacencyGraph.construct(graph)
 
-    new_weights = hg._rag_back_project_weights(detail["vertex_map"], rag_vertex_weights)
+    new_weights = hg._rag_back_project_weights(rag["vertex_map"], vertex_weights)
 
-    hg.CptVertexWeightedGraph.link(new_weights, detail["pre_graph"])
+    hg.CptVertexWeightedGraph.link(new_weights, rag["pre_graph"])
 
     return new_weights
 
 
 @hg.argument_helper(hg.CptEdgeWeightedGraph)
-def rag_back_project_edge_weights(rag_edge_weights, rag):
+def rag_back_project_edge_weights(edge_weights, graph):
     """
     Projects rag edge weights onto original graph edges.
     The result is an array weighting the edges of the original graph of the rag such that:
@@ -106,21 +106,21 @@ def rag_back_project_edge_weights(rag_edge_weights, rag):
     For any edge index ei,
     result[ei] = rag_edge_weight[rag_edge_map[ei]] if rag_edge_map[ei] != -1 and 0 otherwise
 
-    :param rag:
-    :param rag_edge_weights:
+    :param graph:
+    :param edge_weights:
     :return:
     """
 
-    detail = hg.CptRegionAdjacencyGraph.construct(rag)
+    rag = hg.CptRegionAdjacencyGraph.construct(graph)
 
-    new_weights = hg._rag_back_project_weights(detail["edge_map"], rag_edge_weights)
+    new_weights = hg._rag_back_project_weights(rag["edge_map"], edge_weights)
 
-    hg.CptEdgeWeightedGraph.link(new_weights, detail["pre_graph"])
+    hg.CptEdgeWeightedGraph.link(new_weights, rag["pre_graph"])
 
     return new_weights
 
 
-@hg.argument_helper(hg.CptRegionAdjacencyGraph, ("pre_graph", hg.CptVertexWeightedGraph))
+@hg.argument_helper(hg.CptRegionAdjacencyGraph)
 def rag_accumulate_on_vertices(rag, accumulator, vertex_weights):
     """
     Computes rag vertex weights by accumulating values from the vertex weights of the original graph.
@@ -143,7 +143,7 @@ def rag_accumulate_on_vertices(rag, accumulator, vertex_weights):
     return new_weights
 
 
-@hg.argument_helper(hg.CptRegionAdjacencyGraph, ("pre_graph", hg.CptEdgeWeightedGraph))
+@hg.argument_helper(hg.CptRegionAdjacencyGraph)
 def rag_accumulate_on_edges(rag, accumulator, edge_weights):
     """
     Computes rag edge weights by accumulating values from the edge weights of the original graph.

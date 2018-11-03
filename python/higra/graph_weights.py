@@ -12,7 +12,7 @@ import higra as hg
 
 
 @hg.argument_helper(hg.CptVertexWeightedGraph)
-def weight_graph(vertex_weights, graph, weight_function):
+def weight_graph(vertex_weights, weight_function, graph):
     """
     Compute the edge weights of a graph using source and target vertices values
     and specified weighting function (see WeightFunction enumeration).

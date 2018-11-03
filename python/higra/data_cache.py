@@ -182,6 +182,8 @@ class __CacheLookupException(Exception):
 
 
 def __cache_lookup(obj, dep_path, data_cache):
+    if obj is None:
+        raise __CacheLookupException("Cannot lookup into None-type object cache")
     name, *tail = dep_path.split('.', maxsplit=1)
     obj_cache = data_cache.get_data(obj)
     name_data = None
