@@ -51,8 +51,8 @@ def gradient_orientation(gradient_image, scale=4):
     return angle
 
 
-@hg.data_consumer("shape", "edge_weights")
-def mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations=None):
+@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", hg.CptGridGraph))
+def mean_pb_hierarchy(edge_weights, graph, shape, edge_orientations=None):
     """
     Compute the mean pb hierarchy as described in :
         P. Arbelaez, M. Maire, C. Fowlkes and J. Malik, "Contour Detection and Hierarchical Image Segmentation,"
@@ -84,8 +84,8 @@ def mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations=None):
     return tree
 
 
-@hg.data_consumer("shape")
-def multiscale_mean_pb_hierarchy(graph, shape, fine_edge_weights, others_edge_weights, edge_orientations=None):
+@hg.argument_helper(("graph", hg.CptGridGraph))
+def multiscale_mean_pb_hierarchy(fine_edge_weights, others_edge_weights, graph, shape, edge_orientations=None):
     """
     Compute the multiscale mean pb hierarchy as described in :
     J. Pont-Tuset, P. Arbeláez, J. Barron, F. Marques, and J. Malik

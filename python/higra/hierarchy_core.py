@@ -39,8 +39,8 @@ def bpt_canonical(edge_weights, graph):
     return tree, altitudes
 
 
-@hg.data_consumer("edge_weights")
-def quasi_flat_zones_hierarchy(graph, edge_weights):
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def quasi_flat_zones_hierarchy(edge_weights, graph):
     """
     Compute the quasi flat zones hierarchy of the given weighted graph.
 
@@ -53,14 +53,14 @@ def quasi_flat_zones_hierarchy(graph, edge_weights):
     tree = res.tree()
     altitudes = res.altitudes()
 
-    hg.set_attribute(tree, "leaf_graph", graph)
-    hg.set_attribute(tree, "altitudes", altitudes)
+    hg.CptHierarchy.link(tree, graph)
+    hg.CptValuedHierarchy.link(altitudes, tree)
 
-    return tree
+    return tree, altitudes
 
 
-@hg.data_consumer("deleted_vertices")
-def simplify_tree(tree, deleted_vertices):
+@hg.argument_helper(hg.CptValuedHierarchy)
+def simplify_tree(deleted_vertices, tree):
     """
     Creates a copy of the current Tree and deletes the vertices i such that deletedVertices[i] is true.
 
@@ -76,10 +76,10 @@ def simplify_tree(tree, deleted_vertices):
     new_tree = res.tree()
     node_map = res.node_map()
 
-    hg.set_attribute(new_tree, "leaf_graph", hg.getAttribute(tree, "leaf_graph"))
-    hg.set_attribute(new_tree, "node_map", node_map)
+    if hg.CptHierarchy.validate(tree):
+        hg.CptHierarchy().link(tree, hg.CptHierarchy.construct(tree)["leaf_graph"])
 
-    return new_tree
+    return new_tree, node_map
 
 
 @hg.argument_helper(hg.CptValuedHierarchy, ("tree", "lca_map"))
@@ -101,8 +101,8 @@ def saliency(altitudes, leaf_graph, lca_map, handle_rag=True):
     return sm
 
 
-@hg.data_consumer("edge_weights")
-def binary_partition_tree_complete_linkage(graph, edge_weights):
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def binary_partition_tree_complete_linkage(edge_weights, graph):
     """
     Compute a binary partition tree with complete linkage distance.
 
@@ -119,13 +119,14 @@ def binary_partition_tree_complete_linkage(graph, edge_weights):
     tree = res.tree()
     altitudes = res.altitudes()
 
-    hg.set_attribute(tree, "leaf_graph", graph)
-    hg.set_attribute(tree, "altitudes", altitudes)
+    hg.CptHierarchy.link(tree, graph)
+    hg.CptValuedHierarchy.link(altitudes, tree)
 
-    return tree
+    return tree, altitudes
 
 
-def binary_partition_tree_average_linkage(graph, edge_values, edge_weights):
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def binary_partition_tree_average_linkage(edge_values, graph,  edge_weights):
     """
     Compute a binary partition tree with average linkage distance.
 
@@ -144,14 +145,14 @@ def binary_partition_tree_average_linkage(graph, edge_values, edge_weights):
     tree = res.tree()
     altitudes = res.altitudes()
 
-    hg.set_attribute(tree, "leaf_graph", graph)
-    hg.set_attribute(tree, "altitudes", altitudes)
+    hg.CptHierarchy.link(tree, graph)
+    hg.CptValuedHierarchy.link(altitudes, tree)
 
-    return tree
+    return tree, altitudes
 
 
-@hg.data_consumer("edge_weights")
-def binary_partition_tree_single_linkage(graph, edge_weights):
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def binary_partition_tree_single_linkage(edge_weights, graph):
     """
     Alias for bpt_canonical
 
@@ -163,8 +164,8 @@ def binary_partition_tree_single_linkage(graph, edge_weights):
     return bpt_canonical(edge_weights, graph)
 
 
-@hg.data_consumer("edge_weights")
-def binary_partition_tree(graph, weight_function, edge_weights):
+@hg.argument_helper(("edge_weights",hg.CptEdgeWeightedGraph))
+def binary_partition_tree(weight_function, edge_weights, graph):
     """
     Compute the binary partition tree of the graph.
      
@@ -237,7 +238,7 @@ def binary_partition_tree(graph, weight_function, edge_weights):
     tree = res.tree()
     altitudes = res.altitudes()
 
-    hg.set_attribute(tree, "leaf_graph", graph)
-    hg.set_attribute(tree, "altitudes", altitudes)
+    hg.CptHierarchy.link(tree, graph)
+    hg.CptValuedHierarchy.link(altitudes, tree)
 
-    return tree
+    return tree, altitudes

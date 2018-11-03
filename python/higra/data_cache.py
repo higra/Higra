@@ -205,7 +205,7 @@ def __cache_lookup(obj, dep_path, data_cache):
 def __resolve_dependency(obj, dep_name, dep_path, data_cache, kwargs):
     # if user has provided an explicit initialization for current dependency
 
-    if dep_name in kwargs:
+    if dep_name in kwargs and kwargs[dep_name] is not None:
         provided_dep = kwargs[dep_name]
         # if user has provided a path
         if isinstance(provided_dep, str):

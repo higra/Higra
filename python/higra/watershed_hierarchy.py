@@ -11,57 +11,56 @@
 import higra as hg
 
 
-@hg.data_consumer("edge_weights", "vertex_area")
-def watershed_hierarchy_by_area(graph, edge_weights, vertex_area):
+@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", "vertex_area"))
+def watershed_hierarchy_by_area(edge_weights, graph, vertex_area):
     res = hg._watershed_hierarchy_by_area(graph, edge_weights, vertex_area)
     tree = res.tree()
     altitudes = res.altitudes()
 
-    hg.set_attribute(tree, "leaf_graph", graph)
-    hg.set_attribute(tree, "altitudes", altitudes)
+    hg.CptHierarchy.link(tree, graph)
+    hg.CptValuedHierarchy.link(altitudes, tree)
 
-    return tree
+    return tree, altitudes
 
 
-@hg.data_consumer("edge_weights", "vertex_area")
-def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area):
+@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", "vertex_area"))
+def watershed_hierarchy_by_volume(edge_weights, graph, vertex_area):
     res = hg._watershed_hierarchy_by_volume(graph, edge_weights, vertex_area)
     tree = res.tree()
     altitudes = res.altitudes()
 
-    hg.set_attribute(tree, "leaf_graph", graph)
-    hg.set_attribute(tree, "altitudes", altitudes)
+    hg.CptHierarchy.link(tree, graph)
+    hg.CptValuedHierarchy.link(altitudes, tree)
 
-    return tree
+    return tree, altitudes
 
 
-@hg.data_consumer("edge_weights")
-def watershed_hierarchy_by_dynamics(graph, edge_weights):
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def watershed_hierarchy_by_dynamics(edge_weights, graph):
     res = hg._watershed_hierarchy_by_dynamics(graph, edge_weights)
     tree = res.tree()
     altitudes = res.altitudes()
 
-    hg.set_attribute(tree, "leaf_graph", graph)
-    hg.set_attribute(tree, "altitudes", altitudes)
+    hg.CptHierarchy.link(tree, graph)
+    hg.CptValuedHierarchy.link(altitudes, tree)
 
-    return tree
+    return tree, altitudes
 
 
-@hg.data_consumer("edge_weights")
-def watershed_hierarchy_by_attribute(graph, attribute_functor, edge_weights):
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def watershed_hierarchy_by_attribute(edge_weights, attribute_functor, graph):
     """
     Compute the watershed hierarchy by a user defined attributes.
 
-    The attribute functor is a function that takes a binary partition tree as argument and returns an array with
-    the node attribute values for the given tree. The tree will be equipped with the following attributes:
-    "altitudes" and "leaf_graph".
+    The attribute functor is a function that takes a binary partition tree and an array of altitudes as argument
+    and returns an array with the node attribute values for the given tree.
 
     Example
     -------
 
     Calling watershed_hierarchy_by_area is equivalent to:
 
-        tree = watershed_hierarchy_by_attribute(graph, attribute_area)
+        tree = watershed_hierarchy_by_attribute(graph, lambda tree, _: hg.attribute_area(tree))
 
     :param graph: input graph
     :param edge_weights: edge weights of the input graph
@@ -70,16 +69,16 @@ def watershed_hierarchy_by_attribute(graph, attribute_functor, edge_weights):
     """
 
     def helper_functor(tree, altitudes):
-        hg.set_attribute(tree, "leaf_graph", graph)
-        hg.set_attribute(tree, "altitudes", altitudes)
+        hg.CptHierarchy.link(tree, graph)
+        hg.CptValuedHierarchy.link(altitudes, tree)
 
-        return attribute_functor(tree)
+        return attribute_functor(tree, altitudes)
 
     res = hg._watershed_hierarchy_by_attribute(graph, edge_weights, helper_functor)
     tree = res.tree()
     altitudes = res.altitudes()
 
-    hg.set_attribute(tree, "leaf_graph", graph)
-    hg.set_attribute(tree, "altitudes", altitudes)
+    hg.CptHierarchy.link(tree, graph)
+    hg.CptValuedHierarchy.link(altitudes, tree)
 
-    return tree
+    return tree, altitudes

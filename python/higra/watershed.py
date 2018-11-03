@@ -11,8 +11,8 @@
 import higra as hg
 
 
-@hg.data_consumer(edge_weights="edge_weights")
-def labelisation_watershed(graph, edge_weights):
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def labelisation_watershed(edge_weights, graph):
     """
     Compute a watershed cut of the given edge weighted graph.
 
@@ -24,6 +24,6 @@ def labelisation_watershed(graph, edge_weights):
     """
     vertex_labels = hg._labelisation_watershed(graph, edge_weights)
 
-    hg.set_attribute(graph, "vertex_labels", vertex_labels)
+    hg.CptVertexLabeledGraph.link(vertex_labels, graph)
 
     return vertex_labels

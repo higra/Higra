@@ -29,10 +29,14 @@ class Concept(object):
 
     @classmethod
     def validate(cls, canonical_element):
+        if canonical_element is None:
+            return False
         return hg.has_tag(canonical_element, cls)
 
     @classmethod
     def construct(cls, canonical_element, strict=True, data_cache=None):
+        if canonical_element is None:
+            return {}
         if strict and not cls.validate(canonical_element):
             raise Exception("Cannot construct concept '" + str(cls) + "': the element '" + str(canonical_element)
                             + "' does not satisfy this concept.")
@@ -178,7 +182,7 @@ class CptRegionAdjacencyGraph(Concept):
                       "vertex_map": ("a map giving for each vertex of pre_graph the corresponding vertex of rag",
                                      "vertex_map"),
                       "edge_map": ("a map giving for each edge of pre_graph the corresponding edge of rag "
-                                   "(and -1 if not such edge exists", "vertex_map")}
+                                   "(and -1 if not such edge exists", "edge_map")}
     _canonical_data_element = "rag"
 
     def __init__(self, **kwargs):
@@ -191,7 +195,7 @@ class CptRegionAdjacencyGraph(Concept):
         hg.set_attribute(rag, "edge_map", edge_map)
         hg.set_attribute(rag, "pre_graph", pre_graph)
         CptEdgeWeightedGraph.link(edge_map, pre_graph)
-        CptVertexWeightedGraph.link(vertex_map, pre_graph)
+        CptVertexLabeledGraph.link(vertex_map, pre_graph)
 
 
 class CptSaliencyMap(CptEdgeWeightedGraph):

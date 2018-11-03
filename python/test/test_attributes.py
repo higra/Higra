@@ -75,7 +75,7 @@ class TestAttributes(unittest.TestCase):
 
         leaf_area = np.asarray([1, 2, 1, 1, 2, 1, 1, 1, 3])
         ref_area = [1, 2, 1, 1, 2, 1, 1, 1, 3, 3, 2, 3, 2, 5, 5, 10, 13]
-        area = hg.attribute_area(tree, leaf_area=leaf_area, force_recompute=True)
+        area = hg.attribute_area(tree, vertex_area=leaf_area, force_recompute=True)
         self.assertTrue(np.allclose(ref_area, area))
 
     def test_volume(self):
@@ -108,7 +108,7 @@ class TestAttributes(unittest.TestCase):
 
         leaf_perimeter = 4 + np.zeros((tree.num_leaves(),))
         ref_attribute = [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 8, 10, 16, 12]
-        attribute = hg.attribute_perimeter_length(tree, leaf_perimeter=leaf_perimeter, force_recompute=True)
+        attribute = hg.attribute_perimeter_length(tree, vertex_perimeter=leaf_perimeter, force_recompute=True)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_compactness(self):
@@ -130,7 +130,7 @@ class TestAttributes(unittest.TestCase):
                                     (1. / 2, 1. / 2), (7. / 2, 7. / 2), (7. / 2, 7. / 2), (13. / 2, 13. / 2), (7., 7.),
                                     (2., 2.), (29. / 7, 29. / 7), (4., 4.)))
 
-        attribute = hg.attribute_mean_weights(tree, leaf_data=leaf_data)
+        attribute = hg.attribute_mean_weights(tree, vertex_weights=leaf_data)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
 
