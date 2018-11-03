@@ -51,8 +51,8 @@ def gradient_orientation(gradient_image, scale=4):
     return angle
 
 
-@hg.data_consumer("shape", "edge_weights")
-def mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations=None):
+@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", hg.CptGridGraph))
+def mean_pb_hierarchy(edge_weights, graph, shape, edge_orientations=None):
     """
     Compute the mean pb hierarchy as described in :
         P. Arbelaez, M. Maire, C. Fowlkes and J. Malik, "Contour Detection and Hierarchical Image Segmentation,"
@@ -72,20 +72,15 @@ def mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations=None):
     shape = hg.normalize_shape(shape)
     rag, vertex_map, edge_map, tree, altitudes = hg._mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations)
 
-    hg.set_attribute(rag, "vertex_map", vertex_map)
-    hg.set_attribute(rag, "edge_map", edge_map)
-    hg.set_attribute(rag, "pre_graph", graph)
-    hg.set_attribute(vertex_map, "domain", graph)
-    hg.set_attribute(edge_map, "domain", graph)
+    hg.CptRegionAdjacencyGraph.link(rag, graph, vertex_map, edge_map)
+    hg.CptHierarchy.link(tree, rag)
+    hg.CptValuedHierarchy.link(altitudes, tree)
 
-    hg.set_attribute(tree, "leaf_graph", rag)
-    hg.set_attribute(tree, "altitudes", altitudes)
-
-    return tree
+    return tree, altitudes
 
 
-@hg.data_consumer("shape")
-def multiscale_mean_pb_hierarchy(graph, shape, fine_edge_weights, others_edge_weights, edge_orientations=None):
+@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", hg.CptGridGraph))
+def multiscale_mean_pb_hierarchy(fine_edge_weights, others_edge_weights, graph, shape, edge_orientations=None):
     """
     Compute the multiscale mean pb hierarchy as described in :
     J. Pont-Tuset, P. Arbeláez, J. Barron, F. Marques, and J. Malik
@@ -108,14 +103,14 @@ def multiscale_mean_pb_hierarchy(graph, shape, fine_edge_weights, others_edge_we
     """
 
     shape = hg.normalize_shape(shape)
-    tree_fine = hg.mean_pb_hierarchy(graph, shape, fine_edge_weights, edge_orientations)
-    saliency_fine = hg.saliency(tree_fine)
-    super_vertex_fine = hg.labelisation_hierarchy_supervertices(tree_fine)
+    tree_fine, altitudes_fine = hg.mean_pb_hierarchy(fine_edge_weights, graph=graph, shape=shape, edge_orientations=edge_orientations)
+    saliency_fine = hg.saliency(altitudes_fine)
+    super_vertex_fine = hg.labelisation_hierarchy_supervertices(altitudes_fine)
 
     other_hierarchies = []
     for edge_weights in others_edge_weights:
-        tree_coarse = hg.mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations)
-        other_hierarchies.append(tree_coarse)
+        tree_coarse, altitudes_coarse = hg.mean_pb_hierarchy(edge_weights, graph=graph, shape=shape, edge_orientations=edge_orientations)
+        other_hierarchies.append(altitudes_coarse)
 
     aligned_saliencies = hg.align_hierarchies(super_vertex_fine, other_hierarchies)
 
@@ -124,4 +119,4 @@ def multiscale_mean_pb_hierarchy(graph, shape, fine_edge_weights, others_edge_we
 
     saliency_fine *= (1.0 / (1 + len(others_edge_weights)))
 
-    return hg.mean_pb_hierarchy(graph, shape, saliency_fine)
+    return hg.mean_pb_hierarchy(saliency_fine, graph=graph, shape=shape)

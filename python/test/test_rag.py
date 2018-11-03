@@ -23,10 +23,14 @@ class TestRag(unittest.TestCase):
                                     1, 1, 3, 3,
                                     1, 1, 10, 10))
 
-        return hg._make_region_adjacency_graph_from_labelisation(g, vertex_labels)
+        return hg.make_region_adjacency_graph_from_labelisation(vertex_labels, g)
 
     def test_make_rag(self):
-        rag, vertex_map, edge_map = TestRag.get_rag()
+        rag = TestRag.get_rag()
+
+        detail = hg.CptRegionAdjacencyGraph.construct(rag)
+        vertex_map = detail["vertex_map"]
+        edge_map = detail["edge_map"]
 
         self.assertTrue(rag.num_vertices() == 4)
         self.assertTrue(rag.num_edges() == 5)
@@ -58,7 +62,10 @@ class TestRag(unittest.TestCase):
                                          0, 0, 1, 0, 0, 1, 1,
                                          0, 1, 0))
 
-        rag, vertex_map, edge_map = hg._make_region_adjacency_graph_from_graph_cut(g, edge_weights)
+        rag = hg.make_region_adjacency_graph_from_graph_cut(edge_weights, g)
+        detail = hg.CptRegionAdjacencyGraph.construct(rag)
+        vertex_map = detail["vertex_map"]
+        edge_map = detail["edge_map"]
 
         self.assertTrue(rag.num_vertices() == 4)
         self.assertTrue(rag.num_edges() == 5)
@@ -84,10 +91,10 @@ class TestRag(unittest.TestCase):
         self.assertTrue(np.allclose(edge_map, expected_edge_map))
 
     def test_back_project_vertex(self):
-        rag, vertex_map, edge_map = TestRag.get_rag()
+        rag = TestRag.get_rag()
 
         rag_vertex_weights = np.asarray((5, 7, 1, 3))
-        vertex_weights = hg._rag_back_project_weights(vertex_map, rag_vertex_weights)
+        vertex_weights = hg.rag_back_project_vertex_weights(rag_vertex_weights, rag)
         expected_vertex_weights = np.asarray((5, 5, 7, 7,
                                               5, 5, 7, 7,
                                               5, 5, 1, 1,
@@ -95,10 +102,10 @@ class TestRag(unittest.TestCase):
         self.assertTrue(np.allclose(vertex_weights, expected_vertex_weights))
 
     def test_back_project_edge(self):
-        rag, vertex_map, edge_map = TestRag.get_rag()
+        rag = TestRag.get_rag()
 
         rag_edge_weights = np.asarray((5, 7, 1, 3, 2))
-        edge_weights = hg._rag_back_project_weights(edge_map, rag_edge_weights)
+        edge_weights = hg.rag_back_project_edge_weights(rag_edge_weights, rag)
         iv = 0
         expected_edge_weights = np.asarray((iv, iv, 5, iv, iv, iv, iv,
                                             iv, iv, 5, iv, iv, 7, 7,
@@ -107,20 +114,20 @@ class TestRag(unittest.TestCase):
         self.assertTrue(np.allclose(edge_weights, expected_edge_weights))
 
     def test_accumulate_vertex(self):
-        rag, vertex_map, edge_map = TestRag.get_rag()
+        rag = TestRag.get_rag()
         vertex_weights = np.ones((16,))
 
-        rag_vertex_weights = hg._rag_accumulate(vertex_map, vertex_weights, hg.Accumulators.sum)
+        rag_vertex_weights = hg.rag_accumulate_on_vertices(rag, hg.Accumulators.sum, vertex_weights)
 
         expected_rag_vertex_weights = (8, 4, 2, 2)
 
         self.assertTrue(np.allclose(rag_vertex_weights, expected_rag_vertex_weights))
 
     def test_accumulate_edge(self):
-        rag, vertex_map, edge_map = TestRag.get_rag()
+        rag = TestRag.get_rag()
         edge_weights = np.ones((24,))
 
-        rag_edge_weights = hg._rag_accumulate(edge_map, edge_weights, hg.Accumulators.sum)
+        rag_edge_weights = hg.rag_accumulate_on_edges(rag, hg.Accumulators.sum, edge_weights)
 
         expected_rag_edge_weights = (2, 2, 1, 2, 1)
 

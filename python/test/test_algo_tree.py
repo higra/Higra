@@ -29,7 +29,7 @@ class TestAlgorithmTree(unittest.TestCase):
 
         condition = np.asarray((True, False, True, False, True, True, False, False), np.bool_)
 
-        output = hg.reconstruct_leaf_data(tree, condition, input)
+        output = hg.reconstruct_leaf_data(input, condition, tree)
         ref = np.asarray(((8, 1),
                           (2, 7),
                           (7, 2),
@@ -47,9 +47,9 @@ class TestAlgorithmTree(unittest.TestCase):
         ref_t1 = np.asarray((1, 1, 2, 2, 2), dtype=np.int32)
         ref_t2 = np.asarray((1, 1, 1, 1, 1), dtype=np.int32)
 
-        output_t0 = hg.labelisation_horizontal_cut(tree, 0, altitudes)
-        output_t1 = hg.labelisation_horizontal_cut(tree, 0.5, altitudes)
-        output_t2 = hg.labelisation_horizontal_cut(tree, 0.7, altitudes)
+        output_t0 = hg.labelisation_horizontal_cut(altitudes, 0, tree)
+        output_t1 = hg.labelisation_horizontal_cut(altitudes, 0.5, tree)
+        output_t2 = hg.labelisation_horizontal_cut(altitudes, 0.7, tree)
 
         self.assertTrue(hg.is_in_bijection(ref_t0, output_t0))
         self.assertTrue(hg.is_in_bijection(ref_t1, output_t1))
@@ -62,7 +62,7 @@ class TestAlgorithmTree(unittest.TestCase):
 
         ref = np.asarray((0, 1, 2, 2, 2), dtype=np.int32)
 
-        output = hg.labelisation_hierarchy_supervertices(tree, altitudes)
+        output = hg.labelisation_hierarchy_supervertices(altitudes, tree)
 
         self.assertTrue(hg.is_in_bijection(ref, output))
         self.assertTrue(np.amax(output) == 2)
@@ -92,12 +92,12 @@ class TestAlgorithmTree(unittest.TestCase):
     def test_filter_binary_partition_tree(self):
         g = hg.get_4_adjacency_graph((1, 8))
         edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
-        tree = hg.bpt_canonical(g, edge_weights=edge_weights)
+        tree, altitudes = hg.bpt_canonical(edge_weights, g)
         area = hg.attribute_area(tree)
         area_min_children = hg.accumulate_parallel(tree, area, hg.Accumulators.min)
-        res = hg.filter_binary_partition_tree(tree, area_min_children <= 2)
+        res_tree, res_altitudes = hg.filter_binary_partition_tree(altitudes, area_min_children <= 2)
 
-        sm = hg.saliency(res)
+        sm = hg.saliency(res_altitudes)
         sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
         self.assertTrue(np.all(sm == sm_ref))
 

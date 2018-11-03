@@ -19,9 +19,7 @@ class TestWatershedHierarchy(unittest.TestCase):
         g = hg.get_4_adjacency_graph((1, 19))
         edge_weights = np.asarray((0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0))
         # watershed hierarchy by area...
-        t = hg.watershed_hierarchy_by_attribute(g, hg.attribute_area, edge_weights)
-
-        altitudes = hg.get_attribute(t, "altitudes")
+        t, altitudes = hg.watershed_hierarchy_by_attribute(edge_weights, lambda tree, _: hg.attribute_area(tree), g)
 
         ref_parents = np.asarray((
             19, 19, 20, 20, 20, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 24, 24, 25,

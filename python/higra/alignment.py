@@ -9,9 +9,9 @@
 ############################################################################
 
 import higra as hg
+import numpy as np
 
-
-@hg.data_consumer(graph="domain")
+@hg.argument_helper(hg.CptVertexLabeledGraph)
 def align_hierarchies(vertex_labels, other_hierarchies, graph):
     """
     Align hierarchies boundaries on the boundaries of the provided super-vertex decomposition of a graph
@@ -34,33 +34,43 @@ def align_hierarchies(vertex_labels, other_hierarchies, graph):
     """
     result = []
     list_input = True
-    try:
-        _ = iter(other_hierarchies)
-    except TypeError:  # other_hierachies is not iterable
+    if type(other_hierarchies) is np.ndarray:
         list_input = False
         other_hierarchies = (other_hierarchies,)
+    else:
+        try:
+            _ = iter(other_hierarchies)
+        except TypeError:  # other_hierachies is not iterable
+            list_input = False
+            other_hierarchies = (other_hierarchies,)
 
     aligner = hg.HierarchyAligner.from_labelisation(graph, vertex_labels)
 
     for hierarchy in other_hierarchies:
         r = None
-        if type(hierarchy) is hg.Tree:
-            super_vertices = None
-            leaf_graph = hg.get_attribute(hierarchy, "leaf_graph")
-            if leaf_graph is not None:
-                super_vertices = hg.get_attribute(leaf_graph, "vertex_map")
-            if super_vertices is not None:  # tree on rag
-                r = aligner.align_hierarchy(super_vertices, hierarchy, hg.get_attribute(hierarchy, "altitudes"))
+
+        if hg.CptValuedHierarchy.validate(hierarchy):
+            h = hg.CptValuedHierarchy.construct(hierarchy)
+
+            if hg.CptRegionAdjacencyGraph.validate(h["leaf_graph"]):
+                rag = hg.CptRegionAdjacencyGraph.construct(h["leaf_graph"])
+                r = aligner.align_hierarchy(rag["vertex_map"], h["tree"], h["altitudes"])
             else:
-                r = aligner.align_hierarchy(hierarchy, hg.get_attribute(hierarchy, "altitudes"))
-        else:  # saliency map
-            super_vertices = hg.get_attribute(hierarchy, "vertex_map")
-            if super_vertices is not None:  # defined on rag
-                bpt = hg.bpt_canonical(hierarchy)
-                r = aligner.align_hierarchy(super_vertices, bpt, hg.get_attribute(bpt, "altitudes"))
+                r = aligner.align_hierarchy(h["tree"], h["altitudes"])
+
+        elif hg.CptSaliencyMap.validate(hierarchy):
+            h = hg.CptSaliencyMap.construct(hierarchy)
+            if hg.CptRegionAdjacencyGraph.validate(h["graph"]):
+                rag = hg.CptRegionAdjacencyGraph.construct(h["graph"])
+                bpt, altitudes = hg.bpt_canonical(h["edge_weights"])
+                r = aligner.align_hierarchy(rag["vertex_map"], bpt, altitudes)
             else:
-                r = aligner.align_hierarchy(hierarchy, hg.get_attribute(hierarchy, "edge_weights"))
-        hg.set_attribute(r, "domain", graph)
+                r = aligner.align_hierarchy(h["graph"], h["edge_weights"])
+
+        else:
+            raise Exception("Hierarchy format not recognized: " + str(hierarchy))
+
+        hg.CptSaliencyMap.link(r, graph)
         result.append(r)
     if not list_input:
         return result[0]

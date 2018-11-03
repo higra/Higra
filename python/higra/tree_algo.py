@@ -11,8 +11,8 @@
 import higra as hg
 
 
-@hg.data_consumer(altitudes="altitudes")
-def reconstruct_leaf_data(tree, deleted_nodes, altitudes):
+@hg.argument_helper(hg.CptValuedHierarchy)
+def reconstruct_leaf_data(altitudes, deleted_nodes, tree):
     """
     Each leaf of the tree takes the altitude of its closest non deleted ancestor.
 
@@ -24,11 +24,17 @@ def reconstruct_leaf_data(tree, deleted_nodes, altitudes):
     reconstruction = hg.propagate_sequential(tree,
                                              altitudes,
                                              deleted_nodes)
-    return reconstruction[0:tree.num_leaves(), ...]
+    leaf_weights = reconstruction[0:tree.num_leaves(), ...]
+
+    if hg.CptHierarchy.validate(tree):
+        leaf_graph = hg.CptHierarchy.construct(tree)["leaf_graph"]
+        hg.CptVertexWeightedGraph.link(leaf_weights, leaf_graph)
+
+    return leaf_weights
 
 
-@hg.data_consumer(altitudes="altitudes")
-def labelisation_horizontal_cut(tree, threshold, altitudes):
+@hg.argument_helper(hg.CptValuedHierarchy)
+def labelisation_horizontal_cut(altitudes, threshold, tree):
     """
     Labelize tree leaves according to an horizontal cut in the tree.
 
@@ -41,11 +47,18 @@ def labelisation_horizontal_cut(tree, threshold, altitudes):
     :param altitudes:
     :return:
     """
-    return hg._labelisation_horizontal_cut(tree, float(threshold), altitudes)
+
+    leaf_labels = hg._labelisation_horizontal_cut(tree, float(threshold), altitudes)
+
+    if hg.CptHierarchy.validate(tree):
+        leaf_graph = hg.CptHierarchy.construct(tree)["leaf_graph"]
+        hg.CptVertexLabeledGraph.link(leaf_labels, leaf_graph)
+
+    return leaf_labels
 
 
-@hg.data_consumer(altitudes="altitudes")
-def labelisation_hierarchy_supervertices(tree, altitudes, handle_rag=True):
+@hg.argument_helper(hg.CptValuedHierarchy)
+def labelisation_hierarchy_supervertices(altitudes, tree, leaf_graph=None, handle_rag=True):
     """
     Labelize the tree leaves into supervertices.
 
@@ -61,15 +74,20 @@ def labelisation_hierarchy_supervertices(tree, altitudes, handle_rag=True):
     :param handle_rag:
     :return:
     """
-    graph = hg.get_attribute(tree, "leaf_graph")
-    if graph is not None and hg.get_attribute(graph, "vertex_map") is not None and handle_rag:
-        return hg.get_attribute(graph, "vertex_map")
 
-    return hg._labelisation_hierarchy_supervertices(tree, altitudes)
+    if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and handle_rag:
+        return hg.CptRegionAdjacencyGraph.construct(leaf_graph)["vertex_map"]
+
+    leaf_labels = hg._labelisation_hierarchy_supervertices(tree, altitudes)
+
+    if leaf_graph is not None:
+        hg.CptVertexLabeledGraph.link(leaf_labels, leaf_graph)
+
+    return leaf_labels
 
 
-@hg.data_consumer("mst", "altitudes")
-def filter_binary_partition_tree(tree, deleted_frontier_nodes, mst, altitudes):
+@hg.argument_helper(hg.CptValuedHierarchy, ("tree", hg.CptBinaryHierarchy))
+def filter_binary_partition_tree(altitudes, deleted_frontier_nodes, tree, mst):
     """
     Filter the given binary partition tree according to the given list of frontiers to remove.
 
@@ -84,5 +102,5 @@ def filter_binary_partition_tree(tree, deleted_frontier_nodes, mst, altitudes):
 
     mst_edge_weights = altitudes[tree.num_leaves():]
     mst_edge_weights[deleted_frontier_nodes[tree.num_leaves():]] = 0
-    return hg.bpt_canonical(mst, edge_weights=mst_edge_weights)
+    return hg.bpt_canonical(mst_edge_weights, mst)
 
