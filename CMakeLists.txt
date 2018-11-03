@@ -80,6 +80,7 @@ else ()
     message("Benchmarking disabled in 'debug' mode.")
     option(DO_BENCHMARK
             "Execute benchmark suit." OFF)
+    add_definitions("-DHG_ENABLE_TRACE")
 endif ()
 
 
