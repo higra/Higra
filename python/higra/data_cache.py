@@ -34,7 +34,10 @@ class WeakKeyDictionary:
             ref, _ = self._data[key]
         except KeyError:
             def on_destroy(_):
-                del self._data[key]
+                try:
+                    del self._data[key]
+                except:
+                    pass
             ref = weakref.ref(obj, on_destroy)
         self._data[key] = ref, value
 
@@ -55,7 +58,10 @@ class WeakKeyDictionary:
             return val
         except KeyError:
             def on_destroy(_):
-                del self._data[key]
+                try:
+                    del self._data[key]
+                except:
+                    pass
             ref = weakref.ref(obj, on_destroy)
             self._data[key] = ref, default
             return default
