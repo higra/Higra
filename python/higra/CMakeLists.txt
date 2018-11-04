@@ -8,11 +8,7 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-find_package(PythonInterp 2.7 REQUIRED)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/" "${CMAKE_SOURCE_DIR}/lib/lib/cmake/pybind11/")
 
-find_package(NumPy REQUIRED)
-include("${CMAKE_SOURCE_DIR}/lib/lib/cmake/pybind11/pybind11Tools.cmake")
 
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIRS})
 
@@ -62,7 +58,6 @@ set(MODULE_FILES
 
 pybind11_add_module(higram pymodule.cpp ${PYMODULE_COMPONENTS})
 set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} higram CACHE INTERNAL "" FORCE)
-
 
 foreach (FILE ${MODULE_FILES})
     configure_file(${FILE} ${CMAKE_CURRENT_BINARY_DIR}/${FILE} COPYONLY)
