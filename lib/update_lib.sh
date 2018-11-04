@@ -93,7 +93,7 @@ cd xtensor-${xtensor_target_version}
 rm -rf build
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=${install_prefix} -DXTENSOR_USE_XSIMD=ON .. >/dev/null
+cmake -DCMAKE_INSTALL_PREFIX=${install_prefix} .. >/dev/null
 make >/dev/null
 make install >/dev/null
 cd ../..
