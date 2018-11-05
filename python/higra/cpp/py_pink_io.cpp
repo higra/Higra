@@ -21,7 +21,7 @@ namespace py = pybind11;
 
 template<typename graph_t>
 void def_save(pybind11::module &m) {
-    m.def("save_graph_pink", [](const std::string &filename,
+    m.def("_save_graph_pink", [](const std::string &filename,
                                 const graph_t &graph,
                                 const pyarray<double> &vertex_values = {0},
                                 const pyarray<double> &edge_values = {0},

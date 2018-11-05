@@ -9,7 +9,7 @@
 ############################################################################
 
 import higra as hg
-
+import numpy as np
 
 def read_graph_pink(filename):
     """
@@ -17,10 +17,33 @@ def read_graph_pink(filename):
     :param filename:
     :return: Graph (with attributes "vertex_weights", "edge_weights", "shape")
     """
-    graph, vertexWeights, edgeWeights, shape = hg._read_graph_pink(filename)
+    graph, vertex_weights, edge_weights, shape = hg._read_graph_pink(filename)
 
-    hg.set_attribute(graph, "edge_weigths", edgeWeights)
-    hg.set_attribute(graph, "vertex_weigths", vertexWeights)
-    hg.set_attribute(graph, "shape", shape)
+    hg.CptGridGraph.link(graph, shape)
+    hg.CptVertexWeightedGraph.link(vertex_weights, graph)
+    hg.CptEdgeWeightedGraph.link(edge_weights, graph)
 
-    return graph
+    return graph, vertex_weights, edge_weights
+
+
+def save_graph_pink(filename, graph, vertex_weights=None, edge_weights=None, shape=None):
+    """
+    Save a (vertex/edge weighted) graph in the pink ascii file format
+    :param filename:
+    :param graph:
+    :param edge_weights:
+    :param vertex_weights:
+    :param shape:
+    :return:
+    """
+
+    if edge_weights is None:
+        edge_weights = np.ones((graph.num_edges(),), dtype=np.np.float64)
+
+    if vertex_weights is None:
+        vertex_weights = np.ones((graph.num_vertices(),), dtype=np.float64)
+
+    if shape is None:
+        shape = (graph.num_vertices(), 1)
+
+    hg._save_graph_pink(filename, graph, vertex_weights=vertex_weights, edge_weights=edge_weights, shape=shape)

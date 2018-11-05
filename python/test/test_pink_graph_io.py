@@ -26,7 +26,9 @@ def silent_remove(filename):
 class TestPinkGraphIO(unittest.TestCase):
 
     def test_graph_read(self):
-        graph, vertex_weights, edge_weights, shape = hg._read_graph_pink("ressources/test.graph")
+        graph, vertex_weights, edge_weights = hg.read_graph_pink("ressources/test.graph")
+
+        shape = hg.get_attribute(graph, "shape")
 
         edges_ref = []
         for i in range(14):
