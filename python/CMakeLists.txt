@@ -13,5 +13,7 @@ find_package(NumPy REQUIRED)
 
 add_subdirectory(higra)
 add_subdirectory(test)
-add_subdirectory(test_cpp)
 
+if (DO_TEST)
+    add_subdirectory(test_cpp)
+endif()

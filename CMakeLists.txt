@@ -48,7 +48,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 endif()
 
 
-find_package(Boost QUIET COMPONENTS unit_test_framework)
+find_package(Boost 1.4 QUIET COMPONENTS unit_test_framework)
 if (Boost_FOUND)
     option(DO_TEST
             "Execute test suit." ON)
