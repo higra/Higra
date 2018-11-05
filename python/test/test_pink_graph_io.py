@@ -51,7 +51,7 @@ class TestPinkGraphIO(unittest.TestCase):
         silent_remove(filename)
 
         vertex_weights = np.arange(1, 16)
-        edges_weights = (3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0)
+        edges_weights = np.asarray((3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0))
         shape = (3, 5)
 
         graph = hg.UndirectedGraph(15)

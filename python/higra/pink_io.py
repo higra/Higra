@@ -11,6 +11,7 @@
 import higra as hg
 import numpy as np
 
+
 def read_graph_pink(filename):
     """
     Read a graph file stored in pink ascii format
@@ -26,6 +27,7 @@ def read_graph_pink(filename):
     return graph, vertex_weights, edge_weights
 
 
+@hg.argument_helper(("edge_weights", hg.CptEdgeWeightedGraph), ("vertex_weights", hg.CptVertexWeightedGraph), ("graph", hg.CptGridGraph))
 def save_graph_pink(filename, graph, vertex_weights=None, edge_weights=None, shape=None):
     """
     Save a (vertex/edge weighted) graph in the pink ascii file format
