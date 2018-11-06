@@ -11,7 +11,7 @@ def imshow2(image):
     plt.show()
 
 
-def imshow(image):
+def imshow(image, click_event=None):
     import matplotlib.pyplot as plt
     dpi = 80
     margin = 0.5  # (5% of the width/height of the figure...)
@@ -19,15 +19,20 @@ def imshow(image):
 
     # Make a figure big enough to accomodate an axis of xpixels by ypixels
     # as well as the ticklabels, etc...
-    figsize = (1 + margin) * h / dpi, (1 + margin) * w / dpi
+    figsize = (1 + margin) * w / dpi, (1 + margin) * h / dpi
 
     fig = plt.figure(figsize=figsize, dpi=dpi)
     # Make the axis the right size...
     ax = fig.add_axes([0, 0, 1, 1])
 
     ax.imshow(image, interpolation='none')
+    
     plt.axis('off')
     plt.show()
+    
+    return fig, ax
+    
+ 
 
 
 def tic():
