@@ -146,7 +146,7 @@ namespace hg {
     template<typename tree_t,
             typename T>
     auto supervertices_hierarchy(const tree_t &tree,
-                            const xt::xexpression<T> &xaltitudes) {
+                                 const xt::xexpression<T> &xaltitudes) {
         HG_TRACE();
         auto &altitudes = xaltitudes.derived_cast();
         hg_assert_node_weights(tree, altitudes);
@@ -174,22 +174,22 @@ namespace hg {
             do {
                 stack.push(e);
                 e = parent(e, tree);
-                if(new_order(e) != invalid_index){
+                if (new_order(e) != invalid_index) {
                     lbl = new_order(e);
                 }
-            } while(altitudes(e) == 0 && lbl == invalid_index);
+            } while (altitudes(e) == 0 && lbl == invalid_index);
 
             removed += stack.size();
 
             // we have found a new supervertex node
-            if(lbl == invalid_index){
+            if (lbl == invalid_index) {
                 super_vertex_nodes.push_back(stack.top());
                 lbl = current_label++;
                 removed--;
             }
 
             // labelize visited nodes
-            while(!stack.empty()){
+            while (!stack.empty()) {
                 new_order(stack.top()) = lbl;
                 stack.pop();
             }
@@ -205,22 +205,22 @@ namespace hg {
         index_t node_number = num_nodes_new_tree - 1;
         std::queue<index_t> queue;
         queue.push(root(tree));
-        while(!queue.empty()){
+        while (!queue.empty()) {
             auto e = queue.front();
             queue.pop();
             new_order(e) = node_number;
             parents(node_number) = new_order(parent(e, tree));
             node_map(node_number) = e;
             node_number--;
-            for(auto c: children_iterator(e, tree)){
-                if(new_order(c) == invalid_index){
+            for (auto c: children_iterator(e, tree)) {
+                if (new_order(c) == invalid_index) {
                     queue.push(c);
                 }
             }
         }
 
         index_t i = 0;
-        for(auto n: super_vertex_nodes){
+        for (auto n: super_vertex_nodes) {
             parents(i) = new_order(parent(n, tree));
             node_map(i) = n;
             i++;
@@ -229,7 +229,7 @@ namespace hg {
         auto supervertex_labels = xt::eval(xt::view(new_order, xt::range(0, num_leaves(tree))));
 
         return supervertex_hierarchy<array_1d<index_t>, hg::tree, array_1d<index_t>>{
-            std::move(supervertex_labels), hg::tree{parents}, std::move(node_map)
+                std::move(supervertex_labels), hg::tree{parents}, std::move(node_map)
         };
     };
 
@@ -276,6 +276,64 @@ namespace hg {
             }// else ok
         }
         return true;
+    }
+
+    /**
+     * Given two binary markers o (object) and b (background) (given by their indicator functions)
+     * on the leaves of a tree t, the corresponding binary labelization of the leaves of t is defined as 
+     * the union of all the nodes intersecting o but not b.
+     * 
+     * final_object = union {R in T | R cap o neq emptyset and R cap b = emptyset}
+     * 
+     * @tparam tree_t tree type
+     * @tparam T1 xtensor type, value_type must be castable to bool
+     * @tparam T2 xtensor type, value_type must be castable to bool
+     * @param tree input tree
+     * @param xobject_marker indicator function of the object marker
+     * @param xbackground_marker indicator function of the background marker
+     * @return indicator function of the final_object
+     */
+    template<typename tree_t, typename T1, typename T2>
+    auto binary_labelisation_from_markers(
+            const tree_t &tree,
+            const xt::xexpression<T1> &xobject_marker,
+            const xt::xexpression<T2> &xbackground_marker) {
+        auto &object_marker = xobject_marker.derived_cast();
+        auto &background_marker = xbackground_marker.derived_cast();
+        hg_assert_leaf_weights(tree, object_marker);
+        hg_assert_leaf_weights(tree, background_marker);
+
+        array_1d<char> attr({num_vertices(tree)}, 0);
+
+        for (auto i: leaves_iterator(tree)) {
+            if (static_cast<bool>(background_marker(i))) {
+                attr(i) = 1;
+            } else if (static_cast<bool>(object_marker(i))) {
+                attr(i) = 2;
+            }
+        }
+
+        for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
+            for (auto c: children_iterator(i, tree)) {
+                attr(i) |= attr(c);
+            }
+        }
+
+        if (attr(root(tree)) == 0) { // both markers are empty
+            attr(root(tree)) = 1;
+        }
+
+        for (auto i: root_to_leaves_iterator(tree, leaves_it::include, root_it::exclude)) {
+            if (attr(i) == 0) {
+                if (attr(parent(i, tree)) == 2) {
+                    attr(i) = 2;
+                } else {
+                    attr(i) = 1;
+                }
+            }
+        }
+
+        return xt::eval(xt::view(attr, xt::range(0, num_leaves(tree))) - 1);
     }
 
 }

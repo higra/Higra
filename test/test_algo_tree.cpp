@@ -125,4 +125,17 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
         BOOST_CHECK(!testTreeIsomorphism(t4, t3));
     }
 
+    BOOST_AUTO_TEST_CASE(test_binary_labelisation_from_markers) {
+
+        tree t(array_1d<index_t>{9, 9, 9, 10, 10, 12, 13, 11, 11, 14, 12, 15, 13, 14, 15, 15});
+        array_1d<char> object_marker{0, 1, 0, 1, 0, 0, 0, 0, 0};
+        array_1d<char> background_marker{1, 0, 0, 0, 0, 0, 1, 0, 0};
+
+        auto labelisation = binary_labelisation_from_markers(t, object_marker, background_marker);
+
+        array_1d<char> ref_labelisation{0, 1, 0, 1, 1, 1, 0, 0, 0};
+
+        BOOST_CHECK(labelisation == ref_labelisation);
+    }
+
 BOOST_AUTO_TEST_SUITE_END();
