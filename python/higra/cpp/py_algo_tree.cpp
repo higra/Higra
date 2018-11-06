@@ -50,6 +50,22 @@ struct labelisation_hierarchy_supervertices {
     }
 };
 
+struct binary_labelisation_from_markers {
+    template<typename value_t>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_binary_labelisation_from_markers", [](const hg::tree &tree,
+                                                      const pyarray<value_t> &object_marker,
+                                                      const pyarray<value_t> &background_marker) {
+                  return hg::binary_labelisation_from_markers(tree, object_marker, background_marker);
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("object_marker"),
+              py::arg("background_marker"));
+    }
+};
+
 void py_init_algo_tree(pybind11::module &m) {
     xt::import_numpy();
 
@@ -78,5 +94,11 @@ void py_init_algo_tree(pybind11::module &m) {
              "Two leaves are in the same supervertex if they have a common ancestor "
              "of altitude 0.\n"
              "This functions guaranties that the labels are in the range [0, num_supervertices-1]."
+            );
+
+    add_type_overloads<binary_labelisation_from_markers, HG_TEMPLATE_INTEGRAL_TYPES>
+            (m,
+             "Union of tree regions with a non empty intersection with the object marker and an empty "
+             "intersection with the background marker."
             );
 }

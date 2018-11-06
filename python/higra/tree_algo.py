@@ -104,3 +104,25 @@ def filter_binary_partition_tree(altitudes, deleted_frontier_nodes, tree, mst):
     mst_edge_weights[deleted_frontier_nodes[tree.num_leaves():]] = 0
     return hg.bpt_canonical(mst_edge_weights, mst)
 
+
+def binary_labelisation_from_markers(tree, object_marker, background_marker):
+    """
+    Given two binary markers o (object) and b (background) (given by their indicator functions)
+    on the leaves of a tree t, the corresponding binary labelization of the leaves of t is defined as
+    the union of all the nodes intersecting o but not b.
+
+    final_object = union {R in T | R cap o neq emptyset and R cap b = emptyset}
+
+    :param tree: input tree
+    :param object_marker: indicator function of the object marker: 1d array of size tree.num_leaves() where non zero values correspond to the object marker
+    :param background_marker: indicator function of the background marker: 1d array of size tree.num_leaves() where non zero values correspond to the background marker
+    :return:
+    """
+
+    labels = hg._binary_labelisation_from_markers(tree, object_marker, background_marker)
+
+    leaf_graph = hg.get_attribute(tree, "leaf_graph")
+    if leaf_graph is not None:
+        hg.CptVertexLabeledGraph.link(labels, leaf_graph)
+
+    return labels

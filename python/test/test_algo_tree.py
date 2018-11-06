@@ -101,6 +101,17 @@ class TestAlgorithmTree(unittest.TestCase):
         sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
         self.assertTrue(np.all(sm == sm_ref))
 
+    def test_binary_labelisation_from_markers(self):
+        tree = hg.Tree(np.asarray((9, 9, 9, 10, 10, 12, 13, 11, 11, 14, 12, 15, 13, 14, 15, 15)))
+        object_marker = np.asarray((0, 1, 0, 1, 0, 0, 0, 0, 0), dtype=np.int8)
+        background_marker = np.asarray((1, 0, 0, 0, 0, 0, 1, 0, 0), dtype=np.int8)
+
+        labelisation = hg.binary_labelisation_from_markers(tree, object_marker, background_marker);
+
+        ref_labelisation = np.asarray((0, 1, 0, 1, 1, 1, 0, 0, 0), dtype=np.int8)
+
+        self.assertTrue(np.all(labelisation == ref_labelisation))
+
 
 if __name__ == '__main__':
     unittest.main()
