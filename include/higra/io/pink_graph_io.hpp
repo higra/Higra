@@ -67,6 +67,7 @@ namespace hg {
             std::size_t i;
             double d;
             in >> i >> d;
+            hg_assert(i < num_points, "Invalid graph file: vertex index out of range.");
             vertex_weight(i) = d;
         }
 
@@ -79,6 +80,8 @@ namespace hg {
             std::size_t i, j;
             double d;
             in >> i >> j >> d;
+            hg_assert(i < num_points && j < num_points,
+                      "Invalid graph file: vertex index out of range in edge definition.");
             g.add_edge(i, j);
             edge_weight(l) = d;
         }
@@ -144,7 +147,7 @@ namespace hg {
                 out << source(e, graph) << " " << target(e, graph) << " 1\n";
             }
         } else {
-            for (auto & e: edge_iterator(graph)) {
+            for (auto &e: edge_iterator(graph)) {
                 out << source(e, graph) << " " << target(e, graph) << " " << edge_values(e) << "\n";
             }
         }
