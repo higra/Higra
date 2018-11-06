@@ -86,11 +86,7 @@ else ()
     add_definitions("-DHG_ENABLE_TRACE")
 endif ()
 
-
-#add_subdirectory(${PROJECT_SOURCE_DIR}/src)
-
-#set(PYBIND11_CPP_STANDARD -std=c++14)
-#add_subdirectory(lib/pybind11)
+set(PYBIND11_CPP_STANDARD -std=c++14)
 
 add_subdirectory(python)
 
