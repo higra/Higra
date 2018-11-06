@@ -10,7 +10,7 @@
 
 #include "py_tree_io.hpp"
 #include "higra/io/tree_io.hpp"
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include <fstream>

@@ -8,9 +8,9 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "py_common_hierarchy.hpp"
-
 #include "py_common.hpp"
+
+#include "../py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "higra/graph.hpp"

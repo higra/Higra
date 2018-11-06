@@ -10,7 +10,7 @@
 
 #include "py_watershed_hierarchy.hpp"
 #include "higra/hierarchy/watershed_hierarchy.hpp"
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 

@@ -8,8 +8,8 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "py_algo_tree.hpp"
-#include "py_common.hpp"
+#include "py_tree.hpp"
+#include "../py_common.hpp"
 #include "higra/graph.hpp"
 #include "higra/algo/tree.hpp"
 #include "xtensor-python/pyarray.hpp"

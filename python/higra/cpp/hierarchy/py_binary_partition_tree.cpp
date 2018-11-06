@@ -10,7 +10,7 @@
 
 #include "py_binary_partition_tree.hpp"
 
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "higra/hierarchy/binary_partition_tree.hpp"

@@ -10,7 +10,7 @@
 
 #include "py_embedding.hpp"
 
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "higra/structure/embedding.hpp"

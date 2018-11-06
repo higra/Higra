@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include "py_log.hpp"
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "higra/detail/log.hpp"
 
 

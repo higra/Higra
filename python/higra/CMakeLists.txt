@@ -12,30 +12,7 @@
 
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIRS})
 
-set(PYMODULE_COMPONENTS
-        cpp/py_accumulators.cpp
-        cpp/py_algo_graph_core.cpp
-        cpp/py_algo_tree.cpp
-        cpp/py_alignement.cpp
-        cpp/py_binary_partition_tree.cpp
-        cpp/py_common_hierarchy.cpp
-        cpp/py_contour_2d.cpp
-        cpp/py_embedding.cpp
-        cpp/py_graph_image.cpp
-        cpp/py_graph_weights.cpp
-        cpp/py_hierarchy_core.cpp
-        cpp/py_hierarchy_mean_pb.cpp
-        cpp/py_lca_fast.cpp
-        cpp/py_log.cpp
-        cpp/py_pink_io.cpp
-        cpp/py_rag.cpp
-        cpp/py_regular_graph.cpp
-        cpp/py_tree_accumulators.cpp
-        cpp/py_tree_graph.cpp
-        cpp/py_tree_io.cpp
-        cpp/py_undirected_graph.cpp
-        cpp/py_watershed.cpp
-        cpp/py_watershed_hierarchy.cpp)
+add_subdirectory(cpp)
 
 set(MODULE_FILES
         __init__.py

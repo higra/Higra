@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include "py_graph_image.hpp"
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "higra/image/graph_image.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"

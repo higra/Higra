@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "higra/graph.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"

@@ -8,8 +8,8 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "py_pink_io.hpp"
-#include "py_common.hpp"
+#include "py_pink_graph_io.hpp"
+#include "../py_common.hpp"
 #include "higra/io/pink_graph_io.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"

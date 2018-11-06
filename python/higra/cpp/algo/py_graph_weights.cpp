@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include "py_graph_weights.hpp"
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "higra/algo/graph_weights.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"

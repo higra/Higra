@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include "py_hierarchy_mean_pb.hpp"
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/image/hierarchy_mean_pb.hpp"
 #include "xtensor-python/pyarray.hpp"

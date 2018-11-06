@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include "py_alignement.hpp"
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "higra/algo/alignment.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"

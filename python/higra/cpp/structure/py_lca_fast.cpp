@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include "py_lca_fast.hpp"
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "higra/graph.hpp"
 #include "higra/structure/lca_fast.hpp"
 #include "xtensor-python/pyarray.hpp"

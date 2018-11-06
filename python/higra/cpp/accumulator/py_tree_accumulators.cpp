@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include "py_tree_accumulators.hpp"
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"

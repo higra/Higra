@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include "py_accumulators.hpp"
-#include "py_common.hpp"
+#include "../py_common.hpp"
 #include "higra/accumulator/accumulator.hpp"
 
 namespace py = pybind11;

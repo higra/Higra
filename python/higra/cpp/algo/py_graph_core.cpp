@@ -8,8 +8,8 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "py_algo_graph_core.hpp"
-#include "py_common.hpp"
+#include "py_graph_core.hpp"
+#include "../py_common.hpp"
 #include "higra/algo/graph_core.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
