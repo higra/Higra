@@ -17,6 +17,7 @@ add_subdirectory(cpp)
 set(MODULE_FILES
         __init__.py
         alignment.py
+        attributes.py
         concept.py
         data_cache.py
         graph_core.py
@@ -27,7 +28,6 @@ set(MODULE_FILES
         image_utils.py
         pink_io.py
         rag.py
-        tree_attributes.py
         tree_algo.py
         tree_io.py
         watershed.py
