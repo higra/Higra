@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include <boost/test/unit_test.hpp>
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 #include "higra/algo/watershed.hpp"
 #include "higra/image/graph_image.hpp"
 

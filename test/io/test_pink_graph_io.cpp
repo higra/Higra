@@ -12,7 +12,7 @@
 #include "higra/io/pink_graph_io.hpp"
 #include <sstream>
 #include <string>
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 #include "xtensor/xgenerator.hpp"
 
 BOOST_AUTO_TEST_SUITE(pinkGraphIO);

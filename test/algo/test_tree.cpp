@@ -8,7 +8,7 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 #include <boost/test/unit_test.hpp>
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 #include "higra/graph.hpp"
 #include "higra/algo/tree.hpp"
 #include "higra/structure/array.hpp"

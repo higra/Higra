@@ -19,7 +19,7 @@
 #include "xtensor/xrandom.hpp"
 #include "xtensor/xstrided_view.hpp"
 #include "xtensor/xeval.hpp"
-#include "higra/attributes/tree_attributes.hpp"
+#include "higra/attribute/tree_attribute.hpp"
 
 using namespace xt;
 using namespace hg;

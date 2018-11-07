@@ -12,7 +12,7 @@
 
 #include "higra/image/contour_2d.hpp"
 
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 
 BOOST_AUTO_TEST_SUITE(test_contour_2d);
 

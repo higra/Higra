@@ -13,7 +13,7 @@
 #include "higra/graph.hpp"
 #include "higra/image/graph_image.hpp"
 #include "higra/structure/lca_fast.hpp"
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 
 BOOST_AUTO_TEST_SUITE(lca);
 

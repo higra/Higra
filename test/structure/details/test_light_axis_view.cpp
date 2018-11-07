@@ -13,7 +13,7 @@
 #include "higra/structure/array.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xstrided_view.hpp"
-#include "test_utils.hpp"
+#include "../../test_utils.hpp"
 
 BOOST_AUTO_TEST_SUITE(light_axis_view);
 

@@ -11,7 +11,7 @@
 #include <boost/test/unit_test.hpp>
 #include "xtensor/xio.hpp"
 #include "higra/graph.hpp"
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 #include <functional>
 
 BOOST_AUTO_TEST_SUITE(treeGraph);

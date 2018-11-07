@@ -13,7 +13,7 @@
 #include "common.hpp"
 #include "higra/graph.hpp"
 #include "hierarchy_core.hpp"
-#include "../attributes/tree_attributes.hpp"
+#include "../attribute/tree_attribute.hpp"
 
 namespace hg {
 

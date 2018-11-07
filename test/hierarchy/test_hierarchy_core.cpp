@@ -12,7 +12,7 @@
 #include "higra/image/graph_image.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/algo/tree.hpp"
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 #include "xtensor/xindex_view.hpp"
 #include "xtensor/xrandom.hpp"
 

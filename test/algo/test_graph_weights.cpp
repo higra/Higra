@@ -11,7 +11,7 @@
 #include <boost/test/unit_test.hpp>
 #include "higra/image/graph_image.hpp"
 #include "higra/algo/graph_weights.hpp"
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 
 BOOST_AUTO_TEST_SUITE(graphWeights);
 

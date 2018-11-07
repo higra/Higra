@@ -11,7 +11,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "higra/structure/fibonacci_heap.hpp"
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 #include <random>
 #include <map>
 #include <algorithm>

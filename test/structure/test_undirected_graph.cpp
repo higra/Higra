@@ -11,7 +11,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/mpl/list.hpp>
 #include "higra/graph.hpp"
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 
 
 /**

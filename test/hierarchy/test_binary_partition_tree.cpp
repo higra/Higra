@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include <boost/test/unit_test.hpp>
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 #include "higra/hierarchy/binary_partition_tree.hpp"
 #include "higra/image/graph_image.hpp"
 #include "xtensor/xrandom.hpp"

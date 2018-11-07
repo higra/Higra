@@ -9,31 +9,14 @@
 ############################################################################
 
 
-if (DO_TEST)
-    find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-    include_directories(${Boost_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include)
+set(FILES
+        test_tree_attribute.cpp)
 
+set(PATH_PREFIX attribute/)
+
+foreach (FILE ${FILES})
     set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
-            test.cpp
-            test_utils.cpp
+            ${PATH_PREFIX}${FILE}
             CACHE INTERNAL "" FORCE)
-
-    add_subdirectory(accumulator)
-    add_subdirectory(algo)
-    add_subdirectory(attribute)
-    add_subdirectory(hierarchy)
-    add_subdirectory(image)
-    add_subdirectory(io)
-    add_subdirectory(structure)
-
-    add_executable(test_exe ${TEST_CPP_COMPONENTS})
-
-    ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
-    target_link_libraries(test_exe ${Boost_LIBRARIES})
-    add_test(NAME Test_cpp COMMAND test_exe)
-    set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} test_exe CACHE INTERNAL "" FORCE)
-
-    add_subdirectory(ressources)
-
-endif (DO_TEST)
+endforeach ()
 

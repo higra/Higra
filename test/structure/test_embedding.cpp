@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include <boost/test/unit_test.hpp>
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 #include "higra/structure/embedding.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xgenerator.hpp"

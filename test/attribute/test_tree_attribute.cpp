@@ -9,8 +9,8 @@
 ****************************************************************************/
 
 #include <boost/test/unit_test.hpp>
-#include "test_utils.hpp"
-#include "higra/attributes/tree_attributes.hpp"
+#include "../test_utils.hpp"
+#include "higra/attribute/tree_attribute.hpp"
 
 BOOST_AUTO_TEST_SUITE(tree_attributes);
 

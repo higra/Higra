@@ -11,7 +11,7 @@
 #include <boost/test/unit_test.hpp>
 #include "higra/algo/alignment.hpp"
 #include "higra/image/graph_image.hpp"
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 
 
 using namespace hg;

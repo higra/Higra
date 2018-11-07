@@ -9,7 +9,7 @@
 ****************************************************************************/
 #include "higra/structure/array.hpp"
 #include <boost/test/unit_test.hpp>
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 #include "higra/accumulator/accumulator.hpp"
 #include "higra/structure/details/light_axis_view.hpp"
 #include <vector>

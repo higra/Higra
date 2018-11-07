@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include <boost/test/unit_test.hpp>
-#include "test_utils.hpp"
+#include "../test_utils.hpp"
 #include "higra/hierarchy/watershed_hierarchy.hpp"
 #include "higra/image/graph_image.hpp"
 #include "higra/algo/tree.hpp"
