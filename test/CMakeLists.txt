@@ -20,6 +20,7 @@ if (DO_TEST)
 
     add_subdirectory(accumulator)
     add_subdirectory(algo)
+    add_subdirectory(assessment)
     add_subdirectory(attribute)
     add_subdirectory(hierarchy)
     add_subdirectory(image)
