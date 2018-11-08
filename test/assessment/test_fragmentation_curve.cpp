@@ -22,12 +22,16 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         array_1d<char> ground_truth{0, 0, 1, 1, 1, 2, 2, 2};
 
         auto res = assess_fragmentation_curve_BCE_optimal_cut(t, ground_truth, 200);
+        auto &res_scores = res.scores;
+        auto &res_k = res.k;
 
-        array_1d<double> ref{2.75, 4.5, 2 + 4.0/3 + 2.5, 2 + 4.0/3 + 2, 2 + 4.0/3 + 4.0/3, 2 + 4.0/3 + 4.0/3, 4, 3};
+        array_1d<double> ref_scores{2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3,
+                                    2 + 4.0 / 3 + 4.0 / 3, 4, 3};
+        array_1d<size_t> ref_k{1, 2, 3, 4, 5, 6, 7, 8};
 
-        BOOST_CHECK(res == (ref/num_leaves(t)));
+        BOOST_CHECK(res_scores == (ref_scores / num_leaves(t)));
+        BOOST_CHECK(res_k == ref_k);
     }
-
 
 
 BOOST_AUTO_TEST_SUITE_END();
