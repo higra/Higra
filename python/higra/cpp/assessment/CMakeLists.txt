@@ -8,11 +8,14 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-add_subdirectory(accumulator)
-add_subdirectory(algo)
-add_subdirectory(assessment)
-add_subdirectory(detail)
-add_subdirectory(hierarchy)
-add_subdirectory(image)
-add_subdirectory(io)
-add_subdirectory(structure)
+
+set(FILES
+        py_fragmentation_curve.cpp)
+
+set(PATH_PREFIX cpp/assessment/)
+
+foreach (FILE ${FILES})
+    set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
+            ${PATH_PREFIX}${FILE}
+            CACHE INTERNAL "" FORCE)
+endforeach ()

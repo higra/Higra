@@ -44,6 +44,7 @@ PYBIND11_MODULE(higram, m) {
     py_init_embedding(m);
     py_init_graph_image(m);
     py_init_graph_weights(m);
+    py_init_fragmentation_curve(m);
     py_init_hierarchy_core(m);
     py_init_hierarchy_mean_pb(m);
     py_init_lca_fast(m);

@@ -108,7 +108,7 @@ namespace hg {
             }
         }
 
-        auto get_fragmentation_curve() {
+        auto get_fragmentation_curve() const{
             auto &backtrack_root = backtracking[root(m_tree)];
             array_1d<double> final_scores({backtrack_root.size()}, 0);
             for (index_t i = 0; i < backtrack_root.size(); i++) {
@@ -118,7 +118,7 @@ namespace hg {
                            xt::eval(final_scores / (double) num_leaves(m_tree))};
         }
 
-        auto get_optimal_number_of_regions() {
+        auto get_optimal_number_of_regions() const {
             auto &backtrack_root = backtracking[root(m_tree)];
             return 1 + std::distance(
                     backtrack_root.begin(),
@@ -127,7 +127,7 @@ namespace hg {
                                      [](const auto &a, const auto &b) { return a.score < b.score; }));
         }
 
-        auto get_optimal_partition(size_t num_regions = 0) {
+        auto get_optimal_partition(size_t num_regions = 0) const{
             if (num_regions == 0) {
                 num_regions = get_optimal_number_of_regions();
             }

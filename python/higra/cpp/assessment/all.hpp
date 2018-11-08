@@ -10,11 +10,4 @@
 
 #pragma once
 
-#include "accumulator/all.hpp"
-#include "algo/all.hpp"
-#include "assessment/all.hpp"
-#include "detail/all.hpp"
-#include "hierarchy/all.hpp"
-#include "image/all.hpp"
-#include "io/all.hpp"
-#include "structure/all.hpp"
+#include "py_fragmentation_curve.hpp"
