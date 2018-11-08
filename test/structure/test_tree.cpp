@@ -258,6 +258,8 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
             }
             BOOST_CHECK(vectorEqual(ref[v], test[v]));
         }
+
+        BOOST_CHECK(child(1, 5, g) == 1);
     }
 
     BOOST_AUTO_TEST_CASE(treeTopologicalIterator) {

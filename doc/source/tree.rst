@@ -31,7 +31,7 @@ is represented by the following parent array:
 .. csv-table::
 
        node , 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , 11
-       parent , 7 , 7 , 8 , 8 , 8 , 9 , 9 , 11 , 10 , 10 , 10 , 11
+       parent , 7 , 7 , 8 , 8 , 8 , 9 , 9 , 11 , 10 , 10 , 11 , 11
 
 Constructor
 -----------
@@ -51,7 +51,7 @@ Example:
             using namespace hg;
 
             // creates the tree shown in the figure above
-            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11});
+            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
 
 
 
@@ -63,7 +63,7 @@ Example:
             import higra as hg
 
             # creates the tree shown in the figure above
-            g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11))
+            g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
 
 
@@ -91,6 +91,9 @@ Basic functions
     *   - ``num_children``
         - positive integer
         - Number of children of the given node
+    *   - ``child``
+        - vertex
+        - i-th child of the given node
     *   - ``is_leaf``
         - boolean
         - True if given node is a leaf, False otherwise
@@ -105,15 +108,16 @@ Example:
             :linenos:
 
             // creates the tree shown in the figure above
-            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11});
+            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
 
             num_leaves(t);      //  7
             root(t);            // 11
             parent(2, t);       //  8
-            parents(t);         //  array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11}
+            parents(t);         //  array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11}
             num_children(8, t); //  3
+            child(1, 11, t);    // 10
             is_leaf(4, t);      // true
-            is_leaf(5, T);      // false
+            is_leaf(5, t);      // false
 
     .. tab:: python
 
@@ -121,13 +125,14 @@ Example:
             :linenos:
 
             # creates the tree shown in the figure above
-            g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11))
+            g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
             t.num_leaves()      #  7
             t.root()            # 11
             t.parent(2)         #  8
-            t.parents()         #  array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11}
+            t.parents()         #  array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11}
             t.num_children(8)   #  3
+            t.child(1, 11)      # 10
             t.is_leaf(4)        # True
             t.is_leaf(5)        # False
 
@@ -164,7 +169,7 @@ Iterators
             :linenos:
 
             // creates the tree shown in the figure above
-            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11});
+            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
 
             for(auto n: children_iterator(t, 8)){
                 ... // 2, 3, 4
@@ -201,7 +206,7 @@ Iterators
             :linenos:
 
             # creates the tree shown in the figure above
-            g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 10, 11))
+            g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
             for n in t.children_iterator(8):
                 ... # 2, 3, 4

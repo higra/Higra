@@ -202,6 +202,8 @@ class TestTree(unittest.TestCase):
                 res.append(c)
             self.assertTrue(res == ref[v])
 
+        self.assertTrue(t.child(1, 5) == 1)
+
 
 if __name__ == '__main__':
     unittest.main()

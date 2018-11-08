@@ -50,6 +50,9 @@ void py_init_tree_graph(pybind11::module &m) {
 
     c.def("num_children", &graph_t::num_children, "Get the number of children nodes of the given node.",
           py::arg("node"));
+    c.def("child", &graph_t::child, "Get the i-th (starting at 0) child of the given node of the tree.",
+          py::arg("i"),
+          py::arg("node"));
     c.def("children",
           [](const graph_t &g, vertex_t v) {
               auto it = hg::children(v, g);

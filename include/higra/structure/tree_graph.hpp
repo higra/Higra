@@ -150,6 +150,10 @@ namespace hg {
             auto children(vertex_descriptor v) const {
                 return _children[v];
             }
+            
+            auto child(index_t i, vertex_descriptor v) const{
+                return _children[v][i];
+            }
 
             template<typename... Args>
             auto parent(Args &&... args) const {
@@ -364,6 +368,12 @@ namespace hg {
     std::pair<tree::children_iterator, tree::children_iterator>
     children(const tree::vertex_descriptor v, const tree &g) {
         return std::make_pair(g.children_cbegin(v), g.children_cend(v));
+    }
+    
+    inline 
+    tree::vertex_descriptor 
+    child(index_t i, tree::vertex_descriptor v, const tree &t){
+        return t.child(i, v);
     }
 
     inline
