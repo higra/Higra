@@ -21,7 +21,11 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         tree t(array_1d<index_t>{8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14});
         array_1d<char> ground_truth{0, 0, 1, 1, 1, 2, 2, 2};
 
-        auto res = assess_fragmentation_curve_BCE_optimal_cut(t, ground_truth, 200);
+        assesser_optimal_cut_BCE assesser(t, ground_truth, 200);
+
+        BOOST_CHECK(assesser.get_optimal_number_of_regions() == 3);
+
+        auto res = assesser.get_fragmentation_curve();
         auto &res_scores = res.scores;
         auto &res_k = res.k;
 
@@ -33,5 +37,27 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         BOOST_CHECK(res_k == ref_k);
     }
 
+    BOOST_AUTO_TEST_CASE(test_assess_optimal_partitions_BCE_optimal_cut) {
+        tree t(array_1d<index_t>{8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14});
+        array_1d<char> ground_truth{0, 0, 1, 1, 1, 2, 2, 2};
+
+        assesser_optimal_cut_BCE assesser(t, ground_truth, 200);
+
+        std::vector<array_1d<index_t>> optimal_partitions
+                {{0, 0, 0, 0, 0, 0, 0, 0},
+                 {0, 0, 0, 0, 1, 1, 1, 1},
+                 {0, 0, 1, 1, 2, 2, 2, 2},
+                 {0, 0, 1, 1, 2, 2, 2, 3},
+                 {0, 0, 1, 1, 2, 2, 3, 4},
+                 {0, 0, 1, 1, 2, 3, 4, 5},
+                 {0, 0, 1, 2, 3, 4, 5, 6},
+                 {0, 1, 2, 3, 4, 5, 6, 7}};
+
+        BOOST_CHECK(is_in_bijection(optimal_partitions[2], assesser.get_optimal_partition()));
+
+        for (index_t i = 0; i < optimal_partitions.size(); i++) {
+            BOOST_CHECK(is_in_bijection(optimal_partitions[i], assesser.get_optimal_partition(i + 1)));
+        }
+    }
 
 BOOST_AUTO_TEST_SUITE_END();

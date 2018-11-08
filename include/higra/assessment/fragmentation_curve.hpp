@@ -12,6 +12,7 @@
 
 #include "../graph.hpp"
 #include "../attribute/tree_attribute.hpp"
+#include "../algo/tree.hpp"
 #include <xtensor/xsort.hpp>
 
 namespace hg {
@@ -31,7 +32,7 @@ namespace hg {
 
     }
 
-    class assesser_optimal_cut_BCE{
+    class assesser_optimal_cut_BCE {
     public:
 
         template<typename tree_t, typename T>
@@ -39,7 +40,7 @@ namespace hg {
                 const tree_t &tree,
                 const xt::xexpression<T> &xground_truth,
                 size_t max_regions = 200):
-                m_tree(tree){
+                m_tree(tree) {
             auto &ground_truth = xground_truth.derived_cast();
             hg_assert_leaf_weights(tree, ground_truth);
             hg_assert_1d_array(ground_truth);
@@ -60,7 +61,8 @@ namespace hg {
             for (auto i: leaves_iterator(tree)) {
                 card_intersection_leaves(i, ground_truth(i))++;
             }
-            array_2d<double> card_intersection = accumulate_sequential(tree, card_intersection_leaves, accumulator_sum());
+            array_2d<double> card_intersection = accumulate_sequential(tree, card_intersection_leaves,
+                                                                       accumulator_sum());
             //auto card_union = xt::eval(-card_intersection + region_gt_areas + xt::view(region_tree_area, xt::all(), xt::newaxis()));
 
             auto scores = xt::eval(xt::sum(
@@ -98,14 +100,15 @@ namespace hg {
 
                         auto fusion_score = match_k_c1.score + match_k_c2.score;
                         if (fusion_score > backtrack_i[fusion_num_regions - 1].score) {
-                            backtrack_i[fusion_num_regions - 1] = {fusion_num_regions, fusion_score, k_c1, k_c2};
+                            backtrack_i[fusion_num_regions - 1] = {fusion_num_regions, fusion_score, k_c1 + 1,
+                                                                   k_c2 + 1};
                         }
                     }
                 }
             }
         }
 
-        auto get_fragmentation_curve(){
+        auto get_fragmentation_curve() {
             auto &backtrack_root = backtracking[root(m_tree)];
             array_1d<double> final_scores({backtrack_root.size()}, 0);
             for (index_t i = 0; i < backtrack_root.size(); i++) {
@@ -115,9 +118,44 @@ namespace hg {
                            xt::eval(final_scores / (double) num_leaves(m_tree))};
         }
 
+        auto get_optimal_number_of_regions() {
+            auto &backtrack_root = backtracking[root(m_tree)];
+            return 1 + std::distance(
+                    backtrack_root.begin(),
+                    std::max_element(backtrack_root.begin(),
+                                     backtrack_root.end(),
+                                     [](const auto &a, const auto &b) { return a.score < b.score; }));
+        }
+
+        auto get_optimal_partition(size_t num_regions = 0) {
+            if (num_regions == 0) {
+                num_regions = get_optimal_number_of_regions();
+            }
+            array_1d<bool> non_cut_nodes({num_vertices(m_tree)}, true);
+            std::stack<std::pair<index_t, size_t>> s;
+            s.push({root(m_tree), num_regions});
+            while (!s.empty()) {
+                index_t n;
+                size_t k_n;
+                std::tie(n, k_n) = s.top();
+                s.pop();
+                auto &node = backtracking[n][k_n - 1];
+                non_cut_nodes[n] = false;
+
+                if (node.back_track_k_left != 0) { // && node.back_track_k_right != 0
+                    s.push({child(0, n, m_tree), node.back_track_k_left});
+                    s.push({child(1, n, m_tree), node.back_track_k_right});
+                }
+
+            }
+            return reconstruct_leaf_data(m_tree,
+                                         xt::arange(num_vertices(m_tree)),
+                                         non_cut_nodes);
+        }
+
     private:
         std::vector<std::vector<fragmentation_curve_internal::dynamic_node>> backtracking;
-        const hg::tree & m_tree;
+        const hg::tree &m_tree;
     };
 
     template<typename tree_t, typename T>
@@ -125,7 +163,7 @@ namespace hg {
             const tree_t &tree,
             const xt::xexpression<T> &xground_truth,
             size_t max_regions = 200) {
-      assesser_optimal_cut_BCE assesser(tree, xground_truth, max_regions);
-      return assesser.get_fragmentation_curve();
+        assesser_optimal_cut_BCE assesser(tree, xground_truth, max_regions);
+        return assesser.get_fragmentation_curve();
     }
 }
