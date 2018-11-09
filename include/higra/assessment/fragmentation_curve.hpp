@@ -22,6 +22,12 @@ namespace hg {
         array_1d<double> scores;
     };
 
+    enum class optimal_cut_measure {
+        BCE,
+        DHamming,
+        Covering
+    };
+
     namespace fragmentation_curve_internal {
         struct dynamic_node {
             size_t k; // number of regions
@@ -36,7 +42,7 @@ namespace hg {
      * This class is used to assess the optimal cuts of a hierarchy of partitions with respect to
      * a given ground-truth labelisation of its base graph and the BCE measure.
      */
-    class assesser_optimal_cut_BCE {
+    class assesser_optimal_cut {
     public:
 
         /**
@@ -54,9 +60,10 @@ namespace hg {
          * @param max_regions maximum number of regions in the considered cuts.
          */
         template<typename tree_t, typename T>
-        assesser_optimal_cut_BCE(
+        assesser_optimal_cut(
                 const tree_t &tree,
                 const xt::xexpression<T> &xground_truth,
+                optimal_cut_measure measure,
                 size_t max_regions = 200):
                 m_tree(tree) {
             auto &ground_truth = xground_truth.derived_cast();
@@ -67,6 +74,7 @@ namespace hg {
             max_regions = std::min(max_regions, num_leaves(tree));
 
             m_num_regions_ground_truth = xt::amax(ground_truth)() + 1;
+
             array_1d<index_t> region_gt_areas({m_num_regions_ground_truth}, 0);
             for (auto v:ground_truth) {
                 region_gt_areas[v]++;
@@ -75,19 +83,32 @@ namespace hg {
             auto region_tree_area = attribute_area(tree);
 
             // for a tree node i, a gt region j: card_intersection(i, j) is the number of pixels in R_i cap R_j
-            array_2d<index_t> card_intersection_leaves{{num_leaves(tree), m_num_regions_ground_truth}, 0};
+            array_2d<index_t> card_intersection_leaves{{num_leaves(tree), region_gt_areas.size()}, 0};
             for (auto i: leaves_iterator(tree)) {
                 card_intersection_leaves(i, ground_truth(i))++;
             }
             array_2d<double> card_intersection = accumulate_sequential(tree, card_intersection_leaves,
                                                                        accumulator_sum());
-            //auto card_union = xt::eval(-card_intersection + region_gt_areas + xt::view(region_tree_area, xt::all(), xt::newaxis()));
 
-            auto scores = xt::eval(xt::sum(
-                    card_intersection *
-                    xt::minimum(card_intersection / region_gt_areas,
-                                card_intersection / xt::view(region_tree_area, xt::all(), xt::newaxis())),
-                    {1}));
+            array_1d<double> scores;
+
+            switch (measure) {
+                case optimal_cut_measure::BCE:
+                    scores = xt::eval(xt::sum(
+                            card_intersection *
+                            xt::minimum(card_intersection / region_gt_areas,
+                                        card_intersection / xt::view(region_tree_area, xt::all(), xt::newaxis())),
+                            {1}));
+                    break;
+                case optimal_cut_measure::DHamming:
+                    scores = xt::eval(xt::amax(card_intersection, {1}));
+                    break;
+                case optimal_cut_measure::Covering:
+                    auto card_union = xt::eval(-card_intersection + region_gt_areas +
+                                               xt::view(region_tree_area, xt::all(), xt::newaxis()));
+                    scores = xt::eval(xt::amax(card_intersection / card_union, {1}) * region_tree_area);
+                    break;
+            }
 
             // initialize scoring for single region partitions (hte node itself)
             for (auto i: leaves_to_root_iterator(tree)) {
@@ -216,24 +237,24 @@ namespace hg {
          * @param normalize_result Ensure that altitudes[tree(root)] == optimal_score
          * @return
          */
-        auto straightened_altitudes(bool gain_only=false, bool normalize_result=true) const {
+        auto straightened_altitudes(bool gain_only = false, bool normalize_result = true) const {
             auto &backtrack_root = backtracking[root(m_tree)];
             auto score_max = backtrack_root[0].score;
 
             array_1d<double> altitudes({num_vertices(m_tree)}, 0);
             stackv<std::pair<index_t, size_t>> stack;
 
-            auto back_track_cut = [&altitudes, &stack, this](size_t k, double score_gain){
+            auto back_track_cut = [&altitudes, &stack, this](size_t k, double score_gain) {
                 stack.push({root(m_tree), k});
-                while(!stack.empty()){
+                while (!stack.empty()) {
                     index_t n;
                     size_t k_n;
                     std::tie(n, k_n) = stack.top();
                     stack.pop();
-                    if(parent(n, m_tree) != n){
+                    if (parent(n, m_tree) != n) {
                         altitudes(parent(n, m_tree)) += score_gain;
                     }
-                    if(!is_leaf(n, m_tree)){
+                    if (!is_leaf(n, m_tree)) {
                         auto &node = backtracking[n][k_n - 1];
                         if (node.back_track_k_left != 0) { // && node.back_track_k_right != 0
                             stack.push({child(0, n, m_tree), node.back_track_k_left});
@@ -252,8 +273,9 @@ namespace hg {
                     back_track_cut(i + 1, std::abs(score_gain) * 0.5); // *0.5 summation from two children
                 }
             }
-            if(normalize_result){
-                back_track_cut(backtrack_root.size(), (score_max - altitudes[root(m_tree)]) * 0.5); // *0.5 summation from two children
+            if (normalize_result) {
+                back_track_cut(backtrack_root.size(),
+                               (score_max - altitudes[root(m_tree)]) * 0.5); // *0.5 summation from two children
             }
 
             return altitudes;
@@ -266,12 +288,4 @@ namespace hg {
         size_t m_num_regions_ground_truth;
     };
 
-    template<typename tree_t, typename T>
-    auto assess_fragmentation_curve_BCE_optimal_cut(
-            const tree_t &tree,
-            const xt::xexpression<T> &xground_truth,
-            size_t max_regions = 200) {
-        assesser_optimal_cut_BCE assesser(tree, xground_truth, max_regions);
-        return assesser.fragmentation_curve();
-    }
 }
