@@ -110,3 +110,18 @@ void showTypeName(std::string msg = "") {
  */
 template<typename T>
 struct COMPILE_ERROR;
+
+template <typename T>
+bool almost_equal(const T & a, const T& b, T epsilon){
+    return std::abs(a - b) < epsilon;
+}
+
+inline
+bool almost_equal(const double & a, const double& b){
+    return almost_equal(a, b, 1e-9);
+}
+
+inline
+bool almost_equal(const float & a, const float& b){
+    return almost_equal(a, b, 1e-4f);
+}

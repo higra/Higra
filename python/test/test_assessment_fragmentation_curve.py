@@ -21,8 +21,11 @@ class TestFragmentationCurve(unittest.TestCase):
 
         assesser = hg.AssesserOptimalCutBCE(t, ground_truth)
 
-        self.assertTrue(assesser.get_optimal_number_of_regions() == 3)
-        res_k, res_scores = assesser.get_fragmentation_curve();
+        self.assertTrue(assesser.optimal_number_of_regions() == 3)
+        self.assertTrue(assesser.number_of_region_ground_truth() == 3)
+        self.assertTrue(np.isclose(assesser.optimal_score(), (2 + 4.0 / 3 + 2.5) / t.num_leaves()))
+
+        res_k, res_scores = assesser.fragmentation_curve()
 
         ref_scores = np.asarray((2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3,
                                  2 + 4.0 / 3 + 4.0 / 3, 4, 3))
@@ -46,10 +49,11 @@ class TestFragmentationCurve(unittest.TestCase):
                               np.asarray((0, 0, 1, 2, 3, 4, 5, 6), dtype=np.int32),
                               np.asarray((0, 1, 2, 3, 4, 5, 6, 7), dtype=np.int32)]
 
-        self.assertTrue(hg.is_in_bijection(optimal_partitions[2], assesser.get_optimal_partition()))
+        self.assertTrue(hg.is_in_bijection(optimal_partitions[2], assesser.optimal_partition()))
 
         for i in range(len(optimal_partitions)):
-            self.assertTrue(hg.is_in_bijection(optimal_partitions[i], assesser.get_optimal_partition(i + 1)))
+            self.assertTrue(hg.is_in_bijection(optimal_partitions[i], assesser.optimal_partition(i + 1)))
+
 
 if __name__ == '__main__':
     unittest.main()

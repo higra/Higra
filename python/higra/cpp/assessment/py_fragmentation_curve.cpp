@@ -40,23 +40,31 @@ void py_init_fragmentation_curve(pybind11::module &m) {
              "leaves and the BCE quality measure. The algorithms will explore optimal cuts containing at most "
              "max_regions regions.");
 
-    c.def("get_fragmentation_curve",
+    c.def("fragmentation_curve",
             [](const assesser_optimal_cut_BCE & assesser){
-                auto curve = assesser.get_fragmentation_curve();
+                auto curve = assesser.fragmentation_curve();
                 return py::make_tuple(std::move(curve.k), std::move(curve.scores));
     },
-    "Get the fragmentation curve, i.e. for each number of region k between 1 and max_regions, "
+    "Fragmentation curve, i.e. for each number of region k between 1 and max_regions, "
     "the BCE score of the optimal cut with k regions. The curve is given by a pair of arrays "
     "(number_of_regions, scores), ready to be plotted:"
     "plot(x=number_of_regions, y=scores)");
 
-    c.def("get_optimal_number_of_regions",
-            &assesser_optimal_cut_BCE::get_optimal_number_of_regions,
-            "Get the number of regions in the optimal cut.");
+    c.def("number_of_region_ground_truth",
+            &assesser_optimal_cut_BCE::number_of_region_ground_truth,
+            "Number of regions in the ground truth.");
 
-    c.def("get_optimal_partition",
-            &assesser_optimal_cut_BCE::get_optimal_partition,
-            "Get the labelisation of the tree vertices that corresponds to the optimal cut with"
+    c.def("optimal_number_of_regions",
+            &assesser_optimal_cut_BCE::optimal_number_of_regions,
+            "Number of regions in the optimal cut.");
+
+    c.def("optimal_score",
+            &assesser_optimal_cut_BCE::optimal_score,
+            "Score of the optimal cut.");
+
+    c.def("optimal_partition",
+            &assesser_optimal_cut_BCE::optimal_partition,
+            "Labelisation of the tree vertices that corresponds to the optimal cut with"
             "the given number of regions. If the number of regions is equal to 0 (default), the "
             "global optimal cut it returned (it will contain get_optimal_number_of_regions regions).",
             py::arg("num_regions")=0);
