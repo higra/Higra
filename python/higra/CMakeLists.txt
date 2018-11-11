@@ -30,6 +30,7 @@ set(MODULE_FILES
         pink_io.py
         rag.py
         tree_algo.py
+        tree_accumulator.py
         tree_io.py
         watershed.py
         watershed_hierarchy.py)

@@ -30,8 +30,8 @@ struct def_accumulate_parallel {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("accumulate_parallel", [](const graph_t &tree, const pyarray<value_t> &input,
-                                        hg::accumulators accumulator) {
+        c.def("_accumulate_parallel", [](const graph_t &tree, const pyarray<value_t> &input,
+                                         hg::accumulators accumulator) {
                   switch (accumulator) {
                       case hg::accumulators::min:
                           return hg::accumulate_parallel(tree, input, hg::accumulator_min());
@@ -72,7 +72,7 @@ struct def_accumulate_sequential {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("accumulate_sequential",
+        c.def("_accumulate_sequential",
               [](const graph_t &tree, const pyarray<value_t> &vertex_data, hg::accumulators accumulator) {
                   switch (accumulator) {
                       case hg::accumulators::min:
@@ -205,7 +205,7 @@ struct def_propagate_sequential {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("propagate_sequential",
+        c.def("_propagate_sequential",
               [](const graph_t &tree, const pyarray<value_t> &input,
                  const pyarray<bool> &condition) {
                   return hg::propagate_sequential(tree, input, condition);
@@ -222,7 +222,7 @@ struct def_propagate_parallel {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("propagate_parallel",
+        c.def("_propagate_parallel",
               [](const graph_t &tree, const pyarray<value_t> &input,
                  const pyarray<bool> &condition) {
                   if (condition.dimension() == 0) {
@@ -241,70 +241,39 @@ struct def_propagate_parallel {
 void py_init_tree_accumulator(pybind11::module &m) {
     add_type_overloads<def_accumulate_parallel<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
-             "For each node i of the tree, we accumulate values of the children of i in the input array and put the result "
-             "in output. i.e. output(i) = accumulate(input(children(i)))");
+             "");
 
     add_type_overloads<def_accumulate_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
-             "Performs a sequential accumulation of node values from the leaves to the root. "
-             "For each leaf node i, output(i) = leaf_data(i)."
-             "For each node i from the leaves (excluded) to the root, output(i) = accumulate(output(children(i)))");
+             "");
 
     add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
-             "Performs a sequential accumulation of node values from the leaves to the root and add the result with the input array."
-             "For each leaf node i, output(i) = leaf_data(i)."
-             "For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))",
-             "accumulate_and_add_sequential",
+             "",
+             "_accumulate_and_add_sequential",
              functorPlus());
 
     add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
-             "Performs a sequential accumulation of node values from the leaves to the root and multiply the result with the input array."
-             "For each leaf node i, output(i) = leaf_data(i)."
-             "For each node i from the leaves (excluded) to the root, output(i) = input(i) * accumulate(output(children(i)))",
-             "accumulate_and_multiply_sequential",
+             "",
+             "_accumulate_and_multiply_sequential",
              functorMultiply());
 
     add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
-             "Performs a sequential accumulation of node values from the leaves to the root and max the result with the input array."
-             "For each leaf node i, output(i) = leaf_data(i)."
-             "For each node i from the leaves (excluded) to the root, output(i) = max(input(i), accumulate(output(children(i))))",
-             "accumulate_and_max_sequential",
+             "",
+             "_accumulate_and_max_sequential",
              functorMax());
 
     add_type_overloads<def_accumulate_and_combine_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
-             "Performs a sequential accumulation of node values from the leaves to the root and min the result with the input array."
-             "For each leaf node i, output(i) = leaf_data(i)."
-             "For each node i from the leaves (excluded) to the root, output(i) = min(input(i), accumulate(output(children(i))))",
-             "accumulate_and_min_sequential",
+             "",
+             "_accumulate_and_min_sequential",
              functorMin());
 
     add_type_overloads<def_propagate_parallel<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
-            (m,
-             "\
-The conditional parallel propagator defines the new value of a node as its parent value if the condition is true and keeps its value otherwise. \
-This process is done in parallel on the whole tree. The default condition (if the user does not provide one) is true for all nodes: each node takes \
-the value of its parent. \n\n\
-The conditional parallel propagator pseudo-code could be::\n\n\
-	# input: a tree t\n\
-	# input: an attribute att on the nodes of t\n\
-	# input: a condition cond on the nodes of t\n\n\
-\
-	output = copy(input)\n\n\
-\
-	for each node n of t:\n\
-	if(cond(n)):\n\
-	    output[n] = input[t.parent(n)]\n\n\
-\
-	return output\
-");
+            (m, "");
 
     add_type_overloads<def_propagate_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
-            (m,
-             "Conditionally propagates parent values to children. "
-             "For each node i from the root to the leaves, if condition(i) then output(i) = output(tree.parent(i)) otherwise"
-             "output(i) = input(i)");
+            (m, "");
 }

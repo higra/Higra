@@ -24,6 +24,7 @@ def labelisation_2_graph_cut(vertex_labels, graph):
     :param vertex_labels:
     :return:
     """
+    vertex_labels = hg.linearize_vertex_weights(vertex_labels, graph)
     graph_cut = hg._labelisation_2_graph_cut(graph, vertex_labels)
     hg.CptEdgeWeightedGraph.link(graph_cut, graph)
     return graph_cut
@@ -42,5 +43,8 @@ def graph_cut_2_labelisation(edge_weights, graph):
     :return:
     """
     vertex_labels = hg._graph_cut_2_labelisation(graph, edge_weights)
+
+    vertex_labels = hg.delinearize_vertex_weights(vertex_labels, graph)
     hg.CptVertexLabeledGraph.link(vertex_labels, graph)
+
     return vertex_labels

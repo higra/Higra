@@ -26,19 +26,7 @@ def weight_graph(vertex_weights, weight_function, graph):
     :return: edge_weights
     """
 
-    shape = vertex_weights.shape
-    num_vertices = graph.num_vertices()
-    collapse = 0
-    curSize = shape[0]
-    while curSize < num_vertices:
-        collapse += 1
-        curSize *= shape[collapse]
-
-    assert curSize == num_vertices, \
-        "The shape of vertex_weights is not compatible with the number of vertices of the graph."
-
-    if collapse != 0:
-        vertex_weights = vertex_weights.reshape([num_vertices] + [shape[i] for i in range(collapse + 1, len(shape))])
+    vertex_weights = hg.linearize_vertex_weights(vertex_weights, graph)
 
     edge_weights = hg._weight_graph(graph, vertex_weights, weight_function)
 

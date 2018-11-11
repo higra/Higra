@@ -23,32 +23,36 @@ class TestTreeAccumulators(unittest.TestCase):
     def test_tree_accumulator(self):
         tree = TestTreeAccumulators.get_tree()
         input_array = np.asarray((1, 1, 1, 1, 1, 1, 1, 1))
+        hg.CptValuedHierarchy.link(input_array, tree)
 
-        res1 = hg.accumulate_parallel(tree, input_array, hg.Accumulators.sum)
+        res1 = hg.accumulate_parallel(input_array, hg.Accumulators.sum)
         ref1 = np.asarray((0, 0, 0, 0, 0, 2, 3, 2))
         self.assertTrue(np.allclose(ref1, res1))
 
         leaf_data = np.asarray((1, 1, 1, 1, 1))
-        res2 = hg.accumulate_sequential(tree, leaf_data, hg.Accumulators.sum)
+        res2 = hg.accumulate_sequential(leaf_data, hg.Accumulators.sum, tree)
         ref2 = np.asarray((1, 1, 1, 1, 1, 2, 3, 5))
         self.assertTrue(np.allclose(ref2, res2))
 
-        res3 = hg.accumulate_and_add_sequential(tree, input_array, leaf_data, hg.Accumulators.max)
+        res3 = hg.accumulate_and_add_sequential(input_array, leaf_data, hg.Accumulators.max)
         ref3 = np.asarray((1, 1, 1, 1, 1, 2, 2, 3))
         self.assertTrue(np.allclose(ref3, res3))
 
         input_array = np.asarray((1, 2, 1, 2, 1, 1, 4, 5))
-        res4 = hg.accumulate_and_max_sequential(tree, input_array, leaf_data, hg.Accumulators.sum)
+        hg.CptValuedHierarchy.link(input_array, tree)
+        res4 = hg.accumulate_and_max_sequential(input_array, leaf_data, hg.Accumulators.sum)
         ref4 = np.asarray((1, 1, 1, 1, 1, 2, 4, 6))
         self.assertTrue(np.allclose(ref4, res4))
 
         input_array = np.asarray((1, 2, 1, 2, 1, 2, 3, 1))
-        res5 = hg.accumulate_and_multiply_sequential(tree, input_array, leaf_data, hg.Accumulators.sum)
+        hg.CptValuedHierarchy.link(input_array, tree)
+        res5 = hg.accumulate_and_multiply_sequential(input_array, leaf_data, hg.Accumulators.sum)
         ref5 = np.asarray((1, 1, 1, 1, 1, 4, 9, 13))
         self.assertTrue(np.allclose(ref5, res5))
 
         input_array = np.asarray((1, 2, 1, 2, 1, 4, 2, 10))
-        res6 = hg.accumulate_and_min_sequential(tree, input_array, leaf_data, hg.Accumulators.sum)
+        hg.CptValuedHierarchy.link(input_array, tree)
+        res6 = hg.accumulate_and_min_sequential(input_array, leaf_data, hg.Accumulators.sum)
         ref6 = np.asarray((1, 1, 1, 1, 1, 2, 2, 4))
         self.assertTrue(np.allclose(ref6, res6))
 
@@ -62,8 +66,9 @@ class TestTreeAccumulators(unittest.TestCase):
                                   (1, 5),
                                   (1, 6),
                                   (1, 7)))
+        hg.CptValuedHierarchy.link(input_array, tree)
 
-        res1 = hg.accumulate_parallel(tree, input_array, hg.Accumulators.sum)
+        res1 = hg.accumulate_parallel(input_array, hg.Accumulators.sum)
         ref1 = np.asarray(((0, 0),
                            (0, 0),
                            (0, 0),
@@ -79,7 +84,7 @@ class TestTreeAccumulators(unittest.TestCase):
                                 (1, 2),
                                 (1, 3),
                                 (1, 4)))
-        res2 = hg.accumulate_sequential(tree, leaf_data, hg.Accumulators.sum)
+        res2 = hg.accumulate_sequential(leaf_data, hg.Accumulators.sum, tree)
         ref2 = np.asarray(((1, 0),
                            (1, 1),
                            (1, 2),
@@ -90,7 +95,7 @@ class TestTreeAccumulators(unittest.TestCase):
                            (5, 10)))
         self.assertTrue(np.allclose(ref2, res2))
 
-        res3 = hg.accumulate_and_add_sequential(tree, input_array, leaf_data, hg.Accumulators.sum)
+        res3 = hg.accumulate_and_add_sequential(input_array, leaf_data, hg.Accumulators.sum)
         ref3 = np.asarray(((1, 0),
                            (1, 1),
                            (1, 2),
@@ -104,17 +109,18 @@ class TestTreeAccumulators(unittest.TestCase):
     def test_tree_propagate(self):
         tree = TestTreeAccumulators.get_tree()
         input_array = np.asarray(((1, 8), (2, 7), (3, 6), (4, 5), (5, 4), (6, 3), (7, 2), (8, 1)), dtype=np.float64)
+        hg.CptValuedHierarchy.link(input_array, tree)
         condition = np.asarray((True, False, True, False, True, True, False, False))
 
-        output = hg.propagate_parallel(tree, input_array)
+        output = hg.propagate_parallel(input_array)
         ref = np.asarray(((6, 3), (6, 3), (7, 2), (7, 2), (7, 2), (8, 1), (8, 1), (8, 1)))
         self.assertTrue(np.allclose(ref, output))
 
-        output = hg.propagate_parallel(tree, input_array, condition)
+        output = hg.propagate_parallel(input_array, condition=condition)
         ref = np.asarray(((6, 3), (2, 7), (7, 2), (4, 5), (7, 2), (8, 1), (7, 2), (8, 1)))
         self.assertTrue(np.allclose(ref, output))
 
-        output2 = hg.propagate_sequential(tree, input_array, condition)
+        output2 = hg.propagate_sequential(input_array, condition)
         ref2 = np.asarray(((8, 1), (2, 7), (7, 2), (4, 5), (7, 2), (8, 1), (7, 2), (8, 1)))
         self.assertTrue(np.allclose(ref2, output2))
 

@@ -21,6 +21,7 @@ def read_graph_pink(filename):
     graph, vertex_weights, edge_weights, shape = hg._read_graph_pink(filename)
 
     hg.CptGridGraph.link(graph, shape)
+    vertex_weights = hg.delinearize_vertex_weights(vertex_weights, graph, shape)
     hg.CptVertexWeightedGraph.link(vertex_weights, graph)
     hg.CptEdgeWeightedGraph.link(edge_weights, graph)
 
@@ -47,5 +48,7 @@ def save_graph_pink(filename, graph, vertex_weights=None, edge_weights=None, sha
 
     if shape is None:
         shape = (graph.num_vertices(), 1)
+
+    vertex_weights = hg.linearize_vertex_weights(vertex_weights, graph, shape)
 
     hg._save_graph_pink(filename, graph, vertex_weights=vertex_weights, edge_weights=edge_weights, shape=shape)

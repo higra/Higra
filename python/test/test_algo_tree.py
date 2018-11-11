@@ -94,7 +94,7 @@ class TestAlgorithmTree(unittest.TestCase):
         edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
         tree, altitudes = hg.bpt_canonical(edge_weights, g)
         area = hg.attribute_area(tree)
-        area_min_children = hg.accumulate_parallel(tree, area, hg.Accumulators.min)
+        area_min_children = hg.accumulate_parallel(area, hg.Accumulators.min)
         res_tree, res_altitudes = hg.filter_binary_partition_tree(altitudes, area_min_children <= 2)
 
         sm = hg.saliency(res_altitudes)

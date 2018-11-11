@@ -126,7 +126,7 @@ def binary_partition_tree_complete_linkage(edge_weights, graph):
 
 
 @hg.argument_helper(hg.CptEdgeWeightedGraph)
-def binary_partition_tree_average_linkage(edge_values, graph,  edge_weights):
+def binary_partition_tree_average_linkage(edge_values, graph, edge_weights):
     """
     Compute a binary partition tree with average linkage distance.
 
@@ -164,7 +164,7 @@ def binary_partition_tree_single_linkage(edge_weights, graph):
     return bpt_canonical(edge_weights, graph)
 
 
-@hg.argument_helper(("edge_weights",hg.CptEdgeWeightedGraph))
+@hg.argument_helper(("edge_weights", hg.CptEdgeWeightedGraph))
 def binary_partition_tree(weight_function, edge_weights, graph):
     """
     Compute the binary partition tree of the graph.

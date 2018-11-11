@@ -11,6 +11,7 @@
 import higra as hg
 import numpy as np
 
+
 @hg.argument_helper(hg.CptVertexLabeledGraph)
 def align_hierarchies(vertex_labels, other_hierarchies, graph):
     """

@@ -13,6 +13,7 @@ import higra as hg
 
 @hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", "vertex_area"))
 def watershed_hierarchy_by_area(edge_weights, graph, vertex_area):
+    vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
     res = hg._watershed_hierarchy_by_area(graph, edge_weights, vertex_area)
     tree = res.tree()
     altitudes = res.altitudes()
@@ -25,6 +26,7 @@ def watershed_hierarchy_by_area(edge_weights, graph, vertex_area):
 
 @hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", "vertex_area"))
 def watershed_hierarchy_by_volume(edge_weights, graph, vertex_area):
+    vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
     res = hg._watershed_hierarchy_by_volume(graph, edge_weights, vertex_area)
     tree = res.tree()
     altitudes = res.altitudes()

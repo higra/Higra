@@ -95,10 +95,10 @@ class TestRag(unittest.TestCase):
 
         rag_vertex_weights = np.asarray((5, 7, 1, 3))
         vertex_weights = hg.rag_back_project_vertex_weights(rag_vertex_weights, rag)
-        expected_vertex_weights = np.asarray((5, 5, 7, 7,
-                                              5, 5, 7, 7,
-                                              5, 5, 1, 1,
-                                              5, 5, 3, 3))
+        expected_vertex_weights = np.asarray(((5, 5, 7, 7),
+                                              (5, 5, 7, 7),
+                                              (5, 5, 1, 1),
+                                              (5, 5, 3, 3)))
         self.assertTrue(np.allclose(vertex_weights, expected_vertex_weights))
 
     def test_back_project_edge(self):

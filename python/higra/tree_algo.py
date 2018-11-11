@@ -21,13 +21,14 @@ def reconstruct_leaf_data(altitudes, deleted_nodes, tree):
     :param altitudes:
     :return:
     """
-    reconstruction = hg.propagate_sequential(tree,
-                                             altitudes,
-                                             deleted_nodes)
+    reconstruction = hg.propagate_sequential(altitudes,
+                                             deleted_nodes,
+                                             tree)
     leaf_weights = reconstruction[0:tree.num_leaves(), ...]
 
     if hg.CptHierarchy.validate(tree):
         leaf_graph = hg.CptHierarchy.construct(tree)["leaf_graph"]
+        leaf_weights = hg.delinearize_vertex_weights(leaf_weights, leaf_graph)
         hg.CptVertexWeightedGraph.link(leaf_weights, leaf_graph)
 
     return leaf_weights
@@ -52,6 +53,7 @@ def labelisation_horizontal_cut(altitudes, threshold, tree):
 
     if hg.CptHierarchy.validate(tree):
         leaf_graph = hg.CptHierarchy.construct(tree)["leaf_graph"]
+        leaf_labels = hg.delinearize_vertex_weights(leaf_labels, leaf_graph)
         hg.CptVertexLabeledGraph.link(leaf_labels, leaf_graph)
 
     return leaf_labels
@@ -81,6 +83,7 @@ def labelisation_hierarchy_supervertices(altitudes, tree, leaf_graph=None, handl
     leaf_labels = hg._labelisation_hierarchy_supervertices(tree, altitudes)
 
     if leaf_graph is not None:
+        leaf_labels = hg.delinearize_vertex_weights(leaf_labels, leaf_graph)
         hg.CptVertexLabeledGraph.link(leaf_labels, leaf_graph)
 
     return leaf_labels
@@ -105,7 +108,8 @@ def filter_binary_partition_tree(altitudes, deleted_frontier_nodes, tree, mst):
     return hg.bpt_canonical(mst_edge_weights, mst)
 
 
-def binary_labelisation_from_markers(tree, object_marker, background_marker):
+@hg.argument_helper(hg.CptHierarchy)
+def binary_labelisation_from_markers(tree, object_marker, background_marker, leaf_graph=None):
     """
     Given two binary markers o (object) and b (background) (given by their indicator functions)
     on the leaves of a tree t, the corresponding binary labelization of the leaves of t is defined as
@@ -119,10 +123,14 @@ def binary_labelisation_from_markers(tree, object_marker, background_marker):
     :return:
     """
 
+    if leaf_graph is not None:
+        object_marker = hg.linearize_vertex_weights(object_marker, leaf_graph)
+        background_marker = hg.linearize_vertex_weights(background_marker, leaf_graph)
+
     labels = hg._binary_labelisation_from_markers(tree, object_marker, background_marker)
 
-    leaf_graph = hg.get_attribute(tree, "leaf_graph")
     if leaf_graph is not None:
+        labels = hg.delinearize_vertex_weights(labels, leaf_graph)
         hg.CptVertexLabeledGraph.link(labels, leaf_graph)
 
     return labels

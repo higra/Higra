@@ -8,6 +8,7 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
+import higra as hg
 
 def normalize_shape(shape):
     """
@@ -18,6 +19,42 @@ def normalize_shape(shape):
     :return:
     """
     return tuple(int(i) for i in shape)
+
+
+@hg.argument_helper(hg.CptVertexWeightedGraph, ("graph", hg.CptGridGraph))
+def linearize_vertex_weights(vertex_weights, graph=None, shape=None):
+    if shape is None or graph.num_vertices() == vertex_weights.shape[0]:
+        return vertex_weights
+
+    v_shape = vertex_weights.shape
+    if len(v_shape) < len(shape):
+        raise Exception("Vertex weights shape " + str(v_shape) +
+                        " is not compatible with graph shape " + str(shape) + ".")
+
+    flag = True
+    for i in range(len(shape)):
+        if v_shape[i] != shape[i]:
+            flag = False
+            break
+
+    if not flag:
+        raise Exception("Vertex weights shape " + str(v_shape) +
+                        " is not compatible with graph shape " + str(shape) + ".")
+
+    return vertex_weights.reshape([graph.num_vertices()] + list(v_shape[len(shape):]))
+
+
+@hg.argument_helper(hg.CptVertexWeightedGraph, ("graph", hg.CptGridGraph))
+def delinearize_vertex_weights(vertex_weights, graph=None, shape=None):
+    if shape is None:
+        return vertex_weights
+
+    v_shape = vertex_weights.shape
+    if v_shape[0] != graph.num_vertices():
+        raise Exception("Vertex weights shape " + str(v_shape) +
+                        " is not compatible with graph size " + str(graph.num_vertices()) + ".")
+
+    return vertex_weights.reshape(list(shape) + list(v_shape[1:]))
 
 
 def is_in_bijection(a, b):

@@ -33,6 +33,8 @@ def make_region_adjacency_graph_from_labelisation(vertex_labels, graph):
     :param vertex_labels:
     :return:
     """
+    vertex_labels = hg.linearize_vertex_weights(vertex_labels, graph)
+
     rag, vertex_map, edge_map = hg._make_region_adjacency_graph_from_labelisation(graph, vertex_labels)
 
     hg.CptRegionAdjacencyGraph.link(rag, graph, vertex_map, edge_map)
@@ -89,6 +91,7 @@ def rag_back_project_vertex_weights(vertex_weights, graph):
 
     new_weights = hg._rag_back_project_weights(rag["vertex_map"], vertex_weights)
 
+    new_weights = hg.delinearize_vertex_weights(new_weights, rag["pre_graph"])
     hg.CptVertexWeightedGraph.link(new_weights, rag["pre_graph"])
 
     return new_weights
@@ -135,6 +138,7 @@ def rag_accumulate_on_vertices(rag, accumulator, vertex_weights):
     """
 
     detail = hg.CptRegionAdjacencyGraph.construct(rag)
+    vertex_weights = hg.linearize_vertex_weights(vertex_weights, detail["pre_graph"])
 
     new_weights = hg._rag_accumulate(detail["vertex_map"], vertex_weights, accumulator)
 

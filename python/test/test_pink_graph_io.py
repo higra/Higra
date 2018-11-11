@@ -34,7 +34,7 @@ class TestPinkGraphIO(unittest.TestCase):
         for i in range(14):
             edges_ref.append((i, i + 1))
 
-        vertex_weights_ref = np.arange(1, 16)
+        vertex_weights_ref = np.arange(1, 16).reshape(3, 5)
         edges_weights_ref = (3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0)
 
         edges = []
