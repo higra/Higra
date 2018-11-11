@@ -17,6 +17,7 @@ add_subdirectory(cpp)
 set(MODULE_FILES
         __init__.py
         alignment.py
+        assessment_fragmentation_curve.py
         attributes.py
         concept.py
         data_cache.py
