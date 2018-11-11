@@ -13,6 +13,7 @@
 #include "../graph.hpp"
 #include "../attribute/tree_attribute.hpp"
 #include "../algo/tree.hpp"
+#include "../algo/rag.hpp"
 #include <xtensor/xsort.hpp>
 
 namespace hg {
@@ -57,6 +58,7 @@ namespace hg {
          * @tparam T type of labels
          * @param tree input hierarchy
          * @param xground_truth ground truth labelisation of the tree leaves
+         * @param vertex_map super-vertices map (if tree is built on a rag, leave empty otherwise)
          * @param max_regions maximum number of regions in the considered cuts.
          */
         template<typename tree_t, typename T>
@@ -64,10 +66,11 @@ namespace hg {
                 const tree_t &tree,
                 const xt::xexpression<T> &xground_truth,
                 optimal_cut_measure measure,
+                const array_1d<index_t> &vertex_map = {},
                 size_t max_regions = 200):
                 m_tree(tree) {
             auto &ground_truth = xground_truth.derived_cast();
-            hg_assert_leaf_weights(tree, ground_truth);
+
             hg_assert_1d_array(ground_truth);
             hg_assert_integral_value_type(ground_truth);
 
@@ -80,13 +83,26 @@ namespace hg {
                 region_gt_areas[v]++;
             }
 
-            auto region_tree_area = attribute_area(tree);
+            array_1d<index_t> region_tree_area;
 
             // for a tree node i, a gt region j: card_intersection(i, j) is the number of pixels in R_i cap R_j
             array_2d<index_t> card_intersection_leaves{{num_leaves(tree), region_gt_areas.size()}, 0};
-            for (auto i: leaves_iterator(tree)) {
-                card_intersection_leaves(i, ground_truth(i))++;
+            if (vertex_map.size() <= 1) { // no rag
+                hg_assert_leaf_weights(tree, ground_truth);
+                for (auto i: leaves_iterator(tree)) {
+                    card_intersection_leaves(i, ground_truth(i))++;
+                }
+                region_tree_area = attribute_area(tree);
+            } else { // tree on rag
+                hg_assert(vertex_map.size() == ground_truth.size(), "Vertex map and ground truth sizes do not match.");
+                for (index_t i = 0; i < vertex_map.size(); i++) {
+                    card_intersection_leaves(vertex_map(i), ground_truth(i))++;
+                }
+                region_tree_area = attribute_area(tree,
+                                                  rag_accumulate(vertex_map, xt::ones<index_t>(vertex_map.shape()),
+                                                                 accumulator_counter()));
             }
+
             array_2d<double> card_intersection = accumulate_sequential(tree, card_intersection_leaves,
                                                                        accumulator_sum());
 
@@ -153,20 +169,20 @@ namespace hg {
          * @param normalize: if true the number of regions are divided by the number of regions in the ground truth
          * @return a k_curve
          */
-        auto fragmentation_curve(bool normalize=true) const {
+        auto fragmentation_curve(bool normalize = true) const {
             auto &backtrack_root = backtracking[root(m_tree)];
             array_1d<double> final_scores({backtrack_root.size()}, 0);
             for (index_t i = 0; i < backtrack_root.size(); i++) {
                 final_scores(i) = backtrack_root[i].score;
             }
-            if(normalize){
+            if (normalize) {
                 return k_curve{xt::eval(xt::arange<double>(1, final_scores.size() + 1) / m_num_regions_ground_truth),
                                xt::eval(final_scores / (double) num_leaves(m_tree))};
-            }else{
+            } else {
                 return k_curve{xt::eval(xt::arange<double>(1, final_scores.size() + 1)),
                                xt::eval(final_scores / (double) num_leaves(m_tree))};
             }
-            
+
         }
 
         /**

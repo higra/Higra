@@ -24,11 +24,13 @@ struct def_assesser_optimal_cut_ctr {
         c.def(py::init<const hg::tree &,
                       const xt::pyarray<value_type> &,
                       optimal_cut_measure,
+                      const xt::pytensor<index_t, 1> &,
                       size_t>(),
               doc,
               py::arg("tree"),
               py::arg("ground_truth"),
               py::arg("optimal_cut_measure") = hg::optimal_cut_measure::BCE,
+              py::arg("vertex_map") = xt::pytensor<index_t, 1>{},
               py::arg("max_regions") = 200);
     }
 };
@@ -59,7 +61,7 @@ void py_init_fragmentation_curve(pybind11::module &m) {
           "(number_of_regions/number_of_region_ground_truth, scores) (or (number_of_regions, scores) if "
           "normalize is False), ready to be plotted:"
           "plot(x=number_of_regions, y=scores)",
-          py::arg("normalize")=true);
+          py::arg("normalize") = true);
 
     c.def("number_of_region_ground_truth",
           &assesser_optimal_cut::number_of_region_ground_truth,

@@ -39,6 +39,31 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         BOOST_CHECK(res_k == ref_k);
     }
 
+    BOOST_AUTO_TEST_CASE(test_assess_fragmentation_curve_BCE_optimal_cut_on_rag) {
+        array_1d<index_t> vertex_map{0, 0, 1, 1, 2, 2, 3, 4};
+        tree t(array_1d<index_t>{6, 6, 5, 5, 7, 7, 8, 8, 8});
+        array_1d<char> ground_truth{0, 0, 1, 1, 1, 2, 2, 2};
+
+        assesser_optimal_cut assesser(t, ground_truth, optimal_cut_measure::BCE, vertex_map);
+
+        BOOST_CHECK(assesser.optimal_number_of_regions() == 3);
+        BOOST_CHECK(assesser.number_of_region_ground_truth() == 3);
+        BOOST_CHECK(almost_equal(assesser.optimal_score(), (2 + 4.0 / 3 + 2.5) / num_leaves(t)));
+
+        auto res = assesser.fragmentation_curve(false);
+        auto &res_scores = res.scores;
+        auto &res_k = res.k;
+
+        std::cout << res_k << std::endl;
+        std::cout << res_scores << std::endl;
+
+        array_1d<double> ref_scores{2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3};
+        array_1d<size_t> ref_k{1, 2, 3, 4, 5};
+
+        BOOST_CHECK(res_scores == (ref_scores / num_leaves(t)));
+        BOOST_CHECK(res_k == ref_k);
+    }
+
     BOOST_AUTO_TEST_CASE(test_assess_fragmentation_curve_DHaming_optimal_cut) {
         tree t(array_1d<index_t>{8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14});
         array_1d<char> ground_truth{0, 0, 1, 1, 1, 2, 2, 2};
@@ -74,7 +99,7 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         auto &res_scores = res.scores;
         auto &res_k = res.k;
 
-        array_1d<double> ref_scores{3, 5, 5 + 4.0 / 3, 5 + 2.0 / 3, 4 + 2.0/3, 2 + 8.0 / 3, 4, 3};
+        array_1d<double> ref_scores{3, 5, 5 + 4.0 / 3, 5 + 2.0 / 3, 4 + 2.0 / 3, 2 + 8.0 / 3, 4, 3};
         array_1d<size_t> ref_k{1, 2, 3, 4, 5, 6, 7, 8};
 
         BOOST_CHECK(xt::allclose(res_scores, (ref_scores / num_leaves(t))));
