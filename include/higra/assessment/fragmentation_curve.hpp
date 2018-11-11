@@ -18,7 +18,7 @@
 namespace hg {
 
     struct k_curve {
-        array_1d<size_t> k;
+        array_1d<double> k;
         array_1d<double> scores;
     };
 
@@ -150,16 +150,23 @@ namespace hg {
         /**
          * Fragmentation curve, i.e. for each number of region k between 1 and max_regions,
          * the BCE score of the optimal cut with k regions.
+         * @param normalize: if true the number of regions are divided by the number of regions in the ground truth
          * @return a k_curve
          */
-        auto fragmentation_curve() const {
+        auto fragmentation_curve(bool normalize=true) const {
             auto &backtrack_root = backtracking[root(m_tree)];
             array_1d<double> final_scores({backtrack_root.size()}, 0);
             for (index_t i = 0; i < backtrack_root.size(); i++) {
                 final_scores(i) = backtrack_root[i].score;
             }
-            return k_curve{xt::arange<size_t>(1, final_scores.size() + 1),
-                           xt::eval(final_scores / (double) num_leaves(m_tree))};
+            if(normalize){
+                return k_curve{xt::eval(xt::arange<double>(1, final_scores.size() + 1) / m_num_regions_ground_truth),
+                               xt::eval(final_scores / (double) num_leaves(m_tree))};
+            }else{
+                return k_curve{xt::eval(xt::arange<double>(1, final_scores.size() + 1)),
+                               xt::eval(final_scores / (double) num_leaves(m_tree))};
+            }
+            
         }
 
         /**

@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         BOOST_CHECK(assesser.number_of_region_ground_truth() == 3);
         BOOST_CHECK(almost_equal(assesser.optimal_score(), (2 + 4.0 / 3 + 2.5) / num_leaves(t)));
 
-        auto res = assesser.fragmentation_curve();
+        auto res = assesser.fragmentation_curve(false);
         auto &res_scores = res.scores;
         auto &res_k = res.k;
 
@@ -49,15 +49,15 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         BOOST_CHECK(assesser.number_of_region_ground_truth() == 3);
         BOOST_CHECK(almost_equal(assesser.optimal_score(), (8.0) / num_leaves(t)));
 
-        auto res = assesser.fragmentation_curve();
+        auto res = assesser.fragmentation_curve(true);
         auto &res_scores = res.scores;
         auto &res_k = res.k;
 
         array_1d<double> ref_scores{3, 5, 7, 7, 7, 8, 8, 8};
-        array_1d<size_t> ref_k{1, 2, 3, 4, 5, 6, 7, 8};
+        array_1d<double> ref_k{1, 2, 3, 4, 5, 6, 7, 8};
 
         BOOST_CHECK(res_scores == (ref_scores / num_leaves(t)));
-        BOOST_CHECK(res_k == ref_k);
+        BOOST_CHECK(res_k == (ref_k / 3));
     }
 
     BOOST_AUTO_TEST_CASE(test_assess_fragmentation_curve_Covering_optimal_cut) {
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         BOOST_CHECK(assesser.number_of_region_ground_truth() == 3);
         BOOST_CHECK(almost_equal(assesser.optimal_score(), (5 + 4.0 / 3) / num_leaves(t)));
 
-        auto res = assesser.fragmentation_curve();
+        auto res = assesser.fragmentation_curve(false);
         auto &res_scores = res.scores;
         auto &res_k = res.k;
 

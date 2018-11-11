@@ -50,14 +50,16 @@ void py_init_fragmentation_curve(pybind11::module &m) {
              "max_regions regions.");
 
     c.def("fragmentation_curve",
-          [](const assesser_optimal_cut &assesser) {
-              auto curve = assesser.fragmentation_curve();
+          [](const assesser_optimal_cut &assesser, bool normalize) {
+              auto curve = assesser.fragmentation_curve(normalize);
               return py::make_tuple(std::move(curve.k), std::move(curve.scores));
           },
           "Fragmentation curve, i.e. for each number of region k between 1 and max_regions, "
           "the score of the optimal cut with k regions. The curve is given by a pair of arrays "
-          "(number_of_regions, scores), ready to be plotted:"
-          "plot(x=number_of_regions, y=scores)");
+          "(number_of_regions/number_of_region_ground_truth, scores) (or (number_of_regions, scores) if "
+          "normalize is False), ready to be plotted:"
+          "plot(x=number_of_regions, y=scores)",
+          py::arg("normalize")=true);
 
     c.def("number_of_region_ground_truth",
           &assesser_optimal_cut::number_of_region_ground_truth,

@@ -25,7 +25,7 @@ class TestFragmentationCurve(unittest.TestCase):
         self.assertTrue(assesser.number_of_region_ground_truth() == 3)
         self.assertTrue(np.isclose(assesser.optimal_score(), (2 + 4.0 / 3 + 2.5) / t.num_leaves()))
 
-        res_k, res_scores = assesser.fragmentation_curve()
+        res_k, res_scores = assesser.fragmentation_curve(False)
 
         ref_scores = np.asarray((2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3,
                                  2 + 4.0 / 3 + 4.0 / 3, 4, 3))
