@@ -152,9 +152,9 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         auto sorted = xt::sort(altitudes);
 
         for (index_t i = 0; i < optimal_partitions.size(); i++) {
-            auto tmp = labelisation_horizontal_cut(t,
-                                                   altitudes,
-                                                   sorted(root(t) - i));
+            auto tmp = labelisation_horizontal_cut_from_threshold(t,
+                                                                  altitudes,
+                                                                  sorted(root(t) - i));
             BOOST_CHECK(is_in_bijection(optimal_partitions[i], tmp));
         }
     }

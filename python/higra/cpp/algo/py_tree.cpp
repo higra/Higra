@@ -24,10 +24,10 @@ struct labelisation_horizontal_cut {
     template<typename value_t>
     static
     void def(pybind11::module &m, const char *doc) {
-        m.def("_labelisation_horizontal_cut", [](const hg::tree &tree,
+        m.def("_labelisation_horizontal_cut_from_threshold", [](const hg::tree &tree,
                                                  double threshold,
                                                  const pyarray<value_t> &altitudes) {
-                  return hg::labelisation_horizontal_cut(tree, altitudes, threshold);
+                  return hg::labelisation_horizontal_cut_from_threshold(tree, altitudes, threshold);
               },
               doc,
               py::arg("tree"),

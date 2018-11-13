@@ -86,7 +86,7 @@ struct def_simplify_tree {
 
 template<typename M>
 void add_simplified_tree(M &m) {
-    using class_t = hg::simplified_tree<hg::tree, hg::array_1d<hg::index_t>>;
+    using class_t = hg::remapped_tree<hg::tree, hg::array_1d<hg::index_t>>;
     auto c = py::class_<class_t>(m,
                                  "SimplifiedTree",
                                  "A simple structure to hold the result of hierarchy simplification algorithms, "

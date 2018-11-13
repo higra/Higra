@@ -47,9 +47,9 @@ class TestAlgorithmTree(unittest.TestCase):
         ref_t1 = np.asarray((1, 1, 2, 2, 2), dtype=np.int32)
         ref_t2 = np.asarray((1, 1, 1, 1, 1), dtype=np.int32)
 
-        output_t0 = hg.labelisation_horizontal_cut(altitudes, 0, tree)
-        output_t1 = hg.labelisation_horizontal_cut(altitudes, 0.5, tree)
-        output_t2 = hg.labelisation_horizontal_cut(altitudes, 0.7, tree)
+        output_t0 = hg.labelisation_horizontal_cut_from_threshold(altitudes, 0, tree)
+        output_t1 = hg.labelisation_horizontal_cut_from_threshold(altitudes, 0.5, tree)
+        output_t2 = hg.labelisation_horizontal_cut_from_threshold(altitudes, 0.7, tree)
 
         self.assertTrue(hg.is_in_bijection(ref_t0, output_t0))
         self.assertTrue(hg.is_in_bijection(ref_t1, output_t1))

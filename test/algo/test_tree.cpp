@@ -12,7 +12,7 @@
 #include "higra/graph.hpp"
 #include "higra/algo/tree.hpp"
 #include "higra/structure/array.hpp"
-
+#include <xtensor/xindex_view.hpp>
 
 using namespace hg;
 
@@ -59,9 +59,9 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
         array_1d<int> ref_t1{1, 1, 2, 2, 2};
         array_1d<int> ref_t2{1, 1, 1, 1, 1};
 
-        auto output_t0 = labelisation_horizontal_cut(tree, altitudes, 0);
-        auto output_t1 = labelisation_horizontal_cut(tree, altitudes, 1);
-        auto output_t2 = labelisation_horizontal_cut(tree, altitudes, 2);
+        auto output_t0 = labelisation_horizontal_cut_from_threshold(tree, altitudes, 0);
+        auto output_t1 = labelisation_horizontal_cut_from_threshold(tree, altitudes, 1);
+        auto output_t2 = labelisation_horizontal_cut_from_threshold(tree, altitudes, 2);
 
         BOOST_CHECK(is_in_bijection(ref_t0, output_t0));
         BOOST_CHECK(is_in_bijection(ref_t1, output_t1));
@@ -136,6 +136,19 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
         array_1d<char> ref_labelisation{0, 1, 0, 1, 1, 1, 0, 0, 0};
 
         BOOST_CHECK(labelisation == ref_labelisation);
+    }
+
+    BOOST_AUTO_TEST_CASE(test_sort_hierarchy_with_altitudes) {
+        tree t(array_1d<index_t>{8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14});
+        array_1d<int> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 4, 6, 5, 7};
+
+        auto res = sort_hierarchy_with_altitudes(t, altitudes);
+
+        array_1d<index_t> ref_par{10, 10, 8, 8, 9, 9, 11, 12, 13, 11, 13, 12, 14, 14, 14};
+        BOOST_CHECK(ref_par == parents(res.tree));
+
+        array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7};
+        BOOST_CHECK(ref_altitudes == xt::index_view(altitudes, res.node_map));
     }
 
 BOOST_AUTO_TEST_SUITE_END();

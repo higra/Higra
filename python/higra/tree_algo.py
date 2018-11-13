@@ -35,7 +35,7 @@ def reconstruct_leaf_data(altitudes, deleted_nodes, tree):
 
 
 @hg.argument_helper(hg.CptValuedHierarchy)
-def labelisation_horizontal_cut(altitudes, threshold, tree):
+def labelisation_horizontal_cut_from_threshold(altitudes, threshold, tree):
     """
     Labelize tree leaves according to an horizontal cut in the tree.
 
@@ -49,7 +49,7 @@ def labelisation_horizontal_cut(altitudes, threshold, tree):
     :return:
     """
 
-    leaf_labels = hg._labelisation_horizontal_cut(tree, float(threshold), altitudes)
+    leaf_labels = hg._labelisation_horizontal_cut_from_threshold(tree, float(threshold), altitudes)
 
     if hg.CptHierarchy.validate(tree):
         leaf_graph = hg.CptHierarchy.construct(tree)["leaf_graph"]

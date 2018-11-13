@@ -16,6 +16,7 @@
 #include "xtensor/xview.hpp"
 #include "../structure/tree_graph.hpp"
 #include "../accumulator/tree_accumulator.hpp"
+#include "../hierarchy/common.hpp"
 #include <queue>
 
 namespace hg {
@@ -65,9 +66,9 @@ namespace hg {
     template<typename tree_t,
             typename T,
             typename value_t>
-    auto labelisation_horizontal_cut(const tree_t &tree,
-                                     const xt::xexpression<T> &xaltitudes,
-                                     const value_t threshold) {
+    auto labelisation_horizontal_cut_from_threshold(const tree_t &tree,
+                                                    const xt::xexpression<T> &xaltitudes,
+                                                    const value_t threshold) {
         HG_TRACE();
         auto &altitudes = xaltitudes.derived_cast();
         return reconstruct_leaf_data(tree,
@@ -97,7 +98,7 @@ namespace hg {
         auto &altitudes = xaltitudes.derived_cast();
         hg_assert_node_weights(tree, altitudes);
 
-        auto labels = labelisation_horizontal_cut(tree, altitudes, 0);
+        auto labels = labelisation_horizontal_cut_from_threshold(tree, altitudes, 0);
         // remap labels to 0...num_labels - 1
         array_1d<index_t> map({num_vertices(tree)}, invalid_index);
         index_t current_label = 0;
@@ -298,6 +299,7 @@ namespace hg {
             const tree_t &tree,
             const xt::xexpression<T1> &xobject_marker,
             const xt::xexpression<T2> &xbackground_marker) {
+        HG_TRACE();
         auto &object_marker = xobject_marker.derived_cast();
         auto &background_marker = xbackground_marker.derived_cast();
         hg_assert_leaf_weights(tree, object_marker);
@@ -335,5 +337,56 @@ namespace hg {
 
         return xt::eval(xt::view(attr, xt::range(0, num_leaves(tree))) - 1);
     }
+
+    /**
+     * Sort the nodes of a tree according to their altitudes.
+     * The altitudes must be increasing, i.e. for any nodes i, j such that j is an ancestor of j, then
+     * altitudes[i] <= altitudes[j].
+     *
+     * The result is a new tree and a node map, isomorph to the input tree such that for any nodes i and j,
+     * i<j => altitudes[node_map[i]] <= altitudes[node_map[j]]
+     *
+     * The latter condition is stronger than the original condition on the altitudes as j is an ancestor of i implies
+     * i<j while the converse is not true.
+     *
+     * Note that the altitudes of the new tree can be obtained with:
+     *
+     *  auto res = sort_hierarchy_with_altitudes(tree, altitudes);
+     *  auto & new_tree = res.tree;
+     *  auto new_altitudes = xt::index_view(altitudes, res.node_map);
+     *
+     * @tparam tree_t
+     * @tparam T
+     * @param tree
+     * @param xaltitudes
+     * @return
+     */
+    template<typename tree_t,
+            typename T>
+    auto sort_hierarchy_with_altitudes(const tree_t &tree,
+                                          const xt::xexpression<T> &xaltitudes) {
+        HG_TRACE();
+        auto &altitudes = xaltitudes.derived_cast();
+        hg_assert_node_weights(tree, altitudes);
+        hg_assert_1d_array(altitudes);
+
+        array_1d<index_t> sorted = xt::arange(altitudes.size());
+        std::stable_sort(sorted.begin() + num_leaves(tree),
+                         sorted.end(),
+                         [&altitudes](index_t i, index_t j) { return altitudes(i) < altitudes(j); });
+
+        array_1d<index_t> reverse_sorted = xt::empty_like(sorted);
+        for(index_t i = 0; i < reverse_sorted.size(); i++){
+            reverse_sorted(sorted(i)) = i;
+        }
+
+        auto & par = parents(tree);
+        array_1d<index_t> new_par = xt::empty_like(sorted);
+        for(index_t i = 0; i < reverse_sorted.size(); i++){
+            new_par(i) = reverse_sorted(par(sorted(i)));
+        }
+
+        return make_remapped_tree(hg::tree(new_par), std::move(sorted));
+    };
 
 }
