@@ -113,17 +113,7 @@ namespace hg {
 
     };
 
-    /**
-     * A simple structure to hold the result of simplify_tree algorithm.
-     *
-     * @tparam tree_t
-     * @tparam node_map_t
-     */
-    template<typename tree_t, typename node_map_t>
-    struct simplified_tree {
-        tree_t tree;
-        node_map_t node_map;
-    };
+
 
     /**
      * Creates a copy of the current Tree and deletes the inner nodes such that the criterion function is true.
@@ -182,7 +172,7 @@ namespace hg {
         }
 
         node_map(node_map.size() - 1) = root(t);
-        return simplified_tree<tree, decltype(node_map)>{tree(new_parent), std::move(node_map)};
+        return make_remapped_tree(tree(new_parent), std::move(node_map));
     };
 
     /**
