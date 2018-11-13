@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_SUITE(test_binary_partition_tree);
         auto res2 = hg::bpt_canonical(graph, edge_weights);
         auto &tree2 = res2.tree;
 
-        BOOST_CHECK(hg::testTreeIsomorphism(tree, tree2));
+        BOOST_CHECK(hg::test_tree_isomorphism(tree, tree2));
     }
 
     BOOST_AUTO_TEST_CASE(test_complete_linkage_clustering_simple) {

@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
         auto &node_map_res = res.node_map;
 
         tree tree_ref(array_1d<index_t>{5, 4, 4, 6, 5, 6, 6});
-        BOOST_CHECK(testTreeIsomorphism(tree_res, tree_ref));
+        BOOST_CHECK(test_tree_isomorphism(tree_res, tree_ref));
 
         array_1d<index_t> supervertex_labelisation_ref{0, 0, 0, 1, 1, 1, 2, 3, 3};
         BOOST_CHECK(is_in_bijection(supervertex_labelisation_ref, supervertex_labelisation_res));
@@ -108,21 +108,21 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
         tree t2(array_1d<index_t>{6, 6, 5, 5, 7, 7, 8, 8, 8});
         tree t3(array_1d<index_t>{7, 7, 5, 5, 6, 6, 8, 8, 8});
 
-        BOOST_CHECK(testTreeIsomorphism(t1, t2));
-        BOOST_CHECK(testTreeIsomorphism(t2, t1));
-        BOOST_CHECK(testTreeIsomorphism(t1, t3));
-        BOOST_CHECK(testTreeIsomorphism(t3, t1));
-        BOOST_CHECK(testTreeIsomorphism(t2, t3));
-        BOOST_CHECK(testTreeIsomorphism(t3, t2));
+        BOOST_CHECK(test_tree_isomorphism(t1, t2));
+        BOOST_CHECK(test_tree_isomorphism(t2, t1));
+        BOOST_CHECK(test_tree_isomorphism(t1, t3));
+        BOOST_CHECK(test_tree_isomorphism(t3, t1));
+        BOOST_CHECK(test_tree_isomorphism(t2, t3));
+        BOOST_CHECK(test_tree_isomorphism(t3, t2));
 
         tree t4(array_1d<index_t>{5, 5, 7, 6, 6, 8, 7, 8, 8});
 
-        BOOST_CHECK(!testTreeIsomorphism(t1, t4));
-        BOOST_CHECK(!testTreeIsomorphism(t2, t4));
-        BOOST_CHECK(!testTreeIsomorphism(t3, t4));
-        BOOST_CHECK(!testTreeIsomorphism(t4, t1));
-        BOOST_CHECK(!testTreeIsomorphism(t4, t2));
-        BOOST_CHECK(!testTreeIsomorphism(t4, t3));
+        BOOST_CHECK(!test_tree_isomorphism(t1, t4));
+        BOOST_CHECK(!test_tree_isomorphism(t2, t4));
+        BOOST_CHECK(!test_tree_isomorphism(t3, t4));
+        BOOST_CHECK(!test_tree_isomorphism(t4, t1));
+        BOOST_CHECK(!test_tree_isomorphism(t4, t2));
+        BOOST_CHECK(!test_tree_isomorphism(t4, t3));
     }
 
     BOOST_AUTO_TEST_CASE(test_binary_labelisation_from_markers) {

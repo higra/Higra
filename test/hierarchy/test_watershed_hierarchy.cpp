@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_SUITE(algo_watershed_hierarchy);
         tree ref_tree(ref_parents);
         array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 3, 5};
 
-        BOOST_CHECK(testTreeIsomorphism(t, ref_tree));
+        BOOST_CHECK(test_tree_isomorphism(t, ref_tree));
         BOOST_CHECK(altitudes == ref_altitudes);
     }
 
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_SUITE(algo_watershed_hierarchy);
         tree ref_tree(ref_parents);
         array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3};
 
-        BOOST_CHECK(testTreeIsomorphism(t, ref_tree));
+        BOOST_CHECK(test_tree_isomorphism(t, ref_tree));
         BOOST_CHECK(altitudes == ref_altitudes);
     }
 
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_SUITE(algo_watershed_hierarchy);
         tree ref_tree(ref_parents);
         array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6};
 
-        BOOST_CHECK(testTreeIsomorphism(t, ref_tree));
+        BOOST_CHECK(test_tree_isomorphism(t, ref_tree));
         BOOST_CHECK(altitudes == ref_altitudes);
     }
 

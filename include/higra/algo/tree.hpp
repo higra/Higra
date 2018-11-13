@@ -251,7 +251,7 @@ namespace hg {
      * @return
      */
     template<typename tree1_t, typename tree2_t>
-    bool testTreeIsomorphism(const tree1_t &t1, const tree2_t &t2) {
+    bool test_tree_isomorphism(const tree1_t &t1, const tree2_t &t2) {
         HG_TRACE();
         if (num_vertices(t1) != num_vertices(t2) || num_leaves(t1) != num_leaves(t2))
             return false;

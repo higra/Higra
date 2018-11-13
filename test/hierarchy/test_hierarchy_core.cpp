@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         auto rtree = res.tree;
         auto altitudes = res.altitudes;
         tree tref(array_1d<index_t>{6, 7, 8, 6, 7, 8, 7, 9, 9, 9});
-        BOOST_CHECK(testTreeIsomorphism(rtree, tref));
+        BOOST_CHECK(test_tree_isomorphism(rtree, tref));
         BOOST_CHECK(xt::allclose(altitudes, xt::xarray<double>({0, 0, 0, 0, 0, 0, 0, 1, 1, 2})));
     }
 
