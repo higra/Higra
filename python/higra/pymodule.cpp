@@ -10,7 +10,7 @@
 
 #include "pybind11/pybind11.h"
 
-#include "cpp/all.hpp"
+#include "all.hpp"
 
 #include "xtl/xmeta_utils.hpp"
 #define FORCE_IMPORT_ARRAY

@@ -8,29 +8,16 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${PYTHON_INCLUDE_DIR} ${NUMPY_INCLUDE_DIRS})
 
 set(PY_FILES
-        __init__.py
-        concept.py
-        data_cache.py
-        hg_utils.py)
+        __init__.py)
 
-REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")
+set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_embedding.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_lca_fast.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_regular_graph.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_tree_graph.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_undirected_graph.cpp
+        PARENT_SCOPE)
 
-set(PYMODULE_COMPONENTS
-        pymodule.cpp)
-
-add_subdirectory(accumulator)
-add_subdirectory(algo)
-add_subdirectory(assessment)
-add_subdirectory(attribute)
-add_subdirectory(detail)
-add_subdirectory(hierarchy)
-add_subdirectory(image)
-add_subdirectory(io_utils)
-add_subdirectory(structure)
-
-pybind11_add_module(higram ${PYMODULE_COMPONENTS})
-
-set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} higram CACHE INTERNAL "" FORCE)
+#REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")
