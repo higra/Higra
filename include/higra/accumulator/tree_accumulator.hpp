@@ -204,6 +204,7 @@ namespace hg {
             auto &input = xinput.derived_cast();
             auto &condition = xcondition.derived_cast();
             hg_assert_node_weights(tree, input);
+            hg_assert_node_weights(tree, condition);
 
             array_nd<output_t> output = array_nd<output_t>::from_shape(input.shape());
 
@@ -234,16 +235,15 @@ namespace hg {
                                        const xt::xexpression<T2> &xcondition) {
             HG_TRACE();
             auto &input = xinput.derived_cast();
+            auto &condition = xcondition.derived_cast();
             hg_assert_node_weights(tree, input);
+            hg_assert_node_weights(tree, condition);
 
             array_nd<output_t> output = array_nd<output_t>::from_shape(input.shape());
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
             auto inout_view = make_light_axis_view<vectorial>(output);
-
-            auto &condition = xcondition.derived_cast();
-            hg_assert_node_weights(tree, input);
 
             auto aparents = parents(tree).storage_begin();
 
