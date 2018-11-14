@@ -13,6 +13,7 @@ set(FILES
         test_alignment.cpp
         test_graph_core.cpp
         test_graph_weights.cpp
+        test_horizontal_cuts.cpp
         test_rag.cpp
         test_tree.cpp
         test_watershed.cpp)

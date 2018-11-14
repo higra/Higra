@@ -38,14 +38,14 @@ bool vectorEqual(std::vector<T> v1, std::vector<T> v2){
 }
 
 /**
- * Test if two vectors contain the same elements
+ * Test if two containers contain the same elements
  * @tparam T
  * @param v1
  * @param v2
  * @return
  */
-template<typename T>
-bool vectorSame(std::vector<T> v1, std::vector<T> v2) {
+template<typename T1, typename T2>
+bool vectorSame(const T1 & v1, const T2 & v2) {
     if (v1.size() != v2.size())
         return false;
     return std::is_permutation(v1.begin(), v1.end(), v2.begin());

@@ -1,0 +1,161 @@
+/***************************************************************************
+* Copyright ESIEE Paris (2018)                                             *
+*                                                                          *
+* Contributor(s) : Benjamin Perret                                         *
+*                                                                          *
+* Distributed under the terms of the CECILL-B License.                     *
+*                                                                          *
+* The full license is in the file LICENSE, distributed with this software. *
+****************************************************************************/
+
+#pragma once
+
+#include "tree.hpp"
+
+namespace hg {
+
+    template<typename tree_t, typename value_t>
+    struct horizontal_cut_nodes {
+
+        horizontal_cut_nodes(const tree_t &_tree,
+                             const array_1d<index_t> &_nodes,
+                             value_t _altitude) :
+                tree(_tree), nodes(_nodes), altitude(_altitude) {
+
+        }
+
+        auto labelisation_leaves() {
+            array_1d<bool> deleted({num_vertices(tree)}, true);
+            xt::index_view(deleted, nodes) = false;
+            return reconstruct_leaf_data(tree,
+                                         xt::arange(num_vertices(tree)),
+                                         deleted);
+        }
+
+        const tree_t &tree;
+        array_1d<index_t> nodes;
+        value_t altitude;
+    };
+
+    template<typename tree_t, typename value_t>
+    decltype(auto) make_horizontal_cut_nodes(tree_t &&tree, array_1d<index_t> &&nodes, value_t altitude) {
+        return horizontal_cut_nodes<tree_t, value_t>(
+                std::forward<tree_t>(tree),
+                std::forward<array_1d<index_t>>(nodes),
+                altitude);
+    }
+
+    template<typename tree_t, typename value_t>
+    class horizontal_cut_explorer {
+    public:
+
+        template<typename T>
+        horizontal_cut_explorer(const tree_t &tree, const xt::xexpression<T> &xaltitudes):m_original_tree(tree) {
+            auto &altitudes = xaltitudes.derived_cast();
+            hg_assert_node_weights(tree, altitudes);
+
+            auto res = sort_hierarchy_with_altitudes(tree, altitudes);
+            m_tree = std::move(res.tree);
+            m_node_map = std::move(res.node_map);
+            m_altitudes = xt::index_view(altitudes, m_node_map);
+
+            auto min_alt_children = accumulate_parallel(m_tree, m_altitudes, accumulator_min());
+
+            // single region partition... edge case
+            m_num_regions_cuts.push_back(1);
+            m_altitudes_cuts.push_back(m_altitudes(root(m_tree)));
+            m_range_nodes_cuts.push_back({invalid_index, invalid_index});
+            index_t range_start = root(m_tree);
+            index_t range_end = root(m_tree);
+            index_t num_regions = num_children(root(m_tree), m_tree);
+            auto current_threshold = m_altitudes(range_start);
+
+            while (current_threshold != 0 && range_start >= num_leaves(m_tree)) {
+
+                while (min_alt_children(range_end) >= current_threshold) {
+                    range_end--;
+                }
+                while (m_altitudes(range_start - 1) >= current_threshold) {
+                    range_start--;
+                    num_regions += num_children(range_start, m_tree) - 1;
+                }
+
+                current_threshold = m_altitudes(range_start - 1);
+
+                m_num_regions_cuts.push_back(num_regions);
+                m_altitudes_cuts.push_back(current_threshold);
+                m_range_nodes_cuts.push_back({range_start, range_end});
+            }
+        }
+
+        auto num_cuts() {
+            return m_num_regions_cuts.size();
+        }
+
+        inline
+        auto horizontal_cut_from_index(index_t cut_index) {
+            auto num_regions = m_num_regions_cuts[cut_index];
+            array_1d<index_t> nodes = xt::empty<index_t>({num_regions});
+            if (cut_index == 0) { // special case for single region partition
+                nodes(0) = root(m_tree);
+            } else {
+                auto altitude = m_altitudes_cuts[cut_index];
+                auto &range = m_range_nodes_cuts[cut_index];
+
+                for (index_t i = range.first, j = 0; i <= range.second; i++) {
+                    for (auto c: children_iterator(i, m_tree)) {
+                        if (m_altitudes(c) <= altitude) {
+                            nodes(j++) = m_node_map(c);
+                        }
+                    }
+                }
+            }
+
+            return make_horizontal_cut_nodes(m_original_tree, std::move(nodes), m_altitudes_cuts[cut_index]);
+        }
+
+        auto horizontal_cut_from_altitude(value_t threshold) {
+            index_t cut_index;
+            auto pos = std::upper_bound(m_altitudes_cuts.rbegin(),
+                                        m_altitudes_cuts.rend(),
+                                        threshold);
+            if (pos == m_altitudes_cuts.rbegin()) {
+                cut_index = m_altitudes_cuts.size() - 1;
+            } else {
+                cut_index = std::distance(pos, m_altitudes_cuts.rend());
+            }
+            return horizontal_cut_from_index(cut_index);
+        }
+
+        auto horizontal_cut_from_num_regions(index_t num_regions) {
+            index_t cut_index;
+            auto pos = std::lower_bound(m_num_regions_cuts.begin(),
+                                        m_num_regions_cuts.end(),
+                                        num_regions);
+            if (pos == m_num_regions_cuts.end()) {
+                cut_index = m_num_regions_cuts.size() - 1;
+            } else {
+                cut_index = std::distance(m_num_regions_cuts.begin(), pos);
+            }
+            return horizontal_cut_from_index(cut_index);
+        }
+
+    private:
+        const tree_t &m_original_tree;
+        hg::tree m_tree;
+        array_1d<index_t> m_node_map;
+        array_1d<value_t> m_altitudes;
+        std::vector<index_t> m_num_regions_cuts;
+        std::vector<value_t> m_altitudes_cuts;
+        std::vector<std::pair<index_t, index_t>> m_range_nodes_cuts;
+    };
+
+    template<typename tree_t, typename T>
+    decltype(auto) make_horizontal_cut_explorer(tree_t &&tree, T &&altitudes) {
+        return horizontal_cut_explorer<tree_t, typename std::decay_t<T>::value_type>(
+                std::forward<tree_t>(tree),
+                std::forward<T>(altitudes));
+    }
+
+
+}

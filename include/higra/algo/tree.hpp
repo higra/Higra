@@ -49,10 +49,10 @@ namespace hg {
      * Labelize tree leaves according to an horizontal cut in the tree.
      *
      * Two leaves are in the same region (ie. have the same label) if
-     * the altitude of their lowest common ancestor is strictly greater
+     * the altitude of their lowest common ancestor is smaller or equal
      * than the specified threshold.
      *
-     * The label of a leave l is equal to the index of smallest node containing l
+     * The label of a leave l is equal to the index of the smallest node containing l
      * and whose altitude is strictly greater than the specified threshold.
      *
      * @tparam tree_t
@@ -364,7 +364,7 @@ namespace hg {
     template<typename tree_t,
             typename T>
     auto sort_hierarchy_with_altitudes(const tree_t &tree,
-                                          const xt::xexpression<T> &xaltitudes) {
+                                       const xt::xexpression<T> &xaltitudes) {
         HG_TRACE();
         auto &altitudes = xaltitudes.derived_cast();
         hg_assert_node_weights(tree, altitudes);
@@ -376,17 +376,20 @@ namespace hg {
                          [&altitudes](index_t i, index_t j) { return altitudes(i) < altitudes(j); });
 
         array_1d<index_t> reverse_sorted = xt::empty_like(sorted);
-        for(index_t i = 0; i < reverse_sorted.size(); i++){
+        for (index_t i = 0; i < reverse_sorted.size(); i++) {
             reverse_sorted(sorted(i)) = i;
         }
 
-        auto & par = parents(tree);
+        auto &par = parents(tree);
         array_1d<index_t> new_par = xt::empty_like(sorted);
-        for(index_t i = 0; i < reverse_sorted.size(); i++){
+        for (index_t i = 0; i < reverse_sorted.size(); i++) {
             new_par(i) = reverse_sorted(par(sorted(i)));
         }
 
         return make_remapped_tree(hg::tree(new_par), std::move(sorted));
     };
+
+
+
 
 }
