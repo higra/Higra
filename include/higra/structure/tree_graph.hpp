@@ -87,6 +87,10 @@ namespace hg {
             //BidirectionalGraph associated types
             using in_edge_iterator = out_edge_iterator;
 
+            tree():_root(invalid_index), _num_vertices(0), _num_leaves(0){
+
+            }
+
             template<typename T>
             tree(const xt::xexpression<T> &parents = xt::xarray<vertex_descriptor>({0})) : _parents(parents),
                                                                                            _children(_parents.size()) {
