@@ -15,8 +15,7 @@ if (DO_TEST)
 
     set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
             test.cpp
-            test_utils.cpp
-            CACHE INTERNAL "" FORCE)
+            test_utils.cpp)
 
     add_subdirectory(accumulator)
     add_subdirectory(algo)

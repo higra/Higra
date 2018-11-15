@@ -23,5 +23,5 @@ set(PATH_PREFIX algo/)
 foreach (FILE ${FILES})
     set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
             ${PATH_PREFIX}${FILE}
-            CACHE INTERNAL "" FORCE)
+            PARENT_SCOPE)
 endforeach ()

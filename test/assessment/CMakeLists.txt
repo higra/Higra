@@ -17,5 +17,5 @@ set(PATH_PREFIX assessment/)
 foreach (FILE ${FILES})
     set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
             ${PATH_PREFIX}${FILE}
-            CACHE INTERNAL "" FORCE)
+            PARENT_SCOPE)
 endforeach ()
