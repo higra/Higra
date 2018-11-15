@@ -10,7 +10,8 @@
 
 
 set(FILES
-        test_fragmentation_curve.cpp)
+        test_fragmentation_curve.cpp
+        test_partition.cpp)
 
 set(PATH_PREFIX assessment/)
 

@@ -72,10 +72,7 @@
     } while (0)
 
 #define hg_assert_same_shape(array1, array2) do { \
-    bool flag = array1.dimension() == array2.dimension();\
-    for(index_t i = 0; i < array1.dimension() && flag; i++) {\
-        if(array1.shape()[i] != array2.shape()[i]){flag=false;}}\
-    hg_assert(flag, "Shapes of '" #array1 "' and '" #array2 "' must be equal."); \
+    hg_assert(xt::same_shape(array1.shape(), array2.shape()), "Shapes of '" #array1 "' and '" #array2 "' must be equal."); \
     } while (0)
 #else
 #define hg_assert(test, msg) ((void)0)
@@ -229,7 +226,6 @@ namespace hg {
                           "Labelisation must have integral value type.");
         }
     }
-
 
 }
 

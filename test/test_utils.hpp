@@ -16,6 +16,7 @@
 #include <string>
 #include <boost/type_index.hpp>
 #include <map>
+#include <iterator>
 #include "xtensor/xmath.hpp"
 #include "xtensor/xgenerator.hpp"
 #include "xtensor/xio.hpp"
@@ -124,4 +125,11 @@ bool almost_equal(const double & a, const double& b){
 inline
 bool almost_equal(const float & a, const float& b){
     return almost_equal(a, b, 1e-4f);
+}
+
+template <typename T>
+void show_list(const T & l) {
+    std::cout << "{";
+    std::copy(l.cbegin(), l.cend(), std::ostream_iterator<typename T::value_type>(std::cout, ", "));
+    std::cout << "}" << std::endl;
 }
