@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "../utils.hpp"
 #include "xtensor/xfixed.hpp"
 
 namespace hg {
