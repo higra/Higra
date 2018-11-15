@@ -36,5 +36,22 @@ BOOST_AUTO_TEST_SUITE(test_assessment_partition);
         }
     }
 
+    BOOST_AUTO_TEST_CASE(test_assess_partition_BCE) {
+        array_1d<int> candidate{0, 0, 0, 1, 1, 1, 2, 2, 2};
+        array_1d<int> gt1{0, 0, 1, 1, 1, 2, 2, 3, 3};
+        array_1d<int> gt2{0, 0, 0, 0, 1, 1, 1, 1, 1};
+
+        auto bce1 = assess_partition_BCE(candidate, gt1);
+        double s1 = 5.0 / 9;
+        BOOST_CHECK(s1 == bce1);
+
+        auto bce2 = assess_partition_BCE(candidate, gt2);
+        double s2 = (9.0 / 4 + 1.0 / 4 + 4.0 / 5 + 9.0 / 5) / 9;
+        BOOST_CHECK(s2 == bce2);
+
+        auto bce = assess_partition_BCE(candidate, xt::stack(xt::xtuple(gt1, gt2)));
+        BOOST_CHECK((s1 + s2) / 2.0 == bce);
+    }
+
 
 BOOST_AUTO_TEST_SUITE_END();

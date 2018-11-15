@@ -17,7 +17,7 @@
 namespace hg {
 
 
-    template<typename T1, typename T2>
+    template<typename value_type=index_t, typename T1, typename T2>
     auto card_intersections(const xt::xexpression<T1> &xcandidate,
                             const xt::xexpression<T2> &xground_truths) {
         auto &candidate = xcandidate.derived_cast();
@@ -26,13 +26,13 @@ namespace hg {
         hg_assert_integral_value_type(candidate);
         hg_assert_integral_value_type(ground_truths);
 
-        std::vector<array_2d<index_t>> result;
+        std::vector<array_2d<value_type>> result;
         auto num_regions_candidate = xt::amax(candidate)() + 1;
 
         auto compute = [&candidate, &result, num_regions_candidate](const auto &ground_truth) {
             hg_assert_same_shape(candidate, ground_truth);
             auto num_regions_ground_truth = xt::amax(ground_truth)() + 1;
-            array_2d<index_t>::shape_type shape_result{(size_t) num_regions_candidate,
+            typename array_2d<value_type>::shape_type shape_result{(size_t) num_regions_candidate,
                                                        (size_t) num_regions_ground_truth};
             result.emplace_back(shape_result, 0);
             auto & r = result.back();
@@ -44,7 +44,7 @@ namespace hg {
             }
         };
 
-        if (xt::same_shape(candidate, ground_truths)) {
+        if (xt::same_shape(candidate.shape(), ground_truths.shape())) {
             compute(ground_truths);
         } else {
             for (index_t i = 0; i < ground_truths.shape()[0]; i++) {
@@ -53,6 +53,22 @@ namespace hg {
         }
 
         return result;
+    }
+
+    template<typename T1, typename T2>
+    auto assess_partition_BCE(const xt::xexpression<T1> &xcandidate,
+                              const xt::xexpression<T2> &xground_truths){
+        auto & candidate = xcandidate.derived_cast();
+        auto card_intersections = hg::card_intersections<double>(xcandidate, xground_truths);
+        double score = 0;
+        auto candidate_regions_area = xt::sum(card_intersections[0], {1});
+        for(const auto & card_intersection: card_intersections){
+            score += xt::sum(
+                    card_intersection *
+                    xt::minimum(card_intersection / xt::sum(card_intersection, {0}),
+                                card_intersection / xt::view(candidate_regions_area, xt::all(), xt::newaxis())))();
+        }
+        return (score / candidate.size() ) / card_intersections.size();
     }
 
 }
