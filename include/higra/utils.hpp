@@ -68,7 +68,14 @@
     } while (0)
 
 #define hg_assert_integral_value_type(array) do { \
-   static_assert(std::is_integral<typename std::decay_t<decltype(array)>::value_type>::value, "Array values of '" #array "' must be integral (char, short, int, long...)."); \
+    static_assert(std::is_integral<typename std::decay_t<decltype(array)>::value_type>::value, "Array values of '" #array "' must be integral (char, short, int, long...)."); \
+    } while (0)
+
+#define hg_assert_same_shape(array1, array2) do { \
+    bool flag = array1.dimension() == array2.dimension();\
+    for(index_t i = 0; i < array1.dimension() && flag; i++) {\
+        if(array1.shape()[i] != array2.shape()[i]){flag=false;}}\
+    hg_assert(flag, "Shapes of '" #array1 "' and '" #array2 "' must be equal."); \
     } while (0)
 #else
 #define hg_assert(test, msg) ((void)0)
@@ -78,6 +85,7 @@
 #define hg_assert_leaf_weights(tree, leaf_weights) ((void)0)
 #define hg_assert_1d_array(array) ((void)0)
 #define hg_assert_integral_value_type(array) ((void)0)
+#define hg_assert_same_shape(array1, array2) ((void)0)
 #endif
 
 
