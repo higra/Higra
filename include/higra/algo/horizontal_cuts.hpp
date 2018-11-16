@@ -92,6 +92,22 @@ namespace hg {
             return m_num_regions_cuts.size();
         }
 
+        auto num_regions_cut(index_t i){
+            return m_num_regions_cuts[i];
+        }
+
+        const auto & num_regions_cuts(){
+            return m_num_regions_cuts;
+        }
+
+        auto altitude_cut(index_t i){
+            return m_altitudes_cuts[i];
+        }
+
+        const auto & altitude_cuts(){
+            return m_altitudes_cuts;
+        }
+
         inline
         auto horizontal_cut_from_index(index_t cut_index) {
             auto num_regions = m_num_regions_cuts[cut_index];
