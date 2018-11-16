@@ -19,7 +19,7 @@ class TestFragmentationCurve(unittest.TestCase):
         t = hg.Tree((8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14))
         ground_truth = np.asarray((0, 0, 1, 1, 1, 2, 2, 2), dtype=np.int32)
 
-        assesser = hg.make_assesser_optimal_cut(t, ground_truth, hg.OptimalCutMeasure.BCE)
+        assesser = hg.make_assesser_fragmentation_optimal_cut(t, ground_truth, hg.OptimalCutMeasure.BCE)
 
         self.assertTrue(assesser.optimal_number_of_regions() == 3)
         self.assertTrue(assesser.number_of_region_ground_truth() == 3)
@@ -42,7 +42,7 @@ class TestFragmentationCurve(unittest.TestCase):
         hg.CptHierarchy.link(t, g)
         ground_truth = np.asarray((0, 0, 1, 1, 1, 2, 2, 2), dtype=np.int32)
 
-        assesser = hg.make_assesser_optimal_cut(t, ground_truth, hg.OptimalCutMeasure.BCE)
+        assesser = hg.make_assesser_fragmentation_optimal_cut(t, ground_truth, hg.OptimalCutMeasure.BCE)
 
         self.assertTrue(assesser.optimal_number_of_regions() == 3)
         self.assertTrue(assesser.number_of_region_ground_truth() == 3)
@@ -60,7 +60,7 @@ class TestFragmentationCurve(unittest.TestCase):
         t = hg.Tree((8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14))
         ground_truth = np.asarray((0, 0, 1, 1, 1, 2, 2, 2), dtype=np.int32)
 
-        assesser = hg.make_assesser_optimal_cut(t, ground_truth, hg.OptimalCutMeasure.BCE)
+        assesser = hg.make_assesser_fragmentation_optimal_cut(t, ground_truth, hg.OptimalCutMeasure.BCE)
 
         optimal_partitions = [np.asarray((0, 0, 0, 0, 0, 0, 0, 0), dtype=np.int32),
                               np.asarray((0, 0, 0, 0, 1, 1, 1, 1), dtype=np.int32),

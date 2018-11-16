@@ -44,7 +44,7 @@ void py_init_fragmentation_curve(pybind11::module &m) {
             .value("DHamming", optimal_cut_measure::DHamming)
             .value("DCovering", optimal_cut_measure::DCovering);
 
-    auto c = py::class_<assesser_optimal_cut>(m, "AssesserOptimalCut");
+    auto c = py::class_<assesser_fragmentation_optimal_cut>(m, "AssesserFragmentationOptimalCut");
     add_type_overloads<def_assesser_optimal_cut_ctr, HG_TEMPLATE_INTEGRAL_TYPES>
             (c,
              "Create an assesser for hierarchy optimal cuts w.r.t. a given ground-truth partition of hierarchy"
@@ -52,7 +52,7 @@ void py_init_fragmentation_curve(pybind11::module &m) {
              "max_regions regions.");
 
     c.def("fragmentation_curve",
-          [](const assesser_optimal_cut &assesser, bool normalize) {
+          [](const assesser_fragmentation_optimal_cut &assesser, bool normalize) {
               auto curve = assesser.fragmentation_curve(normalize);
               return py::make_tuple(std::move(curve.k), std::move(curve.scores));
           },
@@ -64,19 +64,19 @@ void py_init_fragmentation_curve(pybind11::module &m) {
           py::arg("normalize") = true);
 
     c.def("number_of_region_ground_truth",
-          &assesser_optimal_cut::number_of_region_ground_truth,
+          &assesser_fragmentation_optimal_cut::number_of_region_ground_truth,
           "Number of regions in the ground truth.");
 
     c.def("optimal_number_of_regions",
-          &assesser_optimal_cut::optimal_number_of_regions,
+          &assesser_fragmentation_optimal_cut::optimal_number_of_regions,
           "Number of regions in the optimal cut.");
 
     c.def("optimal_score",
-          &assesser_optimal_cut::optimal_score,
+          &assesser_fragmentation_optimal_cut::optimal_score,
           "Score of the optimal cut.");
 
     c.def("optimal_partition",
-          &assesser_optimal_cut::optimal_partition,
+          &assesser_fragmentation_optimal_cut::optimal_partition,
           "Labelisation of the tree vertices that corresponds to the optimal cut with"
           "the given number of regions. If the number of regions is equal to 0 (default), the "
           "global optimal cut it returned (it will contain get_optimal_number_of_regions regions).",

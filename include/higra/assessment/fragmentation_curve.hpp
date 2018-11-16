@@ -43,7 +43,7 @@ namespace hg {
      * This class is used to assess the optimal cuts of a hierarchy of partitions with respect to
      * a given ground-truth labelisation of its base graph and the BCE measure.
      */
-    class assesser_optimal_cut {
+    class assesser_fragmentation_optimal_cut {
     public:
 
         /**
@@ -62,7 +62,7 @@ namespace hg {
          * @param max_regions maximum number of regions in the considered cuts.
          */
         template<typename tree_t, typename T>
-        assesser_optimal_cut(
+        assesser_fragmentation_optimal_cut(
                 const tree_t &tree,
                 const xt::xexpression<T> &xground_truth,
                 optimal_cut_measure measure,
