@@ -8,22 +8,16 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-add_subdirectory(details)
+set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_embedding.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_fibonacci_heap.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_lca.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_point.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_regular_graph.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_tree.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_undirected_graph.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/details/test_light_axis_view.cpp
+        PARENT_SCOPE)
 
-set(FILES
-        test_embedding.cpp
-        test_fibonacci_heap.cpp
-        test_lca.cpp
-        test_point.cpp
-        test_regular_graph.cpp
-        test_tree.cpp
-        test_undirected_graph.cpp)
 
-set(PATH_PREFIX structure/)
-
-foreach (FILE ${FILES})
-    set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
-            ${PATH_PREFIX}${FILE}
-            PARENT_SCOPE)
-endforeach ()
 

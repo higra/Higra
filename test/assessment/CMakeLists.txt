@@ -8,15 +8,7 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-
-set(FILES
-        test_fragmentation_curve.cpp
-        test_partition.cpp)
-
-set(PATH_PREFIX assessment/)
-
-foreach (FILE ${FILES})
-    set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
-            ${PATH_PREFIX}${FILE}
-            PARENT_SCOPE)
-endforeach ()
+set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_fragmentation_curve.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_partition.cpp
+        PARENT_SCOPE)

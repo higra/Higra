@@ -8,17 +8,10 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
+set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_binary_partition_tree.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_hierarchy_core.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_watershed_hierarchy.cpp
+        PARENT_SCOPE)
 
-set(FILES
-        test_binary_partition_tree.cpp
-        test_hierarchy_core.cpp
-        test_watershed_hierarchy.cpp)
-
-set(PATH_PREFIX hierarchy/)
-
-foreach (FILE ${FILES})
-    set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
-            ${PATH_PREFIX}${FILE}
-            PARENT_SCOPE)
-endforeach ()
 

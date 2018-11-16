@@ -8,16 +8,9 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
+set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_accumulator.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_tree_accumulator.cpp
+        PARENT_SCOPE)
 
-set(FILES
-        test_accumulator.cpp
-        test_tree_accumulator.cpp)
-
-set(PATH_PREFIX accumulator/)
-
-foreach (FILE ${FILES})
-    set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
-            ${PATH_PREFIX}${FILE}
-            PARENT_SCOPE)
-endforeach ()
 

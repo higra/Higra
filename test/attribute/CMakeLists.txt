@@ -8,15 +8,8 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
+set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_tree_attribute.cpp
+        PARENT_SCOPE)
 
-set(FILES
-        test_tree_attribute.cpp)
-
-set(PATH_PREFIX attribute/)
-
-foreach (FILE ${FILES})
-    set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
-            ${PATH_PREFIX}${FILE}
-            PARENT_SCOPE)
-endforeach ()
 

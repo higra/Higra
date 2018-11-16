@@ -8,20 +8,12 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-
-set(FILES
-        test_alignment.cpp
-        test_graph_core.cpp
-        test_graph_weights.cpp
-        test_horizontal_cuts.cpp
-        test_rag.cpp
-        test_tree.cpp
-        test_watershed.cpp)
-
-set(PATH_PREFIX algo/)
-
-foreach (FILE ${FILES})
-    set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
-            ${PATH_PREFIX}${FILE}
-            PARENT_SCOPE)
-endforeach ()
+set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_alignment.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_graph_core.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_graph_weights.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_horizontal_cuts.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_rag.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_tree.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_watershed.cpp
+        PARENT_SCOPE)

@@ -41,15 +41,15 @@ BOOST_AUTO_TEST_SUITE(test_assessment_partition);
         array_1d<int> gt1{0, 0, 1, 1, 1, 2, 2, 3, 3};
         array_1d<int> gt2{0, 0, 0, 0, 1, 1, 1, 1, 1};
 
-        auto bce1 = assess_partition_BCE(candidate, gt1);
+        auto bce1 = assess_partition(candidate, gt1, scorer_partition_BCE());
         double s1 = 5.0 / 9;
         BOOST_CHECK(s1 == bce1);
 
-        auto bce2 = assess_partition_BCE(candidate, gt2);
+        auto bce2 = assess_partition(candidate, gt2, scorer_partition_BCE());
         double s2 = (9.0 / 4 + 1.0 / 4 + 4.0 / 5 + 9.0 / 5) / 9;
         BOOST_CHECK(s2 == bce2);
 
-        auto bce = assess_partition_BCE(candidate, xt::stack(xt::xtuple(gt1, gt2)));
+        auto bce = assess_partition(candidate, xt::stack(xt::xtuple(gt1, gt2)), scorer_partition_BCE());
         BOOST_CHECK((s1 + s2) / 2.0 == bce);
     }
 
@@ -58,15 +58,15 @@ BOOST_AUTO_TEST_SUITE(test_assessment_partition);
         array_1d<int> gt1{0, 0, 1, 1, 1, 2, 2, 3, 3};
         array_1d<int> gt2{0, 0, 0, 0, 1, 1, 1, 1, 1};
 
-        auto dh1 = assess_partition_DHamming(candidate, gt1);
+        auto dh1 = assess_partition(candidate, gt1, scorer_partition_DHamming());
         double s1 = 6.0 / 9;
         BOOST_CHECK(s1 == dh1);
 
-        auto dh2 = assess_partition_DHamming(candidate, gt2);
+        auto dh2 = assess_partition(candidate, gt2, scorer_partition_DHamming());
         double s2 = 8.0 / 9;
         BOOST_CHECK(s2 == dh2);
 
-        auto dh = assess_partition_DHamming(candidate, xt::stack(xt::xtuple(gt1, gt2)));
+        auto dh = assess_partition(candidate, xt::stack(xt::xtuple(gt1, gt2)), scorer_partition_DHamming());
         BOOST_CHECK(almost_equal((s1 + s2) / 2.0, dh));
     }
 
@@ -75,15 +75,15 @@ BOOST_AUTO_TEST_SUITE(test_assessment_partition);
         array_1d<int> gt1{0, 0, 1, 1, 1, 2, 2, 3, 3};
         array_1d<int> gt2{0, 0, 0, 0, 1, 1, 1, 1, 1};
 
-        auto cov1 = assess_partition_DCovering(candidate, gt1);
+        auto cov1 = assess_partition(candidate, gt1, scorer_partition_DCovering());
         double s1 = (2.0 + 1.5 + 2.0) / 9;
         BOOST_CHECK(s1 == cov1);
 
-        auto cov2 = assess_partition_DCovering(candidate, gt2);
+        auto cov2 = assess_partition(candidate, gt2, scorer_partition_DCovering());
         double s2 = (9.0 / 4 + 1 + 9.0 / 5) / 9;
         BOOST_CHECK(s2 == cov2);
 
-        auto cov = assess_partition_DCovering(candidate, xt::stack(xt::xtuple(gt1, gt2)));
+        auto cov = assess_partition(candidate, xt::stack(xt::xtuple(gt1, gt2)), scorer_partition_DCovering());
         BOOST_CHECK(almost_equal((s1 + s2) / 2.0, cov));
     }
 
