@@ -10,6 +10,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include "higra/assessment/fragmentation_curve.hpp"
+#include "higra/assessment/partition.hpp"
 #include "higra/image/graph_image.hpp"
 #include "../test_utils.hpp"
 
@@ -154,6 +155,53 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
                                                                   sorted(root(t) - i));
             BOOST_CHECK(is_in_bijection(optimal_partitions[i], tmp));
         }
+    }
+
+    BOOST_AUTO_TEST_CASE(test_assess_fragmentation_curve_DHaming_horizontal_cut) {
+        hg::tree tree{
+                array_1d<index_t>{11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18}
+        };
+        array_1d<int> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3};
+        array_1d<int> ground_truth{0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2};
+
+
+        auto res = assess_fragmentation_horizontal_cut(tree,
+                                                       altitudes,
+                                                       ground_truth,
+                                                       scorer_partition_DHamming(),
+                                                       false);
+        auto &res_scores = res.scores;
+        auto &res_k = res.k;
+
+        array_1d<double> ref_scores{4.0, 8.0, 9.0, 10.0};
+        array_1d<double> ref_k{1, 3, 4, 9};
+
+        BOOST_CHECK(res_scores == (ref_scores / num_leaves(tree)));
+        BOOST_CHECK(res_k == (ref_k));
+    }
+
+    BOOST_AUTO_TEST_CASE(test_assess_fragmentation_curve_DHaming_horizontal_cut_on_rag) {
+        hg::tree tree{
+                array_1d<index_t>{9, 9, 9, 10, 10, 13, 12, 11, 11, 14, 13, 12, 15, 14, 15, 15}
+        };
+        array_1d<int> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 3, 1, 2, 3};
+        array_1d<int> ground_truth{0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2};
+        array_1d<index_t> vertex_map{0, 1, 2, 3, 4, 5, 6, 6, 6, 7, 8};
+
+        auto res = assess_fragmentation_horizontal_cut(tree,
+                                                       altitudes,
+                                                       ground_truth,
+                                                       scorer_partition_DHamming(),
+                                                       false,
+                                                       vertex_map);
+        auto &res_scores = res.scores;
+        auto &res_k = res.k;
+
+        array_1d<double> ref_scores{4.0, 8.0, 9.0, 10.0};
+        array_1d<double> ref_k{1, 3, 4, 9};
+
+        BOOST_CHECK(res_scores == (ref_scores / 11));
+        BOOST_CHECK(res_k == (ref_k));
     }
 
 BOOST_AUTO_TEST_SUITE_END();
