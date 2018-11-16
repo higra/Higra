@@ -33,9 +33,9 @@ namespace hg {
             hg_assert_same_shape(candidate, ground_truth);
             auto num_regions_ground_truth = xt::amax(ground_truth)() + 1;
             typename array_2d<value_type>::shape_type shape_result{(size_t) num_regions_candidate,
-                                                       (size_t) num_regions_ground_truth};
+                                                                   (size_t) num_regions_ground_truth};
             result.emplace_back(shape_result, 0);
-            auto & r = result.back();
+            auto &r = result.back();
 
             const auto &cf = xt::flatten(candidate);
             const auto &gtf = xt::flatten(ground_truth);
@@ -57,18 +57,46 @@ namespace hg {
 
     template<typename T1, typename T2>
     auto assess_partition_BCE(const xt::xexpression<T1> &xcandidate,
-                              const xt::xexpression<T2> &xground_truths){
-        auto & candidate = xcandidate.derived_cast();
+                              const xt::xexpression<T2> &xground_truths) {
+        auto &candidate = xcandidate.derived_cast();
         auto card_intersections = hg::card_intersections<double>(xcandidate, xground_truths);
         double score = 0;
         auto candidate_regions_area = xt::sum(card_intersections[0], {1});
-        for(const auto & card_intersection: card_intersections){
+        for (const auto &card_intersection: card_intersections) {
             score += xt::sum(
                     card_intersection *
                     xt::minimum(card_intersection / xt::sum(card_intersection, {0}),
                                 card_intersection / xt::view(candidate_regions_area, xt::all(), xt::newaxis())))();
         }
-        return (score / candidate.size() ) / card_intersections.size();
+        return (score / candidate.size()) / card_intersections.size();
+    }
+
+    template<typename T1, typename T2>
+    auto assess_partition_DHamming(const xt::xexpression<T1> &xcandidate,
+                                   const xt::xexpression<T2> &xground_truths) {
+        auto &candidate = xcandidate.derived_cast();
+        auto card_intersections = hg::card_intersections<double>(xcandidate, xground_truths);
+        double score = 0;
+        for (const auto &card_intersection: card_intersections) {
+            score += xt::sum(xt::amax(card_intersection, {1}))();
+        }
+        return (score / candidate.size()) / card_intersections.size();
+    }
+
+    template<typename T1, typename T2>
+    auto assess_partition_DCovering(const xt::xexpression<T1> &xcandidate,
+                                   const xt::xexpression<T2> &xground_truths) {
+        auto &candidate = xcandidate.derived_cast();
+        auto card_intersections = hg::card_intersections<double>(xcandidate, xground_truths);
+        double score = 0;
+        auto candidate_regions_area = xt::sum(card_intersections[0], {1});
+        for (const auto &card_intersection: card_intersections) {
+            auto card_union = -card_intersection + xt::sum(card_intersection, {0}) +
+                              xt::view(candidate_regions_area, xt::all(), xt::newaxis());
+            score += xt::eval(xt::sum(xt::amax(card_intersection / card_union, {1}) * candidate_regions_area))();
+
+        }
+        return (score / candidate.size()) / card_intersections.size();
     }
 
 }
