@@ -42,7 +42,7 @@ void py_init_fragmentation_curve(pybind11::module &m) {
     py::enum_<optimal_cut_measure>(m, "OptimalCutMeasure")
             .value("BCE", optimal_cut_measure::BCE)
             .value("DHamming", optimal_cut_measure::DHamming)
-            .value("Covering", optimal_cut_measure::Covering);
+            .value("DCovering", optimal_cut_measure::DCovering);
 
     auto c = py::class_<assesser_optimal_cut>(m, "AssesserOptimalCut");
     add_type_overloads<def_assesser_optimal_cut_ctr, HG_TEMPLATE_INTEGRAL_TYPES>

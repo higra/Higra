@@ -26,7 +26,7 @@ namespace hg {
     enum class optimal_cut_measure {
         BCE,
         DHamming,
-        Covering
+        DCovering
     };
 
     namespace fragmentation_curve_internal {
@@ -119,7 +119,7 @@ namespace hg {
                 case optimal_cut_measure::DHamming:
                     scores = xt::eval(xt::amax(card_intersection, {1}));
                     break;
-                case optimal_cut_measure::Covering:
+                case optimal_cut_measure::DCovering:
                     auto card_union = xt::eval(-card_intersection + region_gt_areas +
                                                xt::view(region_tree_area, xt::all(), xt::newaxis()));
                     scores = xt::eval(xt::amax(card_intersection / card_union, {1}) * region_tree_area);
