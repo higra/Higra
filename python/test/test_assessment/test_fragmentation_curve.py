@@ -22,10 +22,11 @@ class TestFragmentationCurve(unittest.TestCase):
         assesser = hg.make_assesser_fragmentation_optimal_cut(t, ground_truth, hg.OptimalCutMeasure.BCE)
 
         self.assertTrue(assesser.optimal_number_of_regions() == 3)
-        self.assertTrue(assesser.number_of_region_ground_truth() == 3)
         self.assertTrue(np.isclose(assesser.optimal_score(), (2 + 4.0 / 3 + 2.5) / t.num_leaves()))
 
-        res_k, res_scores = assesser.fragmentation_curve(False)
+        res = assesser.fragmentation_curve()
+        res_k = res.num_regions()
+        res_scores = res.scores()
 
         ref_scores = np.asarray((2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3,
                                  2 + 4.0 / 3 + 4.0 / 3, 4, 3))
@@ -45,10 +46,11 @@ class TestFragmentationCurve(unittest.TestCase):
         assesser = hg.make_assesser_fragmentation_optimal_cut(t, ground_truth, hg.OptimalCutMeasure.BCE)
 
         self.assertTrue(assesser.optimal_number_of_regions() == 3)
-        self.assertTrue(assesser.number_of_region_ground_truth() == 3)
         self.assertTrue(np.isclose(assesser.optimal_score(), (2 + 4.0 / 3 + 2.5) / t.num_leaves()))
 
-        res_k, res_scores = assesser.fragmentation_curve(False)
+        res = assesser.fragmentation_curve()
+        res_k = res.num_regions()
+        res_scores = res.scores()
 
         ref_scores = np.asarray((2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3))
         ref_k = np.asarray((1, 2, 3, 4, 5), dtype=np.int32)

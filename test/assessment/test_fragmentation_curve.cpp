@@ -25,12 +25,14 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         assesser_fragmentation_optimal_cut assesser(t, ground_truth, optimal_cut_measure::BCE);
 
         BOOST_CHECK(assesser.optimal_number_of_regions() == 3);
-        BOOST_CHECK(assesser.number_of_region_ground_truth() == 3);
         BOOST_CHECK(almost_equal(assesser.optimal_score(), (2 + 4.0 / 3 + 2.5) / num_leaves(t)));
 
-        auto res = assesser.fragmentation_curve(false);
-        auto &res_scores = res.scores;
-        auto &res_k = res.k;
+        auto res = assesser.fragmentation_curve();
+        auto &res_scores = res.scores();
+        auto &res_k = res.num_regions();
+        BOOST_CHECK(3 == res.num_regions_ground_truth());
+        BOOST_CHECK(almost_equal(res.optimal_score(), (2 + 4.0 / 3 + 2.5) / num_leaves(t)));
+        BOOST_CHECK(res.optimal_number_of_regions() == 3);
 
         array_1d<double> ref_scores{2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3,
                                     2 + 4.0 / 3 + 4.0 / 3, 4, 3};
@@ -48,12 +50,12 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         assesser_fragmentation_optimal_cut assesser(t, ground_truth, optimal_cut_measure::BCE, vertex_map);
 
         BOOST_CHECK(assesser.optimal_number_of_regions() == 3);
-        BOOST_CHECK(assesser.number_of_region_ground_truth() == 3);
         BOOST_CHECK(almost_equal(assesser.optimal_score(), (2 + 4.0 / 3 + 2.5) / num_leaves(t)));
 
-        auto res = assesser.fragmentation_curve(false);
-        auto &res_scores = res.scores;
-        auto &res_k = res.k;
+        auto res = assesser.fragmentation_curve();
+        auto &res_scores = res.scores();
+        auto &res_k = res.num_regions();
+        BOOST_CHECK(3 == res.num_regions_ground_truth());
 
         array_1d<double> ref_scores{2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3};
         array_1d<size_t> ref_k{1, 2, 3, 4, 5};
@@ -69,12 +71,12 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         assesser_fragmentation_optimal_cut assesser(t, ground_truth, optimal_cut_measure::DHamming);
 
         BOOST_CHECK(assesser.optimal_number_of_regions() == 6);
-        BOOST_CHECK(assesser.number_of_region_ground_truth() == 3);
         BOOST_CHECK(almost_equal(assesser.optimal_score(), (8.0) / num_leaves(t)));
 
-        auto res = assesser.fragmentation_curve(true);
-        auto &res_scores = res.scores;
-        auto &res_k = res.k;
+        auto res = assesser.fragmentation_curve();
+        auto &res_scores = res.scores();
+        auto res_k = res.num_regions_normalized();
+        BOOST_CHECK(3 == res.num_regions_ground_truth());
 
         array_1d<double> ref_scores{3, 5, 7, 7, 7, 8, 8, 8};
         array_1d<double> ref_k{1, 2, 3, 4, 5, 6, 7, 8};
@@ -90,12 +92,12 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         assesser_fragmentation_optimal_cut assesser(t, ground_truth, optimal_cut_measure::DCovering);
 
         BOOST_CHECK(assesser.optimal_number_of_regions() == 3);
-        BOOST_CHECK(assesser.number_of_region_ground_truth() == 3);
         BOOST_CHECK(almost_equal(assesser.optimal_score(), (5 + 4.0 / 3) / num_leaves(t)));
 
-        auto res = assesser.fragmentation_curve(false);
-        auto &res_scores = res.scores;
-        auto &res_k = res.k;
+        auto res = assesser.fragmentation_curve();
+        auto &res_scores = res.scores();
+        auto &res_k = res.num_regions();
+        BOOST_CHECK(3 == res.num_regions_ground_truth());
 
         array_1d<double> ref_scores{3, 5, 5 + 4.0 / 3, 5 + 2.0 / 3, 4 + 2.0 / 3, 2 + 8.0 / 3, 4, 3};
         array_1d<size_t> ref_k{1, 2, 3, 4, 5, 6, 7, 8};
@@ -168,10 +170,9 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         auto res = assess_fragmentation_horizontal_cut(tree,
                                                        altitudes,
                                                        ground_truth,
-                                                       scorer_partition_DHamming(),
-                                                       false);
-        auto &res_scores = res.scores;
-        auto &res_k = res.k;
+                                                       scorer_partition_DHamming());
+        auto &res_scores = res.scores();
+        auto &res_k = res.num_regions();
 
         array_1d<double> ref_scores{4.0, 8.0, 9.0, 10.0};
         array_1d<double> ref_k{1, 3, 4, 9};
@@ -192,10 +193,9 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
                                                        altitudes,
                                                        ground_truth,
                                                        scorer_partition_DHamming(),
-                                                       false,
                                                        vertex_map);
-        auto &res_scores = res.scores;
-        auto &res_k = res.k;
+        auto &res_scores = res.scores();
+        auto &res_k = res.num_regions();
 
         array_1d<double> ref_scores{4.0, 8.0, 9.0, 10.0};
         array_1d<double> ref_k{1, 3, 4, 9};

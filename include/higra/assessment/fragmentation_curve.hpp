@@ -19,9 +19,59 @@
 
 namespace hg {
 
-    struct k_curve {
-        array_1d<double> k;
-        array_1d<double> scores;
+    template<typename value_t=double>
+    struct fragmentation_curve {
+
+        fragmentation_curve(array_1d<value_t> &&num_regions,
+                            array_1d<value_t> &&scores,
+                            size_t num_regions_ground_truth) :
+                m_num_regions(std::forward<array_1d<value_t>>(num_regions)),
+                m_scores(std::forward<array_1d<value_t>>(scores)),
+                m_num_regions_ground_truth(num_regions_ground_truth) {
+
+        }
+
+        /**
+         * Number of regions in the ground truth labelisation of the hierarchy base graph
+         * @return
+         */
+        auto num_regions_ground_truth() const {
+            return m_num_regions_ground_truth;
+        }
+
+        /**
+         * Number of regions in the optimal cut
+         * @return
+         */
+        auto optimal_number_of_regions() const {
+            auto pos = std::max_element(m_scores.begin(), m_scores.end());
+            return m_num_regions(std::distance(m_scores.begin(), pos));
+        }
+
+        /**
+         * Score of the optimal cut
+         * @return
+         */
+        auto optimal_score() const {
+            return xt::amax(m_scores)();
+        }
+
+        const auto &scores() const {
+            return m_scores;
+        }
+
+        const auto &num_regions() const {
+            return m_num_regions;
+        }
+
+        auto num_regions_normalized() const {
+            return xt::eval(m_num_regions / (value_t)m_num_regions_ground_truth);
+        }
+
+    private:
+        array_1d<value_t> m_num_regions;
+        array_1d<value_t> m_scores;
+        size_t m_num_regions_ground_truth;
     };
 
     enum class optimal_cut_measure {
@@ -47,7 +97,7 @@ namespace hg {
             hg_assert_1d_array(ground_truth);
 
             auto num_regions_ground_truth = xt::amax(ground_truth)() + 1;
-            array_2d<index_t> card_intersection_leaves({num_leaves(tree), (size_t)num_regions_ground_truth}, 0);
+            array_2d<index_t> card_intersection_leaves({num_leaves(tree), (size_t) num_regions_ground_truth}, 0);
             if (vertex_map.size() <= 1) { // no rag
                 hg_assert_leaf_weights(tree, ground_truth);
                 for (auto i: leaves_iterator(tree)) {
@@ -194,31 +244,19 @@ namespace hg {
         /**
          * Fragmentation curve, i.e. for each number of region k between 1 and max_regions,
          * the BCE score of the optimal cut with k regions.
-         * @param normalize: if true the number of regions are divided by the number of regions in the ground truth
-         * @return a k_curve
+         * @return a fragmentation_curve
          */
-        auto fragmentation_curve(bool normalize = true) const {
+        auto fragmentation_curve() const {
             auto &backtrack_root = backtracking[root(m_tree)];
             array_1d<double> final_scores({backtrack_root.size()}, 0);
             for (index_t i = 0; i < backtrack_root.size(); i++) {
                 final_scores(i) = backtrack_root[i].score;
             }
-            if (normalize) {
-                return k_curve{xt::eval(xt::arange<double>(1, final_scores.size() + 1) / m_num_regions_ground_truth),
-                               xt::eval(final_scores / (double) num_leaves(m_tree))};
-            } else {
-                return k_curve{xt::eval(xt::arange<double>(1, final_scores.size() + 1)),
-                               xt::eval(final_scores / (double) num_leaves(m_tree))};
-            }
 
-        }
-
-        /**
-         * Number of regions in the ground truth labelisation of the hierarchy base graph
-         * @return
-         */
-        auto number_of_region_ground_truth() const {
-            return m_num_regions_ground_truth;
+            return hg::fragmentation_curve<>{
+                    xt::eval(xt::arange<double>(1, final_scores.size() + 1)),
+                    xt::eval(final_scores / (double) num_leaves(m_tree)),
+                    m_num_regions_ground_truth};
         }
 
         /**
@@ -345,7 +383,6 @@ namespace hg {
             const xt::xexpression<T1> &xaltitudes,
             const xt::xexpression<T2> &xground_truth,
             const scorer_t &partition_scorer,
-            bool normalize = true,
             const array_1d<index_t> &vertex_map = {},
             size_t max_regions = 200) {
         auto &altitudes = xaltitudes.derived_cast();
@@ -373,14 +410,9 @@ namespace hg {
             scores(i) = partition_scorer.score(xt::view(card_intersection, xt::keep(hc.nodes), xt::all()));
         }
 
-        if (normalize) {
-            return k_curve{xt::eval(num_regions / (double)card_intersection.shape()[1]),
-                           std::move(scores)};
-        } else {
-            return k_curve{std::move(num_regions),
-                           std::move(scores)};
-        }
-
+        return hg::fragmentation_curve<>{std::move(num_regions),
+                                         std::move(scores),
+                                         card_intersection.shape()[1]};
     };
 
 };

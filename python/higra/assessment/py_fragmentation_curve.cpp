@@ -39,6 +39,25 @@ struct def_assesser_optimal_cut_ctr {
 void py_init_fragmentation_curve(pybind11::module &m) {
     xt::import_numpy();
 
+    using fg_t = fragmentation_curve<double>;
+    py::class_<fg_t>(m,
+                     "FragmentationCurve",
+                     "This class represents a fragmentation curve, ie the evolution of the "
+                     "scores of the partitions of a hierarchy with respect to the number of regions "
+                     "in those partitions.\n\n"
+                     ""
+                     "Example:\n\n"
+                     "\tplt.plot(x=fg.num_regions(), y=fg.scores())")
+            .def("num_regions", &fg_t::num_regions,
+                 "Array of number of regions in the different cuts")
+            .def("num_regions_normalized", &fg_t::num_regions_normalized,
+                 "Array of number of regions in the different cuts divided by the number of regions in the ground-truth")
+            .def("num_regions_ground_truth", &fg_t::num_regions_ground_truth,
+                 "Array of number of regions in the different cuts")
+            .def("scores", &fg_t::scores,
+                 "Array of scores of the different cuts");
+
+
     py::enum_<optimal_cut_measure>(m, "OptimalCutMeasure")
             .value("BCE", optimal_cut_measure::BCE)
             .value("DHamming", optimal_cut_measure::DHamming)
@@ -52,20 +71,9 @@ void py_init_fragmentation_curve(pybind11::module &m) {
              "max_regions regions.");
 
     c.def("fragmentation_curve",
-          [](const assesser_fragmentation_optimal_cut &assesser, bool normalize) {
-              auto curve = assesser.fragmentation_curve(normalize);
-              return py::make_tuple(std::move(curve.k), std::move(curve.scores));
-          },
+          &assesser_fragmentation_optimal_cut::fragmentation_curve,
           "Fragmentation curve, i.e. for each number of region k between 1 and max_regions, "
-          "the score of the optimal cut with k regions. The curve is given by a pair of arrays "
-          "(number_of_regions/number_of_region_ground_truth, scores) (or (number_of_regions, scores) if "
-          "normalize is False), ready to be plotted:"
-          "plot(x=number_of_regions, y=scores)",
-          py::arg("normalize") = true);
-
-    c.def("number_of_region_ground_truth",
-          &assesser_fragmentation_optimal_cut::number_of_region_ground_truth,
-          "Number of regions in the ground truth.");
+          "the score of the optimal cut with k regions.");
 
     c.def("optimal_number_of_regions",
           &assesser_fragmentation_optimal_cut::optimal_number_of_regions,
