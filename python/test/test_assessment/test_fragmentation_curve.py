@@ -35,10 +35,16 @@ class TestFragmentationCurve(unittest.TestCase):
         self.assertTrue(np.all(res_scores == (ref_scores / t.num_leaves())))
         self.assertTrue(np.all(res_k == ref_k))
 
+        res = hg.assess_fragmentation_optimal_cut(t, ground_truth, hg.OptimalCutMeasure.BCE)
+        res_k = res.num_regions()
+        res_scores = res.scores()
+        self.assertTrue(np.all(res_scores == (ref_scores / t.num_leaves())))
+        self.assertTrue(np.all(res_k == ref_k))
+
     def test_assess_fragmentation_curve_BCE_optimal_cut_on_rag(self):
         vertex_map = np.asarray((0, 0, 1, 1, 2, 2, 3, 4), dtype=np.int64)
         g = hg.get_4_adjacency_graph((1, 8))
-        hg.CptRegionAdjacencyGraph.link(g, None, vertex_map, np.ones((7, )))
+        hg.CptRegionAdjacencyGraph.link(g, None, vertex_map, np.ones((7,)))
         t = hg.Tree((6, 6, 5, 5, 7, 7, 8, 8, 8))
         hg.CptHierarchy.link(t, g)
         ground_truth = np.asarray((0, 0, 1, 1, 1, 2, 2, 2), dtype=np.int32)
@@ -77,6 +83,25 @@ class TestFragmentationCurve(unittest.TestCase):
 
         for i in range(len(optimal_partitions)):
             self.assertTrue(hg.is_in_bijection(optimal_partitions[i], assesser.optimal_partition(i + 1)))
+
+    def test_assess_fragmentation_curve_DHamming_horizontal_cut(self):
+        tree = hg.Tree((11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18))
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3))
+        ground_truth = np.asarray((0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2), dtype=np.int64)
+
+        res = hg.assess_fragmentation_horizontal_cut(altitudes,
+                                                     ground_truth,
+                                                     hg.PartitionMeasure.DHamming,
+                                                     tree)
+        res_scores = res.scores()
+        res_k = res.num_regions()
+
+        ref_scores = np.asarray((4.0, 8.0, 9.0, 10.0))
+        ref_k = np.asarray((1, 3, 4, 9))
+
+        self.assertTrue(np.allclose(res_scores, (ref_scores / tree.num_leaves())))
+        self.assertTrue(np.allclose(res_k, ref_k))
 
 
 if __name__ == '__main__':

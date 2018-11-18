@@ -11,6 +11,7 @@
 #include "py_fragmentation_curve.hpp"
 #include "../py_common.hpp"
 #include "higra/assessment/fragmentation_curve.hpp"
+#include "higra/assessment/partition.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
@@ -35,6 +36,47 @@ struct def_assesser_optimal_cut_ctr {
     }
 };
 
+template<typename tree_t>
+struct def_assesse_horizontal_cut {
+    template<typename value_type, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("_assess_fragmentation_horizontal_cut",
+              [](const tree_t &tree,
+                 const xt::pyarray<value_type> &altitudes,
+                 const xt::pyarray<index_t> &ground_truth,
+                 hg::partition_measure measure,
+                 const xt::pytensor<index_t, 1> &vertex_map,
+                 size_t max_regions
+              ) {
+                  switch (measure) {
+                      case partition_measure::DHamming:
+                          return hg::assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth,
+                                                                         hg::scorer_partition_DHamming(), vertex_map,
+                                                                         max_regions);
+                      case partition_measure::DCovering:
+                          return hg::assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth,
+                                                                         hg::scorer_partition_DCovering(), vertex_map,
+                                                                         max_regions);
+                      case partition_measure::BCE:
+                          return hg::assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth,
+                                                                         hg::scorer_partition_BCE(), vertex_map,
+                                                                         max_regions);
+                      default:
+                          throw std::runtime_error(
+                                  "Partition measure is not known, see enumeration PartitionMeasure for legal values.");
+
+                  }
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("altitudes"),
+              py::arg("ground_truth"),
+              py::arg("optimal_cut_measure"),
+              py::arg("vertex_map") = xt::pytensor<index_t, 1>{},
+              py::arg("max_regions") = 200);
+    }
+};
 
 void py_init_fragmentation_curve(pybind11::module &m) {
     xt::import_numpy();
@@ -89,4 +131,8 @@ void py_init_fragmentation_curve(pybind11::module &m) {
           "the given number of regions. If the number of regions is equal to 0 (default), the "
           "global optimal cut it returned (it will contain get_optimal_number_of_regions regions).",
           py::arg("num_regions") = 0);
+
+    add_type_overloads<def_assesse_horizontal_cut<hg::tree>, HG_TEMPLATE_NUMERIC_TYPES>
+            (m,
+             "Compute the fragmentation curve of the horizontal cuts in a hierarchy w.r.t. a given measure.");
 }

@@ -54,3 +54,28 @@ def assess_fragmentation_optimal_cut(tree,
     """
     assesser = make_assesser_fragmentation_optimal_cut(tree, ground_truth, measure, max_regions, vertex_map)
     return assesser.fragmentation_curve()
+
+
+@hg.argument_helper(hg.CptValuedHierarchy, ("leaf_graph", hg.CptRegionAdjacencyGraph))
+def assess_fragmentation_horizontal_cut(altitudes,
+                                        ground_truth,
+                                        measure,
+                                        tree,
+                                        max_regions=200,
+                                        vertex_map=None):
+    """
+    Compute the fragmentation curve of the horizontal cuts in a hierarchy w.r.t. a given measure.
+
+    :param altitudes: altitudes of the nodes of the input hierarchy
+    :param tree: input hierarchy
+    :param ground_truth: labelisation of base graph vertices (see parameter vertex_map if base_graph is a rag)
+    :param measure: evaluation measure to use (see enumeration OptimalCutMeasure)
+    :param max_regions: maximum number of regions in the cuts
+    :param vertex_map: vertex mapping if the hierarchy is build on super-vertices
+    :return: an object of type FragmentationCurve
+    """
+    if vertex_map is None:
+        return hg._assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, measure, max_regions=max_regions)
+    else:
+        return hg._assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, measure, max_regions=max_regions,
+                                                       vertex_map=vertex_map)
