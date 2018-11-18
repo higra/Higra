@@ -10,5 +10,7 @@
 
 #pragma once
 
-#include "py_fragmentation_curve.hpp"
-#include "py_partition.hpp"
+#include "pybind11/pybind11.h"
+
+void py_init_assessment_partition(pybind11::module &m);
+

@@ -16,6 +16,11 @@
 
 namespace hg {
 
+    enum class partition_measure {
+        BCE,
+        DHamming,
+        DCovering
+    };
 
     template<typename value_type=index_t, typename T1, typename T2>
     auto card_intersections(const xt::xexpression<T1> &xcandidate,

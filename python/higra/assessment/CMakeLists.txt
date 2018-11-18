@@ -14,6 +14,7 @@ set(PY_FILES
 
 set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/py_fragmentation_curve.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_partition.cpp
         PARENT_SCOPE)
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")

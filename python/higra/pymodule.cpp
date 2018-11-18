@@ -38,6 +38,7 @@ PYBIND11_MODULE(higram, m) {
     py_init_algo_graph_core(m);
     py_init_algo_tree(m);
     py_init_alignement(m);
+    py_init_assessment_partition(m);
     py_init_binary_partition_tree(m);
     py_init_common_hierarchy(m);
     py_init_contour_2d(m);

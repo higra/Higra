@@ -10,6 +10,7 @@
 
 set(PY_FILES
         __init__.py
-        test_fragmentation_curve.py)
+        test_fragmentation_curve.py
+        test_partition.py)
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")
