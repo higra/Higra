@@ -16,6 +16,7 @@ def extend_class(cls, method_name=None):
     Add the decorated function to the specified class.
     If no name is specified the name of the function is used.
     """
+
     def decorate(funct):
         tmp = method_name
         if tmp is None:
@@ -25,6 +26,7 @@ def extend_class(cls, method_name=None):
                 raise RuntimeError("Name attribute cannot be found in " + str(funct))
         setattr(cls, tmp, funct)
         return funct
+
     return decorate
 
 
@@ -68,6 +70,11 @@ def delinearize_vertex_weights(vertex_weights, graph=None, shape=None):
         return vertex_weights
 
     v_shape = vertex_weights.shape
+
+    if len(v_shape) >= len(shape):
+        if shape == v_shape[:len(shape)]:
+            return vertex_weights
+
     if v_shape[0] != graph.num_vertices():
         raise Exception("Vertex weights shape " + str(v_shape) +
                         " is not compatible with graph size " + str(graph.num_vertices()) + ".")

@@ -26,11 +26,32 @@ class TestHGUtils(unittest.TestCase):
         r = hg.linearize_vertex_weights(np.ones((4, 5, 10, 12)), g, (4, 5))
         self.assertTrue(r.shape == (20, 10, 12))
 
-        r = hg.linearize_vertex_weights(np.ones((20, 4, 5, 10, 12)), g, (4, 5))
-        self.assertTrue(r.shape == (20, 4, 5, 10, 12))
+        r = hg.linearize_vertex_weights(np.ones((20, 4, 5, 2, 3)), g, (4, 5))
+        self.assertTrue(r.shape == (20, 4, 5, 2, 3))
 
         with self.assertRaises(Exception):
             hg.linearize_vertex_weights(np.ones((5, 4)), g, (4, 5))
 
         with self.assertRaises(Exception):
             hg.linearize_vertex_weights(np.ones((25, )), g, (4, 5))
+
+    def test_delinearize_vertex_weights(self):
+        g = hg.get_4_adjacency_graph((4, 5))
+
+        r = hg.delinearize_vertex_weights(np.ones((20, )), g, (4, 5))
+        self.assertTrue(r.shape == (4, 5))
+
+        r = hg.delinearize_vertex_weights(np.ones((4, 5)), g, (4, 5))
+        self.assertTrue(r.shape == (4, 5))
+
+        r = hg.delinearize_vertex_weights(np.ones((4, 5, 10, 12)), g, (4, 5))
+        self.assertTrue(r.shape == (4, 5, 10, 12))
+
+        r = hg.delinearize_vertex_weights(np.ones((20, 4, 5, 2, 3)), g, (4, 5))
+        self.assertTrue(r.shape == (4, 5, 4, 5, 2, 3))
+
+        with self.assertRaises(Exception):
+            hg.delinearize_vertex_weights(np.ones((5, 4)), g, (4, 5))
+
+        with self.assertRaises(Exception):
+            hg.delinearize_vertex_weights(np.ones((25, )), g, (4, 5))
