@@ -13,6 +13,7 @@ set(PY_FILES
         alignment.py
         graph_core.py
         graph_weights.py
+        horizontal_cuts.py
         rag.py
         tree.py
         watershed.py)
@@ -21,6 +22,7 @@ set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/py_alignement.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_graph_core.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_graph_weights.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_horizontal_cuts.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_rag.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_tree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_watershed.cpp

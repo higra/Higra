@@ -10,10 +10,6 @@
 
 #pragma once
 
-#include "py_alignement.hpp"
-#include "py_graph_core.hpp"
-#include "py_graph_weights.hpp"
-#include "py_horizontal_cuts.hpp"
-#include "py_rag.hpp"
-#include "py_tree.hpp"
-#include "py_watershed.hpp"
+#include "pybind11/pybind11.h"
+
+void py_init_horizontal_cuts(pybind11::module &m);

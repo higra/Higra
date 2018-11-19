@@ -10,6 +10,24 @@
 
 import higra as hg
 
+
+def extend_class(cls, method_name=None):
+    """
+    Add the decorated function to the specified class.
+    If no name is specified the name of the function is used.
+    """
+    def decorate(funct):
+        tmp = method_name
+        if tmp is None:
+            if hasattr(funct, "__name__"):
+                tmp = funct.__name__
+            else:
+                raise RuntimeError("Name attribute cannot be found in " + str(funct))
+        setattr(cls, tmp, funct)
+        return funct
+    return decorate
+
+
 def normalize_shape(shape):
     """
     This function ensure that the given shape will be easily convertible

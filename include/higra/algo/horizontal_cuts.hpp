@@ -11,43 +11,61 @@
 #pragma once
 
 #include "tree.hpp"
+#include "graph_core.hpp"
 
 namespace hg {
 
-    template<typename tree_t, typename value_t>
+    template<typename value_t>
     struct horizontal_cut_nodes {
 
-        horizontal_cut_nodes(const tree_t &_tree,
-                             const array_1d<index_t> &_nodes,
+        horizontal_cut_nodes(array_1d <index_t> &&_nodes,
                              value_t _altitude) :
-                tree(_tree), nodes(_nodes), altitude(_altitude) {
-
+                nodes(std::forward<array_1d < index_t> > (_nodes)),
+                altitude(_altitude) {
         }
 
-        auto labelisation_leaves() {
+        template<typename tree_t>
+        auto labelisation_leaves(const tree_t &tree) const {
             array_1d<bool> deleted({num_vertices(tree)}, true);
             xt::index_view(deleted, nodes) = false;
-            return reconstruct_leaf_data(tree,
-                                         xt::arange(num_vertices(tree)),
-                                         deleted);
+            return hg::reconstruct_leaf_data(tree,
+                                             xt::arange(num_vertices(tree)),
+                                             deleted);
         }
 
-        const tree_t &tree;
-        array_1d<index_t> nodes;
+        template<typename tree_t, typename T>
+        auto reconstruct_leaf_data(const tree_t &tree,
+                                   const xt::xexpression<T> &altitudes) const {
+            array_1d<bool> deleted({num_vertices(tree)}, true);
+            xt::index_view(deleted, nodes) = false;
+            return hg::reconstruct_leaf_data(tree,
+                                             altitudes,
+                                             deleted);
+        }
+
+        template<typename tree_t, typename graph_t>
+        auto graph_cut(const tree_t &tree,
+                                   const graph_t &leaf_graph) const {
+            return hg::labelisation_2_graph_cut(leaf_graph, labelisation_leaves(tree));
+        }
+
+        array_1d <index_t> nodes;
         value_t altitude;
     };
 
-    template<typename tree_t, typename value_t>
-    decltype(auto) make_horizontal_cut_nodes(tree_t &&tree, array_1d<index_t> &&nodes, value_t altitude) {
-        return horizontal_cut_nodes<tree_t, value_t>(
-                std::forward<tree_t>(tree),
-                std::forward<array_1d<index_t>>(nodes),
+    template<typename value_t>
+    decltype(auto) make_horizontal_cut_nodes(array_1d <index_t> &&nodes,
+                                             value_t altitude) {
+        return horizontal_cut_nodes<value_t>(
+                std::forward<array_1d < index_t> > (nodes),
                 altitude);
     }
 
     template<typename tree_t, typename value_t>
     class horizontal_cut_explorer {
     public:
+        using tree_type = tree_t;
+        using value_type = value_t;
 
         template<typename T>
         horizontal_cut_explorer(const tree_t &tree, const xt::xexpression<T> &xaltitudes):m_original_tree(tree) {
@@ -92,26 +110,26 @@ namespace hg {
             return m_num_regions_cuts.size();
         }
 
-        auto num_regions_cut(index_t i){
+        auto num_regions_cut(index_t i) {
             return m_num_regions_cuts[i];
         }
 
-        const auto & num_regions_cuts(){
+        const auto &num_regions_cuts() {
             return m_num_regions_cuts;
         }
 
-        auto altitude_cut(index_t i){
+        auto altitude_cut(index_t i) {
             return m_altitudes_cuts[i];
         }
 
-        const auto & altitude_cuts(){
+        const auto &altitude_cuts() {
             return m_altitudes_cuts;
         }
 
         inline
         auto horizontal_cut_from_index(index_t cut_index) {
             auto num_regions = m_num_regions_cuts[cut_index];
-            array_1d<index_t> nodes = xt::empty<index_t>({num_regions});
+            array_1d <index_t> nodes = xt::empty<index_t>({(size_t) num_regions});
             if (cut_index == 0) { // special case for single region partition
                 nodes(0) = root(m_tree);
             } else {
@@ -127,7 +145,7 @@ namespace hg {
                 }
             }
 
-            return make_horizontal_cut_nodes(m_original_tree, std::move(nodes), m_altitudes_cuts[cut_index]);
+            return make_horizontal_cut_nodes(std::move(nodes), m_altitudes_cuts[cut_index]);
         }
 
         auto horizontal_cut_from_altitude(value_t threshold) {
@@ -159,8 +177,8 @@ namespace hg {
     private:
         const tree_t &m_original_tree;
         hg::tree m_tree;
-        array_1d<index_t> m_node_map;
-        array_1d<value_t> m_altitudes;
+        array_1d <index_t> m_node_map;
+        array_1d <value_t> m_altitudes;
         std::vector<index_t> m_num_regions_cuts;
         std::vector<value_t> m_altitudes_cuts;
         std::vector<std::pair<index_t, index_t>> m_range_nodes_cuts;

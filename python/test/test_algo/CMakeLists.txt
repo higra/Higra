@@ -14,6 +14,7 @@ set(PY_FILES
         test_attributes.py
         test_graph_core.py
         test_graph_weights.py
+        test_horizontal_cuts.py
         test_rag.py
         test_tree.py
         test_watershed.py)

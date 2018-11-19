@@ -48,6 +48,7 @@ PYBIND11_MODULE(higram, m) {
     py_init_fragmentation_curve(m);
     py_init_hierarchy_core(m);
     py_init_hierarchy_mean_pb(m);
+    py_init_horizontal_cuts(m);
     py_init_lca_fast(m);
     py_init_log(m);
     py_init_pink_io(m);
