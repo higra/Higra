@@ -54,14 +54,14 @@ BOOST_AUTO_TEST_SUITE(test_graph_accumulator);
         array_1d<int> ref1{2, 4, 6, 5, 7, 7};
         BOOST_CHECK(xt::allclose(ref1, res1));
 
-        array_2d<int> vertex_weights2{{1, 6},
+        array_2d<int> edge_weights2{{1, 6},
                                       {2, 5},
                                       {3, 4},
                                       {4, 3},
                                       {5, 2},
                                       {6, 1},
                                       {7, 9}};
-        auto res2 = accumulate_graph_edges(g, vertex_weights2, accumulator_sum());
+        auto res2 = accumulate_graph_edges(g, edge_weights2, accumulator_sum());
         array_2d<int> ref2{{3,  11},
                            {8,  13},
                            {8,  6},

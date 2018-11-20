@@ -8,5 +8,6 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
+from .graph_accumulator import *
 from .tree_accumulator import *
 

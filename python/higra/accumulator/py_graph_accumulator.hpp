@@ -10,6 +10,6 @@
 
 #pragma once
 
-#include "py_accumulators.hpp"
-#include "py_graph_accumulator.hpp"
-#include "py_tree_accumulators.hpp"
+#include "pybind11/pybind11.h"
+
+void py_init_graph_accumulator(pybind11::module &m);
