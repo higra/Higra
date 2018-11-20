@@ -10,6 +10,7 @@
 
 from .alignment import *
 from .graph_core import *
+from .graph_weights import *
 from .horizontal_cuts import *
 from .rag import *
 from .tree import *
