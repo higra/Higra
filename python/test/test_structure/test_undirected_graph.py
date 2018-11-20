@@ -72,6 +72,16 @@ class TestUndirectedGraph(unittest.TestCase):
 
         self.assertTrue(test == ref)
 
+    def test_edge_list(self):
+        g = TestUndirectedGraph.test_graph()
+        ref_sources = (0, 1, 0)
+        ref_targets = (1, 2, 2)
+
+        sources, targets = g.edge_list()
+
+        self.assertTrue(np.all(ref_sources == sources))
+        self.assertTrue(np.all(ref_targets == targets))
+
     def test_out_edge_iterator(self):
         g = TestUndirectedGraph.test_graph()
         ref = [[(0, 1), (0, 2)],
