@@ -20,6 +20,7 @@ void py_init_accumulators(pybind11::module &m) {
     py::enum_<hg::accumulators>(m, "Accumulators")
             .value("min", hg::accumulators::min)
             .value("max", hg::accumulators::max)
+            .value("mean", hg::accumulators::mean)
             .value("counter", hg::accumulators::counter)
             .value("sum", hg::accumulators::sum)
             .value("prod", hg::accumulators::prod)
