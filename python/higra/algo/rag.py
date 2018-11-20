@@ -88,6 +88,8 @@ def rag_back_project_vertex_weights(vertex_weights, graph):
     """
 
     rag = hg.CptRegionAdjacencyGraph.construct(graph)
+    if graph.num_vertices() != vertex_weights.shape[0]:
+        raise Exception("vertex_weights size does not match graph size.")
 
     new_weights = hg._rag_back_project_weights(rag["vertex_map"], vertex_weights)
 
@@ -115,6 +117,8 @@ def rag_back_project_edge_weights(edge_weights, graph):
     """
 
     rag = hg.CptRegionAdjacencyGraph.construct(graph)
+    if graph.num_edges() != edge_weights.shape[0]:
+        raise Exception("edge_weights size does not match graph size.")
 
     new_weights = hg._rag_back_project_weights(rag["edge_map"], edge_weights)
 
