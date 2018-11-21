@@ -42,6 +42,14 @@ endmacro()
 include(CMakeFindDependencyMacro)
 find_dependency(xtl 0.4.16)
 
+if(XTENSOR_USE_XSIMD)
+    find_dependency(xsimd )
+endif()
+
+if(XTENSOR_USE_TBB)
+    find_dependency(TBB)
+endif()
+
 if(NOT TARGET xtensor)
   include("${CMAKE_CURRENT_LIST_DIR}/xtensorTargets.cmake")
   get_target_property(xtensor_INCLUDE_DIRS xtensor INTERFACE_INCLUDE_DIRECTORIES)

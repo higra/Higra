@@ -27,14 +27,18 @@ namespace xt
     template <class E>
     inline std::ostream& operator<<(std::ostream& out, const xexpression<E>& e);
 
+    /*****************
+     * print options *
+     *****************/
+
     namespace print_options
     {
         struct print_options_impl
         {
-            std::size_t edgeitems = 3;
-            std::size_t line_width = 75;
-            std::size_t threshold = 1000;
-            std::streamsize precision = -1;  // default precision
+            int edge_items = 3;
+            int line_width = 75;
+            int threshold = 1000;
+            int precision = -1;  // default precision
         };
 
         inline print_options_impl& print_options()
@@ -49,7 +53,7 @@ namespace xt
          *
          * @param line_width The line width
          */
-        inline void set_line_width(std::size_t line_width)
+        inline void set_line_width(int line_width)
         {
             print_options().line_width = line_width;
         }
@@ -60,7 +64,7 @@ namespace xt
          * @param threshold The number of elements in the xexpression that triggers
          *                  summarization in the output
          */
-        inline void set_threshold(std::size_t threshold)
+        inline void set_threshold(int threshold)
         {
             print_options().threshold = threshold;
         }
@@ -70,11 +74,11 @@ namespace xt
          *        triggered, this value defines how many items of each dimension
          *        are printed.
          *
-         * @param edgeitems The number of edge items
+         * @param edge_items The number of edge items
          */
-        inline void set_edgeitems(std::size_t edgeitems)
+        inline void set_edge_items(int edge_items)
         {
-            print_options().edgeitems = edgeitems;
+            print_options().edge_items = edge_items;
         }
 
         /**
@@ -82,11 +86,97 @@ namespace xt
          *
          * @param precision The number of digits for floating point output
          */
-        inline void set_precision(std::streamsize precision)
+        inline void set_precision(int precision)
         {
             print_options().precision = precision;
         }
-    }
+
+#define DEFINE_LOCAL_PRINT_OPTION(NAME)                                   \
+        class NAME                                                        \
+        {                                                                 \
+        public:                                                           \
+                                                                          \
+            NAME(int value) : m_value(value)                              \
+            {                                                             \
+                id();                                                     \
+            }                                                             \
+            static int id()                                               \
+            {                                                             \
+                static int id = std::ios_base::xalloc();                  \
+                return id;                                                \
+            }                                                             \
+            int value() const                                             \
+            {                                                             \
+                return m_value;                                           \
+            }                                                             \
+                                                                          \
+        private:                                                          \
+                                                                          \
+            int m_value;                                                  \
+        };                                                                \
+                                                                          \
+        inline std::ostream& operator<<(std::ostream& out, const NAME& n) \
+        {                                                                 \
+            out.iword(NAME::id()) = n.value();                            \
+            return out;                                                   \
+        }
+
+        /**
+         * @class line_width
+         *
+         * io manipulator used to set the width of the lines when printing
+         * an expression.
+         *
+         * \code{.cpp}
+         * using po = xt::print_options;
+         * xt::xarray<double> a = {{1, 2, 3}, {4, 5, 6}};
+         * std::cout << po::line_width(100) << a << std::endl;
+         * \endcode
+         */
+        DEFINE_LOCAL_PRINT_OPTION(line_width)
+
+        /**
+         * @class threshold
+         *
+         * io manipulator used to set the threshold after which summarization is
+         * triggered.
+         *
+         * \code{.cpp}
+         * using po = xt::print_options;
+         * xt::xarray<double> a = xt::rand::randn<double>({2000, 500});
+         * std::cout << po::threshold(50) << a << std::endl;
+         * \endcode
+         */
+        DEFINE_LOCAL_PRINT_OPTION(threshold)
+
+       /**
+         * @class edge_items
+         *
+         * io manipulator used to set the number of egde items if
+         * the summarization is triggered.
+         *
+         * \code{.cpp}
+         * using po = xt::print_options;
+         * xt::xarray<double> a = xt::rand::randn<double>({2000, 500});
+         * std::cout << po::edge_items(5) << a << std::endl;
+         * \endcode
+         */
+        DEFINE_LOCAL_PRINT_OPTION(edge_items)
+
+       /**
+         * @class precision
+         *
+         * io manipulator used to set the precision of the floating point values
+         * when printing an expression.
+         *
+         * \code{.cpp}
+         * using po = xt::print_options;
+         * xt::xarray<double> a = xt::rand::randn<double>({2000, 500});
+         * std::cout << po::precision(5) << a << std::endl;
+         * \endcode
+         */
+        DEFINE_LOCAL_PRINT_OPTION(precision)
+   }
 
     /**************************************
      * xexpression ostream implementation *
@@ -580,6 +670,31 @@ namespace xt
         };
     }
 
+    inline print_options::print_options_impl get_print_options(std::ostream& out)
+    {
+        print_options::print_options_impl res;
+        using print_options::edge_items;
+        using print_options::line_width;
+        using print_options::threshold;
+        using print_options::precision;
+
+        res.edge_items = static_cast<int>(out.iword(edge_items::id()));
+        res.line_width = static_cast<int>(out.iword(line_width::id()));
+        res.threshold = static_cast<int>(out.iword(threshold::id()));
+        res.precision = static_cast<int>(out.iword(precision::id()));
+
+        if(!res.edge_items) { res.edge_items = print_options::print_options().edge_items; }
+        else { out.iword(edge_items::id()) = long(0); }
+        if(!res.line_width) { res.line_width = print_options::print_options().line_width; }
+        else { out.iword(line_width::id()) = long(0); }
+        if(!res.threshold) { res.threshold = print_options::print_options().threshold; }
+        else { out.iword(threshold::id()) = long(0); }
+        if(!res.precision) { res.precision = print_options::print_options().precision; }
+        else { out.iword(precision::id()) = long(0); }
+
+        return res;
+    }
+
     template <class E, class F>
     std::ostream& pretty_print(const xexpression<E>& e, F&& func, std::ostream& out = std::cout)
     {
@@ -594,9 +709,12 @@ namespace xt
 
         std::size_t lim = 0;
         std::size_t sz = compute_size(d.shape());
-        if (sz > print_options::print_options().threshold)
+
+        auto po = get_print_options(out);
+
+        if (sz > static_cast<std::size_t>(po.threshold))
         {
-            lim = print_options::print_options().edgeitems;
+            lim = static_cast<std::size_t>(po.edge_items);
         }
         if (sz == 0)
         {
@@ -606,10 +724,10 @@ namespace xt
 
         auto temp_precision = out.precision();
         auto precision = temp_precision;
-        if (print_options::print_options().precision != -1)
+        if (po.precision != -1)
         {
-            out.precision(print_options::print_options().precision);
-            precision = print_options::print_options().precision;
+            out.precision(static_cast<std::streamsize>(po.precision));
+            precision = static_cast<std::streamsize>(po.precision);
         }
 
         detail::printer<E> p(precision);
@@ -618,7 +736,7 @@ namespace xt
         detail::recurser_run(p, d, sv, lim);
         p.init();
         sv.clear();
-        xoutput(out, d, sv, p, 1, p.width(), lim, print_options::print_options().line_width);
+        xoutput(out, d, sv, p, 1, p.width(), lim, static_cast<std::size_t>(po.line_width));
 
         out.precision(temp_precision);  // restore precision
 
@@ -630,360 +748,11 @@ namespace xt
     {
         return pretty_print(e, out);
     }
+}
+#endif
+
+// Backward compatibility: include xmime.hpp in xio.hpp by default.
 
 #ifdef __CLING__
-
-    template <class P>
-    void compute_1d_row(std::stringstream& out, P& printer, const std::size_t& row_idx)
-    {
-        out << "<tr><td style='font-family:monospace;' title='" << row_idx << "'><pre>";
-        printer.print_next(out);
-        out << "</pre></td></tr>";
-    }
-
-    template <class P, class T>
-    void compute_1d_table(std::stringstream& out, P& printer, const T& expr,
-                          const std::size_t& edgeitems)
-    {
-        const auto& dim = expr.shape()[0];
-
-        out << "<table style='border-style:solid;border-width:1px;'><tbody>";
-        if (edgeitems == 0 || 2 * edgeitems >= dim)
-        {
-            for (std::size_t row_idx = 0; row_idx < dim; ++row_idx)
-            {
-                compute_1d_row(out, printer, row_idx);
-            }
-        }
-        else
-        {
-            for (std::size_t row_idx = 0; row_idx < edgeitems; ++row_idx)
-            {
-                compute_1d_row(out, printer, row_idx);
-            }
-            out << "<tr><td><center>...</center></td></tr>";
-            for (std::size_t row_idx = dim - edgeitems; row_idx < dim; ++row_idx)
-            {
-                compute_1d_row(out, printer, row_idx);
-            }
-        }
-        out << "</tbody></table>";
-    }
-
-    template <class P>
-    void compute_2d_element(std::stringstream& out, P& printer, const std::string& idx_str,
-                            const std::size_t& row_idx, const std::size_t& column_idx)
-    {
-        out << "<td style='font-family:monospace;' title='("
-            << idx_str << row_idx << ", " << column_idx << ")'><pre>";
-        printer.print_next(out);
-        out << "</pre></td>";
-    }
-
-    template <class P, class T>
-    void compute_2d_row(std::stringstream& out, P& printer, const T& expr,
-                        const std::size_t& edgeitems, const std::string& idx_str,
-                        const std::size_t& row_idx)
-    {
-        const auto& dim = expr.shape()[expr.dimension() - 1];
-
-        out << "<tr>";
-        if (edgeitems == 0 || 2 * edgeitems >= dim)
-        {
-            for (std::size_t column_idx = 0; column_idx < dim; ++column_idx)
-            {
-                compute_2d_element(out, printer, idx_str, row_idx, column_idx);
-            }
-        }
-        else
-        {
-            for (std::size_t column_idx = 0; column_idx < edgeitems; ++column_idx)
-            {
-                compute_2d_element(out, printer, idx_str, row_idx, column_idx);
-            }
-            out << "<td><center>...</center></td>";
-            for (std::size_t column_idx = dim - edgeitems; column_idx < dim; ++column_idx)
-            {
-                compute_2d_element(out, printer, idx_str, row_idx, column_idx);
-            }
-        }
-        out << "</tr>";
-    }
-
-    template <class P, class T, class I>
-    void compute_2d_table(std::stringstream& out, P& printer, const T& expr,
-                               const std::size_t& edgeitems, const std::vector<I>& idx)
-    {
-        const auto& dim = expr.shape()[expr.dimension() - 2];
-        std::string idx_str;
-        std::for_each(idx.cbegin(), idx.cend(), [&idx_str](const auto& i) {
-            idx_str += std::to_string(i) + ", ";
-        });
-
-        out << "<table style='border-style:solid;border-width:1px;'><tbody>";
-        if (edgeitems == 0 || 2 * edgeitems >= dim)
-        {
-            for (std::size_t row_idx = 0; row_idx < dim; ++row_idx)
-            {
-                compute_2d_row(out, printer, expr, edgeitems, idx_str, row_idx);
-            }
-        }
-        else
-        {
-            for (std::size_t row_idx = 0; row_idx < edgeitems; ++row_idx)
-            {
-                compute_2d_row(out, printer, expr, edgeitems, idx_str, row_idx);
-            }
-            out << "<tr>";
-            for (std::size_t column_idx = 0; column_idx < 2 * edgeitems + 1; ++column_idx)
-            {
-                out << "<td><center>...</center></td>";
-            }
-            out << "</tr>";
-            for (std::size_t row_idx = dim - edgeitems; row_idx < dim; ++row_idx)
-            {
-                compute_2d_row(out, printer, expr, edgeitems, idx_str, row_idx);
-            }
-        }
-        out << "</tbody></table>";
-    }
-
-    template <class P, class T, class I>
-    void compute_nd_row(std::stringstream& out, P& printer, const T& expr,
-                         const std::size_t& edgeitems, const std::vector<I>& idx)
-    {
-        out << "<tr><td>";
-        compute_nd_table_impl(out, printer, expr, edgeitems, idx);
-        out << "</td></tr>";
-    }
-
-    template <class P, class T, class I>
-    void compute_nd_table_impl(std::stringstream& out, P& printer, const T& expr,
-                               const std::size_t& edgeitems, const std::vector<I>& idx)
-    {
-        const auto& displayed_dimension = idx.size();
-        const auto& expr_dim = expr.dimension();
-        const auto& dim = expr.shape()[displayed_dimension];
-
-        if (expr_dim - displayed_dimension == 2)
-        {
-            return compute_2d_table(out, printer, expr, edgeitems, idx);
-        }
-
-        std::vector<I> idx2 = idx;
-        idx2.resize(displayed_dimension + 1);
-
-        out << "<table style='border-style:solid;border-width:1px;'>";
-        if (edgeitems == 0 || 2 * edgeitems >= dim)
-        {
-            for (std::size_t i = 0; i < dim; ++i)
-            {
-                idx2[displayed_dimension] = i;
-                compute_nd_row(out, printer, expr, edgeitems, idx2);
-            }
-        }
-        else
-        {
-            for (std::size_t i = 0; i < edgeitems; ++i)
-            {
-                idx2[displayed_dimension] = i;
-                compute_nd_row(out, printer, expr, edgeitems, idx2);
-            }
-            out << "<tr><td><center>...</center></td></tr>";
-            for (std::size_t i = dim - edgeitems; i < dim; ++i)
-            {
-                idx2[displayed_dimension] = i;
-                compute_nd_row(out, printer, expr, edgeitems, idx2);
-            }
-        }
-        out << "</table>";
-    }
-
-    template <class P, class T>
-    void compute_nd_table(std::stringstream& out, P& printer, const T& expr,
-                          const std::size_t& edgeitems)
-    {
-        if (expr.dimension() == 1)
-        {
-            compute_1d_table(out, printer, expr, edgeitems);
-        }
-        else
-        {
-            std::vector<std::size_t> empty_vector;
-            compute_nd_table_impl(out, printer, expr, edgeitems, empty_vector);
-        }
-    }
-
-    template <class E>
-    xeus::xjson mime_bundle_repr_impl(const E& expr)
-    {
-        std::stringstream out;
-
-        std::size_t edgeitems = 0;
-        std::size_t size = compute_size(expr.shape());
-        if (size > print_options::print_options().threshold)
-        {
-            edgeitems = print_options::print_options().edgeitems;
-        }
-
-        if (print_options::print_options().precision != -1)
-        {
-            out.precision(print_options::print_options().precision);
-        }
-
-        detail::printer<E> printer(out.precision());
-
-        xstrided_slice_vector slice_vector;
-        detail::recurser_run(printer, expr, slice_vector, edgeitems);
-        printer.init();
-
-        compute_nd_table(out, printer, expr, edgeitems);
-
-        auto bundle = xeus::xjson::object();
-        bundle["text/html"] = out.str();
-        return bundle;
-    }
-
-    template <class F, class CT>
-    class xfunctor_view;
-
-    template <class F, class CT>
-    xeus::xjson mime_bundle_repr(const xfunctor_view<F, CT>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class F, class... CT>
-    class xfunction;
-
-    template <class F, class... CT>
-    xeus::xjson mime_bundle_repr(const xfunction<F, CT...>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class EC, layout_type L, class SC, class Tag>
-    class xarray_container;
-
-    template <class EC, layout_type L, class SC, class Tag>
-    xeus::xjson mime_bundle_repr(const xarray_container<EC, L, SC, Tag>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class EC, std::size_t N, layout_type L, class Tag>
-    class xtensor_container;
-
-    template <class EC, std::size_t N, layout_type L, class Tag>
-    xeus::xjson mime_bundle_repr(const xtensor_container<EC, N, L, Tag>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class ET, class S, layout_type L, class Tag>
-    class xfixed_container;
-
-    template <class ET, class S, layout_type L, class Tag>
-    xeus::xjson mime_bundle_repr(const xfixed_container<ET, S, L, Tag>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class F, class CT, class X>
-    class xreducer;
-
-    template <class F, class CT, class X>
-    xeus::xjson mime_bundle_repr(const xreducer<F, CT, X>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class VE, class FE>
-    class xoptional_assembly;
-
-    template <class VE, class FE>
-    xeus::xjson mime_bundle_repr(const xoptional_assembly<VE, FE>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class VEC, class FEC>
-    class xoptional_assembly_adaptor;
-
-    template <class VEC, class FEC>
-    xeus::xjson mime_bundle_repr(const xoptional_assembly_adaptor<VEC, FEC>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class CT>
-    class xscalar;
-
-    template <class CT>
-    xeus::xjson mime_bundle_repr(const xscalar<CT>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class CT, class X>
-    class xbroadcast;
-
-    template <class CT, class X>
-    xeus::xjson mime_bundle_repr(const xbroadcast<CT, X>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class F, class R, class S>
-    class xgenerator;
-
-    template <class F, class R, class S>
-    xeus::xjson mime_bundle_repr(const xgenerator<F, R, S>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class CT, class... S>
-    class xview;
-
-    template <class CT, class... S>
-    xeus::xjson mime_bundle_repr(const xview<CT, S...>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class CT, class S, layout_type L, class FST>
-    class xstrided_view;
-
-    template <class CT, class S, layout_type L, class FST>
-    xeus::xjson mime_bundle_repr(const xstrided_view<CT, S, L, FST>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class CTD, class CTM>
-    class xmasked_view;
-
-    template <class CTD, class CTM>
-    xeus::xjson mime_bundle_repr(const xmasked_view<CTD, CTM>& expr)
-    {
-        return mime_bundle_repr_impl(expr);
-    }
-
-    template <class T, class B>
-    class xmasked_value;
-
-    template <class T, class B>
-    xeus::xjson mime_bundle_repr(const xmasked_value<T, B>& v)
-    {
-        auto bundle = xeus::xjson::object();
-        std::stringstream tmp;
-        tmp << v;
-        bundle["text/plain"] = tmp.str();
-        return bundle;
-    }
-
-#endif
-}
-
+#include "xmime.hpp"
 #endif

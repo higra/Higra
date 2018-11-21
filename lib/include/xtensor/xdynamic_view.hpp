@@ -195,7 +195,12 @@ namespace xt
 
         size_type data_offset() const noexcept;
 
-        using base_type::data;
+        // Explicitly deleting data methods so has_data_interface results
+        // to false instead of having compilers complaining about not being
+        // able to call the methods from the private base
+        value_type* data() noexcept = delete;
+        const value_type* data() const noexcept = delete;
+
         using base_type::storage;
         using base_type::expression;
         using base_type::broadcast_shape;
@@ -234,16 +239,16 @@ namespace xt
 
         container_iterator data_xbegin() noexcept;
         const_container_iterator data_xbegin() const noexcept;
-        container_iterator data_xend(layout_type l) noexcept;
-        const_container_iterator data_xend(layout_type l) const noexcept;
+        container_iterator data_xend(layout_type l, size_type offset) noexcept;
+        const_container_iterator data_xend(layout_type l, size_type offset) const noexcept;
 
         template <class It>
         It data_xbegin_impl(It begin) const noexcept;
 
         template <class It>
-        It data_xend_impl(It end, layout_type l) const noexcept;
+        It data_xend_impl(It end, layout_type l, size_type offset) const noexcept;
 
-        void assign_temporary_impl(temporary_type&& tmp);      
+        void assign_temporary_impl(temporary_type&& tmp);
 
         template <class T,  class... Args>
         offset_type adjust_offset(offset_type offset, T idx, Args... args) const noexcept;
@@ -578,7 +583,7 @@ namespace xt
         inner_strides_type str(base_type::strides());
         slice_vector_type svt(m_slices);
         inner_strides_type adj_str(m_adj_strides);
-        return rebind_t<E>(std::forward<E>(e), std::move(sh), std::move(str), 
+        return rebind_t<E>(std::forward<E>(e), std::move(sh), std::move(str),
                            base_type::data_offset(), this->layout(), std::move(svt), std::move(adj_str));
     }
 
@@ -595,15 +600,15 @@ namespace xt
     }
 
     template <class CT, class S, layout_type L, class FST>
-    inline auto xdynamic_view<CT, S, L, FST>::data_xend(layout_type l) noexcept -> container_iterator
+    inline auto xdynamic_view<CT, S, L, FST>::data_xend(layout_type l, size_type offset) noexcept -> container_iterator
     {
-        return data_xend_impl(this->storage().begin(), l);
+        return data_xend_impl(this->storage().begin(), l, offset);
     }
 
     template <class CT, class S, layout_type L, class FST>
-    inline auto xdynamic_view<CT, S, L, FST>::data_xend(layout_type l) const noexcept -> const_container_iterator
+    inline auto xdynamic_view<CT, S, L, FST>::data_xend(layout_type l, size_type offset) const noexcept -> const_container_iterator
     {
-        return data_xend_impl(this->storage().cbegin(), l);
+        return data_xend_impl(this->storage().cbegin(), l, offset);
     }
 
     template <class CT, class S, layout_type L, class FST>
@@ -617,10 +622,9 @@ namespace xt
 
     template <class CT, class S, layout_type L, class FST>
     template <class It>
-    inline It xdynamic_view<CT, S, L, FST>::data_xend_impl(It begin, layout_type l) const noexcept
+    inline It xdynamic_view<CT, S, L, FST>::data_xend_impl(It begin, layout_type l, size_type offset) const noexcept
     {
-        std::ptrdiff_t end_offset = static_cast<std::ptrdiff_t>(std::accumulate(this->backstrides().begin(), this->backstrides().end(), std::size_t(0)));
-        return strided_data_end(*this, begin + std::ptrdiff_t(data_offset()) + end_offset + 1, l);
+        return strided_data_end(*this, begin + std::ptrdiff_t(data_offset()), l, offset);
     }
 
     template <class CT, class S, layout_type L, class FST>
