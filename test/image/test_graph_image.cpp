@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_SUITE(graphImage);
     BOOST_AUTO_TEST_CASE(khalimsky2graph) {
 
 
-        array_1d<std::size_t> ref_shape{4, 5};
+        array_1d<index_t> ref_shape{4, 5};
 
         xt::xarray<int> data{0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 0, 2,
                              3};

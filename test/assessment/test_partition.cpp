@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_SUITE(test_assessment_partition);
                          {1, 2},
                          {0, 3}}};
         BOOST_CHECK(r.size() == ref.size());
-        for (int i = 0; i < ref.size(); i++) {
+        for (int i = 0; i < (int)ref.size(); i++) {
             BOOST_CHECK(ref[i] == r[i]);
         }
     }

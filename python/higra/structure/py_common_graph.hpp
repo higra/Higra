@@ -73,7 +73,7 @@ void add_incidence_graph_concept(pyc &c) {
           "Return the out degree of the given vertex.",
           pybind11::arg("vertex"));
 
-    add_type_overloads<def_out_degree<graph_t>, int, unsigned int, long, unsigned long>
+    add_type_overloads<def_out_degree<graph_t>, int, unsigned int, long long, unsigned long long>
             (c, "Return the out degree of the given vertices.");
 
 
@@ -134,14 +134,14 @@ void add_bidirectionnal_graph_concept(pyc &c) {
           "Return the degree of the given vertex.",
           pybind11::arg("vertex"));
 
-    add_type_overloads<def_degree<graph_t>, int, unsigned int, long, unsigned long>
+    add_type_overloads<def_degree<graph_t>, int, unsigned int, long long, unsigned long long>
             (c, "Return the degree of the given vertices.");
 
     c.def("in_degree", [](graph_t &g, vertex_t vertex) { return hg::in_degree(vertex, g); },
           "Return the in degree of the given vertex.",
           pybind11::arg("vertex"));
 
-    add_type_overloads<def_in_degree<graph_t>, int, unsigned int, long, unsigned long>
+    add_type_overloads<def_in_degree<graph_t>, int, unsigned int, long long, unsigned long long>
             (c, "Return the in degree of the given vertices.");
 }
 

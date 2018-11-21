@@ -109,7 +109,7 @@ namespace hg {
             }
 
         public:
-            friend class fibonacci_heap<T>;
+            friend struct fibonacci_heap<T>;
 
             T get_value() { return m_value; }
         };

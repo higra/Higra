@@ -64,7 +64,7 @@ namespace hg {
         index_t num_regions = 0;
         index_t num_edges = 0;
 
-        std::vector<long> canonical_edge_indexes;
+        std::vector<index_t> canonical_edge_indexes;
 
         stackv<index_t> s;
 
@@ -146,7 +146,7 @@ namespace hg {
         index_t num_regions = 0;
         index_t num_edges = 0;
 
-        std::vector<long> canonical_edge_indexes;
+        std::vector<index_t> canonical_edge_indexes;
 
         stackv<index_t> s;
 

@@ -95,8 +95,8 @@ namespace hg {
 
             const tree &m_tree;
             out_type m_out;
-            long m_nb_attr_position = -1;
-            long m_num_attr = 0;
+            index_t m_nb_attr_position = -1;
+            index_t m_num_attr = 0;
             bool finalized = false;
         };
 

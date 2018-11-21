@@ -47,9 +47,12 @@ namespace hg {
             shape.push_back(rs);
         }
 
-        std::size_t num_points;
-        std::size_t num_edges;
+        index_t num_points;
+        index_t num_edges;
         in >> num_points >> num_edges;
+
+        hg_assert(num_points > 0, "The number of vertices cannot be negative.");
+        hg_assert(num_edges > 0, "The number of edges cannot be negative.");
 
         if (shape.empty()) // construct valid shape
         {
@@ -61,26 +64,26 @@ namespace hg {
 
         // vertex list
         ugraph g(num_points);
-        auto vertex_weight = array_1d<double>::from_shape({num_points});
+        auto vertex_weight = array_1d<double>::from_shape({(size_t)num_points});
 
-        for (std::size_t l = 0; l < num_points; ++l) {
-            std::size_t i;
+        for (index_t l = 0; l < num_points; ++l) {
+            index_t i;
             double d;
             in >> i >> d;
-            hg_assert(i < num_points, "Invalid graph file: vertex index out of range.");
+            hg_assert(0 <= i && i < num_points, "Invalid graph file: vertex index out of range.");
             vertex_weight(i) = d;
         }
 
         //useless line to announce edge list
         in >> discard >> discard;
 
-        auto edge_weight = array_1d<double>::from_shape({num_edges});
+        auto edge_weight = array_1d<double>::from_shape({(size_t)num_edges});
 
-        for (std::size_t l = 0; l < num_edges; ++l) {
-            std::size_t i, j;
+        for (index_t l = 0; l < num_edges; ++l) {
+            index_t i, j;
             double d;
             in >> i >> j >> d;
-            hg_assert(i < num_points && j < num_points,
+            hg_assert(0 <= i && 0 <= j && i < num_points && j < num_points,
                       "Invalid graph file: vertex index out of range in edge definition.");
             g.add_edge(i, j);
             edge_weight(l) = d;

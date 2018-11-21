@@ -72,15 +72,15 @@ void py_init_embedding_impl(pybind11::module &m) {
     using class_t = embedding_grid<dim>;
 
     auto c = py::class_<class_t>(m, ("EmbeddingGrid" + std::to_string(dim) + "d").c_str());
-    c.def(py::init<const std::vector<long> &>(),
+   /* c.def(py::init<const std::vector<hg::index_t> &>(),
+          "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
+          py::arg("shape"));*/
+
+    c.def(py::init<const pyarray<hg::index_t> &>(),
           "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
           py::arg("shape"));
 
-    c.def(py::init<const pyarray<long> &>(),
-          "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
-          py::arg("shape"));
-
-    c.def("shape", [](const class_t &e) { return pyarray<long>(e.shape()); },
+    c.def("shape", [](const class_t &e) { return pyarray<hg::index_t>(e.shape()); },
           "Get the shape/dimensions of the grid embedding");
 
     c.def("size", &class_t::size, "Get the total number of points contained in the embedding.");
@@ -88,7 +88,7 @@ void py_init_embedding_impl(pybind11::module &m) {
     c.def("dimension", &class_t::dimension,
           "Get the dimension of the embedding (aka self.shape().size()).");
 
-    c.def("contains", [](const class_t &e, const std::vector<long> &a) { return e.contains(a); },
+    c.def("contains", [](const class_t &e, const std::vector<hg::index_t> &a) { return e.contains(a); },
           "Takes a list or tuple representing the coordinates of a point and returns true if the point is contained in the embedding.",
           py::arg("coordinates"));
 
@@ -98,7 +98,7 @@ void py_init_embedding_impl(pybind11::module &m) {
                      "indicating if each point is contained in the embedding.");
 
     // ::TODO:: remove cast to xt::pyarray when xtesnor python supports xtensor_fixed
-    c.def("lin2grid", [](const class_t &e, const index_t a) { return pyarray<long>(e.lin2grid(a)); },
+    c.def("lin2grid", [](const class_t &e, const index_t a) { return pyarray<hg::index_t>(e.lin2grid(a)); },
           "Compute the nd coordinates of a point given its linear coordinate.",
           py::arg("index"));
 
@@ -108,7 +108,7 @@ void py_init_embedding_impl(pybind11::module &m) {
                      "where each value, seen as the linear coordinates of a point, has been replaced by the corresponding nd coordinates.");
 
 
-    c.def("grid2lin", [](const class_t &e, const std::vector<long> &a) { return e.grid2lin(a); },
+    c.def("grid2lin", [](const class_t &e, const std::vector<hg::index_t> &a) { return e.grid2lin(a); },
           "Compute the linear coordinate of a point given its nd coordinates.",
           py::arg("coordinates"));
 

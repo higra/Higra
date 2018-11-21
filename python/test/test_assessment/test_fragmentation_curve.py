@@ -61,7 +61,7 @@ class TestFragmentationCurve(unittest.TestCase):
         ref_scores = np.asarray((2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3))
         ref_k = np.asarray((1, 2, 3, 4, 5), dtype=np.int32)
 
-        self.assertTrue(np.all(res_scores == (ref_scores / t.num_leaves())))
+        self.assertTrue(np.allclose(res_scores, (ref_scores / t.num_leaves())))
         self.assertTrue(np.all(res_k == ref_k))
 
     def test_assess_optimal_partitions_BCE_optimal_cut(self):

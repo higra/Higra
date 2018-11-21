@@ -211,7 +211,7 @@ namespace hg {
                 // if i-th element true the polyline has to be subdivided at this element
                 std::vector<bool> is_subdivision_element(m_contour_elements.size(), false);
 
-                for (index_t segment_index = 0; segment_index < size(); segment_index++) {
+                for (index_t segment_index = 0; segment_index < (index_t)size(); segment_index++) {
                     stack.push({m_control_points[segment_index], m_control_points[segment_index + 1]});
 
                     // current segment points are preserved
@@ -263,7 +263,7 @@ namespace hg {
                     // final subdivision
                     m_control_points.clear();
 
-                    for (index_t i = 0; i < m_contour_elements.size(); i++) {
+                    for (index_t i = 0; i < (index_t)m_contour_elements.size(); i++) {
                         if (is_subdivision_element[i]) {
                             m_control_points.push_back(i);
                         }
@@ -401,7 +401,7 @@ namespace hg {
         contour_2d result;
 
         array_1d<index_t> positive_edge_index = xt::empty<index_t>({num_edges(graph)});
-        for (index_t i = 0; i < positive_edge_index.size(); i++) {
+        for (index_t i = 0; i < (index_t)positive_edge_index.size(); i++) {
             if (edge_weights[i] > 0)
                 positive_edge_index[i] = i;
             else positive_edge_index[i] = invalid_index;
@@ -425,8 +425,8 @@ namespace hg {
 
         array_2d<bool> processed = xt::zeros<bool>(contours_khalimsky.shape());
 
-        auto height = contours_khalimsky.shape()[0];
-        auto width = contours_khalimsky.shape()[1];
+        index_t height = contours_khalimsky.shape()[0];
+        index_t width = contours_khalimsky.shape()[1];
 
         auto is_intersection = [&contours_khalimsky, &height, &width](
                 index_t y,

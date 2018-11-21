@@ -29,7 +29,7 @@ namespace hg {
             array_1d<bool> deleted({num_vertices(tree)}, true);
             xt::index_view(deleted, nodes) = false;
             return hg::reconstruct_leaf_data(tree,
-                                             xt::arange(num_vertices(tree)),
+                                             xt::arange<index_t>(num_vertices(tree)),
                                              deleted);
         }
 
@@ -88,7 +88,7 @@ namespace hg {
             index_t num_regions = num_children(root(m_tree), m_tree);
             auto current_threshold = m_altitudes(range_start);
 
-            while (current_threshold != 0 && range_start >= num_leaves(m_tree)) {
+            while (current_threshold != 0 && range_start >= (index_t)num_leaves(m_tree)) {
 
                 while (min_alt_children(range_end) >= current_threshold) {
                     range_end--;

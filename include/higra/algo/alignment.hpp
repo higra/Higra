@@ -63,11 +63,13 @@ namespace hg {
 
         array_2d<size_t> intersections = xt::zeros<size_t>({num_regions_fine, num_regions_coarse});
 
-        for (index_t i = 0; i < labelisation_fine.size(); i++) {
+        for (index_t i = 0; i < (index_t)labelisation_fine.size(); i++) {
             intersections(labelisation_fine(i), labelisation_coarse(i))++;
         }
 
-        return xt::eval(xt::argmax(intersections, 1));
+        // cast size_t -> index_t
+        array_1d<index_t> res = xt::argmax(intersections, 1);
+        return res;
     }
 
     /**

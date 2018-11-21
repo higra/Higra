@@ -89,9 +89,9 @@ namespace hg {
                   "Graph number of vertices does not match the size of the embedding.");
         auto &shape = embedding.shape();
 
-        long border = (add_extra_border) ? 1 : -1;
+        index_t border = (add_extra_border) ? 1 : -1;
 
-        std::array<long, 2> res_shape{shape[0] * 2 + border, shape[1] * 2 + border};
+        std::array<index_t, 2> res_shape{(index_t)shape[0] * 2 + border, (index_t)shape[1] * 2 + border};
 
         array_2d <result_type> res = xt::zeros<result_type>(res_shape);
 
@@ -116,23 +116,23 @@ namespace hg {
         auto flat_res = xt::flatten(res);
 
         if (add_extra_border && extra_border_value != 0) {
-            for (long x = 1; x < w; x += 2) {
+            for (index_t x = 1; x < w; x += 2) {
                 res(0, x) = extra_border_value;
                 res(h - 1, x) = extra_border_value;
             }
-            for (long y = 1; y < h; y += 2) {
+            for (index_t y = 1; y < h; y += 2) {
                 res(y, 0) = extra_border_value;
                 res(y, w - 1) = extra_border_value;
             }
         }
 
-        long ymin = (add_extra_border) ? 0 : 1;
-        long ymax = (add_extra_border) ? h : h - 1;
-        long xmin = (add_extra_border) ? 0 : 1;
-        long xmax = (add_extra_border) ? w : w - 1;
+        index_t ymin = (add_extra_border) ? 0 : 1;
+        index_t ymax = (add_extra_border) ? h : h - 1;
+        index_t xmin = (add_extra_border) ? 0 : 1;
+        index_t xmax = (add_extra_border) ? w : w - 1;
 
-        for (long y = ymin; y < ymax; y += 2) {
-            for (long x = xmin; x < xmax; x += 2) {
+        for (index_t y = ymin; y < ymax; y += 2) {
+            for (index_t x = xmin; x < xmax; x += 2) {
                 auto v = res_embedding.grid2lin({y, x});
                 result_type max_v = std::numeric_limits<result_type>::lowest();
                 for (auto av: adjacent_vertex_iterator(v, adj4)) {
@@ -160,9 +160,9 @@ namespace hg {
 
         auto &shape = khalimsky.shape();
 
-        long border = (extra_border) ? 0 : 1;
+        index_t border = (extra_border) ? 0 : 1;
 
-        std::array<long, 2> res_shape{(long) shape[0] / 2 + border, (long) shape[1] / 2 + border};
+        std::array<index_t, 2> res_shape{(index_t) shape[0] / 2 + border, (index_t) shape[1] / 2 + border};
         embedding_grid_2d res_embedding(res_shape);
 
         auto g = get_4_adjacency_graph(res_embedding);

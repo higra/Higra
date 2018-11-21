@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_SUITE(test_horinzontal_cuts);
 
         std::vector<int> alt_cuts{3, 2, 1, 0};
 
-        for (index_t i = 0; i < hch.num_cuts(); i++) {
+        for (index_t i = 0; i < (index_t)hch.num_cuts(); i++) {
             auto c = hch.horizontal_cut_from_index(i);
             BOOST_CHECK(vectorSame(c.nodes, cut_nodes[i]));
             BOOST_CHECK(c.altitude == alt_cuts[i]);
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_SUITE(test_horinzontal_cuts);
 
         std::vector<int> alt_cuts{3, 2, 1, 0};
 
-        for (index_t i = 0; i < hch.num_cuts(); i++) {
+        for (index_t i = 0; i < (index_t)hch.num_cuts(); i++) {
             auto c = hch.horizontal_cut_from_altitude(alt_cuts[i]);
             BOOST_CHECK(vectorSame(c.nodes, cut_nodes[i]));
             BOOST_CHECK(c.altitude == alt_cuts[i]);
@@ -90,14 +90,14 @@ BOOST_AUTO_TEST_SUITE(test_horinzontal_cuts);
 
         std::vector<int> k_cuts{1, 3, 4, 9};
 
-        for (index_t i = 0; i < hch.num_cuts(); i++) {
+        for (index_t i = 0; i < (index_t)hch.num_cuts(); i++) {
             auto c = hch.horizontal_cut_from_num_regions(k_cuts[i]);
             BOOST_CHECK(vectorSame(c.nodes, cut_nodes[i]));
         }
 
         std::vector<int> k_cuts2{1, 2, 4, 5};
 
-        for (index_t i = 0; i < hch.num_cuts(); i++) {
+        for (index_t i = 0; i < (index_t)hch.num_cuts(); i++) {
             auto c = hch.horizontal_cut_from_num_regions(k_cuts2[i]);
             BOOST_CHECK(vectorSame(c.nodes, cut_nodes[i]));
         }

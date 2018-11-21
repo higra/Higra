@@ -48,7 +48,7 @@ namespace hg {
      */
     template<typename tree_t>
     auto attribute_area(const tree_t &tree) {
-        return attribute_area(tree, xt::ones<long>({num_leaves(tree)}));
+        return attribute_area(tree, xt::ones<index_t>({num_leaves(tree)}));
     }
 
     /**
@@ -94,7 +94,7 @@ namespace hg {
      */
     template<typename tree_t>
     auto attribute_depth(const tree_t &tree) {
-        array_1d<long> depth = xt::empty<long>({tree.num_vertices()});
+        array_1d<index_t> depth = xt::empty<index_t>({tree.num_vertices()});
         depth(tree.root()) = 0;
         for (auto i: root_to_leaves_iterator(tree, leaves_it::include, root_it::exclude)) {
             depth(i) = depth(parent(i, tree)) + 1;

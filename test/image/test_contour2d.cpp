@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
 
     template<typename graph_t, typename T>
     auto contour_2_khalimsky(const graph_t &graph, const T &shape, const contour_2d &contour, bool interp=false) {
-        std::array<size_t, 2> res_shape{shape[0] * 2 -1, shape[1] * 2 - 1};
+        std::array<index_t, 2> res_shape{shape[0] * 2 -1, shape[1] * 2 - 1};
         array_2d<index_t> result = xt::zeros<index_t>(res_shape);
         embedding_grid_2d embedding{shape};
         long count = 0;
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
 
     BOOST_AUTO_TEST_CASE(fit_contour_2d_simple) {
 
-        std::array<size_t, 2> shape{4, 5};
+        std::array<index_t, 2> shape{4, 5};
         auto g = get_4_adjacency_graph(shape);
 
         xt::xarray<int> data{0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 0, 2,
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
 
     BOOST_AUTO_TEST_CASE(fit_contour_2d_no_intersection) {
 
-        std::array<size_t, 2> shape{5, 5};
+        std::array<index_t, 2> shape{5, 5};
         auto g = get_4_adjacency_graph(shape);
 
         xt::xarray<int> data = xt::zeros<int>({40});
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
 
     BOOST_AUTO_TEST_CASE(fit_contour_2d_more_complex) {
 
-        std::array<size_t, 2> shape{4, 5};
+        std::array<index_t, 2> shape{4, 5};
         auto g = get_4_adjacency_graph(shape);
 
         xt::xarray<int> data{0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 4, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 1, 2,
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
 
    BOOST_AUTO_TEST_CASE(contour_2d_subdivide_nothing) {
 
-        std::array<size_t, 2> shape{4, 5};
+        std::array<index_t, 2> shape{4, 5};
         auto g = get_4_adjacency_graph(shape);
 
         xt::xarray<int> data{0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 4, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 1, 2,
@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
 
     BOOST_AUTO_TEST_CASE(contour_2d_subdivide_simple) {
 
-        std::array<size_t, 2> shape{4, 5};
+        std::array<index_t, 2> shape{4, 5};
         auto g = get_4_adjacency_graph(shape);
 
         xt::xarray<int> data{0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
 
     BOOST_AUTO_TEST_CASE(contour_2d_subdivide_simple2) {
 
-        std::array<size_t, 2> shape{4, 5};
+        std::array<index_t, 2> shape{4, 5};
         auto g = get_4_adjacency_graph(shape);
 
         xt::xarray<int> data{0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

@@ -46,6 +46,7 @@ namespace hg {
         class regular_graph {
 
         public:
+            using self_type = regular_graph<embedding_t>;
             // Graph associated types
             using vertex_descriptor = index_t;
             using directed_category = graph::undirected_tag;
@@ -78,11 +79,22 @@ namespace hg {
             }
 
             embedding_t embedding;
-            point_list_t<long, embedding_t::_dim> neighbours;
+            point_list_t<index_t, embedding_t::_dim> neighbours;
 
-            regular_graph(embedding_t _embedding = {}, point_list_t<long, embedding_t::_dim> _neighbours = {})
+            regular_graph(embedding_t _embedding = {}, point_list_t<index_t, embedding_t::_dim> _neighbours = {})
                     : embedding(_embedding), neighbours(_neighbours) {
             }
+
+            ~regular_graph() = default;
+
+            regular_graph(const self_type &other) = default;
+
+            regular_graph(self_type &&other) = default;
+
+            self_type &operator=(const self_type &) = default;
+
+            self_type &operator=(self_type &&) = default;
+
         };
 
         // Iterator
@@ -92,16 +104,19 @@ namespace hg {
                         typename regular_graph<embedding_t>::vertex_descriptor,
                         typename regular_graph<embedding_t>::vertex_descriptor> {
         public:
+            using self_type = regular_graph_adjacent_vertex_iterator<embedding_t>;
             using graph_t = regular_graph<embedding_t>;
             using graph_vertex_t = typename graph_t::vertex_descriptor;
+
+
 
 
             regular_graph_adjacent_vertex_iterator() {}
 
             regular_graph_adjacent_vertex_iterator(graph_vertex_t _source,
                                                    embedding_t _embedding,
-                                                   point_list_iterator_t<long, embedding_t::_dim> _point_iterator,
-                                                   point_list_iterator_t<long, embedding_t::_dim> _point_iterator_end
+                                                   point_list_iterator_t<index_t, embedding_t::_dim> _point_iterator,
+                                                   point_list_iterator_t<index_t, embedding_t::_dim> _point_iterator_end
             )
                     : source(_source), embedding(_embedding), point_iterator(_point_iterator),
                       point_iterator_end(_point_iterator_end) {
@@ -155,8 +170,8 @@ namespace hg {
             graph_vertex_t neighbour;
             point_type source_coordinates;
             embedding_t embedding;
-            point_list_iterator_t<long, embedding_t::_dim> point_iterator;
-            point_list_iterator_t<long, embedding_t::_dim> point_iterator_end;
+            point_list_iterator_t<index_t, embedding_t::_dim> point_iterator;
+            point_list_iterator_t<index_t, embedding_t::_dim> point_iterator_end;
 
         };
 

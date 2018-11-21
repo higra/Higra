@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         }
 
         index_t find(index_t index) {
-            for (index_t i = 0; i < elements.size(); i++)
+            for (index_t i = 0; i < (index_t)elements.size(); i++)
                 if (elements[i].m_index == index)
                     return i;
             throw std::runtime_error("cannot find element");

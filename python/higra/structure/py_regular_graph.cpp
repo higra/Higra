@@ -24,7 +24,7 @@ void py_init_regular_graph_impl(pybind11::module &m) {
 
     auto c = py::class_<graph_t>(m, ("RegularGraph" + std::to_string(dim) + "d").c_str());
 
-    c.def(py::init([](const embedding_t &e, const std::vector<std::vector<long>> &pl) {
+    c.def(py::init([](const embedding_t &e, const std::vector<std::vector<hg::index_t>> &pl) {
               std::vector<point_t> points;
 
                        for (const auto &v : pl) {
@@ -41,7 +41,7 @@ void py_init_regular_graph_impl(pybind11::module &m) {
           py::arg("embedding"),
           py::arg("neighbour_list"));
 
-    c.def(py::init([](const std::vector<hg::size_t> &shape, const std::vector<std::vector<long>> &pl) {
+    c.def(py::init([](const std::vector<hg::size_t> &shape, const std::vector<std::vector<hg::index_t>> &pl) {
                        std::vector<point_t> points;
 
                        for (const auto &v : pl) {

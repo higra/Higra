@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         array_1d<double> ref_scores{2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3};
         array_1d<size_t> ref_k{1, 2, 3, 4, 5};
 
-        BOOST_CHECK(res_scores == (ref_scores / num_leaves(t)));
+        BOOST_CHECK(xt::allclose(res_scores, ref_scores / num_leaves(t)));
         BOOST_CHECK(res_k == ref_k);
     }
 
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         array_1d<double> ref_k{1, 2, 3, 4, 5, 6, 7, 8};
 
         BOOST_CHECK(res_scores == (ref_scores / num_leaves(t)));
-        BOOST_CHECK(res_k == (ref_k / 3));
+        BOOST_CHECK(xt::allclose(res_k, ref_k / 3));
     }
 
     BOOST_AUTO_TEST_CASE(test_assess_fragmentation_curve_Covering_optimal_cut) {
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
 
         BOOST_CHECK(is_in_bijection(optimal_partitions[2], assesser.optimal_partition()));
 
-        for (index_t i = 0; i < optimal_partitions.size(); i++) {
+        for (index_t i = 0; i < (index_t) optimal_partitions.size(); i++) {
             BOOST_CHECK(is_in_bijection(optimal_partitions[i], assesser.optimal_partition(i + 1)));
         }
     }
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
 
         auto sorted = xt::sort(altitudes);
 
-        for (index_t i = 0; i < optimal_partitions.size(); i++) {
+        for (index_t i = 0; i < (index_t) optimal_partitions.size(); i++) {
             auto tmp = labelisation_horizontal_cut_from_threshold(t,
                                                                   altitudes,
                                                                   sorted(root(t) - i));
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         array_1d<double> ref_scores{4.0, 8.0, 9.0, 10.0};
         array_1d<double> ref_k{1, 3, 4, 9};
 
-        BOOST_CHECK(res_scores == (ref_scores / num_leaves(tree)));
+        BOOST_CHECK(xt::allclose(res_scores, ref_scores / num_leaves(tree)));
         BOOST_CHECK(res_k == (ref_k));
     }
 
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_SUITE(test_fragmentation_curve);
         array_1d<double> ref_scores{4.0, 8.0, 9.0, 10.0};
         array_1d<double> ref_k{1, 3, 4, 9};
 
-        BOOST_CHECK(res_scores == (ref_scores / 11));
+        BOOST_CHECK(xt::allclose(res_scores, ref_scores / 11));
         BOOST_CHECK(res_k == (ref_k));
     }
 

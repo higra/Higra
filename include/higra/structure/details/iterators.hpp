@@ -7,6 +7,7 @@
 *                                                                          *
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
+#include "../../utils.hpp"
 
 #pragma once
 
@@ -113,7 +114,7 @@ namespace hg {
      *
      * @tparam value_type
      */
-    template<typename value_type = long>
+    template<typename value_type = index_t>
     struct counting_iterator :
             public forward_iterator_facade<counting_iterator<value_type>,
                     value_type> {
@@ -151,7 +152,7 @@ namespace hg {
      *
      * @tparam value_type
      */
-    template<typename value_type = long>
+    template<typename value_type = index_t>
     struct irange {
 
         irange() : m_start(0), m_stop(0), m_step(1) {}

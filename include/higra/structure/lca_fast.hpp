@@ -51,7 +51,7 @@ namespace hg {
                     bool first_visit;
                 };
 
-                long nbr = -1;
+                index_t nbr = -1;
 
                 std::stack<se> stack;
                 stack.push({tree.root(), true});
@@ -72,7 +72,7 @@ namespace hg {
             }
 
             /* Recursive version
-            long LCApreprocessDepthFirst(const tree_t &tree, std::size_t node, std::size_t depth, long *nbr,
+            index_t LCApreprocessDepthFirst(const tree_t &tree, std::size_t node, std::size_t depth, index_t *nbr,
                                          std::size_t *rep) {
                 (*nbr)++;
                 Euler[*nbr] = node;
@@ -91,7 +91,7 @@ namespace hg {
             void LCApreprocess(const tree_t &tree) {
                 //O(n.log(n)) preprocessing
                 /* Recursive version
-                long nbr = -1;
+                index_t nbr = -1;
                 std::size_t rep = 0;
 
                 nbr = LCApreprocessDepthFirst(tree, tree.root(), 0, &nbr, &rep);

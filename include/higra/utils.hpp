@@ -90,27 +90,17 @@
 #define HG_STR(a) #a
 
 
-#define HG_TEMPLATE_SINTEGRAL_TYPES   char, short, int, long
+#define HG_TEMPLATE_SINTEGRAL_TYPES   char, short, int, long,  long long
 
-#define HG_TEMPLATE_UINTEGRAL_TYPES   unsigned char, unsigned short, unsigned int, unsigned long
+#define HG_TEMPLATE_UINTEGRAL_TYPES   unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long
 
-#define HG_TEMPLATE_INTEGRAL_TYPES    char, unsigned char, short, unsigned short, int, unsigned int, long, unsigned long
+#define HG_TEMPLATE_INTEGRAL_TYPES    char, unsigned char, short, unsigned short, int, unsigned int, long, unsigned long, long long, unsigned long long
 
 #define HG_TEMPLATE_FLOAT_TYPES       float, double
 
-#define HG_TEMPLATE_NUMERIC_TYPES     char, unsigned char, short, unsigned short, int, unsigned int, long, unsigned long, float, double
+#define HG_TEMPLATE_NUMERIC_TYPES     char, unsigned char, short, unsigned short, int, unsigned int, long, unsigned long, long long, unsigned long long, float, double
 
-#define HG_TEMPLATE_SNUMERIC_TYPES     char, short, int, long, float, double
-
-#define HG_SINTEGRAL_TYPES   (char)(short)(int)(long)
-
-#define HG_UINTEGRAL_TYPES   (unsigned char)(unsigned short)(unsigned int)(unsigned long)
-
-#define HG_INTEGRAL_TYPES    (char)(unsigned char)(short)(unsigned short)(int)(unsigned int)(long)(unsigned long)
-
-#define HG_FLOAT_TYPES       (float)(double)
-
-#define HG_NUMERIC_TYPES     (char)(unsigned char)(short)(unsigned short)(int)(unsigned int)(long)(unsigned long)(float)(double)
+#define HG_TEMPLATE_SNUMERIC_TYPES     char, short, int, long long, float, double
 
 
 namespace xt {

@@ -44,7 +44,7 @@ namespace hg {
 
             const auto &cf = xt::flatten(candidate);
             const auto &gtf = xt::flatten(ground_truth);
-            for (index_t i = 0; i < cf.size(); i++) {
+            for (index_t i = 0; i < (index_t)cf.size(); i++) {
                 r(cf(i), gtf(i))++;
             }
         };
@@ -52,7 +52,7 @@ namespace hg {
         if (xt::same_shape(candidate.shape(), ground_truths.shape())) {
             compute(ground_truths);
         } else {
-            for (index_t i = 0; i < ground_truths.shape()[0]; i++) {
+            for (index_t i = 0; i < (index_t)ground_truths.shape()[0]; i++) {
                 compute(xt::view(ground_truths, i));
             }
         }

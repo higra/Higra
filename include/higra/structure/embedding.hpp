@@ -31,12 +31,13 @@ namespace hg {
          * @tparam dim Dimension of the embedding
          * @tparam coordinates_t Type of coordinates manipulated
          */
-        template<int dim, typename coordinates_t=long>
+        template<int dim, typename coordinates_t=index_t>
         class embedding_grid {
         public:
             using coordinate_type = coordinates_t;
             using point_type = point<index_t, dim>;
             using shape_type = point_type;
+            using self_type = embedding_grid<dim, coordinates_t>;
         private:
             size_t nbElement = 0;
             shape_type _shape; // signed for safer comparisons
@@ -54,7 +55,7 @@ namespace hg {
 
             void computeSumProd() {
                 sum_prod(dim - 1) = 1;
-                for (long i = dim - 2; i >= 0; --i) {
+                for (index_t i = dim - 2; i >= 0; --i) {
                     sum_prod(i) = sum_prod(i + 1) * _shape(i + 1);
                 }
             }
@@ -79,9 +80,9 @@ namespace hg {
              * Creates an embedding with the given shape
              * @param shape list of dim positive integers
              */
-            embedding_grid(const std::initializer_list<long> &shape){
+            embedding_grid(const std::initializer_list<index_t> &shape) {
                 hg_assert(dim == _shape.size(), "Shape dimension does not match embedding dimension !");
-                _shape = xt::zeros<long>({shape.size()});
+                _shape = xt::zeros<index_t>({shape.size()});
                 index_t i = 0;
                 for (const auto c:shape)
                     _shape(i++) = c;
@@ -104,6 +105,16 @@ namespace hg {
                 computeSize();
             }
 
+            ~embedding_grid() = default;
+
+            embedding_grid(const self_type &other) = default;
+
+            embedding_grid(self_type &&other) = default;
+
+            self_type &operator=(const self_type &) = default;
+
+            self_type &operator=(self_type &&) = default;
+
             /**
              * Shape of the embedding
              * @return
@@ -119,7 +130,7 @@ namespace hg {
             template<typename T>
             embedding_grid(const T &shape) {
                 hg_assert(dim == shape.size(), "Shape dimension does not match embedding dimension !");
-                _shape = xt::zeros<long>({shape.size()});
+                _shape = xt::zeros<index_t>({shape.size()});
                 index_t i = 0;
                 for (const auto c:shape)
                     _shape(i++) = c;
@@ -263,7 +274,7 @@ namespace hg {
 
                 index_t count = 0;
                 for (const auto &c: coordinates)
-                    if (c < 0 || c >= (long) _shape(count++))
+                    if (c < 0 || c >= _shape(count++))
                         return false;
                 return true;
             }
@@ -297,12 +308,12 @@ namespace hg {
                               "Indices must have integral value type.");
                 const auto &indices = xindices.derived_cast();
 
-                index_t size = (index_t)indices.size();
+                index_t size = (index_t) indices.size();
                 auto shapeO = indices.shape();
                 std::vector<size_t> shape(shapeO.begin(), shapeO.end());
                 shape.push_back(dim);
 
-                array_nd<coordinates_t> result = array_nd<coordinates_t>::from_shape({(size_t)size, (size_t) dim});
+                array_nd<coordinates_t> result = array_nd<coordinates_t>::from_shape({(size_t) size, (size_t) dim});
 
 
                 const auto indicesLin = xt::flatten(indices);
@@ -324,13 +335,13 @@ namespace hg {
     }
 
     template<int dim>
-    using embedding_grid = typename embedding_internal::embedding_grid<dim, long>;
+    using embedding_grid = typename embedding_internal::embedding_grid<dim, index_t>;
 
-    using embedding_grid_1d = typename embedding_internal::embedding_grid<1, long>;
+    using embedding_grid_1d = typename embedding_internal::embedding_grid<1, index_t>;
 
-    using embedding_grid_2d = typename embedding_internal::embedding_grid<2, long>;
+    using embedding_grid_2d = typename embedding_internal::embedding_grid<2, index_t>;
 
-    using embedding_grid_3d = typename embedding_internal::embedding_grid<3, long>;
+    using embedding_grid_3d = typename embedding_internal::embedding_grid<3, index_t>;
 
-    using embedding_grid_4d = typename embedding_internal::embedding_grid<4, long>;
+    using embedding_grid_4d = typename embedding_internal::embedding_grid<4, index_t>;
 }

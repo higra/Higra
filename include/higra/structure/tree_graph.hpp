@@ -169,21 +169,21 @@ namespace hg {
             }
 
             auto leaves_iterator() const {
-                return irange<long>(0, _num_leaves);
+                return irange<index_t>(0, _num_leaves);
             }
 
             auto leaves_to_root_iterator(leaves_it leaves_opt = leaves_it::include,
                                              root_it root_opt = root_it::include) const {
                 vertex_descriptor start = (leaves_opt == leaves_it::include) ? 0 : num_leaves();
                 vertex_descriptor end = (root_opt == root_it::include) ? _num_vertices : _num_vertices - 1;
-                return irange<long>(start, end);
+                return irange<index_t>(start, end);
             }
 
             auto root_to_leaves_iterator(leaves_it leaves_opt = leaves_it::include,
                                              root_it root_opt = root_it::include) const {
                 vertex_descriptor end = (leaves_opt == leaves_it::include) ? -1 : num_leaves() - 1;
                 vertex_descriptor start = (root_opt == root_it::include) ? _num_vertices - 1 : _num_vertices - 2;
-                return irange<long>(start, end, -1);
+                return irange<index_t>(start, end, -1);
             }
 
             auto edge_from_index(edge_index_t ei) const{
@@ -191,7 +191,7 @@ namespace hg {
             }
 
             auto is_leaf(vertex_descriptor v) const{
-                return v < _num_leaves;
+                return (size_t)v < _num_leaves;
             }
 
         private:

@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
 
         array_2d<index_t> indices{{0, 3},
                                   {1, 2}};
-        array_2d<index_t> ref{{2, 0},
+        array_2d<size_t> ref{{2, 0},
                               {2, 2}};
 
         BOOST_CHECK(xt::allclose(degree(indices, g), ref));

@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
 
     BOOST_AUTO_TEST_CASE(degreeTree) {
         auto t = data.t;
-        vector<index_t> ref = {1, 1, 1, 1, 1, 3, 4, 2};
+        vector<size_t> ref = {1, 1, 1, 1, 1, 3, 4, 2};
         for (auto v: vertex_iterator(t)) {
             BOOST_CHECK(degree(v, t) == ref[v]);
             BOOST_CHECK(in_degree(v, t) == ref[v]);

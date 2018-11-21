@@ -18,14 +18,14 @@ namespace hg {
     using point = xt::xtensor_fixed <value_t, xt::xshape<dim>>;
 
     using point_1d_f = point<double, 1>;
-    using point_1d_i = point<long, 1>;
+    using point_1d_i = point<index_t, 1>;
 
     using point_2d_f = point<double, 2>;
-    using point_2d_i = point<long, 2>;
+    using point_2d_i = point<index_t, 2>;
 
     using point_3d_f = point<double, 3>;
-    using point_3d_i = point<long, 3>;
+    using point_3d_i = point<index_t, 3>;
 
     using point_4d_f = point<double, 4>;
-    using point_4d_i = point<long, 4>;
+    using point_4d_i = point<index_t, 4>;
 }

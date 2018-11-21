@@ -105,7 +105,7 @@ namespace hg {
                 }
             } else { // tree on rag
                 hg_assert(vertex_map.size() == ground_truth.size(), "Vertex map and ground truth sizes do not match.");
-                for (index_t i = 0; i < vertex_map.size(); i++) {
+                for (index_t i = 0; i < (index_t)vertex_map.size(); i++) {
                     card_intersection_leaves(vertex_map(i), ground_truth(i))++;
                 }
             }
@@ -173,7 +173,7 @@ namespace hg {
                 region_tree_area = attribute_area(tree);
             } else { // tree on rag
                 hg_assert(vertex_map.size() == ground_truth.size(), "Vertex map and ground truth sizes do not match.");
-                for (index_t i = 0; i < vertex_map.size(); i++) {
+                for (index_t i = 0; i < (index_t)vertex_map.size(); i++) {
                     card_intersection_leaves(vertex_map(i), ground_truth(i))++;
                 }
                 region_tree_area = attribute_area(tree,
@@ -249,7 +249,7 @@ namespace hg {
         auto fragmentation_curve() const {
             auto &backtrack_root = backtracking[root(m_tree)];
             array_1d<double> final_scores({backtrack_root.size()}, 0);
-            for (index_t i = 0; i < backtrack_root.size(); i++) {
+            for (index_t i = 0; i < (index_t)backtrack_root.size(); i++) {
                 final_scores(i) = backtrack_root[i].score;
             }
 
@@ -353,7 +353,7 @@ namespace hg {
                 }
             };
 
-            for (index_t i = 1; i < backtrack_root.size(); i++) {
+            for (index_t i = 1; i < (index_t)backtrack_root.size(); i++) {
                 double score = backtrack_root[i].score;
                 double previous_score = backtrack_root[i - 1].score;
                 double score_gain = score - previous_score;
@@ -400,7 +400,7 @@ namespace hg {
         auto &num_regions_cuts = hc_explorer.num_regions_cuts();
         auto last_cut = std::upper_bound(num_regions_cuts.begin(), num_regions_cuts.end(), max_regions);
 
-        size_t num_cuts = std::distance(num_regions_cuts.begin(), last_cut);
+        index_t num_cuts = std::distance(num_regions_cuts.begin(), last_cut);
         array_1d<double> scores = xt::empty<double>({num_cuts});
         array_1d<double> num_regions = xt::empty<double>({num_cuts});
         std::copy(num_regions_cuts.begin(), num_regions_cuts.end(), num_regions.begin());

@@ -62,7 +62,7 @@ struct def_watershed_hierarchy_by_area {
         c.def("_watershed_hierarchy_by_area",
               [](const graph_t &graph,
                  const pyarray<value_t> &edge_weights,
-                 const pyarray<long> & vertex_area) {
+                 const pyarray<hg::index_t> & vertex_area) {
                   return hg::watershed_hierarchy_by_area(graph, edge_weights, vertex_area);
               },
               doc,
@@ -80,7 +80,7 @@ struct def_watershed_hierarchy_by_volume {
         c.def("_watershed_hierarchy_by_volume",
               [](const graph_t &graph,
                  const pyarray<value_t> &edge_weights,
-                 const pyarray<long> & vertex_area) {
+                 const pyarray<hg::index_t> & vertex_area) {
                   return hg::watershed_hierarchy_by_volume(graph, edge_weights, vertex_area);
               },
               doc,
