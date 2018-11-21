@@ -72,7 +72,7 @@ namespace hg {
         HG_TRACE();
         auto &altitudes = xaltitudes.derived_cast();
         return reconstruct_leaf_data(tree,
-                                     xt::arange(num_vertices(tree)),
+                                     xt::arange<index_t>(num_vertices(tree)),
                                      xt::index_view(altitudes, tree.parents())
                                      <= static_cast<typename T::value_type>(threshold));
     };

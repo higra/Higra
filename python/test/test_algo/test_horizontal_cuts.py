@@ -102,7 +102,6 @@ class TestHorizontalCuts(unittest.TestCase):
         self.assertTrue(np.all(rec == ref_rec))
 
         cut = c.graph_cut(tree)
-        print(cut)
         ref_cut = (0, 0, 0, 0, 0, 1, 0, 0, 1, 0)
         self.assertTrue(np.all(cut == ref_cut))
 

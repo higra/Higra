@@ -247,9 +247,13 @@ namespace hg {
 
             auto aparents = parents(tree).storage_begin();
 
-            for (auto i: root_to_leaves_iterator(tree)) {
-                output_view.set_position(i);
+            // root cannot be deleted
+            output_view.set_position(root(tree));
+            input_view.set_position(root(tree));
+            output_view = input_view;
 
+            for (auto i: root_to_leaves_iterator(tree, leaves_it::include, root_it::exclude)) {
+                output_view.set_position(i);
                 if (condition(i)) {
                     inout_view.set_position(aparents[i]);
                     output_view = inout_view;

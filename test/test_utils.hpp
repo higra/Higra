@@ -78,14 +78,14 @@ bool is_in_bijection(const xt::xexpression<T1> & a, const xt::xexpression<T2> & 
     for(long i = 0; i < (long)aa.size(); i++){
         auto v1 = aa[i];
         auto v2 = bb[i];
-        if (equiv1.count(v1) != 0){
+        if (equiv1.count(v1) > 0){
             if(! (v2 == equiv1[v1]))
                 return false;
         } else{
             equiv1[v1] = v2;
         }
 
-        if (equiv2.count(v2) != 0){
+        if (equiv2.count(v2) > 0){
             if(! (v1 == equiv2[v2]))
                 return false;
         } else{
