@@ -12,7 +12,6 @@
 #include <iostream>
 
 #include <benchmark/benchmark.h>
-#include "xsimd/xsimd.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xtensor.hpp"
 
