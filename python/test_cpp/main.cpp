@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_SUITE(xp);
     }
 
     BOOST_AUTO_TEST_CASE(higra_sand_box) {
-
+		/*
         py::module sys = py::module::import("sys");
         sys.attr("path") = py::make_tuple("", "/home/perretb/Higra/cmake-build-debug/python",
                 "/home/perretb/anaconda3/lib/python36.zip",
@@ -116,6 +116,7 @@ BOOST_AUTO_TEST_SUITE(xp);
                 "/home/perretb/anaconda3/lib/python3.6/site-packages");
 
         auto higra_m = py::module::import("higra");
+		*/
         //auto res = higra_m.attr("read_graph_pink")("/home/perretb/2008_000009.graph");
 
     }

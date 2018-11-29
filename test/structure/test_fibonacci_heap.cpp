@@ -134,75 +134,75 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
     };
 
     BOOST_AUTO_TEST_CASE(test_pool_one_block) {
-        fibonacci_heap_internal::object_pool<long> pool;
-        long *i1 = pool.allocate();
+        fibonacci_heap_internal::object_pool<hg::index_t> pool;
+        hg::index_t *i1 = pool.allocate();
 
-        long *i2 = pool.allocate();
-        BOOST_CHECK(i2 - i1 == 1);
-        long *i3 = pool.allocate();
-        BOOST_CHECK(i3 - i1 == 2);
-        long *i4 = pool.allocate();
-        BOOST_CHECK(i4 - i1 == 3);
+        hg::index_t *i2 = pool.allocate();
+        BOOST_CHECK((i2 - i1) == 1);
+        hg::index_t *i3 = pool.allocate();
+        BOOST_CHECK((i3 - i1) == 2);
+        hg::index_t *i4 = pool.allocate();
+        BOOST_CHECK((i4 - i1) == 3);
 
         pool.free(i3);
 
-        long *i5 = pool.allocate();
-        BOOST_CHECK(i5 - i1 == 2);
-        long *i6 = pool.allocate();
-        BOOST_CHECK(i6 - i1 == 4);
+        hg::index_t *i5 = pool.allocate();
+        BOOST_CHECK((i5 - i1) == 2);
+        hg::index_t *i6 = pool.allocate();
+        BOOST_CHECK((i6 - i1) == 4);
 
         pool.free(i5);
         pool.free(i4);
 
-        long *i7 = pool.allocate();
-        BOOST_CHECK(i7 - i1 == 3);
-        long *i8 = pool.allocate();
-        BOOST_CHECK(i8 - i1 == 2);
-        long *i9 = pool.allocate();
+        hg::index_t *i7 = pool.allocate();
+        BOOST_CHECK((i7 - i1) == 3);
+        hg::index_t *i8 = pool.allocate();
+        BOOST_CHECK((i8 - i1) == 2);
+        hg::index_t *i9 = pool.allocate();
         BOOST_CHECK(i9 - i1 == 5);
-        long *i10 = pool.allocate();
-        BOOST_CHECK(i10 - i1 == 6);
+        hg::index_t *i10 = pool.allocate();
+        BOOST_CHECK((i10 - i1) == 6);
     }
 
     BOOST_AUTO_TEST_CASE(test_pool_several_blocks) {
-        fibonacci_heap_internal::object_pool<long> pool(3);
-        long *i1 = pool.allocate();
-        long *i2 = pool.allocate();
+        fibonacci_heap_internal::object_pool<hg::index_t> pool(3);
+        hg::index_t *i1 = pool.allocate();
+        hg::index_t *i2 = pool.allocate();
         BOOST_CHECK(i2 - i1 == 1);
-        long *i3 = pool.allocate();
+        hg::index_t *i3 = pool.allocate();
         BOOST_CHECK(i3 - i1 == 2);
 
-        long *i4 = pool.allocate();
-        long *i5 = pool.allocate();
+        hg::index_t *i4 = pool.allocate();
+        hg::index_t *i5 = pool.allocate();
         BOOST_CHECK(i5 - i4 == 1);
-        long *i6 = pool.allocate();
+        hg::index_t *i6 = pool.allocate();
         BOOST_CHECK(i6 - i4 == 2);
 
-        long *i7 = pool.allocate();
-        long *i8 = pool.allocate();
+        hg::index_t *i7 = pool.allocate();
+        hg::index_t *i8 = pool.allocate();
         BOOST_CHECK(i8 - i7 == 1);
 
         pool.free(i6);
         pool.free(i2);
         pool.free(i4);
 
-        long *i9 = pool.allocate();
+        hg::index_t *i9 = pool.allocate();
         BOOST_CHECK(i9 - i4 == 0);
-        long *i10 = pool.allocate();
+        hg::index_t *i10 = pool.allocate();
         BOOST_CHECK(i10 - i1 == 1);
-        long *i11 = pool.allocate();
+        hg::index_t *i11 = pool.allocate();
         BOOST_CHECK(i11 - i4 == 2);
 
-        long *i12 = pool.allocate();
+        hg::index_t *i12 = pool.allocate();
         BOOST_CHECK(i12 - i7 == 2);
 
-        long *i13 = pool.allocate();
-        long *i14 = pool.allocate();
+        hg::index_t *i13 = pool.allocate();
+        hg::index_t *i14 = pool.allocate();
         BOOST_CHECK(i14 - i13 == 1);
     }
 
     BOOST_AUTO_TEST_CASE(test_fibonacci_heap1) {
-        fibonacci_heap<long> heap;
+        fibonacci_heap<hg::index_t> heap;
         heap.push(10);
         BOOST_CHECK(heap.size() == 1);
         BOOST_CHECK(!heap.empty());
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
     }
 
     BOOST_AUTO_TEST_CASE(test_fibonacci_heap2) {
-        fibonacci_heap<long> heap;
+        fibonacci_heap<hg::index_t> heap;
         heap.push(10);
         heap.pop();
         BOOST_CHECK(heap.size() == 0);
@@ -259,12 +259,12 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
 
 
     BOOST_AUTO_TEST_CASE(test_fibonacci_heap3) {
-        fibonacci_heap<long> heap;
+        fibonacci_heap<hg::index_t> heap;
         heap.push(10);
         heap.push(15);
         heap.push(8);
 
-        fibonacci_heap<long> heap2;
+        fibonacci_heap<hg::index_t> heap2;
         heap.push(9);
         heap.push(7);
 
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
     }
 
     BOOST_AUTO_TEST_CASE(test_fibonacci_heap_decrease_key) {
-        fibonacci_heap<long> heap;
+        fibonacci_heap<hg::index_t> heap;
         heap.push(10);
         heap.pop();
         BOOST_CHECK(heap.size() == 0);
@@ -323,7 +323,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
     }
 
     BOOST_AUTO_TEST_CASE(test_fibonacci_heap_erase_key) {
-        fibonacci_heap<long> heap;
+        fibonacci_heap<hg::index_t> heap;
         heap.push(10);
         heap.pop();
         BOOST_CHECK(heap.size() == 0);
@@ -358,7 +358,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
     }
 
     BOOST_AUTO_TEST_CASE(test_fibonacci_heap_increase_key) {
-        fibonacci_heap<long> heap;
+        fibonacci_heap<hg::index_t> heap;
         heap.push(10);
         heap.pop();
         BOOST_CHECK(heap.size() == 0);
@@ -411,8 +411,8 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         auto &rng = rnd::get_rng();
 
 
-        fibonacci_heap<long> heap;
-        trivial_heap<long> theap;
+        fibonacci_heap<hg::index_t> heap;
+        trivial_heap<hg::index_t> theap;
 
         for (int i = 0; i < nbop; i++) {
             int op = dist100(rng);
@@ -452,8 +452,8 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         auto &rng = rnd::get_rng();
         int nbop = 500;
 
-        fibonacci_heap<long> heap;
-        trivial_heap<long> theap;
+        fibonacci_heap<hg::index_t> heap;
+        trivial_heap<hg::index_t> theap;
 
         for (int i = 0; i < nbop; i++) {
             int op = dist100(rng);
@@ -491,10 +491,10 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         auto &rng = rnd::get_rng();
         int nbop = 20000;
 
-        fibonacci_heap<long> heap;
-        trivial_heap<long> theap;
+        fibonacci_heap<hg::index_t> heap;
+        trivial_heap<hg::index_t> theap;
 
-        map<fibonacci_heap<long>::value_handle, trivial_heap<long>::value_handle> heapset;
+        map<fibonacci_heap<hg::index_t>::value_handle, trivial_heap<hg::index_t>::value_handle> heapset;
 
         for (int i = 0; i < nbop; i++) {
             int op = dist100(rng);
