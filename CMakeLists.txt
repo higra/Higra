@@ -55,21 +55,22 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU"
             endif ()
         endif ()
     endif()
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     # using Visual Studio C++
-
     CHECK_CXX_COMPILER_FLAG("/std:c++14" COMPILER_SUPPORTS_CXX14)
     if(COMPILER_SUPPORTS_CXX14)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14")
     else()
         message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
     endif()
+
+	set(Boost_USE_STATIC_LIBS ON)
+
     if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast /LTCG /EHsc /MP /bigobj")
         set(CMAKE_EXE_LINKER_FLAGS /MANIFEST:NO)
     endif()
 endif()
-
 
 find_package(Boost 1.4 QUIET COMPONENTS unit_test_framework)
 if (Boost_FOUND)
@@ -79,7 +80,7 @@ else ()
     message("Testing disabled as 'Boost unit test framework' cannot be found. Please install it or manually provide its location to cmake in order to enable testing.")
     option(DO_TEST
             "Execute test suit." OFF)
-endif ()
+endif () 
 
 
 enable_testing()

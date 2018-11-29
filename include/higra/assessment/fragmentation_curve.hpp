@@ -161,8 +161,13 @@ namespace hg {
                 region_gt_areas[v]++;
             }
 
-            array_1d<index_t> region_tree_area;
-
+// TODO remove when xtensor MSVC witht he bug with xt::view(region_tree_area, xt::all(), xt::newaxis()) on 1d tensor
+#ifndef _MSC_VER
+			array_1d<index_t> region_tree_area;
+#else
+			array_nd<index_t> region_tree_area;
+#endif
+            
             // for a tree node i, a gt region j: card_intersection(i, j) is the number of pixels in R_i cap R_j
             array_2d<index_t> card_intersection_leaves{{num_leaves(tree), region_gt_areas.size()}, 0};
             if (vertex_map.size() <= 1) { // no rag
@@ -183,7 +188,7 @@ namespace hg {
 
             array_2d<double> card_intersection = accumulate_sequential(tree, card_intersection_leaves,
                                                                        accumulator_sum());
-
+			
             array_1d<double> scores;
 
             switch (measure) {

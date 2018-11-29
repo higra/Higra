@@ -53,14 +53,14 @@ namespace hg {
 
             for(auto & polyline: contour2d){
                 for(auto & segment: polyline){
-                    auto segment_orientation = std::fmod(segment.angle(), M_PI);
+                    auto segment_orientation = std::fmod(segment.angle(), xt::numeric_constants<double>::PI);
 
                     for(auto element: segment){
                         auto edge_index = element.first;
                         auto edge_weight = edge_weights(edge_index);
                         auto edge_orientation = edge_orientations(edge_index);
                         auto new_weight = edge_weight
-                                          * std::abs(std::cos(edge_orientation - M_PI/2.0 - segment_orientation));
+                                          * std::abs(std::cos(edge_orientation - xt::numeric_constants<double>::PI_2 - segment_orientation));
                         if(new_weight > final_weights(edge_index)){
                             final_weights(edge_index) = new_weight;
                         }

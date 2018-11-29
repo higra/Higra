@@ -9,22 +9,19 @@
 ****************************************************************************/
 
 #include <boost/test/unit_test.hpp>
-
-#include "higra/image/contour_2d.hpp"
-
 #include "../test_utils.hpp"
+#include "higra/image/contour_2d.hpp"
 
 BOOST_AUTO_TEST_SUITE(test_contour_2d);
 
     using namespace hg;
     using namespace std;
 
-    template<typename graph_t, typename T>
-    auto contour_2_khalimsky(const graph_t &graph, const T &shape, const contour_2d &contour, bool interp=false) {
+    auto contour_2_khalimsky(const hg::ugraph &graph, const std::array<index_t, 2> &shape, const contour_2d &contour) {
         std::array<index_t, 2> res_shape{shape[0] * 2 -1, shape[1] * 2 - 1};
         array_2d<index_t> result = xt::zeros<index_t>(res_shape);
-        embedding_grid_2d embedding{shape};
-        long count = 0;
+        embedding_grid_2d embedding(shape);
+        index_t count = 0;
 
         auto edge_to_k = [&graph, &embedding](index_t edge_index){
             auto & e = edge_from_index(edge_index, graph);
@@ -47,7 +44,7 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
                 result[edge_to_k(segment.last().first)] = invalid_index * count;
             }
         }
-
+		/*
         if(interp){
             embedding_grid_2d res_embedding(res_shape);
             auto adj4 = get_4_adjacency_implicit_graph(res_embedding);
@@ -64,6 +61,7 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
                 }
             }
         }
+		*/
 
         return result;
     }
@@ -108,13 +106,13 @@ BOOST_AUTO_TEST_SUITE(test_contour_2d);
         std::array<index_t, 2> shape{5, 5};
         auto g = get_4_adjacency_graph(shape);
 
-        xt::xarray<int> data = xt::zeros<int>({40});
+        array_1d<index_t> data({40}, 0);
         data(14) = 1;
         data(20) = 1;
         data(22) = 1;
         data(23) = 1;
 
-        xt::xarray<int> ref{{0, 0, 0, 0, 0, 0, 0, 0, 0},
+        array_2d<index_t> ref{{0, 0, 0, 0, 0, 0, 0, 0, 0},
                             {0, 0, 0, 0, 0, 0, 0, 0, 0},
                             {0, 0, 0, 0, 0, 0, 0, 0, 0},
                             {0, 0, 0, 0, 1, 0, 0, 0, 0},
