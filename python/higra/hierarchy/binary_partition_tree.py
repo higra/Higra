@@ -80,64 +80,71 @@ def binary_partition_tree(weight_function, edge_weights, graph):
     Compute the binary partition tree of the graph.
 
     At each step:
+
     1 - the algorithm finds the edge of smallest weight.
     2 - the two vertices linked by this edge are merged: the new vertex is the parent of the two merged vertices
-    3 - the weight of the edges linking the new vertex to the remaining vertices of the graph are updated according
-       to the user provided function (weight_function)
+    3 - the weight of the edges linking the new vertex to the remaining vertices of the graph are updated according to the user provided function (weight_function)
     4 - repeat until a single edge remain
 
     The initial weight of the edges (edge_weights) and the callback (weight_function) determine the shape of the
     hierarchy.
 
     Classical single/complete/average linkage weighting function are already implemented: use functions
+
     - binary_partition_tree_single_linkage
     - binary_partition_tree_complete_linkage
     - binary_partition_tree_average_linkage.
-    Those functions are impleted and c++ and should be faster than a user defined weighting function written in Python.
+
+    Those functions are implemented in c++ and should be faster than a user defined weighting function written in Python.
 
     The weight_function callback can be anything that defining the operator() and should follow the following pattern:
 
-    def weight_function(graph,              # the current state of the graph
-                   fusion_edge_index,       # the edge between the two vertices being merged
-                   new_region,              # the new vertex in the graph
-                   merged_region1,          # the first vertex merged
-                   merged_region2,          # the second vertex merged
-                   new_neighbours):         # list of edges to be weighted (see below)
-       ...
-       for n in new_neighbours:
-           ...
-           n.set_new_edge_weight(new_edge_value) # define the weight of this edge
+    .. code-block:: python
 
-    }
+        def weight_function(graph,              # the current state of the graph
+                       fusion_edge_index,       # the edge between the two vertices being merged
+                       new_region,              # the new vertex in the graph
+                       merged_region1,          # the first vertex merged
+                       merged_region2,          # the second vertex merged
+                       new_neighbours):         # list of edges to be weighted (see below)
+           ...
+           for n in new_neighbours:
+               ...
+               n.set_new_edge_weight(new_edge_value) # define the weight of this edge
+
+        }
 
     Each element in the parameter new_neighbours represent an edge between the new vertex and another vertex of
     the graph. For each element of the list, the following methods are available:
+
     - neighbour_vertex(): the other vertex
-    - num_edges(): returns 2 if both the two merged vertices add an edge linking themselves with neighbour_vertex()
-       and 1 otherwise
+    - num_edges(): returns 2 if both the two merged vertices add an edge linking themselves with neighbour_vertex() and 1 otherwise
     - first_edge_index(): the index of the edge linking one of the merged region to neighbour_vertex()
     - second_edge_index(): the index of the edge linking the other merged region to neighbour_vertex() (only if num_edges()==2)
     - set_new_edge_weight(value): weight of the new edge (THIS HAS TO BE DEFINED IN THE WEIGHTING FUNCTION)
     - new_edge_index(): the index of the new edge: the weighting function will probably have to track new weight values
 
     Example of weighting function for average linkage assuming that
+
     - edge_weights is an array containing the weight of each edge, and
     - edge_values is an array containing the value of each edge:
 
-    def weighting_function_average_linkage(graph, fusion_edge_index, new_region, merged_region1, merged_region2, new_neighbours):
-        for n in new_neighbours:
-            if n.num_edges() > 1:
-                new_weight = edge_weights[n.first_edge_index()] + edge_weights[n.second_edge_index()]
-                new_value = (edge_values[n.first_edge_index()] * edge_weights[n.first_edge_index()] \
-                    + edge_values[n.second_edge_index()] * edge_weights[n.second_edge_index()]) \
-                    / new_weight
-            else:
-                new_weight = edge_weights[n.first_edge_index()]
-                new_value = edge_values[n.first_edge_index()]
+    .. code-block:: python
 
-            n.set_new_edge_weight(new_value)
-            edge_values[n.new_edge_index()] = new_value
-            edge_weights[n.new_edge_index()] = new_weight
+        def weighting_function_average_linkage(graph, fusion_edge_index, new_region, merged_region1, merged_region2, new_neighbours):
+            for n in new_neighbours:
+                if n.num_edges() > 1:
+                    new_weight = edge_weights[n.first_edge_index()] + edge_weights[n.second_edge_index()]
+                    new_value = (edge_values[n.first_edge_index()] * edge_weights[n.first_edge_index()] \
+                        + edge_values[n.second_edge_index()] * edge_weights[n.second_edge_index()]) \
+                        / new_weight
+                else:
+                    new_weight = edge_weights[n.first_edge_index()]
+                    new_value = edge_values[n.first_edge_index()]
+
+                n.set_new_edge_weight(new_value)
+                edge_values[n.new_edge_index()] = new_value
+                edge_weights[n.new_edge_index()] = new_weight
 
     :param graph:
     :param edge_weights:
