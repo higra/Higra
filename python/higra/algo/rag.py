@@ -22,11 +22,8 @@ def make_region_adjacency_graph_from_labelisation(vertex_labels, graph):
 
     The returned rag is equipped with three attributes:
 
-    * vertex_map: an array of size graph.num_vertices() which indicates for each vertex v of the graph
-    the index of the vertex of the rag that represents the region containing v;
-    * edge_map: an array of size graph.num_edges() which indicates for each edge e of the graph
-    the index of the edge of the rag that links the two regions containing the extremities of e. If no such edge exists
-    (if both extremities of e are in the same region), the value -1 is used.
+    * vertex_map: an array of size graph.num_vertices() which indicates for each vertex v of the graph the index of the vertex of the rag that represents the region containing v;
+    * edge_map: an array of size graph.num_edges() which indicates for each edge e of the graph the index of the edge of the rag that links the two regions containing the extremities of e. If no such edge exists (if both extremities of e are in the same region), the value -1 is used.
     * original_graph: the graph from which this rag has been computed
 
     :param graph:
@@ -53,11 +50,8 @@ def make_region_adjacency_graph_from_graph_cut(edge_weights, graph):
 
     The returned rag is equipped with three attributes:
 
-    * vertex_map: an array of size graph.num_vertices() which indicates for each vertex v of the graph
-    the index of the vertex of the rag that represents the region containing v;
-    * edge_map: an array of size graph.num_edges() which indicates for each edge e of the graph
-    the index of the edge of the rag that links the two regions containing the extremities of e. If no such edge exists
-    (if both extremities of e are in the same region), the value -1 is used.
+    * vertex_map: an array of size graph.num_vertices() which indicates for each vertex v of the graph the index of the vertex of the rag that represents the region containing v;
+    * edge_map: an array of size graph.num_edges() which indicates for each edge e of the graph the index of the edge of the rag that links the two regions containing the extremities of e. If no such edge exists (if both extremities of e are in the same region), the value -1 is used.
     * original_graph: the graph from which this rag has been computed
 
     :param graph:

@@ -84,10 +84,10 @@ void def_horizontal_cut_explorer(pybind11::module &m) {
             "HorizontalCutExplorer",
             "This class helps to explore and browse the horizontal cuts of a valued hierarchy.\n"
             "Construction of the HorizontalCutExplorer if performed in linear time O(n) w.r.t. the number of nodes in the tree.\n"
-            "Each cut of the hierarchy can be accessed through:\n"
-            "  - its index (the first single region cut has index 0). This operations runs in O(k), with k the number of regions in the retrieved cut ;\n"
-            "  - the number of regions in the cut (the smallest partition having at least the given number of regions if found). This operations runs in O(k*log(n)), with k the number of regions in the retrieved cut;\n"
-            "  - the altitude of the cut. This operations runs in O(k*log(n)), with k the number of regions in the retrieved cut.\n"
+            "Each cut of the hierarchy can be accessed through:\n\n"
+            "\t- its index (the first single region cut has index 0). This operations runs in O(k), with k the number of regions in the retrieved cut ;\n"
+            "\t- the number of regions in the cut (the smallest partition having at least the given number of regions if found). This operations runs in O(k*log(n)), with k the number of regions in the retrieved cut;\n"
+            "\t- the altitude of the cut. This operations runs in O(k*log(n)), with k the number of regions in the retrieved cut.\n"
     );
     add_type_overloads<def_horizontal_cut_explorer_ctr<class_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (c,
