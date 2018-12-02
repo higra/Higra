@@ -41,12 +41,15 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         auto &tree = res.tree;
         auto &altitudes = res.altitudes;
         auto &mst = res.mst;
+        auto &mst_edge_map = res.mst_edge_map;
+
         BOOST_CHECK(num_vertices(tree) == 3);
         BOOST_CHECK(num_edges(tree) == 2);
-        BOOST_CHECK(xt::allclose(tree.parents(), xt::xarray<unsigned int>({2, 2, 2})));
-        BOOST_CHECK(xt::allclose(altitudes, xt::xarray<double>({0, 0, 2})));
+        BOOST_CHECK(tree.parents() == array_1d<int>({2, 2, 2}));
+        BOOST_CHECK(altitudes == array_1d<double>({0, 0, 2}));
         BOOST_CHECK(num_vertices(mst) == 2);
         BOOST_CHECK(num_edges(mst) == 1);
+        BOOST_CHECK(mst_edge_map == array_1d<int>({0}));
 
     }
 
@@ -61,6 +64,8 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         auto &tree = res.tree;
         auto &altitudes = res.altitudes;
         auto &mst = res.mst;
+        auto &mst_edge_map = res.mst_edge_map;
+
         BOOST_CHECK(num_vertices(tree) == 11);
         BOOST_CHECK(num_edges(tree) == 10);
         BOOST_CHECK(xt::allclose(hg::parents(tree), xt::xarray<unsigned int>({6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10})));
@@ -76,6 +81,7 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
             auto e = edge_from_index(i, mst);
             BOOST_CHECK(e == ref[i]);
         }
+        BOOST_CHECK(mst_edge_map == array_1d<int>({1, 0, 3, 4, 2}));
     }
 
 

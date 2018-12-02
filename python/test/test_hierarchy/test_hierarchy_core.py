@@ -43,6 +43,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         tree, altitudes = hg.bpt_canonical(edge_weights, graph)
         mst = hg.CptBinaryHierarchy.construct(tree)["mst"]
+        mst_edge_map = hg.get_attribute(mst, "mst_edge_map")
 
         self.assertTrue(tree.num_vertices() == 11)
         self.assertTrue(tree.num_edges() == 10)
@@ -60,6 +61,8 @@ class TestHierarchyCore(unittest.TestCase):
         for e in mst.edges():
             test.append((e[0], e[1]))
         self.assertTrue(ref == test)
+
+        self.assertTrue(np.all(mst_edge_map == (1, 0, 3, 4, 2)))
 
     def test_QFZ(self):
         graph = hg._get_4_adjacency_graph((2, 3))

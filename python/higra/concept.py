@@ -264,13 +264,16 @@ class CptMinimumSpanningTree(Concept):
     _name = "minimum_spanning_tree"
     _description = "A minimum spanning tree and its base graph."
     _data_elements = {"base_graph": ("a base graph", "base_graph"),
-                      "mst": ("a minimum spanning tree of the base graph", None)}
+                      "mst": ("a minimum spanning tree of the base graph", None),
+                      "mst_edge_map": ("For each edge index i of the mst, gives the corresponding edge index in the base graph", "mst_edge_map")}
     _canonical_data_element = "mst"
 
     def __init__(self, **kwargs):
         super(CptMinimumSpanningTree, self).__init__(**kwargs)
 
     @staticmethod
-    def link(mst, base_graph):
+    def link(mst, base_graph, mst_edge_map):
         hg.add_tag(mst, CptMinimumSpanningTree)
         hg.set_attribute(mst, "base_graph", base_graph)
+        hg.set_attribute(mst, "mst_edge_map", mst_edge_map)
+

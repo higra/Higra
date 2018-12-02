@@ -36,13 +36,19 @@ namespace hg {
         tree_t tree;
         altitude_t altitudes;
         mst_t mst;
+        array_1d<index_t> mst_edge_map;
     };
 
     template<typename tree_t, typename altitude_t, typename mst_t>
-    decltype(auto) make_node_weighted_tree_and_mst(tree_t &&tree, altitude_t &&node_altitude, mst_t &&mst) {
+    decltype(auto) make_node_weighted_tree_and_mst(
+            tree_t &&tree,
+            altitude_t &&node_altitude,
+            mst_t &&mst,
+            array_1d<index_t> && mst_edge_map) {
         return node_weighted_tree_and_mst<tree_t, altitude_t, mst_t>{std::forward<tree_t>(tree),
                                                                      std::forward<altitude_t>(node_altitude),
-                                                                     std::forward<mst_t>(mst)};
+                                                                     std::forward<mst_t>(mst),
+                                                                     std::forward< array_1d<index_t> >(mst_edge_map)};
     }
 
     /**
@@ -78,6 +84,7 @@ namespace hg {
 
         auto num_edge_mst = num_points - 1;
         ugraph mst(num_points);
+        array_1d<index_t> mst_edge_map = xt::empty<index_t>({num_edge_mst});
 
         union_find uf(num_points);
 
@@ -96,21 +103,25 @@ namespace hg {
             auto c1 = uf.find(source(e, graph));
             auto c2 = uf.find(target(e, graph));
             if (c1 != c2) {
-                num_edge_found++;
                 levels[num_nodes] = edge_weights[ei];
                 parents[roots[c1]] = num_nodes;
                 parents[roots[c2]] = num_nodes;
                 auto newRoot = uf.link(c1, c2);
                 roots[newRoot] = num_nodes;
                 mst.add_edge(e);
+                mst_edge_map(num_edge_found) = ei;
                 num_nodes++;
+                num_edge_found++;
             }
             i++;
         }
         hg_assert(num_edge_found == num_edge_mst, "Input graph must be connected.");
 
-        return make_node_weighted_tree_and_mst(tree(parents), std::move(levels), std::move(mst));
-
+        return make_node_weighted_tree_and_mst(
+                tree(parents),
+                std::move(levels),
+                std::move(mst),
+                std::move(mst_edge_map));
     };
 
 

@@ -35,6 +35,8 @@ struct def_node_weighted_tree_and_mst {
               "An array of tree node altitude.");
         c.def("mst", [](class_t &self) -> hg::ugraph & { return self.mst; },
               "A minimum spanning tree associated to the binary partition tree.");
+        c.def("mst_edge_map", [](class_t &self) -> hg::array_1d<hg::index_t> & { return self.mst_edge_map; },
+              "For each edge index i of the mst, gives the corresponding edge index in the original graph.");
     }
 };
 

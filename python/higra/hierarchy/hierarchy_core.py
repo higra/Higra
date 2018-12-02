@@ -25,13 +25,14 @@ def bpt_canonical(edge_weights, graph):
     tree = res.tree()
     altitudes = res.altitudes()
     mst = res.mst()
+    mst_edge_map = res.mst_edge_map()
 
     if hg.CptMinimumSpanningTree.validate(graph):
         leaf_graph = hg.CptMinimumSpanningTree.construct(graph)["base_graph"]
     else:
         leaf_graph = graph
 
-    hg.CptMinimumSpanningTree.link(mst, leaf_graph)
+    hg.CptMinimumSpanningTree.link(mst, leaf_graph, mst_edge_map)
     hg.CptHierarchy.link(tree, leaf_graph)
     hg.CptBinaryHierarchy.link(tree, mst)
     hg.CptValuedHierarchy.link(altitudes, tree)
