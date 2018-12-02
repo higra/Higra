@@ -57,10 +57,11 @@ def watershed_hierarchy_by_attribute(edge_weights, attribute_functor, graph):
     The attribute functor is a function that takes a binary partition tree and an array of altitudes as argument
     and returns an array with the node attribute values for the given tree.
 
-    Example
-    -------
+    Example:
 
     Calling watershed_hierarchy_by_area is equivalent to:
+
+    .. code-block:: python
 
         tree = watershed_hierarchy_by_attribute(graph, lambda tree, _: hg.attribute_area(tree))
 

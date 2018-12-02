@@ -171,6 +171,10 @@ All operations are done in constant time.
         - void
         - add a new edge to the graph
         - ``ugraph``
+    *   - ``add_edges``
+        - void
+        - add all edges given as a pair of arrays (sources, targets) to the graph
+        - ``ugraph``
     *   - ``num_edges``
         - positive integer
         - number of edges in the graph
@@ -191,6 +195,10 @@ All operations are done in constant time.
         - edge
         - the edge with given index (in an undirected graph, always returns the edge whose source vertex is smaller than the target vertex)
         - ``ugraph``, ``tree``
+    *   - ``edge_list``
+        - void
+        - a pair of arrays (sources, targets) defining all the edges of the graph
+        - ``ugraph``, ``tree``
 
 Note that python's edges are simply tuples whose first value is the source vertex, second value is the target vertex,
 and third (optional) value is the index.
@@ -207,8 +215,8 @@ Example:
             #include "higra/graph.hpp"
             using namespace hg;
 
-            // create a graph with 3 vertices and no edge
-            ugraph g(2);
+            // create a graph with 4 vertices and no edge
+            ugraph g(4);
 
             // add an edge, between vertex 0 and 1
             add_edge(0, 1, g);
@@ -219,7 +227,12 @@ Example:
             auto t = target(e, g); // 2
             auto ei = index(e, g); // 1
 
-            auto ne = num_edges(g); // 2
+            // add the two edges (3, 0) and (3, 1)
+            add_edges({3, 3}, {0, 1});
+
+            auto ne = num_edges(g); // 4
+
+            auto edges = edge_list(g); // edges.first = {0, 1, 0, 1}, edges.second = {1, 2, 3, 3}
 
     .. tab:: python
 
@@ -228,8 +241,8 @@ Example:
 
             import higra as hg
 
-            # create a graph with 3 vertices and no edge
-            g = hg.UndirectedGraph(3)
+            # create a graph with 4 vertices and no edge
+            g = hg.UndirectedGraph(4)
 
             # add an edge, between vertex 0 and 1
             g.add_edge(0, 1)
@@ -240,7 +253,12 @@ Example:
             t = g.target(e) # 2 or equivalently e[1]
             ei = g.index(e) # 1 or equivalently e[2]
 
-            ne = g.num_edges() # 2
+            # add the two edges (3, 0) and (3, 1)
+            g.add_edges((3, 3), (0, 1));
+
+            ne = g.num_edges() # 4
+
+            sources, targets = g.edge_list() # sources = [0, 1, 0, 1], targets = [1, 2, 3, 3]
 
 
 Iterating on edges
