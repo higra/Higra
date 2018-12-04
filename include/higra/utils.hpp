@@ -19,6 +19,24 @@
 #include "xtensor/xio.hpp"
 #include "detail/log.hpp"
 
+namespace hg {
+
+    /**
+     * Preferred type to represent an index
+     */
+    using index_t = std::ptrdiff_t;
+
+    /**
+     * Constant used to represent an invalid index (eg. not initialized)
+     */
+    const index_t invalid_index = -1;
+
+    /**
+     * Preferred type to represent a size
+     */
+    using size_t = std::size_t;
+}
+
 #define HG_MAIN_ASSERT
 
 #ifndef __FUNCTION_NAME__
@@ -85,22 +103,38 @@
 #define hg_assert_same_shape(array1, array2) ((void)0)
 #endif
 
+// Check windows
+#if _WIN32 || _WIN64
+    #define HG_INT_64 long long
+    #define HG_UINT_64 unsigned long long
+#elif __GNUC__ || __clang__
+    #if __x86_64__ || __ppc64__
+        #define HG_INT_64 long
+        #define HG_UINT_64 unsigned long
+    #else
+        #define HG_INT_64 long long
+        #define HG_UINT_64 unsigned long long
+    #endif
+#else
+    #if !defined(HG_INT_64) && !defined(HG_UINT_64)
+        #error Unkown architecture, please provide the two macros HG_INT_64 and HG_UINT_64 defining respectively the types of 64 integers and unsigned 64 bits integers
+    #endif
+#endif
+
 
 #define HG_XSTR(a) HG_STR(a)
 #define HG_STR(a) #a
 
 
-#define HG_TEMPLATE_SINTEGRAL_TYPES   char, short, int, long,  long long
+#define HG_TEMPLATE_SINTEGRAL_TYPES   char, short, int, HG_INT_64
 
-#define HG_TEMPLATE_UINTEGRAL_TYPES   unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long
-
-#define HG_TEMPLATE_INTEGRAL_TYPES    char, unsigned char, short, unsigned short, int, unsigned int, long, unsigned long, long long, unsigned long long
+#define HG_TEMPLATE_INTEGRAL_TYPES    char, unsigned char, short, unsigned short, int, unsigned int, HG_INT_64, HG_UINT_64
 
 #define HG_TEMPLATE_FLOAT_TYPES       float, double
 
-#define HG_TEMPLATE_NUMERIC_TYPES     char, unsigned char, short, unsigned short, int, unsigned int, long, unsigned long, long long, unsigned long long, float, double
+#define HG_TEMPLATE_NUMERIC_TYPES     char, unsigned char, short, unsigned short, int, unsigned int, HG_INT_64, HG_UINT_64, float, double
 
-#define HG_TEMPLATE_SNUMERIC_TYPES     char, short, int, long long, float, double
+#define HG_TEMPLATE_SNUMERIC_TYPES    char, short, int, HG_INT_64, float, double
 
 
 namespace xt {
@@ -165,21 +199,6 @@ namespace xt {
 namespace hg {
 
     /**
-     * Preferred type to represent an index
-     */
-    using index_t = std::ptrdiff_t;
-
-    /**
-     * Constant used to represent an invalid index (eg. not initialized)
-     */
-    const index_t invalid_index = -1;
-
-    /**
-     * Preferred type to represent a size
-     */
-    using size_t = std::size_t;
-
-    /**
      * Insert all elements of collection b at the end of collection a.
      * @tparam T1 must have an insert method (STL like) and a range interface (begin, end)
      * @tparam T2 must have a range interface (begin, end)
@@ -200,22 +219,6 @@ namespace hg {
      */
     template<typename T>
     struct COMPILE_ERROR;
-
-
-    template<bool scalar = false, typename graph_t, typename T>
-    void ensure_edge_weight(const graph_t &graph,
-                            const T &edge_weights) {
-        hg_assert(edge_weights.dimension() > 0,
-                  "The dimension of the array of edge weights of a graph must be at least 1.");
-        hg_assert(num_edges(graph) == edge_weights.shape()[0], "The dimension of provided edge weights does "
-                                                               "not match the number of edges in the provided graph.");
-        if (scalar) {
-            hg_assert(edge_weights.dimension() == 1, "This method does not handle multivariate weights");
-
-            static_assert(std::is_integral<typename T::value_type>::value,
-                          "Labelisation must have integral value type.");
-        }
-    }
 
 }
 
