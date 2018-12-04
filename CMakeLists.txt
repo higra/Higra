@@ -67,8 +67,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 	set(Boost_USE_STATIC_LIBS ON)
 
     if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast /LTCG /EHsc /MP /bigobj")
-        set(CMAKE_EXE_LINKER_FLAGS /MANIFEST:NO)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast /GL /EHsc /MP /bigobj /O2")
+        set(CMAKE_EXE_LINKER_FLAGS /LTCG /MANIFEST:NO)
     endif()
 endif()
 

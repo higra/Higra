@@ -98,7 +98,8 @@ BOOST_AUTO_TEST_SUITE(embedding);
         hg::point_3d_i p1 = {{3, 2, 1}};
         auto p1t = e1.lin2grid(35);
         BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
-        BOOST_CHECK(e1.grid2lin(p1) == 35);
+		auto r = e1.grid2lin(p1);
+        BOOST_CHECK( r == 35);
     }
 
 
