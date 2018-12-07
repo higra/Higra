@@ -17,3 +17,7 @@ add_subdirectory(test)
 if (DO_TEST)
     add_subdirectory(test_cpp)
 endif()
+
+configure_file(setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
+configure_file(MANIFEST.in ${CMAKE_CURRENT_BINARY_DIR}/MANIFEST)
+configure_file(README.md ${CMAKE_CURRENT_BINARY_DIR}/README.md COPYONLY)
