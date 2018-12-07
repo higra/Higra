@@ -137,8 +137,7 @@ endif ()
 #  Build Python bindings
 ##########################
 
-set(PYBIND11_CPP_STANDARD -std=c++14)
-
+#set(PYBIND11_CPP_STANDARD -std=c++14)
 add_subdirectory(python)
 
 ##########################
