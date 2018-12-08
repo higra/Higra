@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/PerretB/Higra.svg?branch=master)](https://travis-ci.org/PerretB/Higra)
+
 # Higra: Hierarchical Graph Analysis
 
 ## Build
