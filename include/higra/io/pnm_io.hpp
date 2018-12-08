@@ -41,7 +41,8 @@ namespace hg {
                             return "";
                         std::getline(m_in, m_current_line);
                     } while (m_current_line.size() == 0 || m_current_line[0] == '#');
-                    m_stream = std::stringstream(m_current_line);
+                    m_stream.clear();
+                    m_stream.str(m_current_line);
                 }
                 std::string token;
                 m_stream >> token;

@@ -137,7 +137,7 @@ namespace hg {
             vertex_descriptor add_vertex() {
                 auto tmp = _num_vertices;
                 _num_vertices++;
-                out_edges.push_back({});
+                out_edges.emplace_back();
                 return tmp;
             }
 
