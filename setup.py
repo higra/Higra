@@ -20,11 +20,11 @@ def get_version():
     patch = 0
 
     for l in lines:
-        if l.find("HIGRA_VERSION_MAJOR"):
+        if l.find("HIGRA_VERSION_MAJOR") >= 0:
             major = int(l.split(' ')[2])
-        if l.find("HIGRA_VERSION_MINOR"):
+        if l.find("HIGRA_VERSION_MINOR") >= 0:
             minor = int(l.split(' ')[2])
-        if l.find("HIGRA_VERSION_PATCH"):
+        if l.find("HIGRA_VERSION_PATCH") >= 0:
             patch = int(l.split(' ')[2])
 
     return ".".join([str(i) for i in (major, minor, patch)])
@@ -53,6 +53,7 @@ class CMakeBuild(build_ext):
 
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        extdir = os.path.join(extdir, "higra")
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable]
 
