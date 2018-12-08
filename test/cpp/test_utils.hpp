@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
-#include <boost/type_index.hpp>
 #include <map>
 #include <iterator>
 #include "xtensor/xmath.hpp"
@@ -100,10 +99,12 @@ bool is_in_bijection(const xt::xexpression<T1> & a, const xt::xexpression<T2> & 
  * @tparam T
  * @param msg
  */
+ /*
 template<typename T>
 void showTypeName(std::string msg = "") {
     std::cout << msg << boost::typeindex::type_id<T>().pretty_name() << std::endl;
 }
+*/
 
 /**
  * Do not use except if you want a compile error showing the type of the provided template parameter !
