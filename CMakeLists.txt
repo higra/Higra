@@ -8,7 +8,7 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-cmake_minimum_required(VERSION 2.7)
+cmake_minimum_required(VERSION 2.8.12)
 project(higra)
 
 ##########################
@@ -97,12 +97,12 @@ endif()
 
 find_package(Boost 1.4 QUIET COMPONENTS unit_test_framework)
 if (Boost_FOUND)
-    option(DO_TEST
-            "Execute test suit." ON)
+    option(DO_CPP_TEST
+            "Execute c++ test suit." ON)
 else ()
     message("Testing disabled as 'Boost unit test framework' cannot be found. Please install it or manually provide its location to cmake in order to enable testing.")
-    option(DO_TEST
-            "Execute test suit." OFF)
+    option(DO_CPP_TEST
+            "Execute c++ test suit." OFF)
 endif () 
 
 enable_testing()
@@ -138,25 +138,18 @@ endif ()
 ##########################
 
 #set(PYBIND11_CPP_STANDARD -std=c++14)
-add_subdirectory(python)
+find_package(PythonInterp 3 REQUIRED)
+find_package(pybind11 REQUIRED)
+find_package(NumPy REQUIRED)
+add_subdirectory(higra)
+configure_file(setup.py ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
+configure_file(README.md ${CMAKE_CURRENT_BINARY_DIR}/README.md COPYONLY)
 
 ##########################
 #  Build Tests
 ##########################
 
-if (DO_TEST)
-    add_subdirectory(${PROJECT_SOURCE_DIR}/test)
-    add_custom_target( all_tests ALL
-            DEPENDS ${UNIT_TEST_TARGETS}
-            )
-
-    add_custom_command(TARGET all_tests
-            COMMENT "Run tests"
-            POST_BUILD COMMAND ctest
-            #POST_BUILD COMMAND ctest ARGS --output-on-failure
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-            )
-endif(DO_TEST)
+add_subdirectory(test)
 
 ##########################
 #  Build benchmark
