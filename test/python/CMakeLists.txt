@@ -8,7 +8,7 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-add_subdirectory(ressources)
+add_subdirectory(resources)
 set(PYTHON_MODULE_PATH ${CMAKE_BINARY_DIR}/python/)
 
 set(PY_FILES

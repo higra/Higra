@@ -32,7 +32,7 @@ if (DO_CPP_TEST)
     add_test(NAME Test_cpp COMMAND test_exe)
     set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} test_exe CACHE INTERNAL "" FORCE)
 
-    add_subdirectory(ressources)
+    add_subdirectory(resources)
 
 endif (DO_CPP_TEST)
 

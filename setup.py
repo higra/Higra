@@ -10,6 +10,13 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
+force_debug = False
+force_debug_arg = '--force_debug'
+if force_debug_arg in sys.argv:
+    index = sys.argv.index(force_debug_arg)
+    sys.argv.pop(index)  # Removes the arguement
+    force_debug = True
+
 
 def get_version():
     with open(os.path.join("include", "higra", "config.hpp")) as file:
@@ -52,12 +59,14 @@ class CMakeBuild(build_ext):
             self.build_extension(ext)
 
     def build_extension(self, ext):
+        global force_debug
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         extdir = os.path.join(extdir, "higra")
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPYTHON_EXECUTABLE=' + sys.executable]
+                      '-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DDO_CPP_TEST=OFF']
 
-        cfg = 'Debug' if self.debug else 'Release'
+        cfg = 'Debug' if force_debug or self.debug else 'Release'
         build_args = ['--config', cfg]
 
         if platform.system() == "Windows":
