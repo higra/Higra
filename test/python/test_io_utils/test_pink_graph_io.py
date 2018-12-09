@@ -12,6 +12,11 @@ import unittest
 import numpy as np
 import higra as hg
 
+# needed for reliable access to resource files...
+import sys
+sys.path.append('..')
+from resources import get_ressource_path
+
 import os
 import os.path
 
@@ -26,7 +31,7 @@ def silent_remove(filename):
 class TestPinkGraphIO(unittest.TestCase):
 
     def test_graph_read(self):
-        graph, vertex_weights, edge_weights = hg.read_graph_pink("ressources/test.graph")
+        graph, vertex_weights, edge_weights = hg.read_graph_pink(get_ressource_path("test.graph"))
 
         shape = hg.get_attribute(graph, "shape")
 
