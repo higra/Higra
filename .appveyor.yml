@@ -1,0 +1,74 @@
+build: false
+
+platform:
+  - x64
+
+image:
+  - Visual Studio 2017
+
+environment:
+  MINICONDA: C:\Miniconda36-x64
+  BOOST_ROOT: C:\Libraries\boost_1_67_0
+  Boost_LIBRARY_DIRS: C:\Libraries\boost_1_67_0\lib64-msvc-14.1
+  CIBW_TEST_COMMAND: "python -c \"import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
+  CIBW_BUILD_VERBOSITY: "1"
+  CIBW_BEFORE_BUILD: "pip install cmake numpy"
+  CIBW_BUILD: "cp3*"
+  CIBW_SKIP: "*win32"
+  TWINE_USERNAME: "bperret"
+  TWINE_PASSWORD:
+    secure: gKT63gdRJqmmn+KGlXbzww==
+
+  matrix:
+    - CIBUILDWHEEL: 0
+      TAG_SCENARIO: false
+    - CIBUILDWHEEL: 1
+      TAG_SCENARIO: true
+
+for:
+-
+  # non-tagged scenario
+  matrix:
+    except:
+      - TAG_SCENARIO: false
+
+  skip_non_tags: true
+
+
+
+init:
+  - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2017" set VCVARPATH="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%MINICONDA%\\Library\\bin;%Boost_LIBRARY_DIRS%;%PATH%"
+
+install:
+  - if %CIBUILDWHEEL% == 0 (
+      conda config --set always_yes yes --set changeps1 no &&
+      conda info -a &&
+      conda install cmake numpy -c conda-forge &&
+      python setup.py bdist_wheel
+      )  else (
+        pip install cibuildwheel==0.10.0 cmake numpy &&
+        cibuildwheel --output-dir wheelhouse
+      )
+  #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+  #  - mklink /D "%BOOST_ROOT%\lib" "%Boost_LIBRARY_DIRS%"
+
+build_script:
+  #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+  - if %CIBUILDWHEEL% == 0 (
+      cd dist &&
+      for  %%s in (higra*whl) do ( pip install %%s ) &&
+      python -c "import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('c:\\projects\\higra\\test\\python\\'));exit(0 if result.wasSuccessful() else 1)" &&
+      cd ..\build &&
+      cd temp* &&
+      cd Release &&
+      ctest -C Release -R Test_cpp -V
+    ) else (
+      pip install twine &&
+      python -m twine upload --repository-url https://test.pypi.org/legacy/ wheelhouse/*.whl && exit 0
+    )
+
+artifacts:
+  - path: "wheelhouse\\*.whl"
+    name: Wheels

@@ -13,14 +13,15 @@ add_subdirectory(python)
 if (DO_CPP_TEST)
     add_subdirectory(cpp)
     add_subdirectory(python_cpp)
-    add_custom_target( all_tests ALL
+    add_custom_target(all_tests ALL
             DEPENDS ${UNIT_TEST_TARGETS}
             )
+endif (DO_CPP_TEST)
 
+if (DO_AUTO_TEST)
     add_custom_command(TARGET all_tests
             COMMENT "Run tests"
             POST_BUILD COMMAND ctest
-            #POST_BUILD COMMAND ctest ARGS --output-on-failure
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             )
-endif(DO_CPP_TEST)
+endif (DO_AUTO_TEST)
