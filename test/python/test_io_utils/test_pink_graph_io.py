@@ -13,13 +13,13 @@ import numpy as np
 import higra as hg
 
 # needed for reliable access to resource files...
-import sys
-sys.path.append('..')
-from resources import get_ressource_path
 
 import os
 import os.path
 
+# needed for reliable access to resource files...
+_my_path = os.path.dirname(os.path.abspath(__file__))
+graph_file = os.path.join(_my_path, "..", "resources", "test.graph")
 
 def silent_remove(filename):
     try:
@@ -31,7 +31,8 @@ def silent_remove(filename):
 class TestPinkGraphIO(unittest.TestCase):
 
     def test_graph_read(self):
-        graph, vertex_weights, edge_weights = hg.read_graph_pink(get_ressource_path("test.graph"))
+        global graph_file
+        graph, vertex_weights, edge_weights = hg.read_graph_pink(graph_file)
 
         shape = hg.get_attribute(graph, "shape")
 
@@ -52,6 +53,7 @@ class TestPinkGraphIO(unittest.TestCase):
         self.assertTrue(np.allclose(edge_weights, edges_weights_ref))
 
     def test_graphWrite(self):
+        global graph_file
         filename = "testWriteGraphPink.graph"
         silent_remove(filename)
 
@@ -72,7 +74,7 @@ class TestPinkGraphIO(unittest.TestCase):
 
         silent_remove(filename)
 
-        with open("ressources/test.graph", 'r') as f:
+        with open(graph_file, 'r') as f:
             data_ref = f.read()
 
         self.assertTrue(data == data_ref)

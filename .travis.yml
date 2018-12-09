@@ -3,65 +3,114 @@ dist: trusty
 matrix:
   fast_finish: true
   include:
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
-            - libboost-all-dev
-      env: COMPILER=gcc GCC=6
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-4.0
-          packages:
-            - g++-4.9
-            - clang-4.0
-            - libboost-all-dev
-      env: COMPILER=clang CLANG=4.0
-    - os: osx
-      osx_image: xcode8
-      compiler: clang
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-6
+        - libboost-all-dev
+    env: COMPILER=gcc GCC=6
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        - llvm-toolchain-trusty-4.0
+        packages:
+        - g++-4.9
+        - clang-4.0
+        - libboost-all-dev
+    env: COMPILER=clang CLANG=4.0
+  - os: osx
+    osx_image: xcode8
+    compiler: clang
+  - sudo: required
+    services:
+      - docker
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp34-*" CIBW_SKIP=*-manylinux1_i686
+  - sudo: required
+    if: branch = master AND tag IS present
+    services:
+      - docker
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*" CIBW_SKIP=*-manylinux1_i686
+  - sudo: required
+    if: branch = master AND tag IS present
+    services:
+      - docker
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*" CIBW_SKIP=*-manylinux1_i686
+  - sudo: required
+    if: branch = master AND tag IS present
+    services:
+      - docker
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*" CIBW_SKIP=*-manylinux1_i686
+  - os: osx
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp34-*"
+  - os: osx
+    if: branch = master AND tag IS present
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*"
+  - os: osx
+    if: branch = master AND tag IS present
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*"
+  - os: osx
+    if: branch = master AND tag IS present
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*"
 env:
   global:
-    - MINCONDA_VERSION="latest"
-    - MINCONDA_LINUX="Linux-x86_64"
-    - MINCONDA_OSX="MacOSX-x86_64"
+  - MINCONDA_VERSION="latest"
+  - MINCONDA_LINUX="Linux-x86_64"
+  - MINCONDA_OSX="MacOSX-x86_64"
+  - CIBW_BUILD_VERBOSITY="1"
+  - CIBW_BEFORE_BUILD_LINUX="source tools/cibuildwheel_manylinux.sh"
+  - CIBW_BEFORE_BUILD_MACOS="pip install numpy"
+  - CIBW_ENVIRONMENT_LINUX='MFLAG="-m64" PATH="/toolchain/bin:${PATH}" CXXFLAGS="-I/toolchain/include
+    ${MFLAG} -static-libstdc++" LD_LIBRARY_PATH="/toolchain/lib64:/toolchain/lib:${LD_LIBRARY_PATH}"'
+  - CIBW_TEST_COMMAND="python -c \"import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
+  - TWINE_USERNAME="bperret"
+  - secure: eIQeQdE8S5hQuj2xOlfYLz2KexLd3GLN/vgj9Gyik1VxJUpTysL5Qp2Qufz57qcHBYH2bvqvRM5VfkSorlQVpjWZHweQMP8qu1MHyOh5NSjWUdaBQSMOrtHkv7IsCfGOB3rwYtHgIM+GCIxHmbmuKx3xayiwLqMDXaSg9GzMGg0FDy4M4o31zoM9eOhtHpzW0SJyN3xmZgcHHgvq7UFy32tvKSfJ3O3Tjv/ju3PqzlIvJ8zdTGl0DLep7TSWaw7XaBDUR84et0t2+7+/TZz8SbPGgB5+U+a0yNTsmiEbwE70EaXMTomyfXLGWh59+cSZEOqGk+3yp0IQPaYkxaKom69+y678I1rkOonikVzRlZjY9qW8MOnppEswGQrOOGhPzbT+PlQaX0ZN8rHfsdPeYHDimG4xcblKgRW/6JlB/3ZjU5L/uMVQssFXSZ8hjoF4ucf6u1E62KEhY7qanrXujOBlXyLIMoo/pznZny154NxQM068vmIYH7neIQlBtGQPWK5DpeXf5azOfE7ehJr2weBwvNl6nb4gkvJ3mrMHD62NL5LjKqASctus2zVWJMo7EZUb5IS6WkB8Dn+IrCBwRGeH7nyLN4zP5CsJWtCwmE/SiZc0AjUAAtxRZhHS2oW48R1Bv1zzegb/TWXguXJL9DpeqynSx0eEd0j0bSE1orQ=
 before_install:
-    - |
-      # Configure build variables
-      if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-        if [[ "$COMPILER" == "gcc" ]]; then
-          export CXX=g++-$GCC CC=gcc-$GCC;
-        fi
-        if [[ "$COMPILER" == "clang" ]]; then
-          export CXX=clang++-$CLANG CC=clang-$CLANG;
-        fi
-      elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-        export CXX=clang++ CC=clang;
-      fi
+- |
+  # Configure build variables
+  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    if [[ "$COMPILER" == "gcc" ]]; then
+      export CXX=g++-$GCC CC=gcc-$GCC;
+    fi
+    if [[ "$COMPILER" == "clang" ]]; then
+      export CXX=clang++-$CLANG CC=clang-$CLANG;
+    fi
+  elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+    export CXX=clang++ CC=clang;
+  fi
 install:
-    # Define the version of miniconda to download
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-        MINCONDA_OS=$MINCONDA_LINUX;
-      elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-        MINCONDA_OS=$MINCONDA_OSX;
-      fi
-    - wget "http://repo.continuum.io/miniconda/Miniconda3-$MINCONDA_VERSION-$MINCONDA_OS.sh" -O miniconda.sh;
-    - bash miniconda.sh -b -p $HOME/miniconda
-    - export PATH="$HOME/miniconda/bin:$PATH"
-    - hash -r
-    - conda config --set always_yes yes --set changeps1 no
-    - conda update -q conda
-    - conda install numpy
-    # Testing
-    - mkdir build
-    - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python  ..;
-    - make -j2 
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    MINCONDA_OS=$MINCONDA_LINUX;
+  elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+    MINCONDA_OS=$MINCONDA_OSX;
+  fi
+- wget "http://repo.continuum.io/miniconda/Miniconda3-$MINCONDA_VERSION-$MINCONDA_OS.sh" -O miniconda.sh;
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
+- if [ -z "$BUILD_WHEEL" ]; then
+    conda install numpy &&
+    mkdir build &&
+    cd build &&
+    cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python  ..  &&
+    make -j2 higram test_exe test_python_exe;
+  else
+    pip install cibuildwheel==0.10.0;
+  fi
 script:
-    - ctest
+  - if [ -z "$BUILD_WHEEL" ]; then
+      ctest -V;
+    else
+      cibuildwheel --output-dir wheelhouse;
+      python -m pip install twine;
+    fi
+  - if [ -n "$BUILD_WHEEL" -a -n "$TRAVIS_TAG" ]; then
+      python -m twine upload wheelhouse/*.whl;
+    fi
+

@@ -63,7 +63,8 @@ class CMakeBuild(build_ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         extdir = os.path.join(extdir, "higra")
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPYTHON_EXECUTABLE=' + sys.executable]
+                      '-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DDO_CPP_TEST=OFF']
 
         cfg = 'Debug' if force_debug or self.debug else 'Release'
         build_args = ['--config', cfg]
