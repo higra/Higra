@@ -10,11 +10,15 @@
 
 #include "py_log.hpp"
 #include "../py_common.hpp"
+#include "higra/config.hpp"
 #include "higra/detail/log.hpp"
 
 
 void py_init_log(pybind11::module &m) {
 
+    m.def("version",
+          []() { return "HIGRA_VERSION_MAJOR.HIGRA_VERSION_MINOR.HIGRA_VERSION_PATCH"; },
+          "Gives the version number of higra.");
 
     m.def("set_trace", [](bool enabled) { hg::logger::trace_enabled() = enabled; },
           "Define if function call tracing is enabled.",
