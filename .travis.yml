@@ -111,6 +111,6 @@ script:
       python -m pip install twine;
     fi
   - if [ -n "$BUILD_WHEEL" -a -n "$TRAVIS_TAG" ]; then
-      python -m twine upload wheelhouse/*.whl;
+      python -m twine upload wheelhouse/*.whl || true;
     fi
 
