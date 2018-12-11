@@ -47,12 +47,9 @@ Pushing a new version
   - Change version number in `include/higra/config.hpp`: `x.y.z`
   - Add tag `x.y.z` to master
   - push tag to master/origin
-  - (linux/max pypi wheels generated automatically with `Travis Ci
-<https://travis-ci.com/>`_) 
-  - (broken windows wheels generated automatically with `Appveyor
-<https://www.appveyor.com/>`)
+  - (linux/max pypi wheels generated automatically with `Travis Ci <https://travis-ci.com/>`_) 
+  - (broken windows wheels generated automatically with `Appveyor <https://www.appveyor.com/>`)
   - generate windows wheels locally with `tools/build_wheel_msvc.bat` and upload with twine
-  - regenerate docs when Pypi is up-to-date `readthedocs
-<https://readthedocs.org/projects/higra/>`) 
+  - regenerate docs when Pypi is up-to-date `readthedocs <https://readthedocs.org/projects/higra/>`) 
 
 
