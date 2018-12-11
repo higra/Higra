@@ -7,13 +7,15 @@ Welcome to Higra's documentation!
 =================================
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :caption: Fundamentals:
 
     Graphs <graph.rst>
     Trees <tree.rst>
     Arrays <arrays.rst>
     Python module <python.rst>
+	
+	Contributing <contributing.rst>
 
 
 
