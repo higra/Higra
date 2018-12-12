@@ -3,6 +3,7 @@
 # Higra: Hierarchical Graph Analysis
 
 [![Build Status](https://travis-ci.org/PerretB/Higra.svg?branch=master)](https://travis-ci.org/PerretB/Higra) 
+[![codecov](https://codecov.io/gh/PerretB/Higra/branch/master/graph/badge.svg)](https://codecov.io/gh/PerretB/Higra)
 [![Documentation Status](https://readthedocs.org/projects/higra/badge/?version=latest)](https://higra.readthedocs.io/en/latest/?badge=latest)
 
 Higra is a C++/Python library for efficient graph analysis with a special focus on hierarchical methods. Some of the main features are:
