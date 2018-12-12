@@ -17,6 +17,16 @@ matrix:
       apt:
         sources:
         - ubuntu-toolchain-r-test
+        packages:
+        - g++-6
+        - lcov
+        - libboost-all-dev
+    env: COMPILER=gcc GCC=6 COVERAGE=1
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
         - llvm-toolchain-trusty-4.0
         packages:
         - g++-4.9
@@ -94,7 +104,13 @@ install:
 - hash -r
 - conda config --set always_yes yes --set changeps1 no
 - conda update -q conda
-- if [ -z "$BUILD_WHEEL" ]; then
+- if [ -n "$COVERAGE" ]; then
+    conda install numpy &&
+    mkdir build &&
+    cd build &&
+    cmake -DCMAKE_BUILD_TYPE=Coverage -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python  ..  &&
+    make -j2 test_exe;
+  elif [ -z "$BUILD_WHEEL" ]; then
     conda install numpy &&
     mkdir build &&
     cd build &&
@@ -104,7 +120,18 @@ install:
     pip install cibuildwheel==0.10.0;
   fi
 script:
-  - if [ -z "$BUILD_WHEEL" ]; then
+  - |
+    if [ -n "$COVERAGE" ]; then
+      ctest -R Test_cpp &&
+      cd ${TRAVIS_BUILD_DIR} &&
+      lcov --directory . --capture --output-file coverage.info && # capture coverage info
+      lcov --remove coverage.info '/usr/*' --output-file coverage.info && # filter out system
+      lcov --remove coverage.info '*xtl*' --output-file coverage.info && # filter out system
+      lcov --remove coverage.info '*xsimd*' --output-file coverage.info && # filter out system
+      lcov --remove coverage.info '*xtensor*' --output-file coverage.info && # filter out system
+      lcov --list coverage.info && #debug info
+      bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports";
+    elif [ -z "$BUILD_WHEEL" ]; then
       ctest -V;
     else
       cibuildwheel --output-dir wheelhouse;
