@@ -39,13 +39,38 @@ include(higraTools)
 #  Build Type and flags
 ##########################
 
+# new build type coverage
+message("* Adding build types...")
+SET(CMAKE_CXX_FLAGS_COVERAGE
+        "${GCC_DEBUG_FLAGS} -fprofile-arcs -ftest-coverage"
+        CACHE STRING "Flags used by the C++ compiler during coverage builds."
+        FORCE )
+SET(CMAKE_C_FLAGS_COVERAGE
+        "${GCC_DEBUG_FLAGS} -fprofile-arcs -ftest-coverage"
+        CACHE STRING "Flags used by the C compiler during coverage builds."
+        FORCE )
+SET(CMAKE_EXE_LINKER_FLAGS_COVERAGE
+        ""
+        CACHE STRING "Flags used for linking binaries during coverage builds."
+        FORCE )
+SET(CMAKE_SHARED_LINKER_FLAGS_COVERAGE
+        ""
+        CACHE STRING "Flags used by the shared libraries linker during coverage builds."
+        FORCE )
+MARK_AS_ADVANCED(
+        CMAKE_CXX_FLAGS_COVERAGE
+        CMAKE_C_FLAGS_COVERAGE
+        CMAKE_EXE_LINKER_FLAGS_COVERAGE
+        CMAKE_SHARED_LINKER_FLAGS_COVERAGE )
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-            "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."  FORCE)
+            "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel Coverage."  FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
+message("Current build type is: ${CMAKE_BUILD_TYPE}")
 
 include(CheckCXXCompilerFlag)
-message("${CMAKE_CXX_COMPILER_ID}")
+message("Current compiler is: ${CMAKE_CXX_COMPILER_ID}")
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
 
@@ -142,7 +167,6 @@ endif ()
 #  Build Python bindings
 ##########################
 
-#set(PYBIND11_CPP_STANDARD -std=c++14)
 find_package(PythonInterp 3 REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(NumPy REQUIRED)
