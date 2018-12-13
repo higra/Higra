@@ -27,7 +27,9 @@ namespace hg {
         L1,
         L2,
         L_infinity,
-        L2_squared
+        L2_squared,
+        source,
+        target
     };
 
     /**
@@ -76,7 +78,7 @@ namespace hg {
         using vertex_t = typename graph_t::vertex_descriptor;
         const auto &vertex_weights = xvertex_weights.derived_cast();
         hg_assert_vertex_weights(graph, vertex_weights);
-        
+
         switch (weight) {
             case weight_functions::mean: {
                 hg_assert_1d_array(vertex_weights);
@@ -238,7 +240,22 @@ namespace hg {
                     return weight_graph(graph, fun);
                 }
             }
-
+            case weight_functions::source: {
+                hg_assert_1d_array(vertex_weights);
+                std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
+                                                                                          vertex_t j) -> result_value_t {
+                    return vertex_weights(i);
+                };
+                return weight_graph(graph, fun);
+            }
+            case weight_functions::target: {
+                hg_assert_1d_array(vertex_weights);
+                std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
+                                                                                          vertex_t j) -> result_value_t {
+                    return vertex_weights(j);
+                };
+                return weight_graph(graph, fun);
+            }
         }
         throw std::runtime_error("Unknown weight function.");
 
