@@ -51,6 +51,19 @@ BOOST_AUTO_TEST_SUITE(graphWeights);
         xt::xarray<double> ref7{1, 4, 4, 1};
         auto r7 = weight_graph(g, data, hg::weight_functions::L2_squared);
         BOOST_CHECK(xt::allclose(ref7, r7));
+
+        xt::xarray<double> data2{0, 0, 2, 0};
+        xt::xarray<double> ref8{0, 1, 0, 1};
+        auto r8 = weight_graph(g, data2, hg::weight_functions::L0);
+        BOOST_CHECK(xt::allclose(ref8, r8));
+
+        xt::xarray<double> ref9{0, 0, 1, 2};
+        auto r9 = weight_graph(g, data, hg::weight_functions::source);
+        BOOST_CHECK(xt::allclose(ref9, r9));
+
+        xt::xarray<double> ref10{1, 2, 3, 3};
+        auto r10 = weight_graph(g, data, hg::weight_functions::target);
+        BOOST_CHECK(xt::allclose(ref10, r10));
     }
 
     BOOST_AUTO_TEST_CASE(graphWeightingVectorial) {

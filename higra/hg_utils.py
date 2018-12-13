@@ -9,7 +9,7 @@
 ############################################################################
 
 import higra as hg
-
+import numpy as np
 
 def extend_class(cls, method_name=None):
     """
@@ -118,3 +118,30 @@ def is_in_bijection(a, b):
             equiv2[v2] = v1
 
     return True
+
+
+def mean_angle_mod_pi(angles1, angles2):
+    """
+    Compute the element wise mean of two arrays of angles (radian) handling a modulo pi wrapping
+
+    eg: the modulo pi mean angle between 0 and 3.0 is roughly 3.07
+
+    :param angles1: must be in [0; pi]
+    :param angles2: must be in [0; pi]
+    :return: average of angles1 and angles2 with correct wrapping in [0; pi]
+    """
+    min_angles = np.minimum(angles1, angles2)
+    max_angles = np.maximum(angles1, angles2)
+    differences = max_angles - min_angles
+
+    # places where we should have wrapped
+    problems = differences > np.pi/2
+    ok = np.logical_not(problems)
+
+    # handle wrapping
+    differences[problems] = (np.pi - differences[problems]) / 2 + max_angles[problems]
+    differences[ok] = min_angles[ok] + differences[ok] / 2
+
+    # modulo pi
+    differences[differences > np.pi] -= np.pi
+    return differences

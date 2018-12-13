@@ -20,13 +20,38 @@
 
 
 namespace hg {
-    template <typename graph_t, typename T1, typename T2>
-    auto mean_pb_hierarchy(const graph_t & graph,
-                 const embedding_grid_2d &embedding,
-                 const xt::xexpression<T1> & xedge_weights,
-                 const xt::xexpression<T2> & xedge_orientations = array_nd<int>()){
-        HG_TRACE();
 
+    /**
+     * Compute the *oriented watershed* as described in [ArbelaezPAMI2011]_ .
+     * Given a 4 adjacency graph with edge boundary probabilities and estimated boundary orientations, the algorithms computes:
+     *
+     *  - a region adjacency graph of the watershed regions of the edge boundary probabilities
+     *  - the boundaries between watershed regions are vectorized and simplified (see contour_2d class)
+     *  - the orientation of each boundary element is estimated
+     *  - the edge boundary probabilities are reweighted according to the concordance between user provided boundary orientations and estimated orientation of boundary elements
+     *  - the weight of the region adjacency graph edges as the mean value of reweighted edge boundary probabilities on the frontier between the 2 regions
+     *
+     *  The algorithm returns the region adjacency graph of watershed pixels and its edge weights.
+     *
+     * .. [ArbelaezPAMI2011] Arbelaez, P., Maire, M., Fowlkes, C., & Malik, J..
+     *    Contour detection and hierarchical image segmentation.
+     *    IEEE transactions on pattern analysis and machine intelligence, 33(5), 898-916.
+     *
+     * @tparam graph_t
+     * @tparam T1
+     * @tparam T2
+     * @param graph
+     * @param embedding
+     * @param xedge_weights
+     * @param xedge_orientations
+     * @return
+     */
+    template <typename graph_t, typename T1, typename T2>
+    auto oriented_watershed(const graph_t & graph,
+                            const embedding_grid_2d &embedding,
+                            const xt::xexpression<T1> & xedge_weights,
+                            const xt::xexpression<T2> & xedge_orientations = array_nd<int>()){
+        HG_TRACE();
         using value_t = typename T1::value_type;
         const auto &edge_weights = xedge_weights.derived_cast();
         const auto &edge_orientations = xedge_orientations.derived_cast();
@@ -34,7 +59,6 @@ namespace hg {
         hg_assert_1d_array(edge_weights);
         hg_assert(num_vertices(graph) == embedding.size(),
                   "Graph number of vertices does not match the size of the embedding.");
-
         auto watershed_labels = labelisation_watershed(graph, edge_weights);
         auto rag = make_region_adjacency_graph_from_labelisation(graph, watershed_labels);
 
@@ -48,8 +72,6 @@ namespace hg {
             auto watershed_cut =  weight_graph(graph, watershed_labels, weight_functions::L0);
             auto contour2d = fit_contour_2d(graph, embedding, watershed_cut);
             contour2d.subdivide();
-
-
 
             for(auto & polyline: contour2d){
                 for(auto & segment: polyline){
@@ -74,7 +96,52 @@ namespace hg {
 
         // compute rag edge weights
         auto rag_edge_weights = rag_accumulate(rag.edge_map, final_weights, accumulator_mean());
-        auto rag_edge_length = rag_accumulate(rag.edge_map, final_weights, accumulator_counter());
+
+        return std::make_pair(std::move(rag), std::move(rag_edge_weights));
+    }
+
+    /**
+     * Compute the *mean probability boundary hierarchy* as described in [ArbelaezPAMI2011]_ .
+     * Given a 4 adjacency graph with edge boundary probabilities and estimated boundary orientations, the algorithms computes:
+     *
+     *  - the oriented watershed of the given graph
+     *  - the average linkage clustering ot the oriented watershed
+     *
+     *  The algorithm returns the region adjacency graph of watershed pixels and teh valued tree computed on this graph.
+     *
+     * .. [ArbelaezPAMI2011] Arbelaez, P., Maire, M., Fowlkes, C., & Malik, J..
+     *    Contour detection and hierarchical image segmentation.
+     *    IEEE transactions on pattern analysis and machine intelligence, 33(5), 898-916.
+     *
+     * @tparam graph_t
+     * @tparam T1
+     * @tparam T2
+     * @param graph
+     * @param embedding
+     * @param xedge_weights
+     * @param xedge_orientations
+     * @return
+     */
+    template <typename graph_t, typename T1, typename T2>
+    auto mean_pb_hierarchy(const graph_t & graph,
+                 const embedding_grid_2d &embedding,
+                 const xt::xexpression<T1> & xedge_weights,
+                 const xt::xexpression<T2> & xedge_orientations = array_nd<int>()){
+        HG_TRACE();
+
+        using value_t = typename T1::value_type;
+        const auto &edge_weights = xedge_weights.derived_cast();
+        const auto &edge_orientations = xedge_orientations.derived_cast();
+        hg_assert_edge_weights(graph, edge_weights);
+        hg_assert_1d_array(edge_weights);
+        hg_assert(num_vertices(graph) == embedding.size(),
+                  "Graph number of vertices does not match the size of the embedding.");
+
+        auto ows = oriented_watershed(graph, embedding, edge_weights, edge_orientations);
+        auto & rag = ows.first;
+        auto & rag_edge_weights = ows.second;
+
+        auto rag_edge_length = rag_accumulate(rag.edge_map, edge_weights, accumulator_counter());
 
         auto tree = binary_partition_tree(rag.rag,
                                          rag_edge_weights,

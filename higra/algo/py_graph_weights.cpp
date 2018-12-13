@@ -15,7 +15,7 @@
 #include "xtensor-python/pytensor.hpp"
 
 // @TODO Remove layout_type when xtensor solves the issue with iterators
-template <typename T>
+template<typename T>
 using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
 
 #include "pybind11/functional.h"
@@ -49,36 +49,40 @@ void py_init_graph_weights(pybind11::module &m) {
             .value("L1", hg::weight_functions::L1)
             .value("L2", hg::weight_functions::L2)
             .value("L_infinity", hg::weight_functions::L_infinity)
-            .value("L2_squared", hg::weight_functions::L2_squared);
+            .value("L2_squared", hg::weight_functions::L2_squared)
+            .value("source", hg::weight_functions::source)
+            .value("target", hg::weight_functions::target);
 
 
     add_type_overloads<def_weight_graph<hg::ugraph>, HG_TEMPLATE_SNUMERIC_TYPES>
             (m,
              "Compute the edge weights of a graph using source and target vertices values"
-                     " and specified weighting function (see WeightFunction enumeration)."
+             " and specified weighting function (see WeightFunction enumeration)."
             );
 
     add_type_overloads<def_weight_graph<hg::tree>, HG_TEMPLATE_SNUMERIC_TYPES>
             (m,
              "Compute the edge weights of a graph using source and target vertices values"
-                     " and specified weighting function (see WeightFunction enumeration)."
+             " and specified weighting function (see WeightFunction enumeration)."
             );
 
     m.def("_weight_graph", [](const hg::ugraph &graph,
-                              const std::function<double(hg::ugraph::vertex_descriptor, hg::ugraph::vertex_descriptor)> &fun) {
+                              const std::function<double(hg::ugraph::vertex_descriptor,
+                                                         hg::ugraph::vertex_descriptor)> &fun) {
               return hg::weight_graph(graph, fun);
           },
           "Compute the edge weights of a graph with the given weighting function. The weighting function takes the "
-                  "vertex index of the extremities of an edge and returns the weight of the edge",
+          "vertex index of the extremities of an edge and returns the weight of the edge",
           py::arg("explicit_graph"),
           py::arg("weight_function"));
 
     m.def("_weight_graph", [](const hg::tree &graph,
-                              const std::function<double(hg::tree::vertex_descriptor, hg::tree::vertex_descriptor)> &fun) {
+                              const std::function<double(hg::tree::vertex_descriptor,
+                                                         hg::tree::vertex_descriptor)> &fun) {
               return hg::weight_graph(graph, fun);
           },
           "Compute the edge weights of a graph with the given weighting function. The weighting function takes the "
-                  "vertex index of the extremities of an edge and returns the weight of the edge",
+          "vertex index of the extremities of an edge and returns the weight of the edge",
           py::arg("explicit_graph"),
           py::arg("weight_function"));
 
