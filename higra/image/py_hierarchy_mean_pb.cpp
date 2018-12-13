@@ -22,6 +22,33 @@ using pyarray = xt::pyarray<T>;
 namespace py = pybind11;
 
 template<typename graph_t>
+struct def_oriented_watershed {
+    template<typename value_t, typename C>
+    static
+    void def(C &m, const char *doc) {
+        m.def("_oriented_watershed", [](const graph_t &graph,
+                                       const std::vector<size_t> &shape,
+                                       const pyarray<value_t> &edge_weights,
+                                       const pyarray<value_t> &edge_orientations) {
+                  auto res = hg::oriented_watershed(graph,
+                                                   hg::embedding_grid_2d(shape),
+                                                   edge_weights,
+                                                   edge_orientations);
+                  return py::make_tuple(std::move(res.first.rag),
+                                        std::move(res.first.vertex_map),
+                                        std::move(res.first.edge_map),
+                                        std::move(res.second));
+              },
+              doc,
+              py::arg("graph"),
+              py::arg("shape"),
+              py::arg("edge_weights"),
+              py::arg("edge_orientations") = pyarray<value_t>()
+        );
+    }
+};
+
+template<typename graph_t>
 struct def_hierarchy_mean_pb {
     template<typename value_t, typename C>
     static
@@ -54,9 +81,19 @@ struct def_hierarchy_mean_pb {
 void py_init_hierarchy_mean_pb(pybind11::module &m) {
     xt::import_numpy();
 
+    add_type_overloads<def_oriented_watershed<hg::ugraph>, HG_TEMPLATE_FLOAT_TYPES>
+            (m,
+             "Compute the oriented watershed as described in \n\n"
+             "P. Arbelaez, M. Maire, C. Fowlkes and J. Malik, \"Contour Detection and Hierarchical Image Segmentation,\" "
+             "in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 33, no. 5, pp. 898-916, May 2011.\n"
+             "doi: 10.1109/TPAMI.2010.161\n"
+             "\n"
+             "This does not include gradient estimation."
+            );
+
     add_type_overloads<def_hierarchy_mean_pb<hg::ugraph>, HG_TEMPLATE_FLOAT_TYPES>
             (m,
-             "Compute the mean pb hierarchy as described in \n"
+             "Compute the mean pb hierarchy as described in \n\n"
              "P. Arbelaez, M. Maire, C. Fowlkes and J. Malik, \"Contour Detection and Hierarchical Image Segmentation,\" "
              "in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 33, no. 5, pp. 898-916, May 2011.\n"
              "doi: 10.1109/TPAMI.2010.161\n"
