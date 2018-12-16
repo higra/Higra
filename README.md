@@ -3,6 +3,7 @@
 # Higra: Hierarchical Graph Analysis
 
 [![Build Status](https://travis-ci.org/PerretB/Higra.svg?branch=master)](https://travis-ci.org/PerretB/Higra) 
+[![Build status](https://ci.appveyor.com/api/projects/status/5op4qm2cddm7iuj2/branch/master?svg=true)](https://ci.appveyor.com/project/PerretB/higra/branch/master)
 [![codecov](https://codecov.io/gh/PerretB/Higra/branch/master/graph/badge.svg)](https://codecov.io/gh/PerretB/Higra)
 [![Documentation Status](https://readthedocs.org/projects/higra/badge/?version=latest)](https://higra.readthedocs.io/en/latest/?badge=latest)
 
