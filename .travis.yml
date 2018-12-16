@@ -105,13 +105,13 @@ install:
 - conda config --set always_yes yes --set changeps1 no
 - conda update -q conda
 - if [ -n "$COVERAGE" ]; then
-    conda install numpy &&
+    conda install numpy  -c conda-forge &&
     mkdir build &&
     cd build &&
     cmake -DCMAKE_BUILD_TYPE=Coverage -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python  ..  &&
     make -j2 test_exe;
   elif [ -z "$BUILD_WHEEL" ]; then
-    conda install numpy &&
+    conda install numpy  -c conda-forge &&
     mkdir build &&
     cd build &&
     cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python  ..  &&

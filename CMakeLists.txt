@@ -30,6 +30,9 @@ message(STATUS "Building higra v${${PROJECT_NAME}_VERSION}")
 #  CMAKE config
 ##########################
 
+#if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.12)
+#    cmake_policy(SET CMP0074 NEW) # use XXX_ROOT env variable for find_package
+#endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/")
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_SOURCE_DIR}/lib/")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/tools")
@@ -113,11 +116,9 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
     endif()
 
-    set(Boost_USE_STATIC_LIBS ON)
-
     if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast /GL /EHsc /MP /bigobj /O2")
-        set(CMAKE_EXE_LINKER_FLAGS /LTCG /MANIFEST:NO)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG /MANIFEST:NO")
     endif()
 endif()
 
@@ -127,6 +128,14 @@ endif()
 
 find_package(Boost 1.4 QUIET COMPONENTS unit_test_framework)
 if (Boost_FOUND)
+    option(STATIC_LINK_BOOST_LIBRARY
+            "Statically link boost test library (windows only)." OFF)
+
+    if(STATIC_LINK_BOOST_LIBRARY)
+        message(STATUS  "Boost static library dir is: ${Boost_LIBRARY_DIRS}")
+        set(BOOST_LIBRARYDIR ${BOOST_ROOT}/lib/)
+        set(Boost_USE_STATIC_LIBS ON)
+    endif()
     option(DO_CPP_TEST
             "Execute c++ test suit." ON)
 else ()
@@ -177,7 +186,8 @@ configure_file(README.md ${CMAKE_CURRENT_BINARY_DIR}/README.md COPYONLY)
 ##########################
 #  Build Tests
 ##########################
-
+option(DO_AUTO_TEST
+        "Execute test suit automatically at the end of the build." OFF)
 add_subdirectory(test)
 
 ##########################

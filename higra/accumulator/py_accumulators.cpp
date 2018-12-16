@@ -25,5 +25,6 @@ void py_init_accumulators(pybind11::module &m) {
             .value("sum", hg::accumulators::sum)
             .value("prod", hg::accumulators::prod)
             .value("first", hg::accumulators::first)
-            .value("last", hg::accumulators::last);
+            .value("last", hg::accumulators::last)
+            .export_values();
 }
