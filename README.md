@@ -37,6 +37,10 @@ Supported systems:
 
 The C++ backend is an header only library. No facilities for system wide installation is currently provided: just copy/past where you need it!
 
+## Demonstration and tutorials
+
+Check the dedicated repository [Higra-Notebooks](https://github.com/PerretB/Higra-Notebooks) for a collection of Jupyter Notebooks dedicated to Higra.
+
 ## Build
 
 ### With cmake
