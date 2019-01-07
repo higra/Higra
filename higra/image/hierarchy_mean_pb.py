@@ -21,13 +21,16 @@ def oriented_watershed(edge_weights, graph, shape, edge_orientations=None):
         in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 33, no. 5, pp. 898-916, May 2011.
         doi: 10.1109/TPAMI.2010.161
 
+    If no edge orientations are provided, then the weight of a rag edge between region i and j is the mean weight of the
+    edges linking a vertex of i to a vertex of j.
+
     This does not include gradient estimation.
 
-    :param graph: must be a 4 adjacency graph
-    :param shape: (height, width)
-    :param edge_weights: gradient value on edges
-    :param edge_orientations: estimates orientation of the gradient on edges
-    :return: a pair (rag, rag_edge_weights): the region adjacency graph and its estimated edge_weights
+    :param edge_weights: gradient value on edges (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: must be a 4 adjacency graph (deduced from :class:`~higra.CptEdgeWeightedGraph`, Concept :class:`~higra.CptGridGraph`)
+    :param shape: shape of the graph, i.e. a pair (height, width) (deduced from :class:`~higra.CptGridGraph`)
+    :param edge_orientations: estimated orientation of the gradient on edges (optional)
+    :return: a pair (rag, rag_edge_weights): the region adjacency graph (Concept :class:`~higra.CptRegionAdjacencyGraph`) and its estimated edge_weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
 
     shape = hg.normalize_shape(shape)
@@ -49,13 +52,16 @@ def mean_pb_hierarchy(edge_weights, graph, shape, edge_orientations=None):
         doi: 10.1109/TPAMI.2010.161
 
     This does not include gradient estimation.
+
+    The returned hierarchy is defined on the gradient watershed super-pixels.
+
     The final sigmoid scaling of the hierarchy altitude is not performed.
 
-    :param graph: must be a 4 adjacency graph
-    :param shape: (height, width)
-    :param edge_weights: gradient value on edges
-    :param edge_orientations: estimates orientation of the gradient on edges
-    :return: the hierarchy defined on the gradient watershed super-pixels
+    :param edge_weights: gradient value on edges (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: must be a 4 adjacency graph (deduced from :class:`~higra.CptEdgeWeightedGraph`, Concept :class:`~higra.CptGridGraph`)
+    :param shape: shape of the graph, i.e. a pair (height, width) (deduced from :class:`~higra.CptGridGraph`)
+    :param edge_orientations: estimated orientation of the gradient on edges (optional)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
 
     shape = hg.normalize_shape(shape)
@@ -84,16 +90,19 @@ def multiscale_mean_pb_hierarchy(fine_edge_weights, others_edge_weights, graph, 
         IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI), vol. 40, no. 4, pp. 819 - 833, 2018.
 
     This does not include gradient estimation.
+
+    The returned hierarchy is defined on the gradient watershed super-pixels.
+
     The final sigmoid scaling of the hierarchy altitude is not performed.
 
-    :param graph: must be a 4 adjacency graph
-    :param shape: (height, width)
-    :param fine_edge_weights: edge weights of the finest gradient
-    :param others_edge_weights: tuple of gradient value on edges
-    :param edge_orientations: estimates orientation of the gradient on edges
-    :return: the hierarchy defined on the finest gradient watershed super-pixels
-    """
 
+    :param fine_edge_weights: edge weights of the finest gradient (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param others_edge_weights: tuple of gradient value on edges
+    :param graph: must be a 4 adjacency graph (deduced from :class:`~higra.CptEdgeWeightedGraph`, Concept :class:`~higra.CptGridGraph`)
+    :param shape: shape of the graph, i.e. a pair (height, width) (deduced from :class:`~higra.CptGridGraph`)
+    :param edge_orientations: estimated orientation of the gradient on edges (optional)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    """
     shape = hg.normalize_shape(shape)
     tree_fine, altitudes_fine = hg.mean_pb_hierarchy(fine_edge_weights, graph=graph, shape=shape, edge_orientations=edge_orientations)
     saliency_fine = hg.saliency(altitudes_fine)

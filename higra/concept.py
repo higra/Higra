@@ -13,12 +13,28 @@ import inspect
 import functools
 
 
+def auto_concept_docstring(cls):
+    cls.__doc__ = cls.description()
+    return cls
+
 class Concept(object):
-    _name = "abstract_concept"
-    _description = "A concept describes a set of data elements whose union can be considered " \
-                   "as a coherent notion of higher semantic level."
+    _name = "Abstract Concept"
+    _description = "A concept describes how a set of data elements can be considered as a coherent notion of higher " \
+                   "semantic level. " \
+                   "One of the data elements of the concept is the canonical element of the association " \
+                   "that can be used to materialize the concept, ie, to assemble all the data elements associated to " \
+                   "the canonical element in order to build a representation of the higher semantic object described " \
+                   "by the concept.\n" \
+                   "Concepts are conceptually close to Classes in object oriented programming where data elements " \
+                   "correspond to attributes. " \
+                   "However with concepts, one never creates or manipulates actual objects: objects exist only from " \
+                   "the relation between their data elements." \
+
+
     _data_elements = {}
-    _canonical_data_element = None
+    _canonical_data_element = "The canonical element of a concept is the data that serves as a reference to retrieve all " \
+                              "the data elements of the Concept. The canonical element is usually chosen such that there " \
+                              "is a natural n to 1 association between the canonical element and its data elements."
 
     def __init__(self, **kw_args):
         self.name_mapping = kw_args
@@ -29,12 +45,26 @@ class Concept(object):
 
     @classmethod
     def validate(cls, canonical_element):
+        """
+        Check if the given canonical is tagged with the given Concept (class on which the `validate` function is called).
+
+        :param canonical_element:
+        :return:
+        """
         if canonical_element is None:
             return False
         return hg.has_tag(canonical_element, cls)
 
     @classmethod
     def construct(cls, canonical_element, strict=True, data_cache=None):
+        """
+        Tries to construct a dictionary holding all the data elements of the concept associated to the given canonical element.
+
+        :param canonical_element: an object
+        :param strict: if `True` an exception is raised if all the data elements of the Concept cannot be recovered from the given canonical element, otherwise the missing data element is simply not included in the result.
+        :param data_cache: specify a data cache where to search for data elements. If `None`, the default Higra global data cache is used.
+        :return: a dictionary
+        """
         if canonical_element is None:
             return {}
         if strict and not cls.validate(canonical_element):
@@ -74,27 +104,36 @@ class Concept(object):
 
     @classmethod
     def description(cls):
-        description = "Name: " + cls._name + "\n"
-        description += "Description: " + cls._description + "\n"
-        description += "Canonical data element: " + cls._canonical_data_element + "\n"
-        description += "Data elements:\n"
+        """
+        Get a textual description of the Concept
+
+        :return: a string with all the information available on the Concept
+        """
+        description = "**Concept Name**: " + cls._name + "\n\n"
+        description += "**Description**: " + cls._description + "\n\n"
+        description += "**Canonical data element**: " + cls._canonical_data_element + "\n\n"
+        description += "**Data elements**:\n\n"
         classes = inspect.getmro(cls)
         for c in classes:
             if issubclass(c, Concept):
                 for n, d in c._data_elements.items():
-                    if c is not cls and d[1] is not None:
+                    if c is not cls and d[1] is None:
                         continue
-                    description += "\t" + n
+                    description += "  * *" + n + "*"
                     if d[1]:
-                        description += "('" + d[1] + "'):"
+                        description += " (attribute name: '" + d[1] + "'): "
                     else:
-                        description += "(canonical):"
+                        description += " (canonical): "
                     description += d[0]
                     if c != cls:
-                        description += " (from " + c._name + ")"
-                    description += "\n"
+                        description += " (inherited from :class:`~higra." + c.__name__ + "`)"
+                    description += "\n\n"
+        return description
+
+auto_concept_docstring(Concept)
 
 
+@auto_concept_docstring
 class CptEdgeWeightedGraph(Concept):
     _name = "edge_weighted_graph"
     _description = "An edge weighted graph is the composition of a graph data structure and an array of edge weights."
@@ -110,11 +149,25 @@ class CptEdgeWeightedGraph(Concept):
         hg.add_tag(edge_weights, CptEdgeWeightedGraph)
         hg.set_attribute(edge_weights, "domain", graph)
 
+    @staticmethod
+    def get_graph(edge_weights):
+        """
+        The graph whose edges are valued by the given weights.
 
+        :param edge_weights:
+        :return:
+        """
+        return hg.get_attribute(edge_weights, "domain")
+
+
+@auto_concept_docstring
 class CptGraphCut(CptEdgeWeightedGraph):
     _name = "graph_cut"
     _description = "A graph cut is the composition of a graph data structure and an array of edge weights " \
                    "such that each each edge with a non zero weight is considered to belong to the cut."
+
+    _data_elements = {"edge_weights": ("an array a such that a.dimension >= 1 and a.shape[0] == g.num_edges()", None)}
+    _canonical_data_element = "edge_weights"
 
     def __init__(self, **kwargs):
         super(CptGraphCut, self).__init__(**kwargs)
@@ -123,9 +176,9 @@ class CptGraphCut(CptEdgeWeightedGraph):
     def link(edge_weights, graph):
         CptEdgeWeightedGraph.link(edge_weights, graph)
         hg.add_tag(edge_weights, CptGraphCut)
-        hg.set_attribute(edge_weights, "domain", graph)
 
 
+@auto_concept_docstring
 class CptVertexWeightedGraph(Concept):
     _name = "vertex_weighted_graph"
     _description = "A vertex weighted graph is the composition of a graph data structure and an array of vertex weights."
@@ -142,10 +195,25 @@ class CptVertexWeightedGraph(Concept):
         hg.add_tag(vertex_weights, CptVertexWeightedGraph)
         hg.set_attribute(vertex_weights, "domain", graph)
 
+    @staticmethod
+    def get_graph(vertex_weights):
+        """
+        The graph whose vertices are valued by the given weights.
 
+        :param vertex_weights:
+        :return:
+        """
+        return hg.get_attribute(vertex_weights, "domain")
+
+
+@auto_concept_docstring
 class CptVertexLabeledGraph(CptVertexWeightedGraph):
     _name = "vertex_labeled_graph"
     _description = "A vertex labeled graph is the composition of a graph data structure and an array of vertex labels."
+
+    _data_elements = {"vertex_weights": (
+                          "an array a such that a.dimension >= 1 and a.shape[0] == g.num_vertices()", None)}
+    _canonical_data_element = "vertex_weights"
 
     def __init__(self, **kwargs):
         super(CptVertexLabeledGraph, self).__init__(**kwargs)
@@ -156,6 +224,7 @@ class CptVertexLabeledGraph(CptVertexWeightedGraph):
         hg.add_tag(vertex_labels, CptVertexLabeledGraph)
 
 
+@auto_concept_docstring
 class CptGridGraph(Concept):
     _name = "grid_graph"
     _description = "A graph whose vertices correspond to points on a regular grid."
@@ -172,7 +241,18 @@ class CptGridGraph(Concept):
         hg.add_tag(graph, CptGridGraph)
         hg.set_attribute(graph, "shape", shape)
 
+    @staticmethod
+    def get_shape(graph):
+        """
+        The shape (a tuple of positive integers) of the graph.
 
+        :param graph:
+        :return:
+        """
+        return hg.get_attribute(graph, "shape")
+
+
+@auto_concept_docstring
 class CptRegionAdjacencyGraph(Concept):
     _name = "region_adjacency_graph"
     _description = "A graph whose vertices represented super-vertices of another graph."
@@ -181,7 +261,7 @@ class CptRegionAdjacencyGraph(Concept):
                       "vertex_map": ("a map giving for each vertex of pre_graph the corresponding vertex of rag",
                                      "vertex_map"),
                       "edge_map": ("a map giving for each edge of pre_graph the corresponding edge of rag "
-                                   "(and -1 if not such edge exists", "edge_map")}
+                                   "(and -1 if not such edge exists)", "edge_map")}
     _canonical_data_element = "rag"
 
     def __init__(self, **kwargs):
@@ -196,10 +276,46 @@ class CptRegionAdjacencyGraph(Concept):
         CptEdgeWeightedGraph.link(edge_map, pre_graph)
         CptVertexLabeledGraph.link(vertex_map, pre_graph)
 
+    @staticmethod
+    def get_vertex_map(rag):
+        """
+        The map giving for each vertex of pre_graph of the given rag, i.e. the graph the rag was built on, the corresponding vertex of rag.
 
+        :param rag:
+        :return:
+        """
+        return hg.get_attribute(rag, "vertex_map")
+
+    @staticmethod
+    def get_edge_map(rag):
+        """
+        The map giving for each edge of pre_graph of the given rag, i.e. the graph the rag was built on, the corresponding edge of rag (and -1 if not such edge exists).
+
+        :param rag:
+        :return:
+        """
+        return hg.get_attribute(rag, "edge_map")
+
+    @staticmethod
+    def get_pre_graph(rag):
+        """
+        The graph the rag was built on.
+
+        :param rag:
+        :return:
+        """
+        return hg.get_attribute(rag, "pre_graph")
+
+
+@auto_concept_docstring
 class CptSaliencyMap(CptEdgeWeightedGraph):
     _name = "saliency_map"
-    _description = "A saliency map represents a hierarchy by an edge weighted graph."
+    _description = "A saliency map represents a hierarchy by an edge weighted graph. " \
+                   "Any thresholding of saliency map is a graph cut."
+
+    _data_elements = {"edge_weights": ("an array a such that a.dimension >= 1 and a.shape[0] == g.num_edges()", None)}
+    _canonical_data_element = "edge_weights"
+
 
     def __init__(self, **kwargs):
         super(CptSaliencyMap, self).__init__(**kwargs)
@@ -210,6 +326,7 @@ class CptSaliencyMap(CptEdgeWeightedGraph):
         CptEdgeWeightedGraph.link(edge_weights, graph)
 
 
+@auto_concept_docstring
 class CptHierarchy(Concept):
     _name = "hierarchy"
     _description = "A tree representing a hierarchy over a base graph."
@@ -226,7 +343,18 @@ class CptHierarchy(Concept):
         hg.add_tag(tree, CptHierarchy)
         hg.set_attribute(tree, "leaf_graph", leaf_graph)
 
+    @staticmethod
+    def get_leaf_graph(tree):
+        """
+        The graph the tree was built on, i.e. the graph associated to the leaves of the tree.
 
+        :param tree:
+        :return:
+        """
+        return hg.get_attribute(tree, "leaf_graph")
+
+
+@auto_concept_docstring
 class CptValuedHierarchy(CptHierarchy):
     _name = "valued_hierarchy"
     _description = "A tree representing a hierarchy with node values."
@@ -242,7 +370,32 @@ class CptValuedHierarchy(CptHierarchy):
         hg.add_tag(altitudes, CptValuedHierarchy)
         hg.set_attribute(altitudes, "domain", hierarchy)
 
+    @staticmethod
+    def get_tree(altitudes):
+        """
+        The tree whose vertices are valued by the given altitudes.
 
+        :param altitudes:
+        :return:
+        """
+        return hg.get_attribute(altitudes, "domain")
+
+    @staticmethod
+    def get_leaf_graph(altitudes):
+        """
+        The graph the tree associated to the given altitudes was built on, i.e. the graph associated to the leaves of the tree.
+
+        :param altitudes:
+        :return:
+        """
+        tree = CptValuedHierarchy.get_tree(altitudes)
+        if tree is not None:
+            return CptHierarchy.get_leaf_graph(tree)
+        else:
+            return None
+
+
+@auto_concept_docstring
 class CptBinaryHierarchy(CptHierarchy):
     _name = "binary_hierarchy"
     _description = "A binary tree representing a hierarchy with an associated " \
@@ -259,7 +412,18 @@ class CptBinaryHierarchy(CptHierarchy):
         hg.add_tag(hierarchy, CptBinaryHierarchy)
         hg.set_attribute(hierarchy, "mst", mst)
 
+    @staticmethod
+    def get_mst(tree):
+        """
+        The minimum spanning tree of the leaf graph of the hierarchy.
 
+        :param tree:
+        :return:
+        """
+        return hg.get_attribute(tree, "mst")
+
+
+@auto_concept_docstring
 class CptMinimumSpanningTree(Concept):
     _name = "minimum_spanning_tree"
     _description = "A minimum spanning tree and its base graph."
@@ -276,4 +440,24 @@ class CptMinimumSpanningTree(Concept):
         hg.add_tag(mst, CptMinimumSpanningTree)
         hg.set_attribute(mst, "base_graph", base_graph)
         hg.set_attribute(mst, "mst_edge_map", mst_edge_map)
+        CptEdgeWeightedGraph.link(mst_edge_map, mst)
 
+    @staticmethod
+    def get_base_graph(mst):
+        """
+        The graph on which the given mst was computed.
+
+        :param mst:
+        :return:
+        """
+        return hg.get_attribute(mst, "base_graph")
+
+    @staticmethod
+    def get_edge_map(mst):
+        """
+        The map that gives for each edge index i of the mst, the corresponding edge index in the base graph
+
+        :param mst:
+        :return:
+        """
+        return hg.get_attribute(mst, "mst_edge_map")

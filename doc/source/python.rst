@@ -6,6 +6,12 @@ Python modules
 
 .. toctree::
     :maxdepth: 2
+    :caption: Meta:
+
+    Concepts </python/concept.rst>
+
+.. toctree::
+    :maxdepth: 2
     :caption: Data structures:
 
     UndirectedGraph </python/UndirectedGraph.rst>

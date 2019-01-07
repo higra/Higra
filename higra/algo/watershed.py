@@ -18,10 +18,10 @@ def labelisation_watershed(edge_weights, graph):
 
     The watershed cut is represented by a labelisation of the graph vertices.
 
-    :param graph:
-    :param edge_weights:
-    :return:
-    """
+    :param edge_weights: Weights on the edges of the graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: (deduced from :class:`~higra.CptEdgeWeightedGraph`)
+    :return: A labelisation of the graph vertices (Concept :class:`~higra.CptVertexWeightedGraph`)
+   """
     vertex_labels = hg._labelisation_watershed(graph, edge_weights)
 
     vertex_labels = hg.delinearize_vertex_weights(vertex_labels, graph)

@@ -28,10 +28,10 @@ def align_hierarchies(vertex_labels, other_hierarchies, graph):
     The projection of t onto l1 is a hierarchy given by the saliency map sm on g defined by:
            for all {x,y} in edges(g), sm({x,y}) = a(lca_t(s(l1(x), l2), s(l1(y), l2)))
 
-    :param vertex_labels: labeling of the graph vertices into super-vertices
-    :param other_hierarchies: a hierarchy or a list of hierarchies: hierarchies can be given either as trees or as saliency maps, defined on the pixel graph or on a region adjacency graph.
-    :param graph: the domain graph
-    :return: a hierarchy or a list of hierarchies as saliency maps.
+    :param vertex_labels: labeling of the graph vertices into super-vertices (Concept :class:`~higra.CptVertexLabeledGraph`)
+    :param other_hierarchies: a hierarchy or a list of hierarchies: hierarchies can be given either as trees (Concept :class:`~higra.CptValuedHierarchy`) or as saliency maps (Concept :class:`~higra.CptSaliencyMap`), defined on the pixel graph or on a region adjacency graph (Concept :class:`~higra.CptRegionAdjacencyGraph`).
+    :param graph: the domain graph (deduced from :class:`~higra.CptVertexLabeledGraph`)
+    :return: a hierarchy or a list of hierarchies as saliency maps (Concept :class:`~higra.CptSaliencyMap`).
     """
     result = []
     list_input = True
@@ -84,8 +84,8 @@ def project_fine_to_coarse_rag(fine_rag, coarse_rag):
     Find for each region of the fine rag, the region of the
     coarse rag that maximises the intersection with the "fine" region.
 
-    :param fine_rag:
-    :param coarse_rag:
+    :param fine_rag: reference region adjacency graph (Concept :class:`~higra.CptRegionAdjacencyGraph`)
+    :param coarse_rag: region adjacency graph to align (Concept :class:`~higra.CptRegionAdjacencyGraph`)
     :return: a 1d array of size num_vertices fine_rag.num_vertices()
     """
     return hg.project_fine_to_coarse_labelisation(
