@@ -15,15 +15,12 @@ import higra as hg
 def weight_graph(vertex_weights, weight_function, graph):
     """
     Compute the edge weights of a graph using source and target vertices values
-    and specified weighting function (see WeightFunction enumeration).
+    and specified weighting function (see :class:`~higra.WeightFunction` enumeration).
 
-    Set the attribute "vertex_weights" of graph with the provided values.
-    Set the attribute "edge_weights" of graph with the computed values.
-
-    :param graph:
-    :param vertex_weights:
-    :param weight_function: in WeightFunction enumeration
-    :return: edge_weights
+    :param vertex_weights: vertex weights of the input graph  (Concept :class:`~higra.CptVertexWeightedGraph`)
+    :param weight_function: see :class:`~higra.WeightFunction`
+    :param graph: input graph (deduced from :class:`~higra.CptVertexWeightedGraph`)
+    :return: edge weights of the graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
 
     vertex_weights = hg.linearize_vertex_weights(vertex_weights, graph)
@@ -42,9 +39,9 @@ def weight_graph_function(graph, weight_function):
 
     Set the attribute "edge_weights" of graph with the computed values.
 
-    :param graph:
+    :param graph: input graph
     :param weight_function: eg. lambda i, j: abs(data[i]-[j])
-    :return: edge_weights
+    :return: edge weights of the graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
 
     edge_weights = hg._weight_graph(graph, weight_function)

@@ -16,10 +16,10 @@ def reconstruct_leaf_data(altitudes, deleted_nodes, tree):
     """
     Each leaf of the tree takes the altitude of its closest non deleted ancestor.
 
-    :param tree:
-    :param deleted_nodes:
-    :param altitudes:
-    :return:
+    :param altitudes: node altitudes of the input tree (Concept :class:`~higra.CptValuedHierarchy`
+    :param deleted_nodes: binary node weights indicating which nodes are deleted
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :return: Leaf weights (Concept :class:`~higra.CptVertexWeightedGraph` if tree satisfies :class:`~higra.CptHierarchy`)
     """
     reconstruction = hg.propagate_sequential(altitudes,
                                              deleted_nodes,
@@ -43,10 +43,10 @@ def labelisation_horizontal_cut_from_threshold(altitudes, threshold, tree):
     the altitude of their lowest common ancestor is strictly greater
     than the specified threshold.
 
-    :param tree:
-    :param threshold:
-    :param altitudes:
-    :return:
+    :param altitudes: node altitudes of the input tree (Concept :class:`~higra.CptValuedHierarchy`
+    :param threshold: a threshold level
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :return: Leaf labels (Concept :class:`~higra.CptVertexWeightedGraph` if tree satisfies :class:`~higra.CptHierarchy`)
     """
 
     leaf_labels = hg._labelisation_horizontal_cut_from_threshold(tree, float(threshold), altitudes)
@@ -66,15 +66,14 @@ def labelisation_hierarchy_supervertices(altitudes, tree, leaf_graph=None, handl
 
     Two leaves are in the same supervertex if they have a common ancestor of altitude 0.
 
-    If handle_rag is True and the provided has been built on a region adjacency graph, then the labelisation
-    corresponding to the rag regions is returned.
-
     This functions guaranties that the labels are in the range [0, num_supervertices-1].
 
-    :param tree:
-    :param altitudes:
-    :param handle_rag:
-    :return:
+    :param altitudes: node altitudes of the input tree (Concept :class:`~higra.CptValuedHierarchy`
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :param leaf_graph: optional, graph on the leaves of the input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :param handle_rag: if True and the provided tree has been built on a region adjacency graph, then the labelisation corresponding to the rag regions is returned.
+    :return: Leaf labels (Concept :class:`~higra.CptVertexWeightedGraph` if tree satisfies :class:`~higra.CptHierarchy`)
+
     """
 
     if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and handle_rag:
@@ -98,9 +97,11 @@ def filter_binary_partition_tree(altitudes, deleted_frontier_nodes, tree, mst):
     If this node frontier is marked for deletion then the corresponding frontier is removed
     effectively merging its two children.
 
-    :param tree: input binary partition tree (should be constructed with the function `bpt_canonical`)
+    :param altitudes: node altitudes of the input tree (Concept :class:`~higra.CptValuedHierarchy`)
     :param deleted_frontier_nodes: a boolean array indicating for each node of the tree is its children must be merged (True) or not (False)
-    :return: a filtered binary partition tree
+    :param tree: input binary partition tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :param mst: minimum spanning tree associated to the given binary partition tree (deduced from :class:`~higra.CptBinaryPartitionHierarchy` on the parameter `tree`)
+    :return: a binary partition tree (Concept :class:`~higra.CptBinaryHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
 
     mst_edge_weights = altitudes[tree.num_leaves():]
@@ -117,10 +118,11 @@ def binary_labelisation_from_markers(tree, object_marker, background_marker, lea
 
     final_object = union {R in T | R cap o neq emptyset and R cap b = emptyset}
 
-    :param tree: input tree
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param object_marker: indicator function of the object marker: 1d array of size tree.num_leaves() where non zero values correspond to the object marker
     :param background_marker: indicator function of the background marker: 1d array of size tree.num_leaves() where non zero values correspond to the background marker
-    :return:
+    :param leaf_graph: optional, graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :return: Leaf labels (Concept :class:`~higra.CptVertexWeightedGraph` if `leaf_graph` is not `None`)
     """
 
     if leaf_graph is not None:

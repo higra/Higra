@@ -15,8 +15,9 @@ import numpy as np
 def read_graph_pink(filename):
     """
     Read a graph file stored in pink ascii format
-    :param filename:
-    :return: Graph (with attributes "vertex_weights", "edge_weights", "shape")
+
+    :param filename: path to the graph file
+    :return: a tuple (graph, vertex_weights, edge_weights) (with respective Concepts :class:`~higra.CptGridGraph`, :class:`~higra.CptVertexWeightedGraph`, and :class:`~higra.CptEdgeWeightedGraph`)
     """
     graph, vertex_weights, edge_weights, shape = hg._read_graph_pink(filename)
 
@@ -31,13 +32,14 @@ def read_graph_pink(filename):
 @hg.argument_helper(("edge_weights", hg.CptEdgeWeightedGraph), ("vertex_weights", hg.CptVertexWeightedGraph), ("graph", hg.CptGridGraph))
 def save_graph_pink(filename, graph, vertex_weights=None, edge_weights=None, shape=None):
     """
-    Save a (vertex/edge weighted) graph in the pink ascii file format
-    :param filename:
-    :param graph:
-    :param edge_weights:
-    :param vertex_weights:
-    :param shape:
-    :return:
+    Save a (vertex/edge weighted) graph in the pink ascii file format.
+
+    :param filename: path to the graph file (will be overwritten if the file already exists!)
+    :param graph: graph to save (deduced from :class:`~higra.CptEdgeWeightedGraph` or :class:`~higra.CptEdgeWeightedGraph`, Concept :class:`~higra.CptGridGraph`)
+    :param edge_weights: edge weights of the graph (optional) (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param vertex_weights: vertex weights of the graph (optional) (Concept :class:`~higra.CptVertexWeightedGraph`)
+    :param shape: shape of the graph (optional) (deduced from :class:`~higra.CptGridGraph`)
+    :return: nothing
     """
 
     if edge_weights is None:

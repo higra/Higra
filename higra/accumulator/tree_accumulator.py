@@ -17,10 +17,10 @@ def accumulate_parallel(node_weights, accumulator, tree):
     For each node i of the tree: accumulates values of the children of i in the node_weights array and put the result
     in output. i.e. output(i) = accumulate(node_weights(children(i)))
 
-    :param node_weights: Weights on the nodes of the tree
-    :param accumulator: see Accumulators
-    :param tree: input tree
-    :return: returns new tree node weights
+    :param node_weights: Weights on the nodes of the tree (Concept :class:`~higra.CptValuedHierarchy`)
+    :param accumulator: see :class:`~higra.Accumulators`
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
     """
     res = hg._accumulate_parallel(tree, node_weights, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
@@ -35,9 +35,10 @@ def accumulate_sequential(leaf_data, accumulator, tree, leaf_graph=None):
     For each node i from the leaves (excluded) to the root, output(i) = accumulate(output(children(i)))
 
     :param leaf_data: array of weights on the leaves of the tree
-    :param accumulator: see Accumulators
-    :param tree: input tree
-    :return: returns new tree node weights
+    :param accumulator: see :class:`~higra.Accumulators`
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param leaf_graph: graph of the tree leaves (optional, deduced from :class:`~higra.CptHierarchy`)
+    :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
@@ -53,10 +54,10 @@ def propagate_sequential(node_weights, condition, tree):
     For each node i from the root to the leaves, if condition(i) then output(i) = output(tree.parent(i)) otherwise
     output(i) = input(i)
 
-    :param node_weights: Weights on the nodes of the tree
+    :param node_weights: Weights on the nodes of the tree (Concept :class:`~higra.CptValuedHierarchy`)
     :param condition: Boolean array on the nodes of the tree
-    :param tree: input tree
-    :return: returns new tree node weights
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
     """
     res = hg._propagate_sequential(tree, node_weights, condition)
     hg.CptValuedHierarchy.link(res, tree)
@@ -84,10 +85,10 @@ def propagate_parallel(node_weights, tree, condition=None):
 
             return output
 
-    :param node_weights: Weights on the nodes of the tree
+    :param node_weights: Weights on the nodes of the tree (Concept :class:`~higra.CptValuedHierarchy`)
     :param condition: Boolean array on the nodes of the tree
-    :param tree: input tree
-    :return: returns new tree node weights
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
     """
 
     if condition is not None:
@@ -107,12 +108,12 @@ def accumulate_and_add_sequential(node_weights, leaf_data, accumulator, tree, le
     For each leaf node i, output(i) = leaf_data(i).
     For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))
 
-    :param node_weights: Weights on the nodes of the tree
+    :param node_weights: Weights on the nodes of the tree (Concept :class:`~higra.CptValuedHierarchy`)
     :param leaf_data: Weights on the leaves of the tree
-    :param accumulator: see Accumulators
-    :param tree: input tree
-    :param leaf_graph: graph of the tree leaves (optional)
-    :return: returns new tree node weights
+    :param accumulator: see :class:`~higra.Accumulators`
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :param leaf_graph: graph of the tree leaves (optional (optional, deduced from :class:`~higra.CptValuedHierarchy`))
+    :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
@@ -130,12 +131,12 @@ def accumulate_and_multiply_sequential(node_weights, leaf_data, accumulator, tre
     For each leaf node i, output(i) = leaf_data(i).
     For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))
 
-    :param node_weights: Weights on the nodes of the tree
+    :param node_weights: Weights on the nodes of the tree (Concept :class:`~higra.CptValuedHierarchy`)
     :param leaf_data: Weights on the leaves of the tree
-    :param accumulator: see Accumulators
-    :param tree: input tree
-    :param leaf_graph: graph of the tree leaves (optional)
-    :return: returns new tree node weights
+    :param accumulator: see :class:`~higra.Accumulators`
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :param leaf_graph: graph of the tree leaves (optional (optional, deduced from :class:`~higra.CptValuedHierarchy`))
+    :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
@@ -153,12 +154,12 @@ def accumulate_and_min_sequential(node_weights, leaf_data, accumulator, tree, le
     For each leaf node i, output(i) = leaf_data(i).
     For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))
 
-    :param node_weights: Weights on the nodes of the tree
+    :param node_weights: Weights on the nodes of the tree (Concept :class:`~higra.CptValuedHierarchy`)
     :param leaf_data: Weights on the leaves of the tree
-    :param accumulator: see Accumulators
-    :param tree: input tree
-    :param leaf_graph: graph of the tree leaves (optional)
-    :return: returns new tree node weights
+    :param accumulator: see :class:`~higra.Accumulators`
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :param leaf_graph: graph of the tree leaves (optional (optional, deduced from :class:`~higra.CptValuedHierarchy`))
+    :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
@@ -176,12 +177,12 @@ def accumulate_and_max_sequential(node_weights, leaf_data, accumulator, tree, le
     For each leaf node i, output(i) = leaf_data(i).
     For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))
 
-    :param node_weights: Weights on the nodes of the tree
+    :param node_weights: Weights on the nodes of the tree (Concept :class:`~higra.CptValuedHierarchy`)
     :param leaf_data: Weights on the leaves of the tree
-    :param accumulator: see Accumulators
-    :param tree: input tree
-    :param leaf_graph: graph of the tree leaves (optional)
-    :return: returns new tree node weights
+    :param accumulator: see :class:`~higra.Accumulators`
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :param leaf_graph: graph of the tree leaves (optional (optional, deduced from :class:`~higra.CptValuedHierarchy`))
+    :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)

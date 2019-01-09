@@ -20,15 +20,9 @@ def make_region_adjacency_graph_from_labelisation(vertex_labels, graph):
     There is an edge between two regions of labels l1 and l2 in the rag iff there exists an edge linking 2
     vertices of labels l1 and l2 int he original graph.
 
-    The returned rag is equipped with three attributes:
-
-    * vertex_map: an array of size graph.num_vertices() which indicates for each vertex v of the graph the index of the vertex of the rag that represents the region containing v;
-    * edge_map: an array of size graph.num_edges() which indicates for each edge e of the graph the index of the edge of the rag that links the two regions containing the extremities of e. If no such edge exists (if both extremities of e are in the same region), the value -1 is used.
-    * original_graph: the graph from which this rag has been computed
-
-    :param graph:
-    :param vertex_labels:
-    :return:
+    :param vertex_labels: vertex labels on the input graph (Concept :class:`~higra.CptVertexLabeledGraph`)
+    :param graph: input graph (deduced from :class:`~higra.CptVertexLabeledGraph`)
+    :return: a region adjacency graph (Concept :class:`~higra.CptRegionAdjacencyGraph`)
     """
     vertex_labels = hg.linearize_vertex_weights(vertex_labels, graph)
 
@@ -48,15 +42,9 @@ def make_region_adjacency_graph_from_graph_cut(edge_weights, graph):
     There is an edge between two regions of labels l1 and l2 in the rag iff there exists an edge linking 2
     vertices of labels l1 and l2 int he original graph.
 
-    The returned rag is equipped with three attributes:
-
-    * vertex_map: an array of size graph.num_vertices() which indicates for each vertex v of the graph the index of the vertex of the rag that represents the region containing v;
-    * edge_map: an array of size graph.num_edges() which indicates for each edge e of the graph the index of the edge of the rag that links the two regions containing the extremities of e. If no such edge exists (if both extremities of e are in the same region), the value -1 is used.
-    * original_graph: the graph from which this rag has been computed
-
-    :param graph:
-    :param edge_weights:
-    :return:
+    :param edge_weights: edge weights on the input graph, non zero weights are part of the cut (Concept :class:`~higra.CptGraphCut`)
+    :param graph: input graph (deduced from :class:`~higra.CptGraphCut`)
+    :return: a region adjacency graph (Concept :class:`~higra.CptRegionAdjacencyGraph`)
     """
     rag, vertex_map, edge_map = hg._make_region_adjacency_graph_from_graph_cut(graph, edge_weights)
 
@@ -76,9 +64,9 @@ def rag_back_project_vertex_weights(vertex_weights, graph):
     For any vertex index i,
     result[i] = rag_vertex_weight[rag_vertex_map[i]]
 
-    :param graph:
-    :param vertex_weights:
-    :return:
+    :param vertex_weights: vertex weights on the input region adjacency graph (Concept :class:`~higra.CptVertexWeightedGraph`)
+    :param graph: input region adjacency graph (deduced from :class:`~higra.CptVertexWeightedGraph`)
+    :return: vertex weights on the original graph (Concept :class:`~higra.CptVertexWeightedGraph`)
     """
 
     rag = hg.CptRegionAdjacencyGraph.construct(graph)
@@ -105,9 +93,9 @@ def rag_back_project_edge_weights(edge_weights, graph):
     For any edge index ei,
     result[ei] = rag_edge_weight[rag_edge_map[ei]] if rag_edge_map[ei] != -1 and 0 otherwise
 
-    :param graph:
-    :param edge_weights:
-    :return:
+    :param edge_weights: edge weights on the input region adjacency graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: input region adjacency graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
+    :return: edge weights on the original graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
 
     rag = hg.CptRegionAdjacencyGraph.construct(graph)
@@ -129,10 +117,10 @@ def rag_accumulate_on_vertices(rag, accumulator, vertex_weights):
     For any vertex index i of the rag,
     result[i] = accumulate({vertex_weights[j] | rag_vertex_map[j] == i})
 
-    :param rag:
-    :param vertex_weights:
-    :param accumulator:
-    :return:
+    :param rag: input region adjacency graph (Concept :class:`~higra.RegionAdjacencyGraph`)
+    :param vertex_weights: vertex weights on the original graph
+    :param accumulator: see :class:`~higra.Accumulators`
+    :return: vertex weights on the region adjacency graph (Concept :class:`~higra.VertexWeightedGraph`)
     """
 
     detail = hg.CptRegionAdjacencyGraph.construct(rag)
@@ -153,10 +141,10 @@ def rag_accumulate_on_edges(rag, accumulator, edge_weights):
     For any edge index i of the rag,
     result[i] = accumulate({vertex_weights[j] | rag_vertex_map[j] == i})
 
-    :param rag:
-    :param edge_weights:
-    :param accumulator:
-    :return:
+    :param rag: input region adjacency graph (Concept :class:`~higra.RegionAdjacencyGraph`)
+    :param edge_weights: edge weights on the original graph
+    :param accumulator: see :class:`~higra.Accumulators`
+    :return: edge weights on the region adjacency graph (Concept :class:`~higra.EdgeWeightedGraph`)
     """
 
     detail = hg.CptRegionAdjacencyGraph.construct(rag)

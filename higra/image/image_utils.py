@@ -21,9 +21,9 @@ def triangular_filter(image, size):
 
     @TODO@ add efficient implementation
 
-    :param image:
-    :param size:
-    :return:
+    :param image: a 2d array
+    :param size: a positive integer
+    :return: a 2d array with the same shape as image
     """
     kernel = np.asarray(list(range(size + 1)) + list(range(size, 0, -1)))
     im2 = np.pad(image, size, 'symmetric')
@@ -37,9 +37,10 @@ def gradient_orientation(gradient_image, scale=4):
     """
     Estimate gradient orientation.
 
-    Reimplementation of similar function from Piotr Dollar's matlab edge tool box
+    Reimplementation of similar function from Piotr Dollar's matlab edge tool box.
+
     :param gradient_image: 2d image with gradient values
-    :param scale:
+    :param scale: a positive integer (size of the triangular filter)
     :return: 2d image with estimated gradient orientation in [0; pi]
     """
 

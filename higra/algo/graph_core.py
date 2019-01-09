@@ -20,27 +20,27 @@ def labelisation_2_graph_cut(vertex_labels, graph):
     The result is a weighting of the graph edges where edges with
     a non zero weight are part of the cut.
 
-    :param graph:
-    :param vertex_labels:
-    :return:
+    :param vertex_labels: Weights on the vertices of the graph (Concept :class:`~higra.CptVertexLabeledGraph`)
+    :param graph: input graph (deduced from :class:`~higra.CptVertexLabeledGraph`)
+    :return: graph edge-weights representing the equivalent cut (Concept :class:`~higra.CptGraphCut`)
     """
     vertex_labels = hg.linearize_vertex_weights(vertex_labels, graph)
     graph_cut = hg._labelisation_2_graph_cut(graph, vertex_labels)
-    hg.CptEdgeWeightedGraph.link(graph_cut, graph)
+    hg.CptGraphCut.link(graph_cut, graph)
     return graph_cut
 
 
 @hg.argument_helper(hg.CptGraphCut)
 def graph_cut_2_labelisation(edge_weights, graph):
     """
-    Labelize graph vertices according to the given graph cut.
+    Labelise graph vertices according to the given graph cut.
 
     Each edge having a non zero value in the given edge_weights
     are assumed to be part of the cut.
 
-    :param graph:
-    :param edge_weights:
-    :return:
+    :param edge_weights: Weights on the edges of the graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: (deduced from :class:`~higra.CptEdgeWeightedGraph`)
+    :return: A labelisation of the graph vertices (Concept :class:`~higra.CptVertexWeightedGraph`)
     """
     vertex_labels = hg._graph_cut_2_labelisation(graph, edge_weights)
 
