@@ -18,6 +18,17 @@ using namespace hg;
 
 BOOST_AUTO_TEST_SUITE(test_horinzontal_cuts);
 
+    BOOST_AUTO_TEST_CASE(test_horizontal_cut_explorer_assert) {
+
+        hg::tree tree{
+                array_1d<index_t>{4, 4, 5, 5, 6, 6, 6}
+        };
+        array_1d<int> altitudes{1, 0, 0, 0, 2, 3, 4};
+        BOOST_CHECK_THROW(make_horizontal_cut_explorer(tree, altitudes), std::runtime_error);
+
+        array_1d<int> altitudes2{0, 0, 0, 0, 2, 3, -1};
+        BOOST_CHECK_THROW(make_horizontal_cut_explorer(tree, altitudes2), std::runtime_error);
+    }
 
     BOOST_AUTO_TEST_CASE(test_horizontal_cut_explorer_indexed) {
 
