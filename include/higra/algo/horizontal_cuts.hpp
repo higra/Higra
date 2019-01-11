@@ -18,9 +18,9 @@ namespace hg {
     template<typename value_t>
     struct horizontal_cut_nodes {
 
-        horizontal_cut_nodes(array_1d <index_t> &&_nodes,
+        horizontal_cut_nodes(array_1d<index_t> &&_nodes,
                              value_t _altitude) :
-                nodes(std::forward<array_1d < index_t> > (_nodes)),
+                nodes(std::forward<array_1d<index_t> >(_nodes)),
                 altitude(_altitude) {
         }
 
@@ -45,19 +45,19 @@ namespace hg {
 
         template<typename tree_t, typename graph_t>
         auto graph_cut(const tree_t &tree,
-                                   const graph_t &leaf_graph) const {
+                       const graph_t &leaf_graph) const {
             return hg::labelisation_2_graph_cut(leaf_graph, labelisation_leaves(tree));
         }
 
-        array_1d <index_t> nodes;
+        array_1d<index_t> nodes;
         value_t altitude;
     };
 
     template<typename value_t>
-    decltype(auto) make_horizontal_cut_nodes(array_1d <index_t> &&nodes,
+    decltype(auto) make_horizontal_cut_nodes(array_1d<index_t> &&nodes,
                                              value_t altitude) {
         return horizontal_cut_nodes<value_t>(
-                std::forward<array_1d < index_t> > (nodes),
+                std::forward<array_1d<index_t> >(nodes),
                 altitude);
     }
 
@@ -71,6 +71,12 @@ namespace hg {
         horizontal_cut_explorer(const tree_t &tree, const xt::xexpression<T> &xaltitudes):m_original_tree(tree) {
             auto &altitudes = xaltitudes.derived_cast();
             hg_assert_node_weights(tree, altitudes);
+
+            hg_assert(xt::count_nonzero(xt::view(altitudes, xt::range(0, num_leaves(tree))))() == 0,
+                      "The altitude of the leaf nodes must be equal to 0.");
+
+            hg_assert(xt::all(xt::view(altitudes, xt::range(num_leaves(tree), num_vertices(tree)))) >= 0,
+                      "The altitude of the nodes must be greater than or equal to 0.");
 
             auto res = sort_hierarchy_with_altitudes(tree, altitudes);
             m_tree = std::move(res.tree);
@@ -88,7 +94,7 @@ namespace hg {
             index_t num_regions = num_children(root(m_tree), m_tree);
             auto current_threshold = m_altitudes(range_start);
 
-            while (current_threshold != 0 && range_start >= (index_t)num_leaves(m_tree)) {
+            while (current_threshold != 0 && range_start >= (index_t) num_leaves(m_tree)) {
 
                 while (min_alt_children(range_end) >= current_threshold) {
                     range_end--;
@@ -129,7 +135,7 @@ namespace hg {
         inline
         auto horizontal_cut_from_index(index_t cut_index) {
             auto num_regions = m_num_regions_cuts[cut_index];
-            array_1d <index_t> nodes = xt::empty<index_t>({(size_t) num_regions});
+            array_1d<index_t> nodes = xt::empty<index_t>({(size_t) num_regions});
             if (cut_index == 0) { // special case for single region partition
                 nodes(0) = root(m_tree);
             } else {
@@ -177,8 +183,8 @@ namespace hg {
     private:
         const tree_t &m_original_tree;
         hg::tree m_tree;
-        array_1d <index_t> m_node_map;
-        array_1d <value_t> m_altitudes;
+        array_1d<index_t> m_node_map;
+        array_1d<value_t> m_altitudes;
         std::vector<index_t> m_num_regions_cuts;
         std::vector<value_t> m_altitudes_cuts;
         std::vector<std::pair<index_t, index_t>> m_range_nodes_cuts;
