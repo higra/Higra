@@ -330,4 +330,25 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         t.clear();
     }
 
+    BOOST_AUTO_TEST_CASE(adjacency_matrix) {
+
+        auto t = data.t;
+
+        array_1d<int> edge_weights{1, 2, 3, 4, 5, 6, 7};
+
+        auto adj_mat = undirected_graph_2_adjacency_matrix(t, edge_weights);
+
+        array_2d<int> ref_adj_mat = {{0, 0, 0, 0, 0, 1, 0, 0},
+                                     {0, 0, 0, 0, 0, 2, 0, 0},
+                                     {0, 0, 0, 0, 0, 0, 3, 0},
+                                     {0, 0, 0, 0, 0, 0, 4, 0},
+                                     {0, 0, 0, 0, 0, 0, 5, 0},
+                                     {1, 2, 0, 0, 0, 0, 0, 6},
+                                     {0, 0, 3, 4, 5, 0, 0, 7},
+                                     {0, 0, 0, 0, 0, 6, 7, 0}};
+
+        BOOST_CHECK(ref_adj_mat == adj_mat);
+       
+    }
+
 BOOST_AUTO_TEST_SUITE_END();
