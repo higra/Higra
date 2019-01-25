@@ -285,7 +285,7 @@ namespace hg {
     /**
      * Create an adjacency matrix from an undirected edge-weighted graph (the result is thus symmetric).
      *
-     * As the given graph is not necessarily complete, non-existant edges will receive the value `non_edge_value` in
+     * As the given graph is not necessarily complete, non-existing edges will receive the value `non_edge_value` in
      * the adjacency matrix.
      *
      * @tparam undirected_graph

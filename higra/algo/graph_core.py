@@ -48,3 +48,34 @@ def graph_cut_2_labelisation(edge_weights, graph):
     hg.CptVertexLabeledGraph.link(vertex_labels, graph)
 
     return vertex_labels
+
+
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def undirected_graph_2_adjacency_matrix(edge_weights, graph, non_edge_value=0):
+    """
+    Create an adjacency matrix from an undirected edge-weighted graph (the result is thus symmetric).
+
+    As the given graph is not necessarily complete, non-existing edges will receive the value `non_edge_value` in
+    the adjacency matrix.
+
+    :param edge_weights: Graph edge weights
+    :param graph: Input graph
+    :param non_edge_value: Value used to represent edges that are not in the input graph
+    :return: A 2d symmetric square matrix
+    """
+    return hg._undirected_graph_2_adjacency_matrix(graph, edge_weights, non_edge_value)
+
+
+def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
+    """
+    Creates an undirected edge-weighted graph from an adjacency matrix.
+
+    Adjacency matrix entries which are equal to `non_edge_value` are not considered to be part of the graph.
+
+    :param adjacency_matrix: Input adjacency matrix (A 2d symmetric square matrix)
+    :param non_edge_value: Value used to represent non existing edges in the adjacency matrix
+    :return: a pair (UndirectedGraph, ndarray) representing the graph and its edge_weights
+    """
+    graph, edge_weights = hg._adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value)
+    hg.CptEdgeWeightedGraph.link(edge_weights, graph)
+    return graph, edge_weights
