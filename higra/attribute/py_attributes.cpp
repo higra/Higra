@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright ESIEE Paris (2018)                                             *
+* Copyright ESIEE Paris (2019)                                             *
 *                                                                          *
 * Contributor(s) : Benjamin Perret                                         *
 *                                                                          *
@@ -8,14 +8,19 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#pragma once
+#include "py_attributes.hpp"
+#include "../py_common.hpp"
+#include "higra/attribute/tree_attribute.hpp"
+#include "xtensor-python/pyarray.hpp"
+#include "xtensor-python/pytensor.hpp"
 
-#include "accumulator/all.hpp"
-#include "attribute/all.hpp"
-#include "algo/all.hpp"
-#include "assessment/all.hpp"
-#include "detail/all.hpp"
-#include "hierarchy/all.hpp"
-#include "image/all.hpp"
-#include "io_utils/all.hpp"
-#include "structure/all.hpp"
+void py_init_attributes(pybind11::module &m) {
+    xt::import_numpy();
+    m.def("_attribute_sibling",
+          [](const hg::tree &tree, hg::index_t skip) {
+              return hg::attribute_sibling(tree, skip);
+          },
+          "Attribute sibling.",
+          pybind11::arg("tree"),
+          pybind11::arg("skip") = 1);
+}

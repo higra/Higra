@@ -56,6 +56,7 @@ matrix:
       - docker
     env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*" CIBW_SKIP=*-manylinux1_i686
   - os: osx
+    if: tag IS present
     env: BUILD_WHEEL=1 CIBW_BUILD="cp34-*"
   - os: osx
     if: tag IS present

@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright ESIEE Paris (2018)                                             *
+* Copyright ESIEE Paris (2019)                                             *
 *                                                                          *
 * Contributor(s) : Benjamin Perret                                         *
 *                                                                          *
@@ -10,12 +10,5 @@
 
 #pragma once
 
-#include "accumulator/all.hpp"
-#include "attribute/all.hpp"
-#include "algo/all.hpp"
-#include "assessment/all.hpp"
-#include "detail/all.hpp"
-#include "hierarchy/all.hpp"
-#include "image/all.hpp"
-#include "io_utils/all.hpp"
-#include "structure/all.hpp"
+#include "py_attributes.hpp"
+
