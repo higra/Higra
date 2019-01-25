@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         array_2d<index_t> indices{{0, 3},
                                   {1, 2}};
         array_2d<size_t> ref{{2, 0},
-                              {2, 2}};
+                             {2, 2}};
 
         BOOST_CHECK(xt::allclose(degree(indices, g), ref));
         BOOST_CHECK(xt::allclose(in_degree(indices, g), ref));
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         vector<pair<index_t, index_t>> etest;
         for (auto e: hg::edge_iterator(g)) {
             etest.push_back(e);
-       }
+        }
 
         BOOST_CHECK(vectorSame(eref, etest));
 
@@ -92,11 +92,11 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         auto g = hg::copy_graph<T>(g0);
 
         vector<vector<pair<index_t, index_t>>> outListsRef{{{0, 1}, {0, 3}},
-                                                                       {{1, 0}, {1, 2}, {1, 4}},
-                                                                       {{2, 1}, {2, 5}},
-                                                                       {{3, 0}, {3, 4}},
-                                                                       {{4, 1}, {4, 3}, {4, 5}},
-                                                                       {{5, 2}, {5, 4}}
+                                                           {{1, 0}, {1, 2}, {1, 4}},
+                                                           {{2, 1}, {2, 5}},
+                                                           {{3, 0}, {3, 4}},
+                                                           {{4, 1}, {4, 3}, {4, 5}},
+                                                           {{5, 2}, {5, 4}}
         };
         vector<vector<pair<index_t, index_t>>> outListsTest;
 
@@ -132,8 +132,8 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         auto g = data<T>::g();
 
         vector<pair<index_t, index_t>> eref{{0, 1},
-                                                        {1, 2},
-                                                        {0, 2}};
+                                            {1, 2},
+                                            {0, 2}};
         vector<pair<index_t, index_t>> etest;
         for (auto e: hg::edge_iterator(g)) {
             etest.push_back(e);
@@ -147,9 +147,9 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         auto g = data<T>::g();
 
         vector<vector<pair<index_t, index_t>>> outListsRef{{{0, 1}, {0, 2}},
-                                                                       {{1, 0}, {1, 2}},
-                                                                       {{2, 1}, {2, 0}},
-                                                                       {}};
+                                                           {{1, 0}, {1, 2}},
+                                                           {{2, 1}, {2, 0}},
+                                                           {}};
         vector<vector<pair<index_t, index_t>>> outListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -167,9 +167,9 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         auto g = data<T>::g();
 
         vector<vector<pair<index_t, index_t>>> inListsRef{{{1, 0}, {2, 0}},
-                                                                      {{0, 1}, {2, 1}},
-                                                                      {{1, 2}, {0, 2}},
-                                                                      {}};
+                                                          {{0, 1}, {2, 1}},
+                                                          {{1, 2}, {0, 2}},
+                                                          {}};
 
         for (auto v: hg::vertex_iterator(g)) {
             vector<pair<index_t, index_t>> inListTest;
@@ -184,9 +184,9 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         auto g = data<T>::g();
 
         vector<vector<index_t>> adjListsRef{{1, 2},
-                                                  {0, 2},
-                                                  {1, 0},
-                                                  {}};
+                                            {0, 2},
+                                            {1, 0},
+                                            {}};
         vector<vector<index_t>> adjListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -216,9 +216,9 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         auto g = data<T>::g();
 
         vector<vector<index_t>> ref{{0, 2},
-                                          {0, 1},
-                                          {1, 2},
-                                          {}};
+                                    {0, 1},
+                                    {1, 2},
+                                    {}};
         vector<vector<index_t>> test;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -235,9 +235,9 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         auto g = data<T>::g();
 
         vector<vector<index_t>> ref{{0, 2},
-                                          {0, 1},
-                                          {1, 2},
-                                          {}};
+                                    {0, 1},
+                                    {1, 2},
+                                    {}};
         vector<vector<index_t>> test;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -285,9 +285,9 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         BOOST_CHECK(degree(2, g) == 1);
 
         vector<vector<index_t>> adjListsRef{{1, 2},
-                                                  {0},
-                                                  {0},
-                                                  {}};
+                                            {0},
+                                            {0},
+                                            {}};
         vector<vector<index_t>> adjListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -321,9 +321,9 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
         BOOST_CHECK(degree(3, g) == 1);
 
         vector<vector<index_t>> adjListsRef{{1, 2, 3},
-                                                  {0},
-                                                  {0},
-                                                  {0}};
+                                            {0},
+                                            {0},
+                                            {0}};
         vector<vector<index_t>> adjListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -332,6 +332,43 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
                 adjListsTest[v].push_back(av);
             }
             BOOST_CHECK(vectorSame(adjListsRef[v], adjListsTest[v]));
+        }
+    }
+
+    BOOST_AUTO_TEST_CASE_TEMPLATE(adjacency_matrix, T, test_types) {
+
+        T g(5);
+        add_edge(0, 1, g);
+        add_edge(0, 2, g);
+        add_edge(0, 3, g);
+        add_edge(0, 4, g);
+        add_edge(1, 2, g);
+        add_edge(2, 3, g);
+        add_edge(2, 4, g);
+
+        array_1d<int> edge_weights{1, 2, 3, 4, 5, 6, 7};
+
+        auto adj_mat = undirected_graph_2_adjacency_matrix(g, edge_weights, -1);
+
+        array_2d<int> ref_adj_mat = {{-1,  1,  2,  3,  4},
+                                     { 1, -1,  5, -1, -1},
+                                     { 2,  5, -1,  6,  7},
+                                     { 3, -1,  6, -1, -1},
+                                     { 4, -1,  7, -1, -1}};
+
+        BOOST_CHECK(ref_adj_mat == adj_mat);
+        auto res = adjacency_matrix_2_undirected_graph(ref_adj_mat, -1);
+
+        auto & g2 = res.first;
+        auto & ew2 = res.second;
+        
+        BOOST_CHECK(ew2 == edge_weights);
+        BOOST_CHECK(num_vertices(g) == num_vertices(g2));
+        BOOST_CHECK(num_edges(g) == num_edges(g2));
+        auto it1 = edges(g);
+        auto it2 = edges(g);
+        for(auto i1 = it1.first, i2 = it2.first; i1 != it1.second; i1++, i2++){
+            BOOST_CHECK(*i1 == *i2);
         }
     }
 

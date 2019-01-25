@@ -280,4 +280,77 @@ namespace hg {
                       const graph_t &graph) {
         return (source(edge, graph) == vertex) ? target(edge, graph) : source(edge, graph);
     }
+
+
+    /**
+     * Create an adjacency matrix from an undirected edge-weighted graph (the result is thus symmetric).
+     *
+     * As the given graph is not necessarily complete, non-existing edges will receive the value `non_edge_value` in
+     * the adjacency matrix.
+     *
+     * @tparam undirected_graph
+     * @tparam T
+     * @tparam value_type
+     * @param graph Input undirected graph
+     * @param xedge_weights Input edge-weights
+     * @param non_edge_value Value used to represent non existing edges
+     * @return A 2d square array
+     */
+    template<typename undirected_graph, typename T, typename value_type = typename T::value_type>
+    auto undirected_graph_2_adjacency_matrix(const undirected_graph &graph,
+                                             const xt::xexpression<T> &xedge_weights,
+                                             const value_type &non_edge_value = 0) {
+        auto & edge_weights = xedge_weights.derived_cast();
+        hg_assert_edge_weights(graph, edge_weights);
+        array_2d<value_type> a = array_2d<value_type>::from_shape({num_vertices(graph), num_vertices(graph)});
+
+        a.fill(non_edge_value);
+
+        for (const auto & e: edge_iterator(graph)) {
+            a(source(e, graph), target(e, graph)) = a(target(e, graph), source(e, graph)) = edge_weights(index(e, graph));
+        }
+
+        return a;
+    }
+
+    /**
+     * Creates an undirected edge-weighted graph from an adjacency matrix.
+     *
+     * Adjacency matrix entries which are equal to `non_edge_value` are not considered to be part of the graph.
+     *
+     * @tparam T
+     * @tparam value_type
+     * @param xadjacency_matrix Input adjacency matrix
+     * @param non_edge_value Value used to represent non existing edges
+     * @return a pair of types (ugraph, array_1d) representing the graph and its edge-weights
+     */
+    template<typename T, typename value_type = typename T::value_type>
+    auto adjacency_matrix_2_undirected_graph(const xt::xexpression<T> &xadjacency_matrix,
+                                             const value_type &non_edge_value = 0){
+        auto & adjacency_matrix = xadjacency_matrix.derived_cast();
+        hg_assert(adjacency_matrix.dimension() == 2, "Adjacency matrix must be a 2d array.");
+        hg_assert(adjacency_matrix.shape()[0] == adjacency_matrix.shape()[1], "Adjacency matrix must be square.");
+
+        ugraph g(adjacency_matrix.shape()[0]);
+
+        index_t n_edges = 0;
+        for(index_t i = 0; i < num_vertices(g); i++){
+            for(index_t j = i; j < num_vertices(g); j++){
+                if(adjacency_matrix(i, j) != non_edge_value){
+                    n_edges++;
+                }
+            }
+        }
+        array_1d<value_type> edge_weights = xt::empty<value_type>({n_edges});
+        index_t n = 0;
+        for(index_t i = 0; i < num_vertices(g); i++){
+            for(index_t j = i; j < num_vertices(g); j++){
+                if(adjacency_matrix(i, j) != non_edge_value){
+                    g.add_edge(i, j);
+                    edge_weights(n++) = adjacency_matrix(i, j);
+                }
+            }
+        }
+        return std::make_pair(std::move(g), std::move(edge_weights));
+    }
 };
