@@ -56,7 +56,7 @@ def attribute_vertex_perimeter(graph):
 
 @hg.data_provider("area")
 @hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_area"))
-def attribute_area(tree, vertex_area, leaf_graph=None):
+def attribute_area(tree, vertex_area=None, leaf_graph=None):
     """
     Compute the area of each node the given tree.
     The area of a node is equal to the sum of the area of the leaves of the subtree rooted in the node.
@@ -68,6 +68,9 @@ def attribute_area(tree, vertex_area, leaf_graph=None):
     :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array (Concept :class:`~higra.CptValuedHierarchy`)
     """
+    if vertex_area is None:
+        vertex_area = np.ones((tree.num_leaves(),), dtype=np.int64)
+
     if leaf_graph is not None:
         vertex_area = hg.linearize_vertex_weights(vertex_area, leaf_graph)
     return hg.accumulate_sequential(vertex_area, hg.Accumulators.sum, tree)
