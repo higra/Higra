@@ -331,11 +331,12 @@ namespace hg {
         hg_assert(adjacency_matrix.dimension() == 2, "Adjacency matrix must be a 2d array.");
         hg_assert(adjacency_matrix.shape()[0] == adjacency_matrix.shape()[1], "Adjacency matrix must be square.");
 
-        ugraph g(adjacency_matrix.shape()[0]);
+        index_t n_vertices = adjacency_matrix.shape()[0];
+        ugraph g(n_vertices);
 
         index_t n_edges = 0;
-        for(index_t i = 0; i < num_vertices(g); i++){
-            for(index_t j = i; j < num_vertices(g); j++){
+        for(index_t i = 0; i < n_vertices; i++){
+            for(index_t j = i; j < n_vertices; j++){
                 if(adjacency_matrix(i, j) != non_edge_value){
                     n_edges++;
                 }
@@ -343,8 +344,8 @@ namespace hg {
         }
         array_1d<value_type> edge_weights = xt::empty<value_type>({n_edges});
         index_t n = 0;
-        for(index_t i = 0; i < num_vertices(g); i++){
-            for(index_t j = i; j < num_vertices(g); j++){
+        for(index_t i = 0; i < n_vertices; i++){
+            for(index_t j = i; j < n_vertices; j++){
                 if(adjacency_matrix(i, j) != non_edge_value){
                     g.add_edge(i, j);
                     edge_weights(n++) = adjacency_matrix(i, j);

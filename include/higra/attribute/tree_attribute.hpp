@@ -193,4 +193,39 @@ namespace hg {
 
         return dynamics;
     };
+
+    /**
+     * For each node `n` which is the `k`-th child of its parent node `p` among `N` children,
+     * the attribute sibling of `n` is the index of the `(k + skip) % N`-th child of `p`.
+     *
+     * The sibling of the root node is itself.
+     *
+     * The sibling attribute enables to easily emulates a (doubly) linked list among brothers.
+     *
+     * In a binary tree, the sibling attribute of a node is effectively its only brother (with `skip` equals to 1).
+     *
+     * @tparam tree_t
+     * @param tree Input tree
+     * @param skip Number of skipped element in the children list (including yourself)
+     * @return an array with the sibling index of each node of the tree
+     */
+    template<typename tree_t>
+    auto attribute_sibling(const tree_t &tree, index_t skip=1){
+
+        array_1d<index_t> attribute = xt::empty<index_t>({num_vertices(tree)});
+        for(auto n: leaves_to_root_iterator(tree, leaves_it::exclude, root_it::include)){
+            index_t nchs = num_children(n, tree);
+            for(index_t i = 0; i < nchs; i++){
+
+                index_t j = (i + skip) % nchs;
+                if(j < 0){ // stupid c modulo
+                    j += nchs;
+                }
+
+                attribute(child(i, n, tree)) = child(j, n, tree);
+            }
+        }
+        attribute(root(tree)) = root(tree);
+        return attribute;
+    }
 }

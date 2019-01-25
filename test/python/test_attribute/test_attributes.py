@@ -26,8 +26,19 @@ class TestAttributes(unittest.TestCase):
         self.assertTrue(np.all(ref_area == area))
 
         tree2 = hg.Tree(tree.parents())
-        area2 = hg.attribute_area(tree2, data_debug=True)
+        area2 = hg.attribute_area(tree2)
         self.assertTrue(np.all(ref_area == area2))
+
+    def test_sibling(self):
+        t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        ref = np.asarray((1, 0, 3, 4, 2, 6, 5, 7))
+        res = hg.attribute_sibling(t)
+        self.assertTrue(np.all(ref == res))
+
+        t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        ref2 = np.asarray((1, 0, 4, 2, 3, 6, 5, 7))
+        res2 = hg.attribute_sibling(t, -1)
+        self.assertTrue(np.all(ref2 == res2))
 
 
 if __name__ == '__main__':

@@ -76,5 +76,17 @@ BOOST_AUTO_TEST_SUITE(tree_attributes);
         BOOST_CHECK(ref == res);
     }
 
+    BOOST_AUTO_TEST_CASE(test_attribute_sibling) {
+        auto t = data.t;
+
+        array_1d<long> ref{1, 0, 3, 4, 2, 6, 5, 7};
+        auto res = attribute_sibling(t);
+        BOOST_CHECK(ref == res);
+
+        array_1d<long> ref2{1, 0, 4, 2, 3, 6, 5, 7};
+        auto res2 = attribute_sibling(t, -1);
+        BOOST_CHECK(ref2 == res2);
+    }
+
 
 BOOST_AUTO_TEST_SUITE_END();
