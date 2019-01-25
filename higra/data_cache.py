@@ -348,16 +348,17 @@ def argument_helper(*concepts):
                             __resolve_dependency(arg_value, concept, concept, data_cache, kwargs)
 
                         except __CacheLookupException as e:
-                            if data_debug:
-                                err = "Error during the resolution of the arguments of the function '" \
-                                      + fun.__name__
-                                raise Exception(err) from e
-                            else:  # swallow exception chain for readability
-                                err = "Error during the resolution of the arguments of the function '" + fun.__name__ + "'.\n" \
-                                      + str(e) \
-                                      + "\nYou can call your function with the extra parameter 'data_debug=True' to " \
-                                        "get more information about this error."
-                                raise Exception(err) from None
+                            if signature.parameters[arg_name].default is signature.parameters[arg_name].empty:
+                                if data_debug:
+                                    err = "Error during the resolution of the arguments of the function '" \
+                                          + fun.__name__
+                                    raise Exception(err) from e
+                                else:  # swallow exception chain for readability
+                                    err = "Error during the resolution of the arguments of the function '" + fun.__name__ + "'.\n" \
+                                          + str(e) \
+                                          + "\nYou can call your function with the extra parameter 'data_debug=True' to " \
+                                            "get more information about this error."
+                                    raise Exception(err) from None
                 except TypeError as e:
                     err = "Lookup for the following argument failed: '" \
                           + arg_name \
