@@ -202,11 +202,45 @@ def attribute_mean_weights(tree, vertex_weights, area, leaf_graph=None):
     if leaf_graph is not None:
         vertex_weights = hg.linearize_vertex_weights(vertex_weights, leaf_graph)
 
-    return hg.accumulate_sequential(vertex_weights.astype(np.float64), hg.Accumulators.sum, tree) / area.reshape((-1, 1))
+    return hg.accumulate_sequential(vertex_weights.astype(np.float64), hg.Accumulators.sum, tree) / area.reshape(
+        (-1, 1))
 
 
 @hg.data_provider("sibling")
 def attribute_sibling(tree, skip=1):
+    """
+    For each node `n` which is the `k`-th child of its parent node `p` among `N` children,
+    the attribute sibling of `n` is the index of the `(k + skip) % N`-th child of `p`.
+
+    The sibling of the root node is itself.
+
+    The sibling attribute enables to easily emulates a (doubly) linked list among brothers.
+
+    In a binary tree, the sibling attribute of a node is effectively its only brother (with `skip` equals to 1).
+
+    **Provider name**: "sibling"
+
+    :param tree: Input tree
+    :param skip: Number of skipped element in the children list (including yourself)
+    :return: a nd array (Concept :class:`~higra.CptValuedHierarchy`)
+    """
     attribute = hg._attribute_sibling(tree, skip)
+    hg.CptValuedHierarchy.link(attribute, tree)
+    return attribute
+
+
+@hg.data_provider("depth")
+def attribute_depth(tree):
+    """
+    The depth of a node `n` of the tree `t` is equal to the number of ancestors of `n` in `t`.
+
+    The depth of the root node is equalt to 0.
+
+    **Provider name**: "depth"
+
+    :param tree: Input tree
+    :return: a nd array (Concept :class:`~higra.CptValuedHierarchy`)
+    """
+    attribute = hg._attribute_depth(tree)
     hg.CptValuedHierarchy.link(attribute, tree)
     return attribute

@@ -23,4 +23,11 @@ void py_init_attributes(pybind11::module &m) {
           "Attribute sibling.",
           pybind11::arg("tree"),
           pybind11::arg("skip") = 1);
+
+    m.def("_attribute_depth",
+          [](const hg::tree &tree) {
+              return hg::attribute_depth(tree);
+          },
+          "Attribute depth.",
+          pybind11::arg("tree"));
 }
