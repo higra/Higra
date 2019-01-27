@@ -40,6 +40,12 @@ class TestAttributes(unittest.TestCase):
         res2 = hg.attribute_sibling(t, -1)
         self.assertTrue(np.all(ref2 == res2))
 
+    def test_depth(self):
+        t = hg.Tree((6, 6, 7, 8, 8, 8, 7, 9, 9, 9))
+        ref = np.asarray((3, 3, 2, 2, 2, 2, 2, 1, 1, 0))
+        res = hg.attribute_depth(t)
+        self.assertTrue(np.all(ref == res))
+
 
 if __name__ == '__main__':
     unittest.main()
