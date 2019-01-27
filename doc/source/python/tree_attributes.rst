@@ -17,6 +17,8 @@ Tree attributes
 
 .. autofunction:: higra.attribute_perimeter_length
 
+.. autofunction:: higra.attribute_regular_altitudes
+
 .. autofunction:: higra.attribute_sibling
 
 .. autofunction:: higra.attribute_vertex_area

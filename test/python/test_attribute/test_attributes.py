@@ -46,6 +46,12 @@ class TestAttributes(unittest.TestCase):
         res = hg.attribute_depth(t)
         self.assertTrue(np.all(ref == res))
 
+    def test_regular_altitudes(self):
+        t = hg.Tree((6, 6, 7, 8, 8, 8, 7, 9, 9, 9))
+        ref = np.asarray((0, 0, 0, 0, 0, 0, 1/3, 2/3, 2/3, 1))
+        res = hg.attribute_regular_altitudes(t)
+        self.assertTrue(np.allclose(ref, res))
+
 
 if __name__ == '__main__':
     unittest.main()

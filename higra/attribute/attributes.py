@@ -244,3 +244,22 @@ def attribute_depth(tree):
     attribute = hg._attribute_depth(tree)
     hg.CptValuedHierarchy.link(attribute, tree)
     return attribute
+
+
+@hg.data_provider("regular_altitudes")
+@hg.argument_helper("depth")
+def attribute_regular_altitudes(tree, depth):
+    """
+    The regular altitudes is comprised between 0 and 1 and is inversely proportional to its depth
+
+    **Provider name**: "regular_altitudes"
+
+    :param tree: input tree
+    :param depth: depth of the tree node (provided by :func:`~higra.attribute_depth` on `tree`)
+    :return: a nd array (Concept :class:`~higra.CptValuedHierarchy`)
+    """
+
+    altitudes = 1 - depth / np.max(depth)
+    altitudes[:tree.num_leaves()] = 0
+    hg.CptValuedHierarchy.link(altitudes, tree)
+    return altitudes
