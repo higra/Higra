@@ -10,13 +10,4 @@
 
 #pragma once
 
-#include "accumulator/all.hpp"
-#include "attribute/all.hpp"
-#include "algo/all.hpp"
-#include "assessment/all.hpp"
-#include "detail/all.hpp"
-#include "hierarchy/all.hpp"
-#include "image/all.hpp"
-#include "interop/all.hpp"
-#include "io_utils/all.hpp"
-#include "structure/all.hpp"
+#include "py_scipy.hpp"

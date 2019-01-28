@@ -36,6 +36,12 @@ Python modules
 
 .. toctree::
     :maxdepth: 2
+    :caption: Interoperability:
+
+    SciPy </python/scipy.rst>
+
+.. toctree::
+    :maxdepth: 2
     :caption: Hierarchy algorithms:
 
     Alignment </python/alignment.rst>

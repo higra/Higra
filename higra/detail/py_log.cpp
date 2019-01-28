@@ -17,7 +17,7 @@
 void py_init_log(pybind11::module &m) {
 
     m.def("version",
-          []() { return "HIGRA_VERSION_MAJOR.HIGRA_VERSION_MINOR.HIGRA_VERSION_PATCH"; },
+          []() { return HG_XSTR(HIGRA_VERSION_MAJOR) "." HG_XSTR(HIGRA_VERSION_MINOR) "." HG_XSTR(HIGRA_VERSION_PATCH); },
           "Gives the version number of higra.");
 
     m.def("set_trace", [](bool enabled) { hg::logger::trace_enabled() = enabled; },

@@ -24,6 +24,7 @@ add_subdirectory(test_assessment)
 add_subdirectory(test_attribute)
 add_subdirectory(test_hierarchy)
 add_subdirectory(test_image)
+add_subdirectory(test_interop)
 add_subdirectory(test_io_utils)
 add_subdirectory(test_structure)
 
