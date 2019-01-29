@@ -21,7 +21,11 @@ Tree attributes
 
 .. autofunction:: higra.attribute_sibling
 
+.. autofunction:: higra.attribute_edge_length
+
 .. autofunction:: higra.attribute_vertex_area
+
+.. autofunction:: higra.attribute_vertex_coordinates
 
 .. autofunction:: higra.attribute_vertex_perimeter
 

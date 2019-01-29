@@ -11,7 +11,6 @@
 set(PY_FILES
         __init__.py
         test_alignment.py
-        test_attributes.py
         test_graph_core.py
         test_graph_weights.py
         test_horizontal_cuts.py
