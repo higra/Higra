@@ -18,8 +18,9 @@ def attribute_vertex_area(graph):
     """
     Compute the vertex area of the given graph.
 
-    If the graph is a region adjacency graph then the area of a region is equal to the sum of the area
-    of the vertices inside the region (obtained with a recursive call to attribute_vertex_area on the original graph).
+    In general the area of a vertex if simply equal to 1. But, if the graph is a region adjacency graph then the area of
+    a region is equal to the sum of the area of the vertices inside the region (obtained with a recursive call to
+    attribute_vertex_area on the original graph).
 
     **Provider name**: "vertex_area"
 
@@ -27,7 +28,7 @@ def attribute_vertex_area(graph):
     :return: a 1d array (Concept :class:`~higra.CptVertexWeightedGraph`)
     """
     if hg.CptRegionAdjacencyGraph.validate(graph):  # this is a rag like graph
-        pre_graph = hg.CptRegionAdjacencyGraph.construct(graph)["pre_graph"]
+        pre_graph = hg.CptRegionAdjacencyGraph.get_pre_graph(graph)
         pre_graph_vertex_area = attribute_vertex_area(pre_graph)
         return hg.rag_accumulate_on_vertices(graph, hg.Accumulators.sum, vertex_weights=pre_graph_vertex_area)
     res = np.ones((graph.num_vertices(),), dtype=np.int64)
@@ -36,22 +37,74 @@ def attribute_vertex_area(graph):
     return res
 
 
+@hg.data_provider("edge_length")
+def attribute_edge_length(graph):
+    """
+    Compute the edge length of the given graph.
+
+    In general the legnth of an edge if simply equal to 1. But, if the graph is a region adjacency graph then the
+    length of an edge is equal to the sum of length of the corresponding edges in the original graph (obtained with a
+    recursive call to attribute_edge_length on the original graph).
+
+    **Provider name**: "edge_length"
+
+    :param graph: input graph
+    :return: a nd array (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    """
+    if hg.CptRegionAdjacencyGraph.validate(graph):  # this is a rag like graph
+        pre_graph = hg.CptRegionAdjacencyGraph.get_pre_graph(graph)
+        pre_graph_edge_length = attribute_edge_length(pre_graph)
+        return hg.rag_accumulate_on_edges(graph, hg.Accumulators.sum, edge_weights=pre_graph_edge_length)
+    res = np.ones((graph.num_edges(),), dtype=np.int64)
+    hg.CptEdgeWeightedGraph.link(res, graph)
+    return res
+
+
 @hg.data_provider("vertex_perimeter")
-def attribute_vertex_perimeter(graph):
+@hg.argument_helper("edge_length")
+def attribute_vertex_perimeter(graph, edge_length):
     """
     Compute the vertex perimeter of the given graph.
-    The perimeter of a vertex is defined as the number of out-edges of the vertex.
+    The perimeter of a vertex is defined as the sum of the length of out-edges of the vertex.
 
     **Provider name**: "vertex_perimeter"
 
     :param graph: input graph
-    :return: a 1d array (Concept :class:`~higra.CptVertexWeightedGraph`)
+    :param edge_length: length of the edges of the input graph (provided by :func:`~higra.attribute_edge_length` on `graph`)
+    :return: a nd array (Concept :class:`~higra.CptVertexWeightedGraph`)
     """
-    vertices = np.arange(graph.num_vertices(), dtype=np.int64)
-    res = graph.out_degree(vertices)
+    res = hg.accumulate_graph_edges(edge_length, hg.Accumulators.sum, graph)
     res = hg.delinearize_vertex_weights(res, graph)
     hg.CptVertexWeightedGraph.link(res, graph)
     return res
+
+
+@hg.data_provider("vertex_coordinates")
+@hg.argument_helper(hg.CptGridGraph)
+def attribute_vertex_coordinates(graph, shape):
+    """
+    Computes the coordinates of the given grid graph.
+
+    **Provider name**: "vertex_coordinates"
+
+    Example
+    =======
+
+    >>> g = hg.get_4_adjacency_graph((2, 3))
+    >>> c = hg.attribute_vertex_coordinates(g)
+    (((0, 0), (0, 1), (0, 2)),
+     ((1, 0), (1, 1), (1, 2)))
+
+    :param graph: Input graph
+    :param shape: (deduced from :class:`~higra.CptGridGraph`)
+    :return: a nd array (Concept :class:`~higra.CptVertexWeightedGraph`)
+    """
+    coords = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
+    coords = [c.reshape((-1, )) for c in coords]
+    attribute = np.stack(reversed(coords), axis=1)
+    attribute = hg.delinearize_vertex_weights(attribute, graph)
+    hg.CptVertexWeightedGraph.link(attribute, graph)
+    return attribute
 
 
 @hg.data_provider("area")
@@ -122,22 +175,24 @@ def attribute_lca_map(tree, leaf_graph):
 
 
 @hg.data_provider("frontier_length")
-@hg.argument_helper(("tree", "lca_map"))
-def attribute_frontier_length(tree, lca_map):
+@hg.argument_helper(hg.CptHierarchy, ("tree", "lca_map"), ("leaf_graph", "edge_length"))
+def attribute_frontier_length(tree, lca_map, edge_length, leaf_graph=None):
     """
     In a partition tree, each node represent the merging of 2 or more regions.
     The frontier of a node is then defined as the common contour between the merged regions.
-    This function compute the length of these common contours as the number of edges going from one of the merged region
-    to another.
+    This function compute the length of these common contours as the sum of the length of edges going from one of the
+    merged region to the other one.
 
     **Provider name**: "frontier_length"
 
     :param tree: input tree
     :param lca_map: indicates for each edge `(i, j)` of the `leaf_graph`, the lowest common ancestor of `i` and `j` in the given tree (provided by :func:`~higra.attribute_lca_map` on `tree`)
+    :param edge_length: length of th edges of the leaf graph (provided by :func:`~higra.attribute_edge_length` on `leaf_graph`)
+    :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array (Concept :class:`~higra.CptValuedHierarchy`)
     """
     frontier_length = np.zeros((tree.num_vertices(),), dtype=np.int64)
-    np.add.at(frontier_length, lca_map, 1)
+    np.add.at(frontier_length, lca_map, edge_length)
     hg.CptValuedHierarchy.link(frontier_length, tree)
     return frontier_length
 
@@ -202,8 +257,9 @@ def attribute_mean_weights(tree, vertex_weights, area, leaf_graph=None):
     if leaf_graph is not None:
         vertex_weights = hg.linearize_vertex_weights(vertex_weights, leaf_graph)
 
-    return hg.accumulate_sequential(vertex_weights.astype(np.float64), hg.Accumulators.sum, tree) / area.reshape(
-        (-1, 1))
+    attribute = hg.accumulate_sequential(vertex_weights.astype(np.float64), hg.Accumulators.sum, tree) / area.reshape((-1, 1))
+    hg.CptValuedHierarchy.link(attribute, tree)
+    return attribute
 
 
 @hg.data_provider("sibling")
