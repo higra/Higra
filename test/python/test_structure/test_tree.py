@@ -204,6 +204,19 @@ class TestTree(unittest.TestCase):
 
         self.assertTrue(t.child(1, 5) == 1)
 
+    def test_leaves_iterator(self):
+        t = TestTree.get_tree()
+
+        ref = [0, 1, 2, 3, 4]
+        self.assertTrue(ref == [l for l in t.leaves()])
+
+    def test_ancestors_iterator(self):
+        t = TestTree.get_tree()
+
+        self.assertTrue([1, 5, 7] == t.ancestors(1))
+        self.assertTrue([6, 7] == t.ancestors(6))
+        self.assertTrue([7] == t.ancestors(7))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -56,7 +56,7 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("children",
           [](const graph_t &g, vertex_t v) {
               pybind11::list l;
-              for(auto c: hg::children_iterator(v, g)){
+              for (auto c: hg::children_iterator(v, g)) {
                   l.append(c);
               }
               return l;
@@ -66,8 +66,17 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("parents", &graph_t::parents, "Get the parents array representing the tree.");
     c.def("parent", [](const graph_t &tree, vertex_t v) { return tree.parent(v); }, "Get the parent of the given node.",
           py::arg("node"));
+    c.def("ancestors", [](const graph_t &tree, vertex_t v) {
+              pybind11::list l;
+              for (auto c: hg::ancestors_iterator(v, tree)) {
+                  l.append(c);
+              }
+              return l;
+          },
+          "Get the list of ancestors of the given node in topological order (starting from the given node included).",
+          py::arg("node"));
 
-    c.def("leaves_iterator",
+    c.def("leaves",
           [](const graph_t &tree) {
               auto range = hg::leaves_iterator(tree);
               return py::make_iterator(range.begin(), range.end());
