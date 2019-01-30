@@ -151,6 +151,20 @@ namespace hg {
     }
 
     /**
+     * Range over the ancestors of v in topological order (starting from v included)
+     *
+     * @tparam graph_t
+     * @param v
+     * @param g
+     * @return
+     */
+    template<typename graph_t>
+    auto ancestors_iterator(typename graph_t::vertex_descriptor v, const graph_t &g){
+        using it_t = typename graph_t::ancestors_iterator;
+        return iterator_wrapper<it_t>(ancestors(v, g));
+    }
+
+    /**
      * Degrees of all the given vertices in the given graph
      * @tparam T type of indices (must be integral, preferably index_t)
      * @tparam graph_t

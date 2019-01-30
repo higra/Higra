@@ -48,6 +48,18 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         }
     }
 
+    BOOST_AUTO_TEST_CASE(ancestorsIteratorTree) {
+        auto t = data.t;
+        vector<hg::index_t> ref = {1, 5, 7};
+        BOOST_CHECK(rangeEqual(ancestors_iterator(1, t), ref));
+
+        vector<hg::index_t> ref2 = {6, 7};
+        BOOST_CHECK(rangeEqual(ancestors_iterator(6, t), ref2));
+
+        vector<hg::index_t> ref3 = {7};
+        BOOST_CHECK(rangeEqual(ancestors_iterator(7, t), ref3));
+    }
+
 
     BOOST_AUTO_TEST_CASE(degreeTree) {
         auto t = data.t;

@@ -146,12 +146,15 @@ Iterators
     *   - Function
         - Returns
         - Description
-    *   - ``children_iterator``
-        - a range of iterators
+    *   - ``children_iterator`` (cpp) ``children`` (python)
+        - a range of iterators (cpp), a list (python)
         - iterator on the children of the given node
-    *   - ``leaves_iterator``
+    *   - ``leaves_iterator`` (cpp) ``leaves`` (python)
         - a range of iterators
         - iterator on the leaves of the tree
+    *   - ``ancestors_iterator`` (cpp) ``ancestors`` (python)
+        - a range of iterators (cpp), a list (python)
+        - iterator from a given node to the root of the tree (both included)
     *   - ``leaves_to_root_iterator``
         - a range of iterators
         - iterator on the nodes of the tree in a topological order
@@ -175,9 +178,17 @@ Iterators
                 ... // 2, 3, 4
             }
 
+            for(auto n: leaves_iterator(t)){
+                ... // 0, 1, 2, ..., 6
+            }
+
+            for(auto n: ancestors_iterator(8, t)){
+                ... // 8, 10, 11
+            }
+
             for(auto n: leaves_to_root_iterator(t,
-                leaves_it::include /* optional: include (default) or exclude leaves from the iterator*/,
-                root_it::include /* optional: include (default) or exclude root from the iterator*/)){
+                    leaves_it::include /* optional: include (default) or exclude leaves from the iterator*/,
+                    root_it::include /* optional: include (default) or exclude root from the iterator*/)){
                 ... // 0, 1, 2, ..., 11
             }
 
@@ -188,8 +199,8 @@ Iterators
             }
 
             for(auto n: root_to_leaves_iterator(t,
-                leaves_it::include /* optional: include (default) or exclude leaves from the iterator*/,
-                root_it::include /* optional: include (default) or exclude root from the iterator*/)){
+                    leaves_it::include /* optional: include (default) or exclude leaves from the iterator*/,
+                    root_it::include /* optional: include (default) or exclude root from the iterator*/)){
                 ... // 11, 10, 9, ..., 0
             }
 
@@ -208,26 +219,32 @@ Iterators
             # creates the tree shown in the figure above
             g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
-            for n in t.children_iterator(8):
+            for n in t.children(8):
                 ... # 2, 3, 4
 
+            for n in t.leaves_iterator():
+                ... # 0, 1, 2, ..., 6
+
+            for n in t.ancestors(8):
+                ... # 8, 10, 11
+
             for n in t.leaves_to_root_iterator(
-                include_leaves = True, # optional: include (default) or exclude leaves from the iterator
+                    include_leaves = True, # optional: include (default) or exclude leaves from the iterator
                     include_root = True): # optional: include (default) or exclude root from the iterator
                 ... // 0, 1, 2, ..., 11
 
             for n in t.leaves_to_root_iterator(
-                include_leaves = False,
+                    include_leaves = False,
                     include_root = False):
                 ... // 7, 8, 9, 10
 
             for n in t.root_to_leaves_iterator(
-                include_leaves = True, # optional: include (default) or exclude leaves from the iterator
+                    include_leaves = True, # optional: include (default) or exclude leaves from the iterator
                     include_root = True): # optional: include (default) or exclude root from the iterator
                 ... // 11, 10, 9, ..., 0
 
             for n in t.root_to_leaves_iterator(
-                include_leaves = False,
+                    include_leaves = False,
                     include_root = False):
                 ... // 10, 9, 8, 7
 
