@@ -55,10 +55,13 @@ void py_init_tree_graph(pybind11::module &m) {
           py::arg("node"));
     c.def("children",
           [](const graph_t &g, vertex_t v) {
-              auto it = hg::children(v, g);
-              return pybind11::make_iterator(it.first, it.second);
+              pybind11::list l;
+              for(auto c: hg::children_iterator(v, g)){
+                  l.append(c);
+              }
+              return l;
           },
-          "Get an iterator on the children of the given node.",
+          "Get a copy of the list of children of the given node.",
           py::arg("node"));
     c.def("parents", &graph_t::parents, "Get the parents array representing the tree.");
     c.def("parent", [](const graph_t &tree, vertex_t v) { return tree.parent(v); }, "Get the parent of the given node.",
