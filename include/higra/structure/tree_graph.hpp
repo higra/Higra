@@ -38,6 +38,9 @@ namespace hg {
         template<bool edge_index_iterator>
         struct tree_graph_adjacent_vertex_iterator;
 
+        // forward declaration
+        struct tree_graph_node_to_root_iterator;
+
         struct tree_graph_traversal_category :
                 virtual public graph::incidence_graph_tag,
                 virtual public graph::bidirectional_graph_tag,
@@ -52,6 +55,7 @@ namespace hg {
             using edge_index_t = index_t;
             using children_list_t = std::vector<vertex_descriptor>;
             using children_iterator = children_list_t::const_iterator;
+            using ancestors_iterator = tree_graph_node_to_root_iterator;
             using edge_descriptor = indexed_edge<vertex_descriptor, edge_index_t>;
             using directed_category = graph::undirected_tag;
             using edge_parallel_category = graph::disallow_parallel_edge_tag;
@@ -274,6 +278,39 @@ namespace hg {
             point_list_iterator_t _child_iterator;
         };
 
+
+        struct tree_graph_node_to_root_iterator :
+                public forward_iterator_facade<tree_graph_node_to_root_iterator, tree::vertex_descriptor> {
+        public:
+            using graph_t = tree;
+            using graph_vertex_t = graph_t::vertex_descriptor;
+
+            tree_graph_node_to_root_iterator(const graph_t & tree, const graph_vertex_t & node)
+                    : m_position(node), m_tree(tree){
+            }
+
+            void increment() {
+                auto par = m_tree.parent(m_position);
+                if(par != m_position){
+                    m_position = par;
+                }else{
+                    m_position = invalid_index;
+                }
+            }
+
+            bool equal(const tree_graph_node_to_root_iterator &that) const {
+                return this->m_position == that.m_position;
+            }
+
+            graph_vertex_t dereference() const {
+                return m_position;
+            }
+
+        private:
+            graph_vertex_t m_position;
+            const graph_t & m_tree;
+        };
+
     }
 
     using tree = tree_internal::tree;
@@ -360,6 +397,13 @@ namespace hg {
     auto
     leaves_iterator(const tree &t){
         return t.leaves_iterator();
+    }
+
+    inline
+    auto
+    ancestors(tree::vertex_descriptor v, const tree & t){
+        using it_t = tree_internal::tree_graph_node_to_root_iterator;
+        return std::make_pair(it_t(t, v), it_t(t, invalid_index));
     }
 
     inline

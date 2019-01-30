@@ -38,6 +38,31 @@ bool vectorEqual(std::vector<T> v1, std::vector<T> v2){
 }
 
 /**
+ * Test if two ranges are equal
+ * @tparam T1
+ * @tparam T2
+ * @param r1
+ * @param r2
+ * @return
+ */
+template <typename T1, typename T2>
+bool rangeEqual(const T1 & r1, const T2 & r2){
+    auto b1 = r1.begin();
+    auto b2 = r2.begin();
+    auto e1 = r1.end();
+    auto e2 = r2.end();
+    for(;b1 != e1 && b2 != e2; b1++, b2++){
+        if(*b1 != *b2){
+            return false;
+        }
+    }
+    if(b1 != e1 || b2 != e2){
+        return false;
+    }
+    return true;
+}
+
+/**
  * Test if two containers contain the same elements
  * @tparam T
  * @param v1
