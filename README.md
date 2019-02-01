@@ -30,7 +30,7 @@ pip install higra
 
 Supported systems: 
 
- - Python 3.4, 3.5, 3.6, 3.7
+ - Python 3.5, 3.6, 3.7
  - Linux 64 bits, macOS, Windows 64 bits
 
 ### C++ backend
