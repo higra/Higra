@@ -2,6 +2,7 @@ language: cpp
 dist: trusty
 branches:
   only:
+  - master
   - /^\d+\.\d+\.\d+(-\S*)?$/
 matrix:
   include:
