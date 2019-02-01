@@ -3,8 +3,8 @@ REM Very dirty: don't use it
 REM Really i'm serious don't use it
 
 @echo off
-set pyversions=3.4 3.5 3.6 3.7
-
+REM set pyversions=3.4 3.5 3.6 3.7
+set pyversions=3.5 3.6 3.7
 
 set wheellocation=.\wheelhouse
 set tmpfolder=.\tmp-build-wheel
@@ -18,6 +18,7 @@ if exist "%tmpfolder%" RMDIR "%tmpfolder%" /s /q
 MKDIR "%tmpfolder%"
 CALL :NORMALIZEPATH "%tmpfolder%"
 SET tmpfolder=%RETVAL%
+set TEMP=.
 
 cd %tmpfolder%
 
@@ -38,9 +39,10 @@ EXIT /B
 	set env_name=build-wheel-py%~1
 	echo Preparing environment %env_name%
 	call conda remove --name %env_name% --all --yes || exit /b
-	call conda create -n %env_name% python=%pyversion% pip numpy cmake boost --yes || exit /b
+	call conda create -n %env_name% python=%pyversion% pip  --yes || exit /b
 	call conda activate %env_name%  || exit /b
-	call python -m pip install --upgrade pip || exit /b
+	call conda install numpy cmake boost -c conda-forge --yes || exit /b
+	call python -m pip install --upgrade pip==18.1 || exit /b
 	
 	echo Building project
 	call git clone https://github.com/PerretB/Higra.git || exit /b
