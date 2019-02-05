@@ -16,8 +16,7 @@ environment:
   Boost_LIBRARY_DIRS: C:\Libraries\boost_1_67_0\lib64-msvc-14.1
   CIBW_TEST_COMMAND: "python -c \"import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
   CIBW_BUILD_VERBOSITY: "1"
-  CIBW_BEFORE_BUILD: "pip install cmake numpy"
-  CIBW_BUILD: "cp3[67]"
+  CIBW_BEFORE_BUILD: "pip install cmake numpy==1.15.4"
   CIBW_SKIP: "*win32"
   TWINE_USERNAME: "bperret"
   TWINE_PASSWORD:
@@ -28,6 +27,16 @@ environment:
       TAG_SCENARIO: false
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
+      CIBW_BUILD: "cp34*"
+    - CIBUILDWHEEL: 1
+      TAG_SCENARIO: true
+      CIBW_BUILD: "cp35*"
+    - CIBUILDWHEEL: 1
+      TAG_SCENARIO: true
+      CIBW_BUILD: "cp36*"
+    - CIBUILDWHEEL: 1
+      TAG_SCENARIO: true
+      CIBW_BUILD: "cp37*"
 
 for:
 -
@@ -45,13 +54,13 @@ init:
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%MINICONDA%\\Library\\bin;%Boost_LIBRARY_DIRS%;%PATH%"
 
 install:
+  - conda config --set always_yes yes --set changeps1 no
+  - conda info -a
   - if %CIBUILDWHEEL% == 0 (
-      conda config --set always_yes yes --set changeps1 no &&
-      conda info -a &&
       conda install cmake numpy -c conda-forge &&
       python setup.py bdist_wheel
       )  else (
-        pip install cibuildwheel==0.10.0 cmake numpy &&
+        pip install cibuildwheel==0.10.1 &&
         cibuildwheel --output-dir wheelhouse
       )
   #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
@@ -69,9 +78,12 @@ build_script:
       cd Release &&
       ctest -C Release -R Test_cpp -V
     ) else (
-      pip install twine &&
-      python -m twine upload --repository-url https://test.pypi.org/legacy/ wheelhouse/*.whl && exit 0
+      conda install twine &&
+      twine upload  wheelhouse/*.whl
     )
+    #python -m pip install --upgrade pip &&
+    #python -m pip install twine &&
+    # --repository-url https://test.pypi.org/legacy/
 
 artifacts:
   - path: "wheelhouse\\*.whl"

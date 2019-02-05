@@ -106,7 +106,7 @@ setup(
     ext_modules=[CMakeExtension('higram')],
     cmdclass=dict(build_ext=CMakeBuild),
     install_requires=[
-        'numpy',
+        'numpy>=1.15.4',
     ],
     zip_safe=False,
     license='CeCILL-B',
