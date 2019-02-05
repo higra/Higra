@@ -82,7 +82,7 @@ env:
   - MINCONDA_OSX="MacOSX-x86_64"
   - CIBW_BUILD_VERBOSITY="1"
   - CIBW_BEFORE_BUILD_LINUX="source tools/cibuildwheel_manylinux.sh"
-  - CIBW_BEFORE_BUILD_MACOS="pip install numpy"
+  - CIBW_BEFORE_BUILD_MACOS="pip install numpy==1.15.4"
   - CIBW_ENVIRONMENT_LINUX='MFLAG="-m64" PATH="/toolchain/bin:${PATH}" CXXFLAGS="-I/toolchain/include
     ${MFLAG} -static-libstdc++" LD_LIBRARY_PATH="/toolchain/lib64:/toolchain/lib:${LD_LIBRARY_PATH}"'
   - CIBW_TEST_COMMAND="python -c \"import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
@@ -126,7 +126,7 @@ install:
     cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python  ..  &&
     make -j2 higram test_exe test_python_exe;
   else
-    pip install cibuildwheel==0.10.0;
+    pip install cibuildwheel==0.10.1;
   fi
 script:
   - |
