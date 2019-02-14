@@ -196,8 +196,8 @@ All operations are done in constant time.
         - the edge with given index (in an undirected graph, always returns the edge whose source vertex is smaller than the target vertex)
         - ``ugraph``, ``tree``
     *   - ``edge_list``
-        - void
         - a pair of arrays (sources, targets) defining all the edges of the graph
+        - void
         - ``ugraph``, ``tree``
 
 Note that python's edges are simply tuples whose first value is the source vertex, second value is the target vertex,
@@ -228,7 +228,7 @@ Example:
             auto ei = index(e, g); // 1
 
             // add the two edges (3, 0) and (3, 1)
-            add_edges({3, 3}, {0, 1});
+            add_edges({3, 3}, {0, 1}, g);
 
             auto ne = num_edges(g); // 4
 
