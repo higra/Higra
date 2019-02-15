@@ -21,6 +21,7 @@ class WeakKeyDictionary:
 
     Uses solely object id as key.
     """
+
     def __init__(self):
         self._data = {}
 
@@ -38,6 +39,7 @@ class WeakKeyDictionary:
                     del self._data[key]
                 except:
                     pass
+
             ref = weakref.ref(obj, on_destroy)
         self._data[key] = ref, value
 
@@ -62,6 +64,7 @@ class WeakKeyDictionary:
                     del self._data[key]
                 except:
                     pass
+
             ref = weakref.ref(obj, on_destroy)
             self._data[key] = ref, default
             return default
@@ -96,11 +99,17 @@ def list_data_providers():
 
 
 def list_attributes(key):
-    return list(hg.__higra_global_cache.get_data(key).keys())
+    try:
+        return list(hg.__higra_global_cache.get_data(key).keys())
+    except TypeError:
+        return ()
 
 
 def get_attribute(key, attribute_name):
-    return hg.__higra_global_cache.get_data(key).get(attribute_name, None)
+    try:
+        return hg.__higra_global_cache.get_data(key).get(attribute_name, None)
+    except TypeError:
+        return None
 
 
 def set_attribute(key, attribute_name, attribute):
@@ -163,12 +172,16 @@ def data_provider(name, description=""):
             data_name = kwargs.pop("attribute_name", name)
             force_recompute = kwargs.pop("force_recompute", False)
             data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
-            obj_cache = data_cache.get_data(obj)
+            try:
+                obj_cache = data_cache.get_data(obj)
 
-            if data_name not in obj_cache or force_recompute:
-                obj_cache[data_name] = fun(obj, *args, **kwargs)
+                if data_name not in obj_cache or force_recompute:
+                    obj_cache[data_name] = fun(obj, *args, **kwargs)
 
-            return obj_cache[data_name]
+                return obj_cache[data_name]
+            except TypeError:
+                # cannot cache obj...
+                return fun(obj, *args, **kwargs)
 
         wrapper.name = name
         wrapper.original = fun
@@ -191,10 +204,13 @@ def __cache_lookup(obj, dep_path, data_cache):
     if obj is None:
         raise __CacheLookupException("Cannot lookup into None-type object cache")
     name, *tail = dep_path.split('.', maxsplit=1)
-    obj_cache = data_cache.get_data(obj)
+    try:
+        obj_cache = data_cache.get_data(obj)
+    except TypeError:
+        obj_cache = None
 
     name_data = None
-    if name in obj_cache:
+    if obj_cache is not None and name in obj_cache:
         name_data = obj_cache[name]
     elif name in hg.__data_providers:  # look in providers
         name_data = hg.__data_providers[name](obj)
@@ -240,7 +256,6 @@ def __resolve_dependency(obj, dep_name, dep_path, data_cache, kwargs):
             raise __CacheLookupException(err) from e
 
 
-
 def __transfer_to_kw_arguments(signature, args, kwargs):
     nargs = list(args)
     for p in signature.parameters.values():
@@ -283,7 +298,6 @@ def data_consumer(*dependencies, **dependencies_path):
                             "get more information about this error."
                     raise Exception(err) from None
 
-
             return fun(*args, **kwargs)
 
         wrapper.original = fun
@@ -293,7 +307,7 @@ def data_consumer(*dependencies, **dependencies_path):
     return decorator
 
 
-def __resolve_concept(arg_name, concept, all_parameters_name,all_data_found,kwargs,data_cache):
+def __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache):
     if not type(concept) is type:
         concept_type = type(concept)
         concept_name_to_arg_name_map = concept.name_mapping
@@ -336,36 +350,30 @@ def argument_helper(*concepts):
                 except:  # failed to unpack, use first parameter name
                     concept = concept_elem
                     arg_name = signature.parameters.values().__iter__().__next__().name
-                try:
-                    if type(concept) is type or issubclass(type(concept), hg.Concept):
-                        __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache)
-                    else:
-                        try:
-                            if arg_name in all_data_found:
-                                arg_value = all_data_found[arg_name]
-                            else:
-                                arg_value = None
-                            __resolve_dependency(arg_value, concept, concept, data_cache, kwargs)
 
-                        except __CacheLookupException as e:
-                            if signature.parameters[arg_name].default is signature.parameters[arg_name].empty:
-                                if data_debug:
-                                    err = "Error during the resolution of the arguments of the function '" \
-                                          + fun.__name__
-                                    raise Exception(err) from e
-                                else:  # swallow exception chain for readability
-                                    err = "Error during the resolution of the arguments of the function '" + fun.__name__ + "'.\n" \
-                                          + str(e) \
-                                          + "\nYou can call your function with the extra parameter 'data_debug=True' to " \
-                                            "get more information about this error."
-                                    raise Exception(err) from None
-                except TypeError as e:
-                    err = "Lookup for the following argument failed: '" \
-                          + arg_name \
-                          + "' with associated data path '" \
-                          + str(concept) \
-                          + "' as the associated object is not suitable for data caching."
-                    raise __CacheLookupException(err) from e
+                if type(concept) is type or issubclass(type(concept), hg.Concept):
+                    __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache)
+                else:
+                    try:
+                        if arg_name in all_data_found:
+                            arg_value = all_data_found[arg_name]
+                        else:
+                            arg_value = None
+                        __resolve_dependency(arg_value, concept, concept, data_cache, kwargs)
+
+                    except __CacheLookupException as e:
+                        if signature.parameters[arg_name].default is signature.parameters[arg_name].empty:
+                            if data_debug:
+                                err = "Error during the resolution of the arguments of the function '" \
+                                      + fun.__name__
+                                raise Exception(err) from e
+                            else:  # swallow exception chain for readability
+                                err = "Error during the resolution of the arguments of the function '" + fun.__name__ + "'.\n" \
+                                      + str(e) \
+                                      + "\nYou can call your function with the extra parameter 'data_debug=True' to " \
+                                        "get more information about this error."
+                                raise Exception(err) from None
+
             return fun(*args, **kwargs)
 
         wrapper.original = fun

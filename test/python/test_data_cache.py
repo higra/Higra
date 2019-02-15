@@ -23,6 +23,13 @@ class Dummy:
         return str(self.hash)
 
 
+class MyException(Exception):
+    def __init__(self, message=""):
+        # Call the base class constructor with the parameters it needs
+        super().__init__(message)
+
+
+
 @hg.data_provider("attr1")
 def provider1(obj, crash=False):
     if crash:
@@ -56,6 +63,18 @@ def provider_consumer(obj, attr1, crash=False):
     if crash:
         raise Exception("Should not have been called")
     return attr1 + 1
+
+
+@hg.argument_helper("attr1")
+def accept_everything(dummy, attr1):
+    return attr1
+
+
+@hg.argument_helper(hg.CptGridGraph)
+def accept_RegularGraph2d(graph, shape):
+    if type(graph) != hg.RegularGraph2d:
+        raise MyException("kaput")
+    return 2
 
 
 class TestDataCache(unittest.TestCase):
@@ -110,6 +129,17 @@ class TestDataCache(unittest.TestCase):
         self.assertTrue(hg.get_attribute(obj8, "attr1") == 1)
         hg.clear_all_attributes()
 
+    def test_argument_helper_accept_everything(self):
+        self.assertTrue(accept_everything(2) == 1)
+        self.assertTrue(accept_everything((3,2)) == 1)
+        self.assertTrue(accept_everything({3, 2}) == 1)
+        self.assertTrue(accept_everything({"toto": 42}) == 1)
+
+    def test_argument_helper_accept_RegularGraph2d(self):
+        g = hg.get_4_adjacency_implicit_graph((2, 3))
+        self.assertTrue(accept_RegularGraph2d(g) == 2)
+
+        self.assertRaises(MyException, accept_RegularGraph2d, (4, 5), (2, 3))
 
 if __name__ == '__main__':
     unittest.main()
