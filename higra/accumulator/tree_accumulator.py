@@ -65,6 +65,22 @@ def propagate_sequential(node_weights, condition, tree):
 
 
 @hg.argument_helper(hg.CptValuedHierarchy)
+def propagate_sequential_and_accumulate(node_weights, accumulator, tree):
+    """
+    Propagates parent values to children anc accumulate with current value.
+    For each node i from the root to the leaves, output(i) = accumulate(node_weights(i), output(parent(i))).
+
+    :param node_weights: Weights on the nodes of the tree (Concept :class:`~higra.CptValuedHierarchy`)
+    :param accumulator: see :class:`~higra.Accumulators`
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
+    """
+    res = hg._propagate_sequential_and_accumulate(tree, node_weights, accumulator)
+    hg.CptValuedHierarchy.link(res, tree)
+    return res
+
+
+@hg.argument_helper(hg.CptValuedHierarchy)
 def propagate_parallel(node_weights, tree, condition=None):
     """
     The conditional parallel propagator defines the new value of a node as its parent value if the condition is true

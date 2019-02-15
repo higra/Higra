@@ -124,6 +124,10 @@ class TestTreeAccumulators(unittest.TestCase):
         ref2 = np.asarray(((8, 1), (2, 7), (7, 2), (4, 5), (7, 2), (8, 1), (7, 2), (8, 1)))
         self.assertTrue(np.allclose(ref2, output2))
 
+        output2 = hg.propagate_sequential_and_accumulate(input_array, hg.Accumulators.sum)
+        ref2 = np.asarray(((15, 12), (16, 11), (18, 9), (19, 8), (20, 7), (14, 4), (15, 3), (8, 1)))
+        self.assertTrue(np.allclose(ref2, output2))
+
 
 if __name__ == '__main__':
     unittest.main()
