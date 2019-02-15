@@ -70,9 +70,9 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
                                            {longmax, longmax},
                                            {longmax, longmax},
                                            {longmax, longmax},
-                                   {1,        0},
-                                   {1,        2},
-                                   {1,        5}};
+                                           {1,       0},
+                                           {1,       2},
+                                           {1,       5}};
         BOOST_CHECK(xt::allclose(ref1, res1));
 
         xt::xtensor<unsigned long, 2> vertex_data{{1, 0},
@@ -94,13 +94,13 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
         auto res3 = accumulate_and_combine_sequential(tree, input, vertex_data, hg::accumulator_sum(),
                                                       std::plus<unsigned long>());
         xt::xtensor<unsigned long, 2> ref3{{1, 0},
-                                   {1, 1},
-                                   {1, 2},
-                                   {1, 3},
-                                   {1, 4},
-                                   {3, 6},
-                                   {4, 15},
-                                   {8, 28}};
+                                           {1, 1},
+                                           {1, 2},
+                                           {1, 3},
+                                           {1, 4},
+                                           {3, 6},
+                                           {4, 15},
+                                           {8, 28}};
         BOOST_CHECK(xt::allclose(ref3, res3));
 
     }
@@ -122,6 +122,10 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
         auto output3 = propagate_sequential(tree, input, condition);
         array_1d<int> ref3{8, 2, 7, 4, 7, 8, 7, 8};
         BOOST_CHECK(xt::allclose(ref3, output3));
+
+        auto output4 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_sum());
+        array_1d<int> ref4{15, 16, 18, 19, 20, 14, 15, 8};
+        BOOST_CHECK(xt::allclose(ref4, output4));
     }
 
     BOOST_AUTO_TEST_CASE(treePropagateVect) {
@@ -169,6 +173,19 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
                            {7, 2},
                            {8, 1}};
         BOOST_CHECK(xt::allclose(ref3, output3));
+
+        auto output4 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_sum());
+        array_2d<int> ref4{{15, 12},
+                           {16, 11},
+                           {18, 9},
+                           {19, 8},
+                           {20, 7},
+                           {14, 4},
+                           {15, 3},
+                           {8,  1}};
+        BOOST_CHECK(xt::allclose(ref4, output4));
+        std::cout << output4 << std::endl;
+
     }
 
 BOOST_AUTO_TEST_SUITE_END();
