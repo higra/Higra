@@ -108,8 +108,6 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
             BOOST_CHECK(out_degree(v, g) == outListsRef[v].size());
 
         }
-
-
     }
 
 
@@ -176,6 +174,24 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
             for (auto e: hg::in_edge_iterator(v, g))
                 inListTest.push_back(e);
             BOOST_CHECK(vectorSame(inListsRef[v], inListTest));
+        }
+    }
+
+    BOOST_AUTO_TEST_CASE_TEMPLATE(addEdges, T, test_types) {
+        auto g = data<T>::g();
+
+        ugraph g2(4);
+
+        array_1d<int> sources{0, 1, 0};
+        array_1d<int> targets{1, 2, 2};
+        add_edges(sources, targets, g2);
+
+        BOOST_CHECK(num_edges(g2) == 3);
+
+        for (index_t i = 0; i < num_edges(g2); i++) {
+            auto e1 = edge_from_index(i, g);
+            auto e2 = edge_from_index(i, g2);
+            BOOST_CHECK(e1 == e2);
         }
     }
 
@@ -350,24 +366,24 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
 
         auto adj_mat = undirected_graph_2_adjacency_matrix(g, edge_weights, -1);
 
-        array_2d<int> ref_adj_mat = {{-1,  1,  2,  3,  4},
-                                     { 1, -1,  5, -1, -1},
-                                     { 2,  5, -1,  6,  7},
-                                     { 3, -1,  6, -1, -1},
-                                     { 4, -1,  7, -1, -1}};
+        array_2d<int> ref_adj_mat = {{-1, 1,  2,  3,  4},
+                                     {1,  -1, 5,  -1, -1},
+                                     {2,  5,  -1, 6,  7},
+                                     {3,  -1, 6,  -1, -1},
+                                     {4,  -1, 7,  -1, -1}};
 
         BOOST_CHECK(ref_adj_mat == adj_mat);
         auto res = adjacency_matrix_2_undirected_graph(ref_adj_mat, -1);
 
-        auto & g2 = res.first;
-        auto & ew2 = res.second;
-        
+        auto &g2 = res.first;
+        auto &ew2 = res.second;
+
         BOOST_CHECK(ew2 == edge_weights);
         BOOST_CHECK(num_vertices(g) == num_vertices(g2));
         BOOST_CHECK(num_edges(g) == num_edges(g2));
         auto it1 = edges(g);
         auto it2 = edges(g);
-        for(auto i1 = it1.first, i2 = it2.first; i1 != it1.second; i1++, i2++){
+        for (auto i1 = it1.first, i2 = it2.first; i1 != it1.second; i1++, i2++) {
             BOOST_CHECK(*i1 == *i2);
         }
     }
