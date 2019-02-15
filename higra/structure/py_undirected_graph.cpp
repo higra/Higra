@@ -64,6 +64,11 @@ void init_graph(class_t &c) {
               return hg::add_vertex(g);
           },
           "Add a vertex to the graph, the index of the new vertex is returned");
+    c.def("add_vertices", [](graph_t &g, size_t num) {
+              hg::add_vertices(num, g);
+          },
+          py::arg("num"),
+          "Add the given number of vertices to the graph.");
     c.def("set_edge", &graph_t::set_edge,
           py::arg("edge_index"),
           py::arg("source"),

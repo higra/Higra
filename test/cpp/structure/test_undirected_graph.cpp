@@ -23,8 +23,6 @@ typedef boost::mpl::list<hg::ugraph, hg::undirected_graph<hg::hash_setS> > test_
 BOOST_AUTO_TEST_SUITE(undirectedGraph);
 
 
-
-
     using namespace std;
     using namespace hg;
 
@@ -123,6 +121,14 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
 
         BOOST_CHECK(vectorEqual(vref, vtest));
 
+    }
+
+    BOOST_AUTO_TEST_CASE_TEMPLATE(addVertices, T, test_types) {
+        T g{};
+        hg::add_vertices(4, g);
+        add_edge(0, 3, g);
+
+        BOOST_CHECK(num_vertices(g) == 4);
     }
 
     BOOST_AUTO_TEST_CASE_TEMPLATE(edgeIteratorSimpleGraph, T, test_types) {

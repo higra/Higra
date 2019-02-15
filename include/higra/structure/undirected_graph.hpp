@@ -141,6 +141,13 @@ namespace hg {
                 return tmp;
             }
 
+            void add_vertices(size_t num) {
+                if(num > 0) {
+                    _num_vertices += num;
+                    out_edges.resize(_num_vertices);
+                }
+            }
+
             void remove_edge(edge_index_t ei) {
                 auto &source = edges[ei].source;
                 auto &target = edges[ei].target;
@@ -286,6 +293,11 @@ namespace hg {
     template<typename T>
     typename hg::undirected_graph<T>::vertex_descriptor add_vertex(hg::undirected_graph<T> &g) {
         return g.add_vertex();
+    }
+
+    template<typename T>
+    void add_vertices(size_t num, hg::undirected_graph<T> &g) {
+        g.add_vertices(num);
     }
 
     template<typename T>
