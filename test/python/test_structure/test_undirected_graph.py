@@ -23,8 +23,7 @@ class TestUndirectedGraph(unittest.TestCase):
         g.add_edge(0, 2)
         return g
 
-
-    def test_add_vertices(self):
+    def test_add_vertex(self):
         g = hg.UndirectedGraph()
         self.assertTrue(g.num_vertices() == 0)
         self.assertTrue(g.add_vertex() == 0)
@@ -35,7 +34,15 @@ class TestUndirectedGraph(unittest.TestCase):
         g = hg.UndirectedGraph(3)
         self.assertTrue(g.num_vertices() == 3)
 
-    def test_add_edges(self):
+    def test_add_vertices(self):
+        g = hg.UndirectedGraph()
+        self.assertTrue(g.num_vertices() == 0)
+        g.add_vertices(3)
+        self.assertTrue(g.num_vertices() == 3)
+        g.add_vertices(2)
+        self.assertTrue(g.num_vertices() == 5)
+
+    def test_add_edge(self):
         g = hg.UndirectedGraph(3)
         self.assertTrue(g.num_edges() == 0)
         g.add_edge(0, 1)
@@ -51,6 +58,19 @@ class TestUndirectedGraph(unittest.TestCase):
 
         g.add_edge(0, 2)
         self.assertTrue(g.num_edges() == 4)
+
+    def test_add_edges(self):
+        g = hg.UndirectedGraph(3)
+        g.add_edge(0, 1)
+        g.add_edge(0, 2)
+
+        g2 = hg.UndirectedGraph(3)
+        g2.add_edges((0, 0), (1, 2))
+
+        self.assertTrue(g2.num_edges() == 2)
+
+        for i in range(g2.num_edges()):
+            self.assertTrue(g.edge_from_index(i) == g2.edge_from_index(i))
 
     def test_vertex_iterator(self):
         g = TestUndirectedGraph.test_graph()

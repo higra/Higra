@@ -41,7 +41,8 @@ For example, the function ``num_vertices`` that returns the number of vertices i
 Vertices
 --------
 
-Graph vertices are represented by positive integers (``index_t`` in c++), suitable for array indexing. All operations are done in constant time.
+Graph vertices are represented by positive integers (``index_t`` in c++), suitable for array indexing.
+Note that the constructor of the `ugraph` class accepts a single parameter: the initial number of vertices in the graph.
 
 
 .. list-table::
@@ -54,6 +55,10 @@ Graph vertices are represented by positive integers (``index_t`` in c++), suitab
     *   - ``add_vertex``
         - new vertex
         - add a new vertex to the graph
+        - ``ugraph``
+    *   - ``add_vertices``
+        - void
+        - add a given number of new vertices to the graph
         - ``ugraph``
     *   - ``num_vertices``
         - positive integer
@@ -69,14 +74,16 @@ Example:
         .. code-block:: cpp
             :linenos:
 
-                #include "higra/graph.hpp"
-                using namespace hg;
+            #include "higra/graph.hpp"
+            using namespace hg;
 
-                ugraph g;
-                add_vertex(g);
-                add_vertex(g);
+            ugraph g;
+            add_vertex(g);
+            add_vertex(g);
 
-                auto nv = num_vertices(g); // 2
+            add_vertices(3, g);
+
+            auto nv = num_vertices(g); // 5
 
 
     .. tab:: python
@@ -84,13 +91,15 @@ Example:
         .. code-block:: python
             :linenos:
 
-                import higra as hg
+            import higra as hg
 
-                g = hg.UndirectedGraph()
-                g.add_vertex()
-                g.add_vertex()
+            g = hg.UndirectedGraph()
+            g.add_vertex()
+            g.add_vertex()
 
-                nv = g.num_vertices() # 2
+            g.add_vertices(3)
+
+            nv = g.num_vertices() # 5
 
 
 Iterating on vertices
@@ -120,16 +129,16 @@ Iterating on vertices
         .. code-block:: cpp
             :linenos:
 
-                ugraph g;
-                ...
+            ugraph g;
+            ...
 
-                for(auto v: vertex_iterator(g)){
-                    ... // all vertices of g
-                }
+            for(auto v: vertex_iterator(g)){
+                ... // all vertices of g
+            }
 
-                for(auto v: adjacent_vertex_iterator(1, g)){
-                    ... // all vertices adjacent to vertex 1 in g
-                }
+            for(auto v: adjacent_vertex_iterator(1, g)){
+                ... // all vertices adjacent to vertex 1 in g
+            }
 
 
     .. tab:: python
@@ -137,14 +146,14 @@ Iterating on vertices
         .. code-block:: python
             :linenos:
 
-                g = hg.UndirectedGraph()
-                ...
+            g = hg.UndirectedGraph()
+            ...
 
-                for v in g.vertices():
-                    ... # all vertices of g
+            for v in g.vertices():
+                ... # all vertices of g
 
-                for v in g.adjacent_vertices(1):
-                    ... # all vertices adjacent to vertex 1 in g
+            for v in g.adjacent_vertices(1):
+                ... # all vertices adjacent to vertex 1 in g
 
 Edges
 -----

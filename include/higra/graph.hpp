@@ -159,7 +159,7 @@ namespace hg {
      * @return
      */
     template<typename graph_t>
-    auto ancestors_iterator(typename graph_t::vertex_descriptor v, const graph_t &g){
+    auto ancestors_iterator(typename graph_t::vertex_descriptor v, const graph_t &g) {
         using it_t = typename graph_t::ancestors_iterator;
         return iterator_wrapper<it_t>(ancestors(v, g));
     }
@@ -229,6 +229,29 @@ namespace hg {
         res.reshape(index.shape());
         return res;
     };
+
+    /**
+     * Add all edges given as a pair of arrays (sources, targets) to the graph.
+     *
+     * @tparam T xexpression type
+     * @tparam graph_t Mutable graph type
+     * @param xsources Must be a 1d array of integral values
+     * @param xtargets Must have the same shape as xsources
+     * @param g A mutable graph
+     */
+    template<typename T, typename graph_t>
+    void add_edges(const xt::xexpression<T> &xsources,
+                   const xt::xexpression<T> &xtargets,
+                   graph_t &g) {
+        auto &sources = xsources.derived_cast();
+        auto &targets = xtargets.derived_cast();
+        hg_assert_1d_array(sources);
+        hg_assert_integral_value_type(sources);
+        hg_assert_same_shape(sources, targets);
+
+        for (index_t i = 0; i < sources.size(); i++)
+            g.add_edge(sources(i), targets(i));
+    }
 
     /**
      * Create a new graph as a copy of the given graph
@@ -314,14 +337,15 @@ namespace hg {
     auto undirected_graph_2_adjacency_matrix(const undirected_graph &graph,
                                              const xt::xexpression<T> &xedge_weights,
                                              const value_type &non_edge_value = 0) {
-        auto & edge_weights = xedge_weights.derived_cast();
+        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         array_2d<value_type> a = array_2d<value_type>::from_shape({num_vertices(graph), num_vertices(graph)});
 
         a.fill(non_edge_value);
 
-        for (const auto & e: edge_iterator(graph)) {
-            a(source(e, graph), target(e, graph)) = a(target(e, graph), source(e, graph)) = edge_weights(index(e, graph));
+        for (const auto &e: edge_iterator(graph)) {
+            a(source(e, graph), target(e, graph)) = a(target(e, graph), source(e, graph)) = edge_weights(
+                    index(e, graph));
         }
 
         return a;
@@ -340,8 +364,8 @@ namespace hg {
      */
     template<typename T, typename value_type = typename T::value_type>
     auto adjacency_matrix_2_undirected_graph(const xt::xexpression<T> &xadjacency_matrix,
-                                             const value_type &non_edge_value = 0){
-        auto & adjacency_matrix = xadjacency_matrix.derived_cast();
+                                             const value_type &non_edge_value = 0) {
+        auto &adjacency_matrix = xadjacency_matrix.derived_cast();
         hg_assert(adjacency_matrix.dimension() == 2, "Adjacency matrix must be a 2d array.");
         hg_assert(adjacency_matrix.shape()[0] == adjacency_matrix.shape()[1], "Adjacency matrix must be square.");
 
@@ -349,18 +373,18 @@ namespace hg {
         ugraph g(n_vertices);
 
         index_t n_edges = 0;
-        for(index_t i = 0; i < n_vertices; i++){
-            for(index_t j = i; j < n_vertices; j++){
-                if(adjacency_matrix(i, j) != non_edge_value){
+        for (index_t i = 0; i < n_vertices; i++) {
+            for (index_t j = i; j < n_vertices; j++) {
+                if (adjacency_matrix(i, j) != non_edge_value) {
                     n_edges++;
                 }
             }
         }
         array_1d<value_type> edge_weights = xt::empty<value_type>({n_edges});
         index_t n = 0;
-        for(index_t i = 0; i < n_vertices; i++){
-            for(index_t j = i; j < n_vertices; j++){
-                if(adjacency_matrix(i, j) != non_edge_value){
+        for (index_t i = 0; i < n_vertices; i++) {
+            for (index_t j = i; j < n_vertices; j++) {
+                if (adjacency_matrix(i, j) != non_edge_value) {
                     g.add_edge(i, j);
                     edge_weights(n++) = adjacency_matrix(i, j);
                 }

@@ -13,8 +13,25 @@
 
 namespace py = pybind11;
 
+template<typename graph_t>
+struct def_add_edges {
+    template<typename value_t, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("add_edges", [](graph_t &g,
+                              pyarray<value_t> sources,
+                              pyarray<value_t> targets
+              ) {
+                  hg::add_edges(sources, targets, g);
+              },
+              doc,
+              py::arg("sources"),
+              py::arg("targets"));
+    }
+};
+
 template<typename graph_t, typename class_t>
-void init_graph(class_t &c){
+void init_graph(class_t &c) {
 
     using edge_t = typename hg::graph_traits<graph_t>::edge_descriptor;
     using vertex_t = typename hg::graph_traits<graph_t>::vertex_descriptor;
@@ -39,10 +56,19 @@ void init_graph(class_t &c){
           "Add an (undirected) edge between 'vertex1' and 'vertex2'. Returns the new edge.",
           py::arg("source"),
           py::arg("target"));
+
+    add_type_overloads<def_add_edges<graph_t>, int, unsigned int, long long, unsigned long long>
+            (c, "Add all edges given as a pair of arrays (sources, targets) to the graph.");
+
     c.def("add_vertex", [](graph_t &g) {
               return hg::add_vertex(g);
           },
           "Add a vertex to the graph, the index of the new vertex is returned");
+    c.def("add_vertices", [](graph_t &g, size_t num) {
+              hg::add_vertices(num, g);
+          },
+          py::arg("num"),
+          "Add the given number of vertices to the graph.");
     c.def("set_edge", &graph_t::set_edge,
           py::arg("edge_index"),
           py::arg("source"),
