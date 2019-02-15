@@ -238,6 +238,49 @@ struct def_propagate_parallel {
     }
 };
 
+
+template<typename graph_t>
+struct def_propagate_sequential_and_accumulate {
+    template<typename value_t, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("_propagate_sequential_and_accumulate",
+              [](const graph_t &tree, const pyarray<value_t> &vertex_data, hg::accumulators accumulator) {
+                  switch (accumulator) {
+                      case hg::accumulators::min:
+                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_min());
+                          break;
+                      case hg::accumulators::max:
+                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_max());
+                          break;
+                      case hg::accumulators::mean:
+                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_mean());
+                          break;
+                      case hg::accumulators::counter:
+                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_counter());
+                          break;
+                      case hg::accumulators::sum:
+                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_sum());
+                          break;
+                      case hg::accumulators::prod:
+                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_prod());
+                          break;
+                      case hg::accumulators::first:
+                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_first());
+                          break;
+                      case hg::accumulators::last:
+                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_last());
+                          break;
+                  }
+                  throw std::runtime_error("Unknown accumulator.");
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("vertex_data"),
+              py::arg("accumulator"));
+    }
+};
+
 void py_init_tree_accumulator(pybind11::module &m) {
     add_type_overloads<def_accumulate_parallel<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
@@ -275,5 +318,8 @@ void py_init_tree_accumulator(pybind11::module &m) {
             (m, "");
 
     add_type_overloads<def_propagate_sequential<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
+            (m, "");
+
+    add_type_overloads<def_propagate_sequential_and_accumulate<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m, "");
 }

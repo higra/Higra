@@ -339,7 +339,7 @@ The following example demonstrates the application of a parallel sum accumulator
             t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
             input = numpy.ones((t.num_vertices(),))
 
-            result = hg.accumulate_parallel(t, input, hg.Accumulators.sum)
+            result = hg.accumulate_parallel(input, hg.Accumulators.sum, t)
 
             # result = (0, 0, 0, 0, 0, 2, 3, 2)
 
@@ -397,7 +397,7 @@ The following example demonstrates the application of a sequential sum accumulat
             t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
             input = numpy.ones((t.num_leaves(),))
 
-            result = hg.accumulate_sequential(t, input, hg.Accumulators.sum)
+            result = hg.accumulate_sequential(input, hg.Accumulators.sum, t)
 
             # result = (1, 1, 1, 1, 1, 2, 3, 5)
 
@@ -463,7 +463,7 @@ The following example demonstrates the application of sequential max accumulator
             leaf_attribute = numpy.ones((t.num_leaves(),))
             tree_attribute = numpy.ones((t.num_vertices(),))
 
-            result = hg.accumulate_and_add_sequential(tree, tree_attribute, leaf_attribute, hg.Accumulators.max)
+            result = hg.accumulate_and_add_sequential(tree_attribute, leaf_attribute, hg.Accumulators.max, tree)
 
             # result = (1, 1, 1, 1, 1, 2, 2, 3)
 
@@ -540,7 +540,7 @@ The following example demonstrates the application of a conditional parallel pro
             input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
             condition = numpy.asarray((True, False, True, False, True, True, False, False))
 
-            result = hg.propagate_parallel(t, input, condition)
+            result = hg.propagate_parallel(input, condition, t)
 
             # result = (6, 2, 7, 4, 7, 8, 7, 8)
 
@@ -599,6 +599,62 @@ The following example demonstrates the application of a conditional sequential p
             input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
             condition = numpy.asarray((True, False, True, False, True, True, False, False))
 
-            result = hg.propagate_sequential(t, input, condition)
+            result = hg.propagate_sequential(input, condition, t)
 
             # result = (8, 2, 7, 4, 7, 8, 7, 8)
+
+Sequential propagate and accumulate
+***********************************
+
+The sequential propagate and accumulate defines the new value of a node as its parent value accumulated with its current value.
+This process is done from the root to the leaves of the tree.
+
+The propagate and accumulate pseudo-code could be:
+
+.. code-block:: python
+    :linenos:
+
+    # input: a tree t
+    # input: an attribute att on the nodes of t
+    # input: an accumulator acc
+
+    output[t.root] = acc(input[t.root])
+
+    for each node n of t from the root (excluded) to the leaves:
+        output[n] = acc(output[t.parent(n)], input[n])
+
+    return output
+
+The following example demonstrates the application of a propagate and accumulate with a sum accumulator:
+
+.. image:: fig/tree_demo_propagate_sequential_and_accumulate.svg
+    :align: center
+
+
+.. tabs::
+
+    .. tab:: c++
+
+        .. code-block:: cpp
+            :linenos:
+
+            // tree in the above example
+            tree t({5, 5, 6, 6, 6, 7, 7, 7});
+            array_1d<index_t> input{1, 2, 3, 4, 5, 6, 7, 8};
+
+            auto result = propagate_sequential_and_accumulate(t, input, hg.Accumulators.sum);
+
+            // result = {15, 16, 18, 19, 20, 14, 15, 8};
+
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            # tree in the above example
+            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+            input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
+
+            result = hg.propagate_sequential_and_accumulate(input, condition, t)
+
+            # result = (15, 16, 18, 19, 20, 14, 15, 8)
