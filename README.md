@@ -12,7 +12,7 @@ Higra is a C++/Python library for efficient graph analysis with a special focus 
 - efficient methods and data structures to handle the dual representation of hierarchical clustering: dendrograms (trees) and ultra-metric distances (saliency maps);
 - hierarchical clustering algorithms: agglomerative clustering (single-linkage, average-linkage, complete-linkage, or custom rule), hierarchical watersheds;
 - various algorithms to manipulate and explore hierarchical clustering: accumulators, filtering/simplification, cluster extraction, (optimal) partitioning , alignment;
-- algorithms on graphs: accumulators, computation of dissimilarities, partionning;
+- algorithms on graphs: accumulators, computation of dissimilarities, partitioning;
 - assessment: supervised assessment of graph clustering and hierarchical clustering;
 - image toolbox: special methods for grid graphs, hierarchical clustering methods dedicated to image analysis.
 
@@ -30,7 +30,7 @@ pip install higra
 
 Supported systems: 
 
- - Python 3.5, 3.6, 3.7
+ - Python 3.4, 3.5, 3.6, 3.7
  - Linux 64 bits, macOS, Windows 64 bits
 
 ### C++ backend
@@ -55,7 +55,7 @@ Requires:
 Commands:
 
 ```bash
-git clone https://git.esiee.fr/perretb/Higra.git
+git clone https://github.com/PerretB/Higra.git
 mkdir build
 cd build
 cmake ../Higra/
@@ -72,7 +72,7 @@ cmake -DPYTHON_EXECUTABLE:FILEPATH=/anaconda3/bin/python ../Higra/
 The python package is build in the directory
 
 ```
-build/python/
+build/higra/
 ```
 
 ### With setup.py
