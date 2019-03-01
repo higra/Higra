@@ -624,7 +624,7 @@ namespace xt
     template <class S>
     inline pyarray<T, L> pyarray<T, L>::from_shape(S&& shape)
     {
-        auto shp = xtl::forward_sequence<shape_type>(shape);
+        auto shp = xtl::forward_sequence<shape_type, S>(shape);
         return self_type(shp);
     }
     //@}
@@ -679,7 +679,7 @@ namespace xt
         : base_type()
     {
         // TODO: prevent intermediary shape allocation
-        shape_type shape = xtl::forward_sequence<shape_type>(e.derived_cast().shape());
+        shape_type shape = xtl::forward_sequence<shape_type, decltype(e.derived_cast().shape())>(e.derived_cast().shape());
         strides_type strides = xtl::make_sequence<strides_type>(shape.size(), size_type(0));
         compute_strides(shape, layout_type::row_major, strides);
         init_array(shape, strides);
@@ -744,9 +744,11 @@ namespace xt
     template <class T, layout_type L>
     inline void pyarray<T, L>::init_from_python()
     {
-        if(!static_cast<bool>(*this))
+        if (!static_cast<bool>(*this))
+        {
             return;
-
+        }
+        
         m_shape = inner_shape_type(reinterpret_cast<size_type*>(PyArray_SHAPE(this->python_array())),
                                    static_cast<size_type>(PyArray_NDIM(this->python_array())));
         m_strides = inner_strides_type(reinterpret_cast<difference_type*>(PyArray_STRIDES(this->python_array())),
@@ -759,7 +761,7 @@ namespace xt
 
         m_backstrides = backstrides_type(*this);
         m_storage = storage_type(reinterpret_cast<pointer>(PyArray_DATA(this->python_array())),
-                                 this->get_min_stride() * static_cast<size_type>(PyArray_SIZE(this->python_array())));
+                                 this->get_buffer_size());
     }
 
     template <class T, layout_type L>

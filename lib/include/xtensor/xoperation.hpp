@@ -15,12 +15,39 @@
 
 #include <xtl/xsequence.hpp>
 
-#include "xconcepts.hpp"
 #include "xfunction.hpp"
 #include "xscalar.hpp"
 #include "xstrides.hpp"
 #include "xstrided_view.hpp"
 #include "xmanipulation.hpp"
+
+namespace xtl
+{
+    template <class CT, class CB>
+    class xoptional;
+
+    template <class... Args>
+    struct at_least_one_xoptional : disjunction<is_xoptional<Args>...>
+    {
+    };
+
+    template <class B, class T1, class T2, XTL_REQUIRES(negation<at_least_one_xoptional<B, T1, T2>>)>
+    inline std::common_type_t<T1, T2> select(const B& cond, const T1& v1, const T2& v2) noexcept
+    {
+        return cond ? v1 : v2;
+    }
+
+    template <class B, class T1, class T2, XTL_REQUIRES(at_least_one_xoptional<B, T1, T2>)>
+    inline common_optional_t<T1, T2> select(const B& cond, const T1& v1, const T2& v2) noexcept
+    {
+        using bool_type = common_optional_t<B>;
+        using return_type = common_optional_t<T1, T2>;
+        bool_type opt_cond(cond);
+        return opt_cond.has_value() ?
+            opt_cond.value() ? return_type(v1) : return_type(v2) :
+            missing<typename return_type::value_type>();
+    }
+}
 
 namespace xt
 {
@@ -47,12 +74,6 @@ namespace xt
 #define UNARY_OPERATOR_FUNCTOR(NAME, OP) UNARY_OPERATOR_FUNCTOR_IMPL(NAME, OP, T)
 #define UNARY_BOOL_OPERATOR_FUNCTOR(NAME, OP) UNARY_OPERATOR_FUNCTOR_IMPL(NAME, OP, bool)
 
-    /* In this macro, T is assumed to be the promote_type of all arguments.
-       Nonetheless, operator() is implemented as a function template,
-       because automatic conversion of the actual argument types to T may
-       cause 'possible loss of data' warnings, e.g. when T is double and an
-       argument is uint64_t.
-    */
 #define BINARY_OPERATOR_FUNCTOR_IMPL(NAME, OP, R)                                \
     struct NAME                                                                  \
     {                                                                            \
@@ -102,11 +123,12 @@ namespace xt
             template <class B>
             using get_batch_bool = typename xsimd::simd_traits<typename xsimd::revert_simd_traits<B>::type>::bool_type;
 
-            template <class A1, class A2>
-            constexpr auto operator()(bool t1, const A1& t2, const A2& t3) const noexcept
+            template <class B, class A1, class A2>
+            constexpr auto operator()(const B& cond, const A1& v1, const A2& v2) const noexcept
             {
-                return t1 ? t2 : t3;
+                return xtl::select(cond, v1, v2);
             }
+
             template <class B>
             constexpr B simd_apply(const get_batch_bool<B>& t1,
                                    const B& t2,
@@ -474,6 +496,71 @@ namespace xt
         return detail::make_xfunction<detail::right_shift>(std::forward<E1>(e1), std::forward<E2>(e2));
     }
 
+    namespace detail
+    {
+        // Shift operator is not available for all the types, so the xfunction type instantiation
+        // has to be delayed, enable_if_t is not sufficient
+        template <class F, class E1, class E2>
+        struct shift_function_getter
+        {
+            using type = xfunction_type_t<F, E1, E2>;
+        };
+
+        template <bool B, class T>
+        struct eval_enable_if
+        {
+            using type = typename T::type;
+        };
+
+        template <class T>
+        struct eval_enable_if<false, T>
+        {
+        };
+
+        template <bool B, class T>
+        using eval_enable_if_t = typename eval_enable_if<B, T>::type;
+
+        template <class F, class E1, class E2>
+        using shift_return_type_t = eval_enable_if_t<is_xexpression<std::decay_t<E1>>::value,
+                                                     shift_function_getter<F, E1, E2>>;
+    }
+
+    /**
+     * @ingroup bitwise_operators
+     * @brief Bitwise left shift
+     *
+     * Returns an \ref xfunction for the element-wise bitwise left shift of e1
+     * by e2.
+     * @param e1 an \ref xexpression
+     * @param e2 an \ref xexpression
+     * @return an \ref xfunction
+     * @sa left_shift
+     */
+    template <class E1, class E2>
+    inline auto operator<<(E1&& e1, E2&& e2) noexcept
+        -> detail::shift_return_type_t<detail::left_shift, E1, E2>
+    {
+        return left_shift(std::forward<E1>(e1), std::forward<E2>(e2));
+    }
+
+    /**
+     * @ingroup bitwise_operators
+     * @brief Bitwise right shift
+     *
+     * Returns an \ref xfunction for the element-wise bitwise right shift of e1
+     * by e2.
+     * @param e1 an \ref xexpression
+     * @param e2 an \ref xexpression
+     * @return an \ref xfunction
+     * @sa right_shift
+     */
+    template <class E1, class E2>
+    inline auto operator>>(E1&& e1, E2&& e2)
+        -> detail::shift_return_type_t<detail::right_shift, E1, E2>
+    {
+        return right_shift(std::forward<E1>(e1), std::forward<E2>(e2));
+    }
+
     /**
      * @defgroup comparison_operators Comparison operators
      */
@@ -496,15 +583,15 @@ namespace xt
     }
 
     /**
-    * @ingroup comparison_operators
-    * @brief Lesser or equal
-    *
-    * Returns an \ref xfunction for the element-wise
-    * lesser or equal comparison of \a e1 and \a e2.
-    * @param e1 an \ref xexpression or a scalar
-    * @param e2 an \ref xexpression or a scalar
-    * @return an \ref xfunction
-    */
+     * @ingroup comparison_operators
+     * @brief Lesser or equal
+     *
+     * Returns an \ref xfunction for the element-wise
+     * lesser or equal comparison of \a e1 and \a e2.
+     * @param e1 an \ref xexpression or a scalar
+     * @param e2 an \ref xexpression or a scalar
+     * @return an \ref xfunction
+     */
     template <class E1, class E2>
     inline auto operator<=(E1&& e1, E2&& e2) noexcept
         -> detail::xfunction_type_t<detail::less_equal, E1, E2>
@@ -513,15 +600,15 @@ namespace xt
     }
 
     /**
-    * @ingroup comparison_operators
-    * @brief Greater than
-    *
-    * Returns an \ref xfunction for the element-wise
-    * greater than comparison of \a e1 and \a e2.
-    * @param e1 an \ref xexpression or a scalar
-    * @param e2 an \ref xexpression or a scalar
-    * @return an \ref xfunction
-    */
+     * @ingroup comparison_operators
+     * @brief Greater than
+     *
+     * Returns an \ref xfunction for the element-wise
+     * greater than comparison of \a e1 and \a e2.
+     * @param e1 an \ref xexpression or a scalar
+     * @param e2 an \ref xexpression or a scalar
+     * @return an \ref xfunction
+     */
     template <class E1, class E2>
     inline auto operator>(E1&& e1, E2&& e2) noexcept
         -> detail::xfunction_type_t<detail::greater, E1, E2>
@@ -530,15 +617,15 @@ namespace xt
     }
 
     /**
-    * @ingroup comparison_operators
-    * @brief Greater or equal
-    *
-    * Returns an \ref xfunction for the element-wise
-    * greater or equal comparison of \a e1 and \a e2.
-    * @param e1 an \ref xexpression or a scalar
-    * @param e2 an \ref xexpression or a scalar
-    * @return an \ref xfunction
-    */
+     * @ingroup comparison_operators
+     * @brief Greater or equal
+     *
+     * Returns an \ref xfunction for the element-wise
+     * greater or equal comparison of \a e1 and \a e2.
+     * @param e1 an \ref xexpression or a scalar
+     * @param e2 an \ref xexpression or a scalar
+     * @return an \ref xfunction
+     */
     template <class E1, class E2>
     inline auto operator>=(E1&& e1, E2&& e2) noexcept
         -> detail::xfunction_type_t<detail::greater_equal, E1, E2>
@@ -575,16 +662,16 @@ namespace xt
     }
 
     /**
-    * @ingroup comparison_operators
-    * @brief Inequality
-    *
-    * Returns true if \a e1 and \a e2 have different shapes
-    * or hold the different values. Unlike other comparison
-    * operators, this does not return an \ref xfunction.
-    * @param e1 an \ref xexpression or a scalar
-    * @param e2 an \ref xexpression or a scalar
-    * @return a boolean
-    */
+     * @ingroup comparison_operators
+     * @brief Inequality
+     *
+     * Returns true if \a e1 and \a e2 have different shapes
+     * or hold the different values. Unlike other comparison
+     * operators, this does not return an \ref xfunction.
+     * @param e1 an \ref xexpression or a scalar
+     * @param e2 an \ref xexpression or a scalar
+     * @return a boolean
+     */
     template <class E1, class E2>
     inline bool operator!=(const xexpression<E1>& e1, const xexpression<E2>& e2)
     {
@@ -592,15 +679,15 @@ namespace xt
     }
 
     /**
-    * @ingroup comparison_operators
-    * @brief Element-wise equality
-    *
-    * Returns an \ref xfunction for the element-wise
-    * equality of \a e1 and \a e2.
-    * @param e1 an \ref xexpression or a scalar
-    * @param e2 an \ref xexpression or a scalar
-    * @return an \ref xfunction
-    */
+     * @ingroup comparison_operators
+     * @brief Element-wise equality
+     *
+     * Returns an \ref xfunction for the element-wise
+     * equality of \a e1 and \a e2.
+     * @param e1 an \ref xexpression or a scalar
+     * @param e2 an \ref xexpression or a scalar
+     * @return an \ref xfunction
+     */
     template <class E1, class E2>
     inline auto equal(E1&& e1, E2&& e2) noexcept
         -> detail::xfunction_type_t<detail::equal_to, E1, E2>
@@ -609,20 +696,92 @@ namespace xt
     }
 
     /**
-    * @ingroup comparison_operators
-    * @brief Element-wise inequality
-    *
-    * Returns an \ref xfunction for the element-wise
-    * inequality of \a e1 and \a e2.
-    * @param e1 an \ref xexpression or a scalar
-    * @param e2 an \ref xexpression or a scalar
-    * @return an \ref xfunction
-    */
+     * @ingroup comparison_operators
+     * @brief Element-wise inequality
+     *
+     * Returns an \ref xfunction for the element-wise
+     * inequality of \a e1 and \a e2.
+     * @param e1 an \ref xexpression or a scalar
+     * @param e2 an \ref xexpression or a scalar
+     * @return an \ref xfunction
+     */
     template <class E1, class E2>
     inline auto not_equal(E1&& e1, E2&& e2) noexcept
         -> detail::xfunction_type_t<detail::not_equal_to, E1, E2>
     {
         return detail::make_xfunction<detail::not_equal_to>(std::forward<E1>(e1), std::forward<E2>(e2));
+    }
+
+    /**
+     * @ingroup comparison_operators
+     * @brief Lesser than
+     *
+     * Returns an \ref xfunction for the element-wise
+     * lesser than comparison of \a e1 and \a e2. This
+     * function is equivalent to operator<(E1&&, E2&&).
+     * @param e1 an \ref xexpression or a scalar
+     * @param e2 an \ref xexpression or a scalar
+     * @return an \ref xfunction
+     */
+    template <class E1, class E2>
+    inline auto less(E1&& e1, E2&& e2) noexcept
+        -> decltype(std::forward<E1>(e1) < std::forward<E2>(e2))
+    {
+        return std::forward<E1>(e1) < std::forward<E2>(e2);
+    }
+
+    /**
+     * @ingroup comparison_operators
+     * @brief Lesser or equal
+     *
+     * Returns an \ref xfunction for the element-wise
+     * lesser or equal comparison of \a e1 and \a e2. This
+     * function is equivalent to operator<=(E1&&, E2&&).
+     * @param e1 an \ref xexpression or a scalar
+     * @param e2 an \ref xexpression or a scalar
+     * @return an \ref xfunction
+     */
+    template <class E1, class E2>
+    inline auto less_equal(E1&& e1, E2&& e2) noexcept
+        -> decltype(std::forward<E1>(e1) <= std::forward<E2>(e2))
+    {
+        return std::forward<E1>(e1) <= std::forward<E2>(e2);
+    }
+
+    /**
+     * @ingroup comparison_operators
+     * @brief Greater than
+     *
+     * Returns an \ref xfunction for the element-wise
+     * greater than comparison of \a e1 and \a e2. This
+     * function is equivalent to operator>(E1&&, E2&&).
+     * @param e1 an \ref xexpression or a scalar
+     * @param e2 an \ref xexpression or a scalar
+     * @return an \ref xfunction
+     */
+    template <class E1, class E2>
+    inline auto greater(E1&& e1, E2&& e2) noexcept
+        -> decltype(std::forward<E1>(e1) > std::forward<E2>(e2))
+    {
+        return std::forward<E1>(e1) > std::forward<E2>(e2);
+    }
+
+    /**
+     * @ingroup comparison_operators
+     * @brief Greater or equal
+     *
+     * Returns an \ref xfunction for the element-wise
+     * greater or equal comparison of \a e1 and \a e2.
+     * This function is equivalent to operator>=(E1&&, E2&&).
+     * @param e1 an \ref xexpression or a scalar
+     * @param e2 an \ref xexpression or a scalar
+     * @return an \ref xfunction
+     */
+    template <class E1, class E2>
+    inline auto greater_equal(E1&& e1, E2&& e2) noexcept
+        -> decltype(std::forward<E1>(e1) >= std::forward<E2>(e2))
+    {
+        return std::forward<E1>(e1) >= std::forward<E2>(e2);
     }
 
     /**

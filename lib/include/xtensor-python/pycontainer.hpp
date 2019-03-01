@@ -122,7 +122,7 @@ namespace xt
         const derived_type& derived_cast() const;
 
         PyArrayObject* python_array() const;
-        size_type get_min_stride() const;
+        size_type get_buffer_size() const;
     };
 
     namespace detail
@@ -297,10 +297,15 @@ namespace xt
     }
 
     template <class D>
-    inline auto pycontainer<D>::get_min_stride() const -> size_type
+    inline auto pycontainer<D>::get_buffer_size() const -> size_type
     {
         const size_type& (*min)(const size_type&, const size_type&) = std::min<size_type>;
-        return std::max(size_type(1), std::accumulate(this->strides().cbegin(), this->strides().cend(), std::numeric_limits<size_type>::max(), min));
+        size_type min_stride = this->strides().empty() ? size_type(1) : 
+            std::max(size_type(1), std::accumulate(this->strides().cbegin(),
+                                                   this->strides().cend(), 
+                                                   std::numeric_limits<size_type>::max(),
+                                                   min));
+        return min_stride * static_cast<size_type>(PyArray_SIZE(this->python_array()));
     }
 
     template <class D>
@@ -378,7 +383,7 @@ namespace xt
     inline void pycontainer<D>::resize(const S& shape, const strides_type& strides)
     {
         detail::check_dims<shape_type>::run(shape.size());
-        derived_type tmp(xtl::forward_sequence<shape_type>(shape), strides);
+        derived_type tmp(xtl::forward_sequence<shape_type, decltype(shape)>(shape), strides);
         *static_cast<derived_type*>(this) = std::move(tmp);
     }
 

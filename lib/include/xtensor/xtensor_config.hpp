@@ -10,8 +10,8 @@
 #define XTENSOR_CONFIG_HPP
 
 #define XTENSOR_VERSION_MAJOR 0
-#define XTENSOR_VERSION_MINOR 18
-#define XTENSOR_VERSION_PATCH 3
+#define XTENSOR_VERSION_MINOR 19
+#define XTENSOR_VERSION_PATCH 4
 
 // DETECT 3.6 <= clang < 3.8 for compiler bug workaround.
 #ifdef __clang__
@@ -73,6 +73,26 @@
 
 #ifndef XTENSOR_DEFAULT_LAYOUT
 #define XTENSOR_DEFAULT_LAYOUT ::xt::layout_type::row_major
+#endif
+
+#ifndef XTENSOR_DEFAULT_TRAVERSAL
+#define XTENSOR_DEFAULT_TRAVERSAL ::xt::layout_type::row_major
+#endif
+
+#ifdef IN_DOXYGEN
+namespace xtl
+{
+    template <class... T>
+    struct conjunction
+    {
+        constexpr bool value = true;
+    };
+
+    template <class... C>
+    using check_concept = std::enable_if_t<conjunction<C...>::value, int>;
+
+#define XTL_REQUIRES(...) xtl::check_concept<__VA_ARGS__> = 0
+}
 #endif
 
 #endif

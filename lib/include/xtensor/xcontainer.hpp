@@ -169,7 +169,6 @@ namespace xt
         template <class S>
         bool has_linear_assign(const S& strides) const noexcept;
         template <class S>
-
         stepper stepper_begin(const S& shape) noexcept;
         template <class S>
         stepper stepper_end(const S& shape, layout_type l) noexcept;
@@ -995,7 +994,7 @@ namespace xt
             {
                 m_layout = XTENSOR_DEFAULT_LAYOUT;  // fall back to default layout
             }
-            m_shape = xtl::forward_sequence<shape_type>(shape);
+            m_shape = xtl::forward_sequence<shape_type, S>(shape);
             resize_container(m_strides, dim);
             resize_container(m_backstrides, dim);
             size_type data_size = compute_strides<D::static_layout>(m_shape, m_layout, m_strides, m_backstrides);
@@ -1033,7 +1032,7 @@ namespace xt
         {
             throw std::runtime_error("Cannot resize with custom strides when layout() is != layout_type::dynamic.");
         }
-        m_shape = xtl::forward_sequence<shape_type>(shape);
+        m_shape = xtl::forward_sequence<shape_type, S>(shape);
         m_strides = strides;
         resize_container(m_backstrides, m_strides.size());
         adapt_strides(m_shape, m_strides, m_backstrides);
@@ -1049,7 +1048,8 @@ namespace xt
      */
     template <class D>
     template <class S>
-    inline void xstrided_container<D>::reshape(S&& shape, layout_type layout){
+    inline void xstrided_container<D>::reshape(S&& shape, layout_type layout)
+    {
         reshape_impl(std::forward<S>(shape), std::is_signed<std::decay_t<typename std::decay_t<S>::value_type>>(), std::forward<layout_type>(layout));
     }
 
@@ -1070,7 +1070,7 @@ namespace xt
             throw std::runtime_error("Cannot reshape with different layout if static layout != dynamic.");
         }
         m_layout = layout;
-        m_shape = xtl::forward_sequence<shape_type>(shape);
+        m_shape = xtl::forward_sequence<shape_type, S>(shape);
         resize_container(m_strides, m_shape.size());
         resize_container(m_backstrides, m_shape.size());
         compute_strides<D::static_layout>(m_shape, m_layout, m_strides, m_backstrides);
@@ -1103,7 +1103,7 @@ namespace xt
             shape[neg_idx] = static_cast<value_type>(this->size()) / std::abs(accumulator);
         }
         m_layout = layout;
-        m_shape = xtl::forward_sequence<shape_type>(shape);
+        m_shape = xtl::forward_sequence<shape_type, S>(shape);
         resize_container(m_strides, m_shape.size());
         resize_container(m_backstrides, m_shape.size());
         compute_strides<D::static_layout>(m_shape, m_layout, m_strides, m_backstrides);

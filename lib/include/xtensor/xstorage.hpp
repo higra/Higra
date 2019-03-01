@@ -85,9 +85,17 @@ namespace xt
         bool empty() const noexcept;
         size_type size() const noexcept;
         void resize(size_type size);
+        size_type max_size() const noexcept;
+        void reserve(size_type new_cap);
+        size_type capacity() const noexcept;
+        void shrink_to_fit();
+        void clear();
 
         reference operator[](size_type i);
         const_reference operator[](size_type i) const;
+
+        reference at(size_type i);
+        const_reference at(size_type i) const;
 
         reference front();
         const_reference front() const;
@@ -365,6 +373,34 @@ namespace xt
     }
 
     template <class T, class A>
+    inline auto uvector<T, A>::max_size() const noexcept -> size_type
+    {
+        return m_allocator.max_size();
+    }
+
+    template <class T, class A>
+    inline void uvector<T, A>::reserve(size_type /*new_cap*/)
+    {
+    }
+    
+    template <class T, class A>
+    inline auto uvector<T, A>::capacity() const noexcept -> size_type
+    {
+        return size();
+    }
+
+    template <class T, class A>
+    inline void uvector<T, A>::shrink_to_fit()
+    {
+    }
+
+    template <class T, class A>
+    inline void uvector<T, A>::clear()
+    {
+        resize(size_type(0));
+    }
+
+    template <class T, class A>
     inline auto uvector<T, A>::operator[](size_type i) -> reference
     {
         return p_begin[i];
@@ -374,6 +410,22 @@ namespace xt
     inline auto uvector<T, A>::operator[](size_type i) const -> const_reference
     {
         return p_begin[i];
+    }
+
+    template <class T, class A>
+    inline auto uvector<T, A>::at(size_type i) -> reference
+    {
+        if(i >= size())
+            throw std::out_of_range("Out of range in uvector access");
+        return this->operator[](i);
+    }
+
+    template <class T, class A>
+    inline auto uvector<T, A>::at(size_type i) const -> const_reference
+    {
+        if(i >= size())
+            throw std::out_of_range("Out of range in uvector access");
+        return this->operator[](i);
     }
 
     template <class T, class A>
@@ -620,14 +672,13 @@ namespace xt
         reference operator[](size_type idx);
         const_reference operator[](size_type idx) const;
 
+        reference at(size_type idx);
+        const_reference at(size_type idx) const;
+
         pointer data();
         const_pointer data() const;
 
-        void resize(size_type n);
-
-        size_type capacity() const;
         void push_back(const T& elt);
-
         void pop_back();
 
         iterator begin();
@@ -644,9 +695,14 @@ namespace xt
         const_reverse_iterator rend() const;
         const_reverse_iterator crend() const;
 
-        size_type size() const;
-
         bool empty() const;
+        size_type size() const;
+        void resize(size_type n);
+        size_type max_size() const noexcept;
+        size_type capacity() const;
+        void reserve(size_type n);
+        void shrink_to_fit();
+        void clear();
 
         reference front();
         const_reference front() const;
@@ -845,6 +901,22 @@ namespace xt
     }
 
     template <class T, std::size_t N, class A, bool Init>
+    inline auto svector<T, N, A, Init>::at(size_type idx) -> reference
+    {
+        if(idx >= size())
+            throw std::out_of_range("Out of range in svector access");
+        return this->operator[](idx);
+    }
+
+    template <class T, std::size_t N, class A, bool Init>
+    inline auto svector<T, N, A, Init>::at(size_type idx) const -> const_reference
+    {
+        if(idx >= size())
+            throw std::out_of_range("Out of range in svector access");
+        return this->operator[](idx);
+    }
+
+    template <class T, std::size_t N, class A, bool Init>
     inline auto svector<T, N, A, Init>::data() -> pointer
     {
         return m_begin;
@@ -863,17 +935,45 @@ namespace xt
         {
             grow(n);
         }
+        size_type old_size = size();
         m_end = m_begin + n;
-        if (Init)
+        if (Init && old_size < size())
         {
-            std::fill(begin(), end(), T());
+            std::fill(begin() + old_size, end(), T());
         }
+    }
+
+    template <class T, std::size_t N, class A, bool Init>
+    inline auto svector<T, N, A, Init>::max_size() const noexcept -> size_type
+    {
+        return m_allocator.max_size();
     }
 
     template <class T, std::size_t N, class A, bool Init>
     inline auto svector<T, N, A, Init>::capacity() const -> size_type
     {
         return static_cast<std::size_t>(m_capacity - m_begin);
+    }
+
+    template <class T, std::size_t N, class A, bool Init>
+    inline void svector<T, N, A, Init>::reserve(size_type n)
+    {
+        if(n > N && n > capacity())
+        {
+            grow(n);
+        }
+    }
+
+    template <class T, std::size_t N, class A, bool Init>
+    inline void svector<T, N, A, Init>::shrink_to_fit()
+    {
+        // No op for now
+    }
+
+    template <class T, std::size_t N, class A, bool Init>
+    inline void svector<T, N, A, Init>::clear()
+    {
+        resize(size_type(0));
     }
 
     template <class T, std::size_t N, class A, bool Init>
@@ -1090,6 +1190,7 @@ namespace xt
     template <std::size_t ON, class OA, bool InitA>
     inline void svector<T, N, A, Init>::swap(svector<T, ON, OA, InitA>& rhs)
     {
+        using std::swap;
         if (this == &rhs)
         {
             return;
@@ -1098,45 +1199,43 @@ namespace xt
         // We can only avoid copying elements if neither vector is small.
         if (!this->on_stack() && !rhs.on_stack())
         {
-            std::swap(this->m_begin, rhs.m_begin);
-            std::swap(this->m_end, rhs.m_end);
-            std::swap(this->m_capacity, rhs.m_capacity);
+            swap(this->m_begin, rhs.m_begin);
+            swap(this->m_end, rhs.m_end);
+            swap(this->m_capacity, rhs.m_capacity);
             return;
         }
 
-        if (rhs.size() > this->capacity())
+        size_type rhs_old_size = rhs.size();
+        size_type old_size = this->size();
+
+        if (rhs_old_size > old_size)
         {
-            this->resize(rhs.size());
+            this->resize(rhs_old_size);
         }
-        if (this->size() > rhs.capacity())
+        else if (old_size > rhs_old_size)
         {
-            rhs.resize(this->size());
+            rhs.resize(old_size);
         }
 
         // Swap the shared elements.
-        std::size_t num_shared = (std::min)(this->size(), rhs.size());
-
-        for (size_type i = 0; i != num_shared; ++i)
+        size_type min_size = (std::min)(old_size, rhs_old_size);
+        for (size_type i = 0; i < min_size; ++i)
         {
-            std::swap((*this)[i], rhs[i]);
+            swap((*this)[i], rhs[i]);
         }
 
         // Copy over the extra elts.
-        if (this->size() > rhs.size())
+        if (old_size > rhs_old_size)
         {
-            std::size_t elements_diff = this->size() - rhs.size();
-            std::copy(this->begin() + num_shared, this->end(), rhs.end());
-            rhs.m_end = rhs.end() + elements_diff;
-            this->destroy_range(this->begin() + num_shared, this->end());
-            this->m_end = this->begin() + num_shared;
+            std::copy(this->begin() + min_size, this->end(), rhs.begin() + min_size);
+            this->destroy_range(this->begin() + min_size, this->end());
+            this->m_end = this->begin() + min_size;
         }
-        else if (rhs.size() > this->size())
+        else if (rhs_old_size > old_size)
         {
-            std::size_t elements_diff = rhs.size() - this->size();
-            std::uninitialized_copy(rhs.begin() + num_shared, rhs.end(), this->end());
-            this->m_end = this->end() + elements_diff;
-            this->destroy_range(rhs.begin() + num_shared, rhs.end());
-            rhs.m_end = rhs.begin() + num_shared;
+            std::copy(rhs.begin() + min_size, rhs.end(), this->begin() + min_size);
+            this->destroy_range(rhs.begin() + min_size, rhs.end());
+            rhs.m_end = rhs.begin() + min_size;
         }
     }
 
@@ -1396,6 +1495,11 @@ namespace xt
         #endif
         }
 
+        constexpr bool empty() const noexcept
+        {
+            return size() == size_type(0);
+        }
+
         constexpr size_type size() const noexcept
         {
             return N;
@@ -1491,6 +1595,11 @@ namespace xt
             return m_array[idx];
         }
 
+        XTENSOR_FIXED_SHAPE_CONSTEXPR bool empty() const
+        {
+            return sizeof...(X) == 0; 
+        }
+
     private:
 
          XTENSOR_CONSTEXPR_ENHANCED_STATIC cast_type m_array = cast_type({X...});
@@ -1527,6 +1636,7 @@ namespace xt
         template <std::ptrdiff_t OS, std::ptrdiff_t OE>
         explicit sequence_view(const sequence_view<E, OS, OE>& other);
 
+        bool empty() const;
         size_type size() const;
         const_reference operator[](std::size_t idx) const;
 
@@ -1560,6 +1670,12 @@ namespace xt
     sequence_view<E, Start, End>::sequence_view(const sequence_view<E, OS, OE>& other)
         : m_sequence(other.storage())
     {
+    }
+
+    template <class E, std::ptrdiff_t Start, std::ptrdiff_t End>
+    bool sequence_view<E, Start, End>::empty() const
+    {
+        return size() == size_type(0);
     }
 
     template <class E, std::ptrdiff_t Start, std::ptrdiff_t End>

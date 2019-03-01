@@ -38,24 +38,6 @@ namespace xt
      * reduce *
      **********/
 
-#define DEFAULT_STRATEGY_REDUCERS evaluation_strategy::lazy
-
-    template <class F, class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              class = std::enable_if_t<!std::is_base_of<evaluation_strategy::base, std::decay_t<X>>::value, int>>
-    auto reduce(F&& f, E&& e, X&& axes, EVS es = EVS());
-
-    template <class F, class E, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              class = std::enable_if_t<std::is_base_of<evaluation_strategy::base, EVS>::value, int>>
-    auto reduce(F&& f, E&& e, EVS es = EVS());
-
-#ifdef X_OLD_CLANG
-    template <class F, class E, class I, class EVS = DEFAULT_STRATEGY_REDUCERS>
-    auto reduce(F&& f, E&& e, std::initializer_list<I> axes, EVS es = EVS());
-#else
-    template <class F, class E, class I, std::size_t N, class EVS = DEFAULT_STRATEGY_REDUCERS>
-    auto reduce(F&& f, E&& e, const I (&axes)[N], EVS es = EVS());
-#endif
-
     template <class ST, class X>
     struct xreducer_shape_type;
 
@@ -107,7 +89,7 @@ namespace xt
         shape_type result_shape{};
         resize_container(result_shape, e.dimension() - axes.size());
 
-        dynamic_shape<std::size_t> iter_shape = xtl::forward_sequence<dynamic_shape<std::size_t>>(e.shape());
+        dynamic_shape<std::size_t> iter_shape = xtl::forward_sequence<dynamic_shape<std::size_t>, decltype(e.shape())>(e.shape());
         dynamic_shape<std::size_t> iter_strides(e.dimension());
 
         using result_container_type = typename xreducer_result_container<std::decay_t<E>, X, result_type>::type;
@@ -557,6 +539,25 @@ namespace xt
         }
     }
 
+#define DEFAULT_STRATEGY_REDUCERS evaluation_strategy::lazy
+
+    namespace detail
+    {
+        template <class T>
+        struct is_xreducer_functors_impl : std::false_type
+        {
+        };
+
+        template <class RF, class IF, class MF>
+        struct is_xreducer_functors_impl<xreducer_functors<RF, IF, MF>>
+            : std::true_type
+        {
+        };
+
+        template <class T>
+        using is_xreducer_functors = is_xreducer_functors_impl<std::decay_t<T>>;
+    }
+
     /**
      * @brief Returns an \ref xexpression applying the specified reducing
      * function to an expression over the given axes.
@@ -570,14 +571,26 @@ namespace xt
      * depending on whether \p e is an lvalue or an rvalue.
      */
 
-    template <class F, class E, class X, class EVS, class>
-    inline auto reduce(F&& f, E&& e, X&& axes, EVS evaluation_strategy)
+    template <class F, class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              XTL_REQUIRES(xtl::negation<is_evaluation_strategy<X>>,
+                           detail::is_xreducer_functors<F>)>
+    inline auto reduce(F&& f, E&& e, X&& axes, EVS evaluation_strategy = EVS())
     {
         return detail::reduce_impl(std::forward<F>(f), std::forward<E>(e), std::forward<X>(axes), evaluation_strategy);
     }
 
-    template <class F, class E, class EVS, class>
-    inline auto reduce(F&& f, E&& e, EVS evaluation_strategy)
+    template <class F, class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              XTL_REQUIRES(xtl::negation<is_evaluation_strategy<X>>,
+                           xtl::negation<detail::is_xreducer_functors<F>>)>
+    inline auto reduce(F&& f, E&& e, X&& axes, EVS evaluation_strategy = EVS())
+    {
+        return reduce(make_xreducer_functor(std::forward<F>(f)), std::forward<E>(e), std::forward<X>(axes), evaluation_strategy);
+    }
+
+    template <class F, class E, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              XTL_REQUIRES(is_evaluation_strategy<EVS>,
+                           detail::is_xreducer_functors<F>)>
+    inline auto reduce(F&& f, E&& e, EVS evaluation_strategy = EVS())
     {
         xindex_type_t<typename std::decay_t<E>::shape_type> ar;
         resize_container(ar, e.dimension());
@@ -585,22 +598,44 @@ namespace xt
         return detail::reduce_impl(std::forward<F>(f), std::forward<E>(e), std::move(ar), evaluation_strategy);
     }
 
+    template <class F, class E, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              XTL_REQUIRES(is_evaluation_strategy<EVS>,
+                           xtl::negation<detail::is_xreducer_functors<F>>)>
+    inline auto reduce(F&& f, E&& e, EVS evaluation_strategy = EVS())
+    {
+        return reduce(make_xreducer_functor(std::forward<F>(f)), std::forward<E>(e), evaluation_strategy);
+    }
+
 #ifdef X_OLD_CLANG
-    template <class F, class E, class I, class EVS>
-    inline auto reduce(F&& f, E&& e, std::initializer_list<I> axes, EVS evaluation_strategy)
+    template <class F, class E, class I, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              XTL_REQUIRES(detail::is_xreducer_functors<F>)>
+    inline auto reduce(F&& f, E&& e, std::initializer_list<I> axes, EVS evaluation_strategy = EVS())
     {
         using axes_type = std::vector<std::size_t>;
         auto ax = xt::forward_normalize<axes_type>(e, axes);
         using reducer_type = xreducer<F, const_xclosure_t<E>, axes_type>;
         return detail::reduce_impl(std::forward<F>(f), std::forward<E>(e), std::move(ax), evaluation_strategy);
     }
+    template <class F, class E, class I, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              XTL_REQUIRES(xtl::negation<detail::is_xreducer_functors<F>>)>
+    inline auto reduce(F&& f, E&& e, std::initializer_list<I> axes, EVS evaluation_strategy = EVS())
+    {
+        return reduce(make_xreducer_functor(std::forward<F>(f)), std::forward<E>(e), axes, evaluation_strategy);
+    }
 #else
-    template <class F, class E, class I, std::size_t N, class EVS>
-    inline auto reduce(F&& f, E&& e, const I (&axes)[N], EVS evaluation_strategy)
+    template <class F, class E, class I, std::size_t N, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              XTL_REQUIRES(detail::is_xreducer_functors<F>)>
+    inline auto reduce(F&& f, E&& e, const I (&axes)[N], EVS evaluation_strategy = EVS())
     {
         using axes_type = std::array<std::size_t, N>;
         auto ax = xt::forward_normalize<axes_type>(e, axes);
         return detail::reduce_impl(std::forward<F>(f), std::forward<E>(e), std::move(ax), evaluation_strategy);
+    }
+    template <class F, class E, class I, std::size_t N, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              XTL_REQUIRES(xtl::negation<detail::is_xreducer_functors<F>>)>
+    inline auto reduce(F&& f, E&& e, const I (&axes)[N], EVS evaluation_strategy = EVS())
+    {
+        return reduce(make_xreducer_functor(std::forward<F>(f)), std::forward<E>(e), axes, evaluation_strategy);
     }
 #endif
 
@@ -1124,28 +1159,35 @@ namespace xt
     template <class F, class CT, class X>
     inline auto xreducer_stepper<F, CT, X>::aggregate(size_type dim) const -> reference
     {
-        size_type index = axis(dim);
-        size_type size = shape(index);
         reference res;
-        if (dim != m_reducer->m_axes.size() - 1)
+        if(m_reducer->m_e.shape().empty())
         {
-            res = aggregate(dim + 1);
-            for (size_type i = 1; i != size; ++i)
-            {
-                m_stepper.step(index);
-                res = m_reducer->m_merge(res, aggregate(dim + 1));
-            }
+            res = m_reducer->m_init(*m_stepper);
         }
         else
         {
-            res = m_reducer->m_init(*m_stepper);
-            for (size_type i = 1; i != size; ++i)
+            size_type index = axis(dim);
+            size_type size = shape(index);
+            if (dim != m_reducer->m_axes.size() - 1)
             {
-                m_stepper.step(index);
-                res = m_reducer->m_reduce(res, *m_stepper);
+                res = aggregate(dim + 1);
+                for (size_type i = 1; i != size; ++i)
+                {
+                    m_stepper.step(index);
+                    res = m_reducer->m_merge(res, aggregate(dim + 1));
+                }
             }
+            else
+            {
+                res = m_reducer->m_init(*m_stepper);
+                for (size_type i = 1; i != size; ++i)
+                {
+                    m_stepper.step(index);
+                    res = m_reducer->m_reduce(res, *m_stepper);
+                }
+            }
+            m_stepper.reset(index);
         }
-        m_stepper.reset(index);
         return res;
     }
 
