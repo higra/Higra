@@ -75,7 +75,8 @@ namespace hg {
             hg_assert(xt::count_nonzero(xt::view(altitudes, xt::range(0, num_leaves(tree))))() == 0,
                       "The altitude of the leaf nodes must be equal to 0.");
 
-            hg_assert(xt::all(xt::view(altitudes, xt::range(num_leaves(tree), num_vertices(tree))) >= 0),
+            hg_assert(xt::all(xt::view(altitudes, xt::range(num_leaves(tree), num_vertices(tree))) >=
+                              static_cast<typename T::value_type>(0)),
                       "The altitude of the nodes must be greater than or equal to 0.");
 
             auto res = sort_hierarchy_with_altitudes(tree, altitudes);

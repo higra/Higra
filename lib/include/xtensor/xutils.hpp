@@ -113,6 +113,16 @@ namespace xt
     template <class T, class R>
     using disable_integral_t = std::enable_if_t<!std::is_integral<T>::value, R>;
 
+    /********************************
+     * meta identity implementation *
+     ********************************/
+
+    template <class T>
+    struct meta_identity
+    {
+        using type = T;
+    };
+
     /*******************************
      * remove_class implementation *
      *******************************/
@@ -1176,7 +1186,6 @@ namespace xt
     };
 #endif
 
-
     template <class S>
     struct get_strides_type
     {
@@ -1187,8 +1196,8 @@ namespace xt
     struct get_strides_type<fixed_shape<I...>>
     {
         // TODO we could compute the strides statically here.
-        //      But we'll need full constexpr support to have a
-        //      homogenous ``compute_strides`` method
+        //  But we'll need full constexpr support to have a
+        //  homogenous ``compute_strides`` method
         using type = std::array<std::ptrdiff_t, sizeof...(I)>;
     };
 

@@ -95,11 +95,12 @@ BOOST_AUTO_TEST_SUITE(embedding);
         BOOST_CHECK(e1.size() == 100);
         BOOST_CHECK(e1.dimension() == 3);
 
-        hg::point_3d_i p1 = {{3, 2, 1}};
-        auto p1t = e1.lin2grid(35);
-        BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
-		auto r = e1.grid2lin(p1);
-        BOOST_CHECK( r == 35);
+#ifndef _MSC_VER // vs 2017 ICE
+		hg::point_3d_i p1 = { {3, 2, 1} };
+		auto p1t = e1.lin2grid(35);
+		BOOST_CHECK(std::equal(p1.begin(), p1.end(), p1t.begin()));
+		BOOST_CHECK(e1.grid2lin(p1) == 35);
+#endif // !_MSC_VER
     }
 
 

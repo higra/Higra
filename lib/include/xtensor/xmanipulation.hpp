@@ -31,7 +31,7 @@ namespace xt
     template <class E, class S, class Tag = check_policy::none>
     auto transpose(E&& e, S&& permutation, Tag check_policy = Tag());
 
-    template <layout_type L, class E>
+    template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL, class E>
     auto ravel(E&& e);
 
     template <class E>
@@ -278,7 +278,8 @@ namespace xt
     /**
      * Returns a flatten view of the given expression. No copy is made.
      * @param e the input expression
-     * @tparam L the layout used to read the elements of e
+     * @tparam L the layout used to read the elements of e. If no parameter
+     * is specified, XTENSOR_DEFAULT_TRAVERSAL is used.
      * @tparam E the type of the expression
      */
     template <layout_type L, class E>
@@ -423,7 +424,7 @@ namespace xt
     inline auto squeeze(E&& e, const I(&axis)[N], Tag check_policy = Tag())
     {
         using arr_t = std::array<I, N>;
-        return detail::squeeze_impl(std::forward<E>(e), xtl::forward_sequence<arr_t>(axis), check_policy);
+        return detail::squeeze_impl(std::forward<E>(e), xtl::forward_sequence<arr_t, decltype(axis)>(axis), check_policy);
     }
 #endif
 

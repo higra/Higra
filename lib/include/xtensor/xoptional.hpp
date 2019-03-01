@@ -164,23 +164,51 @@ namespace xt
          ********************/
 
         template <class T = bool>
-        struct optional_bitwise
+        class optional_bitwise
         {
+        public:
+
             using return_type = T;
             using first_argument_type = T;
             using second_argument_type = T;
             using result_type = T;
             using simd_value_type = bool;
             using simd_result_type = bool;
-            template <class T1, class T2>
-            constexpr result_type operator()(const T1& arg1, const T2& arg2) const
+            
+            template <class... Args>
+            constexpr result_type operator()(const Args&... args) const
             {
-                return (arg1 & arg2);
+                return apply_impl(args...);
             }
-            constexpr simd_result_type simd_apply(const simd_value_type& arg1,
-                                                  const simd_value_type& arg2) const
+
+            template <class... Args>
+            constexpr simd_result_type simd_apply(const Args&... args) const
             {
-                return (arg1 & arg2);
+                return simd_apply_impl(args...);
+            }
+
+        private:
+
+            constexpr result_type apply_impl() const
+            {
+                return true;
+            }
+
+            template <class U, class... Args>
+            constexpr result_type apply_impl(const U& t, const Args&... args) const
+            {
+                return t & apply_impl(args...);
+            }
+
+            constexpr simd_result_type simd_apply_impl() const
+            {
+                return simd_result_type(true);
+            }
+
+            template <class U, class... Args>
+            constexpr simd_result_type simd_apply_impl(const U& t, const Args&... args) const
+            {
+                return t & simd_apply_impl(args...);
             }
         };
     }
@@ -192,11 +220,11 @@ namespace xt
     template <class T, class B>
     auto sign(const xtl::xoptional<T, B>& e);
 
-    template <class E, XTENSOR_REQUIRE<is_xexpression<E>::value>>
+    /*template <class E, XTL_REQUIRES(is_xexpression<E>)>
     detail::value_expression_t<E> value(E&&);
 
-    template <class E, XTENSOR_REQUIRE<is_xexpression<E>::value>>
-    detail::flag_expression_t<E> has_value(E&&);
+    template <class E, XTL_REQUIRES(is_xexpression<E>)>
+    detail::flag_expression_t<E> has_value(E&&);*/
 
     template <>
     class xexpression_assigner_base<xoptional_expression_tag>
@@ -1072,13 +1100,13 @@ namespace xt
      * value() and has_value() implementation *
      ******************************************/
 
-    template <class E, class>
+    template <class E, XTL_REQUIRES(is_xexpression<E>)>
     inline auto value(E&& e) -> detail::value_expression_t<E>
     {
         return detail::split_optional_expression<E>::value(std::forward<E>(e));
     }
 
-    template <class E, class>
+    template <class E, XTL_REQUIRES(is_xexpression<E>)>
     inline auto has_value(E&& e) -> detail::flag_expression_t<E>
     {
         return detail::split_optional_expression<E>::has_value(std::forward<E>(e));

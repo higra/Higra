@@ -25,6 +25,12 @@
 namespace xt
 {
 
+    template <class D>
+    class xexpression;
+
+    template <class D>
+    auto make_xshared(xexpression<D>&&);
+
     /***************************
      * xexpression declaration *
      ***************************/
@@ -54,7 +60,7 @@ namespace xt
 
     protected:
 
-        xexpression() = default;
+        xexpression();
         ~xexpression() = default;
 
         xexpression(const xexpression&) = default;
@@ -62,11 +68,23 @@ namespace xt
 
         xexpression(xexpression&&) = default;
         xexpression& operator=(xexpression&&) = default;
+
+    private:
+
+        std::shared_ptr<D> p_shared;
+
+        friend auto make_xshared<D>(xexpression<D>&&);
     };
 
     /******************************
      * xexpression implementation *
      ******************************/
+
+    template <class D>
+    inline xexpression<D>::xexpression()
+        : p_shared(nullptr)
+    {
+    }
 
     /**
      * @name Downcast functions
@@ -159,6 +177,11 @@ namespace xt
         */
     }
 
+    template <class T>
+    struct is_evaluation_strategy : std::is_base_of<evaluation_strategy::base, std::decay_t<T>>
+    {
+    };
+
     /************
      * xclosure *
      ************/
@@ -248,6 +271,17 @@ namespace xt
             template <class T, layout_type L>
             using type = xarray<T, L>;
         };
+
+#if defined(__GNUC__) && (__GNUC__ > 6)
+#if __cplusplus == 201703L 
+        template <template <class, std::size_t, class, bool> class S, class X, std::size_t N, class A, bool Init>
+        struct xtype_for_shape<S<X, N, A, Init>>
+        {
+            template <class T, layout_type L>
+            using type = xarray<T, L>;
+        };
+#endif // __cplusplus == 201703L
+#endif // __GNUC__ && (__GNUC__ > 6)
 
         template <template <class, std::size_t> class S, class X, std::size_t N>
         struct xtype_for_shape<S<X, N>>
@@ -495,7 +529,7 @@ namespace xt
         static constexpr layout_type static_layout = E::static_layout;
         static constexpr bool contiguous_layout = static_layout != layout_type::dynamic;
 
-        explicit xshared_expression(std::shared_ptr<E>&& ptr);
+        explicit xshared_expression(const std::shared_ptr<E>& ptr);
         long use_count() const noexcept;
 
         template <class... Args>
@@ -627,8 +661,8 @@ namespace xt
      * @sa make_xshared
      */
     template <class E>
-    inline xshared_expression<E>::xshared_expression(std::shared_ptr<E>&& ptr)
-        : m_ptr(std::move(ptr))
+    inline xshared_expression<E>::xshared_expression(const std::shared_ptr<E>& ptr)
+        : m_ptr(ptr)
     {
     }
 
@@ -649,9 +683,39 @@ namespace xt
      * @return xshared expression
      */
     template <class E>
-    auto make_xshared(xexpression<E>&& expr)
+    inline auto make_xshared(xexpression<E>&& expr)
     {
-        return xshared_expression<E>(std::make_shared<E>(std::move(expr).derived_cast()));
+        if(expr.p_shared == nullptr)
+        {
+            expr.p_shared = std::make_shared<E>(std::move(expr).derived_cast());
+        }
+        return xshared_expression<E>(expr.p_shared);
+    }
+
+    /**
+     * Helper function to create shared expression from any xexpression
+     *
+     * @param expr rvalue expression that will be shared
+     * @return xshared expression
+     * @sa make_xshared
+     */
+    template <class E>
+    inline auto share(xexpression<E>& expr)
+    {
+        return make_xshared(std::move(expr));
+    }
+
+    /**
+     * Helper function to create shared expression from any xexpression
+     *
+     * @param expr rvalue expression that will be shared
+     * @return xshared expression
+     * @sa make_xshared
+     */
+    template <class E>
+    inline auto share(xexpression<E>&& expr)
+    {
+        return make_xshared(std::move(expr));
     }
 
 #undef XTENSOR_FORWARD_METHOD

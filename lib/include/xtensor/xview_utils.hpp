@@ -36,7 +36,7 @@ namespace xt
     template <class... S>
     constexpr std::size_t newaxis_count();
 
-// number of newaxis types in the specified sequence of types before specified index
+    // number of newaxis types in the specified sequence of types before specified index
     template <class... S>
     constexpr std::size_t newaxis_count_before(std::size_t i);
 
@@ -44,7 +44,6 @@ namespace xt
     template <class... S>
     constexpr std::size_t newaxis_skip(std::size_t i);
 
-    // return slice evaluation and increment iterator
     template <class S, class It>
     inline disable_xslice<S, std::size_t> get_slice_value(const S& s, It&) noexcept
     {
@@ -54,7 +53,7 @@ namespace xt
     template <class S, class It>
     inline auto get_slice_value(const xslice<S>& slice, It& it) noexcept
     {
-        return slice.derived_cast()(typename S::size_type(*it++));
+        return slice.derived_cast()(typename S::size_type(*it));
     }
 
     /***********************
@@ -66,13 +65,13 @@ namespace xt
         template <class T, class S, layout_type L, class... SL>
         struct view_temporary_type_impl
         {
-            using type = xarray<T, L>;
+            using type = xt::xarray<T, L>;
         };
 
         template <class T, class I, std::size_t N, layout_type L, class... SL>
         struct view_temporary_type_impl<T, std::array<I, N>, L, SL...>
         {
-            using type = xtensor<T, N + newaxis_count<SL...>() - integral_count<SL...>(), L>;
+            using type = xt::xtensor<T, N + newaxis_count<SL...>() - integral_count<SL...>(), L>;
         };
     }
 

@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "xtl_config.hpp"
+#include "xmeta_utils.hpp"
 
 namespace xtl
 {
@@ -25,7 +26,7 @@ namespace xtl
     template <class S>
     S make_sequence(typename S::size_type size, typename S::value_type v);
 
-    template <class R, class I = void, class A>
+    template <class R, class A>
     decltype(auto) forward_sequence(A&& s);
 
     // equivalent to std::size(c) in c++17
@@ -100,21 +101,8 @@ namespace xtl
     namespace detail
     {
         template <class R, class A, class E = void>
-        struct sequence_forwarder
+        struct sequence_forwarder_impl
         {
-            template <class T>
-            static inline R forward(const T& r)
-            {
-                return R(std::begin(r), std::end(r));
-            }
-        };
-
-        template <class I, std::size_t L, class A>
-        struct sequence_forwarder<std::array<I, L>, A,
-                                  std::enable_if_t<!std::is_same<std::array<I, L>, A>::value>>
-        {
-            using R = std::array<I, L>;
-
             template <class T>
             static inline R forward(const T& r)
             {
@@ -123,33 +111,54 @@ namespace xtl
                 return ret;
             }
         };
+        
+        template <class R, class A>
+        struct sequence_forwarder_impl<R, A, void_t<decltype(std::declval<R>().resize(std::size_t()))>>
+        {
+            template <class T>
+            static inline auto forward(const T& r)
+            {
+                return R(std::begin(r), std::end(r));
+            }
+        };
+
+        template <class R, class A>
+        struct sequence_forwarder
+            : sequence_forwarder_impl<R, A>
+        {
+        };
 
         template <class R>
         struct sequence_forwarder<R, R>
         {
             template <class T>
-            static inline T&& forward(typename std::remove_reference<T>::type& t) noexcept
+            static inline T&& forward(T&& t) noexcept
             {
-                return static_cast<T&&>(t);
-            }
-
-            template <class T>
-            static inline T&& forward(typename std::remove_reference<T>::type&& t) noexcept
-            {
-                return static_cast<T&&>(t);
+                return std::forward<T>(t);
             }
         };
-    }
 
-    template <class R, class I, class A>
-    inline decltype(auto) forward_sequence(A&& s)
-    {
-        using forwarder = detail::sequence_forwarder<
+        template <class R, class A>
+        using forwarder_type = detail::sequence_forwarder<
             std::decay_t<R>,
             std::remove_cv_t<std::remove_reference_t<A>>
         >;
-        using forward_type = std::conditional_t<std::is_same<I, void>::value, A, I>;
-        return forwarder::template forward<forward_type>(s);
+    }
+
+    template <class R, class A>
+    inline decltype(auto) forward_sequence(typename std::remove_reference<A>::type& s)
+    {
+        using forwarder = detail::forwarder_type<R, A>;
+        return forwarder::forward(std::forward<A>(s));
+    }
+
+    template <class R, class A>
+    inline decltype(auto) forward_sequence(typename std::remove_reference<A>::type&& s)
+    {
+        using forwarder = detail::forwarder_type<R, A>;
+        static_assert(!std::is_lvalue_reference<A>::value,
+                      "Can not forward an rvalue as an lvalue.");
+        return forwarder::forward(std::move(s));
     }
 
     /********************************

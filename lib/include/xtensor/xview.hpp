@@ -390,10 +390,10 @@ namespace xt
         using stepper = typename iterable_base::stepper;
         using const_stepper = typename iterable_base::const_stepper;
 
-        using storage_iterator = std::conditional_t<has_data_interface<xexpression_type>::value,
+        using storage_iterator = std::conditional_t<has_data_interface<xexpression_type>::value && is_strided_view,
                                                     typename xexpression_type::storage_iterator,
                                                     typename iterable_base::storage_iterator>;
-        using const_storage_iterator = std::conditional_t<has_data_interface<xexpression_type>::value,
+        using const_storage_iterator = std::conditional_t<has_data_interface<xexpression_type>::value && is_strided_view,
                                                     typename xexpression_type::const_storage_iterator,
                                                     typename iterable_base::const_storage_iterator>;
 
@@ -732,7 +732,7 @@ namespace xt
 
         xview_stepper() = default;
         xview_stepper(view_type* view, substepper_type it,
-                      size_type offset, bool end = false, layout_type l = XTENSOR_DEFAULT_LAYOUT);
+                      size_type offset, bool end = false, layout_type l = XTENSOR_DEFAULT_TRAVERSAL);
 
         reference operator*() const;
 
@@ -786,7 +786,7 @@ namespace xt
     template <std::size_t... I, class... S>
     struct xview_shape_type<fixed_shape<I...>, S...>
     {
-        using type = typename xview_shape_type<std::array<std::size_t, sizeof...(I)>>::type;
+        using type = typename xview_shape_type<std::array<std::size_t, sizeof...(I)>, S...>::type;
     };
 
     /************************
@@ -1610,25 +1610,32 @@ namespace xt
     inline auto xview<CT, S...>::make_index(It first, It last) const -> base_index_type
     {
         auto index = xtl::make_sequence<base_index_type>(m_e.dimension(), 0);
+        using ivalue_type = typename base_index_type::value_type;
         auto func1 = [&first](const auto& s) {
             return get_slice_value(s, first);
         };
         auto func2 = [](const auto& s) {
             return xt::value(s, 0);
         };
+
+        auto first_copy = first;
         for (size_type i = 0; i != m_e.dimension(); ++i)
         {
             size_type k = newaxis_skip<S...>(i);
-            std::advance(first, difference_type(k - i));
-            if (first != last)
+
+            // need to advance captured `first`
+            first = first_copy;
+            std::advance(first, k - xt::integral_count_before<S...>(i));
+
+            if (first < last)
             {
                 index[i] = k < sizeof...(S) ?
-                    apply<size_type>(k, func1, m_slices) : *first++;
+                    apply<size_type>(k, func1, m_slices) : static_cast<ivalue_type>(*first);
             }
             else
             {
                 index[i] = k < sizeof...(S) ?
-                    apply<size_type>(k, func2, m_slices) : 0;
+                    apply<size_type>(k, func2, m_slices) : ivalue_type(0);
             }
         }
         return index;
@@ -1915,7 +1922,7 @@ namespace xt
             {
                 size_type s = apply<size_type>(i, func, p_view->slices());
                 size_type ix = apply<size_type>(i, size_func, p_view->slices());
-                m_index_keeper[i] = ix;
+                m_index_keeper[i] = ix - size_type(1);
                 size_type index = i - newaxis_count_before<S...>(i);
                 s = p_view->underlying_size(index) - 1 - s;
                 m_it.step_back(index, s);
@@ -1956,12 +1963,7 @@ namespace xt
         if (dim >= m_offset)
         {
             auto func = [&dim, this](const auto& s) noexcept {
-                this->m_index_keeper[dim]++;
-                // index_keeper tracks index+1, this should be refactored
-                // there are some pitfalls in to_end_impl and common_reset
-                // methods
-                auto idx = this->m_index_keeper[dim] - 1;
-                return step_size(s, idx, 1);
+                return step_size(s, this->m_index_keeper[dim]++, 1);
             };
             size_type index = integral_skip<S...>(dim);
             if (!is_newaxis_slice(index))
@@ -1981,9 +1983,9 @@ namespace xt
         if (dim >= m_offset)
         {
             auto func = [&dim, &n, this](const auto& s) noexcept {
+                auto st_size = step_size(s, this->m_index_keeper[dim], n);
                 this->m_index_keeper[dim] += n;
-                auto idx = this->m_index_keeper[dim] - 1;
-                return step_size(s, idx, n);
+                return size_type(st_size);
             };
 
             size_type index = integral_skip<S...>(dim);
@@ -2005,11 +2007,7 @@ namespace xt
         {
             auto func = [&dim, this](const auto& s) noexcept {
                 this->m_index_keeper[dim]--;
-                // index_keeper tracks index+1, this should be refactored
-                // there are some pitfalls in to_end_impl and common_reset
-                // methods
-                auto idx = this->m_index_keeper[dim] - 1;
-                return step_size(s, idx, 1);
+                return step_size(s, this->m_index_keeper[dim], 1);
             };
             size_type index = integral_skip<S...>(dim);
             if (!is_newaxis_slice(index))
@@ -2030,11 +2028,7 @@ namespace xt
         {
             auto func = [&dim, &n, this](const auto& s) noexcept {
                 this->m_index_keeper[dim] -= n;
-                // index_keeper tracks index+1, this should be refactored
-                // there are some pitfalls in to_end_impl and common_reset
-                // methods
-                auto idx = this->m_index_keeper[dim] - 1;
-                return step_size(s, idx, n);
+                return step_size(s, this->m_index_keeper[dim], n);
             };
 
             size_type index = integral_skip<S...>(dim);
@@ -2058,20 +2052,13 @@ namespace xt
         size_type index = integral_skip<S...>(dim);
         if (!is_newaxis_slice(index))
         {
-            size_type size = index < sizeof...(S) ? apply<size_type>(index, size_func, p_view->slices()) : p_view->shape()[dim];
-            if (size != 0)
-            {
-                size = size - 1;
-            }
-
-            size_type sz = index < sizeof...(S) ? apply<size_type>(index, size_func, p_view->slices()) : p_view->shape()[dim];
             if (dim < m_index_keeper.size())
             {
-                m_index_keeper[dim] = backwards ? sz : 0;
+                size_type size = index < sizeof...(S) ? apply<size_type>(index, size_func, p_view->slices()) : p_view->shape()[dim];
+                m_index_keeper[dim] = backwards ? size - 1 : 0;
             }
 
-            auto ss = index < sizeof...(S) ? apply<size_type>(index, end_func, p_view->slices()) : p_view->shape()[dim];
-            size_type reset_n = index < sizeof...(S) ? ss : size;
+            size_type reset_n = index < sizeof...(S) ? apply<size_type>(index, end_func, p_view->slices()) : p_view->shape()[dim] - 1;
             index -= newaxis_count_before<S...>(index);
             f(index, reset_n);
         }

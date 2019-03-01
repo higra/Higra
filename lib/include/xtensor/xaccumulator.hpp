@@ -201,11 +201,12 @@ namespace xt
             std::size_t outer_stride = 1;  // this is either going row- or column-wise (strides.back / strides.front)
             std::size_t outer_loop_size = 0;
             std::size_t inner_loop_size = 0;
+            std::size_t init_size = e.shape()[axis] != std::size_t(1) ? std::size_t(1) : std::size_t(0);
 
-            auto set_loop_sizes = [&outer_loop_size, &inner_loop_size](auto first, auto last, std::ptrdiff_t ax) {
+            auto set_loop_sizes = [&outer_loop_size, &inner_loop_size, init_size](auto first, auto last, std::ptrdiff_t ax) {
                 outer_loop_size = std::accumulate(first,
                                                   first + ax,
-                                                  std::size_t(1), std::multiplies<std::size_t>());
+                                                  init_size, std::multiplies<std::size_t>());
 
                 inner_loop_size = std::accumulate(first + ax,
                                                   last,
@@ -227,7 +228,7 @@ namespace xt
             inner_loop_size = inner_loop_size - inner_stride;
 
             // activate the init loop if we have an init function other than identity
-            if (!std::is_same<decltype(std::get<1>(f)), xtl::identity>::value)
+            if (!std::is_same<std::decay_t<decltype(std::get<1>(f))>, xtl::identity>::value)
             {
                 accumulator_init_with_f(std::get<1>(f), result, axis);
             }
@@ -256,12 +257,12 @@ namespace xt
             std::size_t sz = e.size();
             auto result = result_type::from_shape({sz});
 
-            auto it = e.template begin<XTENSOR_DEFAULT_LAYOUT>();
+            auto it = e.template begin<XTENSOR_DEFAULT_TRAVERSAL>();
 
             result.storage()[0] = std::get<1>(f)(*it);
             ++it;
 
-            for (std::size_t idx = 0; it != e.template end<XTENSOR_DEFAULT_LAYOUT>(); ++it)
+            for (std::size_t idx = 0; it != e.template end<XTENSOR_DEFAULT_TRAVERSAL>(); ++it)
             {
                 result.storage()[idx + 1] = std::get<0>(f)(result.storage()[idx], *it);
                 ++idx;
@@ -281,7 +282,7 @@ namespace xt
      * @return returns xarray<T> filled with accumulated values
      */
     template <class F, class E, class EVS = DEFAULT_STRATEGY_ACCUMULATORS,
-              typename std::enable_if_t<!std::is_integral<EVS>::value, int> = 0>
+              XTL_REQUIRES(is_evaluation_strategy<EVS>)>
     inline auto accumulate(F&& f, E&& e, EVS evaluation_strategy = EVS())
     {
         // Note we need to check is_integral above in order to prohibit EVS = int, and not taking the std::size_t

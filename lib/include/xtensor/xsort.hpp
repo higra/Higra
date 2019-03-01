@@ -49,7 +49,7 @@ namespace xt
 
             for (std::size_t i = 0; i < n_iters; ++i, offset += secondary_stride)
             {
-                size_t adj_secondary_stride = (std::max)(secondary_stride, std::ptrdiff_t(1));
+                std::size_t adj_secondary_stride = static_cast<size_t>((std::max)(secondary_stride, std::ptrdiff_t(1)));
                 fct(ev.data() + offset, ev.data() + offset + adj_secondary_stride);
             }
         }
@@ -393,15 +393,15 @@ namespace xt
             return idx;
         }
 
-        template <class E, class F>
+        template <layout_type L, class E, class F>
         inline xtensor<std::size_t, 0> arg_func_impl(const E& e, F&& f)
         {
-            return cmp_idx(e.template begin<XTENSOR_DEFAULT_LAYOUT>(),
-                           e.template end<XTENSOR_DEFAULT_LAYOUT>(), 1,
+            return cmp_idx(e.template begin<L>(),
+                           e.template end<L>(), 1,
                            std::forward<F>(f));
         }
 
-        template <class E, class F>
+        template <layout_type L, class E, class F>
         inline typename argfunc_result_type<E>::type
         arg_func_impl(const E& e, std::size_t axis, F&& cmp)
         {
@@ -412,7 +412,7 @@ namespace xt
 
             if (e.dimension() == 1)
             {
-                return arg_func_impl(e, std::forward<F>(cmp));
+                return arg_func_impl<L>(e, std::forward<F>(cmp));
             }
 
             result_shape_type alt_shape;
@@ -423,7 +423,7 @@ namespace xt
             std::copy(e.shape().cbegin() + std::ptrdiff_t(axis) + 1, e.shape().cend(), alt_shape.begin() + std::ptrdiff_t(axis));
 
             result_type result = result_type::from_shape(std::move(alt_shape));
-            auto result_iter = result.begin();
+            auto result_iter = result.template begin<L>();
 
             auto arg_func_lambda = [&result_iter, &cmp](auto begin, auto end) {
                 std::size_t idx = 0;
@@ -460,12 +460,12 @@ namespace xt
         }
     }
 
-    template <class E>
+    template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL, class E>
     inline auto argmin(const xexpression<E>& e)
     {
         using value_type = typename E::value_type;
         auto&& ed = eval(e.derived_cast());
-        return detail::arg_func_impl(ed, std::less<value_type>());
+        return detail::arg_func_impl<L>(ed, std::less<value_type>());
     }
 
     /**
@@ -476,20 +476,20 @@ namespace xt
      *
      * @return returns xarray with positions of minimal value
      */
-    template <class E>
+    template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL, class E>
     inline auto argmin(const xexpression<E>& e, std::size_t axis)
     {
         using value_type = typename E::value_type;
         auto&& ed = eval(e.derived_cast());
-        return detail::arg_func_impl(ed, axis, std::less<value_type>());
+        return detail::arg_func_impl<L>(ed, axis, std::less<value_type>());
     }
 
-    template <class E>
+    template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL, class E>
     inline auto argmax(const xexpression<E>& e)
     {
         using value_type = typename E::value_type;
         auto&& ed = eval(e.derived_cast());
-        return detail::arg_func_impl(ed, std::greater<value_type>());
+        return detail::arg_func_impl<L>(ed, std::greater<value_type>());
     }
 
     /**
@@ -500,12 +500,12 @@ namespace xt
      *
      * @return returns xarray with positions of maximal value
      */
-    template <class E>
+    template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL, class E>
     inline auto argmax(const xexpression<E>& e, std::size_t axis)
     {
         using value_type = typename E::value_type;
         auto&& ed = eval(e.derived_cast());
-        return detail::arg_func_impl(ed, axis, std::greater<value_type>());
+        return detail::arg_func_impl<L>(ed, axis, std::greater<value_type>());
     }
 
     /**

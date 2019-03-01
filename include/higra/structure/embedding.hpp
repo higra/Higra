@@ -180,8 +180,8 @@ namespace hg {
              */
             template<typename T>
             auto grid2lin(const point<T, dim> &coordinates) const {
-                static_assert(std::is_integral<T>::value,
-                              "Coordinates must have integral value type.");
+                /*static_assert(std::is_integral<T>::value,
+                              "Coordinates must have integral value type.");*/
                 index_t res = coordinates[dim - 1];
                 for (index_t i = 0; i < dim - 1; ++i)
                     res += coordinates[i] * sum_prod[i];
