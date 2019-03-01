@@ -66,6 +66,21 @@ struct binary_labelisation_from_markers {
     }
 };
 
+struct sort_hierarchy_with_altitudes {
+    template<typename value_t>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_sort_hierarchy_with_altitudes", [](const hg::tree &tree,
+                                                      const pyarray<value_t> &altitudes) {
+                  auto res = hg::sort_hierarchy_with_altitudes(tree, altitudes);
+                  return pybind11::make_tuple(std::move(res.tree), std::move(res.node_map));
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("altitudes"));
+    }
+};
+
 void py_init_algo_tree(pybind11::module &m) {
     xt::import_numpy();
 
@@ -101,4 +116,6 @@ void py_init_algo_tree(pybind11::module &m) {
              "Union of tree regions with a non empty intersection with the object marker and an empty "
              "intersection with the background marker."
             );
+
+    add_type_overloads<sort_hierarchy_with_altitudes, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
 }

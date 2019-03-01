@@ -112,6 +112,18 @@ class TestAlgorithmTree(unittest.TestCase):
 
         self.assertTrue(np.all(labelisation == ref_labelisation))
 
+    def test_sort_hierarchy_with_altitudes(self):
+        tree = hg.Tree(np.asarray((8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14)))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 4, 6, 5, 7))
+
+        ntree, naltitudes, node_map = hg.sort_hierarchy_with_altitudes(altitudes, tree)
+
+        ref_par = np.asarray((10, 10, 8, 8, 9, 9, 11, 12, 13, 11, 13, 12, 14, 14, 14))
+        self.assertTrue(np.all(ref_par == ntree.parents()))
+
+        ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7))
+        self.assertTrue(np.all(ref_altitudes == naltitudes))
+
 
 if __name__ == '__main__':
     unittest.main()

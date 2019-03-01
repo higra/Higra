@@ -136,3 +136,27 @@ def binary_labelisation_from_markers(tree, object_marker, background_marker, lea
         hg.CptVertexLabeledGraph.link(labels, leaf_graph)
 
     return labels
+
+
+@hg.argument_helper(hg.CptValuedHierarchy)
+def sort_hierarchy_with_altitudes(altitudes, tree):
+    """
+    Sort the nodes of a tree according to their altitudes.
+    The altitudes must be increasing, i.e. for any nodes :math:`i, j` such that :math:`j` is an ancestor of :math:`i`, then :math:`altitudes[i] <= altitudes[j]`.
+
+    The result is a new tree and a node map, isomorph to the input tree such that for any nodes :math:`i` and :math:`j`, :math:`i<j \Rightarrow altitudes[node\_map[i]] \leq altitudes[node\_map[j]]`
+
+    The latter condition is stronger than the original condition on the altitudes as :math:`j` is an ancestor of :math:`i` implies :math:`i<j` while the converse is not true.
+
+    The returned "node_map" is an array that maps any node index :math:`i` of the new tree,
+    to the index of this node in the original tree.
+
+    :param altitudes: node altitudes of the input tree (Concept :class:`~higra.CptValuedHierarchy`)
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :return: the sorted tree (Concept :class:`~higra.CptHierarchy`), its node altitudes (Concept :class:`~higra.CptValuedHierarchy`), and the node map
+    """
+    new_tree, node_map = hg._sort_hierarchy_with_altitudes(tree, altitudes)
+    new_altitudes = altitudes[node_map]
+    hg.CptValuedHierarchy.link(new_altitudes, new_tree)
+
+    return new_tree, new_altitudes, node_map
