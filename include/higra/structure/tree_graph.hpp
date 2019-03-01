@@ -91,7 +91,7 @@ namespace hg {
             //BidirectionalGraph associated types
             using in_edge_iterator = out_edge_iterator;
 
-            tree():_root(invalid_index), _num_vertices(0), _num_leaves(0){
+            tree() : _root(invalid_index), _num_vertices(0), _num_leaves(0) {
 
             }
 
@@ -120,7 +120,7 @@ namespace hg {
                         num_leaves++;
                     }
                 }
-                _num_leaves = (size_t)num_leaves;
+                _num_leaves = (size_t) num_leaves;
             };
 
             vertices_size_type num_vertices() const {
@@ -158,8 +158,8 @@ namespace hg {
             auto children(vertex_descriptor v) const {
                 return _children[v];
             }
-            
-            auto child(index_t i, vertex_descriptor v) const{
+
+            auto child(index_t i, vertex_descriptor v) const {
                 return _children[v][i];
             }
 
@@ -177,25 +177,25 @@ namespace hg {
             }
 
             auto leaves_to_root_iterator(leaves_it leaves_opt = leaves_it::include,
-                                             root_it root_opt = root_it::include) const {
+                                         root_it root_opt = root_it::include) const {
                 vertex_descriptor start = (leaves_opt == leaves_it::include) ? 0 : num_leaves();
                 vertex_descriptor end = (root_opt == root_it::include) ? _num_vertices : _num_vertices - 1;
                 return irange<index_t>(start, end);
             }
 
             auto root_to_leaves_iterator(leaves_it leaves_opt = leaves_it::include,
-                                             root_it root_opt = root_it::include) const {
+                                         root_it root_opt = root_it::include) const {
                 vertex_descriptor end = (leaves_opt == leaves_it::include) ? -1 : num_leaves() - 1;
                 vertex_descriptor start = (root_opt == root_it::include) ? _num_vertices - 1 : _num_vertices - 2;
                 return irange<index_t>(start, end, -1);
             }
 
-            auto edge_from_index(edge_index_t ei) const{
+            auto edge_from_index(edge_index_t ei) const {
                 return edge_descriptor(ei, parent(ei), ei);
             }
 
-            auto is_leaf(vertex_descriptor v) const{
-                return (size_t)v < _num_leaves;
+            auto is_leaf(vertex_descriptor v) const {
+                return (size_t) v < _num_leaves;
             }
 
         private:
@@ -285,15 +285,15 @@ namespace hg {
             using graph_t = tree;
             using graph_vertex_t = graph_t::vertex_descriptor;
 
-            tree_graph_node_to_root_iterator(const graph_t & tree, const graph_vertex_t & node)
-                    : m_position(node), m_tree(tree){
+            tree_graph_node_to_root_iterator(const graph_t &tree, const graph_vertex_t &node)
+                    : m_position(node), m_tree(tree) {
             }
 
             void increment() {
                 auto par = m_tree.parent(m_position);
-                if(par != m_position){
+                if (par != m_position) {
                     m_position = par;
-                }else{
+                } else {
                     m_position = invalid_index;
                 }
             }
@@ -308,7 +308,7 @@ namespace hg {
 
         private:
             graph_vertex_t m_position;
-            const graph_t & m_tree;
+            const graph_t &m_tree;
         };
 
     }
@@ -343,72 +343,114 @@ namespace hg {
 
     inline
     auto
-    num_leaves(const tree & t){
+    num_leaves(const tree &t) {
         return t.num_leaves();
     }
 
     inline
     auto
-    num_children(tree::vertex_descriptor v, const tree & t){
+    num_children(tree::vertex_descriptor v, const tree &t) {
         return t.num_children(v);
+    }
+
+    template<typename T>
+    auto
+    num_children(const xt::xexpression<T> &xvertices, const tree &t) {
+        auto &vertices = xvertices.derived_cast();
+        hg_assert_1d_array(vertices);
+        hg_assert_integral_value_type(vertices);
+
+        array_1d <size_t> result = xt::empty<index_t>({vertices.size()});
+        for (index_t j = 0; j < (index_t) vertices.size(); j++) {
+            result(j) = num_children(vertices(j), t);
+        }
+        return result;
     }
 
     inline
     auto
-    root(const tree & t){
+    root(const tree &t) {
         return t.root();
     }
 
     inline
     auto
-    parent(tree::vertex_descriptor v, const tree & t){
+    parent(tree::vertex_descriptor v, const tree &t) {
         return t.parent(v);
+    }
+
+    template<typename T>
+    auto
+    parent(const xt::xexpression<T> &xvertices, const tree &t) {
+        auto &vertices = xvertices.derived_cast();
+        hg_assert_1d_array(vertices);
+        hg_assert_integral_value_type(vertices);
+
+        array_1d<index_t> result = xt::empty<bool>({vertices.size()});
+        for (index_t j = 0; j < (index_t) vertices.size(); j++) {
+            result(j) = parent(vertices(j), t);
+        }
+        return result;
     }
 
     inline
     auto
-    is_leaf(tree::vertex_descriptor v, const tree & t){
+    is_leaf(tree::vertex_descriptor v, const tree &t) {
         return t.is_leaf(v);
+    }
+
+    template<typename T>
+    auto
+    is_leaf(const xt::xexpression<T> &xvertices, const tree &t) {
+        auto &vertices = xvertices.derived_cast();
+        hg_assert_1d_array(vertices);
+        hg_assert_integral_value_type(vertices);
+
+        array_1d<bool> result = xt::empty<bool>({vertices.size()});
+        for (index_t j = 0; j < (index_t) vertices.size(); j++) {
+            result(j) = is_leaf(vertices(j), t);
+        }
+        return result;
     }
 
     inline
     const auto &
-    parents(const tree & t){
+    parents(const tree &t) {
         return t.parents();
     }
 
     inline
     auto
-    leaves_to_root_iterator(const tree & t,
-                                leaves_it leaves_opt = leaves_it::include,
-                                        root_it root_opt = root_it::include){
+    leaves_to_root_iterator(const tree &t,
+                            leaves_it leaves_opt = leaves_it::include,
+                            root_it root_opt = root_it::include) {
         return t.leaves_to_root_iterator(leaves_opt, root_opt);
     }
 
     inline
     auto
-    root_to_leaves_iterator(const tree & t,
-                                leaves_it leaves_opt = leaves_it::include,
-                                root_it root_opt = root_it::include){
+    root_to_leaves_iterator(const tree &t,
+                            leaves_it leaves_opt = leaves_it::include,
+                            root_it root_opt = root_it::include) {
         return t.root_to_leaves_iterator(leaves_opt, root_opt);
     }
 
     inline
     auto
-    leaves_iterator(const tree &t){
+    leaves_iterator(const tree &t) {
         return t.leaves_iterator();
     }
 
     inline
     auto
-    ancestors(tree::vertex_descriptor v, const tree & t){
+    ancestors(tree::vertex_descriptor v, const tree &t) {
         using it_t = tree_internal::tree_graph_node_to_root_iterator;
         return std::make_pair(it_t(t, v), it_t(t, invalid_index));
     }
 
     inline
     tree::edge_descriptor
-    edge_from_index(tree::edge_index_t ei, const tree &g){
+    edge_from_index(tree::edge_index_t ei, const tree &g) {
         return g.edge_from_index(ei);
     }
 
@@ -417,11 +459,25 @@ namespace hg {
     children(const tree::vertex_descriptor v, const tree &g) {
         return std::make_pair(g.children_cbegin(v), g.children_cend(v));
     }
-    
-    inline 
-    tree::vertex_descriptor 
-    child(index_t i, tree::vertex_descriptor v, const tree &t){
+
+    inline
+    tree::vertex_descriptor
+    child(index_t i, tree::vertex_descriptor v, const tree &t) {
         return t.child(i, v);
+    }
+
+    template<typename T>
+    auto
+    child(index_t i, const xt::xexpression<T> &xvertices, const tree &t) {
+        auto &vertices = xvertices.derived_cast();
+        hg_assert_1d_array(vertices);
+        hg_assert_integral_value_type(vertices);
+
+        array_1d <index_t> result = xt::empty<index_t>({vertices.size()});
+        for (index_t j = 0; j < (index_t) vertices.size(); j++) {
+            result(j) = t.child(i, vertices(j));
+        }
+        return result;
     }
 
     inline

@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_SUITE(undirectedGraph);
 
         BOOST_CHECK(num_edges(g2) == 3);
 
-        for (index_t i = 0; i < num_edges(g2); i++) {
+        for (index_t i = 0; i < (index_t)num_edges(g2); i++) {
             auto e1 = edge_from_index(i, g);
             auto e2 = edge_from_index(i, g2);
             BOOST_CHECK(e1 == e2);

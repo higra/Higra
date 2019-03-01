@@ -84,19 +84,19 @@ Basic functions
         - Root node (last node of the parent array)
     *   - ``parent``
         - vertex
-        - Parent of the given node
+        - Parent(s) of the given node(s)
     *   - ``parents``
         - array of vertices
         - The parent array
     *   - ``num_children``
         - positive integer
-        - Number of children of the given node
+        - Number(s) of children of the given node(s)
     *   - ``child``
         - vertex
-        - i-th child of the given node
+        - i-th child of the given node(s)
     *   - ``is_leaf``
         - boolean
-        - True if given node is a leaf, False otherwise
+        - True if given node(s) is a leaf, False otherwise
 
 Example:
 
@@ -110,14 +110,26 @@ Example:
             // creates the tree shown in the figure above
             tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
 
-            num_leaves(t);      //  7
-            root(t);            // 11
-            parent(2, t);       //  8
-            parents(t);         //  array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11}
-            num_children(8, t); //  3
-            child(1, 11, t);    // 10
-            is_leaf(4, t);      // true
-            is_leaf(5, t);      // false
+            // two set of vertices
+            array_1d<index_t> vertices{0, 11, 8};
+            array_1d<index_t> vertices2{8, 11, 7};
+
+            num_leaves(t);              // 7
+            root(t);                    // 11
+
+            parent(2, t);               // 8
+            parent(vertices, t);        // array {7, 11, 10}
+            parents(t);                 // array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11}
+
+            num_children(8, t);         // 3
+            num_children(vertices, t);  // array {0, 2, 3}
+
+            is_leaf(4, t);              // true
+            is_leaf(5, t);              // false
+            is_leaf(vertices, t);       // array {true, false, false}
+
+            child(1, 11, t);            // 10
+            child(0, vertices2, t);     // array {2, 7, 0}
 
     .. tab:: python
 
@@ -127,14 +139,23 @@ Example:
             # creates the tree shown in the figure above
             g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
-            t.num_leaves()      #  7
-            t.root()            # 11
-            t.parent(2)         #  8
-            t.parents()         #  array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11}
-            t.num_children(8)   #  3
-            t.child(1, 11)      # 10
-            t.is_leaf(4)        # True
-            t.is_leaf(5)        # False
+            t.num_leaves()              # 7
+            t.root()                    # 11
+
+            t.parent(2)                 # 8
+            t.parents((0, 11, 8))       # array {7, 11, 10}
+            t.parents()                 # array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11}
+
+            t.num_children(8)           # 3
+            t.num_children((0, 11, 8))  # array {0, 2, 3}
+
+
+            t.is_leaf(4)                # True
+            t.is_leaf(5)                # False
+            t.is_leaf((0, 11, 8))       # array {True, False, False}
+
+            t.child(1, 11)              # 10
+            t.child(0, (8, 11, 7))      # array {2, 7, 0}
 
 
 Iterators

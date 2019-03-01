@@ -40,7 +40,6 @@ class TestWatershed(unittest.TestCase):
                                (1, 1, 3, 3),
                                (2, 2, 3, 3),
                                (2, 2, 3, 3)))
-        print(labels)
         self.assertTrue(hg.is_in_bijection(labels, expected))
 
 

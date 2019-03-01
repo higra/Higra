@@ -36,8 +36,21 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         BOOST_CHECK(hg::num_edges(t) == 7);
         BOOST_CHECK(hg::num_leaves(t) == 5);
 
+        BOOST_CHECK(hg::num_children(6, t) == 3);
+        array_1d<index_t> vertices{5, 7, 6};
+        array_1d<size_t> ref_numchildren{2, 2, 3};
+        BOOST_CHECK(hg::num_children(vertices, t) == ref_numchildren);
+
         BOOST_CHECK(hg::is_leaf(4, t));
         BOOST_CHECK(!hg::is_leaf(5, t));
+        array_1d<index_t> vertices2{0, 5, 2, 3, 7};
+        array_1d<bool> ref_isleaf{true, false, true, true, false};
+        BOOST_CHECK(hg::is_leaf(vertices2, t) == ref_isleaf);
+
+        BOOST_CHECK(hg::parent(4, t) == 6);
+        array_1d<index_t> vertices3{0, 5, 2, 3, 7};
+        array_1d<index_t> ref_parent{5, 7, 6, 6, 7};
+        BOOST_CHECK(hg::parent(vertices3, t) == ref_parent);
     }
 
     BOOST_AUTO_TEST_CASE(vertexIteratorTree) {
@@ -84,12 +97,12 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         auto g = data.t;
 
         vector<pair<index_t, index_t>> eref{{0, 5},
-                                                        {1, 5},
-                                                        {2, 6},
-                                                        {3, 6},
-                                                        {4, 6},
-                                                        {5, 7},
-                                                        {6, 7}};
+                                            {1, 5},
+                                            {2, 6},
+                                            {3, 6},
+                                            {4, 6},
+                                            {5, 7},
+                                            {6, 7}};
         vector<pair<index_t, index_t>> etest;
         for (auto e: hg::edge_iterator(g)) {
             etest.push_back({source(e, g), target(e, g)});
@@ -103,13 +116,13 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         auto g = data.t;
 
         vector<vector<index_t>> adjListsRef{{5},
-                                                  {5},
-                                                  {6},
-                                                  {6},
-                                                  {6},
-                                                  {7, 0, 1},
-                                                  {7, 2, 3, 4},
-                                                  {5, 6}};
+                                            {5},
+                                            {6},
+                                            {6},
+                                            {6},
+                                            {7, 0, 1},
+                                            {7, 2, 3, 4},
+                                            {5, 6}};
         vector<vector<index_t>> adjListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -126,13 +139,13 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         auto g = data.t;
 
         vector<vector<pair<index_t, index_t>>> outListsRef{{{0, 5}},
-                                                                       {{1, 5}},
-                                                                       {{2, 6}},
-                                                                       {{3, 6}},
-                                                                       {{4, 6}},
-                                                                       {{5, 7}, {5, 0}, {5, 1}},
-                                                                       {{6, 7}, {6, 2}, {6, 3}, {6, 4}},
-                                                                       {{7, 5}, {7, 6}}};
+                                                           {{1, 5}},
+                                                           {{2, 6}},
+                                                           {{3, 6}},
+                                                           {{4, 6}},
+                                                           {{5, 7}, {5, 0}, {5, 1}},
+                                                           {{6, 7}, {6, 2}, {6, 3}, {6, 4}},
+                                                           {{7, 5}, {7, 6}}};
         vector<vector<pair<index_t, index_t>>> outListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -151,13 +164,13 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         auto g = data.t;
 
         vector<vector<pair<index_t, index_t>>> outListsRef{{{5, 0}},
-                                                                       {{5, 1}},
-                                                                       {{6, 2}},
-                                                                       {{6, 3}},
-                                                                       {{6, 4}},
-                                                                       {{7, 5}, {0, 5}, {1, 5}},
-                                                                       {{7, 6}, {2, 6}, {3, 6}, {4, 6}},
-                                                                       {{5, 7}, {6, 7}}};
+                                                           {{5, 1}},
+                                                           {{6, 2}},
+                                                           {{6, 3}},
+                                                           {{6, 4}},
+                                                           {{7, 5}, {0, 5}, {1, 5}},
+                                                           {{7, 6}, {2, 6}, {3, 6}, {4, 6}},
+                                                           {{5, 7}, {6, 7}}};
         vector<vector<pair<index_t, index_t>>> outListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -189,13 +202,13 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         auto g = data.t;
 
         vector<vector<index_t>> ref{{0},
-                                          {1},
-                                          {2},
-                                          {3},
-                                          {4},
-                                          {5, 0, 1},
-                                          {6, 2, 3, 4},
-                                          {5, 6}};
+                                    {1},
+                                    {2},
+                                    {3},
+                                    {4},
+                                    {5, 0, 1},
+                                    {6, 2, 3, 4},
+                                    {5, 6}};
         vector<vector<index_t>> test;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -212,13 +225,13 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         auto g = data.t;
 
         vector<vector<index_t>> ref{{0},
-                                          {1},
-                                          {2},
-                                          {3},
-                                          {4},
-                                          {5, 0, 1},
-                                          {6, 2, 3, 4},
-                                          {5, 6}};
+                                    {1},
+                                    {2},
+                                    {3},
+                                    {4},
+                                    {5, 0, 1},
+                                    {6, 2, 3, 4},
+                                    {5, 6}};
         vector<vector<index_t>> test;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -235,12 +248,12 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         auto g = data.t;
 
         vector<pair<index_t, index_t>> eref{{0, 5},
-                                                        {1, 5},
-                                                        {2, 6},
-                                                        {3, 6},
-                                                        {4, 6},
-                                                        {5, 7},
-                                                        {6, 7}};
+                                            {1, 5},
+                                            {2, 6},
+                                            {3, 6},
+                                            {4, 6},
+                                            {5, 7},
+                                            {6, 7}};
         vector<pair<index_t, index_t>> etest;
         for (auto e: hg::edge_iterator(g)) {
             etest.push_back(edge_from_index(index(e, g), g));
@@ -254,13 +267,13 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         auto g = data.t;
 
         vector<vector<index_t>> ref{{},
-                                          {},
-                                          {},
-                                          {},
-                                          {},
-                                          {0, 1},
-                                          {2, 3, 4},
-                                          {5, 6}};
+                                    {},
+                                    {},
+                                    {},
+                                    {},
+                                    {0, 1},
+                                    {2, 3, 4},
+                                    {5, 6}};
         vector<vector<index_t>> test;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -272,6 +285,14 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         }
 
         BOOST_CHECK(child(1, 5, g) == 1);
+
+        array_1d<index_t> vertices{5, 7, 6};
+
+        array_1d<index_t> ref_child0{0, 5, 2};
+        BOOST_CHECK(child(0, vertices, g) == ref_child0);
+
+        array_1d<index_t> ref_child1{1, 6, 3};
+        BOOST_CHECK(child(1, vertices, g) == ref_child1);
     }
 
     BOOST_AUTO_TEST_CASE(treeTopologicalIterator) {
@@ -321,7 +342,7 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         t.clear();
 
         vector<index_t> ref2{6, 5, 4, 3, 2, 1, 0};
-        for (auto v: hg::root_to_leaves_iterator(tree,hg::leaves_it::include, hg::root_it::exclude)) {
+        for (auto v: hg::root_to_leaves_iterator(tree, hg::leaves_it::include, hg::root_it::exclude)) {
             t.push_back(v);
         }
         BOOST_CHECK(vectorEqual(ref2, t));
@@ -360,7 +381,7 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
                                      {0, 0, 0, 0, 0, 6, 7, 0}};
 
         BOOST_CHECK(ref_adj_mat == adj_mat);
-       
+
     }
 
 BOOST_AUTO_TEST_SUITE_END();

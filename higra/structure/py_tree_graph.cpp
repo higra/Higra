@@ -29,6 +29,66 @@ struct def_tree_ctr {
     }
 };
 
+template<typename graph_t>
+struct def_is_leaf {
+    template<typename type, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("is_leaf",
+              [](const graph_t &tree, const pyarray<type> &vertices) {
+                  return hg::is_leaf(vertices, tree);
+              },
+              doc,
+              py::arg("vertices")
+        );
+    }
+};
+
+template<typename graph_t>
+struct def_num_children {
+    template<typename type, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("num_children",
+              [](const graph_t &tree, const pyarray<type> &vertices) {
+                  return hg::num_children(vertices, tree);
+              },
+              doc,
+              py::arg("vertices")
+        );
+    }
+};
+
+template<typename graph_t>
+struct def_child {
+    template<typename type, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("child",
+              [](const graph_t &tree, hg::index_t i, const pyarray<type> &vertices) {
+                  return hg::child(i, vertices, tree);
+              },
+              doc,
+              py::arg("i"),
+              py::arg("vertices")
+        );
+    }
+};
+
+template<typename graph_t>
+struct def_parent {
+    template<typename type, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("parent",
+              [](const graph_t &tree, const pyarray<type> &vertices) {
+                  return hg::parent(vertices, tree);
+              },
+              doc,
+              py::arg("vertices")
+        );
+    }
+};
 
 void py_init_tree_graph(pybind11::module &m) {
     xt::import_numpy();
@@ -47,12 +107,20 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("root", &graph_t::root, "Get the index of the root node (i.e. self.num_vertices() - 1)");
     c.def("num_leaves", &graph_t::num_leaves, "Get the number of leaves nodes.");
     c.def("is_leaf", &graph_t::is_leaf, "Returns true if the given node is a leaf of true and false otherwise.");
+    add_type_overloads<def_is_leaf<graph_t>, int, unsigned int, long long, unsigned long long>
+            (c, "Indicates if each vertex in the given array is a leaf or not.");
 
     c.def("num_children", &graph_t::num_children, "Get the number of children nodes of the given node.",
           py::arg("node"));
+    add_type_overloads<def_num_children<graph_t>, int, unsigned int, long long, unsigned long long>
+            (c, "Get the number of children of each vertex in the given array.");
+
     c.def("child", &graph_t::child, "Get the i-th (starting at 0) child of the given node of the tree.",
           py::arg("i"),
           py::arg("node"));
+    add_type_overloads<def_child<graph_t>, int, unsigned int, long long, unsigned long long>
+            (c, "Get the i-th (starting at 0) child of each vertex in the given array.");
+
     c.def("children",
           [](const graph_t &g, vertex_t v) {
               pybind11::list l;
@@ -63,9 +131,13 @@ void py_init_tree_graph(pybind11::module &m) {
           },
           "Get a copy of the list of children of the given node.",
           py::arg("node"));
+
     c.def("parents", &graph_t::parents, "Get the parents array representing the tree.");
     c.def("parent", [](const graph_t &tree, vertex_t v) { return tree.parent(v); }, "Get the parent of the given node.",
           py::arg("node"));
+    add_type_overloads<def_parent<graph_t>, int, unsigned int, long long, unsigned long long>
+            (c, "Get the parent of each vertex in the given array.");
+
     c.def("ancestors", [](const graph_t &tree, vertex_t v) {
               pybind11::list l;
               for (auto c: hg::ancestors_iterator(v, tree)) {

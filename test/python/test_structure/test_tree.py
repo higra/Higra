@@ -28,6 +28,16 @@ class TestTree(unittest.TestCase):
         self.assertTrue(t.num_edges() == 7)
         self.assertTrue(t.num_leaves() == 5)
 
+        self.assertTrue(t.is_leaf(0))
+        self.assertTrue(not t.is_leaf(5))
+        self.assertTrue(np.all(t.is_leaf((0, 5, 2, 3, 7)) == (True, False, True, True, False)))
+
+        self.assertTrue(t.num_children(6) == 3)
+        self.assertTrue(np.all(t.num_children((5, 7, 6)) == (2, 2, 3)))
+
+        self.assertTrue(t.parent(4) == 6)
+        self.assertTrue(np.all(t.parent((0, 5, 2, 3, 7)) == (5, 7, 6, 6, 7)))
+
     def test_vertex_iterator(self):
         t = TestTree.get_tree()
 
@@ -203,6 +213,8 @@ class TestTree(unittest.TestCase):
             self.assertTrue(res == ref[v])
 
         self.assertTrue(t.child(1, 5) == 1)
+        self.assertTrue(np.all(t.child(0, (5, 7, 6)) == (0, 5, 2)))
+        self.assertTrue(np.all(t.child(1, (5, 7, 6)) == (1, 6, 3)))
 
     def test_leaves_iterator(self):
         t = TestTree.get_tree()
