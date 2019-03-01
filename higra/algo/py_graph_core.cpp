@@ -56,8 +56,8 @@ struct def_ugraph_2_adjacency_matrix {
     void def(pybind11::module &m, const char *doc) {
         m.def("_undirected_graph_2_adjacency_matrix", [](const graph_t &graph,
                                                          const pyarray<value_t> &edge_weights,
-                                                         const value_t non_edge_value) {
-                  return hg::undirected_graph_2_adjacency_matrix(graph, edge_weights, non_edge_value);
+                                                         const double non_edge_value) {
+                  return hg::undirected_graph_2_adjacency_matrix(graph, edge_weights, static_cast<value_t>(non_edge_value));
               },
               doc,
               py::arg("graph"),
@@ -72,8 +72,8 @@ struct def_adjacency_matrix_2_ugraph {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_adjacency_matrix_2_undirected_graph", [](const pyarray<value_t> &adjacency_matrix,
-                                                         const value_t non_edge_value) {
-                  auto res = hg::adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value);
+                                                         const double non_edge_value) {
+                  auto res = hg::adjacency_matrix_2_undirected_graph(adjacency_matrix, static_cast<value_t>(non_edge_value));
                   return pybind11::make_tuple(std::move(res.first), std::move(res.second));
               },
               doc,

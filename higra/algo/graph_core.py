@@ -63,7 +63,7 @@ def undirected_graph_2_adjacency_matrix(edge_weights, graph, non_edge_value=0):
     :param non_edge_value: Value used to represent edges that are not in the input graph
     :return: A 2d symmetric square matrix
     """
-    return hg._undirected_graph_2_adjacency_matrix(graph, edge_weights, non_edge_value)
+    return hg._undirected_graph_2_adjacency_matrix(graph, edge_weights, float(non_edge_value))
 
 
 def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
@@ -76,6 +76,6 @@ def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
     :param non_edge_value: Value used to represent non existing edges in the adjacency matrix
     :return: a pair (UndirectedGraph, ndarray) representing the graph and its edge_weights
     """
-    graph, edge_weights = hg._adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value)
+    graph, edge_weights = hg._adjacency_matrix_2_undirected_graph(adjacency_matrix, float(non_edge_value))
     hg.CptEdgeWeightedGraph.link(edge_weights, graph)
     return graph, edge_weights

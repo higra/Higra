@@ -184,8 +184,6 @@ BOOST_AUTO_TEST_SUITE(treeAccumulator);
                            {15, 3},
                            {8,  1}};
         BOOST_CHECK(xt::allclose(ref4, output4));
-        std::cout << output4 << std::endl;
-
     }
 
 BOOST_AUTO_TEST_SUITE_END();
