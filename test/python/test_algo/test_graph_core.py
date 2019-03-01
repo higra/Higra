@@ -125,6 +125,16 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         for (e1, e2) in zip(graph.edges(), ref_graph.edges()):
             self.assertTrue(e1 == e2)
 
+    def ultrametric_open(self):
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((2, 3, 9, 5, 10, 1, 5, 8, 2, 2, 4, 3), dtype=np.int32)
+
+        subd_ultrametric = hg.ultrametric_open(edge_weights, graph)
+
+        ref_subd_ultrametric = np.asarray((2, 3, 9, 3, 9, 1, 4, 3, 2, 2, 4, 3), dtype=np.int32)
+
+        self.assertTrue(hg.is_in_bijection(subd_ultrametric, ref_subd_ultrametric))
+
 
 if __name__ == '__main__':
     unittest.main()

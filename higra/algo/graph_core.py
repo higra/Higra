@@ -39,7 +39,7 @@ def graph_cut_2_labelisation(edge_weights, graph):
     are assumed to be part of the cut.
 
     :param edge_weights: Weights on the edges of the graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
-    :param graph: (deduced from :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: Input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
     :return: A labelisation of the graph vertices (Concept :class:`~higra.CptVertexWeightedGraph`)
     """
     vertex_labels = hg._graph_cut_2_labelisation(graph, edge_weights)
@@ -59,7 +59,7 @@ def undirected_graph_2_adjacency_matrix(edge_weights, graph, non_edge_value=0):
     the adjacency matrix.
 
     :param edge_weights: Graph edge weights
-    :param graph: Input graph
+    :param graph: Input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
     :param non_edge_value: Value used to represent edges that are not in the input graph
     :return: A 2d symmetric square matrix
     """
@@ -79,3 +79,24 @@ def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
     graph, edge_weights = hg._adjacency_matrix_2_undirected_graph(adjacency_matrix, float(non_edge_value))
     hg.CptEdgeWeightedGraph.link(edge_weights, graph)
     return graph, edge_weights
+
+
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def ultrametric_open(edge_weights, graph):
+    """
+    Computes the subdominant ultrametric of the given edge weighted graph.
+
+    The subdominant ultrametric relative to a given dissimilarity measure (here the graph edge weights)
+    is defined as the largest ultrametric smaller than the dissimilarity measure.
+
+    In the case of an edge weighted undirected graph, the value of the subdominant ultrametric on the edge `{x,y}`
+    is given by the min-max distance between `x` and `y`.
+
+    Complexity: `O(n*log(n))` with `n` the number of edges in the graph
+
+    :param edge_weights: Graph edge weights
+    :param graph: Input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
+    :return: edge weights corresponding to the subdominant ultrametric
+    """
+    tree, altitudes = hg.bpt_canonical(edge_weights, graph)
+    return hg.saliency(altitudes)
