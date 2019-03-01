@@ -17,12 +17,14 @@ class TestSciPyInterop(unittest.TestCase):
 
     def test_binary_hierarchy_to_scipy_linkage_matrix(self):
         t = hg.Tree((5, 5, 7, 6, 6, 7, 8, 8, 8))
-        ref = np.asarray(((0, 1, 1 / 3, 2),
-                          (3, 4, 2 / 3, 2),
-                          (2, 5, 2 / 3, 3),
-                          (6, 7, 1, 5)))
-        res = hg.binary_hierarchy_to_scipy_linkage_matrix(t)
+        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 2, 3), dtype=np.int32)
+        ref = np.asarray(((0, 1, 1, 2),
+                          (3, 4, 2, 2),
+                          (2, 5, 2, 3),
+                          (6, 7, 3, 5)))
+        res = hg.binary_hierarchy_to_scipy_linkage_matrix(t, altitudes=altitudes)
         self.assertTrue(np.allclose(ref, res))
+        self.assertTrue(res.dtype == np.float64)
 
     def test_scipy_linkage_matrix_to_binary_hierarchy(self):
         linkage_matrix = np.asarray(((0, 1, 1, 2),
