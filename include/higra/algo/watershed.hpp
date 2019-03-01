@@ -77,7 +77,7 @@ namespace hg {
                     auto adjacent_vertex = target(e, graph);
                     if (notInL[adjacent_vertex] && edge_weights(e) == fminus[y]) {
                         if (labels[adjacent_vertex] != no_label) {
-                            return std::make_pair(std::move(L), labels[adjacent_vertex]);
+                            return labels[adjacent_vertex];
                         } else if (fminus[adjacent_vertex] < fminus[y]) {
                             L.push_back(adjacent_vertex);
                             notInL[adjacent_vertex] = false;
@@ -92,7 +92,7 @@ namespace hg {
                     }
                 }
             }
-            return std::make_pair(std::move(L), no_label);
+            return no_label;
         };
 
         index_t num_labs = 0;
@@ -100,15 +100,15 @@ namespace hg {
         for (auto v: vertex_iterator(graph)) {
             if (labels[v] == no_label) {
                 auto res = stream(v);
-                if (res.second == no_label) {
+                if (res == no_label) {
                     num_labs++;
-                    for (auto x: res.first) {
+                    for (auto x: L) {
                         labels[x] = num_labs;
                         notInL[x] = true;
                     }
                 } else {
-                    for (auto x: res.first) {
-                        labels[x] = res.second;
+                    for (auto x: L) {
+                        labels[x] = res;
                         notInL[x] = true;
                     }
                 }

@@ -249,7 +249,7 @@ namespace hg {
         hg_assert_integral_value_type(sources);
         hg_assert_same_shape(sources, targets);
 
-        for (index_t i = 0; i < sources.size(); i++)
+        for (index_t i = 0; i < (index_t)sources.size(); i++)
             g.add_edge(sources(i), targets(i));
     }
 
