@@ -32,9 +32,6 @@ namespace xtl
     template <class T, class B>
     auto optional(T&& t, B&& b) noexcept;
 
-    template <class T>
-    auto missing() noexcept;
-
     /*************************
      * xoptional declaration *
      *************************/
@@ -316,8 +313,8 @@ namespace xtl
          xoptional&>
         inline operator=(T&& rhs)
         {
-            m_flag = true;
             m_value = std::forward<T>(rhs);
+            m_flag = true;
             return *this;
         }
 
@@ -331,8 +328,8 @@ namespace xtl
         xoptional&>
         inline operator=(const xoptional<CTO, CBO>& rhs)
         {
-            m_flag = rhs.has_value();
             m_value = rhs.value();
+            m_flag = rhs.has_value();
             return *this;
         }
 
@@ -346,8 +343,8 @@ namespace xtl
         xoptional&>
         inline operator=(xoptional<CTO, CBO>&& rhs)
         {
-            m_flag = std::move(rhs).has_value();
             m_value = std::move(rhs).value();
+            m_flag = std::move(rhs).has_value();
             return *this;
         }
 
@@ -499,7 +496,7 @@ namespace xtl
      * @brief Returns an \ref xoptional for a missig value
      */
     template <class T>
-    auto missing() noexcept
+    xoptional<T, bool> missing() noexcept
     {
         return xoptional<T, bool>(T(), false);
     }

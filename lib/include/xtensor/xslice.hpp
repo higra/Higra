@@ -546,33 +546,6 @@ namespace xt
         {
         }
 
-        auto normalize(std::ptrdiff_t val, std::size_t ssize) const
-        {
-            std::ptrdiff_t size = static_cast<std::ptrdiff_t>(ssize);
-            val = (val >= 0) ? val : val + size;
-            return (std::max)(std::ptrdiff_t(0), (std::min)(size, val));
-        }
-
-        auto get_stepped_range(std::ptrdiff_t start, std::ptrdiff_t stop, std::ptrdiff_t step, std::size_t ssize) const
-        {
-            std::ptrdiff_t size = static_cast<std::ptrdiff_t>(ssize);
-            start = (start >= 0) ? start : start + size;
-            stop = (stop >= 0) ? stop : stop + size;
-
-            if (step > 0)
-            {
-                start = (std::max)(std::ptrdiff_t(0), (std::min)(size, start));
-                stop  = (std::max)(std::ptrdiff_t(0), (std::min)(size, stop));
-            }
-            else
-            {
-                start = (std::max)(std::ptrdiff_t(-1), (std::min)(size - 1, start));
-                stop  = (std::max)(std::ptrdiff_t(-1), (std::min)(size - 1, stop));
-            }
-
-            return xstepped_range<std::ptrdiff_t>(start, stop, step);
-        }
-
         template <class MI = A, class MA = B, class STEP = C>
         inline std::enable_if_t<std::is_integral<MI>::value &&
                                 std::is_integral<MA>::value &&
@@ -656,7 +629,38 @@ namespace xt
             return xall<std::ptrdiff_t>(static_cast<std::ptrdiff_t>(size));
         }
 
+        A start() const { return m_start; }
+        B stop()  const { return m_stop;  }
+        C step()  const { return m_step;  }
+
     private:
+
+        static auto normalize(std::ptrdiff_t val, std::size_t ssize)
+        {
+            std::ptrdiff_t size = static_cast<std::ptrdiff_t>(ssize);
+            val = (val >= 0) ? val : val + size;
+            return (std::max)(std::ptrdiff_t(0), (std::min)(size, val));
+        }
+
+        static auto get_stepped_range(std::ptrdiff_t start, std::ptrdiff_t stop, std::ptrdiff_t step, std::size_t ssize)
+        {
+            std::ptrdiff_t size = static_cast<std::ptrdiff_t>(ssize);
+            start = (start >= 0) ? start : start + size;
+            stop = (stop >= 0) ? stop : stop + size;
+
+            if (step > 0)
+            {
+                start = (std::max)(std::ptrdiff_t(0), (std::min)(size, start));
+                stop  = (std::max)(std::ptrdiff_t(0), (std::min)(size, stop));
+            }
+            else
+            {
+                start = (std::max)(std::ptrdiff_t(-1), (std::min)(size - 1, start));
+                stop  = (std::max)(std::ptrdiff_t(-1), (std::min)(size - 1, stop));
+            }
+
+            return xstepped_range<std::ptrdiff_t>(start, stop, step);
+        }
 
         A m_start;
         B m_stop;
@@ -1332,9 +1336,9 @@ namespace xt
     template <class T>
     inline auto xkeep_slice<T>::step_size(std::size_t i, std::size_t n) const noexcept -> size_type
     {
-        if (i + 1 == m_indices.size())
+        if (i + n >= m_indices.size())
         {
-            return 1;
+            return m_indices.back() - m_indices[i] + 1;
         }
         else
         {
@@ -1474,13 +1478,13 @@ namespace xt
     template <class T>
     inline auto xdrop_slice<T>::step_size(std::size_t i, std::size_t n) const noexcept -> size_type
     {
-        if(i + 1 == static_cast<std::size_t>(m_size))
+        if (i + n >= static_cast<std::size_t>(m_size))
         {
-            return 1;
+            return (*this)(static_cast<size_type>(m_size-1)) - (*this)(static_cast<size_type>(i)) + 1;
         }
         else
         {
-            return (*this)(i + n) - (*this)(i);
+            return (*this)(static_cast<size_type>(i + n)) - (*this)(static_cast<size_type>(i));
         }
     }
 
