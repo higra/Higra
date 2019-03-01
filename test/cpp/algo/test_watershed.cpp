@@ -35,5 +35,17 @@ BOOST_AUTO_TEST_SUITE(algo_watershed);
         BOOST_CHECK(labels == expected);
     }
 
+    BOOST_AUTO_TEST_CASE(watershed2) {
+        auto g = hg::get_4_adjacency_graph({3, 3});
+        array_1d<int> edge_weights{1, 1, 0, 0, 0, 1, 0, 0, 2, 2, 0, 2};
+
+        auto labels = hg::labelisation_watershed(g, edge_weights);
+
+        array_1d<index_t> expected{1, 1, 1,
+                                   2, 1, 1,
+                                   2, 2, 1};
+        BOOST_CHECK(labels == expected);
+    }
+
 
 BOOST_AUTO_TEST_SUITE_END();
