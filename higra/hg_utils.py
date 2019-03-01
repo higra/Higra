@@ -145,3 +145,24 @@ def mean_angle_mod_pi(angles1, angles2):
     # modulo pi
     differences[differences > np.pi] -= np.pi
     return differences
+
+
+def dtype_info(dtype):
+    """
+    Returns a `numpy.iinfo` object if given dtype is an integral type,
+    and a `numpy.finfo` if given dtype os a float type.
+
+    Raises an exception is dtype is a more complex type.
+
+    :param dtype:
+    :return:
+    """
+    int_types = (np.uint8, np.int8, np.uint16, np.int16, np.uint32, np.int32, np.uint64, np.int64)
+    float_types = (np.float32, np.float64)
+
+    if dtype in int_types:
+        return np.iinfo(dtype)
+    elif dtype in float_types:
+        return np.finfo(dtype)
+    else:
+        raise TypeError("Given dtype is not suported or invalid.")
