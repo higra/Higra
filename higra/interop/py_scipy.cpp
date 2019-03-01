@@ -22,7 +22,7 @@ namespace py = pybind11;
 
 using namespace hg;
 
-template<typename tree_t, typename T1, typename T2, typename value_t=typename T1::value_type>
+template<typename tree_t, typename T1, typename T2, typename value_t=double>
 auto binary_hierarchy_to_scipy_linkage_matrix(const tree_t &tree,
                                               const xt::xexpression<T1> &xaltitudes,
                                               const xt::xexpression<T2> &xarea) {
@@ -110,7 +110,7 @@ void py_init_scipy(pybind11::module &m) {
             (m,
              "Converts an Higra binary hierarchy to a SciPy linkage matrix."
             );
-    add_type_overloads<def_scipy_linkage_matrix_to_binary_hierarchy, HG_TEMPLATE_FLOAT_TYPES>
+    add_type_overloads<def_scipy_linkage_matrix_to_binary_hierarchy, double>
             (m,
              "Converts a SciPy linkage matrix to an Higra binary hierarchy."
             );
