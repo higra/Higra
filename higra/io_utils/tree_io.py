@@ -20,7 +20,7 @@ def read_tree(filename):
     :param filename: path to the tree file
     :return: a pair (tree, attribute_map)
     """
-    tree, attribute_map = hg._read_tree(filename)
+    tree, attribute_map = hg.cpp._read_tree(filename)
 
     for k in attribute_map:
         hg.set_attribute(tree, k, attribute_map[k])

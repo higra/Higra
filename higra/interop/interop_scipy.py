@@ -41,7 +41,7 @@ def binary_hierarchy_to_scipy_linkage_matrix(tree, altitudes=None, area=None):
     if area is None:
         area = hg.attribute_area(tree)
 
-    return hg._binary_hierarchy_to_scipy_linkage_matrix(tree, altitudes, area)
+    return hg.cpp._binary_hierarchy_to_scipy_linkage_matrix(tree, altitudes, area)
 
 
 def scipy_linkage_matrix_to_binary_hierarchy(linkage_matrix):
@@ -57,7 +57,7 @@ def scipy_linkage_matrix_to_binary_hierarchy(linkage_matrix):
     :param linkage_matrix: a 2d array as produced by the `linkage` method of SciPy
     :return: a tuple (tree, altitudes (Concept :class:`~higra.CptValuedHierarchy`), area (Concept :class:`~higra.CptValuedHierarchy`))
     """
-    tree, altitudes, area = hg._scipy_linkage_matrix_to_binary_hierarchy(linkage_matrix)
+    tree, altitudes, area = hg.cpp._scipy_linkage_matrix_to_binary_hierarchy(linkage_matrix)
 
     hg.CptValuedHierarchy.link(altitudes, tree)
     hg.CptValuedHierarchy.link(area, tree)

@@ -37,7 +37,7 @@ class TestTreeIO(unittest.TestCase):
 
         hg.save_tree(filename, tree, {"attr1": attr1, "attr2": attr2})
 
-        tree, attributes = hg._read_tree(filename)
+        tree, attributes = hg.read_tree(filename)
         silent_remove(filename)
 
         self.assertTrue(np.allclose(tree.parents(), parents))

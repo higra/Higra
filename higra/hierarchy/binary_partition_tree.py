@@ -25,7 +25,7 @@ def binary_partition_tree_complete_linkage(edge_weights, graph):
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
 
-    res = hg._binary_partition_tree_complete_linkage(graph, edge_weights)
+    res = hg.cpp._binary_partition_tree_complete_linkage(graph, edge_weights)
     tree = res.tree()
     altitudes = res.altitudes()
 
@@ -51,7 +51,7 @@ def binary_partition_tree_average_linkage(edge_values, graph, edge_weights):
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
 
-    res = hg._binary_partition_tree_average_linkage(graph, edge_values, edge_weights)
+    res = hg.cpp._binary_partition_tree_average_linkage(graph, edge_values, edge_weights)
     tree = res.tree()
     altitudes = res.altitudes()
 
@@ -71,7 +71,7 @@ def binary_partition_tree_single_linkage(edge_weights, graph):
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
 
-    return bpt_canonical(edge_weights, graph)
+    return hg.bpt_canonical(edge_weights, graph)
 
 
 @hg.argument_helper(("edge_weights", hg.CptEdgeWeightedGraph))
@@ -151,7 +151,7 @@ def binary_partition_tree(weight_function, edge_weights, graph):
     :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
-    res = hg._binary_partition_tree_custom_linking(graph, edge_weights, weight_function)
+    res = hg.cpp._binary_partition_tree(graph, edge_weights, weight_function)
     tree = res.tree()
     altitudes = res.altitudes()
 

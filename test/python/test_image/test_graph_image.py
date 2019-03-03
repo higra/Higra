@@ -16,13 +16,13 @@ import numpy as np
 class TestGraphImage(unittest.TestCase):
 
     def test_graph_4_adjacency_2_khalimsky(self):
-        g = hg._get_4_adjacency_graph((2, 3))
+        g = hg.get_4_adjacency_graph((2, 3))
         data = np.asarray((1, 0, 2, 1, 1, 1, 2))
 
         ref = np.asarray(((0, 1, 0, 2, 0),
                           (0, 1, 1, 2, 1),
                           (0, 1, 0, 2, 0)))
-        r = hg._graph_4_adjacency_2_khalimsky(g, (2, 3), data)
+        r = hg.graph_4_adjacency_2_khalimsky(data, g)
         self.assertTrue(np.allclose(ref, r))
 
     def test_khalimsky_2_graph_4_adjacency(self):
@@ -31,8 +31,9 @@ class TestGraphImage(unittest.TestCase):
         ref = np.asarray(((0, 1, 0, 2, 0),
                           (0, 1, 1, 2, 1),
                           (0, 1, 0, 2, 0)))
-        graph, embedding, weights = hg._khalimsky_2_graph_4_adjacency(ref)
-        self.assertTrue(np.allclose(embedding.shape(), (2, 3)))
+        graph, weights = hg.khalimsky_2_graph_4_adjacency(ref)
+        shape = hg.CptGridGraph.get_shape(graph)
+        self.assertTrue(np.allclose(shape, (2, 3)))
         self.assertTrue(np.allclose(data, weights))
 
 

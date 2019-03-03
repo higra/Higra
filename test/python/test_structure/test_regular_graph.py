@@ -19,16 +19,16 @@ class TestRegularGraph(unittest.TestCase):
         nl = ((-1, 0), (0, -1), (0, 1), (1, 0))
         g1 = hg.RegularGraph2d(hg.EmbeddingGrid2d(shape), nl)
 
-        g2 = hg._get_4_adjacency_implicit_graph(shape)
-        g3 = hg._get_8_adjacency_implicit_graph(shape)
+        g2 = hg.get_4_adjacency_implicit_graph(shape)
+        g3 = hg.get_8_adjacency_implicit_graph(shape)
 
         for g in (g1, g2, g3):
             self.assertTrue(g.num_vertices() == 6)
 
     def test_vertices_iterator(self):
         shape = (2, 3)
-        g1 = hg._get_4_adjacency_implicit_graph(shape)
-        g2 = hg._get_8_adjacency_implicit_graph(shape)
+        g1 = hg.get_4_adjacency_implicit_graph(shape)
+        g2 = hg.get_8_adjacency_implicit_graph(shape)
 
         vref = [0, 1, 2, 3, 4, 5];
 
@@ -42,7 +42,7 @@ class TestRegularGraph(unittest.TestCase):
 
     def test_out_edge_iterator4(self):
         shape = (2, 3)
-        g = hg._get_4_adjacency_implicit_graph(shape)
+        g = hg.get_4_adjacency_implicit_graph(shape)
 
         ref = [[(0, 1), (0, 3)],
                [(1, 0), (1, 2), (1, 4)],
@@ -61,7 +61,7 @@ class TestRegularGraph(unittest.TestCase):
 
     def test_out_edge_iterator8(self):
         shape = (2, 3)
-        g = hg._get_8_adjacency_implicit_graph(shape)
+        g = hg.get_8_adjacency_implicit_graph(shape)
 
         ref = [[(0, 1), (0, 3), (0, 4)],
                [(1, 0), (1, 2), (1, 3), (1, 4), (1, 5)],

@@ -90,7 +90,9 @@ def assess_fragmentation_horizontal_cut(altitudes,
     :return: an object of type :class:`~higra.FragmentationCurve`
     """
     if vertex_map is None:
-        return hg._assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, measure, max_regions=max_regions)
+        return hg.cpp._assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, measure,
+                                                           max_regions=max_regions)
     else:
-        return hg._assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, measure, max_regions=max_regions,
-                                                       vertex_map=vertex_map)
+        return hg.cpp._assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, measure,
+                                                           max_regions=max_regions,
+                                                           vertex_map=vertex_map)

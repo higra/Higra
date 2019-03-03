@@ -22,7 +22,7 @@ class TestHierarchyCore(unittest.TestCase):
         return hg.Tree(parent_relation)
 
     def test_BPTTrivial(self):
-        graph = hg._get_4_adjacency_graph((1, 3))
+        graph = hg.get_4_adjacency_graph((1, 3))
 
         edge_weights = np.asarray([2, 3])
 
@@ -37,7 +37,7 @@ class TestHierarchyCore(unittest.TestCase):
         self.assertTrue(mst.num_edges() == 2)
 
     def test_BPT(self):
-        graph = hg._get_4_adjacency_graph((2, 3))
+        graph = hg.get_4_adjacency_graph((2, 3))
 
         edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
 
@@ -65,7 +65,7 @@ class TestHierarchyCore(unittest.TestCase):
         self.assertTrue(np.all(mst_edge_map == (1, 0, 3, 4, 2)))
 
     def test_QFZ(self):
-        graph = hg._get_4_adjacency_graph((2, 3))
+        graph = hg.get_4_adjacency_graph((2, 3))
 
         edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
 

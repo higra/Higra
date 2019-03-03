@@ -25,7 +25,7 @@ def weight_graph(vertex_weights, weight_function, graph):
 
     vertex_weights = hg.linearize_vertex_weights(vertex_weights, graph)
 
-    edge_weights = hg._weight_graph(graph, vertex_weights, weight_function)
+    edge_weights = hg.cpp._weight_graph(graph, vertex_weights, weight_function)
 
     hg.CptEdgeWeightedGraph.link(edge_weights, graph)
 
@@ -44,7 +44,7 @@ def weight_graph_function(graph, weight_function):
     :return: edge weights of the graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
 
-    edge_weights = hg._weight_graph(graph, weight_function)
+    edge_weights = hg.cpp._weight_graph(graph, weight_function)
 
     hg.CptEdgeWeightedGraph.link(edge_weights, graph)
 

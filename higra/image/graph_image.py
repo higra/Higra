@@ -23,7 +23,7 @@ def graph_4_adjacency_2_khalimsky(edge_weights, graph, shape, add_extra_border=F
     :return: a 2d array
     """
     shape = hg.normalize_shape(shape)
-    return hg._graph_4_adjacency_2_khalimsky(graph, shape, edge_weights, add_extra_border)
+    return hg.cpp._graph_4_adjacency_2_khalimsky(graph, shape, edge_weights, add_extra_border)
 
 
 def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False):
@@ -35,7 +35,7 @@ def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False):
     :return: a graph (Concept :class:`~higra.CptGridGraph`) and its edge weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
 
-    graph, embedding, edge_weights = hg._khalimsky_2_graph_4_adjacency(khalimsky, extra_border)
+    graph, embedding, edge_weights = hg.cpp._khalimsky_2_graph_4_adjacency(khalimsky, extra_border)
 
     hg.CptEdgeWeightedGraph.link(edge_weights, graph)
     hg.CptGridGraph.link(graph, embedding.shape())
@@ -50,7 +50,7 @@ def get_4_adjacency_graph(shape):
     :param shape: a pair (height, width)
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
-    graph = hg._get_4_adjacency_graph(shape)
+    graph = hg.cpp._get_4_adjacency_graph(shape)
     hg.CptGridGraph.link(graph, shape)
     return graph
 
@@ -62,7 +62,7 @@ def get_8_adjacency_graph(shape):
     :param shape: a pair (height, width)
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
-    graph = hg._get_8_adjacency_graph(shape)
+    graph = hg.cpp._get_8_adjacency_graph(shape)
     hg.CptGridGraph.link(graph, shape)
     return graph
 
@@ -74,7 +74,7 @@ def get_4_adjacency_implicit_graph(shape):
     :param shape: a pair (height, width)
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
-    graph = hg._get_4_adjacency_implicit_graph(shape)
+    graph = hg.cpp._get_4_adjacency_implicit_graph(shape)
     hg.CptGridGraph.link(graph, shape)
     return graph
 
@@ -86,6 +86,6 @@ def get_8_adjacency_implicit_graph(shape):
     :param shape: a pair (height, width)
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
-    graph = hg._get_8_adjacency_implicit_graph(shape)
+    graph = hg.cpp._get_8_adjacency_implicit_graph(shape)
     hg.CptGridGraph.link(graph, shape)
     return graph

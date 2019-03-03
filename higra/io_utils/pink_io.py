@@ -19,7 +19,7 @@ def read_graph_pink(filename):
     :param filename: path to the graph file
     :return: a tuple (graph, vertex_weights, edge_weights) (with respective Concepts :class:`~higra.CptGridGraph`, :class:`~higra.CptVertexWeightedGraph`, and :class:`~higra.CptEdgeWeightedGraph`)
     """
-    graph, vertex_weights, edge_weights, shape = hg._read_graph_pink(filename)
+    graph, vertex_weights, edge_weights, shape = hg.cpp._read_graph_pink(filename)
 
     hg.CptGridGraph.link(graph, shape)
     vertex_weights = hg.delinearize_vertex_weights(vertex_weights, graph, shape)
@@ -53,4 +53,4 @@ def save_graph_pink(filename, graph, vertex_weights=None, edge_weights=None, sha
 
     vertex_weights = hg.linearize_vertex_weights(vertex_weights, graph, shape)
 
-    hg._save_graph_pink(filename, graph, vertex_weights=vertex_weights, edge_weights=edge_weights, shape=shape)
+    hg.cpp._save_graph_pink(filename, graph, vertex_weights=vertex_weights, edge_weights=edge_weights, shape=shape)

@@ -83,7 +83,7 @@ def watershed_hierarchy_by_attribute(edge_weights, attribute_functor, graph):
 
         return attribute_functor(tree, altitudes)
 
-    res = hg._watershed_hierarchy_by_attribute(graph, edge_weights, helper_functor)
+    res = hg.cpp._watershed_hierarchy_by_attribute(graph, edge_weights, helper_functor)
     tree = res.tree()
     altitudes = res.altitudes()
 
@@ -122,7 +122,7 @@ def watershed_hierarchy_by_minima_ordering(edge_weights, minima_ranks, minima_al
     :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
-    res = hg._watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, minima_altitudes)
+    res = hg.cpp._watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, minima_altitudes)
     tree = res.tree()
     altitudes = res.altitudes()
 

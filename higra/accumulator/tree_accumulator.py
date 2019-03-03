@@ -22,7 +22,7 @@ def accumulate_parallel(node_weights, accumulator, tree):
     :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
     :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
     """
-    res = hg._accumulate_parallel(tree, node_weights, accumulator)
+    res = hg.cpp._accumulate_parallel(tree, node_weights, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
     return res
 
@@ -42,7 +42,7 @@ def accumulate_sequential(leaf_data, accumulator, tree, leaf_graph=None):
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
-    res = hg._accumulate_sequential(tree, leaf_data, accumulator)
+    res = hg.cpp._accumulate_sequential(tree, leaf_data, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
     return res
 
@@ -59,7 +59,7 @@ def propagate_sequential(node_weights, condition, tree):
     :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
     :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
     """
-    res = hg._propagate_sequential(tree, node_weights, condition)
+    res = hg.cpp._propagate_sequential(tree, node_weights, condition)
     hg.CptValuedHierarchy.link(res, tree)
     return res
 
@@ -75,7 +75,7 @@ def propagate_sequential_and_accumulate(node_weights, accumulator, tree):
     :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
     :return: returns new tree node weights (Concept :class:`~higra.CptValuedHierarchy`)
     """
-    res = hg._propagate_sequential_and_accumulate(tree, node_weights, accumulator)
+    res = hg.cpp._propagate_sequential_and_accumulate(tree, node_weights, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
     return res
 
@@ -108,9 +108,9 @@ def propagate_parallel(node_weights, tree, condition=None):
     """
 
     if condition is not None:
-        res = hg._propagate_parallel(tree, node_weights, condition)
+        res = hg.cpp._propagate_parallel(tree, node_weights, condition)
     else:
-        res = hg._propagate_parallel(tree, node_weights)
+        res = hg.cpp._propagate_parallel(tree, node_weights)
     hg.CptValuedHierarchy.link(res, tree)
     return res
 
@@ -133,7 +133,7 @@ def accumulate_and_add_sequential(node_weights, leaf_data, accumulator, tree, le
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
-    res = hg._accumulate_and_add_sequential(tree, node_weights, leaf_data, accumulator)
+    res = hg.cpp._accumulate_and_add_sequential(tree, node_weights, leaf_data, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
     return res
 
@@ -156,7 +156,7 @@ def accumulate_and_multiply_sequential(node_weights, leaf_data, accumulator, tre
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
-    res = hg._accumulate_and_multiply_sequential(tree, node_weights, leaf_data, accumulator)
+    res = hg.cpp._accumulate_and_multiply_sequential(tree, node_weights, leaf_data, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
     return res
 
@@ -179,7 +179,7 @@ def accumulate_and_min_sequential(node_weights, leaf_data, accumulator, tree, le
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
-    res = hg._accumulate_and_min_sequential(tree, node_weights, leaf_data, accumulator)
+    res = hg.cpp._accumulate_and_min_sequential(tree, node_weights, leaf_data, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
     return res
 
@@ -202,6 +202,6 @@ def accumulate_and_max_sequential(node_weights, leaf_data, accumulator, tree, le
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
-    res = hg._accumulate_and_max_sequential(tree, node_weights, leaf_data, accumulator)
+    res = hg.cpp._accumulate_and_max_sequential(tree, node_weights, leaf_data, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
     return res
