@@ -30,6 +30,21 @@ class TestWatershedHierarchy(unittest.TestCase):
         self.assertTrue(hg.test_tree_isomorphism(t, ref_tree))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 
+    def test_watershed_hierarchy_by_minima_ordering(self):
+        g = hg.get_4_adjacency_graph((1, 7))
+        edge_weights = np.asarray((1, 4, 1, 0, 10, 8))
+        # same as dynamics
+        minima_ranking = np.asarray((2, 2, 0, 3, 3, 1, 1), dtype=np.uint64)
+        minima_altitudes = np.asarray((0, 2, 3, 10), dtype=np.float64)
+
+        t, altitudes = hg.watershed_hierarchy_by_minima_ordering(edge_weights, minima_ranking, minima_altitudes, g)
+
+        ref_parents = np.asarray((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
+        ref_tree = hg.Tree(ref_parents)
+        ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3))
+
+        self.assertTrue(hg.test_tree_isomorphism(t, ref_tree))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
 
 
 if __name__ == '__main__':

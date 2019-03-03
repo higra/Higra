@@ -54,6 +54,11 @@ def watershed_hierarchy_by_attribute(edge_weights, attribute_functor, graph):
     """
     Compute the watershed hierarchy by a user defined attributes.
 
+    The algorithm used is described in:
+
+        Laurent Najman, Jean Cousty, Benjamin Perret:
+        Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs. ISMM 2013: 135-146
+
     The attribute functor is a function that takes a binary partition tree and an array of altitudes as argument
     and returns an array with the node attribute values for the given tree.
 
@@ -65,10 +70,11 @@ def watershed_hierarchy_by_attribute(edge_weights, attribute_functor, graph):
 
         tree = watershed_hierarchy_by_attribute(graph, lambda tree, _: hg.attribute_area(tree))
 
-    :param graph: input graph
-    :param edge_weights: edge weights of the input graph
-    :param attribute_functor:
-    :return: a tree with attributes "altitudes" and "leaf_graph"
+
+    :param edge_weights: edge weights of the input graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param attribute_functor: function computing the regional attribute
+    :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
 
     def helper_functor(tree, altitudes):
@@ -78,6 +84,45 @@ def watershed_hierarchy_by_attribute(edge_weights, attribute_functor, graph):
         return attribute_functor(tree, altitudes)
 
     res = hg._watershed_hierarchy_by_attribute(graph, edge_weights, helper_functor)
+    tree = res.tree()
+    altitudes = res.altitudes()
+
+    hg.CptHierarchy.link(tree, graph)
+    hg.CptValuedHierarchy.link(altitudes, tree)
+
+    return tree, altitudes
+
+
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def watershed_hierarchy_by_minima_ordering(edge_weights, minima_ranks, minima_altitudes, graph):
+    """
+    Computes a hierarchical watershed for the given minima ordering.
+     
+    The algorithm used is described in:
+     
+        Laurent Najman, Jean Cousty, Benjamin Perret:
+        Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs. ISMM 2013: 135-146
+     
+     
+    The ranking ranking of the minima of the given edge weighted graph (G,w) is given as vertex weights with values in
+    {0..n} with n the number of minima of (G,w). It must satisfy the following pre-conditions:
+
+        - each minimum of (G,w) contains at least one non zero vertex,
+        - all non zero vertices in a minimum have the same weight,
+        - there is no non zero value vertex outside minima, and
+        - no two minima contain non zero vertices with the same weight.
+     
+    The altitude associated to each minimum is a non decreasing 1d array of size n + 1 with non negative values.
+    Note that the first entry of the minima altitudes array, ie. the value at index 0, does not represent a minimum and
+    its value should be 0.
+
+    :param edge_weights: edge weights of the input graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param minima_ranks: input graph vertex weights containing the rank of each minima of the input edge weighted graph
+    :param minima_altitudes: array mapping each minima rank to its altitude
+    :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    """
+    res = hg._watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, minima_altitudes)
     tree = res.tree()
     altitudes = res.altitudes()
 
