@@ -10,7 +10,6 @@
 
 import higra as hg
 
-
 @hg.argument_helper(hg.CptEdgeWeightedGraph)
 def accumulate_graph_edges(edge_weights, accumulator, graph):
     """
@@ -22,7 +21,7 @@ def accumulate_graph_edges(edge_weights, accumulator, graph):
     :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
     :return: returns new graph vertex weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
-    res = hg._accumulate_graph_edges(graph, edge_weights, accumulator)
+    res = hg.cpp._accumulate_graph_edges(graph, edge_weights, accumulator)
     hg.CptVertexWeightedGraph.link(res, graph)
     return res
 
@@ -38,7 +37,7 @@ def accumulate_graph_vertices(vertex_weights, accumulator, graph):
     :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
     :return: returns new graph vertex weights (Concept :func:`~higra.CptEdgeWeightedGraph`)
     """
-    res = hg._accumulate_graph_vertices(graph, vertex_weights, accumulator)
+    res = hg.cpp._accumulate_graph_vertices(graph, vertex_weights, accumulator)
     hg.CptVertexWeightedGraph.link(res, graph)
     return res
 

@@ -22,7 +22,7 @@ def bpt_canonical(edge_weights, graph):
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
 
-    res = hg._bpt_canonical(graph, edge_weights)
+    res = hg.cpp._bpt_canonical(graph, edge_weights)
     tree = res.tree()
     altitudes = res.altitudes()
     mst = res.mst()
@@ -54,7 +54,7 @@ def quasi_flat_zones_hierarchy(edge_weights, graph):
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
 
-    res = hg._quasi_flat_zones_hierarchy(graph, edge_weights)
+    res = hg.cpp._quasi_flat_zones_hierarchy(graph, edge_weights)
     tree = res.tree()
     altitudes = res.altitudes()
 
@@ -77,7 +77,7 @@ def simplify_tree(deleted_vertices, tree):
     :return: a simplified tree (Concept :class:`~higra.CptHierarchy`) and the node map
     """
 
-    res = hg._simplify_tree(tree, deleted_vertices)
+    res = hg.cpp._simplify_tree(tree, deleted_vertices)
     new_tree = res.tree()
     node_map = res.node_map()
 

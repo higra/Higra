@@ -22,7 +22,7 @@ def labelisation_watershed(edge_weights, graph):
     :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
     :return: A labelisation of the graph vertices (Concept :class:`~higra.CptVertexLabeledGraph`)
    """
-    vertex_labels = hg._labelisation_watershed(graph, edge_weights)
+    vertex_labels = hg.cpp._labelisation_watershed(graph, edge_weights)
 
     vertex_labels = hg.delinearize_vertex_weights(vertex_labels, graph)
     hg.CptVertexLabeledGraph.link(vertex_labels, graph)

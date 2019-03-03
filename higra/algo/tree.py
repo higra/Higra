@@ -49,7 +49,7 @@ def labelisation_horizontal_cut_from_threshold(altitudes, threshold, tree):
     :return: Leaf labels (Concept :class:`~higra.CptVertexWeightedGraph` if tree satisfies :class:`~higra.CptHierarchy`)
     """
 
-    leaf_labels = hg._labelisation_horizontal_cut_from_threshold(tree, float(threshold), altitudes)
+    leaf_labels = hg.cpp._labelisation_horizontal_cut_from_threshold(tree, float(threshold), altitudes)
 
     if hg.CptHierarchy.validate(tree):
         leaf_graph = hg.CptHierarchy.construct(tree)["leaf_graph"]
@@ -79,7 +79,7 @@ def labelisation_hierarchy_supervertices(altitudes, tree, leaf_graph=None, handl
     if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and handle_rag:
         return hg.CptRegionAdjacencyGraph.construct(leaf_graph)["vertex_map"]
 
-    leaf_labels = hg._labelisation_hierarchy_supervertices(tree, altitudes)
+    leaf_labels = hg.cpp._labelisation_hierarchy_supervertices(tree, altitudes)
 
     if leaf_graph is not None:
         leaf_labels = hg.delinearize_vertex_weights(leaf_labels, leaf_graph)
@@ -129,7 +129,7 @@ def binary_labelisation_from_markers(tree, object_marker, background_marker, lea
         object_marker = hg.linearize_vertex_weights(object_marker, leaf_graph)
         background_marker = hg.linearize_vertex_weights(background_marker, leaf_graph)
 
-    labels = hg._binary_labelisation_from_markers(tree, object_marker, background_marker)
+    labels = hg.cpp._binary_labelisation_from_markers(tree, object_marker, background_marker)
 
     if leaf_graph is not None:
         labels = hg.delinearize_vertex_weights(labels, leaf_graph)
@@ -155,7 +155,7 @@ def sort_hierarchy_with_altitudes(altitudes, tree):
     :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
     :return: the sorted tree (Concept :class:`~higra.CptHierarchy`), its node altitudes (Concept :class:`~higra.CptValuedHierarchy`), and the node map
     """
-    new_tree, node_map = hg._sort_hierarchy_with_altitudes(tree, altitudes)
+    new_tree, node_map = hg.cpp._sort_hierarchy_with_altitudes(tree, altitudes)
     new_altitudes = altitudes[node_map]
     hg.CptValuedHierarchy.link(new_altitudes, new_tree)
 

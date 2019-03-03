@@ -280,7 +280,7 @@ def attribute_sibling(tree, skip=1):
     :param skip: Number of skipped element in the children list (including yourself)
     :return: a nd array (Concept :class:`~higra.CptValuedHierarchy`)
     """
-    attribute = hg._attribute_sibling(tree, skip)
+    attribute = hg.cpp._attribute_sibling(tree, skip)
     hg.CptValuedHierarchy.link(attribute, tree)
     return attribute
 
@@ -297,7 +297,7 @@ def attribute_depth(tree):
     :param tree: Input tree
     :return: a nd array (Concept :class:`~higra.CptValuedHierarchy`)
     """
-    attribute = hg._attribute_depth(tree)
+    attribute = hg.cpp._attribute_depth(tree)
     hg.CptValuedHierarchy.link(attribute, tree)
     return attribute
 
