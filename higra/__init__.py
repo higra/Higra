@@ -37,7 +37,10 @@ for loader, name, is_pkg in pkgutil.walk_packages(__path__):
 
 # list of modules that have to be loaded before the others
 # (required for correct file parsing, eg. defining top level decorators)
-pre_load = ("higram", "data_cache", "concept", "hg_utils")
+pre_load = ("higram",
+            "data_cache",
+            "concept",
+            "hg_utils")
 
 for name in pre_load:
     __import_module(modules[name], name)
@@ -45,8 +48,19 @@ for name in pre_load:
 
 _data_cache__init()
 
-for name in modules:
+normal_load = ("accumulator",
+               "algo",
+               "assessment",
+               "attribute",
+               "hierarchy",
+               "image",
+               "interop",
+               "io_utils")
+
+for name in normal_load:
     __import_module(modules[name], name)
+    del modules[name]
+
 
 def __logger_printer(m):
     print(m)
