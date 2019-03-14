@@ -9,7 +9,7 @@
 ############################################################################
 
 import higra as hg
-
+import numpy as np
 
 @hg.argument_helper(hg.CptEdgeWeightedGraph)
 def binary_partition_tree_complete_linkage(edge_weights, graph):
@@ -36,22 +36,25 @@ def binary_partition_tree_complete_linkage(edge_weights, graph):
 
 
 @hg.argument_helper(hg.CptEdgeWeightedGraph)
-def binary_partition_tree_average_linkage(edge_values, graph, edge_weights):
+def binary_partition_tree_average_linkage(edge_weights, graph, edge_weight_weights=None):
     """
     Compute a binary partition tree with average linkage distance.
 
-    Given a graph G, with initial edge values V with associated weights W,
+    Given a graph G, with initial edge weights V with associated weighting W,
     the distance d(X,Y) between any two regions X, Y is defined as:
     d(X,Y) = (1 / Z) + sum_{x in X, y in Y, {x,y} in G} V({x,y}) x W({x,y})
     with Z = sum_{x in X, y in Y, {x,y} in G} W({x,y})
 
-    :param edge_values: edge values of the input graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param edge_weights: edge weights of the input graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
     :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
-    :param edge_weights: edge weights of the input graph
+    :param edge_weight_weights: weighting of edge weights of the input graph (default to an array of ones)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
 
-    res = hg.cpp._binary_partition_tree_average_linkage(graph, edge_values, edge_weights)
+    if edge_weight_weights is None:
+        edge_weight_weights = np.ones_like(edge_weights)
+
+    res = hg.cpp._binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weights)
     tree = res.tree()
     altitudes = res.altitudes()
 

@@ -67,6 +67,24 @@ class TestBinaryPartitionTree(unittest.TestCase):
         self.assertTrue(np.all(expected_parents == tree.parents()))
         self.assertTrue(np.all(expected_altitudes == altitudes))
 
+    def test_binary_partition_tree_average_linkage2(self):
+        graph = hg.UndirectedGraph(10)
+        graph.add_edges((0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5, 7, 7),
+                        (3, 6, 4, 2, 5, 3, 6, 9, 7, 3, 8, 5, 9, 4, 6, 9, 7, 8, 6, 9, 8))
+        edge_values = np.asarray((0.87580029, 0.60123697, 0.79924759, 0.74221387, 0.75418382, 0.66159356,
+                                  1.31856839, 0.76080612, 1.08881471, 0.98557615, 0.61454158, 0.50913424,
+                                  0.63556478, 0.64684775, 1.14865302, 0.81741018, 2.1591071, 0.60563004,
+                                  2.06636665, 1.35617725, 0.83085949), dtype=np.float64)
+
+        tree, altitudes = hg.binary_partition_tree_average_linkage(edge_values, graph)
+
+        expected_parents = np.asarray((11, 14, 10, 13, 15, 10, 11, 18, 12, 13, 12, 17, 16, 14, 15, 16, 17, 18, 18),
+                                      dtype=np.int64)
+        expected_altitudes = np.asarray((0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.509134, 0.601237, 0.610086,
+                                         0.635565, 0.661594, 0.732129, 0.810695, 1.241727, 1.35874), dtype=np.float64)
+        self.assertTrue(np.all(expected_parents == tree.parents()))
+        self.assertTrue(np.allclose(expected_altitudes, altitudes))
+
 
 if __name__ == '__main__':
     unittest.main()
