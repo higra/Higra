@@ -415,10 +415,11 @@ namespace hg {
     struct binary_partition_tree_average_linkage {
         using value_type = typename std::decay<T>::type::value_type;
 
-        T &m_values;
-        T &m_weights;
+        T m_values;
+        T m_weights;
 
-        binary_partition_tree_average_linkage(T &values, T &weights) : m_values(values), m_weights(weights) {
+        binary_partition_tree_average_linkage(const T &values, const T &weights) : m_values(values), m_weights(weights) {
+            hg_assert_same_shape(values, weights);
         }
 
         template<typename graph_t, typename neighbours_t>
