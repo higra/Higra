@@ -72,14 +72,13 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph = hg.UndirectedGraph(2)
         graph.add_edge(0, 1)
 
-        edge_weights = np.asarray((0.1, ), dtype=np.float64)
+        edge_weights = np.asarray((0.1,), dtype=np.float64)
         adj_mat = hg.undirected_graph_2_adjacency_matrix(edge_weights, graph)
 
         ref_adj_mat = np.asarray(((0, 0.1),
                                   (0.1, 0)))
         self.assertTrue(np.all(ref_adj_mat == adj_mat))
         self.assertTrue(adj_mat.dtype == np.float64)
-
 
     def test_adjacency_matrix_2_undirected_graph(self):
         ref_adj_mat = np.asarray(((0, 0.1),
@@ -89,7 +88,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         ref_graph = hg.UndirectedGraph(2)
         ref_graph.add_edge(0, 1)
 
-        ref_edge_weights = np.asarray((0.1, ))
+        ref_edge_weights = np.asarray((0.1,))
 
         self.assertTrue(edge_weights.dtype == np.float64)
         self.assertTrue(np.all(edge_weights == ref_edge_weights))
@@ -134,6 +133,47 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         ref_subd_ultrametric = np.asarray((2, 3, 9, 3, 9, 1, 4, 3, 2, 2, 4, 3), dtype=np.int32)
 
         self.assertTrue(hg.is_in_bijection(subd_ultrametric, ref_subd_ultrametric))
+
+    def test_minimum_spanning_tree(self):
+        graph = hg.get_4_adjacency_graph((2, 3))
+
+        edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
+
+        mst = hg.minimum_spanning_tree(edge_weights, graph)
+        mst_edge_map = hg.CptMinimumSpanningTree.get_edge_map(mst)
+
+        self.assertTrue(mst.num_vertices() == 6)
+        self.assertTrue(mst.num_edges() == 5)
+
+        ref_sources = (0, 0, 1, 2, 1)
+        ref_targets = (3, 1, 4, 5, 2)
+        sources, targets = mst.edge_list()
+
+        self.assertTrue(np.all(sources == ref_sources))
+        self.assertTrue(np.all(targets == ref_targets))
+
+        self.assertTrue(np.all(mst_edge_map == (1, 0, 3, 4, 2)))
+
+    def test_minimum_spanning_forest(self):
+        graph = hg.UndirectedGraph(6)
+        graph.add_edges((0, 0, 1, 3, 3, 4), (1, 2, 2, 4, 5, 5))
+
+        edge_weights = np.asarray((0, 1, 2, 3, 4, 5))
+
+        mst = hg.minimum_spanning_tree(edge_weights, graph)
+        mst_edge_map = hg.CptMinimumSpanningTree.get_edge_map(mst)
+
+        self.assertTrue(mst.num_vertices() == 6)
+        self.assertTrue(mst.num_edges() == 4)
+
+        ref_sources = (0, 0, 3, 3)
+        ref_targets = (1, 2, 4, 5)
+        sources, targets = mst.edge_list()
+
+        self.assertTrue(np.all(sources == ref_sources))
+        self.assertTrue(np.all(targets == ref_targets))
+
+        self.assertTrue(np.all(mst_edge_map == (0, 1, 3, 4)))
 
 
 if __name__ == '__main__':
