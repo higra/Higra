@@ -56,8 +56,9 @@ def watershed_hierarchy_by_attribute(edge_weights, attribute_functor, graph):
 
     The algorithm used is described in:
 
-        Laurent Najman, Jean Cousty, Benjamin Perret:
-        Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs. ISMM 2013: 135-146
+        Laurent Najman, Jean Cousty, Benjamin Perret.
+        `Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs <https://hal.archives-ouvertes.fr/file/index/docid/798621/filename/ismm2013-algo.pdf>`_.
+        ISMM 2013: 135-146.
 
     The attribute functor is a function that takes a binary partition tree and an array of altitudes as argument
     and returns an array with the node attribute values for the given tree.
@@ -97,11 +98,24 @@ def watershed_hierarchy_by_attribute(edge_weights, attribute_functor, graph):
 def watershed_hierarchy_by_minima_ordering(edge_weights, minima_ranks, minima_altitudes, graph):
     """
     Computes a hierarchical watershed for the given minima ordering.
+
+    The definition used follows the one given in:
+
+        J. Cousty, L. Najman.
+        `Incremental algorithm for hierarchical minimum spanning forests and saliency of watershed cuts <https://hal-upec-upem.archives-ouvertes.fr/hal-00622505/document>`_.
+        ISMM 2011: 272-283.
+
+    and in,
+
+        J. Cousty, L. Najman, B. Perret.
+        `Constructive links between some morphological hierarchies on edge-weighted graphs <https://hal.archives-ouvertes.fr/file/index/docid/806851/filename/ismm2013.pdf>`_..
+        ISMM 2013: 86-97.
      
-    The algorithm used is described in:
+    The algorithm used is adapted from the algorithm described in:
      
-        Laurent Najman, Jean Cousty, Benjamin Perret:
-        Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs. ISMM 2013: 135-146
+        Laurent Najman, Jean Cousty, Benjamin Perret.
+        `Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs <https://hal.archives-ouvertes.fr/file/index/docid/798621/filename/ismm2013-algo.pdf>`_.
+        ISMM 2013: 135-146.
      
      
     The ranking ranking of the minima of the given edge weighted graph (G,w) is given as vertex weights with values in
