@@ -16,6 +16,12 @@ def labelisation_watershed(edge_weights, graph):
     """
     Compute a watershed cut of the given edge weighted graph.
 
+    The definition and algorithm used are described in:
+
+        J. Cousty, G. Bertrand, L. Najman and M. Couprie.
+        `Watershed cuts: minimum spanning forests, and the drop of water principle <https://hal-upec-upem.archives-ouvertes.fr/hal-00622410/document>`_.
+        IEEE Trans. on Pattern Analysis and Machine Intelligence, 31(8): 1362-1374, 2009.
+
     The watershed cut is represented by a labelisation of the graph vertices.
 
     :param edge_weights: Weights on the edges of the graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
