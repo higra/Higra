@@ -58,7 +58,7 @@ def undirected_graph_2_adjacency_matrix(edge_weights, graph, non_edge_value=0):
     As the given graph is not necessarily complete, non-existing edges will receive the value `non_edge_value` in
     the adjacency matrix.
 
-    :param edge_weights: Graph edge weights
+    :param edge_weights: Graph edge weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
     :param graph: Input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
     :param non_edge_value: Value used to represent edges that are not in the input graph
     :return: A 2d symmetric square matrix
@@ -74,7 +74,7 @@ def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
 
     :param adjacency_matrix: Input adjacency matrix (A 2d symmetric square matrix)
     :param non_edge_value: Value used to represent non existing edges in the adjacency matrix
-    :return: a pair (UndirectedGraph, ndarray) representing the graph and its edge_weights
+    :return: a pair (UndirectedGraph, ndarray) representing the graph and its edge_weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
     graph, edge_weights = hg.cpp._adjacency_matrix_2_undirected_graph(adjacency_matrix, float(non_edge_value))
     hg.CptEdgeWeightedGraph.link(edge_weights, graph)
@@ -94,9 +94,27 @@ def ultrametric_open(edge_weights, graph):
 
     Complexity: `O(n*log(n))` with `n` the number of edges in the graph
 
-    :param edge_weights: Graph edge weights
+    :param edge_weights: Graph edge weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
     :param graph: Input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
-    :return: edge weights corresponding to the subdominant ultrametric
+    :return: edge weights corresponding to the subdominant ultrametric (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
     tree, altitudes = hg.bpt_canonical(edge_weights, graph)
     return hg.saliency(altitudes)
+
+
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def minimum_spanning_tree(edge_weights, graph):
+    """
+    Computes the minimum spanning tree of the given edge weighted graph with Kruskal's algorithm.
+
+    If the input graph is not connected, the result is indeed a minimum spanning forest.
+
+    Complexity: `O(n*log(n))` with `n` the number of edges in the graph
+
+    :param edge_weights: Graph edge weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: Input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
+    :return: a minimum spanning tree of the input edge wieghted graph (Concept :class:`~higra.CptMinimumSpanningTree`)
+    """
+    mst, edge_map = hg.cpp._minimum_spanning_tree(graph, edge_weights)
+    hg.CptMinimumSpanningTree.link(mst, mst_edge_map=edge_map, base_graph=graph)
+    return mst
