@@ -45,7 +45,13 @@ class TestLCAFast(unittest.TestCase):
 
         ref = (4, 6, 6, 5)
         res = lca.lca(g)
-        self.assertTrue(np.allclose(ref, res))
+        self.assertTrue(np.all(ref == res))
+
+    def test_LCAFastVertices(self):
+        t = hg.Tree((4, 4, 5, 5, 6, 6, 6))
+        lca = hg.LCAFast(t)
+        res = lca.lca((0, 0, 1, 3), (0, 3, 0, 0))
+        self.assertTrue(np.all(res == (0, 6, 4, 6)))
 
 
 if __name__ == '__main__':
