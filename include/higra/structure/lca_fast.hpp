@@ -200,6 +200,34 @@ namespace hg {
                 return result;
             }
 
+            /**
+             * Given two 1d array of graph vertex indices v1 and v2, both containing n elements,
+             * this function returns a 1d array or tree vertex indices of size n such that
+             * for all i in 0..n-1, res(i) = lca(v1(i); v2(i))
+             *
+             * @tparam T
+             * @param xvertices1 first array of graph vertices
+             * @param xvertices2 second array of graph vertices
+             * @return array of lowest common ancestors
+             */
+            template<typename T>
+            auto lca(const xt::xexpression<T> & xvertices1, const xt::xexpression<T> & xvertices2) const {
+                HG_TRACE();
+                auto &vertices1 = xvertices1.derived_cast();
+                auto &vertices2 = xvertices2.derived_cast();
+                hg_assert_1d_array(vertices1);
+                hg_assert_integral_value_type(vertices1);
+                hg_assert_same_shape(vertices1, vertices2);
+
+                auto size = vertices1.size();
+                auto result = array_1d<vertex_t>::from_shape({size});
+
+                for(index_t i = 0; i < size; i++){
+                    result(i) = lca(vertices1(i), vertices2(i));
+                }
+                return result;
+            }
+
 
         };
     }

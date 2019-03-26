@@ -54,8 +54,18 @@ BOOST_AUTO_TEST_SUITE(lca);
         tree t(array_1d<index_t> { 4, 4, 5, 5, 6, 6, 6 });
         lca_fast lca(t);
         auto l = lca.lca(edge_iterator(g));
-        array_1d<decltype(g)::vertex_descriptor> ref{4, 6, 6, 5};
-        BOOST_CHECK(xt::allclose(l, ref));
+        array_1d<index_t> ref{4, 6, 6, 5};
+        BOOST_CHECK(l == ref);
+    }
+
+    BOOST_AUTO_TEST_CASE(lcaVertices) {
+        tree t(array_1d<index_t> { 4, 4, 5, 5, 6, 6, 6 });
+        lca_fast lca(t);
+        array_1d<index_t> v1{0, 0, 1, 3};
+        array_1d<index_t> v2{0, 3, 0, 0};
+        auto l = lca.lca(v1, v2);
+        array_1d<index_t> ref{0, 6, 4, 6};
+        BOOST_CHECK(l == ref);
     }
 
 
