@@ -87,16 +87,25 @@ def simplify_tree(deleted_vertices, tree):
     return new_tree, node_map
 
 
-@hg.argument_helper(hg.CptValuedHierarchy, ("tree", "lca_map"))
-def saliency(altitudes, leaf_graph, lca_map, handle_rag=True):
+@hg.argument_helper(hg.CptValuedHierarchy)
+def saliency(altitudes, tree, leaf_graph, handle_rag=True):
     """
-    Compute the saliency map (ultra-metric distance) of the given tree.
+    The saliency map of the input hierarchy :math:`(tree, altitudes)` for the leaf graph :math:`g` is an array of
+    edge weights :math:`sm` for :math:`g` such that for each pair of adjacent vertices :math:`(i,j)` in :math:`g`,
+    :math:`sm(i,j)` is equal to the ultra-metric distance between :math:`i` and :math:`j` corresponding to the hierarchy.
+
+    Formally, this is computed using the following property: :math:`sm(i,j) = altitudes(lowest\_common\_ancestor_{tree}(i,j))`.
+
+    Complexity: :math:`\mathcal{O}(n\log(n) + m)` with :math:`n` the number of vertices in the tree and :math:`m` the number of edges in the graph.
 
     :param altitudes: altitudes of the vertices of the tree (Concept :class:`~higra.CptValuedHierarchy`)
-    :param lca_map: array containing the lowest common ancestor of the source and target vertices of each edge where saliency need to be computed (provided by :func:`higra.attribute_lca_map`)
+    :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :param leaf_graph: graph whose vertex set is equal to the leaves of the input tree (deduced from :class:`~higra.CptValuedHierarchy`)
     :param handle_rag: if tree has been constructed on a rag, then saliency values will be propagated to the original graph, hence leading to a saliency on the original graph and not on the rag
-    :return: edge saliency corresponding to the given tree (Concept :class:`~higra.CptSaliencyMap`)
+    :return: 1d array of edge weights (Concept :class:`~higra.CptSaliencyMap`)
     """
+    lca_map = hg.attribute_lca_map(tree, leaf_graph=leaf_graph)
+
     sm = altitudes[lca_map]
     if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and handle_rag:
         sm = hg.rag_back_project_edge_weights(sm, leaf_graph)
