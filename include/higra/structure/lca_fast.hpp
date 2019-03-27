@@ -222,7 +222,7 @@ namespace hg {
                 auto size = vertices1.size();
                 auto result = array_1d<vertex_t>::from_shape({size});
 
-                for(index_t i = 0; i < size; i++){
+                for(index_t i = 0; i < (index_t)size; i++){
                     result(i) = lca(vertices1(i), vertices2(i));
                 }
                 return result;
