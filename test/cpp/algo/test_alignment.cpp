@@ -8,7 +8,6 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include <boost/test/unit_test.hpp>
 #include "higra/algo/alignment.hpp"
 #include "higra/image/graph_image.hpp"
 #include "../test_utils.hpp"
@@ -16,9 +15,9 @@
 
 using namespace hg;
 
-BOOST_AUTO_TEST_SUITE(alignment_test);
+namespace test_alignment {
 
-    BOOST_AUTO_TEST_CASE(test_project_fine_to_coarse_labelisation) {
+    TEST_CASE("project fine to coarse labelisation", "[alignment]") {
 
         array_1d<index_t> fine_labels{0, 1, 2, 3, 4, 2, 3, 4, 2};
         array_1d<index_t> coarse_labels{0, 1, 1, 0, 2, 2, 0, 2, 2};
@@ -26,10 +25,10 @@ BOOST_AUTO_TEST_SUITE(alignment_test);
         auto map = project_fine_to_coarse_labelisation(fine_labels, coarse_labels);
 
         array_1d<index_t> ref_map{0, 1, 2, 0, 2};
-        BOOST_CHECK(ref_map == map);
+        REQUIRE((ref_map == map));
     }
 
-    BOOST_AUTO_TEST_CASE(test_hierarchy_alignment) {
+    TEST_CASE("hierarchy alignement", "[alignment]") {
 
         auto g = get_4_adjacency_graph({3, 3});
         array_1d<int> fine_labels{0, 1, 2, 3, 4, 2, 3, 4, 2};
@@ -51,11 +50,11 @@ BOOST_AUTO_TEST_SUITE(alignment_test);
                                   {0, 2, 0, 0, 0},
                                   {0, 2, 0, 0, 0}};
 
-        BOOST_CHECK(sm_k == sm_k_ref);
-        BOOST_CHECK(sm2_k == sm_k_ref);
+        REQUIRE((sm_k == sm_k_ref));
+        REQUIRE((sm2_k == sm_k_ref));
     }
 
-    BOOST_AUTO_TEST_CASE(test_hierarchy_alignment2) {
+    TEST_CASE("hierarchy alignment 2", "[alignment]") {
 
         auto g = get_4_adjacency_graph({3, 3});
         array_1d<int> edge_weights{1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1};
@@ -77,8 +76,8 @@ BOOST_AUTO_TEST_SUITE(alignment_test);
                                   {0, 2, 0, 0, 0},
                                   {0, 2, 0, 0, 0}};
 
-        BOOST_CHECK(sm_k == sm_k_ref);
-        BOOST_CHECK(sm2_k == sm_k_ref);
+        REQUIRE((sm_k == sm_k_ref));
+        REQUIRE((sm2_k == sm_k_ref));
     }
 
-BOOST_AUTO_TEST_SUITE_END();
+}

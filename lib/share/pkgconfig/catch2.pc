@@ -1,0 +1,7 @@
+includedir=/home/perretb/Higra/lib/include
+
+Name: Catch2
+Description: A modern, C++-native, header-only, test framework for C++11
+URL: https://github.com/catchorg/Catch2
+Version: 2.7.1
+Cflags: -I${includedir}

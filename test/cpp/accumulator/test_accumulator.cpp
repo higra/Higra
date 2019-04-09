@@ -7,16 +7,13 @@
 *                                                                          *
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
-#include "higra/structure/array.hpp"
-#include <boost/test/unit_test.hpp>
 #include "../test_utils.hpp"
+#include "higra/structure/array.hpp"
 #include "higra/accumulator/accumulator.hpp"
 #include "higra/structure/details/light_axis_view.hpp"
 #include <vector>
 
-
-BOOST_AUTO_TEST_SUITE(accumulator);
-
+namespace accumulator {
 
     template<bool vec, typename acc_t>
     auto applyAcc(const hg::array_nd<double> &values, acc_t accFactory) {
@@ -30,7 +27,7 @@ BOOST_AUTO_TEST_SUITE(accumulator);
         auto acc = accFactory.template make_accumulator<vec>(storage);
         acc.initialize();
 
-        for (hg::index_t i = 0; i < (hg::index_t)values.shape()[0]; i++) {
+        for (hg::index_t i = 0; i < (hg::index_t) values.shape()[0]; i++) {
             inview.set_position(i);
             acc.accumulate(inview.begin());
         }
@@ -51,22 +48,21 @@ BOOST_AUTO_TEST_SUITE(accumulator);
         return std::abs(a - b) < 10e-5;
     }
 
-    BOOST_AUTO_TEST_CASE(accumulatorScalar) {
-
+    TEST_CASE("accumulator scalar", "[accumulator]") {
         hg::array_nd<double> values{-5, 10, 5, 2, -2};
         double r = applyAccG(values, hg::accumulator_max())();
-        BOOST_CHECK(r == 10.0);
-        BOOST_CHECK((applyAccG(values, hg::accumulator_min()))() == -5);
-        BOOST_CHECK((applyAccG(values, hg::accumulator_sum()))() == 10);
-        BOOST_CHECK((applyAccG(values, hg::accumulator_counter()))() == 5);
-        BOOST_CHECK((applyAccG(values, hg::accumulator_first()))() == -5);
-        BOOST_CHECK((applyAccG(values, hg::accumulator_last()))() == -2);
-        BOOST_CHECK((isclose(applyAccG(values, hg::accumulator_mean())(), 2)));
-        BOOST_CHECK((isclose(applyAccG(values, hg::accumulator_prod())(), 1000)));
+        REQUIRE(r == 10.0);
+        REQUIRE((applyAccG(values, hg::accumulator_min()))() == -5);
+        REQUIRE((applyAccG(values, hg::accumulator_sum()))() == 10);
+        REQUIRE((applyAccG(values, hg::accumulator_counter()))() == 5);
+        REQUIRE((applyAccG(values, hg::accumulator_first()))() == -5);
+        REQUIRE((applyAccG(values, hg::accumulator_last()))() == -2);
+        REQUIRE((isclose(applyAccG(values, hg::accumulator_mean())(), 2)));
+        REQUIRE((isclose(applyAccG(values, hg::accumulator_prod())(), 1000)));
 
     }
 
-    BOOST_AUTO_TEST_CASE(accumulatorVectorial) {
+    TEST_CASE("accumulator vectorial", "[accumulator]") {
 
         hg::array_nd<double> values{{{0,  1}, {1,  2}},
                                     {{5,  9}, {-1, 4}},
@@ -76,28 +72,27 @@ BOOST_AUTO_TEST_SUITE(accumulator);
 
         hg::array_nd<double> ref1{{3, 12},
                                   {1, 5}};
-        BOOST_CHECK(xt::allclose(res1, ref1));
+        REQUIRE(xt::allclose(res1, ref1));
 
         auto res2 = applyAccG(values, hg::accumulator_mean());
         hg::array_nd<double> ref2{{1,       4},
                                   {1.0 / 3, 5.0 / 3}};
-        BOOST_CHECK(xt::allclose(res2, ref2));
+        REQUIRE(xt::allclose(res2, ref2));
 
         auto res3 = applyAccG(values, hg::accumulator_prod());
         hg::array_nd<double> ref3{{0,  18},
                                   {-1, -8}};
-        BOOST_CHECK(xt::allclose(res3, ref3));
+        REQUIRE(xt::allclose(res3, ref3));
 
         auto res4 = applyAccG(values, hg::accumulator_first());
-        hg::array_nd<double> ref4{{0,  1},
+        hg::array_nd<double> ref4{{0, 1},
                                   {1, 2}};
-        BOOST_CHECK(xt::allclose(res4, ref4));
+        REQUIRE(xt::allclose(res4, ref4));
 
         auto res5 = applyAccG(values, hg::accumulator_last());
-        hg::array_nd<double> ref5{{-2,  2},
-                                  {1, -1}};
-        BOOST_CHECK(xt::allclose(res5, ref5));
+        hg::array_nd<double> ref5{{-2, 2},
+                                  {1,  -1}};
+        REQUIRE(xt::allclose(res5, ref5));
 
     }
-
-BOOST_AUTO_TEST_SUITE_END();
+}

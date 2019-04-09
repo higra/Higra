@@ -8,17 +8,15 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include <boost/test/unit_test.hpp>
 #include "../test_utils.hpp"
 #include "higra/algo/watershed.hpp"
 #include "higra/image/graph_image.hpp"
 
 using namespace hg;
 
-BOOST_AUTO_TEST_SUITE(algo_watershed);
+namespace test_watershed {
 
-
-    BOOST_AUTO_TEST_CASE(watershed_simple) {
+    TEST_CASE("watershed cut simple", "[watershed_cut]") {
 
         // Fig 4 of Watershed Cuts: Minimum Spanning Forests and the
         // Drop of Water Principle
@@ -28,14 +26,14 @@ BOOST_AUTO_TEST_SUITE(algo_watershed);
 
         auto labels = hg::labelisation_watershed(g, edge_weights);
 
-            array_1d<index_t> expected{1, 1, 1, 2,
-                                           1, 1, 2, 2,
-                                           1, 1, 3, 3,
-                                           1, 1, 3, 3};
-        BOOST_CHECK(labels == expected);
+        array_1d<index_t> expected{1, 1, 1, 2,
+                                   1, 1, 2, 2,
+                                   1, 1, 3, 3,
+                                   1, 1, 3, 3};
+        REQUIRE((labels == expected));
     }
 
-    BOOST_AUTO_TEST_CASE(watershed2) {
+    TEST_CASE("watershed cut simple 2", "[watershed_cut]") {
         auto g = hg::get_4_adjacency_graph({3, 3});
         array_1d<int> edge_weights{1, 1, 0, 0, 0, 1, 0, 0, 2, 2, 0, 2};
 
@@ -44,8 +42,7 @@ BOOST_AUTO_TEST_SUITE(algo_watershed);
         array_1d<index_t> expected{1, 1, 1,
                                    2, 1, 1,
                                    2, 2, 1};
-        BOOST_CHECK(labels == expected);
+        REQUIRE((labels == expected));
     }
 
-
-BOOST_AUTO_TEST_SUITE_END();
+}

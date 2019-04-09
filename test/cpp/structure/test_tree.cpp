@@ -8,13 +8,12 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include <boost/test/unit_test.hpp>
 #include "xtensor/xio.hpp"
 #include "higra/graph.hpp"
 #include "../test_utils.hpp"
 #include <functional>
 
-BOOST_AUTO_TEST_SUITE(treeGraph);
+namespace tree {
 
     using namespace hg;
     using namespace std;
@@ -28,101 +27,100 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
 
     } data;
 
-
-    BOOST_AUTO_TEST_CASE(sizeTree) {
+    TEST_CASE("tree sizes", "[tree]") {
         auto t = data.t;
-        BOOST_CHECK(hg::root(t) == 7);
-        BOOST_CHECK(hg::num_vertices(t) == 8);
-        BOOST_CHECK(hg::num_edges(t) == 7);
-        BOOST_CHECK(hg::num_leaves(t) == 5);
+        REQUIRE(hg::root(t) == 7);
+        REQUIRE(hg::num_vertices(t) == 8);
+        REQUIRE(hg::num_edges(t) == 7);
+        REQUIRE(hg::num_leaves(t) == 5);
 
-        BOOST_CHECK(hg::num_children(6, t) == 3);
+        REQUIRE(hg::num_children(6, t) == 3);
         array_1d<index_t> vertices{5, 7, 6};
         array_1d<size_t> ref_numchildren{2, 2, 3};
-        BOOST_CHECK(hg::num_children(vertices, t) == ref_numchildren);
+        REQUIRE((hg::num_children(vertices, t) == ref_numchildren));
 
-        BOOST_CHECK(hg::is_leaf(4, t));
-        BOOST_CHECK(!hg::is_leaf(5, t));
+        REQUIRE(hg::is_leaf(4, t));
+        REQUIRE(!hg::is_leaf(5, t));
         array_1d<index_t> vertices2{0, 5, 2, 3, 7};
         array_1d<bool> ref_isleaf{true, false, true, true, false};
-        BOOST_CHECK(hg::is_leaf(vertices2, t) == ref_isleaf);
+        REQUIRE((hg::is_leaf(vertices2, t) == ref_isleaf));
 
-        BOOST_CHECK(hg::parent(4, t) == 6);
+        REQUIRE(hg::parent(4, t) == 6);
         array_1d<index_t> vertices3{0, 5, 2, 3, 7};
         array_1d<index_t> ref_parent{5, 7, 6, 6, 7};
-        BOOST_CHECK(hg::parent(vertices3, t) == ref_parent);
+        REQUIRE((hg::parent(vertices3, t) == ref_parent));
     }
 
-    BOOST_AUTO_TEST_CASE(vertexIteratorTree) {
+    TEST_CASE("tree vertex iterator", "[tree]") {
         auto t = data.t;
         vector<hg::index_t> ref = {0, 1, 2, 3, 4, 5, 6, 7};
         for (auto v: vertex_iterator(t)) {
-            BOOST_CHECK(v == ref[v]);
+            REQUIRE(v == ref[v]);
         }
     }
 
-    BOOST_AUTO_TEST_CASE(ancestorsIteratorTree) {
+    TEST_CASE("tree ancestors iterator", "[tree]") {
         auto t = data.t;
         vector<hg::index_t> ref = {1, 5, 7};
-        BOOST_CHECK(rangeEqual(ancestors_iterator(1, t), ref));
+        REQUIRE(rangeEqual(ancestors_iterator(1, t), ref));
 
         vector<hg::index_t> ref2 = {6, 7};
-        BOOST_CHECK(rangeEqual(ancestors_iterator(6, t), ref2));
+        REQUIRE(rangeEqual(ancestors_iterator(6, t), ref2));
 
         vector<hg::index_t> ref3 = {7};
-        BOOST_CHECK(rangeEqual(ancestors_iterator(7, t), ref3));
+        REQUIRE(rangeEqual(ancestors_iterator(7, t), ref3));
     }
 
-
-    BOOST_AUTO_TEST_CASE(degreeTree) {
+    TEST_CASE("tree degree", "[tree]") {
         auto t = data.t;
         vector<size_t> ref = {1, 1, 1, 1, 1, 3, 4, 2};
         for (auto v: vertex_iterator(t)) {
-            BOOST_CHECK(degree(v, t) == ref[v]);
-            BOOST_CHECK(in_degree(v, t) == ref[v]);
-            BOOST_CHECK(out_degree(v, t) == ref[v]);
+            REQUIRE(degree(v, t) == ref[v]);
+            REQUIRE(in_degree(v, t) == ref[v]);
+            REQUIRE(out_degree(v, t) == ref[v]);
         }
-
     }
 
-    BOOST_AUTO_TEST_CASE(treeFail) {
-        BOOST_REQUIRE_THROW(hg::tree(xt::xarray<index_t>{5, 0, 6, 6, 6, 7, 7, 7}), std::runtime_error);
-        BOOST_REQUIRE_THROW(hg::tree(xt::xarray<index_t>{5, 1, 6, 6, 6, 7, 7, 7}), std::runtime_error);
-        BOOST_REQUIRE_THROW(hg::tree(xt::xarray<index_t>{5, 1, 6, 6, 6, 7, 7, 2}), std::runtime_error);
-        BOOST_REQUIRE_THROW(hg::tree(xt::xarray<index_t>{2, 2, 4, 4, 4}), std::runtime_error);
+    TEST_CASE("tree constructor asserts", "[tree]") {
+        REQUIRE_THROWS_AS(hg::tree(xt::xarray<index_t>{5, 0, 6, 6, 6, 7, 7, 7}), std::runtime_error);
+        REQUIRE_THROWS_AS(hg::tree(xt::xarray<index_t>{5, 1, 6, 6, 6, 7, 7, 7}), std::runtime_error);
+        REQUIRE_THROWS_AS(hg::tree(xt::xarray<index_t>{5, 1, 6, 6, 6, 7, 7, 2}), std::runtime_error);
+        REQUIRE_THROWS_AS(hg::tree(xt::xarray<index_t>{2, 2, 4, 4, 4}), std::runtime_error);
     }
 
-    BOOST_AUTO_TEST_CASE(edgeIteratorTree) {
-
+    TEST_CASE("tree edge iterator", "[tree]") {
         auto g = data.t;
 
-        vector<pair<index_t, index_t>> eref{{0, 5},
-                                            {1, 5},
-                                            {2, 6},
-                                            {3, 6},
-                                            {4, 6},
-                                            {5, 7},
-                                            {6, 7}};
+        vector<pair<index_t, index_t>> eref{
+                {0, 5},
+                {1, 5},
+                {2, 6},
+                {3, 6},
+                {4, 6},
+                {5, 7},
+                {6, 7}
+        };
         vector<pair<index_t, index_t>> etest;
         for (auto e: hg::edge_iterator(g)) {
             etest.push_back({source(e, g), target(e, g)});
         }
 
-        BOOST_CHECK(vectorEqual(eref, etest));
+        REQUIRE(vectorEqual(eref, etest));
     }
 
-    BOOST_AUTO_TEST_CASE(adjacentVertexIteratorTreeGraph) {
-
+    TEST_CASE("tree adjacent vertex iterator", "[tree]") {
         auto g = data.t;
 
-        vector<vector<index_t>> adjListsRef{{5},
-                                            {5},
-                                            {6},
-                                            {6},
-                                            {6},
-                                            {7, 0, 1},
-                                            {7, 2, 3, 4},
-                                            {5, 6}};
+        vector<vector<index_t>> adjListsRef{
+                {5},
+                {5},
+                {6},
+                {6},
+                {6},
+                {7, 0, 1},
+                {7, 2, 3, 4},
+                {5, 6}
+        };
         vector<vector<index_t>> adjListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -130,22 +128,23 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
             for (auto av: hg::adjacent_vertex_iterator(v, g)) {
                 adjListsTest[v].push_back(av);
             }
-            BOOST_CHECK(vectorEqual(adjListsRef[v], adjListsTest[v]));
+            REQUIRE(vectorEqual(adjListsRef[v], adjListsTest[v]));
         }
     }
 
-    BOOST_AUTO_TEST_CASE(outEdgeIteratorTreeGraph) {
-
+    TEST_CASE("tree out edge iterator", "[tree]") {
         auto g = data.t;
 
-        vector<vector<pair<index_t, index_t>>> outListsRef{{{0, 5}},
-                                                           {{1, 5}},
-                                                           {{2, 6}},
-                                                           {{3, 6}},
-                                                           {{4, 6}},
-                                                           {{5, 7}, {5, 0}, {5, 1}},
-                                                           {{6, 7}, {6, 2}, {6, 3}, {6, 4}},
-                                                           {{7, 5}, {7, 6}}};
+        vector<vector<pair<index_t, index_t>>> outListsRef{
+                {{0, 5}},
+                {{1, 5}},
+                {{2, 6}},
+                {{3, 6}},
+                {{4, 6}},
+                {{5, 7}, {5, 0}, {5, 1}},
+                {{6, 7}, {6, 2}, {6, 3}, {6, 4}},
+                {{7, 5}, {7, 6}}
+        };
         vector<vector<pair<index_t, index_t>>> outListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -154,23 +153,24 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
                 //showTypeName<decltype(e)>("edge type : ");
                 outListsTest[v].push_back({source(e, g), target(e, g)});
             }
-            BOOST_CHECK(vectorEqual(outListsRef[v], outListsTest[v]));
+            REQUIRE(vectorEqual(outListsRef[v], outListsTest[v]));
         }
 
     }
 
-    BOOST_AUTO_TEST_CASE(inEdgeIteratorTreeGraph) {
-
+    TEST_CASE("tree in edge iterator", "[tree]") {
         auto g = data.t;
 
-        vector<vector<pair<index_t, index_t>>> outListsRef{{{5, 0}},
-                                                           {{5, 1}},
-                                                           {{6, 2}},
-                                                           {{6, 3}},
-                                                           {{6, 4}},
-                                                           {{7, 5}, {0, 5}, {1, 5}},
-                                                           {{7, 6}, {2, 6}, {3, 6}, {4, 6}},
-                                                           {{5, 7}, {6, 7}}};
+        vector<vector<pair<index_t, index_t>>> outListsRef{
+                {{5, 0}},
+                {{5, 1}},
+                {{6, 2}},
+                {{6, 3}},
+                {{6, 4}},
+                {{7, 5}, {0, 5}, {1, 5}},
+                {{7, 6}, {2, 6}, {3, 6}, {4, 6}},
+                {{5, 7}, {6, 7}}
+        };
         vector<vector<pair<index_t, index_t>>> outListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -179,13 +179,12 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
                 //showTypeName<decltype(e)>("edge type : ");
                 outListsTest[v].push_back({source(e, g), target(e, g)});
             }
-            BOOST_CHECK(vectorEqual(outListsRef[v], outListsTest[v]));
+            REQUIRE(vectorEqual(outListsRef[v], outListsTest[v]));
         }
 
     }
 
-    BOOST_AUTO_TEST_CASE(edgeIndexIteratorTreeGraph) {
-
+    TEST_CASE("tree edge index iterator", "[tree]") {
         auto g = data.t;
 
         vector<index_t> ref{0, 1, 2, 3, 4, 5, 6};
@@ -194,21 +193,22 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         for (auto v: hg::edge_iterator(g)) {
             test.push_back(v);
         }
-        BOOST_CHECK(vectorEqual(ref, test));
+        REQUIRE(vectorEqual(ref, test));
     }
 
-    BOOST_AUTO_TEST_CASE(outEdgeIndexIteratorTreeGraph) {
-
+    TEST_CASE("tree out edge index iterator", "[tree]") {
         auto g = data.t;
 
-        vector<vector<index_t>> ref{{0},
-                                    {1},
-                                    {2},
-                                    {3},
-                                    {4},
-                                    {5, 0, 1},
-                                    {6, 2, 3, 4},
-                                    {5, 6}};
+        vector<vector<index_t>> ref{
+                {0},
+                {1},
+                {2},
+                {3},
+                {4},
+                {5, 0, 1},
+                {6, 2, 3, 4},
+                {5, 6}
+        };
         vector<vector<index_t>> test;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -216,22 +216,23 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
             for (auto av: hg::out_edge_iterator(v, g)) {
                 test[v].push_back(av);
             }
-            BOOST_CHECK(vectorEqual(ref[v], test[v]));
+            REQUIRE(vectorEqual(ref[v], test[v]));
         }
     }
 
-    BOOST_AUTO_TEST_CASE(inEdgeIndexIteratorTreeGraph) {
-
+    TEST_CASE("tree in edge index iterator", "[tree]") {
         auto g = data.t;
 
-        vector<vector<index_t>> ref{{0},
-                                    {1},
-                                    {2},
-                                    {3},
-                                    {4},
-                                    {5, 0, 1},
-                                    {6, 2, 3, 4},
-                                    {5, 6}};
+        vector<vector<index_t>> ref{
+                {0},
+                {1},
+                {2},
+                {3},
+                {4},
+                {5, 0, 1},
+                {6, 2, 3, 4},
+                {5, 6}
+        };
         vector<vector<index_t>> test;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -239,41 +240,43 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
             for (auto av: hg::in_edge_iterator(v, g)) {
                 test[v].push_back(av);
             }
-            BOOST_CHECK(vectorEqual(ref[v], test[v]));
+            REQUIRE(vectorEqual(ref[v], test[v]));
         }
     }
 
-    BOOST_AUTO_TEST_CASE(edgeIndex) {
-
+    TEST_CASE("tree edge index", "[tree]") {
         auto g = data.t;
 
-        vector<pair<index_t, index_t>> eref{{0, 5},
-                                            {1, 5},
-                                            {2, 6},
-                                            {3, 6},
-                                            {4, 6},
-                                            {5, 7},
-                                            {6, 7}};
+        vector<pair<index_t, index_t>> eref{
+                {0, 5},
+                {1, 5},
+                {2, 6},
+                {3, 6},
+                {4, 6},
+                {5, 7},
+                {6, 7}
+        };
         vector<pair<index_t, index_t>> etest;
         for (auto e: hg::edge_iterator(g)) {
             etest.push_back(edge_from_index(index(e, g), g));
         }
 
-        BOOST_CHECK(vectorEqual(eref, etest));
+        REQUIRE(vectorEqual(eref, etest));
     }
 
-    BOOST_AUTO_TEST_CASE(childrenIteratorTreeGraph) {
-
+    TEST_CASE("tree children iterator", "[tree]") {
         auto g = data.t;
 
-        vector<vector<index_t>> ref{{},
-                                    {},
-                                    {},
-                                    {},
-                                    {},
-                                    {0, 1},
-                                    {2, 3, 4},
-                                    {5, 6}};
+        vector<vector<index_t>> ref{
+                {},
+                {},
+                {},
+                {},
+                {},
+                {0, 1},
+                {2, 3, 4},
+                {5, 6}
+        };
         vector<vector<index_t>> test;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -281,22 +284,21 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
             for (auto av: hg::children_iterator(v, g)) {
                 test[v].push_back(av);
             }
-            BOOST_CHECK(vectorEqual(ref[v], test[v]));
+            REQUIRE(vectorEqual(ref[v], test[v]));
         }
 
-        BOOST_CHECK(child(1, 5, g) == 1);
+        REQUIRE(child(1, 5, g) == 1);
 
         array_1d<index_t> vertices{5, 7, 6};
 
         array_1d<index_t> ref_child0{0, 5, 2};
-        BOOST_CHECK(child(0, vertices, g) == ref_child0);
+        REQUIRE((child(0, vertices, g) == ref_child0));
 
         array_1d<index_t> ref_child1{1, 6, 3};
-        BOOST_CHECK(child(1, vertices, g) == ref_child1);
+        REQUIRE((child(1, vertices, g) == ref_child1));
     }
 
-    BOOST_AUTO_TEST_CASE(treeTopologicalIterator) {
-
+    TEST_CASE("tree tree topological order iterator", "[tree]") {
         auto tree = data.t;
 
         vector<index_t> ref1{0, 1, 2, 3, 4, 5, 6, 7};
@@ -304,33 +306,32 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         for (auto v: hg::leaves_to_root_iterator(tree)) {
             t.push_back(v);
         }
-        BOOST_CHECK(vectorEqual(ref1, t));
+        REQUIRE(vectorEqual(ref1, t));
         t.clear();
 
         vector<index_t> ref2{0, 1, 2, 3, 4, 5, 6};
         for (auto v: hg::leaves_to_root_iterator(tree, hg::leaves_it::include, hg::root_it::exclude)) {
             t.push_back(v);
         }
-        BOOST_CHECK(vectorEqual(ref2, t));
+        REQUIRE(vectorEqual(ref2, t));
         t.clear();
 
         vector<index_t> ref3{5, 6, 7};
         for (auto v: hg::leaves_to_root_iterator(tree, hg::leaves_it::exclude, hg::root_it::include)) {
             t.push_back(v);
         }
-        BOOST_CHECK(vectorEqual(ref3, t));
+        REQUIRE(vectorEqual(ref3, t));
         t.clear();
 
         vector<index_t> ref4{5, 6};
         for (auto v: hg::leaves_to_root_iterator(tree, hg::leaves_it::exclude, hg::root_it::exclude)) {
             t.push_back(v);
         }
-        BOOST_CHECK(vectorEqual(ref4, t));
+        REQUIRE(vectorEqual(ref4, t));
         t.clear();
     }
 
-    BOOST_AUTO_TEST_CASE(treeRevTopologicalIterator) {
-
+    TEST_CASE("tree reverse topological order iterator", "[tree]") {
         auto tree = data.t;
 
         vector<index_t> ref1{7, 6, 5, 4, 3, 2, 1, 0};
@@ -338,50 +339,49 @@ BOOST_AUTO_TEST_SUITE(treeGraph);
         for (auto v: hg::root_to_leaves_iterator(tree)) {
             t.push_back(v);
         }
-        BOOST_CHECK(vectorEqual(ref1, t));
+        REQUIRE(vectorEqual(ref1, t));
         t.clear();
 
         vector<index_t> ref2{6, 5, 4, 3, 2, 1, 0};
         for (auto v: hg::root_to_leaves_iterator(tree, hg::leaves_it::include, hg::root_it::exclude)) {
             t.push_back(v);
         }
-        BOOST_CHECK(vectorEqual(ref2, t));
+        REQUIRE(vectorEqual(ref2, t));
         t.clear();
 
         vector<index_t> ref3{7, 6, 5};
         for (auto v: hg::root_to_leaves_iterator(tree, hg::leaves_it::exclude, hg::root_it::include)) {
             t.push_back(v);
         }
-        BOOST_CHECK(vectorEqual(ref3, t));
+        REQUIRE(vectorEqual(ref3, t));
         t.clear();
 
         vector<index_t> ref4{6, 5};
         for (auto v: hg::root_to_leaves_iterator(tree, hg::leaves_it::exclude, hg::root_it::exclude)) {
             t.push_back(v);
         }
-        BOOST_CHECK(vectorEqual(ref4, t));
+        REQUIRE(vectorEqual(ref4, t));
         t.clear();
     }
 
-    BOOST_AUTO_TEST_CASE(adjacency_matrix) {
-
+    TEST_CASE("tree adjacency matrix", "[tree]") {
         auto t = data.t;
 
         array_1d<int> edge_weights{1, 2, 3, 4, 5, 6, 7};
 
         auto adj_mat = undirected_graph_2_adjacency_matrix(t, edge_weights);
 
-        array_2d<int> ref_adj_mat = {{0, 0, 0, 0, 0, 1, 0, 0},
-                                     {0, 0, 0, 0, 0, 2, 0, 0},
-                                     {0, 0, 0, 0, 0, 0, 3, 0},
-                                     {0, 0, 0, 0, 0, 0, 4, 0},
-                                     {0, 0, 0, 0, 0, 0, 5, 0},
-                                     {1, 2, 0, 0, 0, 0, 0, 6},
-                                     {0, 0, 3, 4, 5, 0, 0, 7},
-                                     {0, 0, 0, 0, 0, 6, 7, 0}};
+        array_2d<int> ref_adj_mat = {
+                {0, 0, 0, 0, 0, 1, 0, 0},
+                {0, 0, 0, 0, 0, 2, 0, 0},
+                {0, 0, 0, 0, 0, 0, 3, 0},
+                {0, 0, 0, 0, 0, 0, 4, 0},
+                {0, 0, 0, 0, 0, 0, 5, 0},
+                {1, 2, 0, 0, 0, 0, 0, 6},
+                {0, 0, 3, 4, 5, 0, 0, 7},
+                {0, 0, 0, 0, 0, 6, 7, 0}
+        };
 
-        BOOST_CHECK(ref_adj_mat == adj_mat);
-
+        REQUIRE((ref_adj_mat == adj_mat));
     }
-
-BOOST_AUTO_TEST_SUITE_END();
+}

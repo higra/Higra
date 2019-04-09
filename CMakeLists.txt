@@ -126,23 +126,9 @@ endif()
 #  Options
 ##########################
 
-find_package(Boost 1.4 QUIET COMPONENTS unit_test_framework)
-if (Boost_FOUND)
-    option(STATIC_LINK_BOOST_LIBRARY
-            "Statically link boost test library (windows only)." OFF)
-
-    if(STATIC_LINK_BOOST_LIBRARY)
-        message(STATUS  "Boost static library dir is: ${Boost_LIBRARY_DIRS}")
-        set(BOOST_LIBRARYDIR ${BOOST_ROOT}/lib/)
-        set(Boost_USE_STATIC_LIBS ON)
-    endif()
-    option(DO_CPP_TEST
-            "Execute c++ test suit." ON)
-else ()
-    message("Testing disabled as 'Boost unit test framework' cannot be found. Please install it or manually provide its location to cmake in order to enable testing.")
-    option(DO_CPP_TEST
-            "Execute c++ test suit." OFF)
-endif () 
+find_package(Catch2 REQUIRED)
+option(DO_CPP_TEST
+        "Build c++ test suit." ON)
 
 enable_testing()
 

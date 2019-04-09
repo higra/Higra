@@ -8,12 +8,12 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#define BOOST_TEST_MODULE higra_python_test
+#define CATCH_CONFIG_MAIN
 
 //#include "xtl/xmeta_utils.hpp"
 #define FORCE_IMPORT_ARRAY
 
-#include <boost/test/unit_test.hpp>
+#include "catch2/catch.hpp"
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xarray.hpp>
 #include <xtensor-python/pyarray.hpp>
@@ -42,39 +42,19 @@ PYBIND11_EMBEDDED_MODULE(dummy, m
 }
 
 
-BOOST_AUTO_TEST_SUITE(xp);
-
-    struct interpreter_fixture
-    {
-
-        interpreter_fixture()
-        {
-            py::initialize_interpreter();
-            BOOST_TEST_MESSAGE( "Interpreter start" );
-        }
-
-        ~interpreter_fixture()
-        {
-            py::finalize_interpreter();
-            BOOST_TEST_MESSAGE( "Interpreter stop" );
-        }
-    };
-
-    BOOST_GLOBAL_FIXTURE(interpreter_fixture);
-
-    BOOST_AUTO_TEST_CASE(example) {
+TEST_CASE("basic python embedded interpreter", "[embedded]") {
+    py::initialize_interpreter();
+    SECTION("example import") {
         py::module sys = py::module::import("sys");
 
-    /*    py::scoped_interpreter guard{};
-        auto locals = py::dict("name"_a = "World", "number"_a = 42);
-        py::exec(R"(
-        result = 42
-    )", py::globals(), locals);
-        BOOST_CHECK(locals["result"].cast<int>() == 42);*/
+        /*    py::scoped_interpreter guard{};
+            auto locals = py::dict("name"_a = "World", "number"_a = 42);
+            py::exec(R"(
+            result = 42
+        )", py::globals(), locals);
+            BOOST_CHECK(locals["result"].cast<int>() == 42);*/
     }
-
-    BOOST_AUTO_TEST_CASE(failed_overload) {
-
+    SECTION("failed overload") {
         py::module sys = py::module::import("sys");
         /*sys.attr("path") = py::make_tuple("", "/home/perretb/Higra/cmake-build-debug/python",
                 "/home/perretb/anaconda3/lib/python36.zip",
@@ -85,12 +65,10 @@ BOOST_AUTO_TEST_SUITE(xp);
 
         auto dummy_m = py::module::import("dummy");
         BOOST_CHECK_THROW(dummy_m.attr("foo")("bar").cast<int>(), py::error_already_set);
-*/
+        */
     }
-
-    BOOST_AUTO_TEST_CASE(overload_tensor_array) {
-
-       /* py::module sys = py::module::import("sys");
+    SECTION("overload tensor array") {
+        /* py::module sys = py::module::import("sys");
         sys.attr("path") = py::make_tuple("", "/home/perretb/Higra/cmake-build-debug/python",
                 "/home/perretb/anaconda3/lib/python36.zip",
                 "/home/perretb/anaconda3/lib/python3.6",
@@ -102,26 +80,20 @@ BOOST_AUTO_TEST_SUITE(xp);
 
         xt::xtensor<float, 2> a{{1}};
         dummy_m.attr("foo")(a);*/
-
     }
-
-    BOOST_AUTO_TEST_CASE(higra_sand_box) {
-		/*
+    SECTION("higra sand box") {
+        /*
         py::module sys = py::module::import("sys");
         sys.attr("path") = py::make_tuple("", "/home/perretb/Higra/cmake-build-debug/python",
-                "/home/perretb/anaconda3/lib/python36.zip",
-                "/home/perretb/anaconda3/lib/python3.6",
-                "/home/perretb/anaconda3/lib/python3.6/lib-dynload",
-                "/home/perretb/.local/lib/python3.6/site-packages",
-                "/home/perretb/anaconda3/lib/python3.6/site-packages");
+                                          "/home/perretb/anaconda3/lib/python36.zip",
+                                          "/home/perretb/anaconda3/lib/python3.6",
+                                          "/home/perretb/anaconda3/lib/python3.6/lib-dynload",
+                                          "/home/perretb/.local/lib/python3.6/site-packages",
+                                          "/home/perretb/anaconda3/lib/python3.6/site-packages");
 
         auto higra_m = py::module::import("higra");
-		*/
+        */
         //auto res = higra_m.attr("read_graph_pink")("/home/perretb/2008_000009.graph");
-
     }
-
-
-BOOST_AUTO_TEST_SUITE_END();
-
-
+    py::finalize_interpreter();
+}

@@ -16,6 +16,7 @@ xtensor_target_version="0.19.4"
 xsimd_target_version="7.1.3"
 xtensor_python_target_version="0.22.1"
 pybind11_target_version="2.2.4"
+catch_target_version="2.7.1"
 
 #exit on any failure !
 set -e
@@ -25,6 +26,7 @@ install_prefix=`pwd`
 printf "Cleaning previous library versions..."
 rm -rf lib
 rm -rf include
+rm -rf share
 
 mkdir -p tmp
 cd tmp
@@ -53,6 +55,11 @@ printf "\n\nDownloading pybind11..."
 curl -s -o pybind11.zip -L https://github.com/pybind/pybind11/archive/v${pybind11_target_version}.zip
 printf "\nUncompressing pybind11..."
 unzip -q -o pybind11.zip
+
+printf "\n\nDownloading catch2..."
+curl -s -o catch2.zip -L https://github.com/catchorg/Catch2/archive/v${catch_target_version}.zip
+printf "\nUncompressing catch2..."
+unzip -q -o catch2.zip
 
 
 printf "\n\nInstalling pybind11..."
@@ -104,6 +111,16 @@ rm -rf build
 mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=${install_prefix}  .. >/dev/null
+make >/dev/null
+make install >/dev/null
+cd ../..
+
+printf "\n\nInstalling catch2..."
+cd Catch2-${catch_target_version}
+rm -rf build
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=${install_prefix} -DBUILD_TESTING=OFF -DCATCH_INSTALL_DOCS=OFF -DCATCH_INSTALL_HELPERS=OFF .. >/dev/null
 make >/dev/null
 make install >/dev/null
 cd ../..

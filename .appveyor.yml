@@ -12,8 +12,6 @@ image:
 
 environment:
   MINICONDA: C:\Miniconda36-x64
-  BOOST_ROOT: C:\Libraries\boost_1_67_0
-  Boost_LIBRARY_DIRS: C:\Libraries\boost_1_67_0\lib64-msvc-14.1
   CIBW_TEST_COMMAND: "python -c \"import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
   CIBW_BUILD_VERBOSITY: "1"
   CIBW_BEFORE_BUILD: "pip install cmake numpy==1.15.4"
@@ -51,7 +49,7 @@ for:
 
 init:
   - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2017" set VCVARPATH="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
-  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%MINICONDA%\\Library\\bin;%Boost_LIBRARY_DIRS%;%PATH%"
+  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%MINICONDA%\\Library\\bin;%PATH%"
 
 install:
   - conda config --set always_yes yes --set changeps1 no
@@ -64,8 +62,6 @@ install:
         cibuildwheel --output-dir wheelhouse
       )
   #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-
-  #  - mklink /D "%BOOST_ROOT%\lib" "%Boost_LIBRARY_DIRS%"
 
 build_script:
   #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
