@@ -77,6 +77,33 @@ def _data_cache__init():
     hg.__higra_global_cache = DataCache()
 
 
+def set_provider_caching(boolean):
+    """
+    Globally activates or deactivates the caching of data providers results.
+
+    If set to True (default), a provider will save its results in the object cache of its first argument.
+    Any other call to this provider with the same first argument will return the result stored in the cache
+    instead of recomputing a new result (except if this behaviour is locally overridden with the name arguments
+    "force_recompute=True" or "no_cache=True").
+
+    If set to False, provider will behave as normal function: they won't try to cache results.
+
+    :param boolean: True to globally activate caching for provider, False to deactivate it
+    :return: nothing
+    """
+    if not isinstance(boolean, type(True)):
+        raise TypeError("Parameter must be a bool.")
+    hg.__provider_caching = boolean
+
+
+def get_provider_caching():
+    """
+    Returns the current state of the caching policy for providers (see :func:`~higra.set_provider_caching`)
+
+    :return: True if caching of providers result is globally active, False otherwise
+    """
+    return hg.__provider_caching
+
 class DataCache:
 
     def __init__(self):
@@ -172,6 +199,11 @@ def data_provider(name, description=""):
             data_name = kwargs.pop("attribute_name", name)
             force_recompute = kwargs.pop("force_recompute", False)
             data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
+            no_cache = kwargs.pop("no_cache", False)
+
+            if no_cache or not hg.__provider_caching:
+                return fun(obj, *args, **kwargs)
+
             try:
                 obj_cache = data_cache.get_data(obj)
 
