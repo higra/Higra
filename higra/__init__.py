@@ -11,6 +11,7 @@
 # pre-declaration of globals
 globals()["__data_providers"] = {}
 globals()["__higra_global_cache"] = None
+globals()["__provider_caching"] = True
 
 # extension module
 from .higram import *

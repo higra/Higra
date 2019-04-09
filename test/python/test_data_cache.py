@@ -29,7 +29,6 @@ class MyException(Exception):
         super().__init__(message)
 
 
-
 @hg.data_provider("attr1")
 def provider1(obj, crash=False):
     if crash:
@@ -79,11 +78,45 @@ def accept_RegularGraph2d(graph, shape):
 
 class TestDataCache(unittest.TestCase):
 
-    def test_provider(self):
+    def test_provider_caching_and_force_recompute(self):
         obj1 = Dummy(1)
         self.assertTrue(provider1(obj1, False) == 1)
         self.assertTrue(provider1(obj1, True) == 1)
         self.assertRaises(Exception, provider1, obj1, True, force_recompute=True)
+        hg.clear_all_attributes()
+
+    def test_provider_caching_global_setting(self):
+        obj1 = Dummy(1)
+        hg.set_provider_caching(False)
+        self.assertTrue(provider1(obj1, False) == 1)
+        self.assertRaises(Exception, provider1, obj1, True)
+        hg.set_provider_caching(True)
+        self.assertTrue(provider1(obj1, False) == 1)
+        self.assertTrue(provider1(obj1, True) == 1)
+        hg.set_provider_caching(False)
+        self.assertRaises(Exception, provider1, obj1, True)
+        hg.set_provider_caching(True)
+        hg.clear_all_attributes()
+
+    def test_provider_no_cache_implies_force_recompute(self):
+        obj1 = Dummy(1)
+        self.assertTrue(provider1(obj1, False) == 1)
+        self.assertTrue(provider1(obj1, True) == 1)
+        self.assertRaises(Exception, provider1, obj1, True, no_cache=True)
+        hg.clear_all_attributes()
+
+    def test_provider_no_cache_doesnt_store_result(self):
+        obj1 = Dummy(1)
+        self.assertTrue(provider1(obj1, False, no_cache=True) == 1)
+        self.assertRaises(Exception, provider1, obj1, True)
+        hg.clear_all_attributes()
+
+    def test_provider_rename_attribute(self):
+        obj1 = Dummy(1)
+        self.assertTrue(provider1(obj1, False, attribute_name="xxx") == 1)
+        self.assertRaises(Exception, provider1, obj1, True)
+        self.assertTrue(hg.get_attribute(obj1, "xxx") == 1)
+        self.assertTrue(provider1(obj1, True, attribute_name="xxx") == 1)
         hg.clear_all_attributes()
 
     def test_consumer(self):
@@ -131,7 +164,7 @@ class TestDataCache(unittest.TestCase):
 
     def test_argument_helper_accept_everything(self):
         self.assertTrue(accept_everything(2) == 1)
-        self.assertTrue(accept_everything((3,2)) == 1)
+        self.assertTrue(accept_everything((3, 2)) == 1)
         self.assertTrue(accept_everything({3, 2}) == 1)
         self.assertTrue(accept_everything({"toto": 42}) == 1)
 
@@ -140,6 +173,7 @@ class TestDataCache(unittest.TestCase):
         self.assertTrue(accept_RegularGraph2d(g) == 2)
 
         self.assertRaises(MyException, accept_RegularGraph2d, (4, 5), (2, 3))
+
 
 if __name__ == '__main__':
     unittest.main()
