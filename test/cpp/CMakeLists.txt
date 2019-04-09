@@ -29,7 +29,7 @@ if (DO_CPP_TEST)
 
     #target_link_libraries(test_exe Catch2::Catch2)
     add_test(NAME Test_cpp COMMAND test_exe)
-    set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} test_exe CACHE INTERNAL "" FORCE)
+    set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} test_exe PARENT_SCOPE)
 
     add_subdirectory(resources)
 
