@@ -10,7 +10,7 @@
 
 
 if (DO_CPP_TEST)
-    include_directories(${Boost_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include)
+    include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include)
 
     set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
             test.cpp
@@ -27,8 +27,7 @@ if (DO_CPP_TEST)
 
     add_executable(test_exe ${TEST_CPP_COMPONENTS})
 
-    ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
-    target_link_libraries(test_exe ${Boost_LIBRARIES})
+    #target_link_libraries(test_exe Catch2::Catch2)
     add_test(NAME Test_cpp COMMAND test_exe)
     set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} test_exe CACHE INTERNAL "" FORCE)
 

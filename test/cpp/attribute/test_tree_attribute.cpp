@@ -8,11 +8,10 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include <boost/test/unit_test.hpp>
 #include "../test_utils.hpp"
 #include "higra/attribute/tree_attribute.hpp"
 
-BOOST_AUTO_TEST_SUITE(tree_attributes);
+namespace tree_attributes {
 
     using namespace hg;
     using namespace std;
@@ -21,72 +20,70 @@ BOOST_AUTO_TEST_SUITE(tree_attributes);
 
         hg::tree t;
 
-        _data() : t(xt::xarray<long>{5, 5, 6, 6, 6, 7, 7, 7}) {
+        _data() : t(xt::xarray<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
         }
 
     } data;
 
-
-    BOOST_AUTO_TEST_CASE(test_attribute_sum) {
+    TEST_CASE("tree attribute area", "[tree_attributes]") {
         auto t = data.t;
 
-        array_1d<long> ref{1, 1, 1, 1, 1, 2, 3, 5};
+        array_1d<index_t> ref{1, 1, 1, 1, 1, 2, 3, 5};
         auto res = attribute_area(t);
-        BOOST_CHECK(ref == res);
+        REQUIRE((ref == res));
 
-        array_1d<long> leaf_area{2, 1, 1, 3, 2};
-        array_1d<long> ref2{2, 1, 1, 3, 2, 3, 6, 9};
+        array_1d<index_t> leaf_area{2, 1, 1, 3, 2};
+        array_1d<index_t> ref2{2, 1, 1, 3, 2, 3, 6, 9};
         auto res2 = attribute_area(t, leaf_area);
-        BOOST_CHECK(ref2 == res2);
+        REQUIRE((ref2 == res2));
     }
 
-    BOOST_AUTO_TEST_CASE(test_attribute_volume) {
+    TEST_CASE("tree attribute volume", "[tree_attributes]") {
         auto t = data.t;
 
-        array_1d<long> node_area{2, 1, 1, 3, 2, 3, 6, 9};
+        array_1d<index_t> node_area{2, 1, 1, 3, 2, 3, 6, 9};
         array_1d<double> node_altitude{0, 0, 0, 0, 0, 2, 1, 4};
-        array_1d<long> ref{0, 0, 0, 0, 0, 6, 18, 24};
+        array_1d<index_t> ref{0, 0, 0, 0, 0, 6, 18, 24};
         auto res = attribute_volume(t, node_altitude, node_area);
-        BOOST_CHECK(ref == res);
+        REQUIRE((ref == res));
     }
 
-    BOOST_AUTO_TEST_CASE(test_attribute_depth) {
+    TEST_CASE("tree attribute depth", "[tree_attributes]") {
         auto t = data.t;
 
-        array_1d<long> ref{2, 2, 2, 2, 2, 1, 1, 0};
+        array_1d<index_t> ref{2, 2, 2, 2, 2, 1, 1, 0};
         auto res = attribute_depth(t);
-        BOOST_CHECK(ref == res);
+        REQUIRE((ref == res));
     }
 
-    BOOST_AUTO_TEST_CASE(test_attribute_height) {
+    TEST_CASE("tree attribute height", "[tree_attributes]") {
         auto t = data.t;
 
         array_1d<double> node_altitude{1, 2, 0, 3, 2, 5, 9, 12};
-        array_1d<long> ref{0, 0, 0, 0, 0, 4, 9, 12};
+        array_1d<index_t> ref{0, 0, 0, 0, 0, 4, 9, 12};
         auto res = attribute_height(t, node_altitude);
-        BOOST_CHECK(ref == res);
+        REQUIRE((ref == res));
     }
 
-    BOOST_AUTO_TEST_CASE(test_attribute_dynamics) {
-        tree t(xt::xarray<long>{8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12});
+    TEST_CASE("tree attribute dynamics", "[tree_attributes]") {
+        tree t(xt::xarray<index_t>{8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12});
 
         array_1d<double> node_altitude{0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 8, 10};
-        array_1d<long> ref{0, 0, 0, 0, 0, 0, 0, 10, 3, 10, 10, 2, 10};
+        array_1d<index_t> ref{0, 0, 0, 0, 0, 0, 0, 10, 3, 10, 10, 2, 10};
         auto res = attribute_dynamics(t, node_altitude);
-        BOOST_CHECK(ref == res);
+        REQUIRE((ref == res));
     }
 
-    BOOST_AUTO_TEST_CASE(test_attribute_sibling) {
+    TEST_CASE("tree attribute siblings", "[tree_attributes]") {
         auto t = data.t;
 
-        array_1d<long> ref{1, 0, 3, 4, 2, 6, 5, 7};
+        array_1d<index_t> ref{1, 0, 3, 4, 2, 6, 5, 7};
         auto res = attribute_sibling(t);
-        BOOST_CHECK(ref == res);
+        REQUIRE((ref == res));
 
-        array_1d<long> ref2{1, 0, 4, 2, 3, 6, 5, 7};
+        array_1d<index_t> ref2{1, 0, 4, 2, 3, 6, 5, 7};
         auto res2 = attribute_sibling(t, -1);
-        BOOST_CHECK(ref2 == res2);
+        REQUIRE((ref2 == res2));
     }
 
-
-BOOST_AUTO_TEST_SUITE_END();
+}

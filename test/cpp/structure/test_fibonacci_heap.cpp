@@ -8,15 +8,13 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include <boost/test/unit_test.hpp>
-
 #include "higra/structure/fibonacci_heap.hpp"
 #include "../test_utils.hpp"
 #include <random>
 #include <map>
 #include <algorithm>
 
-BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
+namespace test_fibonacci_heap {
 
     using namespace hg;
     using namespace std;
@@ -124,7 +122,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         }
 
         index_t find(index_t index) {
-            for (index_t i = 0; i < (index_t)elements.size(); i++)
+            for (index_t i = 0; i < (index_t) elements.size(); i++)
                 if (elements[i].m_index == index)
                     return i;
             throw std::runtime_error("cannot find element");
@@ -133,98 +131,98 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         index_t m_counter = 0;
     };
 
-    BOOST_AUTO_TEST_CASE(test_pool_one_block) {
+    TEST_CASE("memory pool 1 block", "[fibonacci_heap]") {
         fibonacci_heap_internal::object_pool<hg::index_t> pool;
         hg::index_t *i1 = pool.allocate();
 
         hg::index_t *i2 = pool.allocate();
-        BOOST_CHECK((i2 - i1) == 1);
+        REQUIRE((i2 - i1) == 1);
         hg::index_t *i3 = pool.allocate();
-        BOOST_CHECK((i3 - i1) == 2);
+        REQUIRE((i3 - i1) == 2);
         hg::index_t *i4 = pool.allocate();
-        BOOST_CHECK((i4 - i1) == 3);
+        REQUIRE((i4 - i1) == 3);
 
         pool.free(i3);
 
         hg::index_t *i5 = pool.allocate();
-        BOOST_CHECK((i5 - i1) == 2);
+        REQUIRE((i5 - i1) == 2);
         hg::index_t *i6 = pool.allocate();
-        BOOST_CHECK((i6 - i1) == 4);
+        REQUIRE((i6 - i1) == 4);
 
         pool.free(i5);
         pool.free(i4);
 
         hg::index_t *i7 = pool.allocate();
-        BOOST_CHECK((i7 - i1) == 3);
+        REQUIRE((i7 - i1) == 3);
         hg::index_t *i8 = pool.allocate();
-        BOOST_CHECK((i8 - i1) == 2);
+        REQUIRE((i8 - i1) == 2);
         hg::index_t *i9 = pool.allocate();
-        BOOST_CHECK(i9 - i1 == 5);
+        REQUIRE(i9 - i1 == 5);
         hg::index_t *i10 = pool.allocate();
-        BOOST_CHECK((i10 - i1) == 6);
+        REQUIRE((i10 - i1) == 6);
     }
 
-    BOOST_AUTO_TEST_CASE(test_pool_several_blocks) {
+    TEST_CASE("memory pool several blocks", "[fibonacci_heap]") {
         fibonacci_heap_internal::object_pool<hg::index_t> pool(3);
         hg::index_t *i1 = pool.allocate();
         hg::index_t *i2 = pool.allocate();
-        BOOST_CHECK(i2 - i1 == 1);
+        REQUIRE(i2 - i1 == 1);
         hg::index_t *i3 = pool.allocate();
-        BOOST_CHECK(i3 - i1 == 2);
+        REQUIRE(i3 - i1 == 2);
 
         hg::index_t *i4 = pool.allocate();
         hg::index_t *i5 = pool.allocate();
-        BOOST_CHECK(i5 - i4 == 1);
+        REQUIRE(i5 - i4 == 1);
         hg::index_t *i6 = pool.allocate();
-        BOOST_CHECK(i6 - i4 == 2);
+        REQUIRE(i6 - i4 == 2);
 
         hg::index_t *i7 = pool.allocate();
         hg::index_t *i8 = pool.allocate();
-        BOOST_CHECK(i8 - i7 == 1);
+        REQUIRE(i8 - i7 == 1);
 
         pool.free(i6);
         pool.free(i2);
         pool.free(i4);
 
         hg::index_t *i9 = pool.allocate();
-        BOOST_CHECK(i9 - i4 == 0);
+        REQUIRE(i9 - i4 == 0);
         hg::index_t *i10 = pool.allocate();
-        BOOST_CHECK(i10 - i1 == 1);
+        REQUIRE(i10 - i1 == 1);
         hg::index_t *i11 = pool.allocate();
-        BOOST_CHECK(i11 - i4 == 2);
+        REQUIRE(i11 - i4 == 2);
 
         hg::index_t *i12 = pool.allocate();
-        BOOST_CHECK(i12 - i7 == 2);
+        REQUIRE(i12 - i7 == 2);
 
         hg::index_t *i13 = pool.allocate();
         hg::index_t *i14 = pool.allocate();
-        BOOST_CHECK(i14 - i13 == 1);
+        REQUIRE(i14 - i13 == 1);
     }
 
-    BOOST_AUTO_TEST_CASE(test_fibonacci_heap1) {
+    TEST_CASE("fibonacci heap push-top-size-empty", "[fibonacci_heap]") {
         fibonacci_heap<hg::index_t> heap;
         heap.push(10);
-        BOOST_CHECK(heap.size() == 1);
-        BOOST_CHECK(!heap.empty());
-        BOOST_CHECK(heap.top()->get_value() == 10);
+        REQUIRE(heap.size() == 1);
+        REQUIRE(!heap.empty());
+        REQUIRE(heap.top()->get_value() == 10);
         heap.push(15);
-        BOOST_CHECK(heap.size() == 2);
-        BOOST_CHECK(heap.top()->get_value() == 10);
+        REQUIRE(heap.size() == 2);
+        REQUIRE(heap.top()->get_value() == 10);
         heap.push(8);
-        BOOST_CHECK(heap.size() == 3);
-        BOOST_CHECK(heap.top()->get_value() == 8);
+        REQUIRE(heap.size() == 3);
+        REQUIRE(heap.top()->get_value() == 8);
 
         heap.clear();
-        BOOST_CHECK(heap.size() == 0);
-        BOOST_CHECK(heap.empty());
+        REQUIRE(heap.size() == 0);
+        REQUIRE(heap.empty());
     }
 
-    BOOST_AUTO_TEST_CASE(test_fibonacci_heap2) {
+    TEST_CASE("fibonacci heap push-top-size-empty 2", "[fibonacci_heap]") {
         fibonacci_heap<hg::index_t> heap;
         heap.push(10);
         heap.pop();
-        BOOST_CHECK(heap.size() == 0);
-        BOOST_CHECK(heap.empty());
+        REQUIRE(heap.size() == 0);
+        REQUIRE(heap.empty());
 
         heap.push(10);
         heap.push(15);
@@ -232,7 +230,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         heap.push(22);
         heap.push(17);
 
-        BOOST_CHECK(heap.top()->get_value() == 8);
+        REQUIRE(heap.top()->get_value() == 8);
         heap.pop();
 
         heap.push(5);
@@ -240,25 +238,25 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         heap.push(2);
 
 
-        BOOST_CHECK(heap.top()->get_value() == 2);
+        REQUIRE(heap.top()->get_value() == 2);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 5);
+        REQUIRE(heap.top()->get_value() == 5);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 10);
+        REQUIRE(heap.top()->get_value() == 10);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 15);
+        REQUIRE(heap.top()->get_value() == 15);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 17);
+        REQUIRE(heap.top()->get_value() == 17);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 19);
+        REQUIRE(heap.top()->get_value() == 19);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 22);
+        REQUIRE(heap.top()->get_value() == 22);
         heap.pop();
-        BOOST_CHECK(heap.size() == 0);
+        REQUIRE(heap.size() == 0);
     }
 
 
-    BOOST_AUTO_TEST_CASE(test_fibonacci_heap3) {
+    TEST_CASE("fibonacci heap push-top-size-empty 3", "[fibonacci_heap]") {
         fibonacci_heap<hg::index_t> heap;
         heap.push(10);
         heap.push(15);
@@ -269,26 +267,26 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         heap.push(7);
 
         heap.merge(heap2);
-        BOOST_CHECK(heap.top()->get_value() == 7);
+        REQUIRE(heap.top()->get_value() == 7);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 8);
+        REQUIRE(heap.top()->get_value() == 8);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 9);
+        REQUIRE(heap.top()->get_value() == 9);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 10);
+        REQUIRE(heap.top()->get_value() == 10);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 15);
+        REQUIRE(heap.top()->get_value() == 15);
         heap.pop();
-        BOOST_CHECK(heap.size() == 0);
+        REQUIRE(heap.size() == 0);
 
     }
 
-    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_decrease_key) {
+    TEST_CASE("fibonacci heap decrease key", "[fibonacci_heap]") {
         fibonacci_heap<hg::index_t> heap;
         heap.push(10);
         heap.pop();
-        BOOST_CHECK(heap.size() == 0);
-        BOOST_CHECK(heap.empty());
+        REQUIRE(heap.size() == 0);
+        REQUIRE(heap.empty());
 
         heap.push(10);
         heap.push(15);
@@ -296,7 +294,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         auto e1 = heap.push(22);
         auto e2 = heap.push(17);
 
-        BOOST_CHECK(heap.top()->get_value() == 8);
+        REQUIRE(heap.top()->get_value() == 8);
         heap.pop();
 
         heap.push(5);
@@ -306,28 +304,28 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         heap.decrease(e2, 12);
         heap.decrease(e1, 3);
 
-        BOOST_CHECK(heap.top()->get_value() == 2);
+        REQUIRE(heap.top()->get_value() == 2);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 3);
+        REQUIRE(heap.top()->get_value() == 3);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 5);
+        REQUIRE(heap.top()->get_value() == 5);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 10);
+        REQUIRE(heap.top()->get_value() == 10);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 12);
+        REQUIRE(heap.top()->get_value() == 12);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 15);
+        REQUIRE(heap.top()->get_value() == 15);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 19);
+        REQUIRE(heap.top()->get_value() == 19);
         heap.pop();
     }
 
-    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_erase_key) {
+    TEST_CASE("fibonacci heap erase key", "[fibonacci_heap]") {
         fibonacci_heap<hg::index_t> heap;
         heap.push(10);
         heap.pop();
-        BOOST_CHECK(heap.size() == 0);
-        BOOST_CHECK(heap.empty());
+        REQUIRE(heap.size() == 0);
+        REQUIRE(heap.empty());
 
         heap.push(10);
         heap.push(15);
@@ -335,7 +333,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         auto e1 = heap.push(22);
         auto e2 = heap.push(17);
 
-        BOOST_CHECK(heap.top()->get_value() == 8);
+        REQUIRE(heap.top()->get_value() == 8);
         heap.pop();
 
         heap.push(5);
@@ -345,24 +343,24 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         heap.erase(e2);
         heap.erase(e1);
 
-        BOOST_CHECK(heap.top()->get_value() == 2);
+        REQUIRE(heap.top()->get_value() == 2);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 5);
+        REQUIRE(heap.top()->get_value() == 5);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 10);
+        REQUIRE(heap.top()->get_value() == 10);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 15);
+        REQUIRE(heap.top()->get_value() == 15);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 19);
+        REQUIRE(heap.top()->get_value() == 19);
         heap.pop();
     }
 
-    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_increase_key) {
+    TEST_CASE("fibonacci heap increase key", "[fibonacci_heap]") {
         fibonacci_heap<hg::index_t> heap;
         heap.push(10);
         heap.pop();
-        BOOST_CHECK(heap.size() == 0);
-        BOOST_CHECK(heap.empty());
+        REQUIRE(heap.size() == 0);
+        REQUIRE(heap.empty());
 
         heap.push(10);
         heap.push(15);
@@ -370,7 +368,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         auto e1 = heap.push(22);
         auto e2 = heap.push(17);
 
-        BOOST_CHECK(heap.top()->get_value() == 8);
+        REQUIRE(heap.top()->get_value() == 8);
         heap.pop();
 
         heap.push(5);
@@ -380,19 +378,19 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         heap.increase(e2, 25);
         heap.increase(e1, 23);
 
-        BOOST_CHECK(heap.top()->get_value() == 2);
+        REQUIRE(heap.top()->get_value() == 2);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 5);
+        REQUIRE(heap.top()->get_value() == 5);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 10);
+        REQUIRE(heap.top()->get_value() == 10);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 15);
+        REQUIRE(heap.top()->get_value() == 15);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 19);
+        REQUIRE(heap.top()->get_value() == 19);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 23);
+        REQUIRE(heap.top()->get_value() == 23);
         heap.pop();
-        BOOST_CHECK(heap.top()->get_value() == 25);
+        REQUIRE(heap.top()->get_value() == 25);
         heap.pop();
     }
 
@@ -422,14 +420,14 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
                 theap.push(w);
             } else {
                 if (theap.size() > 0) {
-                    BOOST_CHECK(heap.top()->get_value() == theap.top().get_value());
-                    BOOST_CHECK(heap.size() == theap.size());
+                    REQUIRE(heap.top()->get_value() == theap.top().get_value());
+                    REQUIRE(heap.size() == theap.size());
                     heap.pop();
                     theap.pop();
                     if (theap.size() > 0) {
-                        BOOST_CHECK(heap.top()->get_value() == theap.top().get_value());
+                        REQUIRE(heap.top()->get_value() == theap.top().get_value());
                     }
-                    BOOST_CHECK(heap.size() == theap.size());
+                    REQUIRE(heap.size() == theap.size());
                 }
             }
 
@@ -438,13 +436,13 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
     }
 
 
-    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_stress_test_push_pop) {
+    TEST_CASE("fibonacci heap randomized stress test push-pop", "[fibonacci_heap]") {
         random_heaps(1000);
         random_heaps(1000);
         random_heaps(1000);
     }
 
-    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_stress_test_push_pop_merge) {
+    TEST_CASE("fibonacci heap randomized stress test push-pop-merge", "[fibonacci_heap]") {
 
         std::uniform_int_distribution<std::mt19937::result_type> dist100(1, 100);
         std::uniform_int_distribution<std::mt19937::result_type> weights(1, 100000);
@@ -466,14 +464,14 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
                     auto fht = heap.top();
                     auto tht = theap.top();
 
-                    BOOST_CHECK(fht->get_value() == tht.get_value());
-                    BOOST_CHECK(heap.size() == theap.size());
+                    REQUIRE(fht->get_value() == tht.get_value());
+                    REQUIRE(heap.size() == theap.size());
                     heap.pop();
                     theap.pop();
                     if (theap.size() > 0) {
-                        BOOST_CHECK(heap.top()->get_value() == theap.top().get_value());
+                        REQUIRE(heap.top()->get_value() == theap.top().get_value());
                     }
-                    BOOST_CHECK(heap.size() == theap.size());
+                    REQUIRE(heap.size() == theap.size());
                 }
             } else {
                 auto hh = random_heaps(100);
@@ -483,8 +481,7 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
         }
     }
 
-    BOOST_AUTO_TEST_CASE(test_fibonacci_heap_stress_test_push_pop_update_erase) {
-
+    TEST_CASE("fibonacci heap randomized stress test push-pop-update-erase", "[fibonacci_heap]") {
         std::uniform_int_distribution<std::mt19937::result_type> dist100(1, 100);
         std::uniform_int_distribution<std::mt19937::result_type> weights(1, 100000);
 
@@ -506,15 +503,15 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
                     auto fht = heap.top();
                     auto tht = theap.top();
 
-                    BOOST_CHECK(fht->get_value() == tht.get_value());
-                    BOOST_CHECK(heap.size() == theap.size());
+                    REQUIRE(fht->get_value() == tht.get_value());
+                    REQUIRE(heap.size() == theap.size());
                     heap.pop();
                     theap.pop();
                     heapset.erase(fht);
                     if (theap.size() > 0) {
-                        BOOST_CHECK(heap.top()->get_value() == theap.top().get_value());
+                        REQUIRE(heap.top()->get_value() == theap.top().get_value());
                     }
-                    BOOST_CHECK(heap.size() == theap.size());
+                    REQUIRE(heap.size() == theap.size());
                 }
 
             } else if (op < 90) {
@@ -557,5 +554,4 @@ BOOST_AUTO_TEST_SUITE(fibonacci_heap_tests);
             }
         }
     }
-
-BOOST_AUTO_TEST_SUITE_END();
+}

@@ -7,7 +7,7 @@
 *                                                                          *
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
-#include <boost/test/unit_test.hpp>
+
 #include "../test_utils.hpp"
 #include "higra/graph.hpp"
 #include "higra/algo/tree.hpp"
@@ -16,18 +16,18 @@
 
 using namespace hg;
 
-BOOST_AUTO_TEST_SUITE(algo_tree);
+namespace test_tree_algorithm {
 
     struct _data {
 
         hg::tree t;
 
-        _data() : t(xt::xarray<long>{5, 5, 6, 6, 6, 7, 7, 7}) {
+        _data() : t(xt::xarray<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
         }
 
     } data;
 
-    BOOST_AUTO_TEST_CASE(test_reconstruct_leaf_data) {
+    TEST_CASE("tree reconstruct leaf data", "[tree_algorithm]") {
 
         auto tree = data.t;
         array_2d<int> input{{1, 8},
@@ -47,10 +47,10 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
                           {7, 2},
                           {4, 5},
                           {7, 2}};
-        BOOST_CHECK(xt::allclose(ref, output));
+        REQUIRE(xt::allclose(ref, output));
     }
 
-    BOOST_AUTO_TEST_CASE(test_labelisation_horizontal_cut) {
+    TEST_CASE("tree labelisation horizontal cut", "[tree_algorithm]") {
 
         auto tree = data.t;
         array_1d<double> altitudes{0, 0, 0, 0, 0, 1, 0, 2};
@@ -63,12 +63,12 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
         auto output_t1 = labelisation_horizontal_cut_from_threshold(tree, altitudes, 1);
         auto output_t2 = labelisation_horizontal_cut_from_threshold(tree, altitudes, 2);
 
-        BOOST_CHECK(is_in_bijection(ref_t0, output_t0));
-        BOOST_CHECK(is_in_bijection(ref_t1, output_t1));
-        BOOST_CHECK(is_in_bijection(ref_t2, output_t2));
+        REQUIRE(is_in_bijection(ref_t0, output_t0));
+        REQUIRE(is_in_bijection(ref_t1, output_t1));
+        REQUIRE(is_in_bijection(ref_t2, output_t2));
     }
 
-    BOOST_AUTO_TEST_CASE(test_labelisation_supervertices) {
+    TEST_CASE("tree labelisation supervertices", "[tree_algorithm]") {
 
         auto tree = data.t;
         array_1d<double> altitudes{0, 0, 0, 0, 0, 1, 0, 2};
@@ -77,12 +77,12 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
 
         auto output = labelisation_hierarchy_supervertices(tree, altitudes);
 
-        BOOST_CHECK(is_in_bijection(ref, output));
-        BOOST_CHECK(xt::amin(output)() == 0);
-        BOOST_CHECK(xt::amax(output)() == 2);
+        REQUIRE(is_in_bijection(ref, output));
+        REQUIRE(xt::amin(output)() == 0);
+        REQUIRE(xt::amax(output)() == 2);
     }
 
-    BOOST_AUTO_TEST_CASE(test_supervertices_hierarchy) {
+    TEST_CASE("tree supervertices hierarchy", "[tree_algorithm]") {
 
         tree t(array_1d<index_t>{9, 9, 9, 10, 10, 12, 13, 11, 11, 14, 12, 15, 13, 14, 15, 15});
         array_1d<int> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3};
@@ -92,40 +92,40 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
         auto &node_map_res = res.node_map;
 
         tree tree_ref(array_1d<index_t>{5, 4, 4, 6, 5, 6, 6});
-        BOOST_CHECK(test_tree_isomorphism(tree_res, tree_ref));
+        REQUIRE(test_tree_isomorphism(tree_res, tree_ref));
 
         array_1d<index_t> supervertex_labelisation_ref{0, 0, 0, 1, 1, 1, 2, 3, 3};
-        BOOST_CHECK(is_in_bijection(supervertex_labelisation_ref, supervertex_labelisation_res));
+        REQUIRE(is_in_bijection(supervertex_labelisation_ref, supervertex_labelisation_res));
 
         array_1d<index_t> node_map_ref{9, 12, 6, 11, 13, 14, 15};
-        BOOST_CHECK(node_map_ref == node_map_res);
+        REQUIRE((node_map_ref == node_map_res));
 
     }
 
-    BOOST_AUTO_TEST_CASE(tree_isomorphism) {
+    TEST_CASE("tree test isomorphism", "[tree_algorithm]") {
 
         tree t1(array_1d<index_t>{5, 5, 6, 6, 7, 8, 7, 8, 8});
         tree t2(array_1d<index_t>{6, 6, 5, 5, 7, 7, 8, 8, 8});
         tree t3(array_1d<index_t>{7, 7, 5, 5, 6, 6, 8, 8, 8});
 
-        BOOST_CHECK(test_tree_isomorphism(t1, t2));
-        BOOST_CHECK(test_tree_isomorphism(t2, t1));
-        BOOST_CHECK(test_tree_isomorphism(t1, t3));
-        BOOST_CHECK(test_tree_isomorphism(t3, t1));
-        BOOST_CHECK(test_tree_isomorphism(t2, t3));
-        BOOST_CHECK(test_tree_isomorphism(t3, t2));
+        REQUIRE(test_tree_isomorphism(t1, t2));
+        REQUIRE(test_tree_isomorphism(t2, t1));
+        REQUIRE(test_tree_isomorphism(t1, t3));
+        REQUIRE(test_tree_isomorphism(t3, t1));
+        REQUIRE(test_tree_isomorphism(t2, t3));
+        REQUIRE(test_tree_isomorphism(t3, t2));
 
         tree t4(array_1d<index_t>{5, 5, 7, 6, 6, 8, 7, 8, 8});
 
-        BOOST_CHECK(!test_tree_isomorphism(t1, t4));
-        BOOST_CHECK(!test_tree_isomorphism(t2, t4));
-        BOOST_CHECK(!test_tree_isomorphism(t3, t4));
-        BOOST_CHECK(!test_tree_isomorphism(t4, t1));
-        BOOST_CHECK(!test_tree_isomorphism(t4, t2));
-        BOOST_CHECK(!test_tree_isomorphism(t4, t3));
+        REQUIRE(!test_tree_isomorphism(t1, t4));
+        REQUIRE(!test_tree_isomorphism(t2, t4));
+        REQUIRE(!test_tree_isomorphism(t3, t4));
+        REQUIRE(!test_tree_isomorphism(t4, t1));
+        REQUIRE(!test_tree_isomorphism(t4, t2));
+        REQUIRE(!test_tree_isomorphism(t4, t3));
     }
 
-    BOOST_AUTO_TEST_CASE(test_binary_labelisation_from_markers) {
+    TEST_CASE("tree binary labelisation from markers", "[tree_algorithm]") {
 
         tree t(array_1d<index_t>{9, 9, 9, 10, 10, 12, 13, 11, 11, 14, 12, 15, 13, 14, 15, 15});
         array_1d<char> object_marker{0, 1, 0, 1, 0, 0, 0, 0, 0};
@@ -135,20 +135,20 @@ BOOST_AUTO_TEST_SUITE(algo_tree);
 
         array_1d<char> ref_labelisation{0, 1, 0, 1, 1, 1, 0, 0, 0};
 
-        BOOST_CHECK(labelisation == ref_labelisation);
+        REQUIRE((labelisation == ref_labelisation));
     }
 
-    BOOST_AUTO_TEST_CASE(test_sort_hierarchy_with_altitudes) {
+    TEST_CASE("tree sort hierarchy w.r.t. altitudes", "[tree_algorithm]") {
         tree t(array_1d<index_t>{8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14});
         array_1d<int> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 4, 6, 5, 7};
 
         auto res = sort_hierarchy_with_altitudes(t, altitudes);
 
         array_1d<index_t> ref_par{10, 10, 8, 8, 9, 9, 11, 12, 13, 11, 13, 12, 14, 14, 14};
-        BOOST_CHECK(ref_par == parents(res.tree));
+        REQUIRE((ref_par == parents(res.tree)));
 
         array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7};
-        BOOST_CHECK(ref_altitudes == xt::index_view(altitudes, res.node_map));
+        REQUIRE((ref_altitudes == xt::index_view(altitudes, res.node_map)));
     }
 
-BOOST_AUTO_TEST_SUITE_END();
+}

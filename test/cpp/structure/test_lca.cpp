@@ -8,18 +8,16 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include <boost/test/unit_test.hpp>
 #include "xtensor/xio.hpp"
 #include "higra/graph.hpp"
 #include "higra/image/graph_image.hpp"
 #include "higra/structure/lca_fast.hpp"
 #include "../test_utils.hpp"
 
-BOOST_AUTO_TEST_SUITE(lca);
+namespace lca {
 
     using namespace hg;
     using namespace std;
-
 
     struct _data {
 
@@ -31,42 +29,40 @@ BOOST_AUTO_TEST_SUITE(lca);
     } data;
 
 
-    BOOST_AUTO_TEST_CASE(lca) {
+    TEST_CASE("lca pairs of vertices", "[lca]") {
         auto t = data.t;
         lca_fast lca(t);
-        BOOST_CHECK(lca.lca(0, 0) == 0);
-        BOOST_CHECK(lca.lca(3, 3) == 3);
-        BOOST_CHECK(lca.lca(5, 5) == 5);
-        BOOST_CHECK(lca.lca(7, 7) == 7);
-        BOOST_CHECK(lca.lca(0, 1) == 5);
-        BOOST_CHECK(lca.lca(1, 0) == 5);
-        BOOST_CHECK(lca.lca(2, 3) == 6);
-        BOOST_CHECK(lca.lca(2, 4) == 6);
-        BOOST_CHECK(lca.lca(3, 4) == 6);
-        BOOST_CHECK(lca.lca(5, 6) == 7);
-        BOOST_CHECK(lca.lca(0, 2) == 7);
-        BOOST_CHECK(lca.lca(1, 4) == 7);
-        BOOST_CHECK(lca.lca(2, 6) == 6);
+        REQUIRE(lca.lca(0, 0) == 0);
+        REQUIRE(lca.lca(3, 3) == 3);
+        REQUIRE(lca.lca(5, 5) == 5);
+        REQUIRE(lca.lca(7, 7) == 7);
+        REQUIRE(lca.lca(0, 1) == 5);
+        REQUIRE(lca.lca(1, 0) == 5);
+        REQUIRE(lca.lca(2, 3) == 6);
+        REQUIRE(lca.lca(2, 4) == 6);
+        REQUIRE(lca.lca(3, 4) == 6);
+        REQUIRE(lca.lca(5, 6) == 7);
+        REQUIRE(lca.lca(0, 2) == 7);
+        REQUIRE(lca.lca(1, 4) == 7);
+        REQUIRE(lca.lca(2, 6) == 6);
     }
 
-    BOOST_AUTO_TEST_CASE(lcaV) {
+    TEST_CASE("lca iterators", "[lca]") {
         auto g = get_4_adjacency_graph({2, 2});
-        tree t(array_1d<index_t> { 4, 4, 5, 5, 6, 6, 6 });
+        tree t(array_1d<index_t>{4, 4, 5, 5, 6, 6, 6});
         lca_fast lca(t);
         auto l = lca.lca(edge_iterator(g));
         array_1d<index_t> ref{4, 6, 6, 5};
-        BOOST_CHECK(l == ref);
+        REQUIRE((l == ref));
     }
 
-    BOOST_AUTO_TEST_CASE(lcaVertices) {
-        tree t(array_1d<index_t> { 4, 4, 5, 5, 6, 6, 6 });
+    TEST_CASE("lca tensors", "[lca]") {
+        tree t(array_1d<index_t>{4, 4, 5, 5, 6, 6, 6});
         lca_fast lca(t);
         array_1d<index_t> v1{0, 0, 1, 3};
         array_1d<index_t> v2{0, 3, 0, 0};
         auto l = lca.lca(v1, v2);
         array_1d<index_t> ref{0, 6, 4, 6};
-        BOOST_CHECK(l == ref);
+        REQUIRE((l == ref));
     }
-
-
-BOOST_AUTO_TEST_SUITE_END();
+}

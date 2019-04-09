@@ -8,7 +8,6 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include <boost/test/unit_test.hpp>
 #include "higra/image/graph_image.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/algo/tree.hpp"
@@ -16,7 +15,7 @@
 #include "xtensor/xindex_view.hpp"
 #include "xtensor/xrandom.hpp"
 
-BOOST_AUTO_TEST_SUITE(hierarchyCore);
+namespace hierarchy_core {
 
     using namespace hg;
     using namespace std;
@@ -30,12 +29,11 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
 
     } data;
 
-
-    BOOST_AUTO_TEST_CASE(testBPTtrivial) {
+    TEST_CASE("canonical binary partition tree trivial", "[hierarchy_core]") {
 
         auto graph = get_4_adjacency_graph({1, 2});
 
-        xt::xarray<double> edge_weights{2};
+        array_1d<double> edge_weights{2};
 
         auto res = bpt_canonical(graph, edge_weights);
         auto &tree = res.tree;
@@ -43,22 +41,20 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         auto &mst = res.mst;
         auto &mst_edge_map = res.mst_edge_map;
 
-        BOOST_CHECK(num_vertices(tree) == 3);
-        BOOST_CHECK(num_edges(tree) == 2);
-        BOOST_CHECK(tree.parents() == array_1d<int>({2, 2, 2}));
-        BOOST_CHECK(altitudes == array_1d<double>({0, 0, 2}));
-        BOOST_CHECK(num_vertices(mst) == 2);
-        BOOST_CHECK(num_edges(mst) == 1);
-        BOOST_CHECK(mst_edge_map == array_1d<int>({0}));
+        REQUIRE(num_vertices(tree) == 3);
+        REQUIRE(num_edges(tree) == 2);
+        REQUIRE(tree.parents() == array_1d<int>({2, 2, 2}));
+        REQUIRE((altitudes == array_1d<double>({0, 0, 2})));
+        REQUIRE(num_vertices(mst) == 2);
+        REQUIRE(num_edges(mst) == 1);
+        REQUIRE((mst_edge_map == array_1d<int>({0})));
 
     }
 
-
-    BOOST_AUTO_TEST_CASE(testBPT) {
-
+    TEST_CASE("canonical binary partition tree", "[hierarchy_core]") {
         auto graph = get_4_adjacency_graph({2, 3});
 
-        xt::xarray<double> edge_weights{1, 0, 2, 1, 1, 1, 2};
+        array_1d<double> edge_weights{1, 0, 2, 1, 1, 1, 2};
 
         auto res = bpt_canonical(graph, edge_weights);
         auto &tree = res.tree;
@@ -66,30 +62,32 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         auto &mst = res.mst;
         auto &mst_edge_map = res.mst_edge_map;
 
-        BOOST_CHECK(num_vertices(tree) == 11);
-        BOOST_CHECK(num_edges(tree) == 10);
-        BOOST_CHECK(xt::allclose(hg::parents(tree), xt::xarray<unsigned int>({6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10})));
-        BOOST_CHECK(xt::allclose(altitudes, xt::xarray<double>({0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2})));
-        BOOST_CHECK(num_vertices(mst) == 6);
-        BOOST_CHECK(num_edges(mst) == 5);
-        std::vector<ugraph::edge_descriptor> ref = {{0, 3, 0},
-                                                    {0, 1, 1},
-                                                    {1, 4, 2},
-                                                    {2, 5, 3},
-                                                    {1, 2, 4}};
+        REQUIRE(num_vertices(tree) == 11);
+        REQUIRE(num_edges(tree) == 10);
+        REQUIRE(xt::allclose(hg::parents(tree), xt::xarray<unsigned int>({6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10})));
+        REQUIRE(xt::allclose(altitudes, xt::xarray<double>({0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2})));
+        REQUIRE(num_vertices(mst) == 6);
+        REQUIRE(num_edges(mst) == 5);
+        std::vector<ugraph::edge_descriptor> ref = {
+                {0, 3, 0},
+                {0, 1, 1},
+                {1, 4, 2},
+                {2, 5, 3},
+                {1, 2, 4}
+        };
         for (index_t i = 0; i < (index_t) ref.size(); i++) {
             auto e = edge_from_index(i, mst);
-            BOOST_CHECK(e == ref[i]);
+            REQUIRE(e == ref[i]);
         }
-        BOOST_CHECK(mst_edge_map == array_1d<int>({1, 0, 3, 4, 2}));
+        REQUIRE((mst_edge_map == array_1d<int>({1, 0, 3, 4, 2})));
     }
 
 
-    BOOST_AUTO_TEST_CASE(testTreeSimplification) {
+    TEST_CASE("simplify tree", "[hierarchy_core]") {
 
         auto t = data.t;
 
-        hg::array_1d<double> altitudes{0, 0, 0, 0, 0, 1, 2, 2};
+        array_1d<double> altitudes{0, 0, 0, 0, 0, 1, 2, 2};
 
         auto criterion = xt::equal(altitudes, xt::index_view(altitudes, t.parents()));
 
@@ -97,43 +95,43 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         auto nt = res.tree;
         auto nm = res.node_map;
 
-        BOOST_CHECK(num_vertices(nt) == 7);
+        REQUIRE(num_vertices(nt) == 7);
 
-        hg::array_1d<index_t> refp{5, 5, 6, 6, 6, 6, 6};
-        BOOST_CHECK(refp == hg::parents(nt));
+        array_1d<index_t> refp{5, 5, 6, 6, 6, 6, 6};
+        REQUIRE((refp == hg::parents(nt)));
 
-        hg::array_1d<index_t> refnm{0, 1, 2, 3, 4, 5, 7};
-        BOOST_CHECK(refnm == nm);
+        array_1d<index_t> refnm{0, 1, 2, 3, 4, 5, 7};
+        REQUIRE((refnm == nm));
     }
 
-    BOOST_AUTO_TEST_CASE(testQuasiFlatZoneHierarchy) {
+    TEST_CASE("quasi flat zones hierarchy", "[hierarchy_core]") {
 
         auto graph = get_4_adjacency_graph({2, 3});
 
-        xt::xarray<double> edge_weights{1, 0, 2, 1, 1, 1, 2};
+        array_1d<double> edge_weights{1, 0, 2, 1, 1, 1, 2};
 
         auto res = quasi_flat_zones_hierarchy(graph, edge_weights);
         auto rtree = res.tree;
         auto altitudes = res.altitudes;
         tree tref(array_1d<index_t>{6, 7, 8, 6, 7, 8, 7, 9, 9, 9});
-        BOOST_CHECK(test_tree_isomorphism(rtree, tref));
-        BOOST_CHECK(xt::allclose(altitudes, xt::xarray<double>({0, 0, 0, 0, 0, 0, 0, 1, 1, 2})));
+        REQUIRE(test_tree_isomorphism(rtree, tref));
+        REQUIRE(xt::allclose(altitudes, xt::xarray<double>({0, 0, 0, 0, 0, 0, 0, 1, 1, 2})));
     }
 
-    BOOST_AUTO_TEST_CASE(testSaliencyMap) {
+    TEST_CASE("saliency map", "[hierarchy_core]") {
 
         auto graph = get_4_adjacency_graph({2, 4});
 
         tree t(xt::xarray<long>{8, 8, 9, 9, 10, 10, 11, 11, 12, 13, 12, 14, 13, 14, 14});
-        xt::xarray<double> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3};
+        array_1d<double> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3};
 
         auto sm = saliency_map(graph, t, altitudes);
-        xt::xarray<double> sm_ref = {0, 1, 2, 1, 0, 3, 3, 0, 3, 0};
+        array_1d<double> sm_ref = {0, 1, 2, 1, 0, 3, 3, 0, 3, 0};
 
-        BOOST_CHECK(sm == sm_ref);
+        REQUIRE((sm == sm_ref));
     }
 
-    BOOST_AUTO_TEST_CASE(testSaliencyMap_bpt_qzf_equiv) {
+    TEST_CASE("saliency maps of canonical bpt and qfz hierarchy are the same", "[hierarchy_core]") {
 
         index_t size = 25;
         auto graph = get_4_adjacency_graph({size, size});
@@ -145,7 +143,7 @@ BOOST_AUTO_TEST_SUITE(hierarchyCore);
         auto sm_bpt = saliency_map(graph, bpt.tree, bpt.altitudes);
         auto sm_qfz = saliency_map(graph, qfz.tree, qfz.altitudes);
 
-        BOOST_CHECK(sm_bpt == sm_qfz);
+        REQUIRE((sm_bpt == sm_qfz));
     }
 
-BOOST_AUTO_TEST_SUITE_END();
+}

@@ -8,16 +8,13 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include <boost/test/unit_test.hpp>
 #include "../test_utils.hpp"
 #include "higra/algo/rag.hpp"
 #include "higra/image/graph_image.hpp"
 
-
 using namespace hg;
 
-BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
-
+namespace test_rag {
     struct fixture {
 
         region_adjacency_graph data;
@@ -33,16 +30,15 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
         }
     };
 
-
-    BOOST_AUTO_TEST_CASE(rag_simple) {
+    TEST_CASE("simple rag", "[rag]") {
 
         fixture d;
         auto &rag = d.data.rag;
         auto &vertex_map = d.data.vertex_map;
         auto &edge_map = d.data.edge_map;
 
-        BOOST_CHECK(num_vertices(rag) == 4);
-        BOOST_CHECK(num_edges(rag) == 5);
+        REQUIRE(num_vertices(rag) == 4);
+        REQUIRE(num_edges(rag) == 5);
 
         std::vector<ugraph::edge_descriptor> expected_edges = {
                 {0, 1, 0},
@@ -53,7 +49,7 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
         };
         index_t i = 0;
         for (auto e: edge_iterator(rag)) {
-            BOOST_CHECK(e == expected_edges[i++]);
+            REQUIRE(e == expected_edges[i++]);
         }
 
         array_1d<index_t> expected_vertex_map{
@@ -62,7 +58,7 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
                 0, 0, 2, 2,
                 0, 0, 3, 3
         };
-        BOOST_CHECK(vertex_map == expected_vertex_map);
+        REQUIRE(xt::equal(vertex_map, expected_vertex_map)());
 
         auto iv = invalid_index;
         array_1d<index_t> expected_edge_map{
@@ -71,32 +67,33 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
                 iv, iv, 2, iv, iv, 3, 3,
                 iv, 4, iv
         };
-        BOOST_CHECK(edge_map == expected_edge_map);
+
+        REQUIRE((edge_map == expected_edge_map));
 
     }
 
-    BOOST_AUTO_TEST_CASE(rag_simple2) {
+    TEST_CASE("simple rag 2", "[rag]") {
 
         auto g = get_4_adjacency_graph({3, 3});
         array_1d<int> labels{0, 1, 2, 3, 4, 2, 3, 4, 2};
         auto rag = make_region_adjacency_graph_from_labelisation(g, labels);
 
-        BOOST_CHECK(num_vertices(rag.rag) == 5);
-        BOOST_CHECK(num_edges(rag.rag) == 6);
+        REQUIRE(num_vertices(rag.rag) == 5);
+        REQUIRE(num_edges(rag.rag) == 6);
 
         array_1d<int> edge_weights{1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1};
         auto rag2 = make_region_adjacency_graph_from_graph_cut(g, edge_weights);
 
-        BOOST_CHECK(num_vertices(rag2.rag) == 5);
-        BOOST_CHECK(num_edges(rag2.rag) == 6);
+        REQUIRE(num_vertices(rag2.rag) == 5);
+        REQUIRE(num_edges(rag2.rag) == 6);
 
-        BOOST_CHECK(rag.vertex_map == rag2.vertex_map);
-        BOOST_CHECK(rag.edge_map == rag2.edge_map);
+        REQUIRE((rag.vertex_map == rag2.vertex_map));
+        REQUIRE((rag.edge_map == rag2.edge_map));
 
     }
 
 
-    BOOST_AUTO_TEST_CASE(rag_simple_from_cut) {
+    TEST_CASE("rag from graph cut", "[rag]") {
 
         auto g = hg::get_4_adjacency_graph({4, 4});
         array_1d<int> edge_weights{0, 0, 1, 0, 0, 0, 0,
@@ -109,8 +106,8 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
         auto &vertex_map = data.vertex_map;
         auto &edge_map = data.edge_map;
 
-        BOOST_CHECK(num_vertices(rag) == 4);
-        BOOST_CHECK(num_edges(rag) == 5);
+        REQUIRE(num_vertices(rag) == 4);
+        REQUIRE(num_edges(rag) == 5);
 
         std::vector<ugraph::edge_descriptor> expected_edges = {
                 {0, 1, 0},
@@ -121,7 +118,7 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
         };
         index_t i = 0;
         for (auto e: edge_iterator(rag)) {
-            BOOST_CHECK(e == expected_edges[i++]);
+            REQUIRE(e == expected_edges[i++]);
         }
 
         array_1d<index_t> expected_vertex_map{
@@ -130,7 +127,7 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
                 0, 0, 2, 2,
                 0, 0, 3, 3
         };
-        BOOST_CHECK(vertex_map == expected_vertex_map);
+        REQUIRE((vertex_map == expected_vertex_map));
 
         auto iv = invalid_index;
         array_1d<index_t> expected_edge_map{
@@ -139,11 +136,11 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
                 iv, iv, 2, iv, iv, 3, 3,
                 iv, 4, iv
         };
-        BOOST_CHECK(edge_map == expected_edge_map);
+        REQUIRE((edge_map == expected_edge_map));
 
     }
 
-    BOOST_AUTO_TEST_CASE(back_project_vertex_weights) {
+    TEST_CASE("rag back project vertex weights", "[rag]") {
 
         fixture d;
         auto &vertex_map = d.data.vertex_map;
@@ -156,7 +153,7 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
                 5, 5, 1, 1,
                 5, 5, 3, 3
         };
-        BOOST_CHECK(vertex_weights == expected_vertex_weights);
+        REQUIRE((vertex_weights == expected_vertex_weights));
 
         array_nd<double> rag_vertex_weights_vec{
                 {5, 2},
@@ -183,10 +180,10 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
                 {3, -2},
                 {3, -2}
         };
-        BOOST_CHECK(vertex_weights_vec == expected_vertex_weights_vec);
+        REQUIRE((vertex_weights_vec == expected_vertex_weights_vec));
     }
 
-    BOOST_AUTO_TEST_CASE(back_project_edge_weights) {
+    TEST_CASE("rag back project edge weights", "[rag]") {
 
         fixture d;
         auto &edge_map = d.data.edge_map;
@@ -201,7 +198,7 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
                 iv, 2, iv
         };
 
-        BOOST_CHECK(edge_weights == expected_edge_weights);
+        REQUIRE((edge_weights == expected_edge_weights));
 
         array_nd<double> rag_edge_weights_vec{
                 {5, 1},
@@ -237,10 +234,10 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
                 {2, 8},
                 {0, 0}
         };
-        BOOST_CHECK(edge_weights_vec == expected_edge_weights_vec);
+        REQUIRE((edge_weights_vec == expected_edge_weights_vec));
     }
 
-    BOOST_AUTO_TEST_CASE(accumulate_vertex_weights) {
+    TEST_CASE("rag accumulate vertex weights", "[rag]") {
 
         fixture d;
 
@@ -250,7 +247,7 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
 
         auto rag_vertex_weights = rag_accumulate(vertex_map, vertex_weights, accumulator_sum());
         array_nd<double> expected_rag_vertex_weights{8, 4, 2, 2};
-        BOOST_CHECK(rag_vertex_weights == expected_rag_vertex_weights);
+        REQUIRE((rag_vertex_weights == expected_rag_vertex_weights));
 
         array_2d<int> vertex_weights_vec({16, 2}, 1);
         auto rag_vertex_weights_vec = rag_accumulate(vertex_map, vertex_weights_vec, accumulator_sum());
@@ -260,10 +257,10 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
                 {2, 2},
                 {2, 2}
         };
-        BOOST_CHECK(rag_vertex_weights_vec == expected_rag_vertex_weights_vec);
+        REQUIRE((rag_vertex_weights_vec == expected_rag_vertex_weights_vec));
     }
 
-    BOOST_AUTO_TEST_CASE(accumulate_edge_weights) {
+    TEST_CASE("rag accumulate edge weights", "[rag]") {
 
         fixture d;
 
@@ -273,7 +270,7 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
 
         auto rag_edge_weights = rag_accumulate(edge_map, edge_weights, accumulator_sum());
         array_nd<double> expected_rag_edge_weights{2, 2, 1, 2, 1};
-        BOOST_CHECK(rag_edge_weights == expected_rag_edge_weights);
+        REQUIRE((rag_edge_weights == expected_rag_edge_weights));
 
         array_2d<int> edge_weights_vec({24, 2}, 1);
         auto rag_edge_weights_vec = rag_accumulate(edge_map, edge_weights_vec, accumulator_sum());
@@ -284,7 +281,7 @@ BOOST_AUTO_TEST_SUITE(region_adjacency_graph_test);
                 {2, 2},
                 {1, 1}
         };
-        BOOST_CHECK(rag_edge_weights_vec == expected_rag_edge_weights_vec);
+        REQUIRE((rag_edge_weights_vec == expected_rag_edge_weights_vec));
     }
 
-BOOST_AUTO_TEST_SUITE_END();
+}

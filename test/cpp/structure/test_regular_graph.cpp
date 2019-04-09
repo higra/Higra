@@ -7,16 +7,14 @@
 *                                                                          *
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
-#include <boost/test/unit_test.hpp>
 
 #include "higra/graph.hpp"
 #include "../test_utils.hpp"
 
-BOOST_AUTO_TEST_SUITE(regularGraph);
+namespace regular_graph {
 
     using namespace hg;
     using namespace std;
-
 
     struct _data {
 
@@ -34,14 +32,13 @@ BOOST_AUTO_TEST_SUITE(regularGraph);
 
     } data;
 
-    BOOST_AUTO_TEST_CASE(sizeRegularGraph) {
+    TEST_CASE("regular graph size", "[regular_graph]") {
         auto g = data.g;
 
-        BOOST_CHECK(num_vertices(g) == 6);
+        REQUIRE(num_vertices(g) == 6);
     }
 
-    BOOST_AUTO_TEST_CASE(vertexIteratorSimpleGraph) {
-
+    TEST_CASE("vertex iterator", "[regular_graph]") {
         auto g = data.g;
 
         vector<unsigned long> vref{0, 1, 2, 3, 4, 5};
@@ -51,20 +48,19 @@ BOOST_AUTO_TEST_SUITE(regularGraph);
             vtest.push_back(v);
         }
 
-        BOOST_CHECK(vectorEqual(vref, vtest));
-
+        REQUIRE(vectorEqual(vref, vtest));
     }
 
-    BOOST_AUTO_TEST_CASE(outEdgeIteratorNeighbouringGraph) {
-
+    TEST_CASE("regular graph out edge iterator", "[regular_graph]") {
         auto g = data.g;
 
-        vector<vector<pair<unsigned long, unsigned long>>> outListsRef{{{0, 1}, {0, 3}},
-                                                                       {{1, 0}, {1, 2}, {1, 4}},
-                                                                       {{2, 1}, {2, 5}},
-                                                                       {{3, 0}, {3, 4}},
-                                                                       {{4, 1}, {4, 3}, {4, 5}},
-                                                                       {{5, 2}, {5, 4}}
+        vector<vector<pair<unsigned long, unsigned long>>> outListsRef{
+                {{0, 1}, {0, 3}},
+                {{1, 0}, {1, 2}, {1, 4}},
+                {{2, 1}, {2, 5}},
+                {{3, 0}, {3, 4}},
+                {{4, 1}, {4, 3}, {4, 5}},
+                {{5, 2}, {5, 4}}
         };
         vector<vector<pair<unsigned long, unsigned long>>> outListsTest;
 
@@ -72,23 +68,21 @@ BOOST_AUTO_TEST_SUITE(regularGraph);
             outListsTest.push_back({});
             for (auto e: hg::out_edge_iterator(v, g))
                 outListsTest[v].push_back({source(e, g), target(e, g)});
-            BOOST_CHECK(vectorEqual(outListsRef[v], outListsTest[v]));
-            BOOST_CHECK(out_degree(v, g) == outListsRef[v].size());
-
+            REQUIRE(vectorEqual(outListsRef[v], outListsTest[v]));
+            REQUIRE(out_degree(v, g) == outListsRef[v].size());
         }
-
     }
 
-    BOOST_AUTO_TEST_CASE(inEdgeIteratorSimpleGraph) {
-
+    TEST_CASE("regular graph in edge iterator", "[regular_graph]") {
         auto g = data.g;
 
-        vector<vector<pair<unsigned long, unsigned long>>> inListsRef{{{1, 0}, {3, 0}},
-                                                                      {{0, 1}, {2, 1}, {4, 1}},
-                                                                      {{1, 2}, {5, 2}},
-                                                                      {{0, 3}, {4, 3}},
-                                                                      {{1, 4}, {3, 4}, {5, 4}},
-                                                                      {{2, 5}, {4, 5}}
+        vector<vector<pair<unsigned long, unsigned long>>> inListsRef{
+                {{1, 0}, {3, 0}},
+                {{0, 1}, {2, 1}, {4, 1}},
+                {{1, 2}, {5, 2}},
+                {{0, 3}, {4, 3}},
+                {{1, 4}, {3, 4}, {5, 4}},
+                {{2, 5}, {4, 5}}
         };
         vector<vector<pair<unsigned long, unsigned long>>> inListsTest;
 
@@ -96,23 +90,24 @@ BOOST_AUTO_TEST_SUITE(regularGraph);
             inListsTest.push_back(vector<pair<unsigned long, unsigned long>>());
             for (auto e: hg::in_edge_iterator(v, g))
                 inListsTest[v].push_back({source(e, g), target(e, g)});
-            BOOST_CHECK(vectorEqual(inListsRef[v], inListsTest[v]));
-            BOOST_CHECK(in_degree(v, g) == inListsRef[v].size());
-            BOOST_CHECK(degree(v, g) == inListsRef[v].size());
+            REQUIRE(vectorEqual(inListsRef[v], inListsTest[v]));
+            REQUIRE(in_degree(v, g) == inListsRef[v].size());
+            REQUIRE(degree(v, g) == inListsRef[v].size());
         }
     }
 
 
-    BOOST_AUTO_TEST_CASE(adjacentVertexIteratorSimpleGraph) {
-
+    TEST_CASE("regular graph adjacent vertex iterator", "[regular_graph]") {
         auto g = data.g;
 
-        vector<vector<unsigned long>> adjListsRef{{1, 3},
-                                                  {0, 2, 4},
-                                                  {1, 5},
-                                                  {0, 4},
-                                                  {1, 3, 5},
-                                                  {2, 4}};
+        vector<vector<unsigned long>> adjListsRef{
+                {1, 3},
+                {0, 2, 4},
+                {1, 5},
+                {0, 4},
+                {1, 3, 5},
+                {2, 4}
+        };
         vector<vector<unsigned long>> adjListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
@@ -120,8 +115,7 @@ BOOST_AUTO_TEST_SUITE(regularGraph);
             for (auto av: hg::adjacent_vertex_iterator(v, g)) {
                 adjListsTest[v].push_back(av);
             }
-            BOOST_CHECK(vectorEqual(adjListsRef[v], adjListsTest[v]));
+            REQUIRE(vectorEqual(adjListsRef[v], adjListsTest[v]));
         }
     }
-
-BOOST_AUTO_TEST_SUITE_END();
+}

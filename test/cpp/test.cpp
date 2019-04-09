@@ -10,25 +10,17 @@
 
 #define HG_DEBUG
 
-#define BOOST_TEST_MODULE higra_test
+#define CATCH_CONFIG_MAIN
 
-#include <boost/test/unit_test.hpp>
+
 #include "test_utils.hpp"
-#include "higra/structure/array.hpp"
-#include "xtensor/xfixed.hpp"
-#include "higra/utils.hpp"
-#include "xtensor/xview.hpp"
 
-BOOST_AUTO_TEST_SUITE(xp);
+using namespace hg;
+using namespace xt;
+using namespace std;
 
-    using namespace hg;
-    using namespace xt;
-    using namespace std;
+TEST_CASE("unused", "[experimental]" ) {
 
-    BOOST_AUTO_TEST_CASE(xpp) {
-
-    }
-
-BOOST_AUTO_TEST_SUITE_END();
+}
 
 

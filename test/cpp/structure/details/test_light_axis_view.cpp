@@ -8,14 +8,13 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include <boost/test/unit_test.hpp>
 #include "higra/structure/details/light_axis_view.hpp"
 #include "higra/structure/array.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xstrided_view.hpp"
 #include "../../test_utils.hpp"
 
-BOOST_AUTO_TEST_SUITE(light_axis_view);
+namespace light_axis_view {
 
     using namespace hg;
     using namespace std;
@@ -48,87 +47,106 @@ BOOST_AUTO_TEST_SUITE(light_axis_view);
         return true;
     };
 
-
-    BOOST_AUTO_TEST_CASE(view_on_array) {
-
-        array_nd<int> a{{{1, 2, 3},
-                                {4,  5,  6}},
-                        {{7, 8, 9},
-                                {10, 11, 12}}};
+    TEST_CASE("view on array", "[light_axis_view]") {
+        array_nd<int> a{
+                {
+                        {1, 2, 3},
+                        {4,  5,  6}
+                },
+                {
+                        {7, 8, 9},
+                        {10, 11, 12}
+                }
+        };
         auto v = make_light_axis_view<true>(a);
         auto v1 = view(a, 0);
-        BOOST_CHECK(compare(v, v1));
+        REQUIRE(compare(v, v1));
 
         v.set_position(1);
         auto v2 = view(a, 1);
-        BOOST_CHECK(compare(v, v2));
+        REQUIRE(compare(v, v2));
     }
 
 
-   /* BOOST_AUTO_TEST_CASE(view_on_view_simple) {
+    /* BOOST_AUTO_TEST_CASE(view_on_view_simple) {
+ 
+         array_nd<int> a{{{1, 2, 3},
+                                 {4,  5,  6}},
+                         {{7, 8, 9},
+                                 {10, 11, 12}}};
+         auto va = view(a, 1);
+         auto v = make_light_axis_view<true>(va);
+         std::array<int, 3> v1{7, 8, 9};
+         REQUIRE(compare(v, v1));
+         std::cout << va << std::endl;
+         print_it(v);
+         v.set_position(1);
+         print_it(v);
+         std::array<int, 3> v2{10, 11, 12};
+         REQUIRE(compare(v, v2));
+     }*/
 
-        array_nd<int> a{{{1, 2, 3},
-                                {4,  5,  6}},
-                        {{7, 8, 9},
-                                {10, 11, 12}}};
-        auto va = view(a, 1);
-        auto v = make_light_axis_view<true>(va);
-        std::array<int, 3> v1{7, 8, 9};
-        BOOST_CHECK(compare(v, v1));
-        std::cout << va << std::endl;
-        print_it(v);
-        v.set_position(1);
-        print_it(v);
-        std::array<int, 3> v2{10, 11, 12};
-        BOOST_CHECK(compare(v, v2));
-    }*/
-
-    BOOST_AUTO_TEST_CASE(view_on_view_complex) {
-
-        array_nd<int> a{{{1, 2, 3},
-                                {4,  5,  6}},
-                        {{7, 8, 9},
-                                {10, 11, 12}}};
+    TEST_CASE("view on xtensor view", "[light_axis_view]") {
+        array_nd<int> a{
+                {
+                        {1, 2, 3},
+                        {4,  5,  6}
+                },
+                {
+                        {7, 8, 9},
+                        {10, 11, 12}
+                }
+        };
         auto va = view(a, xt::all(), xt::range(1, 2), xt::range(0, 3, 2));
         auto v = make_light_axis_view<true>(va);
         std::array<int, 2> v1{4, 6};
-        BOOST_CHECK(compare(v, v1));
+        REQUIRE(compare(v, v1));
 
         v.set_position(1);
         std::array<int, 2> v2{10, 12};
-        BOOST_CHECK(compare(v, v2));
+        REQUIRE(compare(v, v2));
     }
 
-    BOOST_AUTO_TEST_CASE(view_on_strided_view_simple) {
-
-        array_nd<int> a{{{1, 2, 3},
-                                {4,  5,  6}},
-                        {{7, 8, 9},
-                                {10, 11, 12}}};
+    TEST_CASE("view on xtensor strided view", "[light_axis_view]") {
+        array_nd<int> a{
+                {
+                        {1, 2, 3},
+                        {4,  5,  6}
+                },
+                {
+                        {7, 8, 9},
+                        {10, 11, 12}
+                }
+        };
         auto va = strided_view(a, {1});
         auto v = make_light_axis_view<true>(va);
         std::array<int, 3> v1{7, 8, 9};
-        BOOST_CHECK(compare(v, v1));
+        REQUIRE(compare(v, v1));
 
         v.set_position(1);
         std::array<int, 3> v2{10, 11, 12};
-        BOOST_CHECK(compare(v, v2));
+        REQUIRE(compare(v, v2));
     }
 
-    BOOST_AUTO_TEST_CASE(view_on_strided_view_complex) {
-
-        array_nd<int> a{{{1, 2, 3},
-                                {4,  5,  6}},
-                        {{7, 8, 9},
-                                {10, 11, 12}}};
+    TEST_CASE("view on xtensor strided view complex", "[light_axis_view]") {
+        array_nd<int> a{
+                {
+                        {1, 2, 3},
+                        {4,  5,  6}
+                },
+                {
+                        {7, 8, 9},
+                        {10, 11, 12}
+                }
+        };
         auto va = strided_view(a, xt::slice_vector({xt::all(), xt::range(1, 2), xt::range(0, 3, 2)}));
         auto v = make_light_axis_view<true>(va);
         std::array<int, 2> v1{4, 6};
-        BOOST_CHECK(compare(v, v1));
+        REQUIRE(compare(v, v1));
 
         v.set_position(1);
         std::array<int, 2> v2{10, 12};
-        BOOST_CHECK(compare(v, v2));
+        REQUIRE(compare(v, v2));
     }
 
-BOOST_AUTO_TEST_SUITE_END();
+}

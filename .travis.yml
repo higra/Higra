@@ -13,7 +13,6 @@ matrix:
         - ubuntu-toolchain-r-test
         packages:
         - g++-6
-        - libboost-all-dev
     env: COMPILER=gcc GCC=6
   - os: linux
     addons:
@@ -23,7 +22,6 @@ matrix:
         packages:
         - g++-6
         - lcov
-        - libboost-all-dev
     env: COMPILER=gcc GCC=6 COVERAGE=1
   - os: linux
     addons:
@@ -34,7 +32,6 @@ matrix:
         packages:
         - g++-4.9
         - clang-4.0
-        - libboost-all-dev
     env: COMPILER=clang CLANG=4.0
   - os: osx
     osx_image: xcode8
@@ -138,6 +135,7 @@ script:
       lcov --remove coverage.info '*xtl*' --output-file coverage.info && # filter out system
       lcov --remove coverage.info '*xsimd*' --output-file coverage.info && # filter out system
       lcov --remove coverage.info '*xtensor*' --output-file coverage.info && # filter out system
+      lcov --remove coverage.info '*catch*' --output-file coverage.info && # filter out system
       lcov --list coverage.info && #debug info
       bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports";
     elif [ -z "$BUILD_WHEEL" ]; then
