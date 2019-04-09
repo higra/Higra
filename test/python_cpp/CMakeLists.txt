@@ -20,7 +20,7 @@ target_link_libraries(test_python_exe pybind11::embed)
 
 
 add_test(NAME Test_python_cpp COMMAND test_python_exe)
-set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} test_python_exe CACHE INTERNAL "" FORCE)
+set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} test_python_exe PARENT_SCOPE)
 
 
 

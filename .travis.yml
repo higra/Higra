@@ -37,6 +37,7 @@ matrix:
     osx_image: xcode8
     compiler: clang
   - sudo: required
+    if: tag IS present
     services:
       - docker
     env: BUILD_WHEEL=1 CIBW_BUILD="cp34-*" CIBW_SKIP=*-manylinux1_i686
@@ -51,11 +52,11 @@ matrix:
       - docker
     env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*" CIBW_SKIP=*-manylinux1_i686
   - sudo: required
-    if: tag IS present
     services:
       - docker
     env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*" CIBW_SKIP=*-manylinux1_i686
   - os: osx
+    if: tag IS present
     env: BUILD_WHEEL=1 CIBW_BUILD="cp34-*"
   - os: osx
     if: tag IS present
@@ -64,14 +65,8 @@ matrix:
     if: tag IS present
     env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*"
   - os: osx
-    if: tag IS present
     env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*"
-  allow_failures:
-  - os: osx
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp34-*"
-  - os: osx
-    if: tag IS present
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*"
+
 env:
   global:
   - MINCONDA_VERSION="latest"
@@ -121,7 +116,7 @@ install:
     mkdir build &&
     cd build &&
     cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python  ..  &&
-    make -j2 higram test_exe test_python_exe;
+    make -j2 higram test_exe;
   else
     pip install cibuildwheel==0.10.1;
   fi

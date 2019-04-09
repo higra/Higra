@@ -69,7 +69,7 @@ MARK_AS_ADVANCED(
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
             "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel Coverage."  FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
+endif()
 message("Current build type is: ${CMAKE_BUILD_TYPE}")
 
 include(CheckCXXCompilerFlag)
@@ -140,7 +140,7 @@ option (USE_SIMD
 
 if (USE_SIMD)
     add_definitions("-DXTENSOR_USE_XSIMD")
-endif(USE_SIMD)
+endif()
 
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
@@ -185,4 +185,4 @@ add_subdirectory(test)
 
 if (DO_BENCHMARK)
     add_subdirectory(benchmark)
-endif (DO_BENCHMARK)
+endif ()
