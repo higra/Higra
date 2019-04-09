@@ -105,6 +105,48 @@ class TestHorizontalCuts(unittest.TestCase):
         ref_cut = (0, 0, 0, 0, 0, 1, 0, 0, 1, 0)
         self.assertTrue(np.all(cut == ref_cut))
 
+    def test_horizontal_cut_nodes_delinearization(self):
+        g = hg.get_4_adjacency_graph((2, 2))
+        tree = hg.Tree((4, 4, 5, 6, 5, 6, 6))
+        hg.CptHierarchy.link(tree, g)
+        altitudes = np.asarray((0, 0, 0, 0, 1, 2, 3))
+        hg.CptValuedHierarchy.link(altitudes, tree)
+
+        hch = hg.HorizontalCutExplorer(altitudes)
+
+        c = hch.horizontal_cut_from_num_regions(3)
+
+        lbls = c.labelisation_leaves(tree)
+        self.assertTrue(np.all(lbls.shape == (2, 2)))
+        ref_lbls = np.array((0, 0, 1, 2))
+        self.assertTrue(hg.is_in_bijection(lbls[:], ref_lbls))
+
+        vweights = c.reconstruct_leaf_data(altitudes)
+        ref_vweights = np.array(((1, 1), (0, 0)))
+        self.assertTrue(np.all(vweights == ref_vweights))
+
+    def test_horizontal_cut_nodes_rag_delinearization(self):
+        g = hg.get_4_adjacency_graph((2, 2))
+        labels = np.array((0, 0, 1, 2))
+        rag = hg.make_region_adjacency_graph_from_labelisation(labels, g)
+        tree = hg.Tree((3, 3, 4, 4, 4))
+        hg.CptHierarchy.link(tree, rag)
+        altitudes = np.asarray((0, 0, 0, 1, 2))
+        hg.CptValuedHierarchy.link(altitudes, tree)
+
+        hch = hg.HorizontalCutExplorer(altitudes)
+
+        c = hch.horizontal_cut_from_num_regions(2)
+
+        lbls = c.labelisation_leaves(tree)
+        self.assertTrue(np.all(lbls.shape == (2, 2)))
+        ref_lbls = np.array((0, 0, 0, 1))
+        self.assertTrue(hg.is_in_bijection(lbls[:], ref_lbls))
+
+        vweights = c.reconstruct_leaf_data(altitudes)
+        ref_vweights = np.array(((1, 1), (1, 0)))
+        self.assertTrue(np.all(vweights == ref_vweights))
+
 
 if __name__ == '__main__':
     unittest.main()
