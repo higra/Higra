@@ -42,7 +42,7 @@ void def_horizontal_cut_nodes(pybind11::module &m) {
     c.def("altitude",
           [](const class_t &c) { return c.altitude; },
           "Altitude of the cut.");
-    c.def("labelisation_leaves",
+    c.def("_labelisation_leaves",
           [](const class_t &c, const tree_t &tree) { return c.labelisation_leaves(tree); },
           "Labelize tree leaves according to the horizontal cut. \n"
           "Two leaves are in the same region (ie. have the same label) if "
