@@ -175,8 +175,8 @@ def attribute_lca_map(tree, leaf_graph):
 
 
 @hg.data_provider("frontier_length")
-@hg.argument_helper(hg.CptHierarchy, ("tree", "lca_map"), ("leaf_graph", "edge_length"))
-def attribute_frontier_length(tree, lca_map, edge_length, leaf_graph=None):
+@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "edge_length"))
+def attribute_frontier_length(tree, edge_length, leaf_graph=None):
     """
     In a partition tree, each node represent the merging of 2 or more regions.
     The frontier of a node is then defined as the common contour between the merged regions.
@@ -186,12 +186,13 @@ def attribute_frontier_length(tree, lca_map, edge_length, leaf_graph=None):
     **Provider name**: "frontier_length"
 
     :param tree: input tree
-    :param lca_map: indicates for each edge `(i, j)` of the `leaf_graph`, the lowest common ancestor of `i` and `j` in the given tree (provided by :func:`~higra.attribute_lca_map` on `tree`)
     :param edge_length: length of th edges of the leaf graph (provided by :func:`~higra.attribute_edge_length` on `leaf_graph`)
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array (Concept :class:`~higra.CptValuedHierarchy`)
     """
-    frontier_length = np.zeros((tree.num_vertices(),), dtype=np.int64)
+    lca_map = attribute_lca_map(tree, leaf_graph)
+
+    frontier_length = np.zeros((tree.num_vertices(),), dtype=edge_length.dtype)
     np.add.at(frontier_length, lca_map, edge_length)
     hg.CptValuedHierarchy.link(frontier_length, tree)
     return frontier_length
