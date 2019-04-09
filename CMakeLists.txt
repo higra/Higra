@@ -130,6 +130,9 @@ find_package(Catch2 REQUIRED)
 option(DO_CPP_TEST
         "Build c++ test suit." ON)
 
+option(DO_EMBEDDED_PYTHON_CPP_TEST
+        "Build c++ test with python interpreter embedded suit." OFF)
+
 enable_testing()
 
 option (USE_SIMD

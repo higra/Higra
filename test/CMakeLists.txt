@@ -12,7 +12,11 @@ add_subdirectory(python)
 
 if (DO_CPP_TEST)
     add_subdirectory(cpp)
-    add_subdirectory(python_cpp)
+
+    if(DO_EMBEDDED_PYTHON_CPP_TEST)
+        add_subdirectory(python_cpp)
+    endif(DO_EMBEDDED_PYTHON_CPP_TEST)
+
     add_custom_target(all_tests ALL
             DEPENDS ${UNIT_TEST_TARGETS}
             )
