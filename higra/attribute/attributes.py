@@ -42,7 +42,7 @@ def attribute_edge_length(graph):
     """
     Compute the edge length of the given graph.
 
-    In general the legnth of an edge if simply equal to 1. But, if the graph is a region adjacency graph then the
+    In general the length of an edge if simply equal to 1. But, if the graph is a region adjacency graph then the
     length of an edge is equal to the sum of length of the corresponding edges in the original graph (obtained with a
     recursive call to attribute_edge_length on the original graph).
 
@@ -185,8 +185,10 @@ def attribute_frontier_length(tree, edge_length, leaf_graph=None):
 
     **Provider name**: "frontier_length"
 
+    The result has the same dtype as the edge_length array.
+
     :param tree: input tree
-    :param edge_length: length of th edges of the leaf graph (provided by :func:`~higra.attribute_edge_length` on `leaf_graph`)
+    :param edge_length: length of the edges of the leaf graph (provided by :func:`~higra.attribute_edge_length` on `leaf_graph`)
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array (Concept :class:`~higra.CptValuedHierarchy`)
     """
@@ -196,6 +198,33 @@ def attribute_frontier_length(tree, edge_length, leaf_graph=None):
     np.add.at(frontier_length, lca_map, edge_length)
     hg.CptValuedHierarchy.link(frontier_length, tree)
     return frontier_length
+
+
+@hg.data_provider("frontier_strength")
+@hg.argument_helper(hg.CptHierarchy)
+def attribute_frontier_strength(tree, edge_weights, leaf_graph):
+    """
+    In a partition tree, each node represent the merging of 2 or more regions.
+    The frontier of a node is then defined as the common contour between the merged regions.
+    This function compute the strength of a common contour as the sum of the weights of edges going from one of the
+    merged region to the other one divided by the length of the contour.
+
+    **Provider name**: "frontier_strength"
+
+    The result has the same dtype as the edge_weights array.
+
+    :param tree: input tree
+    :param edge_weights: weight of the edges of the leaf graph (if leaf_graph is a region adjacency graph, edge_weights might be weights on the edges of the pre-graph of the rag).
+    :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :return: a 1d array (Concept :class:`~higra.CptValuedHierarchy`)
+    """
+    if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and edge_weights.shape[0] != leaf_graph.num_edges():  # this is a rag like graph
+        edge_weights = hg.rag_accumulate_on_edges(leaf_graph, hg.Accumulators.sum, edge_weights=edge_weights)
+
+    frontier_length = hg.attribute_frontier_length(tree, leaf_graph=leaf_graph)
+    frontier_strength = hg.attribute_frontier_length(tree, edge_weights, leaf_graph, no_cache=True)
+    frontier_strength[tree.num_leaves():] = frontier_strength[tree.num_leaves():] / frontier_length[tree.num_leaves():]
+    return frontier_strength
 
 
 @hg.data_provider("perimeter_length")

@@ -126,6 +126,30 @@ class TestAttributes(unittest.TestCase):
         attribute = hg.attribute_frontier_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
+    def test_frontier_strength(self):
+        tree, altitudes = TestAttributes.get_test_tree()
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1), dtype=np.float64)
+
+        ref_attribute = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 26/5]
+
+        attribute = hg.attribute_frontier_strength(tree, edge_weights)
+        self.assertTrue(np.allclose(ref_attribute, attribute))
+
+    def test_frontier_strength_rag(self):
+        g = hg.get_4_adjacency_graph((3, 3))
+        vertex_labels = np.asarray(((0, 1, 1),
+                                    (0, 2, 2),
+                                    (3, 2, 4)))
+        rag = hg.make_region_adjacency_graph_from_labelisation(vertex_labels, g)
+        rag_edge_weights = np.asarray((1, 5, 4, 3, 6, 2))
+        tree, altitudes = hg.bpt_canonical(rag_edge_weights, rag)
+        # tree is [5 5 6 7 6 7 8 8 8]
+        edge_weights = np.asarray((1, 6, 2, 6, 1, 1, 5, 4, 5, 3, 1, 1), dtype=np.float64)
+
+        ref_attribute = [0, 0, 0, 0, 0, 1, 2, 5, 9 / 4]
+        attribute = hg.attribute_frontier_strength(tree, edge_weights)
+        self.assertTrue(np.allclose(ref_attribute, attribute))
+
     def test_perimeter_length(self):
         tree, altitudes = TestAttributes.get_test_tree()
 
