@@ -113,8 +113,8 @@ namespace hg {
         auto &vertex_values = xvertex_values.derived_cast();
         auto &edge_values = xedge_values.derived_cast();
 
-        hg_assert(vertex_values.dimension() <= 1, "Too many dimensions !");
-        hg_assert(edge_values.dimension() <= 1, "Too many dimensions !");
+        hg_assert(vertex_values.dimension() <= 1, "Too many dimensions for vertex values!");
+        hg_assert(edge_values.dimension() <= 1, "Too many dimensions for edge values!");
 
         switch (shape.size()) {
             case 0:
@@ -138,6 +138,7 @@ namespace hg {
                 out << i << " 1\n";
             }
         } else {
+            hg_assert_vertex_weights(graph, vertex_values);
             for (std::size_t i = 0; i < num_vertices(graph); ++i) {
                 out << i << " " << vertex_values(i) << "\n";
             }
@@ -150,6 +151,7 @@ namespace hg {
                 out << source(e, graph) << " " << target(e, graph) << " 1\n";
             }
         } else {
+            hg_assert_edge_weights(graph, edge_values);
             for (auto &e: edge_iterator(graph)) {
                 out << source(e, graph) << " " << target(e, graph) << " " << edge_values(e) << "\n";
             }
