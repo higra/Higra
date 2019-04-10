@@ -10,8 +10,8 @@
 Higra is a C++/Python library for efficient graph analysis with a special focus on hierarchical methods. Some of the main features are:
 
 - efficient methods and data structures to handle the dual representation of hierarchical clustering: dendrograms (trees) and ultra-metric distances (saliency maps);
-- hierarchical clustering algorithms: agglomerative clustering (single-linkage, average-linkage, complete-linkage, or custom rule), hierarchical watersheds;
-- various algorithms to manipulate and explore hierarchical clustering: accumulators, filtering/simplification, cluster extraction, (optimal) partitioning , alignment;
+- hierarchical clustering algorithms: agglomerative clustering (single-linkage, average-linkage, complete-linkage, or custom rule), quasi-flat zones hierarchy, hierarchical watersheds;
+- various algorithms to manipulate and explore hierarchical clustering: accumulators, filtering/simplification, cluster extraction, (optimal) partitioning, horizontal and non-horizontal cuts, alignment;
 - algorithms on graphs: accumulators, computation of dissimilarities, partitioning;
 - assessment: supervised assessment of graph clustering and hierarchical clustering;
 - image toolbox: special methods for grid graphs, hierarchical clustering methods dedicated to image analysis.
@@ -49,7 +49,6 @@ Requires:
 
 * cmake 
 * Python + Numpy
-* Boost Test (optional for unit testing of the C++ backend)
 * Google Benchmark (optional for benchmarking of the C++ backend)
 
 Commands:
@@ -85,4 +84,13 @@ python setup.py bdist_wheel
 cd dist
 pip install higra*.whl
 ```
+
+## Third-party libraries
+
+Higra bundles several third-party libraries (inside the `lib` folder): 
+
+- [pybind11](https://github.com/pybind/pybind11) helps to create Python bindings of c++ method and classes - [BSD-style license](https://github.com/pybind/pybind11/blob/master/LICENSE)
+- [xtensor](https://github.com/QuantStack/xtensor) (with [xtl](https://github.com/QuantStack/xtl), [xsimd](https://github.com/QuantStack/xsimd), and [xtensor-python](https://github.com/QuantStack/xtensor-python) provides `numpy` like arrays for c++ with seamless integration with Python - all under the [BSD-3-Clause license](https://github.com/QuantStack/xtensor/blob/master/LICENSE)
+- [Catch2](https://github.com/catchorg/Catch2) is a unit test framework - [Boost Software License 1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt)
+
 
