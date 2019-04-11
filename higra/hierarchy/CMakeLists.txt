@@ -11,6 +11,7 @@
 set(PY_FILES
         __init__.py
         binary_partition_tree.py
+        constrained_connectivity_hierarchy.py
         hierarchy_core.py
         watershed_hierarchy.py)
 

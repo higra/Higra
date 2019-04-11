@@ -9,5 +9,6 @@
 ############################################################################
 
 from .binary_partition_tree import *
+from .constrained_connectivity_hierarchy import *
 from .hierarchy_core import *
 from .watershed_hierarchy import *

@@ -17,7 +17,7 @@ Tree attributes
 
 .. autofunction:: higra.attribute_perimeter_length
 
-.. autofunction:: attribute_frontier_strength
+.. autofunction:: higra.attribute_frontier_strength
 
 .. autofunction:: higra.attribute_regular_altitudes
 

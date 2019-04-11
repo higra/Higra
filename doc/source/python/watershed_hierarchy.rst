@@ -12,3 +12,5 @@ Watershed hierarchy
 .. autofunction:: higra.watershed_hierarchy_by_volume
 
 .. autofunction:: higra.watershed_hierarchy_by_dynamics
+
+.. autofunction:: higra.watershed_hierarchy_by_number_of_parents
