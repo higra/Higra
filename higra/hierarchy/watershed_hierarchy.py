@@ -9,7 +9,7 @@
 ############################################################################
 
 import higra as hg
-
+import numpy as np
 
 @hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", "vertex_area"))
 def watershed_hierarchy_by_area(edge_weights, graph, vertex_area):
@@ -47,6 +47,46 @@ def watershed_hierarchy_by_dynamics(edge_weights, graph):
     hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes
+
+
+@hg.argument_helper(hg.CptEdgeWeightedGraph)
+def watershed_hierarchy_by_number_of_parents(edge_weights, graph):
+    """
+    See definition in:
+
+        B. Perret, J. Cousty, S. J. F. Guimarães and D. S. Maia,
+        `Evaluation of Hierarchical Watersheds <https://hal.archives-ouvertes.fr/hal-01430865/file/PCGM%20-%20TIP%202018%20-%20Evaluation%20of%20hierarchical%20watersheds.pdf>`_ ,
+        in IEEE Transactions on Image Processing, vol. 27, no. 4, pp. 1676-1688, April 2018.
+        doi: 10.1109/TIP.2017.2779604
+
+    :param edge_weights: edge weights of the input graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    """
+    def num_parents(bpt_tree, altitudes):
+        # construct quasi flat zone hierarchy from input bpt
+        tree, node_map = hg.simplify_tree(altitudes == altitudes[bpt_tree.parents()], bpt_tree)
+
+        # determine inner nodes of the min tree, i.e. nodes of qfz having at least one node that is not a leaf
+        num_children = tree.num_children(np.arange(tree.num_vertices()))
+        num_children_leaf = np.zeros((tree.num_vertices(),), dtype=np.int64)
+        np.add.at(num_children_leaf, tree.parents()[:tree.num_leaves()], 1)
+        inner_nodes = num_children != num_children_leaf
+
+        # go back into bpt space
+        inner_nodes_bpt = np.zeros((bpt_tree.num_vertices(), ), dtype=np.int64)
+        inner_nodes_bpt[node_map] = inner_nodes
+        inner_nodes = inner_nodes_bpt
+
+        # count number of min tree inner nodes in the subtree rooted in the given node
+        res = hg.accumulate_and_add_sequential(inner_nodes, inner_nodes[:tree.num_leaves()], hg.Accumulators.sum, bpt_tree)
+
+        # add 1 to avoid having a zero measure in a minima
+        res[bpt_tree.num_leaves():] = res[bpt_tree.num_leaves():] + 1
+
+        return res
+
+    return hg.watershed_hierarchy_by_attribute(edge_weights, num_parents, graph)
 
 
 @hg.argument_helper(hg.CptEdgeWeightedGraph)

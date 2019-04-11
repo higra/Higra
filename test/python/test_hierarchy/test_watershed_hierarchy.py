@@ -73,6 +73,19 @@ class TestWatershedHierarchy(unittest.TestCase):
         self.assertTrue(hg.test_tree_isomorphism(tree, ref_tree))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 
+    def test_watershed_hierarchy_by_number_of_parents(self):
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0, 0, 1, 3, 0, 4, 2, 4, 1, 3, 4, 0))
+
+        tree, altitudes = hg.watershed_hierarchy_by_number_of_parents(edge_weights, graph)
+
+        ref_parents = np.asarray((11, 11, 9, 11, 10, 9, 11, 10, 10, 12, 13, 12, 13, 13))
+        ref_tree = hg.Tree(ref_parents)
+        ref_altitudes = np.asarray((0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 2.))
+
+        self.assertTrue(hg.test_tree_isomorphism(tree, ref_tree))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
     def test_watershed_hierarchy_by_volume(self):
         g = hg.get_4_adjacency_graph((1, 7))
         edge_weights = np.asarray((1, 4, 1, 0, 10, 8))
