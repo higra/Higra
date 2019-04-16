@@ -12,6 +12,7 @@
 #include <cmath>
 #include <sstream>
 #include "higra/algo/linear_energy_optimization.hpp"
+#include "higra/graph.hpp"
 
 using namespace hg;
 using namespace std;
@@ -159,8 +160,7 @@ namespace test_linear_energy_function_optimization {
                      {3, 11, 2}});
             REQUIRE(f.infimum(p) == 3);
             REQUIRE(f == r);
-        }
-        SECTION("parallel edge case 3") {
+        }SECTION("parallel edge case 3") {
             lef_t f({{0, 0,  5},
                      {1, 5,  3},
                      {3, 11, 2}});
@@ -171,5 +171,15 @@ namespace test_linear_energy_function_optimization {
             REQUIRE(f.infimum(p) == Approx(1.0 / 3));
             REQUIRE(f == r);
         }
+    }
+
+    TEST_CASE("test labelisation_optimal_cut_from_energy", "[optimal_cut_tree]") {
+        tree t(array_1d<index_t> { 8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12 });
+        array_1d<double> energy_attribute{2, 1, 3, 2, 1, 1, 1, 2, 2, 4, 10, 5, 20};
+
+        auto res = labelisation_optimal_cut_from_energy(t, energy_attribute);
+
+        array_1d<index_t> ref{0, 0, 1, 1, 1, 2, 3};
+        REQUIRE(is_in_bijection(res, ref));
     }
 }

@@ -13,6 +13,10 @@
 #include <deque>
 #include <limits>
 #include <algorithm>
+#include "higra/accumulator/accumulator.hpp"
+#include "higra/accumulator/tree_accumulator.hpp"
+#include "higra/graph.hpp"
+
 
 namespace hg {
 
@@ -256,4 +260,80 @@ namespace hg {
         };
     }
 
+
+    /**
+     * Computes the labelisation of the input tree leaves corresponding to the optimal cut according to the given energy attribute.
+     *
+     * Given a node i, the value energy_attribute(i) represents the energy fo the partial partition composed of the single region i.
+     * Given a node i, the energy of the partial partition composed of the children of i is given by accumulator(energy_attribute(children(i))).
+     *
+     * This function computes the partition (ie. a set of node forming a cut of the tree) that has a minimal energy
+     * according to the definition above.
+     *
+     * The algorithm used is based on dynamic programming and runs in linear time w.r.t. to the number of nodes in the tree.
+     *
+     * See:
+     *
+     *  Laurent Guigues, Jean Pierre Cocquerez, Hervé Le Men. Scale-sets Image Analysis. International
+     *  Journal of Computer Vision, Springer Verlag, 2006, 68 (3), pp.289-317
+     *
+     * and
+     *
+     *  Bangalore Ravi Kiran, Jean Serra. Global-local optimizations by hierarchical cuts and climbing energies.
+     *  Pattern Recognition Letters, Elsevier, 2014, 47 (1), pp.12-24.
+     *
+     * @tparam tree_type input tree type
+     * @tparam T energy attribute type
+     * @tparam accumulator_type accumulator type
+     * @param tree input tree
+     * @param xenergy_attribute 1d array of energy attribute for the input tree
+     * @param accumulator accumulator used to define how children energies are combined in order to obtain the energy of the corresponding partial partition
+     * @return a 1d integer array with num_leaves(tree) elements representing the minimal energy partition
+     */
+    template<typename tree_type,
+            typename T,
+            typename accumulator_type=hg::accumulator_sum>
+    auto labelisation_optimal_cut_from_energy(const tree_type &tree,
+                                              const xt::xexpression<T> &xenergy_attribute,
+                                              const accumulator_type accumulator = hg::accumulator_sum()) {
+        using value_type = typename T::value_type;
+        auto &energy_attribute = xenergy_attribute.derived_cast();
+        hg_assert_node_weights(tree, energy_attribute);
+        hg_assert_1d_array(energy_attribute);
+
+        array_1d<bool> optimal_nodes = array_1d<bool>::from_shape({num_vertices(tree)});
+        array_1d<value_type> optimal_energy = array_1d<value_type>::from_shape({num_vertices(tree)});
+
+        auto energy_children = accumulate_parallel(tree, energy_attribute, accumulator);
+
+        // forward pass
+        xt::view(optimal_nodes, xt::range(0, num_leaves(tree))) = true;
+        xt::view(optimal_energy, xt::range(0, num_leaves(tree))) = xt::view(energy_attribute,
+                                                                            xt::range(0, num_leaves(tree)));
+
+        for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
+            if (energy_attribute(i) <= energy_children(i)) {
+                optimal_nodes(i) = true;
+                optimal_energy(i) = energy_attribute(i);
+            } else {
+                optimal_nodes(i) = false;
+                optimal_energy(i) = energy_children(i);
+            }
+        }
+
+        //  backtracking and labelisation
+        array_1d<index_t> labels = array_1d<index_t>(optimal_nodes.shape(), invalid_index);
+        index_t count = 0;
+        for (auto i: root_to_leaves_iterator(tree)) {
+            if (labels(i) == invalid_index && optimal_nodes(i)) {
+                labels(i) = count++;
+            }
+            if (labels(i) != invalid_index) {
+                for (auto c: children_iterator(i, tree)) {
+                    labels(c) = labels(i);
+                }
+            }
+        }
+        return xt::eval(xt::view(labels, xt::range(0, num_leaves(tree))));
+    };
 }
