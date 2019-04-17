@@ -71,6 +71,7 @@ def constrained_connectivity_hierarchy_alpha_omega(vertex_weights, graph):
     # final  result construction
     tree, node_map = hg.simplify_tree(violated_constraints, tree)
     altitudes = altitudes[node_map]
+    hg.CptHierarchy.link(tree, graph)
     hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes
@@ -129,6 +130,7 @@ def constrained_connectivity_hierarchy_strong_connection(edge_weights, graph):
     # final  result construction
     tree, node_map = hg.simplify_tree(violated_constraints, tree)
     altitudes = altitudes[node_map]
+    hg.CptHierarchy.link(tree, graph)
     hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes
