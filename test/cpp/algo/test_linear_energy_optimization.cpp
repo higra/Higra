@@ -21,12 +21,12 @@ using namespace hg::linear_energy_optimization_internal;
 using lep_t = piecewise_linear_energy_function_piece<double>;
 using lef_t = piecewise_linear_energy_function<double>;
 
-ostream &operator<<(ostream &os, const lep_t &rhs) {
+std::ostream &operator<<(std::ostream &os, const lep_t &rhs) {
     os << "((" << rhs.origin_x() << ", " << rhs.origin_y() << "), " << rhs.slope() << ")";
     return os;
 }
 
-ostream &operator<<(ostream &os, const lef_t &rhs) {
+std::ostream &operator<<(std::ostream &os, const lef_t &rhs) {
     os << "{";
     for (const auto &lp: rhs) {
         os << lp << ", ";
@@ -181,5 +181,20 @@ namespace test_linear_energy_function_optimization {
 
         array_1d<index_t> ref{0, 0, 1, 1, 1, 2, 3};
         REQUIRE(is_in_bijection(res, ref));
+    }
+
+    TEST_CASE("test hierarchy_to_optimal_energy_cut_hierarchy", "[optimal_cut_tree]") {
+        tree t(array_1d<index_t> { 8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12 });
+        array_1d<double> data_fidelity_attribute{1, 1, 1, 1, 1, 1, 1, 4, 5, 10, 15, 25, 45};
+        array_1d<double> regularization_attribute{4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 10, 4, 12};
+
+        auto res = hierarchy_to_optimal_energy_cut_hierarchy(t, data_fidelity_attribute, regularization_attribute);
+        auto &tree = res.tree;
+        auto &altitudes = res.altitudes;
+
+        array_1d<index_t> ref_parents{8, 8, 9, 7, 7, 10, 10, 9, 9, 10, 10};
+        array_1d<double> ref_altitudes{0., 0., 0., 0., 0., 0., 0., 0.5, 0.75, 2.5, 14.0 / 3};
+        REQUIRE(tree.parents() == ref_parents);
+        REQUIRE(xt::allclose(altitudes, ref_altitudes));
     }
 }

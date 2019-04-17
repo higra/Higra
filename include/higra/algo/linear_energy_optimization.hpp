@@ -13,9 +13,12 @@
 #include <deque>
 #include <limits>
 #include <algorithm>
+#include "xtensor/xindex_view.hpp"
 #include "higra/accumulator/accumulator.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 #include "higra/graph.hpp"
+#include "higra/hierarchy/hierarchy_core.hpp"
+
 
 
 namespace hg {
@@ -115,6 +118,14 @@ namespace hg {
 
             piecewise_linear_energy_function(std::initializer_list<lp_t> pieces_l) : pieces(pieces_l) {}
 
+            void add_piece(const lp_t &piece) {
+                pieces.push_back(piece);
+            }
+
+            void add_piece(lp_t &&piece) {
+                pieces.push_back(std::forward<lp_t>(piece));
+            }
+
             /**
              * Computes the sum between two piecewise_linear_energy_function
              * The computation is by default limited to the max_pieces largest pieces (right most)
@@ -197,7 +208,7 @@ namespace hg {
                     }
                 }
 
-                value_type xi = std::numeric_limits<double>::infinity();
+                value_type xi = 0;
                 bool flag = true;
                 while (i >= 0 && flag) {
                     auto &piece = pieces[i];
@@ -259,7 +270,6 @@ namespace hg {
             std::deque<lp_t> pieces;
         };
     }
-
 
     /**
      * Computes the labelisation of the input tree leaves corresponding to the optimal cut according to the given energy attribute.
@@ -336,4 +346,77 @@ namespace hg {
         }
         return xt::eval(xt::view(labels, xt::range(0, num_leaves(tree))));
     };
+
+    /**
+     * Transforms the given hierarchy into its optimal energy cut hierarchy for the given energy terms.
+     * In the optimal energy cut hierarchy, any horizontal cut corresponds to an optimal energy cut in the original
+     * hierarchy.
+     *
+     * Each node i of the tree is associated to a data fidelity energy D(i) and a regularization energy R(i).
+     * The algorithm construct a new hierarchy with associated altitudes such that the horizontal cut of level lambda
+     * is the optimal cut for the energy attribute D + lambda * R of the input tree (see function labelisation_optimal_cut_from_energy).
+     * In other words, the horizontal cut of level lambda in the result is the cut of the input composed of the nodes N such that
+     * sum_{r in N} D(r) + lambda * R(r) is minimal.
+     *
+     * PRECONDITION: the regularization energy R must be sub additive: for each node i: R(i) <= sum_{c in children(i)} R(c)
+     *
+     * The algorithm runs in linear time O(n)
+     *
+     * See:
+     *
+     *  Laurent Guigues, Jean Pierre Cocquerez, Hervé Le Men. Scale-sets Image Analysis. International
+     *  Journal of Computer Vision, Springer Verlag, 2006, 68 (3), pp.289-317
+     *
+     * @tparam tree_type
+     * @tparam T
+     * @param tree
+     * @param xdata_fifelity_attribute
+     * @param xregularization_attribute
+     * @return
+     */
+    template<typename tree_type,
+            typename T>
+    auto
+    hierarchy_to_optimal_energy_cut_hierarchy(const tree_type &tree,
+                                              const xt::xexpression<T> &xdata_fifelity_attribute,
+                                              const xt::xexpression<T> &xregularization_attribute) {
+        auto &data_fidelity_attribute = xdata_fifelity_attribute.derived_cast();
+        auto &regularization_attribute = xregularization_attribute.derived_cast();
+        hg_assert_node_weights(tree, data_fidelity_attribute);
+        hg_assert_node_weights(tree, regularization_attribute);
+        hg_assert_1d_array(data_fidelity_attribute);
+        hg_assert_1d_array(regularization_attribute);
+
+        using lep_t = hg::linear_energy_optimization_internal::piecewise_linear_energy_function_piece<double>;
+        using lef_t = hg::linear_energy_optimization_internal::piecewise_linear_energy_function<double>;
+
+        std::vector <lef_t> optimal_energies{};
+        array_1d<double> apparition_scales = array_1d<double>::from_shape({num_vertices(tree)});
+
+        for (auto i: leaves_iterator(tree)) {
+            optimal_energies.emplace_back(lep_t(0, data_fidelity_attribute(i), regularization_attribute(i)));
+            apparition_scales(i) = -data_fidelity_attribute(i) / regularization_attribute(i);
+        }
+
+        for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
+            optimal_energies.push_back(optimal_energies[child(0, i, tree)]);
+            for (index_t c = 1; c < num_children(i, tree); c++) {
+                optimal_energies[i] = optimal_energies[i].sum(optimal_energies[child(c, i, tree)]);
+            }
+            apparition_scales(i) = optimal_energies[i].infimum({0, data_fidelity_attribute(i), regularization_attribute(i)});
+        }
+
+        for (auto i: root_to_leaves_iterator(tree, leaves_it::include, root_it::exclude)) {
+            apparition_scales(i) = (std::max)(0.0, (std::min)(apparition_scales(i), apparition_scales(parent(i, tree))));
+        }
+
+        auto apparition_scales_parents = propagate_parallel(tree, apparition_scales);
+        auto qfz = simplify_tree(tree, xt::equal(apparition_scales, apparition_scales_parents));
+        auto &qfz_tree = qfz.tree;
+        auto &node_map = qfz.node_map;
+        auto qfz_apparition_scales = xt::eval(xt::index_view(apparition_scales, node_map));
+
+        return make_node_weighted_tree(std::move(qfz_tree), std::move(qfz_apparition_scales));
+    };
+
 }
