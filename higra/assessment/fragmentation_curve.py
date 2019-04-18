@@ -9,7 +9,7 @@
 ############################################################################
 
 import higra as hg
-
+import numpy as np
 
 @hg.argument_helper(hg.CptHierarchy, ("leaf_graph", hg.CptRegionAdjacencyGraph))
 def make_assesser_fragmentation_optimal_cut(tree,
@@ -89,6 +89,10 @@ def assess_fragmentation_horizontal_cut(altitudes,
     :param vertex_map: optional, vertex mapping if the hierarchy is build on a region adjacency graph (deduced from :class:`~higra.CptRegionAdjacencyGraph` on the leaf graph of `tree`)
     :return: an object of type :class:`~higra.FragmentationCurve`
     """
+
+    if ground_truth.dtype != np.int64:
+        ground_truth = ground_truth.astype(np.int64)
+
     if vertex_map is None:
         return hg.cpp._assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, measure,
                                                            max_regions=max_regions)

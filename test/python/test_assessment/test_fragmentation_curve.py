@@ -88,7 +88,7 @@ class TestFragmentationCurve(unittest.TestCase):
         tree = hg.Tree((11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18))
 
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3))
-        ground_truth = np.asarray((0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2), dtype=np.int64)
+        ground_truth = np.asarray((0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2), dtype=np.int16)
 
         res = hg.assess_fragmentation_horizontal_cut(altitudes,
                                                      ground_truth,

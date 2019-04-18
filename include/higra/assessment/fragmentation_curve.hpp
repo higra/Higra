@@ -65,7 +65,7 @@ namespace hg {
         }
 
         auto num_regions_normalized() const {
-            return xt::eval(m_num_regions / (value_t)m_num_regions_ground_truth);
+            return xt::eval(m_num_regions / (value_t) m_num_regions_ground_truth);
         }
 
     private:
@@ -105,7 +105,7 @@ namespace hg {
                 }
             } else { // tree on rag
                 hg_assert(vertex_map.size() == ground_truth.size(), "Vertex map and ground truth sizes do not match.");
-                for (index_t i = 0; i < (index_t)vertex_map.size(); i++) {
+                for (index_t i = 0; i < (index_t) vertex_map.size(); i++) {
                     card_intersection_leaves(vertex_map(i), ground_truth(i))++;
                 }
             }
@@ -163,11 +163,11 @@ namespace hg {
 
 // TODO remove when xtensor MSVC witht he bug with xt::view(region_tree_area, xt::all(), xt::newaxis()) on 1d tensor
 #ifndef _MSC_VER
-			array_1d<index_t> region_tree_area;
+            array_1d<index_t> region_tree_area;
 #else
-			array_nd<index_t> region_tree_area;
+            array_nd<index_t> region_tree_area;
 #endif
-            
+
             // for a tree node i, a gt region j: card_intersection(i, j) is the number of pixels in R_i cap R_j
             array_2d<index_t> card_intersection_leaves{{num_leaves(tree), region_gt_areas.size()}, 0};
             if (vertex_map.size() <= 1) { // no rag
@@ -178,7 +178,7 @@ namespace hg {
                 region_tree_area = attribute_area(tree);
             } else { // tree on rag
                 hg_assert(vertex_map.size() == ground_truth.size(), "Vertex map and ground truth sizes do not match.");
-                for (index_t i = 0; i < (index_t)vertex_map.size(); i++) {
+                for (index_t i = 0; i < (index_t) vertex_map.size(); i++) {
                     card_intersection_leaves(vertex_map(i), ground_truth(i))++;
                 }
                 region_tree_area = attribute_area(tree,
@@ -188,7 +188,7 @@ namespace hg {
 
             array_2d<double> card_intersection = accumulate_sequential(tree, card_intersection_leaves,
                                                                        accumulator_sum());
-			
+
             array_1d<double> scores;
 
             switch (measure) {
@@ -209,7 +209,7 @@ namespace hg {
                     break;
             }
 
-            // initialize scoring for single region partitions (hte node itself)
+            // initialize scoring for single region partitions (the node itself)
             for (auto i: leaves_to_root_iterator(tree)) {
                 backtracking.push_back({{1, scores(i), 0, 0}});
             }
@@ -254,7 +254,7 @@ namespace hg {
         auto fragmentation_curve() const {
             auto &backtrack_root = backtracking[root(m_tree)];
             array_1d<double> final_scores({backtrack_root.size()}, 0);
-            for (index_t i = 0; i < (index_t)backtrack_root.size(); i++) {
+            for (index_t i = 0; i < (index_t) backtrack_root.size(); i++) {
                 final_scores(i) = backtrack_root[i].score;
             }
 
@@ -358,7 +358,7 @@ namespace hg {
                 }
             };
 
-            for (index_t i = 1; i < (index_t)backtrack_root.size(); i++) {
+            for (index_t i = 1; i < (index_t) backtrack_root.size(); i++) {
                 double score = backtrack_root[i].score;
                 double previous_score = backtrack_root[i - 1].score;
                 double score_gain = score - previous_score;
@@ -406,9 +406,10 @@ namespace hg {
         auto last_cut = std::upper_bound(num_regions_cuts.begin(), num_regions_cuts.end(), max_regions);
 
         index_t num_cuts = std::distance(num_regions_cuts.begin(), last_cut);
+
         array_1d<double> scores = xt::empty<double>({num_cuts});
-        array_1d<double> num_regions = xt::empty<double>({num_cuts});
-        std::copy(num_regions_cuts.begin(), num_regions_cuts.end(), num_regions.begin());
+        array_1d<index_t> num_regions = xt::empty<index_t>({num_cuts});
+        std::copy(num_regions_cuts.begin(), num_regions_cuts.begin() + num_cuts, num_regions.begin());
 
         for (index_t i = 0; i < num_cuts; i++) {
             auto hc = hc_explorer.horizontal_cut_from_index(i);

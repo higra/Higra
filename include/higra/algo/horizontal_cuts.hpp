@@ -136,13 +136,12 @@ namespace hg {
         inline
         auto horizontal_cut_from_index(index_t cut_index) {
             auto num_regions = m_num_regions_cuts[cut_index];
-            array_1d<index_t> nodes = xt::empty<index_t>({(size_t) num_regions});
+            array_1d<index_t> nodes = array_1d<index_t>::from_shape({(size_t) num_regions});
             if (cut_index == 0) { // special case for single region partition
                 nodes(0) = root(m_tree);
             } else {
                 auto altitude = m_altitudes_cuts[cut_index];
                 auto &range = m_range_nodes_cuts[cut_index];
-
                 for (index_t i = range.first, j = 0; i <= range.second; i++) {
                     for (auto c: children_iterator(i, m_tree)) {
                         if (m_altitudes(c) <= altitude) {
