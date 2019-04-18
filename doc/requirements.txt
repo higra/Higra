@@ -1,2 +1,2 @@
 sphinx-tabs
-higra==0.2.4
+higra==0.2.5
