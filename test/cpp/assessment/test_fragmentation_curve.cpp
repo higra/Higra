@@ -211,5 +211,4 @@ namespace assessment_fragmentation_curve {
             REQUIRE(xt::allclose(res_scores, ref_scores / 11));
             REQUIRE(res_k == ref_k);
     }
-
 }
