@@ -23,7 +23,7 @@
 
 namespace hg {
 
-    namespace linear_energy_optimization_internal {
+    namespace tree_energy_optimization_internal {
 
         /**
          * One piece of a piecewise energy linear function.
@@ -387,8 +387,8 @@ namespace hg {
         hg_assert_1d_array(data_fidelity_attribute);
         hg_assert_1d_array(regularization_attribute);
 
-        using lep_t = hg::linear_energy_optimization_internal::piecewise_linear_energy_function_piece<double>;
-        using lef_t = hg::linear_energy_optimization_internal::piecewise_linear_energy_function<double>;
+        using lep_t = hg::tree_energy_optimization_internal::piecewise_linear_energy_function_piece<double>;
+        using lef_t = hg::tree_energy_optimization_internal::piecewise_linear_energy_function<double>;
 
         std::vector <lef_t> optimal_energies{};
         array_1d<double> apparition_scales = array_1d<double>::from_shape({num_vertices(tree)});
@@ -400,7 +400,7 @@ namespace hg {
 
         for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             optimal_energies.push_back(optimal_energies[child(0, i, tree)]);
-            for (index_t c = 1; c < num_children(i, tree); c++) {
+            for (index_t c = 1; c < (index_t)num_children(i, tree); c++) {
                 optimal_energies[i] = optimal_energies[i].sum(optimal_energies[child(c, i, tree)]);
             }
             apparition_scales(i) = optimal_energies[i].infimum({0, data_fidelity_attribute(i), regularization_attribute(i)});

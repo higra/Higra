@@ -11,12 +11,12 @@
 #include "../test_utils.hpp"
 #include <cmath>
 #include <sstream>
-#include "higra/algo/linear_energy_optimization.hpp"
+#include "higra/algo/tree_energy_optimization.hpp"
 #include "higra/graph.hpp"
 
 using namespace hg;
 using namespace std;
-using namespace hg::linear_energy_optimization_internal;
+using namespace hg::tree_energy_optimization_internal;
 
 using lep_t = piecewise_linear_energy_function_piece<double>;
 using lef_t = piecewise_linear_energy_function<double>;

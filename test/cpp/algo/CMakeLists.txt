@@ -13,7 +13,7 @@ set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/test_graph_core.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_graph_weights.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_horizontal_cuts.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/test_linear_energy_optimization.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_tree_energy_optimization.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_rag.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_tree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_watershed.cpp
