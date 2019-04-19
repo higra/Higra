@@ -14,4 +14,5 @@ from .graph_weights import *
 from .horizontal_cuts import *
 from .rag import *
 from .tree import *
+from .tree_energy_optimization import *
 from .watershed import *

@@ -14,6 +14,7 @@
 #include <limits>
 #include <algorithm>
 #include "xtensor/xindex_view.hpp"
+#include "xtensor/xview.hpp"
 #include "higra/accumulator/accumulator.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 #include "higra/graph.hpp"
@@ -370,7 +371,7 @@ namespace hg {
      * @tparam tree_type
      * @tparam T
      * @param tree
-     * @param xdata_fifelity_attribute
+     * @param xdata_fidelity_attribute
      * @param xregularization_attribute
      * @return
      */
@@ -378,9 +379,9 @@ namespace hg {
             typename T>
     auto
     hierarchy_to_optimal_energy_cut_hierarchy(const tree_type &tree,
-                                              const xt::xexpression<T> &xdata_fifelity_attribute,
+                                              const xt::xexpression<T> &xdata_fidelity_attribute,
                                               const xt::xexpression<T> &xregularization_attribute) {
-        auto &data_fidelity_attribute = xdata_fifelity_attribute.derived_cast();
+        auto &data_fidelity_attribute = xdata_fidelity_attribute.derived_cast();
         auto &regularization_attribute = xregularization_attribute.derived_cast();
         hg_assert_node_weights(tree, data_fidelity_attribute);
         hg_assert_node_weights(tree, regularization_attribute);
