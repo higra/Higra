@@ -11,6 +11,8 @@ Tree attributes
 
 .. autofunction:: higra.attribute_frontier_length
 
+.. autofunction:: higra.attribute_gaussian_region_weights_model
+
 .. autofunction:: higra.attribute_lca_map
 
 .. autofunction:: higra.attribute_mean_weights
@@ -28,6 +30,8 @@ Tree attributes
 .. autofunction:: higra.attribute_vertex_area
 
 .. autofunction:: higra.attribute_vertex_coordinates
+
+.. autofunction:: higra.attribute_vertex_list
 
 .. autofunction:: higra.attribute_vertex_perimeter
 

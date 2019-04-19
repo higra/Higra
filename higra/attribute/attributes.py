@@ -100,7 +100,7 @@ def attribute_vertex_coordinates(graph, shape):
     :return: a nd array (Concept :class:`~higra.CptVertexWeightedGraph`)
     """
     coords = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
-    coords = [c.reshape((-1, )) for c in coords]
+    coords = [c.reshape((-1,)) for c in coords]
     attribute = np.stack(reversed(coords), axis=1)
     attribute = hg.delinearize_vertex_weights(attribute, graph)
     hg.CptVertexWeightedGraph.link(attribute, graph)
@@ -218,7 +218,8 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array (Concept :class:`~higra.CptValuedHierarchy`)
     """
-    if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and edge_weights.shape[0] != leaf_graph.num_edges():  # this is a rag like graph
+    if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and edge_weights.shape[
+        0] != leaf_graph.num_edges():  # this is a rag like graph
         edge_weights = hg.rag_accumulate_on_edges(leaf_graph, hg.Accumulators.sum, edge_weights=edge_weights)
 
     frontier_length = hg.attribute_frontier_length(tree, leaf_graph=leaf_graph)
@@ -287,7 +288,8 @@ def attribute_mean_weights(tree, vertex_weights, area, leaf_graph=None):
     if leaf_graph is not None:
         vertex_weights = hg.linearize_vertex_weights(vertex_weights, leaf_graph)
 
-    attribute = hg.accumulate_sequential(vertex_weights.astype(np.float64), hg.Accumulators.sum, tree) / area.reshape((-1, 1))
+    attribute = hg.accumulate_sequential(vertex_weights.astype(np.float64), hg.Accumulators.sum, tree) / area.reshape(
+        (-1, 1))
     hg.CptValuedHierarchy.link(attribute, tree)
     return attribute
 
@@ -349,3 +351,77 @@ def attribute_regular_altitudes(tree, depth):
     altitudes[:tree.num_leaves()] = 0
     hg.CptValuedHierarchy.link(altitudes, tree)
     return altitudes
+
+
+@hg.data_provider("vertex_list")
+@hg.argument_helper(hg.CptHierarchy)
+def attribute_vertex_list(tree):
+    """
+    Computes the list of leaf nodes inside the sub-tree rooted in a node.
+
+    **WARNING**: This function is slow and will use O(n²) space, with n the number of leaf nodes !
+
+    **SHOULD ONLY BE USED FOR DEBUGGING AND TESTING**
+
+    **Provider name**: "vertex_list"
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :return: a list of lists
+    """
+    result = [[i] for i in tree.leaves()]
+
+    for i in tree.leaves_to_root_iterator(include_leaves=False):
+        tmp = []
+        for c in tree.children(i):
+            tmp.extend(result[c])
+        result.append(tmp)
+
+    return result
+
+
+@hg.data_provider("gaussian_region_weights_model")
+@hg.argument_helper(hg.CptHierarchy)
+def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=None):
+    """
+    Estimate a gaussian model (mean, (co-)variance) for leaf weights inside a node.
+
+    The result is composed of two arrays:
+
+        - the first one contains the mean value inside each node, scalar if vertex weights are scalar and vectorial otherwise,
+        - the second one contains the variance of the values inside each node, scalar if vertex weights are scalar and a (biased) covariance matrix otherwise.
+
+    Vertex weights must be scalar or 1 dimensional.
+
+    **Provider name**: "gaussian_region_weights_model"
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param vertex_weights: vertex weights of the leaf graph of the input tree
+    :param leaf_graph: leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :return: two arrays mean and variance (Concept :class:`~higra.CptValuedHierarchy`)
+    """
+    if leaf_graph is not None:
+        vertex_weights = hg.linearize_vertex_weights(vertex_weights, leaf_graph)
+
+    if vertex_weights.ndim > 2:
+        raise ValueError("Vertex weight can either be scalar or 1 dimensional.")
+
+    area = hg.attribute_area(tree, leaf_graph=leaf_graph)
+    mean = hg.accumulate_sequential(vertex_weights, hg.Accumulators.sum, tree, leaf_graph)
+
+    if vertex_weights.ndim == 1:
+        # general case below would work but this is simpler
+        mean /= area
+        mean2 = hg.accumulate_sequential(vertex_weights * vertex_weights, hg.Accumulators.sum, tree, leaf_graph)
+        mean2 /= area
+        variance = mean2 - mean * mean
+    else:
+        mean /= area[:, None]
+        tmp = vertex_weights[:, :, None] * vertex_weights[:, None, :]
+        mean2 = hg.accumulate_sequential(tmp, hg.Accumulators.sum, tree, leaf_graph)
+        mean2 /= area[:, None, None]
+
+        variance = mean2 - mean[:, :, None] * mean[:, None, :]
+
+    hg.CptValuedHierarchy.link(mean, tree)
+    hg.CptValuedHierarchy.link(variance, tree)
+    return mean, variance
