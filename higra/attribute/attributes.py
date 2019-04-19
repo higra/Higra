@@ -67,12 +67,24 @@ def attribute_vertex_perimeter(graph, edge_length):
     Compute the vertex perimeter of the given graph.
     The perimeter of a vertex is defined as the sum of the length of out-edges of the vertex.
 
+    If the input graph has an attribute value `no_border_vertex_out_degree`, then each vertex perimeter is assumed to be
+    equal to this attribute value. This is a convenient method to handle image type graphs where an outer border has to be
+    considered.
+
     **Provider name**: "vertex_perimeter"
 
     :param graph: input graph
     :param edge_length: length of the edges of the input graph (provided by :func:`~higra.attribute_edge_length` on `graph`)
     :return: a nd array (Concept :class:`~higra.CptVertexWeightedGraph`)
     """
+    special_case_border_graph = hg.get_attribute(graph, "no_border_vertex_out_degree")
+
+    if special_case_border_graph is not None:
+        res = np.full((graph.num_vertices(), ), special_case_border_graph)
+        res = hg.delinearize_vertex_weights(res, graph)
+        hg.CptVertexWeightedGraph.link(res, graph)
+        return res
+
     res = hg.accumulate_graph_edges(edge_length, hg.Accumulators.sum, graph)
     res = hg.delinearize_vertex_weights(res, graph)
     hg.CptVertexWeightedGraph.link(res, graph)

@@ -9,7 +9,7 @@
 ############################################################################
 
 import higra as hg
-
+import numpy as np
 
 @hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", hg.CptGridGraph))
 def graph_4_adjacency_2_khalimsky(edge_weights, graph, shape, add_extra_border=False):
@@ -39,6 +39,7 @@ def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False):
 
     hg.CptEdgeWeightedGraph.link(edge_weights, graph)
     hg.CptGridGraph.link(graph, embedding.shape())
+    hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
 
     return graph, edge_weights
 
@@ -52,6 +53,8 @@ def get_4_adjacency_graph(shape):
     """
     graph = hg.cpp._get_4_adjacency_graph(shape)
     hg.CptGridGraph.link(graph, shape)
+    hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
+
     return graph
 
 
@@ -64,6 +67,8 @@ def get_8_adjacency_graph(shape):
     """
     graph = hg.cpp._get_8_adjacency_graph(shape)
     hg.CptGridGraph.link(graph, shape)
+    hg.set_attribute(graph, "no_border_vertex_out_degree", 8)
+
     return graph
 
 
@@ -76,6 +81,8 @@ def get_4_adjacency_implicit_graph(shape):
     """
     graph = hg.cpp._get_4_adjacency_implicit_graph(shape)
     hg.CptGridGraph.link(graph, shape)
+    hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
+
     return graph
 
 
@@ -88,4 +95,6 @@ def get_8_adjacency_implicit_graph(shape):
     """
     graph = hg.cpp._get_8_adjacency_implicit_graph(shape)
     hg.CptGridGraph.link(graph, shape)
+    hg.set_attribute(graph, "no_border_vertex_out_degree", 8)
+
     return graph

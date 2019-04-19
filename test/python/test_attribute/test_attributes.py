@@ -152,14 +152,15 @@ class TestAttributes(unittest.TestCase):
 
     def test_perimeter_length(self):
         tree, altitudes = TestAttributes.get_test_tree()
-
-        ref_attribute = [2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 0]
+        ref_attribute = [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 8, 10, 16, 12]
         attribute = hg.attribute_perimeter_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
-        leaf_perimeter = 4 + np.zeros((tree.num_leaves(),))
-        ref_attribute = [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 8, 10, 16, 12]
-        attribute = hg.attribute_perimeter_length(tree, vertex_perimeter=leaf_perimeter, force_recompute=True)
+    def test_perimeter_length2(self):
+        tree, altitudes = TestAttributes.get_test_tree()
+        hg.set_attribute(hg.CptHierarchy.get_leaf_graph(tree), "no_border_vertex_out_degree", None)
+        ref_attribute = [2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 0]
+        attribute = hg.attribute_perimeter_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_perimeter_length_rag(self):
@@ -177,9 +178,6 @@ class TestAttributes(unittest.TestCase):
 
     def test_compactness(self):
         tree, altitudes = TestAttributes.get_test_tree()
-
-        hg.set_attribute(hg.get_attribute(tree, "leaf_graph"), "vertex_perimeter",
-                         4 + np.zeros((tree.num_leaves(),), dtype=np.int64))
         ref_attribute = [1., 1., 1., 1., 1., 1., 1., 1., 1., 0.88888889, 0.88888889, 0.88888889, 0.88888889, 0.75, 0.64,
                          0.4375, 1.]
         attribute = hg.attribute_compactness(tree)
@@ -244,6 +242,14 @@ class TestAttributes(unittest.TestCase):
 
     def test_vertex_perimeter(self):
         g = hg.get_4_adjacency_graph((2, 3))
+        ref = np.asarray(((4, 4, 4),
+                          (4, 4, 4)))
+        res = hg.attribute_vertex_perimeter(g)
+        self.assertTrue(np.allclose(ref, res))
+
+    def test_vertex_perimeter2(self):
+        g = hg.get_4_adjacency_graph((2, 3))
+        hg.set_attribute(g, "no_border_vertex_out_degree", None)
         ref = np.asarray(((2, 3, 2),
                           (2, 3, 2)))
         res = hg.attribute_vertex_perimeter(g)
