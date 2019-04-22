@@ -21,7 +21,6 @@
 #include "higra/hierarchy/hierarchy_core.hpp"
 
 
-
 namespace hg {
 
     namespace tree_energy_optimization_internal {
@@ -307,6 +306,7 @@ namespace hg {
     auto labelisation_optimal_cut_from_energy(const tree_type &tree,
                                               const xt::xexpression<T> &xenergy_attribute,
                                               const accumulator_type accumulator = hg::accumulator_sum()) {
+        HG_TRACE();
         using value_type = typename T::value_type;
         auto &energy_attribute = xenergy_attribute.derived_cast();
         hg_assert_node_weights(tree, energy_attribute);
@@ -315,7 +315,8 @@ namespace hg {
         array_1d<bool> optimal_nodes = array_1d<bool>::from_shape({num_vertices(tree)});
         array_1d<value_type> optimal_energy = array_1d<value_type>::from_shape({num_vertices(tree)});
 
-        auto energy_children = accumulate_parallel(tree, energy_attribute, accumulator);
+        auto output_view = make_light_axis_view<false>(optimal_energy);
+        auto acc = accumulator.template make_accumulator<false>(output_view);
 
         // forward pass
         xt::view(optimal_nodes, xt::range(0, num_leaves(tree))) = true;
@@ -323,12 +324,18 @@ namespace hg {
                                                                             xt::range(0, num_leaves(tree)));
 
         for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
-            if (energy_attribute(i) <= energy_children(i)) {
+            output_view.set_position(i);
+            acc.set_storage(output_view);
+            acc.initialize();
+            for (auto c: children_iterator(i, tree)) {
+                acc.accumulate(&optimal_energy(c));
+            }
+            acc.finalize();
+            if (energy_attribute(i) <= optimal_energy(i)) {
                 optimal_nodes(i) = true;
                 optimal_energy(i) = energy_attribute(i);
             } else {
                 optimal_nodes(i) = false;
-                optimal_energy(i) = energy_children(i);
             }
         }
 
@@ -382,20 +389,22 @@ namespace hg {
     hierarchy_to_optimal_energy_cut_hierarchy(const tree_type &tree,
                                               const xt::xexpression<T> &xdata_fidelity_attribute,
                                               const xt::xexpression<T> &xregularization_attribute,
-                                              const int approximation_piecewise_linear_function=10) {
+                                              const int approximation_piecewise_linear_function = 10) {
+        HG_TRACE();
         auto &data_fidelity_attribute = xdata_fidelity_attribute.derived_cast();
         auto &regularization_attribute = xregularization_attribute.derived_cast();
         hg_assert_node_weights(tree, data_fidelity_attribute);
         hg_assert_node_weights(tree, regularization_attribute);
         hg_assert_1d_array(data_fidelity_attribute);
         hg_assert_1d_array(regularization_attribute);
-        hg_assert(approximation_piecewise_linear_function > 0, "approximation_piecewise_linear_function must be strictly positive.");
+        hg_assert(approximation_piecewise_linear_function > 0,
+                  "approximation_piecewise_linear_function must be strictly positive.");
 
 
         using lep_t = hg::tree_energy_optimization_internal::piecewise_linear_energy_function_piece<double>;
         using lef_t = hg::tree_energy_optimization_internal::piecewise_linear_energy_function<double>;
 
-        std::vector <lef_t> optimal_energies{};
+        std::vector<lef_t> optimal_energies{};
         array_1d<double> apparition_scales = array_1d<double>::from_shape({num_vertices(tree)});
 
         for (auto i: leaves_iterator(tree)) {
@@ -405,14 +414,17 @@ namespace hg {
 
         for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             optimal_energies.push_back(optimal_energies[child(0, i, tree)]);
-            for (index_t c = 1; c < (index_t)num_children(i, tree); c++) {
-                optimal_energies[i] = optimal_energies[i].sum(optimal_energies[child(c, i, tree)], approximation_piecewise_linear_function);
+            for (index_t c = 1; c < (index_t) num_children(i, tree); c++) {
+                optimal_energies[i] = optimal_energies[i].sum(optimal_energies[child(c, i, tree)],
+                                                              approximation_piecewise_linear_function);
             }
-            apparition_scales(i) = optimal_energies[i].infimum({0, data_fidelity_attribute(i), regularization_attribute(i)});
+            apparition_scales(i) = optimal_energies[i].infimum(
+                    {0, data_fidelity_attribute(i), regularization_attribute(i)});
         }
 
         for (auto i: root_to_leaves_iterator(tree, leaves_it::include, root_it::exclude)) {
-            apparition_scales(i) = (std::max)(0.0, (std::min)(apparition_scales(i), apparition_scales(parent(i, tree))));
+            apparition_scales(i) = (std::max)(0.0,
+                                              (std::min)(apparition_scales(i), apparition_scales(parent(i, tree))));
         }
 
         auto apparition_scales_parents = propagate_parallel(tree, apparition_scales);

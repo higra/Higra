@@ -37,6 +37,36 @@ class TestTreeEnergyOptimization(unittest.TestCase):
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 
+    def test_hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(self):
+        # Test strategy:
+        # 1) start from a random hierarchy
+        # 2) construct the corresponding optimal Mumford-Shah energy cut hierarchy
+        # 3) verify that the horizontal cuts of the new hierarchy corresponds to the
+        # optimal energy cuts of the first hierarchy obtained from the explicit MF energy
+        # and the function labelisation_optimal_cut_from_energy
+
+        shape = (10, 10)
+        g = hg.get_4_adjacency_graph(shape)
+        np.random.seed(2)
+        vertex_weights = np.random.rand(*shape)
+        edge_weights = hg.weight_graph(vertex_weights, hg.WeightFunction.L1, g)
+        tree1, altitudes1 = hg.watershed_hierarchy_by_area(edge_weights)
+
+        tree, altitudes = hg.hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree1, vertex_weights,
+                                                                                   approximation_piecewise_linear_function=999999)
+
+        for a in altitudes:
+            if a != 0:
+                res = False
+                cut1 = hg.labelisation_horizontal_cut_from_threshold(altitudes, a)
+                # du to numerical issues, and especially as we test critical scale level lambda,
+                # we test several very close scale levels
+                for margin in [-1e-8, 0, 1e-8]:
+                    mfs_energy = hg.attribute_piecewise_constant_Mumford_Shah_energy(tree1, vertex_weights, a + margin)
+                    cut2 = hg.labelisation_optimal_cut_from_energy(tree1, mfs_energy)
+                    res = res or hg.is_in_bijection(cut1, cut2)
+                self.assertTrue(res)
+
 
 if __name__ == '__main__':
     unittest.main()

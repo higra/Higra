@@ -48,12 +48,14 @@ def labelisation_optimal_cut_from_energy(tree, energy_attribute, accumulator=hg.
     labels = hg.cpp._labelisation_optimal_cut_from_energy(tree, energy_attribute, accumulator)
 
     if leaf_graph is not None:
+        labels = hg.delinearize_vertex_weights(labels, leaf_graph)
         hg.CptVertexLabeledGraph.link(labels, leaf_graph)
 
     return labels
 
 
-def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute, approximation_piecewise_linear_function=10):
+def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute,
+                                              approximation_piecewise_linear_function=10):
     """
     Transforms the given hierarchy into its optimal energy cut hierarchy for the given energy terms.
     In the optimal energy cut hierarchy, any horizontal cut corresponds to an optimal energy cut in the original
@@ -81,7 +83,8 @@ def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, reg
     :param approximation_piecewise_linear_function: Maximum number of pieces used in the approximated piecewise linear model for the energy function (default 10).
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
-    res = hg.cpp._hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute, int(approximation_piecewise_linear_function))
+    res = hg.cpp._hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute,
+                                                            int(approximation_piecewise_linear_function))
     new_tree = res.tree()
     altitudes = res.altitudes()
 
@@ -92,7 +95,8 @@ def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, reg
 
 
 @hg.argument_helper(hg.CptHierarchy)
-def hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree, vertex_weights, leaf_graph, approximation_piecewise_linear_function=10):
+def hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree, vertex_weights, leaf_graph,
+                                                          approximation_piecewise_linear_function=10):
     """
     Transform the given hierarchy into an optimal energy cut hierarchy using the piecewise constant Mumford-Shah energy
     (see function :func:`~higra.hierarchy_to_optimal_energy_cut_hierarchy`).
@@ -114,8 +118,12 @@ def hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree, vertex_weights, 
 
     if variance.ndim > 1:
         variance = np.trace(variance, axis1=1, axis2=2)
+    print("perimeter", perimeter)
+    print("variance*area", variance*area)
+    print("parents", tree.parents())
 
-    return hierarchy_to_optimal_energy_cut_hierarchy(tree, variance * area, perimeter, int(approximation_piecewise_linear_function))
+    return hierarchy_to_optimal_energy_cut_hierarchy(tree, variance * area, perimeter,
+                                                     int(approximation_piecewise_linear_function))
 
 
 @hg.argument_helper(hg.CptHierarchy)
