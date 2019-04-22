@@ -9,6 +9,7 @@
 ############################################################################
 
 import higra as hg
+import numpy as np
 
 
 @hg.argument_helper(hg.CptHierarchy)
@@ -52,7 +53,7 @@ def labelisation_optimal_cut_from_energy(tree, energy_attribute, accumulator=hg.
     return labels
 
 
-def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute):
+def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute, approximation_piecewise_linear_function=10):
     """
     Transforms the given hierarchy into its optimal energy cut hierarchy for the given energy terms.
     In the optimal energy cut hierarchy, any horizontal cut corresponds to an optimal energy cut in the original
@@ -77,9 +78,10 @@ def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, reg
     :param tree: input tree
     :param data_fidelity_attribute: 1d array representing the data fidelity energy of each node of the input tree
     :param regularization_attribute: 1d array representing the regularization energy of each node of the input tree
+    :param approximation_piecewise_linear_function: Maximum number of pieces used in the approximated piecewise linear model for the energy function (default 10).
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
-    res = hg.cpp._hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute)
+    res = hg.cpp._hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute, int(approximation_piecewise_linear_function))
     new_tree = res.tree()
     altitudes = res.altitudes()
 
@@ -87,3 +89,57 @@ def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, reg
     hg.CptValuedHierarchy.link(altitudes, new_tree)
 
     return new_tree, altitudes
+
+
+@hg.argument_helper(hg.CptHierarchy)
+def hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree, vertex_weights, leaf_graph, approximation_piecewise_linear_function=10):
+    """
+    Transform the given hierarchy into an optimal energy cut hierarchy using the piecewise constant Mumford-Shah energy
+    (see function :func:`~higra.hierarchy_to_optimal_energy_cut_hierarchy`).
+
+    In this context:
+
+        - the data fidelity energy assumes a piecewise constant model in each node and is given by the variance of the vertex values inside the node  (see function :func:`~higra.attribute_gaussian_region_weights_model`) multiplied by its area,
+        - the regularity energy is given by the length of the perimeter of the node (see function :func:`~higra.attribute_perimeter_length`).
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param vertex_weights: vertex weights of the leaf graph of the input tree
+    :param leaf_graph: leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :param approximation_piecewise_linear_function: Maximum number of pieces used in the approximated piecewise linear model for the energy function (default 10).
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    """
+    area = hg.attribute_area(tree, leaf_graph=leaf_graph)
+    _, variance = hg.attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph)
+    perimeter = hg.attribute_perimeter_length(tree, leaf_graph=leaf_graph)
+
+    if variance.ndim > 1:
+        variance = np.trace(variance, axis1=1, axis2=2)
+
+    return hierarchy_to_optimal_energy_cut_hierarchy(tree, variance * area, perimeter, int(approximation_piecewise_linear_function))
+
+
+@hg.argument_helper(hg.CptHierarchy)
+def attribute_piecewise_constant_Mumford_Shah_energy(tree, vertex_weights, gamma, leaf_graph):
+    """
+    Computes the piecewise constant Mumford-Shah energy of each node of the input tree.
+    The energy of a node is equal to its data fidelity energy plus gamma times its regularization energy.
+
+    For the piecewise constant Mumford-Shah model:
+
+        - the data fidelity energy assumes a piecewise constant model in each node and is given by the variance of the vertex values inside the node  (see function :func:`~higra.attribute_gaussian_region_weights_model`) multiplied by its area,
+        - the regularity energy is given by the length of the perimeter of the node (see function :func:`~higra.attribute_perimeter_length`).
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param vertex_weights: vertex weights of the leaf graph of the input tree
+    :param gamma: weighting of the regularization term (should be a positive value)
+    :param leaf_graph: leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :return: a 1d array measuring the energy of each node the input tree
+    """
+    area = hg.attribute_area(tree, leaf_graph=leaf_graph)
+    _, variance = hg.attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph)
+    perimeter = hg.attribute_perimeter_length(tree, leaf_graph=leaf_graph)
+
+    if variance.ndim > 1:
+        variance = np.trace(variance, axis1=1, axis2=2)
+
+    return variance * area + gamma * perimeter

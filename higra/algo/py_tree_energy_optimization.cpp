@@ -69,16 +69,19 @@ struct def_hierarchy_to_optimal_energy_cut_hierarchy {
     void def(C &c, const char *doc) {
         c.def("_hierarchy_to_optimal_energy_cut_hierarchy", [](const tree_t &tree,
                                                                const pyarray<value_t> &data_fidelity_attribute,
-                                                               const pyarray<value_t> &regularization_attribute) {
+                                                               const pyarray<value_t> &regularization_attribute,
+                                                               const int approximation_piecewise_linear_function) {
                   return hg::hierarchy_to_optimal_energy_cut_hierarchy(
                           tree,
                           data_fidelity_attribute,
-                          regularization_attribute);
+                          regularization_attribute,
+                          approximation_piecewise_linear_function);
               },
               doc,
               py::arg("tree"),
               py::arg("data_fidelity_attribute"),
-              py::arg("regularization_attribute"));
+              py::arg("regularization_attribute"),
+              py::arg("approximation_piecewise_linear_function"));
     }
 };
 

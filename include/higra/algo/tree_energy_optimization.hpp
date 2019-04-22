@@ -370,23 +370,27 @@ namespace hg {
      *
      * @tparam tree_type
      * @tparam T
-     * @param tree
-     * @param xdata_fidelity_attribute
-     * @param xregularization_attribute
-     * @return
+     * @param tree Input tree
+     * @param xdata_fidelity_attribute Data fidelity energy (1d array)
+     * @param xregularization_attribute Regularization energy (1d array)
+     * @param approximation_piecewise_linear_function Maximum number of pieces used in the approximated piecewise linear model for the energy.
+     * @return a node_weighted_tree
      */
     template<typename tree_type,
             typename T>
     auto
     hierarchy_to_optimal_energy_cut_hierarchy(const tree_type &tree,
                                               const xt::xexpression<T> &xdata_fidelity_attribute,
-                                              const xt::xexpression<T> &xregularization_attribute) {
+                                              const xt::xexpression<T> &xregularization_attribute,
+                                              const int approximation_piecewise_linear_function=10) {
         auto &data_fidelity_attribute = xdata_fidelity_attribute.derived_cast();
         auto &regularization_attribute = xregularization_attribute.derived_cast();
         hg_assert_node_weights(tree, data_fidelity_attribute);
         hg_assert_node_weights(tree, regularization_attribute);
         hg_assert_1d_array(data_fidelity_attribute);
         hg_assert_1d_array(regularization_attribute);
+        hg_assert(approximation_piecewise_linear_function > 0, "approximation_piecewise_linear_function must be strictly positive.");
+
 
         using lep_t = hg::tree_energy_optimization_internal::piecewise_linear_energy_function_piece<double>;
         using lef_t = hg::tree_energy_optimization_internal::piecewise_linear_energy_function<double>;
@@ -402,7 +406,7 @@ namespace hg {
         for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             optimal_energies.push_back(optimal_energies[child(0, i, tree)]);
             for (index_t c = 1; c < (index_t)num_children(i, tree); c++) {
-                optimal_energies[i] = optimal_energies[i].sum(optimal_energies[child(c, i, tree)]);
+                optimal_energies[i] = optimal_energies[i].sum(optimal_energies[child(c, i, tree)], approximation_piecewise_linear_function);
             }
             apparition_scales(i) = optimal_energies[i].infimum({0, data_fidelity_attribute(i), regularization_attribute(i)});
         }
