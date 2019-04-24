@@ -92,6 +92,28 @@ void py_init_tree_energy_optimization(pybind11::module &m) {
     add_type_overloads<def_labelisation_optimal_cut_from_energy<hg::tree>, HG_TEMPLATE_FLOAT_TYPES>(m, "");
 
     add_type_overloads<def_hierarchy_to_optimal_energy_cut_hierarchy<hg::tree>, HG_TEMPLATE_FLOAT_TYPES>(m, "");
+
+    m.def("_binary_partition_tree_MumfordShah_energy", [](const hg::ugraph &graph,
+                                                          const pyarray<double> &vertex_perimeter,
+                                                          const pyarray<double> &vertex_area,
+                                                          const pyarray<double> &vertex_values,
+                                                          const pyarray<double> &squared_vertex_values,
+                                                          const pyarray<double> &edge_length) {
+              return hg::binary_partition_tree_MumfordShah_energy(
+                      graph,
+                      vertex_perimeter,
+                      vertex_area,
+                      vertex_values,
+                      squared_vertex_values,
+                      edge_length);
+          },
+          "",
+          py::arg("graph"),
+          py::arg("vertex_perimeter"),
+          py::arg("vertex_area"),
+          py::arg("vertex_values"),
+          py::arg("squared_vertex_values"),
+          py::arg("edge_length"));
 }
 
 

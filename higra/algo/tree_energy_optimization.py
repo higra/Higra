@@ -118,9 +118,6 @@ def hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree, vertex_weights, 
 
     if variance.ndim > 1:
         variance = np.trace(variance, axis1=1, axis2=2)
-    print("perimeter", perimeter)
-    print("variance*area", variance*area)
-    print("parents", tree.parents())
 
     return hierarchy_to_optimal_energy_cut_hierarchy(tree, variance * area, perimeter,
                                                      int(approximation_piecewise_linear_function))
@@ -151,3 +148,60 @@ def attribute_piecewise_constant_Mumford_Shah_energy(tree, vertex_weights, gamma
         variance = np.trace(variance, axis1=1, axis2=2)
 
     return variance * area + gamma * perimeter
+
+
+@hg.argument_helper(("graph", "vertex_area"), ("graph", "vertex_perimeter"), ("graph", "edge_length"))
+def binary_partition_tree_MumfordShah_energy(graph,
+                                             vertex_values,
+                                             vertex_area,
+                                             vertex_perimeter,
+                                             edge_length,
+                                             squared_vertex_values=None):
+    """
+    Compute the binary partition tree, i.e. the agglomerative clustering, according to the Mumford-Shah energy
+    with a constant piecewise model.
+
+    The distance between two regions is equal to the apparition scale of the merged region.
+
+    See:
+
+        Laurent Guigues, Jean Pierre Cocquerez, Hervé Le Men.
+        `Scale-sets Image Analysis. International <https://hal.archives-ouvertes.fr/hal-00705364/file/ijcv_scale-setV11.pdf>`_
+        Journal of Computer Vision, Springer Verlag, 2006, 68 (3), pp.289-317
+
+
+    :param graph: input graph
+    :param vertex_values: Sum of values inside each vertex of the input graph (1d array for scalar value or 2d array for
+        vectorial values, e.g. RGB pixel values)
+    :param vertex_area: area of the vertices of the input graph (provided by :func:`~higra.attribute_vertex_area` on `graph`)
+    :param vertex_perimeter: perimeter of the vertices of the input graph (provided by :func:`~higra.attribute_vertex_perimeter` on `graph`)
+    :param edge_length: length of the frontier represented by the edges of the input graph
+        (provided by :func:`~higra.attribute_edge_length` on `graph`)
+    :param squared_vertex_values: Sum of squared values inside each vertex of the input graph (1d array for scalar
+        value or 2d array for vectorial values, e.g. RGB pixel values).
+        If this argument is not provided, it will default to `vertex_values * vertex_values` which is only correct if a
+        vertex contains a single value.
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    """
+    vertex_values = hg.linearize_vertex_weights(vertex_values, graph)
+    vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
+    vertex_perimeter = hg.linearize_vertex_weights(vertex_perimeter, graph)
+
+    if squared_vertex_values is None:
+        squared_vertex_values = vertex_values * vertex_values
+
+    res = hg.cpp._binary_partition_tree_MumfordShah_energy(
+        graph,
+        vertex_perimeter,
+        vertex_area,
+        vertex_values,
+        squared_vertex_values,
+        edge_length)
+
+    tree = res.tree()
+    altitudes = res.altitudes()
+
+    hg.CptHierarchy.link(tree, graph)
+    hg.CptValuedHierarchy.link(altitudes, tree)
+
+    return tree, altitudes

@@ -21,6 +21,8 @@ Tree attributes
 
 .. autofunction:: higra.attribute_frontier_strength
 
+.. autofunction:: higra.attribute_piecewise_constant_Mumford_Shah_energy
+
 .. autofunction:: higra.attribute_regular_altitudes
 
 .. autofunction:: higra.attribute_sibling

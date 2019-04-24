@@ -67,6 +67,39 @@ class TestTreeEnergyOptimization(unittest.TestCase):
                     res = res or hg.is_in_bijection(cut1, cut2)
                 self.assertTrue(res)
 
+    def test_binary_partition_tree_MumfordShah_energy_scalar(self):
+        g = hg.get_4_adjacency_graph((3, 3))
+
+        vertex_values = np.asarray((1, 1, 20, 6, 1, 20, 10, 10, 10))
+
+        tree, altitudes = hg.binary_partition_tree_MumfordShah_energy(
+            g, vertex_values)
+        ref_parents = (10, 10, 11, 14, 13, 11, 12, 9, 9, 12, 13, 16, 15, 14, 15, 16, 16)
+        ref_altitudes = (0., 0., 0.,
+                         0., 0., 0.,
+                         0., 0., 0.,
+                         0., 0., 0.,
+                         0., 0., 4.6875, 25.741071, 53.973545)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
+    def test_binary_partition_tree_MumfordShah_energy_vectorial(self):
+        g = hg.get_4_adjacency_graph((3, 3))
+
+        vertex_values = np.asarray(((1, 2), (1, 2), (20, 30), (6, 7), (1, 2), (20, 30), (10, 12), (10, 12),
+                                    (10, 12)))
+
+        tree, altitudes = hg.binary_partition_tree_MumfordShah_energy(
+            g, vertex_values)
+        ref_parents = (10, 10, 11, 14, 13, 11, 12, 9, 9, 12, 13, 16, 15, 14, 15, 16, 16)
+        ref_altitudes = (0., 0., 0.,
+                         0., 0., 0.,
+                         0., 0., 0.,
+                         0., 0., 0.,
+                         0., 0., 9.375, 58.553571, 191.121693)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
 
 if __name__ == '__main__':
     unittest.main()
