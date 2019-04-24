@@ -15,10 +15,12 @@
 #include <algorithm>
 #include "xtensor/xindex_view.hpp"
 #include "xtensor/xview.hpp"
+#include "xtensor/xnoalias.hpp"
 #include "higra/accumulator/accumulator.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 #include "higra/graph.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
+#include "higra/hierarchy/binary_partition_tree.hpp"
 
 
 namespace hg {
@@ -269,6 +271,229 @@ namespace hg {
         private:
             std::deque<lp_t> pieces;
         };
+
+        // stupid template metaprogramming for bpt function
+        template<bool vectorial>
+        struct container_bpt {
+
+        };
+
+        template<>
+        struct container_bpt<true> {
+            typedef array_2d<double> type;
+
+            template<typename T>
+            static auto init(const T &a) {
+                type res = type::from_shape({a.shape()[0] * 2 - 1, a.shape()[1]});
+                xt::view(res, xt::range(0, a.shape()[0]), xt::all()) = a;
+                return res;
+            }
+        };
+
+        template<>
+        struct container_bpt<false> {
+            typedef array_1d<double> type;
+
+            template<typename T>
+            static auto init(const T &a) {
+                type res = type::from_shape({a.size() * 2 - 1});
+                xt::view(res, xt::range(0, a.size())) = a;
+                return res;
+            }
+        };
+
+        template<bool vectorial>
+        struct computation_helper {
+        };
+
+        template<>
+        struct computation_helper<true> {
+
+            template<typename T>
+            static
+            void add(T &a, index_t res, index_t i, index_t j) {
+                for (index_t c = 0; c < (index_t) a.shape()[1]; c++) {
+                    a(res, c) = a(i, c) + a(j, c);
+                }
+            }
+
+            template<typename T, typename Q>
+            static
+            auto
+            data_fidelity(const T &m, const T &m2, const Q &area, index_t i) {
+                double res = 0;
+                for (index_t c = 0; c < (index_t) m.shape()[1]; c++) {
+                    res += m2(i, c) - m(i, c) * m(i, c) / area(i);
+                }
+                return res;
+            }
+
+            template<typename Q, typename T, typename R>
+            static
+            auto
+            apparition_scale(const Q &oe, const T &area, const T &perimeter, const R &m, const R &m2,
+                             index_t i, index_t j, double edge_length) {
+                auto e = oe[i].sum(oe[j]);
+                double a = area(i) + area(j);
+                double data_fidelity = 0;
+                for (index_t c = 0; c < (index_t) m.shape()[1]; c++) {
+                    double mean = m(i, c) + m(j, c);
+                    double mean2 = m2(i, c) + m2(j, c);
+                    data_fidelity += mean2 - mean * mean / a;
+                }
+
+                auto v = e.infimum({0,
+                                    data_fidelity,
+                                    perimeter(i) + perimeter(j) - 2 * edge_length});
+                return v;
+            }
+
+        };
+
+        template<>
+        struct computation_helper<false> {
+
+            template<typename T>
+            static
+            void add(T &a, index_t res, index_t i, index_t j) {
+                a(res) = a(i) + a(j);
+            }
+
+            template<typename T>
+            static
+            auto
+            data_fidelity(const T &m, const T &m2, const T &area, index_t i) {
+                return m2(i) - m(i) * m(i) / area(i);
+            }
+
+            template<typename Q, typename T, typename R>
+            static
+            auto
+            apparition_scale(const Q &oe, const T &area, const T &perimeter, const R &m, const R &m2,
+                             index_t i, index_t j, double edge_length) {
+                auto e = oe[i].sum(oe[j]);
+
+                double mean = m(i) + m(j);
+                double mean2 = m2(i) + m2(j);
+                double a = area(i) + area(j);
+
+                auto v = e.infimum({0,
+                                    mean2 - mean * mean / a,
+                                    perimeter(i) + perimeter(j) - 2 * edge_length});
+                return v;
+            }
+
+        };
+
+        /**
+         * Weighting function for binary partition tree based on Mumfor-Shah energy function
+         *
+         * Consider using the helper factory function make_binary_partition_tree_MumfordShah_linkage
+         *
+         * @tparam T
+        */
+        template<bool vectorial, typename graph_type, typename value_type=double>
+        struct binary_partition_tree_MumfordShah_linkage_weighting_functor {
+            using ctype = typename container_bpt<vectorial>::type;
+
+            using lep_t = piecewise_linear_energy_function_piece<double>;
+            using lef_t = piecewise_linear_energy_function<double>;
+
+            std::vector<lef_t> m_optimal_energies{};
+            const graph_type &m_graph;
+            array_1d<double> m_area;
+            array_1d<double> m_perimeter;
+            array_1d<double> m_edge_length;
+            ctype m_sum;
+            ctype m_sum2;
+
+            template<typename T1, typename T2, typename T3, typename T4, typename T5>
+            binary_partition_tree_MumfordShah_linkage_weighting_functor(
+                    const graph_type &graph,
+                    const xt::xexpression<T1> &xvertex_area,
+                    const xt::xexpression<T2> &xsum_vertex_weights,
+                    const xt::xexpression<T3> &xsum_square_vertex_weights,
+                    const xt::xexpression<T4> &xvertex_perimeter,
+                    const xt::xexpression<T5> &xedge_length) :
+                    m_graph(graph),
+                    m_edge_length(xedge_length) {
+                auto &vertex_area = xvertex_area.derived_cast();
+                auto &sum_vertex_weights = xsum_vertex_weights.derived_cast();
+                auto &sum_square_vertex_weights = xsum_square_vertex_weights.derived_cast();
+                auto &vertex_perimeter = xvertex_perimeter.derived_cast();
+
+                size_t num_nodes = vertex_area.size();
+                size_t num_nodes_final = num_nodes * 2 - 1;
+                m_area = array_1d<double>::from_shape({num_nodes_final});
+                xt::noalias(xt::view(m_area, xt::range(0, num_nodes))) = vertex_area;
+                m_perimeter = array_1d<double>::from_shape({num_nodes_final});
+                xt::noalias(xt::view(m_perimeter, xt::range(0, num_nodes))) = vertex_perimeter;
+                m_sum = container_bpt<vectorial>::init(sum_vertex_weights);
+                m_sum2 = container_bpt<vectorial>::init(sum_square_vertex_weights);
+
+                for (index_t i = 0; i < (index_t) num_nodes; i++) {
+                    m_optimal_energies.emplace_back(
+                            lep_t{0, computation_helper<vectorial>::data_fidelity(m_sum, m_sum2, m_area, i),
+                                  m_perimeter(i)});
+                }
+            }
+
+            auto weight_initial_edges() {
+                array_1d<double> edge_weights = array_1d<double>::from_shape({num_edges(m_graph)});
+                for (auto e: edge_iterator(m_graph)) {
+                    auto s = source(e, m_graph);
+                    auto t = target(e, m_graph);
+                    edge_weights(e) = computation_helper<vectorial>::apparition_scale(
+                            m_optimal_energies, m_area, m_perimeter, m_sum, m_sum2,
+                            s, t, m_edge_length(e));
+                }
+                return edge_weights;
+            }
+
+            template<typename graph_t, typename neighbours_t>
+            void operator()(const graph_t &g,
+                            index_t fusion_edge_index,
+                            index_t new_region,
+                            index_t merged_region1,
+                            index_t merged_region2,
+                            neighbours_t &new_neighbours) {
+                // compute attributes of the new region
+                m_area(new_region) = m_area(merged_region1) + m_area(merged_region2);
+                m_perimeter(new_region) =
+                        m_perimeter(merged_region1) + m_perimeter(merged_region2) -
+                        2 * m_edge_length(fusion_edge_index);
+                computation_helper<vectorial>::add(m_sum, new_region, merged_region1, merged_region2);
+                computation_helper<vectorial>::add(m_sum2, new_region, merged_region1, merged_region2);
+
+                // compute energy of new region
+                m_optimal_energies.push_back(
+                        m_optimal_energies[merged_region1].sum(m_optimal_energies[merged_region2]));
+                m_optimal_energies[new_region].infimum(
+                        {0,
+                         computation_helper<vectorial>::data_fidelity(m_sum, m_sum2, m_area, new_region),
+                         m_perimeter(new_region)});
+
+                // update weights of edges linking the new region
+                for (auto &n: new_neighbours) {
+
+                    // compute the length of the edge linking the new region to one of its neighbour
+                    double new_edge_length;
+                    if (n.num_edges() > 1) {
+                        new_edge_length = m_edge_length[n.first_edge_index()] + m_edge_length[n.second_edge_index()];
+                    } else {
+                        new_edge_length = m_edge_length[n.first_edge_index()];
+                    }
+                    m_edge_length[n.new_edge_index()] = new_edge_length;
+
+                    // the weight of the new edge is equal to the apparition scale of the region create by the merging of
+                    // the two extremities of the edge
+                    n.new_edge_weight() = computation_helper<vectorial>::apparition_scale(
+                            m_optimal_energies, m_area, m_perimeter, m_sum, m_sum2,
+                            new_region, n.neighbour_vertex(), new_edge_length);
+
+                }
+            }
+        };
     }
 
     /**
@@ -284,7 +509,8 @@ namespace hg {
      *
      * See:
      *
-     *  Laurent Guigues, Jean Pierre Cocquerez, Hervé Le Men. Scale-sets Image Analysis. International
+     *  Laurent Guigues, Jean Pierre Cocquerez, H
+     *  ervé Le Men. Scale-sets Image Analysis. International
      *  Journal of Computer Vision, Springer Verlag, 2006, 68 (3), pp.289-317
      *
      * and
@@ -320,8 +546,8 @@ namespace hg {
 
         // forward pass
         xt::view(optimal_nodes, xt::range(0, num_leaves(tree))) = true;
-        xt::view(optimal_energy, xt::range(0, num_leaves(tree))) = xt::view(energy_attribute,
-                                                                            xt::range(0, num_leaves(tree)));
+        xt::noalias(xt::view(optimal_energy, xt::range(0, num_leaves(tree)))) =
+                xt::view(energy_attribute, xt::range(0, num_leaves(tree)));
 
         for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             output_view.set_position(i);
@@ -436,4 +662,81 @@ namespace hg {
         return make_node_weighted_tree(std::move(qfz_tree), std::move(qfz_apparition_scales));
     };
 
+    /**
+     * Compute the binary partition tree, i.e. the agglomerative clustering, according to the Mumford-Shah energy
+     * with a constant piecewise model.
+     *
+     * The distance between two regions is equal to the apparition scale of the merged region.
+     *
+     * See:
+     *
+     *  Laurent Guigues, Jean Pierre Cocquerez, Hervé Le Men. Scale-sets Image Analysis. International
+     *  Journal of Computer Vision, Springer Verlag, 2006, 68 (3), pp.289-317
+     *
+     * @tparam graph_t
+     * @tparam T1
+     * @tparam T2
+     * @tparam T3
+     * @tparam T4
+     * @tparam T5
+     * @param graph Input graph
+     * @param xvertex_perimeter Perimeter of each vertex of the input graph
+     * @param xvertex_area Area of each vertex of the input graph
+     * @param xvertex_values Sum of values inside the region represented by each vertex of the input graph.
+     * @param xsquared_vertex_values Sum of the squared values inside the region represented by each vertex of the input graph.
+     * @param xedge_length Length of the frontier represented by each edge.
+     * @return a node_weighted_tree
+     */
+    template<typename graph_t,
+            typename T1, typename T2, typename T3, typename T4, typename T5>
+    auto binary_partition_tree_MumfordShah_energy(
+            const graph_t &graph,
+            const xt::xexpression<T1> &xvertex_perimeter,
+            const xt::xexpression<T2> &xvertex_area,
+            const xt::xexpression<T3> &xvertex_values,
+            const xt::xexpression<T4> &xsquared_vertex_values,
+            const xt::xexpression<T5> &xedge_length) {
+
+        auto &vertex_perimeter = xvertex_perimeter.derived_cast();
+        hg_assert_vertex_weights(graph, vertex_perimeter);
+        hg_assert_1d_array(vertex_perimeter);
+        auto &vertex_area = xvertex_area.derived_cast();
+        hg_assert_vertex_weights(graph, vertex_area);
+        hg_assert_1d_array(vertex_area);
+        auto &vertex_values = xvertex_values.derived_cast();
+        hg_assert_vertex_weights(graph, vertex_values);
+        hg_assert(vertex_values.dimension() <= 2, "Vertex values can be scalar or vectorial.");
+        auto &squared_vertex_values = xsquared_vertex_values.derived_cast();
+        hg_assert_same_shape(vertex_values, squared_vertex_values);
+        auto &edge_length = xedge_length.derived_cast();
+        hg_assert_edge_weights(graph, edge_length);
+        hg_assert_1d_array(edge_length);
+
+        if (vertex_values.dimension() == 1) {
+            auto wf = tree_energy_optimization_internal::
+            binary_partition_tree_MumfordShah_linkage_weighting_functor<false, graph_t>(
+                    graph,
+                    vertex_area,
+                    vertex_values,
+                    squared_vertex_values,
+                    vertex_perimeter,
+                    edge_length
+            );
+            auto edge_weights = wf.weight_initial_edges();
+            return binary_partition_tree(graph, edge_weights, wf);
+        } else {
+            auto wf = tree_energy_optimization_internal::
+            binary_partition_tree_MumfordShah_linkage_weighting_functor<true, graph_t>(
+                    graph,
+                    vertex_area,
+                    vertex_values,
+                    squared_vertex_values,
+                    vertex_perimeter,
+                    edge_length
+            );
+            auto edge_weights = wf.weight_initial_edges();
+            return binary_partition_tree(graph, edge_weights, wf);
+        }
+
+    }
 }
