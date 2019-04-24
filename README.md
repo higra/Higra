@@ -11,10 +11,11 @@ Higra is a C++/Python library for efficient graph analysis with a special focus 
 
 - efficient methods and data structures to handle the dual representation of hierarchical clustering: dendrograms (trees) and ultra-metric distances (saliency maps);
 - hierarchical clustering algorithms: agglomerative clustering (single-linkage, average-linkage, complete-linkage, or custom rule), quasi-flat zones hierarchy, hierarchical watersheds;
-- various algorithms to manipulate and explore hierarchical clustering: accumulators, filtering/simplification, cluster extraction, (optimal) partitioning, horizontal and non-horizontal cuts, alignment;
+- various algorithms to manipulate and explore hierarchical clustering: accumulators, filtering/simplification, cluster extraction, partitioning, horizontal and non-horizontal cuts, alignment;
+- optimization on hierarchies: optimal cuts, energy hierarchies;
 - algorithms on graphs: accumulators, computation of dissimilarities, partitioning;
 - assessment: supervised assessment of graph clustering and hierarchical clustering;
-- image toolbox: special methods for grid graphs, hierarchical clustering methods dedicated to image analysis.
+- image toolbox: special methods for grid graphs, hierarchical clustering methods dedicated to image analysis, optimization of Mumford-Shah energy.
 
 Higra is thought for modularity, performance and seamless integration with classical data analysis pipelines. The data structures (graphs and trees) are decoupled from data (vertex and edge weights ) which are simply arrays ([xtensor](https://github.com/QuantStack/xtensor) arrays in C++ and [numpy](https://github.com/numpy/numpy) arrays in Python).
 

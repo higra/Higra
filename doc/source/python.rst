@@ -50,6 +50,7 @@ Python modules
     Tree accumulators </python/tree_accumulators.rst>
     Tree algorithms </python/tree_algorithm.rst>
     Tree attributes </python/tree_attributes.rst>
+    Tree energy optimization </python/tree_energy_optimization.rst>
 
 .. toctree::
     :maxdepth: 2

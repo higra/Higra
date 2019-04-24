@@ -12,6 +12,7 @@
 
 #include "common.hpp"
 #include "../graph.hpp"
+#include "hierarchy_core.hpp"
 #include "../structure/fibonacci_heap.hpp"
 
 namespace hg {
@@ -140,6 +141,148 @@ namespace hg {
 
         };
 
+        /**
+     * Weighting function to be used in conjunction to the binary_partition_tree method in order to perform a single linkage clustering.
+     *
+     * Given a graph G, with initial edge weights W,
+     * the distance d(X,Y) between any two regions X, Y is defined as :
+     *      d(X,Y) = min {W({x,y}) | x in X, y in Y, {x,y} in G }
+     *
+     * Warning: this is a demonstration: in practice, the bptCanonical function (hierarchy_core.hpp)
+     * can compute the single linkage clustering more efficiently.
+     *
+     * Consider using the helper factory function make_binary_partition_tree_min_linkage
+     *
+     * @tparam T
+     */
+        // no used, better implementation in bpt_canonical
+        /*
+        template<typename T>
+        struct binary_partition_tree_min_linkage {
+
+            T &m_weights;
+
+
+            binary_partition_tree_min_linkage(T &weights) : m_weights(weights) {
+                HG_LOG_INFO("Please consider using bpt_canonical to compute the minimum linkage binary partition tree for improved performances.");
+            }
+
+            template<typename graph_t, typename neighbours_t>
+            void operator()(const graph_t &g,
+                            index_t fusion_edge_index,
+                            index_t new_region,
+                            index_t merged_region1,
+                            index_t merged_region2,
+                            neighbours_t &new_neighbours) {
+
+                for (auto &n: new_neighbours) {
+                    auto min_value = m_weights[n.first_edge_index()];
+                    if (n.num_edges() > 1) {
+                        if (m_weights[n.second_edge_index()] < min_value)
+                            min_value = m_weights[n.second_edge_index()];
+                    }
+                    n.new_edge_weight() = min_value;
+                    m_weights[n.new_edge_index()] = min_value;
+                }
+            }
+        };*/
+
+
+        /**
+        * Weighting function to be used in conjunction to the binary_partition_tree method in order to perform a complete linkage clustering.
+        *
+        * Given a graph G, with initial edge weights W,
+        * the distance d(X,Y) between any two regions X, Y is defined as :
+        *      d(X,Y) = max {W({x,y}) | x in X, y in Y, {x,y} in G }
+        *
+        *
+        * @tparam T
+        */
+        template<typename T>
+        struct binary_partition_tree_complete_linkage_weighting_functor {
+            using value_type = typename T::value_type;
+
+            array_1d<value_type> m_weights;
+
+            /**
+             * Initialize the clustering with given edge weights
+             * @param weights
+             */
+            binary_partition_tree_complete_linkage_weighting_functor(const xt::xexpression<T> &weights) :
+                    m_weights(weights) {
+            }
+
+            template<typename graph_t, typename neighbours_t>
+            void operator()(const graph_t &g,
+                            index_t fusion_edge_index,
+                            index_t new_region,
+                            index_t merged_region1,
+                            index_t merged_region2,
+                            neighbours_t &new_neighbours) {
+
+                for (auto &n: new_neighbours) {
+                    auto max_value = m_weights[n.first_edge_index()];
+                    if (n.num_edges() > 1) {
+                        if (max_value < m_weights[n.second_edge_index()])
+                            max_value = m_weights[n.second_edge_index()];
+                    }
+                    n.new_edge_weight() = max_value;
+                    m_weights[n.new_edge_index()] = max_value;
+                }
+            }
+        };
+
+        /**
+        * Weighting function to be used in conjunction to the binary_partition_tree method in order to perform an average linkage clustering.
+        *
+        * Given a graph G, with initial edge values V with associated weights W,
+        * the distance d(X,Y) between any two regions X, Y is defined as :
+        *      d(X,Y) = (1 / Z) + sum_{x in X, y in Y, {x,y} in G} V({x,y}) x W({x,y})
+        * with Z = sum_{x in X, y in Y, {x,y} in G} W({x,y})
+        *
+        * @tparam T
+        */
+        template<typename T>
+        struct binary_partition_tree_average_linkage_weighting_functor {
+            using value_type = typename T::value_type;
+
+            array_1d<value_type> m_values;
+            array_1d<value_type> m_weights;
+
+            binary_partition_tree_average_linkage_weighting_functor(const xt::xexpression<T> &values,
+                                                                    const xt::xexpression<T> &weights)
+                    : m_values(values), m_weights(weights) {
+                hg_assert_same_shape(m_values, m_weights);
+            }
+
+            template<typename graph_t, typename neighbours_t>
+            void operator()(const graph_t &g,
+                            index_t fusion_edge_index,
+                            index_t new_region,
+                            index_t merged_region1,
+                            index_t merged_region2,
+                            neighbours_t &new_neighbours) {
+
+                for (auto &n: new_neighbours) {
+                    value_type new_value;
+                    value_type new_weight;
+                    if (n.num_edges() > 1) {
+                        new_weight = m_weights[n.first_edge_index()] + m_weights[n.second_edge_index()];
+                        new_value = (m_values[n.first_edge_index()] * m_weights[n.first_edge_index()]
+                                     + m_values[n.second_edge_index()] * m_weights[n.second_edge_index()])
+                                    / new_weight;
+                    } else {
+                        new_weight = m_weights[n.first_edge_index()];
+                        new_value = m_values[n.first_edge_index()];
+                    }
+                    n.new_edge_weight() = new_value;
+                    m_values[n.new_edge_index()] = new_value;
+                    m_weights[n.new_edge_index()] = new_weight;
+                }
+            }
+        };
+
+
     }
 
     /**
@@ -199,7 +342,7 @@ namespace hg {
     binary_partition_tree(const graph_t &graph, const xt::xexpression<T> &xedge_weights, weighter weight_function) {
         using weight_t = typename T::value_type;
         using heap_t = fibonacci_heap<binary_partition_tree_internal::heap_element<weight_t> >;
-        
+
         auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
 
@@ -309,177 +452,72 @@ namespace hg {
 
 
     /**
-     * Weighting function to be used in conjunction to the binary_partition_tree method in order to perform a single linkage clustering.
+     * Compute the binary partition tree, i.e. the agglomerative clustering, with the  minimum/single linkage rule.
      *
      * Given a graph G, with initial edge weights W,
      * the distance d(X,Y) between any two regions X, Y is defined as :
      *      d(X,Y) = min {W({x,y}) | x in X, y in Y, {x,y} in G }
+     * Regions are then iteratively merged following the above distance (closest first) until a single region remains
      *
-     * Warning: this is a demonstration: in practice, the bptCanonical function (hierarchy_core.hpp)
-     * can compute the single linkage clustering more efficiently.
-     *
-     * Consider using the helper factory function make_binary_partition_tree_min_linkage
-     *
+     * @tparam graph_t
      * @tparam T
+     * @param graph
+     * @param xedge_weights
      */
-    template<typename T>
-    struct binary_partition_tree_min_linkage {
-
-        T &m_weights;
-
-        /**
-         * Initialize the clustering with given edge weights
-         * @param weights
-         */
-        binary_partition_tree_min_linkage(T &weights) : m_weights(weights) {
-            HG_LOG_INFO("Please consider using bpt_canonical to compute the minimum linkage binary partition tree for improved performances.");
-        }
-
-        template<typename graph_t, typename neighbours_t>
-        void operator()(const graph_t &g,
-                        index_t fusion_edge_index,
-                        index_t new_region,
-                        index_t merged_region1,
-                        index_t merged_region2,
-                        neighbours_t &new_neighbours) {
-
-            for (auto &n: new_neighbours) {
-                auto min_value = m_weights[n.first_edge_index()];
-                if (n.num_edges() > 1) {
-                    if (m_weights[n.second_edge_index()] < min_value)
-                        min_value = m_weights[n.second_edge_index()];
-                }
-                n.new_edge_weight() = min_value;
-                m_weights[n.new_edge_index()] = min_value;
-            }
-        }
-    };
-
+    template<typename graph_t, typename T>
+    auto binary_partition_tree_min_linkage(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+        auto res = bpt_canonical(graph, xedge_weights);
+        return make_node_weighted_tree(std::move(res.tree), std::move(res.altitudes));
+    }
 
     /**
-    * Weighting function to be used in conjunction to the binary_partition_tree method in order to perform a complete linkage clustering.
-    *
-    * Given a graph G, with initial edge weights W,
-    * the distance d(X,Y) between any two regions X, Y is defined as :
-    *      d(X,Y) = max {W({x,y}) | x in X, y in Y, {x,y} in G }
-    *
-    * Consider using the helper factory function make_binary_partition_tree_complete_linkage
-    *
-    * @tparam T
-    */
-    template<typename T>
-    struct binary_partition_tree_complete_linkage {
-
-        T &m_weights;
-
-        /**
-         * Initialize the clustering with given edge weights
-         * @param weights
-         */
-        binary_partition_tree_complete_linkage(T &weights) : m_weights(weights) {
-        }
-
-        template<typename graph_t, typename neighbours_t>
-        void operator()(const graph_t &g,
-                        index_t fusion_edge_index,
-                        index_t new_region,
-                        index_t merged_region1,
-                        index_t merged_region2,
-                        neighbours_t &new_neighbours) {
-
-            for (auto &n: new_neighbours) {
-                auto max_value = m_weights[n.first_edge_index()];
-                if (n.num_edges() > 1) {
-                    if (max_value < m_weights[n.second_edge_index()])
-                        max_value = m_weights[n.second_edge_index()];
-                }
-                n.new_edge_weight() = max_value;
-                m_weights[n.new_edge_index()] = max_value;
-            }
-        }
-    };
-
-    /**
-    * Weighting function to be used in conjunction to the binary_partition_tree method in order to perform an average linkage clustering.
-    *
-    * Given a graph G, with initial edge values V with associated weights W,
-    * the distance d(X,Y) between any two regions X, Y is defined as :
-    *      d(X,Y) = (1 / Z) + sum_{x in X, y in Y, {x,y} in G} V({x,y}) x W({x,y})
-    * with Z = sum_{x in X, y in Y, {x,y} in G} W({x,y})
+     * Compute the binary partition tree, i.e. the agglomerative clustering, with the  maximum/complete linkage rule.
      *
-    * Consider using the helper factory function make_binary_partition_tree_average_linkage
-    *
-    * @tparam T
-    */
-    template<typename T>
-    struct binary_partition_tree_average_linkage {
-        using value_type = typename std::decay<T>::type::value_type;
-
-        T m_values;
-        T m_weights;
-
-        binary_partition_tree_average_linkage(const T &values, const T &weights) : m_values(values), m_weights(weights) {
-            hg_assert_same_shape(values, weights);
-        }
-
-        template<typename graph_t, typename neighbours_t>
-        void operator()(const graph_t &g,
-                        index_t fusion_edge_index,
-                        index_t new_region,
-                        index_t merged_region1,
-                        index_t merged_region2,
-                        neighbours_t &new_neighbours) {
-
-            for (auto &n: new_neighbours) {
-                value_type new_value;
-                value_type new_weight;
-                if (n.num_edges() > 1) {
-                    new_weight = m_weights[n.first_edge_index()] + m_weights[n.second_edge_index()];
-                    new_value = (m_values[n.first_edge_index()] * m_weights[n.first_edge_index()]
-                            + m_values[n.second_edge_index()] * m_weights[n.second_edge_index()])
-                            / new_weight;
-                } else{
-                    new_weight = m_weights[n.first_edge_index()];
-                    new_value = m_values[n.first_edge_index()];
-                }
-                n.new_edge_weight() = new_value;
-                m_values[n.new_edge_index()] = new_value;
-                m_weights[n.new_edge_index()] = new_weight;
-            }
-        }
-    };
-
-    /**
-     * Factory function for binary_partition_tree_min_linkage
-     * @tparam Q
-     * @param weights
-     * @return
+     * Given a graph G, with initial edge weights W,
+     * the distance d(X,Y) between any two regions X, Y is defined as :
+     *      d(X,Y) = max {W({x,y}) | x in X, y in Y, {x,y} in G }
+     * Regions are then iteratively merged following the above distance (closest first) until a single region remains
+     *
+     * @tparam graph_t
+     * @tparam T
+     * @param graph
+     * @param xedge_weights
      */
-    template<typename Q>
-    auto make_binary_partition_tree_min_linkage(Q &&weights) {
-        return binary_partition_tree_min_linkage<Q>(std::forward<Q>(weights));
+    template<typename graph_t, typename T>
+    auto binary_partition_tree_complete_linkage(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+        return binary_partition_tree(
+                graph,
+                xedge_weights,
+                binary_partition_tree_internal::binary_partition_tree_complete_linkage_weighting_functor<T>(
+                        xedge_weights));
     }
 
     /**
-     * Factory function for binary_partition_tree_complete_linkage
-     * @tparam Q
-     * @param weights
-     * @return
+     * Compute the binary partition tree, i.e. the agglomerative clustering, with the  maximum/complete linkage rule.
+     *
+     * Given a graph G, with initial edge weights W with associated weights WW,
+     * the distance d(X,Y) between any two regions X, Y is defined as :
+     *      d(X,Y) = (1 / Z) + sum_{x in X, y in Y, {x,y} in G} W({x,y}) x WW({x,y})
+     * with Z = sum_{x in X, y in Y, {x,y} in G} W({x,y})
+     *
+     * Regions are then iteratively merged following the above distance (closest first) until a single region remains
+     *
+     * @tparam graph_t
+     * @tparam T
+     * @param graph
+     * @param xedge_weights
+     * @param xedge_weight_weights
      */
-    template<typename Q>
-    auto make_binary_partition_tree_complete_linkage(Q &&weights) {
-        return binary_partition_tree_complete_linkage<Q>(std::forward<Q>(weights));
-    }
-
-    /**
-     * Factory function for binary_partition_tree_average_linkage
-     * @tparam Q
-     * @param weights
-     * @return
-     */
-    template<typename Q>
-    auto make_binary_partition_tree_average_linkage(Q &&values, Q &&weights) {
-        return binary_partition_tree_average_linkage<Q>(std::forward<Q>(values), std::forward<Q>(weights));
+    template<typename graph_t, typename T>
+    auto binary_partition_tree_average_linkage(const graph_t &graph,
+                                               const xt::xexpression<T> &xedge_weights,
+                                               const xt::xexpression<T> &xedge_weight_weights) {
+        return binary_partition_tree(
+                graph,
+                xedge_weights,
+                binary_partition_tree_internal::binary_partition_tree_average_linkage_weighting_functor<T>(
+                        xedge_weights,
+                        xedge_weight_weights));
     }
 
 }

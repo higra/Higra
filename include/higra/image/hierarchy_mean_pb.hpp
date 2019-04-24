@@ -46,11 +46,11 @@ namespace hg {
      * @param xedge_orientations
      * @return
      */
-    template <typename graph_t, typename T1, typename T2>
-    auto oriented_watershed(const graph_t & graph,
+    template<typename graph_t, typename T1, typename T2>
+    auto oriented_watershed(const graph_t &graph,
                             const embedding_grid_2d &embedding,
-                            const xt::xexpression<T1> & xedge_weights,
-                            const xt::xexpression<T2> & xedge_orientations = array_nd<int>()){
+                            const xt::xexpression<T1> &xedge_weights,
+                            const xt::xexpression<T2> &xedge_orientations = array_nd<int>()) {
         HG_TRACE();
         using value_t = typename T1::value_type;
         const auto &edge_weights = xedge_weights.derived_cast();
@@ -64,32 +64,33 @@ namespace hg {
 
         array_1d<value_t> final_weights = xt::zeros<value_t>({num_edges(graph)});
 
-        if(edge_orientations.dimension() != 0){
+        if (edge_orientations.dimension() != 0) {
             // reweighting contours according to contour orientations
             hg_assert_edge_weights(graph, edge_orientations);
             hg_assert_1d_array(edge_orientations);
 
-            auto watershed_cut =  weight_graph(graph, watershed_labels, weight_functions::L0);
+            auto watershed_cut = weight_graph(graph, watershed_labels, weight_functions::L0);
             auto contour2d = fit_contour_2d(graph, embedding, watershed_cut);
             contour2d.subdivide();
 
-            for(auto & polyline: contour2d){
-                for(auto & segment: polyline){
+            for (auto &polyline: contour2d) {
+                for (auto &segment: polyline) {
                     auto segment_orientation = std::fmod(segment.angle(), xt::numeric_constants<double>::PI);
 
-                    for(auto element: segment){
+                    for (auto element: segment) {
                         auto edge_index = element.first;
                         auto edge_weight = edge_weights(edge_index);
                         auto edge_orientation = edge_orientations(edge_index);
                         auto new_weight = edge_weight
-                                          * std::abs(std::cos(edge_orientation - xt::numeric_constants<double>::PI_2 - segment_orientation));
-                        if(new_weight > final_weights(edge_index)){
+                                          * std::abs(
+                                std::cos(edge_orientation - xt::numeric_constants<double>::PI_2 - segment_orientation));
+                        if (new_weight > final_weights(edge_index)) {
                             final_weights(edge_index) = new_weight;
                         }
                     }
                 }
             }
-        }else{
+        } else {
             final_weights = edge_weights;
         }
 
@@ -122,11 +123,11 @@ namespace hg {
      * @param xedge_orientations
      * @return
      */
-    template <typename graph_t, typename T1, typename T2>
-    auto mean_pb_hierarchy(const graph_t & graph,
-                 const embedding_grid_2d &embedding,
-                 const xt::xexpression<T1> & xedge_weights,
-                 const xt::xexpression<T2> & xedge_orientations = array_nd<int>()){
+    template<typename graph_t, typename T1, typename T2>
+    auto mean_pb_hierarchy(const graph_t &graph,
+                           const embedding_grid_2d &embedding,
+                           const xt::xexpression<T1> &xedge_weights,
+                           const xt::xexpression<T2> &xedge_orientations = array_nd<int>()) {
         HG_TRACE();
 
         using value_t = typename T1::value_type;
@@ -138,14 +139,14 @@ namespace hg {
                   "Graph number of vertices does not match the size of the embedding.");
 
         auto ows = oriented_watershed(graph, embedding, edge_weights, edge_orientations);
-        auto & rag = ows.first;
-        auto & rag_edge_weights = ows.second;
+        auto &rag = ows.first;
+        auto &rag_edge_weights = ows.second;
 
         auto rag_edge_length = rag_accumulate(rag.edge_map, edge_weights, accumulator_counter());
 
-        auto tree = binary_partition_tree(rag.rag,
-                                         rag_edge_weights,
-                                         make_binary_partition_tree_average_linkage(rag_edge_weights, rag_edge_length));
+        auto tree = binary_partition_tree_average_linkage(rag.rag,
+                                                          rag_edge_weights,
+                                                          rag_edge_length);
         return std::make_pair(std::move(rag), std::move(tree));
     }
 }

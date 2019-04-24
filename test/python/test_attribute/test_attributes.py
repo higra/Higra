@@ -130,7 +130,7 @@ class TestAttributes(unittest.TestCase):
         tree, altitudes = TestAttributes.get_test_tree()
         edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1), dtype=np.float64)
 
-        ref_attribute = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 26/5]
+        ref_attribute = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 26 / 5]
 
         attribute = hg.attribute_frontier_strength(tree, edge_weights)
         self.assertTrue(np.allclose(ref_attribute, attribute))
@@ -152,14 +152,15 @@ class TestAttributes(unittest.TestCase):
 
     def test_perimeter_length(self):
         tree, altitudes = TestAttributes.get_test_tree()
-
-        ref_attribute = [2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 0]
+        ref_attribute = [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 8, 10, 16, 12]
         attribute = hg.attribute_perimeter_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
-        leaf_perimeter = 4 + np.zeros((tree.num_leaves(),))
-        ref_attribute = [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 8, 10, 16, 12]
-        attribute = hg.attribute_perimeter_length(tree, vertex_perimeter=leaf_perimeter, force_recompute=True)
+    def test_perimeter_length2(self):
+        tree, altitudes = TestAttributes.get_test_tree()
+        hg.set_attribute(hg.CptHierarchy.get_leaf_graph(tree), "no_border_vertex_out_degree", None)
+        ref_attribute = [2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 0]
+        attribute = hg.attribute_perimeter_length(tree, no_cache=True)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_perimeter_length_rag(self):
@@ -177,9 +178,6 @@ class TestAttributes(unittest.TestCase):
 
     def test_compactness(self):
         tree, altitudes = TestAttributes.get_test_tree()
-
-        hg.set_attribute(hg.get_attribute(tree, "leaf_graph"), "vertex_perimeter",
-                         4 + np.zeros((tree.num_leaves(),), dtype=np.int64))
         ref_attribute = [1., 1., 1., 1., 1., 1., 1., 1., 1., 0.88888889, 0.88888889, 0.88888889, 0.88888889, 0.75, 0.64,
                          0.4375, 1.]
         attribute = hg.attribute_compactness(tree)
@@ -216,7 +214,7 @@ class TestAttributes(unittest.TestCase):
 
     def test_regular_altitudes(self):
         t = hg.Tree((6, 6, 7, 8, 8, 8, 7, 9, 9, 9))
-        ref = np.asarray((0, 0, 0, 0, 0, 0, 1/3, 2/3, 2/3, 1))
+        ref = np.asarray((0, 0, 0, 0, 0, 0, 1 / 3, 2 / 3, 2 / 3, 1))
         res = hg.attribute_regular_altitudes(t)
         self.assertTrue(np.allclose(ref, res))
 
@@ -229,14 +227,14 @@ class TestAttributes(unittest.TestCase):
 
     def test_edge_length(self):
         g = hg.get_4_adjacency_graph((2, 3))
-        ref = np.asarray((1, 1, 1, 1, 1, 1,  1))
+        ref = np.asarray((1, 1, 1, 1, 1, 1, 1))
         res = hg.attribute_edge_length(g)
         self.assertTrue(np.allclose(ref, res))
 
     def test_edge_length_rag(self):
         g = hg.get_4_adjacency_graph((2, 3))
-        vertex_labels =  np.asarray(((1, 2, 2),
-                                     (3, 3, 3)))
+        vertex_labels = np.asarray(((1, 2, 2),
+                                    (3, 3, 3)))
         rag = hg.make_region_adjacency_graph_from_labelisation(vertex_labels, g)
         ref = np.asarray((1, 1, 2))
         res = hg.attribute_edge_length(rag)
@@ -244,6 +242,14 @@ class TestAttributes(unittest.TestCase):
 
     def test_vertex_perimeter(self):
         g = hg.get_4_adjacency_graph((2, 3))
+        ref = np.asarray(((4, 4, 4),
+                          (4, 4, 4)))
+        res = hg.attribute_vertex_perimeter(g)
+        self.assertTrue(np.allclose(ref, res))
+
+    def test_vertex_perimeter2(self):
+        g = hg.get_4_adjacency_graph((2, 3))
+        hg.set_attribute(g, "no_border_vertex_out_degree", None)
         ref = np.asarray(((2, 3, 2),
                           (2, 3, 2)))
         res = hg.attribute_vertex_perimeter(g)
@@ -251,12 +257,60 @@ class TestAttributes(unittest.TestCase):
 
     def test_vertex_perimeter_rag(self):
         g = hg.get_4_adjacency_graph((2, 3))
-        vertex_labels =  np.asarray(((1, 2, 2),
-                                     (3, 3, 3)))
+        vertex_labels = np.asarray(((1, 2, 2),
+                                    (3, 3, 3)))
         rag = hg.make_region_adjacency_graph_from_labelisation(vertex_labels, g)
         ref = np.asarray((2, 3, 3))
         res = hg.attribute_vertex_perimeter(rag)
         self.assertTrue(np.allclose(ref, res))
+
+    def test_attribute_vertex_list(self):
+        tree, altitudes = TestAttributes.get_test_tree()
+
+        res = hg.attribute_vertex_list(tree)
+        ref = [[0], [1], [2], [3], [4], [5], [6], [7], [8],
+               [0, 1], [2, 5], [3, 4], [6, 7], [6, 7, 8],
+               [0, 1, 2, 5], [0, 1, 2, 5, 6, 7, 8],
+               [0, 1, 2, 5, 6, 7, 8, 3, 4]]
+        self.assertTrue(len(ref) == len(res))
+        for i in range(len(ref)):
+            self.assertTrue(set(ref[i]) == set(res[i]))
+
+    def test_attribute_gaussian_region_weights_model_scalar(self):
+        tree, altitudes = TestAttributes.get_test_tree()
+        vertex_list = hg.attribute_vertex_list(tree)
+
+        np.random.seed(42)
+        vertex_weights = np.random.rand(tree.num_leaves())
+        mean, variance = hg.attribute_gaussian_region_weights_model(tree, vertex_weights)
+
+        for i in tree.leaves_to_root_iterator():
+            m = np.mean(vertex_weights[vertex_list[i]])
+            v = np.var(vertex_weights[vertex_list[i]])
+            self.assertTrue(np.isclose(m, mean[i]))
+            self.assertTrue(np.isclose(v, variance[i]))
+
+    def test_attribute_gaussian_region_weights_model_vectorial(self):
+        tree, altitudes = TestAttributes.get_test_tree()
+        vertex_list = hg.attribute_vertex_list(tree)
+
+        np.random.seed(42)
+        vertex_weights = np.random.rand(tree.num_leaves(), 3)
+        mean, variance = hg.attribute_gaussian_region_weights_model(tree, vertex_weights)
+
+        for i in tree.leaves_to_root_iterator(include_leaves=True):
+            m = np.mean(vertex_weights[vertex_list[i]], 0)
+
+            self.assertTrue(np.allclose(m, mean[i, :]))
+
+            # numpy wrongly interprets a single observation with several variables as
+            # multiple observations of a single variables
+            if i >= tree.num_leaves():
+                v = np.cov(vertex_weights[vertex_list[i]], rowvar=False, bias=True)
+                self.assertTrue(np.allclose(v, variance[i, ...]))
+            else:
+                v = np.zeros_like(variance[i, ...])
+                self.assertTrue(np.allclose(v, variance[i, ...]))
 
 
 if __name__ == '__main__':

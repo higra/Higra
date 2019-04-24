@@ -47,16 +47,13 @@ struct def_binary_partition_tree_average_linkage {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_binary_partition_tree_average_linkage",
-              [](const hg::ugraph &graph, pyarray<T> &edge_values, pyarray<T> &edge_weights) {
-                  return hg::binary_partition_tree(graph,
-                                                   edge_values,
-                                                   hg::make_binary_partition_tree_average_linkage(
-                                                           edge_values, edge_weights));
+              [](const hg::ugraph &graph, pyarray<T> &edge_weights, pyarray<T> &edge_weight_weights) {
+                  return binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weights);
               },
               doc,
               py::arg("graph"),
-              py::arg("edge_values"),
-              py::arg("edge_weights"));
+              py::arg("edge_weights"),
+              py::arg("edge_weight_weights"));
     }
 };
 
@@ -96,10 +93,7 @@ struct def_binary_partition_tree_complete_linkage {
     void def(pybind11::module &m, const char *doc) {
         m.def("_binary_partition_tree_complete_linkage",
               [](const hg::ugraph &graph, pyarray<T> &edge_weights) {
-                  return hg::binary_partition_tree(graph,
-                                                   edge_weights,
-                                                   hg::make_binary_partition_tree_complete_linkage(
-                                                           edge_weights));
+                  return hg::binary_partition_tree_complete_linkage(graph, edge_weights);
               },
               doc,
               py::arg("graph"),
