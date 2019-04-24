@@ -31,7 +31,7 @@ def attribute_vertex_area(graph):
         pre_graph = hg.CptRegionAdjacencyGraph.get_pre_graph(graph)
         pre_graph_vertex_area = attribute_vertex_area(pre_graph)
         return hg.rag_accumulate_on_vertices(graph, hg.Accumulators.sum, vertex_weights=pre_graph_vertex_area)
-    res = np.ones((graph.num_vertices(),), dtype=np.int64)
+    res = np.ones((graph.num_vertices(),), dtype=np.float64)
     res = hg.delinearize_vertex_weights(res, graph)
     hg.CptVertexWeightedGraph.link(res, graph)
     return res
@@ -55,7 +55,7 @@ def attribute_edge_length(graph):
         pre_graph = hg.CptRegionAdjacencyGraph.get_pre_graph(graph)
         pre_graph_edge_length = attribute_edge_length(pre_graph)
         return hg.rag_accumulate_on_edges(graph, hg.Accumulators.sum, edge_weights=pre_graph_edge_length)
-    res = np.ones((graph.num_edges(),), dtype=np.int64)
+    res = np.ones((graph.num_edges(),), dtype=np.float64)
     hg.CptEdgeWeightedGraph.link(res, graph)
     return res
 
@@ -80,7 +80,7 @@ def attribute_vertex_perimeter(graph, edge_length):
     special_case_border_graph = hg.get_attribute(graph, "no_border_vertex_out_degree")
 
     if special_case_border_graph is not None:
-        res = np.full((graph.num_vertices(), ), special_case_border_graph)
+        res = np.full((graph.num_vertices(), ), special_case_border_graph, dtype=np.float64)
         res = hg.delinearize_vertex_weights(res, graph)
         hg.CptVertexWeightedGraph.link(res, graph)
         return res
@@ -113,7 +113,7 @@ def attribute_vertex_coordinates(graph, shape):
     """
     coords = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
     coords = [c.reshape((-1,)) for c in coords]
-    attribute = np.stack(reversed(coords), axis=1)
+    attribute = np.stack(list(reversed(coords)), axis=1)
     attribute = hg.delinearize_vertex_weights(attribute, graph)
     hg.CptVertexWeightedGraph.link(attribute, graph)
     return attribute
@@ -277,9 +277,9 @@ def attribute_compactness(tree, area, perimeter_length, normalize=True):
     compactness = area / (perimeter_length * perimeter_length)
     if normalize:
         max_compactness = np.nanmax(compactness)
-        res = compactness / max_compactness
-    hg.CptValuedHierarchy.link(res, tree)
-    return res
+        compactness = compactness / max_compactness
+    hg.CptValuedHierarchy.link(compactness, tree)
+    return compactness
 
 
 @hg.data_provider("mean_weights")

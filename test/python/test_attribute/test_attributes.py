@@ -160,7 +160,7 @@ class TestAttributes(unittest.TestCase):
         tree, altitudes = TestAttributes.get_test_tree()
         hg.set_attribute(hg.CptHierarchy.get_leaf_graph(tree), "no_border_vertex_out_degree", None)
         ref_attribute = [2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 0]
-        attribute = hg.attribute_perimeter_length(tree)
+        attribute = hg.attribute_perimeter_length(tree, no_cache=True)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_perimeter_length_rag(self):
