@@ -51,6 +51,7 @@ def get_4_adjacency_graph(shape):
     :param shape: a pair (height, width)
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
+    shape = hg.normalize_shape(shape)
     graph = hg.cpp._get_4_adjacency_graph(shape)
     hg.CptGridGraph.link(graph, shape)
     hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
@@ -65,6 +66,7 @@ def get_8_adjacency_graph(shape):
     :param shape: a pair (height, width)
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
+    shape = hg.normalize_shape(shape)
     graph = hg.cpp._get_8_adjacency_graph(shape)
     hg.CptGridGraph.link(graph, shape)
     hg.set_attribute(graph, "no_border_vertex_out_degree", 8)
@@ -79,6 +81,7 @@ def get_4_adjacency_implicit_graph(shape):
     :param shape: a pair (height, width)
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
+    shape = hg.normalize_shape(shape)
     graph = hg.cpp._get_4_adjacency_implicit_graph(shape)
     hg.CptGridGraph.link(graph, shape)
     hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
@@ -93,6 +96,7 @@ def get_8_adjacency_implicit_graph(shape):
     :param shape: a pair (height, width)
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
+    shape = hg.normalize_shape(shape)
     graph = hg.cpp._get_8_adjacency_implicit_graph(shape)
     hg.CptGridGraph.link(graph, shape)
     hg.set_attribute(graph, "no_border_vertex_out_degree", 8)

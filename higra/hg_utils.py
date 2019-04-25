@@ -11,6 +11,7 @@
 import higra as hg
 import numpy as np
 
+
 def extend_class(cls, method_name=None):
     """
     Add the decorated function to the specified class.
@@ -135,7 +136,7 @@ def mean_angle_mod_pi(angles1, angles2):
     differences = max_angles - min_angles
 
     # places where we should have wrapped
-    problems = differences > np.pi/2
+    problems = differences > np.pi / 2
     ok = np.logical_not(problems)
 
     # handle wrapping
@@ -166,3 +167,212 @@ def dtype_info(dtype):
         return np.finfo(dtype)
     else:
         raise TypeError("Given dtype is not suported or invalid.")
+
+
+__int8 = 'int8'
+__int16 = 'int16'
+__int32 = 'int32'
+__int64 = 'int64'
+__uint8 = 'uint8'
+__uint16 = 'uint16'
+__uint32 = 'uint32'
+__uint64 = 'uint64'
+__float32 = 'float32'
+__float64 = 'float64'
+
+__minimum_type_order = {
+    __int8: {
+        __int8: __int8,
+        __uint8: __int16,
+        __int16: __int16,
+        __uint16: __int32,
+        __int32: __int32,
+        __uint32: __int64,
+        __int64: __int64,
+        __uint64: __int64,
+        __float32: __float32,
+        __float64: __float64
+    },
+    __uint8: {
+        __int8: __int16,
+        __uint8: __uint8,
+        __int16: __int16,
+        __uint16: __uint16,
+        __int32: __int32,
+        __uint32: __uint32,
+        __int64: __int64,
+        __uint64: __uint64,
+        __float32: __float32,
+        __float64: __float64
+    },
+    __int16: {
+        __int8: __int16,
+        __uint8: __int16,
+        __int16: __int16,
+        __uint16: __int32,
+        __int32: __int32,
+        __uint32: __int64,
+        __int64: __int64,
+        __uint64: __int64,
+        __float32: __float32,
+        __float64: __float64
+    },
+    __uint16: {
+        __int8: __int32,
+        __uint8: __uint16,
+        __int16: __int32,
+        __uint16: __uint16,
+        __int32: __int32,
+        __uint32: __uint32,
+        __int64: __int64,
+        __uint64: __uint64,
+        __float32: __float32,
+        __float64: __float64
+    },
+    __int32: {
+        __int8: __int32,
+        __uint8: __int32,
+        __int16: __int32,
+        __uint16: __int32,
+        __int32: __int32,
+        __uint32: __int64,
+        __int64: __int64,
+        __uint64: __int64,
+        __float32: __float32,
+        __float64: __float64
+    },
+    __uint32: {
+        __int8: __int64,
+        __uint8: __uint32,
+        __int16: __int64,
+        __uint16: __uint32,
+        __int32: __int64,
+        __uint32: __uint32,
+        __int64: __int64,
+        __uint64: __uint64,
+        __float32: __float32,
+        __float64: __float64
+    },
+    __int64: {
+        __int8: __int64,
+        __uint8: __int64,
+        __int16: __int64,
+        __uint16: __int64,
+        __int32: __int64,
+        __uint32: __int64,
+        __int64: __int64,
+        __uint64: __int64,
+        __float32: __float32,
+        __float64: __float64
+    },
+    __uint64: {
+        __int8: __int64,
+        __uint8: __uint64,
+        __int16: __int64,
+        __uint16: __uint64,
+        __int32: __int64,
+        __uint32: __uint64,
+        __int64: __int64,
+        __uint64: __uint64,
+        __float32: __float32,
+        __float64: __float64
+    },
+    __float32: {
+        __int8: __float32,
+        __uint8: __float32,
+        __int16: __float32,
+        __uint16: __float32,
+        __int32: __float32,
+        __uint32: __float32,
+        __int64: __float32,
+        __uint64: __float32,
+        __float32: __float32,
+        __float64: __float64
+    },
+    __float64: {
+        __int8: __float64,
+        __uint8: __float64,
+        __int16: __float64,
+        __uint16: __float64,
+        __int32: __float64,
+        __uint32: __float64,
+        __int64: __float64,
+        __uint64: __float64,
+        __float32: __float64,
+        __float64: __float64
+    },
+}
+
+
+def common_type(*arrays, safety_level='minimum'):
+    """
+    Find a common type to a list of numpy arrays.
+
+    If safety level is equal to 'minimum', then the result type is the smallest that ensures that all values in all
+    arrays can be represented exactly in the given type (except for `np.uint64` which is allowed to fit in a `np.int64`!)
+    In this case the function also guaranties that the result type is integral if all the arrays have integral types.
+
+    If safety level is equal to 'overflow', the result type ensures a to have a type suitable to contain the result of common
+    operations involving the input arrays (additions, divisions...). This relies on `numpy.common_type`: The return type will always
+    be an inexact (i.e. floating point) scalar type, even if all the arrays are integer arrays. If one of the inputs is
+    an integer array, the minimum precision type that is returned is a 64-bit floating point dtype.
+
+    All input arrays except int64 and uint64 can be safely cast to the returned dtype without loss of information.
+
+    :param arrays: a sequence of numpy arrays
+    :param safety_level: either 'minimum' or 'overflow'
+    :return: a numpy dtype
+    """
+
+    if safety_level == 'overflow':
+        return np.common_type(*arrays)
+
+    if safety_level != 'minimum':
+        raise ValueError('Unknown safety level: should be "minimum" or "overflow"')
+
+    ctype = str(arrays[0].dtype)
+    for i in range(1, len(arrays)):
+        ctype = __minimum_type_order[ctype][str(arrays[i].dtype)]
+
+    return np.dtype(ctype)
+
+
+def cast_to_common_type(*arrays, safety_level='minimum'):
+    """
+    Find a common type to a list of numpy arrays, cast all arrays that need to be cast to this type and returns the list of arrays (with some of them casted).
+
+    see :func:`~higra.common_type`
+
+    If safety level is equal to 'minimum', then the result type is the smallest that ensures that all values in all
+    arrays can be represented exactly in the given type (except for `np.uint64` which is allowed to fit in a `np.int64`!)
+    In this case the function also guaranties that the result type is integral if all the arrays have integral types.
+
+    If safety level is equal to 'overflow', the result type ensures a to have a type suitable to contain the result of common
+    operations involving the input arrays (additions, divisions...). This relies on `numpy.common_type`: The return type will always
+    be an inexact (i.e. floating point) scalar type, even if all the arrays are integer arrays. If one of the inputs is
+    an integer array, the minimum precision type that is returned is a 64-bit floating point dtype.
+
+    All input arrays except int64 and uint64 can be safely cast to the returned dtype without loss of information.
+
+    :param arrays: a sequence of numpy arrays
+    :param safety_level: either 'minimum' or 'overflow'
+    :return: a list of arrays
+    """
+
+    ctype = common_type(*arrays, safety_level=safety_level)
+
+    return [a if a.dtype == ctype else a.astype(ctype) for a in arrays]
+
+
+def cast_to_dtype(array, dtype):
+    """
+    Cast the given numpy array to the given dtype and returns the result.
+    If the input array dtype is already equal to the given dtype, the input array is returned.
+
+    :param array: a numpy array
+    :param dtype: a numpy dtype
+    :return: a numpy array
+    """
+    if array.dtype != dtype:
+        array = array.astype(dtype)
+    return array

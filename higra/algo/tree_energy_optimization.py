@@ -83,6 +83,7 @@ def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, reg
     :param approximation_piecewise_linear_function: Maximum number of pieces used in the approximated piecewise linear model for the energy function (default 10).
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
+    data_fidelity_attribute, regularization_attribute = hg.cast_to_common_type(data_fidelity_attribute, regularization_attribute)
     res = hg.cpp._hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute,
                                                             int(approximation_piecewise_linear_function))
     new_tree = res.tree()

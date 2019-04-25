@@ -35,9 +35,10 @@ def make_assesser_fragmentation_optimal_cut(tree,
     :return: an object of type :class:`~higra.AssesserFragmentationOptimalCut`
     """
     if vertex_map is None:
-        return hg.AssesserFragmentationOptimalCut(tree, ground_truth, measure, max_regions=max_regions)
+        return hg.AssesserFragmentationOptimalCut(tree, ground_truth, measure, max_regions=int(max_regions))
     else:
-        return hg.AssesserFragmentationOptimalCut(tree, ground_truth, measure, max_regions=max_regions,
+        vertex_map = hg.cast_to_dtype(vertex_map, np.int64)
+        return hg.AssesserFragmentationOptimalCut(tree, ground_truth, measure, max_regions=int(max_regions),
                                                   vertex_map=vertex_map)
 
 
@@ -95,8 +96,9 @@ def assess_fragmentation_horizontal_cut(altitudes,
 
     if vertex_map is None:
         return hg.cpp._assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, measure,
-                                                           max_regions=max_regions)
+                                                           max_regions=int(max_regions))
     else:
+        vertex_map = hg.cast_to_dtype(vertex_map, np.int64)
         return hg.cpp._assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, measure,
-                                                           max_regions=max_regions,
+                                                           max_regions=int(max_regions),
                                                            vertex_map=vertex_map)
