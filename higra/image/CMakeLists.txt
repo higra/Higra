@@ -10,6 +10,7 @@
 
 set(PY_FILES
         __init__.py
+        contour_2d.py
         graph_image.py
         hierarchy_mean_pb.py
         image_utils.py

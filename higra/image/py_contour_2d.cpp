@@ -145,4 +145,36 @@ void py_init_contour_2d(pybind11::module &m) {
             (m,
              "Construct a contour_2d object from a graph cut of a 2d image with a 4 adjacency (non zero edges are part of the cut).");
 
+    m.def("_rag_2d_vertex_perimeter_and_edge_length",
+          [](const ugraph &rag,
+             const pyarray<index_t> &vertex_map,
+             const pyarray<index_t> &edge_map,
+             const std::vector<size_t> &shape,
+             const ugraph &graph,
+             double epsilon = 0.1,
+             bool relative_epsilon = true,
+             int min_size = 2) {
+              hg::embedding_grid_2d embedding(shape);
+              auto res = rag_2d_vertex_perimeter_and_edge_length(
+                      rag,
+                      vertex_map,
+                      edge_map,
+                      embedding,
+                      graph,
+                      epsilon,
+                      relative_epsilon,
+                      min_size
+              );
+              return pybind11::make_tuple(std::move(res.first), std::move(res.second));
+          },
+          "",
+          py::arg("rag"),
+          py::arg("vertex_map"),
+          py::arg("edge_map"),
+          py::arg("shape"),
+          py::arg("graph"),
+          py::arg("epsilon") = 0.1,
+          py::arg("relative_epsilon") = true,
+          py::arg("min_size") = 2
+    );
 }

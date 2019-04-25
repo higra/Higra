@@ -487,9 +487,9 @@ namespace hg {
 
                     // the weight of the new edge is equal to the apparition scale of the region create by the merging of
                     // the two extremities of the edge
-                    n.new_edge_weight() = computation_helper<vectorial>::apparition_scale(
+                    n.new_edge_weight() = (std::max)(0.0, computation_helper<vectorial>::apparition_scale(
                             m_optimal_energies, m_area, m_perimeter, m_sum, m_sum2,
-                            new_region, n.neighbour_vertex(), new_edge_length);
+                            new_region, n.neighbour_vertex(), new_edge_length));
 
                 }
             }
@@ -735,7 +735,9 @@ namespace hg {
                     edge_length
             );
             auto edge_weights = wf.weight_initial_edges();
-            return binary_partition_tree(graph, edge_weights, wf);
+            auto res = binary_partition_tree(graph, edge_weights, wf);
+
+            return res;
         }
 
     }
