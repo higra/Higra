@@ -14,6 +14,8 @@ import numpy as np
 @hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", "vertex_area"))
 def watershed_hierarchy_by_area(edge_weights, graph, vertex_area):
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
+
+    vertex_area = hg.cast_to_dtype(vertex_area, np.float64)
     res = hg.cpp._watershed_hierarchy_by_area(graph, edge_weights, vertex_area)
     tree = res.tree()
     altitudes = res.altitudes()
@@ -27,6 +29,8 @@ def watershed_hierarchy_by_area(edge_weights, graph, vertex_area):
 @hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", "vertex_area"))
 def watershed_hierarchy_by_volume(edge_weights, graph, vertex_area):
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
+
+    vertex_area = hg.cast_to_dtype(vertex_area, np.float64)
     res = hg.cpp._watershed_hierarchy_by_volume(graph, edge_weights, vertex_area)
     tree = res.tree()
     altitudes = res.altitudes()
@@ -176,6 +180,9 @@ def watershed_hierarchy_by_minima_ordering(edge_weights, minima_ranks, minima_al
     :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
     """
+
+    minima_ranks = hg.cast_to_dtype(minima_ranks, np.uint64)
+    minima_altitudes = hg.cast_to_dtype(minima_altitudes, np.float64)
     res = hg.cpp._watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, minima_altitudes)
     tree = res.tree()
     altitudes = res.altitudes()

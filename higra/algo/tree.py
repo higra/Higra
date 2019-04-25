@@ -129,6 +129,7 @@ def binary_labelisation_from_markers(tree, object_marker, background_marker, lea
         object_marker = hg.linearize_vertex_weights(object_marker, leaf_graph)
         background_marker = hg.linearize_vertex_weights(background_marker, leaf_graph)
 
+    object_marker, background_marker = hg.cast_to_common_type(object_marker, background_marker)
     labels = hg.cpp._binary_labelisation_from_markers(tree, object_marker, background_marker)
 
     if leaf_graph is not None:

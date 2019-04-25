@@ -53,6 +53,8 @@ def binary_partition_tree_average_linkage(edge_weights, graph, edge_weight_weigh
 
     if edge_weight_weights is None:
         edge_weight_weights = np.ones_like(edge_weights)
+    else:
+        edge_weights, edge_weight_weights = hg.cast_to_common_type(edge_weights, edge_weight_weights)
 
     res = hg.cpp._binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weights)
     tree = res.tree()

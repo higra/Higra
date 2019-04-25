@@ -9,7 +9,7 @@
 ############################################################################
 
 import higra as hg
-
+import numpy as np
 
 @hg.argument_helper(hg.CptValuedHierarchy)
 def accumulate_parallel(node_weights, accumulator, tree):
@@ -108,6 +108,7 @@ def propagate_parallel(node_weights, tree, condition=None):
     """
 
     if condition is not None:
+        condition = hg.cast_to_dtype(condition, np.bool)
         res = hg.cpp._propagate_parallel(tree, node_weights, condition)
     else:
         res = hg.cpp._propagate_parallel(tree, node_weights)
@@ -133,6 +134,8 @@ def accumulate_and_add_sequential(node_weights, leaf_data, accumulator, tree, le
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
+
+    leaf_data, node_weights = hg.cast_to_common_type(leaf_data, node_weights)
     res = hg.cpp._accumulate_and_add_sequential(tree, node_weights, leaf_data, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
     return res
@@ -156,6 +159,8 @@ def accumulate_and_multiply_sequential(node_weights, leaf_data, accumulator, tre
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
+
+    leaf_data, node_weights = hg.cast_to_common_type(leaf_data, node_weights)
     res = hg.cpp._accumulate_and_multiply_sequential(tree, node_weights, leaf_data, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
     return res
@@ -179,6 +184,8 @@ def accumulate_and_min_sequential(node_weights, leaf_data, accumulator, tree, le
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
+
+    leaf_data, node_weights = hg.cast_to_common_type(leaf_data, node_weights)
     res = hg.cpp._accumulate_and_min_sequential(tree, node_weights, leaf_data, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
     return res
@@ -202,6 +209,8 @@ def accumulate_and_max_sequential(node_weights, leaf_data, accumulator, tree, le
     """
     if leaf_graph is not None:
         leaf_data = hg.linearize_vertex_weights(leaf_data, leaf_graph)
+
+    leaf_data, node_weights = hg.cast_to_common_type(leaf_data, node_weights)
     res = hg.cpp._accumulate_and_max_sequential(tree, node_weights, leaf_data, accumulator)
     hg.CptValuedHierarchy.link(res, tree)
     return res

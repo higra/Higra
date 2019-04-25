@@ -41,6 +41,7 @@ def binary_hierarchy_to_scipy_linkage_matrix(tree, altitudes=None, area=None):
     if area is None:
         area = hg.attribute_area(tree)
 
+    area = hg.cast_to_dtype(area, np.int64)
     return hg.cpp._binary_hierarchy_to_scipy_linkage_matrix(tree, altitudes, area)
 
 

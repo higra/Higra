@@ -134,7 +134,7 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
     :return: a 1d array (Concept :class:`~higra.CptValuedHierarchy`)
     """
     if vertex_area is None:
-        vertex_area = np.ones((tree.num_leaves(),), dtype=np.int64)
+        vertex_area = np.ones((tree.num_leaves(),), dtype=np.float64)
 
     if leaf_graph is not None:
         vertex_area = hg.linearize_vertex_weights(vertex_area, leaf_graph)

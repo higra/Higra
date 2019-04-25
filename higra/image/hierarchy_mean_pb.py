@@ -34,6 +34,8 @@ def oriented_watershed(edge_weights, graph, shape, edge_orientations=None):
     """
 
     shape = hg.normalize_shape(shape)
+    if edge_orientations is not None:
+        edge_weights, edge_orientations = hg.cast_to_common_type(edge_weights, edge_orientations)
     rag, vertex_map, edge_map, rag_edge_weights = hg.cpp._oriented_watershed(graph, shape, edge_weights, edge_orientations)
 
     hg.CptRegionAdjacencyGraph.link(rag, graph, vertex_map, edge_map)
@@ -65,6 +67,8 @@ def mean_pb_hierarchy(edge_weights, graph, shape, edge_orientations=None):
     """
 
     shape = hg.normalize_shape(shape)
+    if edge_orientations is not None:
+        edge_weights, edge_orientations = hg.cast_to_common_type(edge_weights, edge_orientations)
     rag, vertex_map, edge_map, tree, altitudes = hg.cpp._mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations)
 
     hg.CptRegionAdjacencyGraph.link(rag, graph, vertex_map, edge_map)
