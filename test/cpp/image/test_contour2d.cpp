@@ -242,4 +242,27 @@ namespace test_contour_2d {
         REQUIRE(is_in_bijection(ref, contours_khalimsky));
     }
 
+    TEST_CASE("test rag_2d_vertex_perimeter_and_edge_length simple", "[contour_2d]") {
+
+        std::array<index_t, 2> shape{3, 2};
+        auto g = get_4_adjacency_graph(shape);
+
+        xt::xarray<int> vertex_labels{
+                1, 2,
+                3, 3,
+                4, 4
+        };
+
+        auto rag = make_region_adjacency_graph_from_labelisation(g, vertex_labels);
+
+        auto res = rag_2d_vertex_perimeter_and_edge_length(rag, shape, g);
+        auto &vertex_perimeter = res.first;
+        auto &edge_length = res.second;
+
+        array_1d<double> ref_perimeter{4, 4, 6, 6};
+        array_1d<double> ref_length{1, 1, 1, 2};
+
+        REQUIRE((vertex_perimeter == ref_perimeter));
+        REQUIRE((edge_length == ref_length));
+    }
 }

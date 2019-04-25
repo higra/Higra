@@ -8,6 +8,7 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
+from .contour_2d import *
 from .graph_image import *
 from .image_utils import *
 from .hierarchy_mean_pb import *

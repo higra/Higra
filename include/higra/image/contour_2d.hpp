@@ -13,7 +13,9 @@
 #include "../graph.hpp"
 #include "graph_image.hpp"
 #include "../structure/details/iterators.hpp"
+#include "../algo/graph_weights.hpp"
 #include <stack>
+#include <higra/algo/rag.hpp>
 
 namespace hg {
 
@@ -97,7 +99,7 @@ namespace hg {
                 return std::abs((w[0] - v[0]) * p[1] - (w[1] - v[1]) * p[0] + w[1] * v[0] - w[0] * v[1]) / l2;
             };
 
-            auto angle() const{
+            auto angle() const {
                 auto v = first().second;
                 auto w = last().second;
                 return std::atan2(v[0] - w[0], v[1] - w[1]);
@@ -211,7 +213,7 @@ namespace hg {
                 // if i-th element true the polyline has to be subdivided at this element
                 std::vector<bool> is_subdivision_element(m_contour_elements.size(), false);
 
-                for (index_t segment_index = 0; segment_index < (index_t)size(); segment_index++) {
+                for (index_t segment_index = 0; segment_index < (index_t) size(); segment_index++) {
                     stack.push({m_control_points[segment_index], m_control_points[segment_index + 1]});
 
                     // current segment points are preserved
@@ -263,7 +265,7 @@ namespace hg {
                     // final subdivision
                     m_control_points.clear();
 
-                    for (index_t i = 0; i < (index_t)m_contour_elements.size(); i++) {
+                    for (index_t i = 0; i < (index_t) m_contour_elements.size(); i++) {
                         if (is_subdivision_element[i]) {
                             m_control_points.push_back(i);
                         }
@@ -338,7 +340,7 @@ namespace hg {
                 return m_polyline_contours.end();
             }
 
-            auto operator[](index_t i)  {
+            auto operator[](index_t i) {
                 return m_polyline_contours[i];
             }
 
@@ -401,7 +403,7 @@ namespace hg {
         contour_2d result;
 
         array_1d<index_t> positive_edge_index = xt::empty<index_t>({num_edges(graph)});
-        for (index_t i = 0; i < (index_t)positive_edge_index.size(); i++) {
+        for (index_t i = 0; i < (index_t) positive_edge_index.size(); i++) {
             if (edge_weights[i] > 0)
                 positive_edge_index[i] = i;
             else positive_edge_index[i] = invalid_index;
@@ -411,7 +413,7 @@ namespace hg {
                                                                 invalid_index);
 
         auto edge_coordinates = [&embedding, &graph](index_t edge_index) {
-            auto & e = edge_from_index(edge_index, graph);
+            auto &e = edge_from_index(edge_index, graph);
             auto s = source(e, graph);
             auto t = target(e, graph);
             point_type coordinates = embedding.lin2grid(s);
@@ -506,13 +508,14 @@ namespace hg {
 
         };
 
-        auto add_contour_parts_to_polyline = [&contour_part, &edge_coordinates](polyline_contour_2d & polyline, bool reverse = false){
-            if(reverse){
-                for(auto edge_index = contour_part.rbegin(); edge_index != contour_part.rend(); edge_index++){
+        auto add_contour_parts_to_polyline = [&contour_part, &edge_coordinates](polyline_contour_2d &polyline,
+                                                                                bool reverse = false) {
+            if (reverse) {
+                for (auto edge_index = contour_part.rbegin(); edge_index != contour_part.rend(); edge_index++) {
                     polyline.add_contour_element(*edge_index, edge_coordinates(*edge_index));
                 }
-            }else{
-                for(auto edge_index = contour_part.begin(); edge_index != contour_part.end(); edge_index++){
+            } else {
+                for (auto edge_index = contour_part.begin(); edge_index != contour_part.end(); edge_index++) {
                     polyline.add_contour_element(*edge_index, edge_coordinates(*edge_index));
                 }
             }
@@ -523,9 +526,9 @@ namespace hg {
             for (index_t x = 0; x < width; x += 2) {
                 auto edge_index = contours_khalimsky(y, x);
                 if (edge_index != invalid_index && // is there a non zero edge around this 0 face
-                    !processed(y, x)){ // if so did we already processed it ?
+                    !processed(y, x)) { // if so did we already processed it ?
                     processed(y, x) = true;
-                    if(is_intersection(y, x)){ // explore each polyline starting from this point
+                    if (is_intersection(y, x)) { // explore each polyline starting from this point
                         if (x != 0 && contours_khalimsky(y, x - 1) != invalid_index && !processed(y, x - 1)) {
                             explore_contour_part(y, x - 1, EAST);
                             auto &polyline = result.new_polyline_contour_2d();
@@ -546,14 +549,14 @@ namespace hg {
                             auto &polyline = result.new_polyline_contour_2d();
                             add_contour_parts_to_polyline(polyline);
                         }
-                    }else{ // explore the two ends of the polyline passing by this point and join them
+                    } else { // explore the two ends of the polyline passing by this point and join them
                         auto &polyline = result.new_polyline_contour_2d();
                         bool first = true;
                         if (x != 0 && contours_khalimsky(y, x - 1) != invalid_index && !processed(y, x - 1)) {
                             explore_contour_part(y, x - 1, EAST);
                             //if(first){ // impossible at first case
-                                add_contour_parts_to_polyline(polyline, true);
-                                first = false;
+                            add_contour_parts_to_polyline(polyline, true);
+                            first = false;
                             //}else{
                             //    add_contour_parts_to_polyline(polyline);
                             //}
@@ -561,28 +564,28 @@ namespace hg {
                         }
                         if (x != width - 1 && contours_khalimsky(y, x + 1) != invalid_index && !processed(y, x + 1)) {
                             explore_contour_part(y, x + 1, WEST);
-                            if(first){
+                            if (first) {
                                 add_contour_parts_to_polyline(polyline, true);
                                 first = false;
-                            }else{
+                            } else {
                                 add_contour_parts_to_polyline(polyline);
                             }
                         }
                         if (y != 0 && contours_khalimsky(y - 1, x) != invalid_index && !processed(y - 1, x)) {
                             explore_contour_part(y - 1, x, SOUTH);
-                            if(first){
+                            if (first) {
                                 add_contour_parts_to_polyline(polyline, true);
                                 first = false;
-                            }else{
+                            } else {
                                 add_contour_parts_to_polyline(polyline);
                             }
                         }
                         if (y != height - 1 && contours_khalimsky(y + 1, x) != invalid_index && !processed(y + 1, x)) {
                             explore_contour_part(y + 1, x, NORTH);
-                            if(first){
+                            if (first) {
                                 add_contour_parts_to_polyline(polyline, true);
                                 first = false;
-                            }else{
+                            } else {
                                 add_contour_parts_to_polyline(polyline);
                             }
                         }
@@ -596,4 +599,112 @@ namespace hg {
         return result;
     }
 
+    /**
+     * Estimate the vertex perimeter and the length of the frontier associated to the edges of a
+     * region adjacency graph constructed on a 2d 4 adjacency graph.
+     *
+     * The region boundaries are simplified with Ramer–Douglas–Peucker algorithm and is controlled
+     * by the parameters epsilon, relative_epsilon, min_size. See function subdivide of the class contour_2d for more information.
+     *
+     * @tparam graph_t
+     * @param rag_graph Region Adjacency Graph
+     * @param xvertex_map Vertex map of the rag_graph
+     * @param xedge_map Edge map of the rag_graph
+     * @param embedding 2d shape of the input graph
+     * @param graph input graph on which the region adjacency graph has been build: must be a 4 adjacency graph whose shape correspond to the given embedding
+     * @param epsilon larger epsilon values will provide stronger contour shapes simplification
+     * @param relative_epsilon Is epsilon given in relative or absolute units
+     * @param min_size Boundaries elements smaller than min_size will be deleted
+     * @return a pair composed of two 1d arrays: vertex_perimeter and edge_length.
+     */
+    template<typename rag_graph_t, typename graph_t, typename T>
+    auto rag_2d_vertex_perimeter_and_edge_length(
+            const rag_graph_t &rag_graph,
+            const xt::xexpression<T> &xvertex_map,
+            const xt::xexpression<T> &xedge_map,
+            const embedding_grid_2d &embedding,
+            const graph_t &graph,
+            double epsilon = 0.1,
+            bool relative_epsilon = true,
+            int min_size = 2) {
+
+        const auto &vertex_map = xvertex_map.derived_cast();
+        const auto &edge_map = xedge_map.derived_cast();
+        hg_assert_edge_weights(graph, edge_map);
+        hg_assert_1d_array(edge_map);
+        hg_assert_integral_value_type(edge_map);
+        hg_assert_vertex_weights(graph, vertex_map);
+        hg_assert_1d_array(vertex_map);
+        hg_assert_integral_value_type(vertex_map);
+
+        auto cut = weight_graph(graph, vertex_map, weight_functions::L0);
+        auto contour2d = fit_contour_2d(graph, embedding, cut);
+
+        contour2d.subdivide(epsilon, relative_epsilon, min_size);
+
+        array_1d<double> vertex_perimeter = xt::zeros<double>({num_vertices(rag_graph)});
+        array_1d<double> edge_length = xt::zeros<double>({num_edges(rag_graph)});
+
+        for (auto &polyline: contour2d) {
+
+            for (auto &segment: polyline) {
+                auto segment_length = segment.norm() + 1;
+                auto rag_edge_index = edge_map(segment.first().first);
+                auto rag_edge = edge_from_index(rag_edge_index, rag_graph);
+                edge_length(rag_edge_index) += segment_length;
+                vertex_perimeter(source(rag_edge, rag_graph)) += segment_length;
+                vertex_perimeter(target(rag_edge, rag_graph)) += segment_length;
+            }
+        }
+
+        index_t height = embedding.shape()[0];
+        index_t width = embedding.shape()[1];
+
+        for (index_t x = 0; x < width; x++) {
+            vertex_perimeter(vertex_map(embedding.grid2lin({0, x})))++;
+            vertex_perimeter(vertex_map(embedding.grid2lin({height - 1, x})))++;
+        }
+        for (index_t y = 0; y < height; y++) {
+            vertex_perimeter(vertex_map(embedding.grid2lin({y, 0})))++;
+            vertex_perimeter(vertex_map(embedding.grid2lin({y, width - 1})))++;
+        }
+
+        return std::make_pair(std::move(vertex_perimeter), std::move(edge_length));
+    }
+
+    /**
+     * Estimate the vertex perimeter and the length of the frontier associated to the edges of a
+     * region adjacency graph constructed on a 2d 4 adjacency graph.
+     *
+     * The region boundaries are simplified with Ramer–Douglas–Peucker algorithm and is controlled
+     * by the parameters epsilon, relative_epsilon, min_size. See function subdivide of the class contour_2d for more information.
+     *
+     * @tparam graph_t
+     * @param rag Region Adjacency Graph
+     * @param embedding 2d shape of the input graph
+     * @param graph input graph on which the region adjacency graph has been build: must be a 4 adjacency graph whose shape correspond to the given embedding
+     * @param epsilon larger epsilon values will provide stronger contour shapes simplification
+     * @param relative_epsilon Is epsilon given in relative or absolute units
+     * @param min_size Boundaries elements smaller than min_size will be deleted
+     * @return a pair composed of two 1d arrays: vertex_perimeter and edge_length.
+     */
+    template<typename graph_t>
+    auto rag_2d_vertex_perimeter_and_edge_length(
+            const region_adjacency_graph &rag,
+            const embedding_grid_2d &embedding,
+            const graph_t &graph,
+            double epsilon = 0.1,
+            bool relative_epsilon = true,
+            int min_size = 2) {
+        return rag_2d_vertex_perimeter_and_edge_length(
+                rag.rag,
+                rag.vertex_map,
+                rag.edge_map,
+                embedding,
+                graph,
+                epsilon,
+                relative_epsilon,
+                min_size
+        );
+    }
 }
