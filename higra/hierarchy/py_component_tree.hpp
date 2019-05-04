@@ -10,8 +10,6 @@
 
 #pragma once
 
-#include "py_binary_partition_tree.hpp"
-#include "py_common.hpp"
-#include "py_component_tree.hpp"
-#include "py_hierarchy_core.hpp"
-#include "py_watershed_hierarchy.hpp"
+#include "pybind11/pybind11.h"
+
+void py_init_component_tree(pybind11::module &m);

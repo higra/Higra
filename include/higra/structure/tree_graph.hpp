@@ -22,11 +22,24 @@
 namespace hg {
 
 
+    enum class tree_category {
+        component_tree,
+        partition_tree
+    };
+
+    /**
+     * Enum used in tree node iterator (leaves_to_root_iterator and root_to_leaves_iterator)
+     * to include or exclude leaves from the iterator.
+     */
     enum class leaves_it {
         include,
         exclude
     };
 
+    /**
+     * Enum used in tree node iterator (leaves_to_root_iterator and root_to_leaves_iterator)
+     * to include or exclude the root from the iterator.
+     */
     enum class root_it {
         include,
         exclude
@@ -96,8 +109,11 @@ namespace hg {
             }
 
             template<typename T>
-            tree(const xt::xexpression<T> &parents = xt::xarray<vertex_descriptor>({0})) : _parents(parents),
-                                                                                           _children(_parents.size()) {
+            tree(const xt::xexpression<T> &parents = xt::xarray<vertex_descriptor>({0}),
+                 tree_category category = tree_category::partition_tree) :
+                    _parents(parents),
+                    _children(_parents.size()),
+                    _category(category) {
                 HG_TRACE();
 
                 hg_assert(_parents.shape().size() == 1, "parents must be a linear (1d) array");
@@ -122,6 +138,10 @@ namespace hg {
                 }
                 _num_leaves = (size_t) num_leaves;
             };
+
+            const auto &category() const {
+                return _category;
+            }
 
             vertices_size_type num_vertices() const {
                 return _num_vertices;
@@ -205,6 +225,7 @@ namespace hg {
             size_t _num_leaves;
             array_1d <vertex_descriptor> _parents;
             std::vector<children_list_t> _children;
+            tree_category _category;
         };
 
 
@@ -368,6 +389,12 @@ namespace hg {
     }
 
     inline
+    const auto &
+    category(const tree &t) {
+        return t.category();
+    }
+
+    inline
     auto
     root(const tree &t) {
         return t.root();
@@ -386,7 +413,7 @@ namespace hg {
         hg_assert_1d_array(vertices);
         hg_assert_integral_value_type(vertices);
 
-        array_1d<index_t> result = xt::empty<bool>({vertices.size()});
+        array_1d <index_t> result = xt::empty<bool>({vertices.size()});
         for (index_t j = 0; j < (index_t) vertices.size(); j++) {
             result(j) = parent(vertices(j), t);
         }

@@ -23,6 +23,7 @@ class TestTree(unittest.TestCase):
     def test_size_tree(self):
         t = TestTree.get_tree()
 
+        self.assertTrue(t.category() == hg.TreeCategory.PartitionTree)
         self.assertTrue(t.root() == 7)
         self.assertTrue(t.num_vertices() == 8)
         self.assertTrue(t.num_edges() == 7)

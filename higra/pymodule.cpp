@@ -42,6 +42,7 @@ PYBIND11_MODULE(higram, m) {
     py_init_attributes(m);
     py_init_binary_partition_tree(m);
     py_init_common_hierarchy(m);
+    py_init_component_tree(m);
     py_init_contour_2d(m);
     py_init_embedding(m);
     py_init_graph_accumulator(m);
