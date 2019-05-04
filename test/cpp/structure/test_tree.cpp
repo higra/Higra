@@ -29,6 +29,7 @@ namespace tree {
 
     TEST_CASE("tree sizes", "[tree]") {
         auto t = data.t;
+        REQUIRE(hg::category(t) == tree_category::partition_tree);
         REQUIRE(hg::root(t) == 7);
         REQUIRE(hg::num_vertices(t) == 8);
         REQUIRE(hg::num_edges(t) == 7);

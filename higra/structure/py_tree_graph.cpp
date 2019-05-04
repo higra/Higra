@@ -92,6 +92,12 @@ struct def_parent {
 
 void py_init_tree_graph(pybind11::module &m) {
     xt::import_numpy();
+
+    py::enum_<hg::tree_category >(m, "TreeCategory",
+                                "Category of hierarchies.")
+            .value("ComponentTree", hg::tree_category::component_tree)
+            .value("PartitionTree", hg::tree_category::partition_tree);
+    
     auto c = py::class_<graph_t>(m, "Tree");
 
     add_type_overloads<def_tree_ctr<graph_t>, HG_TEMPLATE_INTEGRAL_TYPES>
@@ -104,6 +110,7 @@ void py_init_tree_graph(pybind11::module &m) {
     add_edge_list_graph_concept<graph_t, decltype(c)>(c);
     add_edge_index_graph_concept<graph_t, decltype(c)>(c);
 
+    c.def("category", &graph_t::category, "Get the tree category (see enumeration TreeCategory)");
     c.def("root", &graph_t::root, "Get the index of the root node (i.e. self.num_vertices() - 1)");
     c.def("num_leaves", &graph_t::num_leaves, "Get the number of leaves nodes.");
     c.def("is_leaf", &graph_t::is_leaf, "Returns true if the given node is a leaf of true and false otherwise.");
