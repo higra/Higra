@@ -12,6 +12,7 @@ set(PY_FILES
         __init__.py
         test_binary_partition_tree.py
         test_constrained_connectivity_hierarchy.py
+        test_component_tree.py
         test_hierarchy_core.py
         test_watershed_hierarchy.py)
 

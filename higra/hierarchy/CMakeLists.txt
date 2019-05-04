@@ -11,6 +11,7 @@
 set(PY_FILES
         __init__.py
         binary_partition_tree.py
+        component_tree.py
         constrained_connectivity_hierarchy.py
         hierarchy_core.py
         watershed_hierarchy.py)
@@ -18,6 +19,7 @@ set(PY_FILES
 set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/py_binary_partition_tree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_common.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_component_tree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_hierarchy_core.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_watershed_hierarchy.cpp
         PARENT_SCOPE)
