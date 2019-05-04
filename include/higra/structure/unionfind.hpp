@@ -17,7 +17,7 @@ namespace hg {
 
     namespace union_find_internal {
 
-        template<typename idx_t=size_t>
+        template<typename idx_t=index_t>
         struct union_find {
 
         public:
