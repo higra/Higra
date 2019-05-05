@@ -19,7 +19,7 @@ using namespace hg;
 using namespace xt;
 using namespace std;
 
-TEST_CASE("unused", "[experimental]" ) {
+TEST_CASE("unused", "[experimental]") {
 
 }
 

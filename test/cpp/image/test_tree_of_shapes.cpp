@@ -9,7 +9,10 @@
 ****************************************************************************/
 
 #include "higra/image/tree_of_shapes.hpp"
+#include "higra/image/graph_image.hpp"
+#include "xtensor/xstrided_view.hpp"
 #include "../test_utils.hpp"
+#include <set>
 
 namespace tree_of_shapes {
 
@@ -37,10 +40,10 @@ namespace tree_of_shapes {
             REQUIRE(q.size() == 1);
             q.push(1, 7);
             REQUIRE(q.size() == 2);
-            REQUIRE(q.top(1) == 7);
+            REQUIRE(q.top(1) == 10);
             q.pop(1);
             REQUIRE(q.size() == 1);
-            REQUIRE(q.top(1) == 10);
+            REQUIRE(q.top(1) == 7);
             q.pop(1);
             REQUIRE(q.size() == 0);
             REQUIRE(q.level_empty(1));
@@ -55,4 +58,108 @@ namespace tree_of_shapes {
         }
     }
 
+    TEST_CASE("test interpolate_plain_map_khalimsky2d", "[tree_of_shapes]") {
+        array_1d<int> image{1, 1, 1, 1, 1, 1,
+                            1, 0, 0, 3, 3, 1,
+                            1, 0, 1, 1, 3, 1,
+                            1, 0, 0, 3, 3, 1,
+                            1, 1, 1, 1, 1, 1};
+
+        auto result = hg::tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(image, {5, 6});
+
+        array_3d<int> expected_result
+                {{{1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 3}, {3, 3}, {3, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 3}, {3, 3}, {3, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}}};
+
+        REQUIRE((result == xt::reshape_view(expected_result, {result.shape()[0], result.shape()[1]})));
+    }
+
+    TEST_CASE("test sort_vertices_tree_of_shapes small integers", "[tree_of_shapes]") {
+        array_nd<char> plain_map =
+                {{{1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 3}, {3, 3}, {3, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 3}, {3, 3}, {3, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}}};
+        plain_map.reshape({11 * 9, 2});
+
+        auto g = get_4_adjacency_implicit_graph({9, 11});
+        auto result = hg::tree_of_shapes_internal::sort_vertices_tree_of_shapes(g, plain_map, 1);
+        auto &sorted_vertex_indices = result.first;
+        auto &enqueued_level = result.second;
+
+        set<index_t> zero_vertices{24, 25, 35, 26, 46, 57, 68, 69, 70};
+        set<index_t> three_vertices{28, 29, 30, 41, 52, 72, 63, 73, 74};
+        index_t num_ones = 9 * 11 - 2 * 9;
+        set<index_t> zero_vertices_found{sorted_vertex_indices.begin() + num_ones,
+                                         sorted_vertex_indices.begin() + num_ones + 9};
+        REQUIRE(zero_vertices == zero_vertices_found);
+        set<index_t> three_vertices_found{sorted_vertex_indices.begin() + num_ones + 9,
+                                          sorted_vertex_indices.end()};
+        REQUIRE(three_vertices == three_vertices_found);
+
+        array_nd<char> expected_enqueued_level{{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+                                               {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+                                               {1, 1, 0, 0, 0, 1, 3, 3, 3, 1, 1},
+                                               {1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1},
+                                               {1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1},
+                                               {1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1},
+                                               {1, 1, 0, 0, 0, 1, 3, 3, 3, 1, 1},
+                                               {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+                                               {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+        expected_enqueued_level.reshape({11 * 9});
+        REQUIRE((enqueued_level == expected_enqueued_level));
+    }
+
+    TEST_CASE("test sort_vertices_tree_of_shapes float", "[tree_of_shapes]") {
+        array_nd<float> plain_map =
+                {{{1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 3}, {3, 3}, {3, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 0}, {0, 0}, {0, 0}, {0, 3}, {3, 3}, {3, 3}, {3, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 1}},
+                 {{1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}}};
+        plain_map.reshape({11 * 9, 2});
+
+        auto g = get_4_adjacency_implicit_graph({9, 11});
+        auto result = hg::tree_of_shapes_internal::sort_vertices_tree_of_shapes(g, plain_map, 1);
+        auto &sorted_vertex_indices = result.first;
+        auto &enqueued_level = result.second;
+
+        set<index_t> zero_vertices{24, 25, 35, 26, 46, 57, 68, 69, 70};
+        set<index_t> three_vertices{28, 29, 30, 41, 52, 72, 63, 73, 74};
+        index_t num_ones = 9 * 11 - 2 * 9;
+        set<index_t> zero_vertices_found{sorted_vertex_indices.begin() + num_ones,
+                                         sorted_vertex_indices.begin() + num_ones + 9};
+        REQUIRE(zero_vertices == zero_vertices_found);
+        set<index_t> three_vertices_found{sorted_vertex_indices.begin() + num_ones + 9,
+                                          sorted_vertex_indices.end()};
+        REQUIRE(three_vertices == three_vertices_found);
+
+        array_nd<float> expected_enqueued_level{{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+                                                {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+                                                {1, 1, 0, 0, 0, 1, 3, 3, 3, 1, 1},
+                                                {1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1},
+                                                {1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1},
+                                                {1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1},
+                                                {1, 1, 0, 0, 0, 1, 3, 3, 3, 1, 1},
+                                                {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+                                                {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+        expected_enqueued_level.reshape({11 * 9});
+        REQUIRE((enqueued_level == expected_enqueued_level));
+    }
 }
