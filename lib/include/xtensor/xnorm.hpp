@@ -14,12 +14,186 @@
 #include <complex>
 #include <cstdlib>
 
+#include <xtl/xtype_traits.hpp>
+
 #include "xmath.hpp"
 #include "xoperation.hpp"
 #include "xutils.hpp"
 
 namespace xt
 {
+    /********************************************
+     * type inference for norm and squared norm *
+     ********************************************/
+
+    template <class T>
+    struct norm_type;
+
+    template <class T>
+    struct squared_norm_type;
+
+    namespace traits_detail
+    {
+
+        template <class T, bool scalar = std::is_arithmetic<T>::value>
+        struct norm_of_scalar_impl;
+
+        template <class T>
+        struct norm_of_scalar_impl<T, false>
+        {
+            static const bool value = false;
+            using norm_type = void*;
+            using squared_norm_type = void*;
+        };
+
+        template <class T>
+        struct norm_of_scalar_impl<T, true>
+        {
+            static const bool value = true;
+            using norm_type = xtl::promote_type_t<T>;
+            using squared_norm_type = xtl::promote_type_t<T>;
+        };
+
+        template <class T, bool integral = std::is_integral<T>::value,
+                  bool floating = std::is_floating_point<T>::value>
+        struct norm_of_array_elements_impl;
+
+        template <>
+        struct norm_of_array_elements_impl<void*, false, false>
+        {
+            using norm_type = void*;
+            using squared_norm_type = void*;
+        };
+
+        template <class T>
+        struct norm_of_array_elements_impl<T, false, false>
+        {
+            using norm_type = typename norm_type<T>::type;
+            using squared_norm_type = typename squared_norm_type<T>::type;
+        };
+
+        template <class T>
+        struct norm_of_array_elements_impl<T, true, false>
+        {
+            static_assert(!std::is_same<T, char>::value,
+                          "'char' is not a numeric type, use 'signed char' or 'unsigned char'.");
+
+            using norm_type = double;
+            using squared_norm_type = uint64_t;
+        };
+
+        template <class T>
+        struct norm_of_array_elements_impl<T, false, true>
+        {
+            using norm_type = double;
+            using squared_norm_type = double;
+        };
+
+        template <>
+        struct norm_of_array_elements_impl<long double, false, true>
+        {
+            using norm_type = long double;
+            using squared_norm_type = long double;
+        };
+
+        template <class ARRAY>
+        struct norm_of_vector_impl
+        {
+            static void* test(...);
+
+            template <class U>
+            static typename U::value_type test(U*, typename U::value_type* = 0);
+
+            using T = decltype(test(std::declval<ARRAY*>()));
+
+            static const bool value = !std::is_same<T, void*>::value;
+
+            using norm_type = typename norm_of_array_elements_impl<T>::norm_type;
+            using squared_norm_type = typename norm_of_array_elements_impl<T>::squared_norm_type;
+        };
+
+        template <class U>
+        struct norm_type_base
+        {
+            using T = std::decay_t<U>;
+
+            static_assert(!std::is_same<T, char>::value,
+                          "'char' is not a numeric type, use 'signed char' or 'unsigned char'.");
+
+            using norm_of_scalar = norm_of_scalar_impl<T>;
+            using norm_of_vector = norm_of_vector_impl<T>;
+
+            static const bool value = norm_of_scalar::value || norm_of_vector::value;
+
+            static_assert(value, "norm_type<T> are undefined for type U.");
+        };
+    }  // namespace traits_detail
+
+    /**
+     * @brief Traits class for the result type of the <tt>norm_l2()</tt> function.
+     *
+     * Member 'type' defines the result of <tt>norm_l2(t)</tt>, where <tt>t</tt>
+     * is of type @tparam T. It implements the following rules designed to
+     * minimize the potential for overflow:
+     *   - @tparam T is an arithmetic type: 'type' is the result type of <tt>abs(t)</tt>.
+     *   - @tparam T is a container of 'long double' elements: 'type' is <tt>long double</tt>.
+     *   - @tparam T is a container of another arithmetic type: 'type' is <tt>double</tt>.
+     *   - @tparam T is a container of some other type: 'type' is the element's norm type,
+     *
+     * Containers are recognized by having an embedded typedef 'value_type'.
+     * To change the behavior for a case not covered here, specialize the
+     * <tt>traits_detail::norm_type_base</tt> template.
+     */
+    template <class T>
+    struct norm_type : traits_detail::norm_type_base<T>
+    {
+        using base_type = traits_detail::norm_type_base<T>;
+
+        using type =
+            typename std::conditional<base_type::norm_of_vector::value,
+                                      typename base_type::norm_of_vector::norm_type,
+                                      typename base_type::norm_of_scalar::norm_type>::type;
+    };
+
+    /**
+     * Abbreviation of 'typename norm_type<T>::type'.
+     */
+    template <class T>
+    using norm_type_t = typename norm_type<T>::type;
+
+    /**
+     * @brief Traits class for the result type of the <tt>norm_sq()</tt> function.
+     *
+     * Member 'type' defines the result of <tt>norm_sq(t)</tt>, where <tt>t</tt>
+     * is of type @tparam T. It implements the following rules designed to
+     * minimize the potential for overflow:
+     *   - @tparam T is an arithmetic type: 'type' is the result type of <tt>t*t</tt>.
+     *   - @tparam T is a container of 'long double' elements: 'type' is <tt>long double</tt>.
+     *   - @tparam T is a container of another floating-point type: 'type' is <tt>double</tt>.
+     *   - @tparam T is a container of integer elements: 'type' is <tt>uint64_t</tt>.
+     *   - @tparam T is a container of some other type: 'type' is the element's squared norm type,
+     *
+     *  Containers are recognized by having an embedded typedef 'value_type'.
+     *  To change the behavior for a case not covered here, specialize the
+     *  <tt>traits_detail::norm_type_base</tt> template.
+     */
+    template <class T>
+    struct squared_norm_type : traits_detail::norm_type_base<T>
+    {
+        using base_type = traits_detail::norm_type_base<T>;
+
+        using type =
+            typename std::conditional<base_type::norm_of_vector::value,
+                                      typename base_type::norm_of_vector::squared_norm_type,
+                                      typename base_type::norm_of_scalar::squared_norm_type>::type;
+    };
+
+    /**
+     * Abbreviation of 'typename squared_norm_type<T>::type'.
+     */
+    template <class T>
+    using squared_norm_type_t = typename squared_norm_type<T>::type;
+
     /*************************************
      * norm functions for built-in types *
      *************************************/
@@ -37,7 +211,7 @@ namespace xt
     inline auto                                                   \
     norm_lp_to_p(T t, double p) noexcept                          \
     {                                                             \
-        using rt = real_promote_type_t<T>;                        \
+        using rt = xtl::real_promote_type_t<T>;                   \
         return p == 0.0                                           \
             ? static_cast<rt>(t != 0)                             \
             : std::pow(static_cast<rt>(std::abs(t)),              \
@@ -70,7 +244,7 @@ namespace xt
     inline auto                                               \
     norm_lp_to_p(T t, double p) noexcept                      \
     {                                                         \
-        using rt = real_promote_type_t<T>;                    \
+        using rt = xtl::real_promote_type_t<T>;               \
         return p == 0.0                                       \
             ? static_cast<rt>(t != 0)                         \
             : std::pow(static_cast<rt>(t),                    \
@@ -192,12 +366,11 @@ namespace xt
     }
 #endif
 
-
 #define XTENSOR_EMPTY
 #define XTENSOR_COMMA ,
 #define XTENSOR_NORM_FUNCTION(NAME, RESULT_TYPE, REDUCE_EXPR, REDUCE_OP, MERGE_FUNC) \
     template <class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,               \
-              XTL_REQUIRES(xtl::negation<is_evaluation_strategy<X>>)>                \
+              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>)>                    \
     inline auto NAME(E&& e, X&& axes, EVS es = EVS()) noexcept                       \
     {                                                                                \
         using value_type = typename std::decay_t<E>::value_type;                     \
@@ -206,12 +379,10 @@ namespace xt
         auto reduce_func = [](result_type const& r, value_type const& v) {           \
             return REDUCE_EXPR(r REDUCE_OP NAME(v));                                 \
         };                                                                           \
-        auto init_func = [](value_type const& v) {                                   \
-            return NAME(v);                                                          \
-        };                                                                           \
+                                                                                     \
         return xt::reduce(make_xreducer_functor(std::move(reduce_func),              \
-                                            std::move(init_func),                    \
-                                            MERGE_FUNC<result_type>()),              \
+                                                const_value<result_type>(0),                    \
+                                                MERGE_FUNC<result_type>()),          \
                       std::forward<E>(e), std::forward<X>(axes), es);                \
     }                                                                                \
                                                                                      \
@@ -224,8 +395,8 @@ namespace xt
     XTENSOR_NORM_FUNCTION_AXES(NAME)
 
     XTENSOR_NORM_FUNCTION(norm_l0, unsigned long long, XTENSOR_EMPTY, +, std::plus)
-    XTENSOR_NORM_FUNCTION(norm_l1, big_promote_type_t<value_type>, XTENSOR_EMPTY, +, std::plus)
-    XTENSOR_NORM_FUNCTION(norm_sq, big_promote_type_t<value_type>, XTENSOR_EMPTY, +, std::plus)
+    XTENSOR_NORM_FUNCTION(norm_l1, xtl::big_promote_type_t<value_type>, XTENSOR_EMPTY, +, std::plus)
+    XTENSOR_NORM_FUNCTION(norm_sq, xtl::big_promote_type_t<value_type>, XTENSOR_EMPTY, +, std::plus)
     XTENSOR_NORM_FUNCTION(norm_linf, decltype(norm_linf(std::declval<value_type>())), (std::max<result_type>), XTENSOR_COMMA, math::maximum)
 
 #undef XTENSOR_EMPTY
@@ -305,7 +476,7 @@ namespace xt
      * @return an \ref xreducer (specifically: <tt>sqrt(norm_sq(e, axes))</tt>) (or xcontainer, depending on evaluation strategy)
     */
     template <class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              XTL_REQUIRES(is_xexpression<E>, xtl::negation<is_evaluation_strategy<X>>)>
+              XTL_REQUIRES(is_xexpression<E>, xtl::negation<is_reducer_options<X>>)>
     inline auto norm_l2(E&& e, X&& axes, EVS es = EVS()) noexcept
     {
         return sqrt(norm_sq(std::forward<E>(e), std::forward<X>(axes), es));
@@ -356,7 +527,7 @@ namespace xt
      * the reducer represents a scalar result, otherwise an array of appropriate dimension.
      */
     template <class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              XTL_REQUIRES(xtl::negation<is_evaluation_strategy<X>>)>
+              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>)>
     inline auto norm_lp_to_p(E&& e, double p, X&& axes, EVS es = EVS()) noexcept
     {
         using value_type = typename std::decay_t<E>::value_type;
@@ -365,11 +536,7 @@ namespace xt
         auto reduce_func = [p](result_type const& r, value_type const& v) {
             return r + norm_lp_to_p(v, p);
         };
-
-        auto init_func = [p](value_type const& v) {
-            return norm_lp_to_p(v, p);
-        };
-        return xt::reduce(make_xreducer_functor(std::move(reduce_func), std::move(init_func), std::plus<result_type>()),
+        return xt::reduce(make_xreducer_functor(std::move(reduce_func), xt::const_value<result_type>(0), std::plus<result_type>()),
                       std::forward<E>(e), std::forward<X>(axes), es);
     }
 
@@ -409,7 +576,7 @@ namespace xt
      * the reducer represents a scalar result, otherwise an array of appropriate dimension.
      */
     template <class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              XTL_REQUIRES(xtl::negation<is_evaluation_strategy<X>>)>
+              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>)>
     inline auto norm_lp(E&& e, double p, X&& axes, EVS es = EVS())
     {
         XTENSOR_PRECONDITION(p != 0,

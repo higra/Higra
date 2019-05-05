@@ -139,7 +139,7 @@ namespace light_axis_view {
                         {10, 11, 12}
                 }
         };
-        auto va = strided_view(a, xt::slice_vector({xt::all(), xt::range(1, 2), xt::range(0, 3, 2)}));
+        auto va = strided_view(a, {xt::all(), xt::range(1, 2), xt::range(0, 3, 2)});
         auto v = make_light_axis_view<true>(va);
         std::array<int, 2> v1{4, 6};
         REQUIRE(compare(v, v1));

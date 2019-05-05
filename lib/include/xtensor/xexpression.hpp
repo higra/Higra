@@ -28,8 +28,8 @@ namespace xt
     template <class D>
     class xexpression;
 
-    template <class D>
-    auto make_xshared(xexpression<D>&&);
+    template <class E>
+    auto make_xshared(xexpression<E>&&);
 
     /***************************
      * xexpression declaration *
@@ -156,29 +156,26 @@ namespace xt
      * evaluation_strategy *
      ***********************/
 
+    namespace detail
+    {
+        struct option_base {};
+    }
+
     namespace evaluation_strategy
     {
-        struct base
-        {
-        };
 
-        struct immediate : base
-        {
-        };
-        
-        struct lazy : base
-        {
-        };
-        
+        struct immediate_type : xt::detail::option_base {};
+        constexpr auto immediate = std::tuple<immediate_type>{};
+        struct lazy_type : xt::detail::option_base {};
+        constexpr auto lazy = std::tuple<lazy_type>{};
+
         /*
-        struct cached
-        {
-        };
+        struct cached {};
         */
     }
 
     template <class T>
-    struct is_evaluation_strategy : std::is_base_of<evaluation_strategy::base, std::decay_t<T>>
+    struct is_evaluation_strategy : std::is_base_of<detail::option_base, std::decay_t<T>>
     {
     };
 
@@ -233,73 +230,6 @@ namespace xt
 
     template <class E>
     using const_xclosure_t = typename const_xclosure<E>::type;
-
-    /***************
-     * xvalue_type *
-     ***************/
-
-    namespace detail
-    {
-        template <class E, class enable = void>
-        struct xvalue_type_impl
-        {
-            using type = E;
-        };
-
-        template <class E>
-        struct xvalue_type_impl<E, std::enable_if_t<is_xexpression<E>::value>>
-        {
-            using type = typename E::value_type;
-        };
-    }
-
-    template <class E>
-    using xvalue_type = detail::xvalue_type_impl<E>;
-
-    template <class E>
-    using xvalue_type_t = typename xvalue_type<E>::type;
-
-    /***********************************
-     * temporary_type_t implementation *
-     ***********************************/
-
-    namespace detail
-    {
-        template <class S>
-        struct xtype_for_shape
-        {
-            template <class T, layout_type L>
-            using type = xarray<T, L>;
-        };
-
-#if defined(__GNUC__) && (__GNUC__ > 6)
-#if __cplusplus == 201703L 
-        template <template <class, std::size_t, class, bool> class S, class X, std::size_t N, class A, bool Init>
-        struct xtype_for_shape<S<X, N, A, Init>>
-        {
-            template <class T, layout_type L>
-            using type = xarray<T, L>;
-        };
-#endif // __cplusplus == 201703L
-#endif // __GNUC__ && (__GNUC__ > 6)
-
-        template <template <class, std::size_t> class S, class X, std::size_t N>
-        struct xtype_for_shape<S<X, N>>
-        {
-            template <class T, layout_type L>
-            using type = xtensor<T, N, L>;
-        };
-
-        template <template <std::size_t...> class S, std::size_t... X>
-        struct xtype_for_shape<S<X...>>
-        {
-            template <class T, layout_type L>
-            using type = xtensor_fixed<T, xshape<X...>, L>;
-        };
-
-        template <class T, class S, layout_type L>
-        using temporary_type_t = typename xtype_for_shape<S>::template type<T, L>;
-    }
  
     /*************************
      * expression tag system *
@@ -420,12 +350,45 @@ namespace xt
     {
     };
 
-#define XTENSOR_FORWARD_METHOD(name)           \
-    auto name() const                          \
-        -> decltype(std::declval<E>().name())  \
-    {                                          \
-        return m_ptr->name();                  \
+#define XTENSOR_FORWARD_CONST_METHOD(name)                                      \
+    auto name() const                                                           \
+        -> decltype(std::declval<xtl::constify_t<E>>().name())                  \
+    {                                                                           \
+        return m_ptr->name();                                                   \
     }
+
+#define XTENSOR_FORWARD_METHOD(name)                                            \
+    auto name() -> decltype(std::declval<E>().name())                           \
+    {                                                                           \
+        return m_ptr->name();                                                   \
+    }
+
+#define XTENSOR_FORWARD_CONST_ITERATOR_METHOD(name)                             \
+    template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL>                        \
+    auto name() const noexcept                                                  \
+        -> decltype(std::declval<xtl::constify_t<E>>().template name<L>())      \
+    {                                                                           \
+        return m_ptr->template name<L>();                                       \
+    }                                                                           \
+    template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL, class S>               \
+    auto name(const S& shape) const noexcept                                    \
+        -> decltype(std::declval<xtl::constify_t<E>>().template name<L>(shape)) \
+    {                                                                           \
+        return m_ptr->template name<L>();                                       \
+    }
+
+#define XTENSOR_FORWARD_ITERATOR_METHOD(name)                                   \
+    template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL, class S>               \
+    auto name(const S& shape) noexcept                                          \
+        -> decltype(std::declval<E>().template name<L>(shape))                  \
+    {                                                                           \
+        return m_ptr->template name<L>();                                       \
+    }                                                                           \
+    template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL>                        \
+    auto name() noexcept -> decltype(std::declval<E>().template name<L>())      \
+    {                                                                           \
+        return m_ptr->template name<L>();                                       \
+    }                                                                           \
 
     namespace detail
     {
@@ -539,16 +502,38 @@ namespace xt
             return m_ptr->operator()(args...);
         }
 
-        XTENSOR_FORWARD_METHOD(shape);
-        XTENSOR_FORWARD_METHOD(dimension);
-        XTENSOR_FORWARD_METHOD(size);
-        XTENSOR_FORWARD_METHOD(begin);
-        XTENSOR_FORWARD_METHOD(cbegin);
-        XTENSOR_FORWARD_METHOD(storage_begin);
-        XTENSOR_FORWARD_METHOD(storage_cbegin);
-        XTENSOR_FORWARD_METHOD(storage_end);
-        XTENSOR_FORWARD_METHOD(storage_cend);
-        XTENSOR_FORWARD_METHOD(layout);
+        XTENSOR_FORWARD_CONST_METHOD(shape)
+        XTENSOR_FORWARD_CONST_METHOD(dimension)
+        XTENSOR_FORWARD_CONST_METHOD(size)
+        XTENSOR_FORWARD_CONST_METHOD(layout)
+
+        XTENSOR_FORWARD_ITERATOR_METHOD(begin)
+        XTENSOR_FORWARD_ITERATOR_METHOD(end)
+        XTENSOR_FORWARD_CONST_ITERATOR_METHOD(begin)
+        XTENSOR_FORWARD_CONST_ITERATOR_METHOD(end)
+        XTENSOR_FORWARD_CONST_ITERATOR_METHOD(cbegin)
+        XTENSOR_FORWARD_CONST_ITERATOR_METHOD(cend)
+
+        XTENSOR_FORWARD_ITERATOR_METHOD(rbegin)
+        XTENSOR_FORWARD_ITERATOR_METHOD(rend)
+        XTENSOR_FORWARD_CONST_ITERATOR_METHOD(rbegin)
+        XTENSOR_FORWARD_CONST_ITERATOR_METHOD(rend)
+        XTENSOR_FORWARD_CONST_ITERATOR_METHOD(crbegin)
+        XTENSOR_FORWARD_CONST_ITERATOR_METHOD(crend)
+        
+        XTENSOR_FORWARD_METHOD(storage_begin)
+        XTENSOR_FORWARD_METHOD(storage_end)
+        XTENSOR_FORWARD_CONST_METHOD(storage_begin)
+        XTENSOR_FORWARD_CONST_METHOD(storage_end)
+        XTENSOR_FORWARD_CONST_METHOD(storage_cbegin)
+        XTENSOR_FORWARD_CONST_METHOD(storage_cend)
+        
+        XTENSOR_FORWARD_METHOD(storage_rbegin)
+        XTENSOR_FORWARD_METHOD(storage_rend)
+        XTENSOR_FORWARD_CONST_METHOD(storage_rbegin)
+        XTENSOR_FORWARD_CONST_METHOD(storage_rend)
+        XTENSOR_FORWARD_CONST_METHOD(storage_crbegin)
+        XTENSOR_FORWARD_CONST_METHOD(storage_crend)
 
         template <class T = E>
         std::enable_if_t<has_strides<T>::value, const inner_strides_type&>
