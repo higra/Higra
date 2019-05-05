@@ -60,7 +60,7 @@ namespace xt
             template <class E>
             static inline decltype(auto) real(E&& e) noexcept
             {
-                return e;
+                return std::forward<E>(e);
             }
 
             template <class E>
@@ -74,15 +74,15 @@ namespace xt
         struct complex_expression_helper
         {
             template <class E>
-            static inline auto real(E&& e) noexcept
+            static inline decltype(auto) real(E&& e) noexcept
             {
-                return detail::complex_helper<xtl::is_complex<typename std::decay_t<E>::value_type>::value>::real(e);
+                return detail::complex_helper<xtl::is_complex<typename std::decay_t<E>::value_type>::value>::real(std::forward<E>(e));
             }
 
             template <class E>
-            static inline auto imag(E&& e) noexcept
+            static inline decltype(auto) imag(E&& e) noexcept
             {
-                return detail::complex_helper<xtl::is_complex<typename std::decay_t<E>::value_type>::value>::imag(e);
+                return detail::complex_helper<xtl::is_complex<typename std::decay_t<E>::value_type>::value>::imag(std::forward<E>(e));
             }
         };
 
@@ -153,14 +153,6 @@ namespace xt
     {
         namespace detail
         {
-            // libc++ (OSX) conj is unfortunately broken and returns
-            // std::complex<T> instead of T.
-            template <class T>
-            constexpr T conj_impl(const T& c)
-            {
-                return c;
-            }
-
             template <class T>
             constexpr std::complex<T> conj_impl(const std::complex<T>& c)
             {
@@ -172,6 +164,30 @@ namespace xt
             constexpr X conj_impl(const xsimd::simd_complex_batch<X>& z)
             {
                 return xsimd::conj(z);
+            }
+
+            template <class T>
+            struct not_complex_batch
+                : xtl::negation<std::is_base_of<xsimd::simd_complex_batch<T>, T>>
+            {
+            };
+
+            // libc++ (OSX) conj is unfortunately broken and returns
+            // std::complex<T> instead of T.
+            // This function must be deactivated for complex batches,
+            // otherwise it will be a better match than the previous one.
+            template <class T, XTL_REQUIRES(not_complex_batch<T>)>
+            constexpr T conj_impl(const T& c)
+            {
+                return c;
+            }
+#else
+            // libc++ (OSX) conj is unfortunately broken and returns
+            // std::complex<T> instead of T.
+            template <class T>
+            constexpr T conj_impl(const T& c)
+            {
+                return c;
             }
 #endif
         }

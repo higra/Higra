@@ -40,7 +40,7 @@ endmacro()
 ####################################################################################
 
 include(CMakeFindDependencyMacro)
-find_dependency(xtl 0.5.3)
+find_dependency(xtl 0.6.1)
 
 if(XTENSOR_USE_XSIMD)
     find_dependency(xsimd )

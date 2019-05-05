@@ -111,7 +111,7 @@ namespace xt
         using difference_type = typename subiterator_traits::difference_type;
         using size_type = typename storage_type::size_type;
         using shape_type = typename storage_type::shape_type;
-        using simd_type = xsimd::simd_type<value_type>;
+        using simd_type = xt_simd::simd_type<value_type>;
 
         xstepper() = default;
         xstepper(storage_type* c, subiterator_type it, size_type offset) noexcept;
@@ -129,7 +129,7 @@ namespace xt
         template <class R>
         R step_simd();
 
-        value_type step_leading();
+        void step_leading();
 
         template <class R>
         void store_simd(const R& vec);
@@ -401,54 +401,54 @@ namespace xt
             : std::true_type
         {
         };
+    }
 
-        template <class C>
-        XTENSOR_CONSTEXPR_RETURN auto linear_begin(C& c) noexcept
+    template <class C>
+    XTENSOR_CONSTEXPR_RETURN auto linear_begin(C& c) noexcept
+    {
+        return xtl::mpl::static_if<detail::has_storage_iterator<C>::value>([&](auto self)
         {
-            return xtl::mpl::static_if<has_storage_iterator<C>::value>([&](auto self)
-            {
-                return self(c).storage_begin();
-            }, /*else*/ [&](auto self)
-            {
-                return self(c).begin();
-            });
-        }
+            return self(c).storage_begin();
+        }, /*else*/ [&](auto self)
+        {
+            return self(c).begin();
+        });
+    }
 
-        template <class C>
-        XTENSOR_CONSTEXPR_RETURN auto linear_end(C& c) noexcept
+    template <class C>
+    XTENSOR_CONSTEXPR_RETURN auto linear_end(C& c) noexcept
+    {
+        return xtl::mpl::static_if<detail::has_storage_iterator<C>::value>([&](auto self)
         {
-            return xtl::mpl::static_if<has_storage_iterator<C>::value>([&](auto self)
-            {
-                return self(c).storage_end();
-            }, /*else*/ [&](auto self)
-            {
-                return self(c).end();
-            });
-        }
+            return self(c).storage_end();
+        }, /*else*/ [&](auto self)
+        {
+            return self(c).end();
+        });
+    }
 
-        template <class C>
-        XTENSOR_CONSTEXPR_RETURN auto linear_begin(const C& c) noexcept
+    template <class C>
+    XTENSOR_CONSTEXPR_RETURN auto linear_begin(const C& c) noexcept
+    {
+        return xtl::mpl::static_if<detail::has_storage_iterator<C>::value>([&](auto self)
         {
-            return xtl::mpl::static_if<has_storage_iterator<C>::value>([&](auto self)
-            {
-                return self(c).storage_cbegin();
-            }, /*else*/ [&](auto self)
-            {
-                return self(c).cbegin();
-            });
-        }
+            return self(c).storage_cbegin();
+        }, /*else*/ [&](auto self)
+        {
+            return self(c).cbegin();
+        });
+    }
 
-        template <class C>
-        XTENSOR_CONSTEXPR_RETURN auto linear_end(const C& c) noexcept
+    template <class C>
+    XTENSOR_CONSTEXPR_RETURN auto linear_end(const C& c) noexcept
+    {
+        return xtl::mpl::static_if<detail::has_storage_iterator<C>::value>([&](auto self)
         {
-            return xtl::mpl::static_if<has_storage_iterator<C>::value>([&](auto self)
-            {
-                return self(c).storage_cend();
-            }, /*else*/ [&](auto self)
-            {
-                return self(c).cend();
-            });
-        }
+            return self(c).storage_cend();
+        }, /*else*/ [&](auto self)
+        {
+            return self(c).cend();
+        });
     }
 
     /***************************
@@ -523,7 +523,7 @@ namespace xt
     {
         R reg;
         reg.load_unaligned(&(*m_it));
-        m_it += xsimd::revert_simd_traits<R>::size;
+        m_it += xt_simd::revert_simd_traits<R>::size;
         return reg;
     }
 
@@ -532,14 +532,13 @@ namespace xt
     inline void xstepper<C>::store_simd(const R& vec)
     {
         vec.store_unaligned(&(*m_it));
-        m_it += xsimd::revert_simd_traits<R>::size;;
+        m_it += xt_simd::revert_simd_traits<R>::size;;
     }
 
     template <class C>
-    auto xstepper<C>::step_leading() -> value_type
+    void xstepper<C>::step_leading()
     {
         ++m_it;
-        return *m_it;
     }
 
     template <>
