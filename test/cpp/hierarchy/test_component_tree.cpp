@@ -10,7 +10,9 @@
 
 #include "../test_utils.hpp"
 #include "higra/hierarchy/component_tree.hpp"
+#include "higra/attribute/tree_attribute.hpp"
 #include "higra/image/graph_image.hpp"
+#include "higra/algo/tree.hpp"
 #include "xtensor/xadapt.hpp"
 
 using namespace hg;
@@ -105,8 +107,8 @@ namespace binary_partition_tree {
                                          9, 8, 6, 7});
 
         auto res = component_tree_max_tree(graph, vertex_weights);
-        auto & tree = res.tree;
-        auto & altitudes = res.altitudes;
+        auto &tree = res.tree;
+        auto &altitudes = res.altitudes;
 
         REQUIRE(category(tree) == tree_category::component_tree);
         array_1d<index_t> expected_parents({28, 27, 24, 24,
@@ -136,8 +138,8 @@ namespace binary_partition_tree {
         vertex_weights *= -1.;
 
         auto res = component_tree_min_tree(graph, vertex_weights);
-        auto & tree = res.tree;
-        auto & altitudes = res.altitudes;
+        auto &tree = res.tree;
+        auto &altitudes = res.altitudes;
 
         REQUIRE(category(tree) == tree_category::component_tree);
         array_1d<index_t> expected_parents({28, 27, 24, 24,
@@ -156,5 +158,30 @@ namespace binary_partition_tree {
                                              1., 0.});
         expected_altitudes *= -1.;
         REQUIRE((expected_altitudes == altitudes));
+    }
+
+    TEST_CASE("test max tree area filter", "[component_tree]") {
+        auto graph = get_4_adjacency_implicit_graph({5, 5});
+        array_1d<double> vertex_weights({-5, 2, 2, 5, 5,
+                                         -4, 2, 2, 6, 5,
+                                         3, 3, 3, 3, 3,
+                                         -2, -2, -2, 9, 7,
+                                         -1, 0, -2, 8, 9});
+
+        auto res = component_tree_max_tree(graph, vertex_weights);
+        auto &tree = res.tree;
+        auto &altitudes = res.altitudes;
+
+        auto area = attribute_area(tree);
+        auto filtered_weights = reconstruct_leaf_data(tree, altitudes, area <= 4);
+
+        array_1d<double> expected_filtered_weights
+                ({-5, 2, 2, 3, 3,
+                  -4, 2, 2, 3, 3,
+                  3, 3, 3, 3, 3,
+                  -2, -2, -2, 3, 3,
+                  -2, -2, -2, 3, 3});
+
+        REQUIRE((expected_filtered_weights == filtered_weights));
     }
 }

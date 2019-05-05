@@ -63,6 +63,27 @@ class TestConstrainedConnectivityHierarchy(unittest.TestCase):
         self.assertTrue(np.all(expected_parents == tree.parents()))
         self.assertTrue(np.allclose(expected_altitudes, altitudes))
 
+    def test_area_filter_max_tree(self):
+        graph = hg.get_4_adjacency_implicit_graph((5, 5))
+        vertex_weights = np.asarray(((-5, 2, 2, 5, 5),
+                                     (-4, 2, 2, 6, 5),
+                                     (3, 3, 3, 3, 3),
+                                     (-2, -2, -2, 9, 7),
+                                     (-1, 0, -2, 8, 9)), dtype=np.float64)
+        tree, altitudes = hg.component_tree_max_tree(vertex_weights, graph)
+        area = hg.attribute_area(tree)
+
+        filtered_weights = hg.reconstruct_leaf_data(altitudes, area <= 4)
+
+        expected_filtered_weights = \
+            np.asarray(((-5, 2, 2, 3, 3),
+                        (-4, 2, 2, 3, 3),
+                        (3, 3, 3, 3, 3),
+                        (-2, -2, -2, 3, 3),
+                        (-2, -2, -2, 3, 3)), dtype=np.float64)
+
+        self.assertTrue(np.all(filtered_weights == expected_filtered_weights))
+
 
 if __name__ == '__main__':
     unittest.main()
