@@ -230,6 +230,20 @@ class TestTree(unittest.TestCase):
         self.assertTrue([6, 7] == t.ancestors(6))
         self.assertTrue([7] == t.ancestors(7))
 
+    def test_find_region(self):
+        tree = hg.Tree((8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12))
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 2, 2, 3), dtype=np.int32)
+        vertices = np.asarray((0, 0, 0, 2, 2, 9, 9, 12), dtype=np.int64)
+        lambdas = np.asarray((2, 3, 4, 1, 2, 2, 3, 3), dtype=np.float64)
+
+        expected_results = np.asarray((0, 10, 12, 2, 9, 9, 10, 12), dtype=np.int64)
+
+        for i in range(vertices.size):
+            self.assertTrue(tree.find_region(vertices[i], lambdas[i], altitudes) == expected_results[i])
+
+        self.assertTrue(np.all(tree.find_region(vertices, lambdas, altitudes) == expected_results))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -36,6 +36,7 @@ from .hierarchy import *
 from .image import *
 from .interop import *
 from .io_utils import *
+from .structure import *
 
 
 def __logger_printer(m):

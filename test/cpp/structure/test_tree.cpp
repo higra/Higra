@@ -385,4 +385,21 @@ namespace tree {
 
         REQUIRE((ref_adj_mat == adj_mat));
     }
+
+    TEST_CASE("tree find_region", "[tree]") {
+        hg::tree t(array_1d<index_t> { 8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12 });
+
+        array_1d<double> altitudes{0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 2, 2, 3};
+
+        array_1d<index_t> vertices{0, 0, 0, 2, 2, 9, 9, 12};
+        array_1d<double> lambdas{2, 3, 4, 1, 2, 2, 3, 3};
+
+        array_1d<index_t> expected_results{0, 10, 12, 2, 9, 9, 10, 12};
+
+        for (index_t i = 0; i < vertices.size(); i++) {
+            REQUIRE((find_region(vertices(i), lambdas(i), altitudes, t) == expected_results(i)));
+        }
+
+        REQUIRE((find_region(vertices, lambdas, altitudes, t) == expected_results));
+    }
 }
