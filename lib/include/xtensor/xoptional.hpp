@@ -301,7 +301,7 @@ namespace xt
     }
 
     /*************************************
-     * xcontainer extention for optional *
+     * xcontainer extension for optional *
      *************************************/
 
     namespace extension
@@ -335,19 +335,44 @@ namespace xt
         template <class EC, layout_type L, class SC>
         struct xarray_optional_traits
         {
-            using value_container = typename EC::base_container_type;
-            using flag_container = typename EC::flag_container_type;
+            using value_container = typename std::remove_reference_t<EC>::base_container_type;
+            using flag_container = typename std::remove_reference_t<EC>::flag_container_type;
             using value_expression = xarray_adaptor<value_container&, L, SC>;
             using flag_expression = xarray_adaptor<flag_container&, L, SC>;
             using const_value_expression = xarray_adaptor<const value_container&, L, SC>;
             using const_flag_expression = xarray_adaptor<const flag_container&, L, SC>;
+        };
+
+        template <class EC, layout_type L, class SC>
+        struct xarray_container_optional_traits : xarray_optional_traits<EC, L, SC>
+        {
             using derived_type = xarray_container<EC, L, SC, xoptional_expression_tag>;
         };
 
         template <class EC, layout_type L, class SC>
         struct xarray_container_base<EC, L, SC, xoptional_expression_tag>
         {
-            using traits = xarray_optional_traits<EC, L, SC>;
+            using traits = xarray_container_optional_traits<EC, L, SC>;
+            using type = xcontainer_optional_base<traits>;
+        };
+    }
+
+    /*****************************************
+     * xarray_adaptor extension for optional *
+     *****************************************/
+
+    namespace extension
+    {
+        template <class EC, layout_type L, class SC>
+        struct xarray_adaptor_optional_traits : xarray_optional_traits<EC, L, SC>
+        {
+            using derived_type = xarray_adaptor<EC, L, SC, xoptional_expression_tag>;
+        };
+
+        template <class EC, layout_type L, class SC>
+        struct xarray_adaptor_base<EC, L, SC, xoptional_expression_tag>
+        {
+            using traits = xarray_adaptor_optional_traits<EC, L, SC>;
             using type = xcontainer_optional_base<traits>;
         };
     }
@@ -361,19 +386,44 @@ namespace xt
         template <class EC, std::size_t N, layout_type L>
         struct xtensor_optional_traits
         {
-            using value_container = typename EC::base_container_type;
-            using flag_container = typename EC::flag_container_type;
+            using value_container = typename std::remove_reference_t<EC>::base_container_type;
+            using flag_container = typename std::remove_reference_t<EC>::flag_container_type;
             using value_expression = xtensor_adaptor<value_container&, N, L>;
             using flag_expression = xtensor_adaptor<flag_container&, N, L>;
             using const_value_expression = xtensor_adaptor<const value_container&, N, L>;
             using const_flag_expression = xtensor_adaptor<const flag_container&, N, L>;
+        };
+
+        template <class EC, std::size_t N, layout_type L>
+        struct xtensor_container_optional_traits : xtensor_optional_traits<EC, N, L>
+        {
             using derived_type = xtensor_container<EC, N, L, xoptional_expression_tag>;
         };
 
         template <class EC, std::size_t N, layout_type L>
         struct xtensor_container_base<EC, N, L, xoptional_expression_tag>
         {
-            using traits = xtensor_optional_traits<EC, N, L>;
+            using traits = xtensor_container_optional_traits<EC, N, L>;
+            using type = xcontainer_optional_base<traits>;
+        };
+    }
+
+    /******************************************
+     * xtensor_adaptor extension for optional *
+     ******************************************/
+
+    namespace extension
+    {
+        template <class EC, std::size_t N, layout_type L>
+        struct xtensor_adaptor_optional_traits : xtensor_optional_traits<EC, N, L>
+        {
+            using derived_type = xtensor_adaptor<EC, N, L, xoptional_expression_tag>;
+        };
+
+        template <class EC, std::size_t N, layout_type L>
+        struct xtensor_adaptor_base<EC, N, L, xoptional_expression_tag>
+        {
+            using traits = xtensor_adaptor_optional_traits<EC, N, L>;
             using type = xcontainer_optional_base<traits>;
         };
     }
@@ -556,15 +606,16 @@ namespace xt
 
     namespace extension
     {
-        template <class F, class CT, class X>
-        class xreducer_optional : public xoptional_empty_base<xreducer<F, CT, X>>
+        template <class F, class CT, class X, class O>
+        class xreducer_optional : public xoptional_empty_base<xreducer<F, CT, X, O>>
         {
         public:
 
             using expression_tag = xoptional_expression_tag;
-            using value_expression = xreducer<F, xt::detail::value_expression_t<CT>, X>;
-            using flag_reducer = xreducer_functors<xt::detail::optional_bitwise<bool>>;
-            using flag_expression = xreducer<flag_reducer, xt::detail::flag_expression_t<CT>, X>;
+            using value_expression = xreducer<F, xt::detail::value_expression_t<CT>, X, O>;
+            using flag_reducer = xreducer_functors<xt::detail::optional_bitwise<bool>, xt::const_value<bool>>;
+            using rebound_flag_reduce_options = typename O::template rebind_t<bool>;
+            using flag_expression = xreducer<flag_reducer, xt::detail::flag_expression_t<CT>, X, rebound_flag_reduce_options>;
             using const_value_expression = value_expression;
             using const_flag_expression = flag_expression;
 
@@ -572,10 +623,10 @@ namespace xt
             const_flag_expression has_value() const;
         };
 
-        template <class F, class CT, class X>
-        struct xreducer_base_impl<xoptional_expression_tag, F, CT, X>
+        template <class F, class CT, class X, class O>
+        struct xreducer_base_impl<xoptional_expression_tag, F, CT, X, O>
         {
-            using type = xreducer_optional<F, CT, X>;
+            using type = xreducer_optional<F, CT, X, O>;
         };
     }
 
@@ -977,16 +1028,21 @@ namespace xt
 
     namespace extension
     {
-        template <class F, class CT, class X>
-        inline auto xreducer_optional<F, CT, X>::value() const -> const_value_expression
+        template <class F, class CT, class X, class O>
+        inline auto xreducer_optional<F, CT, X, O>::value() const -> const_value_expression
         {
             return this->derived_cast().build_reducer(this->derived_cast().expression().value());
         }
 
-        template <class F, class CT, class X>
-        inline auto xreducer_optional<F, CT, X>::has_value() const -> const_flag_expression
+        template <class F, class CT, class X, class O>
+        inline auto xreducer_optional<F, CT, X, O>::has_value() const -> const_flag_expression
         {
-            return this->derived_cast().build_reducer(this->derived_cast().expression().has_value(), flag_reducer());
+            auto opts = this->derived_cast().options().rebind(this->derived_cast().options().initial_value.has_value(),
+                                                              this->derived_cast().options());
+
+            return this->derived_cast().build_reducer(this->derived_cast().expression().has_value(),
+                                                        make_xreducer_functor(xt::detail::optional_bitwise<bool>(),
+                                                                              xt::const_value<bool>(true)), std::move(opts));
         }
     }
 

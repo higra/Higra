@@ -20,7 +20,8 @@
 #include <xtl/xsequence.hpp>
 #include <xtl/xtype_traits.hpp>
 
-#include "xexpression.hpp"
+#include "xaccessible.hpp"
+#include "xexpression_traits.hpp"
 #include "xiterable.hpp"
 #include "xlayout.hpp"
 #include "xscalar.hpp"
@@ -40,46 +41,8 @@ namespace xt
     namespace detail
     {
 
-        /********************
-         * common_size_type *
-         ********************/
-
-        template <class... Args>
-        struct common_size_type
-        {
-            using type = std::common_type_t<typename Args::size_type...>;
-        };
-
-        template <>
-        struct common_size_type<>
-        {
-            using type = std::size_t;
-        };
-
-        template <class... Args>
-        using common_size_type_t = typename common_size_type<Args...>::type;
-
         template <bool... B>
         using conjunction_c = xtl::conjunction<std::integral_constant<bool, B>...>;
-
-        /**************************
-         * common_difference type *
-         **************************/
-
-        template <class... Args>
-        struct common_difference_type
-        {
-            using type = std::common_type_t<typename Args::difference_type...>;
-        };
-
-        template <>
-        struct common_difference_type<>
-        {
-            using type = std::ptrdiff_t;
-        };
-
-        template <class... Args>
-        using common_difference_type_t = typename common_difference_type<Args...>::type;
 
         /************************
          * xfunction_cache_impl *
@@ -130,11 +93,11 @@ namespace xt
 
         template <class V>
         struct has_simd_type
-            : std::integral_constant<bool, !std::is_same<V, xsimd::simd_type<V>>::value>
+            : std::integral_constant<bool, !std::is_same<V, xt_simd::simd_type<V>>::value>
         {
         };
 
-        // This meta struct checks wether SIMD should be activated for our 
+        // This meta struct checks wether SIMD should be activated for our
         // functor "F"
         template <class V, class F, class... CT>
         struct xsimd_meta_getter
@@ -146,9 +109,9 @@ namespace xt
                                                           has_simd_type<xvalue_type_t<std::decay_t<CT>>>...>;
             // if yes, insert correct type here
             using simd_value_type = xtl::mpl::eval_if_t<simd_arguments_exist,
-                                                        meta_identity<xsimd::simd_type<scalar_result_type>>,
+                                                        meta_identity<xt_simd::simd_type<scalar_result_type>>,
                                                         make_invalid_type<>>;
-            // if all types are supported, check that the functor has a working 
+            // if all types are supported, check that the functor has a working
             // simd_apply and all arguments have the simd interface
             using use_xsimd = xtl::conjunction<simd_arguments_exist,
                                                has_simd_apply<F, scalar_result_type>,
@@ -159,7 +122,7 @@ namespace xt
     /************************
      * xfunction extensions *
      ************************/
-    
+
     namespace extension
     {
 
@@ -202,6 +165,16 @@ namespace xt
         using stepper = const_stepper;
     };
 
+    template <class F, class... CT>
+    struct xcontainer_inner_types<xfunction<F, CT...>>
+    {
+        // Added indirection for MSVC 2017 bug with the operator value_type()
+        using value_type = typename meta_identity<decltype(std::declval<F>()(std::declval<xvalue_type_t<std::decay_t<CT>>>()...))>::type;
+        using reference = value_type;
+        using const_reference = value_type;
+        using size_type = common_size_type_t<std::decay_t<CT>...>;
+    };
+
     /*************
      * xfunction *
      *************/
@@ -220,25 +193,27 @@ namespace xt
     template <class F, class... CT>
     class xfunction : private xconst_iterable<xfunction<F, CT...>>,
                       public xexpression<xfunction<F, CT...>>,
+                      private xconst_accessible<xfunction<F, CT...>>,
                       public extension::xfunction_base_t<F, CT...>
     {
     public:
 
         using self_type = xfunction<F, CT...>;
+        using accessible_base = xconst_accessible<self_type>;
         using extension_base = extension::xfunction_base_t<F, CT...>;
         using expression_tag = typename extension_base::expression_tag;
         using only_scalar = all_xscalar<CT...>;
         using functor_type = typename std::remove_reference<F>::type;
         using tuple_type = std::tuple<CT...>;
 
-        // Added indirection for MSVC 2017 bug with the operator value_type()
-        using value_type = typename meta_identity<decltype(std::declval<F>()(std::declval<xvalue_type_t<std::decay_t<CT>>>()...))>::type;
-        using reference = value_type;
-        using const_reference = value_type;
+        using inner_types = xcontainer_inner_types<self_type>;
+        using value_type = typename inner_types::value_type;
+        using reference = typename inner_types::reference;
+        using const_reference = typename inner_types::const_reference;
         using pointer = value_type*;
         using const_pointer = const value_type*;
-        using size_type = detail::common_size_type_t<std::decay_t<CT>...>;
-        using difference_type = detail::common_difference_type_t<std::decay_t<CT>...>;
+        using size_type = typename inner_types::size_type;
+        using difference_type = common_difference_type_t<std::decay_t<CT>...>;
         using simd_meta_getter = detail::xsimd_meta_getter<value_type, F, CT...>;
 
         using has_simd_interface = typename simd_meta_getter::use_xsimd;
@@ -246,7 +221,7 @@ namespace xt
         using simd_argument_type = simd_value_type;
 
         template <class requested_type>
-        using simd_return_type = xsimd::simd_return_type<value_type, requested_type>;
+        using simd_return_type = xt_simd::simd_return_type<value_type, requested_type>;
 
         using iterable_base = xconst_iterable<xfunction<F, CT...>>;
         using inner_shape_type = typename iterable_base::inner_shape_type;
@@ -297,7 +272,7 @@ namespace xt
         xfunction(xfunction&&) = default;
         xfunction& operator=(xfunction&&) = default;
 
-        size_type size() const noexcept;
+        using accessible_base::size;
         size_type dimension() const noexcept;
         const inner_shape_type& shape() const;
         layout_type layout() const noexcept;
@@ -306,16 +281,12 @@ namespace xt
         const_reference operator()(Args... args) const;
 
         template <class... Args>
-        const_reference at(Args... args) const;
-
-        template <class... Args>
         const_reference unchecked(Args... args) const;
 
-        template <class S>
-        disable_integral_t<S, const_reference> operator[](const S& index) const;
-        template <class I>
-        const_reference operator[](std::initializer_list<I> index) const;
-        const_reference operator[](size_type i) const;
+        using accessible_base::at;
+        using accessible_base::operator[];
+        using accessible_base::periodic;
+        using accessible_base::in_bounds;
 
         template <class It>
         const_reference element(It first, It last) const;
@@ -356,7 +327,7 @@ namespace xt
         operator value_type() const;
 
         template <class align, class requested_type = value_type,
-                  std::size_t N = xsimd::simd_traits<requested_type>::size>
+                  std::size_t N = xt_simd::simd_traits<requested_type>::size>
         simd_return_type<requested_type> load_simd(size_type i) const;
 
         const tuple_type& arguments() const noexcept;
@@ -398,44 +369,12 @@ namespace xt
         friend class xfunction_iterator<F, CT...>;
         friend class xfunction_stepper<F, CT...>;
         friend class xconst_iterable<self_type>;
+        friend class xconst_accessible<self_type>;
     };
 
     /**********************
      * xfunction_iterator *
      **********************/
-
-    template <class CT>
-    class xscalar;
-
-    namespace detail
-    {
-        template <class C>
-        struct get_iterator_impl
-        {
-            using type = typename C::storage_iterator;
-        };
-
-        template <class C>
-        struct get_iterator_impl<const C>
-        {
-            using type = typename C::const_storage_iterator;
-        };
-
-        template <class CT>
-        struct get_iterator_impl<xscalar<CT>>
-        {
-            using type = typename xscalar<CT>::dummy_iterator;
-        };
-
-        template <class CT>
-        struct get_iterator_impl<const xscalar<CT>>
-        {
-            using type = typename xscalar<CT>::const_dummy_iterator;
-        };
-    }
-
-    template <class C>
-    using get_iterator = typename detail::get_iterator_impl<C>::type;
 
     template <class F, class... CT>
     class xfunction_iterator : public xtl::xrandom_access_iterator_base<xfunction_iterator<F, CT...>,
@@ -474,7 +413,7 @@ namespace xt
 
     private:
 
-        using data_type = std::tuple<get_iterator<const std::decay_t<CT>>...>;
+        using data_type = std::tuple<decltype(linear_begin(std::declval<const std::decay_t<CT>>()))...>;
 
         template <std::size_t... I>
         reference deref_impl(std::index_sequence<I...>) const;
@@ -535,7 +474,7 @@ namespace xt
         template <class ST>
         ST step_simd();
 
-        value_type step_leading();
+        void step_leading();
 
     private:
 
@@ -544,9 +483,6 @@ namespace xt
 
         template <class ST, std::size_t... I>
         ST step_simd_impl(std::index_sequence<I...>);
-
-        template <std::size_t... I>
-        value_type step_leading_impl(std::index_sequence<I...>);
 
         const xfunction_type* p_f;
         std::tuple<typename std::decay_t<CT>::const_stepper...> m_st;
@@ -576,15 +512,6 @@ namespace xt
      * @name Size and shape
      */
     //@{
-    /**
-     * Returns the size of the expression.
-     */
-    template <class F, class... CT>
-    inline auto xfunction<F, CT...>::size() const noexcept -> size_type
-    {
-        return compute_size(shape());
-    }
-
     /**
      * Returns the number of dimensions of the function.
      */
@@ -651,23 +578,6 @@ namespace xt
     }
 
     /**
-     * Returns a constant reference to the element at the specified position in the expression,
-     * after dimension and bounds checking.
-     * @param args a list of indices specifying the position in the function. Indices
-     * must be unsigned integers, the number of indices should be equal to the number of dimensions
-     * of the expression.
-     * @exception std::out_of_range if the number of argument is greater than the number of dimensions
-     * or if indices are out of bounds.
-     */
-    template <class F, class... CT>
-    template <class... Args>
-    inline auto xfunction<F, CT...>::at(Args... args) const -> const_reference
-    {
-        check_access(shape(), static_cast<size_type>(args)...);
-        return this->operator()(args...);
-    }
-
-    /**
      * Returns a constant reference to the element at the specified position in the expression.
      * @param args a list of indices specifying the position in the expression. Indices
      * must be unsigned integers, the number of indices must be equal to the number of
@@ -675,7 +585,7 @@ namespace xt
      *
      * @warning This method is meant for performance, for expressions with a dynamic
      * number of dimensions (i.e. not known at compile time). Since it may have
-     * undefined behavior (see parameters), operator() should be prefered whenever
+     * undefined behavior (see parameters), operator() should be preferred whenever
      * it is possible.
      * @warning This method is NOT compatible with broadcasting, meaning the following
      * code has undefined behavior:
@@ -683,7 +593,7 @@ namespace xt
      * xt::xarray<double> a = {{0, 1}, {2, 3}};
      * xt::xarray<double> b = {0, 1};
      * auto fd = a + b;
-     * double res = fd.uncheked(0, 1);
+     * double res = fd.unchecked(0, 1);
      * \endcode
      */
     template <class F, class... CT>
@@ -693,27 +603,6 @@ namespace xt
         // The static cast prevents the compiler from instantiating the template methods with signed integers,
         // leading to warning about signed/unsigned conversions in the deeper layers of the access methods
         return unchecked_impl(std::make_index_sequence<sizeof...(CT)>(), static_cast<size_type>(args)...);
-    }
-
-    template <class F, class... CT>
-    template <class S>
-    inline auto xfunction<F, CT...>::operator[](const S& index) const
-        -> disable_integral_t<S, const_reference>
-    {
-        return element(index.cbegin(), index.cend());
-    }
-
-    template <class F, class... CT>
-    template <class I>
-    inline auto xfunction<F, CT...>::operator[](std::initializer_list<I> index) const -> const_reference
-    {
-        return element(index.begin(), index.end());
-    }
-
-    template <class F, class... CT>
-    inline auto xfunction<F, CT...>::operator[](size_type i) const -> const_reference
-    {
-        return operator()(i);
     }
 
     /**
@@ -787,14 +676,14 @@ namespace xt
     template <class F, class... CT>
     inline auto xfunction<F, CT...>::storage_cbegin() const noexcept -> const_storage_iterator
     {
-        auto f = [](const auto& e) noexcept { return detail::linear_begin(e); };
+        auto f = [](const auto& e) noexcept { return linear_begin(e); };
         return build_iterator(f, std::make_index_sequence<sizeof...(CT)>());
     }
 
     template <class F, class... CT>
     inline auto xfunction<F, CT...>::storage_cend() const noexcept -> const_storage_iterator
     {
-        auto f = [](const auto& e) noexcept { return detail::linear_end(e); };
+        auto f = [](const auto& e) noexcept { return linear_end(e); };
         return build_iterator(f, std::make_index_sequence<sizeof...(CT)>());
     }
 
@@ -912,9 +801,9 @@ namespace xt
         struct get_simd_type
         {
             using simd_value_type = typename std::decay_t<T>::simd_value_type;
-            static constexpr bool is_arg_bool = ::xsimd::is_batch_bool<simd_value_type>::value;
-            static constexpr bool is_res_bool = ::xsimd::is_batch_bool<simd>::value;
-            static constexpr bool is_arg_cplx = ::xsimd::is_batch_complex<simd_value_type>::value;
+            static constexpr bool is_arg_bool = ::xt_simd::is_batch_bool<simd_value_type>::value;
+            static constexpr bool is_res_bool = ::xt_simd::is_batch_bool<simd>::value;
+            static constexpr bool is_arg_cplx = ::xt_simd::is_batch_complex<simd_value_type>::value;
             using type = std::conditional_t<is_res_bool,
                                             common_simd,
                                             std::conditional_t<is_arg_bool || is_arg_cplx,
@@ -1161,18 +1050,10 @@ namespace xt
     }
 
     template <class F, class... CT>
-    template <std::size_t... I>
-    inline auto xfunction_stepper<F, CT...>::step_leading_impl(std::index_sequence<I...>)
-        -> value_type
+    inline void xfunction_stepper<F, CT...>::step_leading()
     {
-        return (p_f->m_f)(std::get<I>(m_st).step_leading()...);
-    }
-
-    template <class F, class... CT>
-    inline auto xfunction_stepper<F, CT...>::step_leading()
-        -> value_type
-    {
-        return step_leading_impl(std::make_index_sequence<sizeof...(CT)>());
+        auto step_leading_lambda = [](auto&& st) { st.step_leading(); };
+        for_each(step_leading_lambda, m_st);
     }
 }
 
