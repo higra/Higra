@@ -45,9 +45,6 @@ namespace xt
     struct xcontainer_inner_types<xtensor_container<EC, N, L, Tag>>
     {
         using storage_type = EC;
-        using reference = inner_reference_t<storage_type>;
-        using const_reference = typename storage_type::const_reference;
-        using size_type = typename storage_type::size_type;
         using shape_type = std::array<typename storage_type::size_type, N>;
         using strides_type = get_strides_t<shape_type>;
         using backstrides_type = get_strides_t<shape_type>;
@@ -76,7 +73,7 @@ namespace xt
      * @tparam N The dimension of the container.
      * @tparam L The layout_type of the tensor.
      * @tparam Tag The expression tag.
-     * @sa xtensor, xstrided_container, xcontainer
+     * @sa xtensor
      */
     template <class EC, std::size_t N, layout_type L, class Tag>
     class xtensor_container : public xstrided_container<xtensor_container<EC, N, L, Tag>>,
@@ -149,28 +146,10 @@ namespace xt
      * xtensor_container_adaptor declaration *
      *****************************************/
 
-    namespace extension
-    {
-        template <class EC, std::size_t N, layout_type L, class Tag>
-        struct xtensor_adaptor_base;
-
-        template <class EC, std::size_t N, layout_type L>
-        struct xtensor_adaptor_base<EC, N, L, xtensor_expression_tag>
-        {
-            using type = xtensor_empty_base;
-        };
-
-        template <class EC, std::size_t N, layout_type L, class Tag>
-        using xtensor_adaptor_base_t = typename xtensor_adaptor_base<EC, N, L, Tag>::type;
-    }
-
     template <class EC, std::size_t N, layout_type L, class Tag>
     struct xcontainer_inner_types<xtensor_adaptor<EC, N, L, Tag>>
     {
         using storage_type = std::remove_reference_t<EC>;
-        using reference = inner_reference_t<storage_type>;
-        using const_reference = typename storage_type::const_reference;
-        using size_type = typename storage_type::size_type;
         using shape_type = std::array<typename storage_type::size_type, N>;
         using strides_type = get_strides_t<shape_type>;
         using backstrides_type = get_strides_t<shape_type>;
@@ -181,9 +160,9 @@ namespace xt
         static constexpr layout_type layout = L;
     };
 
-    template <class EC, std::size_t N, layout_type L, class Tag>
-    struct xiterable_inner_types<xtensor_adaptor<EC, N, L, Tag>>
-        : xcontainer_iterable_types<xtensor_adaptor<EC, N, L, Tag>>
+    template <class EC, std::size_t N, layout_type L>
+    struct xiterable_inner_types<xtensor_adaptor<EC, N, L>>
+        : xcontainer_iterable_types<xtensor_adaptor<EC, N, L>>
     {
     };
 
@@ -201,12 +180,10 @@ namespace xt
      * @tparam N The dimension of the adaptor.
      * @tparam L The layout_type of the adaptor.
      * @tparam Tag The expression tag.
-     * @sa xstrided_container, xcontainer
      */
     template <class EC, std::size_t N, layout_type L, class Tag>
     class xtensor_adaptor : public xstrided_container<xtensor_adaptor<EC, N, L, Tag>>,
-                            public xcontainer_semantic<xtensor_adaptor<EC, N, L, Tag>>,
-                            public extension::xtensor_container_base_t<EC, N, L, Tag>
+                            public xcontainer_semantic<xtensor_adaptor<EC, N, L, Tag>>
     {
     public:
 
@@ -215,7 +192,6 @@ namespace xt
         using self_type = xtensor_adaptor<EC, N, L, Tag>;
         using base_type = xstrided_container<self_type>;
         using semantic_base = xcontainer_semantic<self_type>;
-        using extension_base = extension::xtensor_adaptor_base_t<EC, N, L, Tag>;
         using storage_type = typename base_type::storage_type;
         using allocator_type = typename base_type::allocator_type;
         using shape_type = typename base_type::shape_type;
@@ -399,7 +375,7 @@ namespace xt
         : base_type()
     {
         XTENSOR_ASSERT_MSG(N == e.derived_cast().dimension(), "Cannot change dimension of xtensor.");
-        // Avoids uninitialized data because of (m_shape == shape) condition
+        // Avoids unintialized data because of (m_shape == shape) condition
         // in resize (called by assign), which is always true when dimension() == 0.
         if (e.derived_cast().dimension() == 0)
         {
@@ -572,7 +548,7 @@ namespace xt
         }
 
         return out;
-    }
+    };
 
     /**
      * Converts ``std::vector<index_type>`` (returned e.g. from ``xt::argwhere``) to a flattened
@@ -597,7 +573,7 @@ namespace xt
         for_each(idx.begin(), idx.end(), [&iter](const auto& t) { iter = std::copy(t.cbegin(), t.cend(), iter); });
 
         return out;
-    }
+    };
 
     struct ravel_vector_tag;
     struct ravel_tensor_tag;
@@ -665,7 +641,7 @@ namespace xt
             *out_iter = element_offset<value_type>(strides, (*idx_iter).cbegin(), (*idx_iter).cend());
         }
         return out;
-    }
+    };
 }
 
 #endif

@@ -27,21 +27,16 @@ namespace xsimd
      * @param y batch of floating point values.
      * @return \c x raised to the power \c y.
      */
-    template <class B>
-    batch_type_t<B> pow(const simd_base<B>& x, const simd_base<B>& y);
-
-    // integer specialization
-    template <class B, class T1>
-    inline typename std::enable_if<std::is_integral<T1>::value, batch_type_t<B>>::type
-    pow(const simd_base<B>& t0, const T1& t1);
+    template <class T, std::size_t N>
+    batch<T, N> pow(const batch<T, N>& x, const batch<T, N>& y);
 
     /**
      * Computes the cubic root of the batch \c x.
      * @param x batch of floating point values.
      * @return the cubic root of \c x.
      */
-    template <class B>
-    batch_type_t<B> cbrt(const simd_base<B>& x);
+    template <class T, std::size_t N>
+    batch<T, N> cbrt(const batch<T, N>& x);
 
     /**
      * Computes the square root of the sum of the squares of the batches
@@ -50,8 +45,8 @@ namespace xsimd
      * @param y batch of floating point values.
      * @return the square root of the sum of the squares of \c x and \c y.
      */
-    template <class B>
-    batch_type_t<B> hypot(const simd_base<B>& x, const simd_base<B>& y);
+    template <class T, std::size_t N>
+    batch<T, N> hypot(const batch<T, N>& x, const batch<T, N>& y);
 
     /**********************
      * pow implementation *
@@ -78,7 +73,7 @@ namespace xsimd
                 auto negx = x < b_type(0.);
                 b_type z = exp(y * log(abs(x)));
                 z = select(is_odd(y) && negx, -z, z);
-                auto invalid = negx && !(is_flint(y) || xsimd::isinf(y));
+                auto invalid = negx && !(is_flint(y) || isinf(y));
                 return select(invalid, nan<b_type>(), z);
             }
         };
@@ -109,17 +104,17 @@ namespace xsimd
       }
     }
 
-    template <class B>
-    inline batch_type_t<B> pow(const simd_base<B>& x, const simd_base<B>& y)
+    template <class T, std::size_t N>
+    inline batch<T, N> pow(const batch<T, N>& x, const batch<T, N>& y)
     {
-        return detail::pow_kernel<batch_type_t<B>>::compute(x(), y());
+        return detail::pow_kernel<batch<T, N>>::compute(x, y);
     }
 
-    template <class B, class T1>
-    inline typename std::enable_if<std::is_integral<T1>::value, batch_type_t<B>>::type
-    pow(const simd_base<B>& t0, const T1& t1)
+    template <class T0, std::size_t N, class T1>
+    inline typename std::enable_if<std::is_integral<T1>::value, batch<T0, N>>::type
+    pow(const batch<T0, N>& t0, const T1& t1)
     {
-        return detail::ipow(t0(), t1);
+        return detail::ipow(t0, t1);
     }
 
     /***********************
@@ -183,7 +178,7 @@ namespace xsimd
                 x = x | bitofsign(a);
 #endif
 #ifndef XSIMD_NO_INFINITIES
-                return select(a == B(0.) || xsimd::isinf(a), a, x);
+                return select(a == B(0.) || isinf(a), a, x);
 #else
                 return select(a == B(0.), a, x);
 #endif
@@ -209,11 +204,11 @@ namespace xsimd
                 i_type e;
                 B x = frexp(z, e);
                 x = horner<B,
-                           0x3fd9c0c12122a4feull,
-                           0x3ff23d6ee505873aull,
-                           0xbfee8a4ca3ba37b8ull,
-                           0x3fe17e1fc7e59d58ull,
-                           0xbfc13c93386fdff6ull>(x);
+                           0x3fd9c0c12122a4fell,
+                           0x3ff23d6ee505873all,
+                           0xbfee8a4ca3ba37b8ll,
+                           0x3fe17e1fc7e59d58ll,
+                           0xbfc13c93386fdff6ll>(x);
                 auto flag = e >= zero<i_type>();
                 i_type e1 = abs(e);
                 i_type rem = e1;
@@ -233,7 +228,7 @@ namespace xsimd
                 x = x | bitofsign(a);
 #endif
 #ifndef XSIMD_NO_INFINITIES
-                return select(a == B(0.) || xsimd::isinf(a), a, x);
+                return select(a == B(0.) || isinf(a), a, x);
 #else
                 return select(a == B(0.), a, x);
 #endif
@@ -241,20 +236,20 @@ namespace xsimd
         };
     }
 
-    template <class B>
-    inline batch_type_t<B> cbrt(const simd_base<B>& x)
+    template <class T, std::size_t N>
+    inline batch<T, N> cbrt(const batch<T, N>& x)
     {
-        return detail::cbrt_kernel<batch_type_t<B>>::compute(x());
+        return detail::cbrt_kernel<batch<T, N>>::compute(x);
     }
 
     /************************
      * hypot implementation *
      ************************/
 
-    template <class B>
-    inline batch_type_t<B> hypot(const simd_base<B>& x, const simd_base<B>& y)
+    template <class T, std::size_t N>
+    inline batch<T, N> hypot(const batch<T, N>& x, const batch<T, N>& y)
     {
-        return sqrt(fma(x(), x(), y() * y()));
+        return sqrt(fma(x, x, y * y));
     }
 }
 

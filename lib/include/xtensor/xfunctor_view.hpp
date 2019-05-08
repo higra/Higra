@@ -17,17 +17,31 @@
 
 #include <xtl/xproxy_wrapper.hpp>
 
-#include "xaccessible.hpp"
-#include "xexpression.hpp"
-#include "xiterator.hpp"
-#include "xsemantic.hpp"
-#include "xutils.hpp"
+#include "xtensor/xexpression.hpp"
+#include "xtensor/xiterator.hpp"
+#include "xtensor/xsemantic.hpp"
+#include "xtensor/xutils.hpp"
 
-#include "xarray.hpp"
-#include "xtensor.hpp"
+#include "xtensor/xarray.hpp"
+#include "xtensor/xtensor.hpp"
 
 namespace xt
 {
+    /*****************************
+     * xfunctor_view declaration *
+     *****************************/
+
+    template <class F, class IT>
+    class xfunctor_iterator;
+
+    template <class F, class ST>
+    class xfunctor_stepper;
+
+    template <class F, class CT>
+    class xfunctor_applier_base;
+
+    template <class F, class CT>
+    class xfunctor_view;
 
     /************************************************
      * xfunctor_view and xfunctor_adaptor extension *
@@ -54,37 +68,57 @@ namespace xt
         using xfunctor_view_base_t = typename xfunctor_view_base<F, CT>::type;
     }
 
-    /*************************************
-     * xfunctor_applier_base declaration *
-     *************************************/
+    /********************************
+     * xfunctor_view_temporary_type *
+     ********************************/
 
-    template <class F, class IT>
-    class xfunctor_iterator;
+    namespace detail
+    {
+        // TODO replace with xexpression_for_shape ... 
+        template <class F, class S, layout_type L>
+        struct functorview_temporary_type_impl
+        {
+            using type = xarray<typename F::value_type, L>;
+        };
 
-    template <class F, class ST>
-    class xfunctor_stepper;
+        template <class F, class T, std::size_t N, layout_type L>
+        struct functorview_temporary_type_impl<F, std::array<T, N>, L>
+        {
+            using type = xtensor<typename F::value_type, N, L>;
+        };
+    }
 
-    template <class D>
-    class xfunctor_applier_base : private xaccessible<D>
+    template <class F, class E>
+    struct xfunctor_view_temporary_type
+    {
+        using type = typename detail::functorview_temporary_type_impl<F, typename E::shape_type, E::static_layout>::type;
+    };
+
+    template <class F, class CT>
+    struct xcontainer_inner_types<xfunctor_view<F, CT>>
+    {
+        using xexpression_type = std::decay_t<CT>;
+        using temporary_type = typename xfunctor_view_temporary_type<F, xexpression_type>::type;
+    };
+
+    template <class F, class CT>
+    class xfunctor_applier_base
     {
     public:
 
-        using self_type = xfunctor_applier_base<D>;
-        using inner_types = xcontainer_inner_types<D>;
-        using xexpression_type = typename inner_types::xexpression_type;
-        using undecay_expression = typename inner_types::undecay_expression;
-        using functor_type = typename inner_types::functor_type;
-        using accessible_base = xaccessible<D>;
+        using self_type = xfunctor_applier_base<F, CT>;
+        using xexpression_type = std::decay_t<CT>;
+        using functor_type = typename std::decay_t<F>;
 
-        using extension_base = extension::xfunctor_view_base_t<functor_type, undecay_expression>;
+        using extension_base = extension::xfunctor_view_base_t<F, CT>;
         using expression_tag = typename extension_base::expression_tag;
 
         using value_type = typename functor_type::value_type;
-        using reference = typename inner_types::reference;
-        using const_reference = typename inner_types::const_reference;
+        using reference = typename functor_type::reference;
+        using const_reference = typename functor_type::const_reference;
         using pointer = typename functor_type::pointer;
         using const_pointer = typename functor_type::const_pointer;
-        using size_type = typename inner_types::size_type;
+        using size_type = typename xexpression_type::size_type;
         using difference_type = typename xexpression_type::difference_type;
 
         using shape_type = typename xexpression_type::shape_type;
@@ -93,7 +127,7 @@ namespace xt
                                                  get_strides_type<shape_type>>;
         using backstrides_type = xtl::mpl::eval_if_t<has_strides<xexpression_type>,
                                                      detail::expr_backstrides_type<xexpression_type>,
-                                                     get_strides_type<shape_type>>;
+                                                     get_strides_type<xexpression_type>>;
 
         using inner_shape_type = typename xexpression_type::inner_shape_type;
         using inner_strides_type = xtl::mpl::eval_if_t<has_strides<xexpression_type>,
@@ -139,17 +173,16 @@ namespace xt
         using reverse_iterator = xfunctor_iterator<functor_type, typename xexpression_type::reverse_iterator>;
         using const_reverse_iterator = xfunctor_iterator<const functor_type, typename xexpression_type::const_reverse_iterator>;
 
-        explicit xfunctor_applier_base(undecay_expression) noexcept;
+        explicit xfunctor_applier_base(CT) noexcept;
 
         template <class Func, class E>
         xfunctor_applier_base(Func&&, E&&) noexcept;
 
         size_type size() const noexcept;
+        size_type dimension() const noexcept;
         const inner_shape_type& shape() const noexcept;
         const inner_strides_type& strides() const noexcept;
         const inner_backstrides_type& backstrides() const noexcept;
-        using accessible_base::dimension;
-        using accessible_base::shape;
 
         layout_type layout() const noexcept;
 
@@ -157,7 +190,16 @@ namespace xt
         reference operator()(Args... args);
 
         template <class... Args>
+        reference at(Args... args);
+
+        template <class... Args>
         reference unchecked(Args... args);
+
+        template <class S>
+        disable_integral_t<S, reference> operator[](const S& index);
+        template <class I>
+        reference operator[](std::initializer_list<I> index);
+        reference operator[](size_type i);
 
         template <class IT>
         reference element(IT first, IT last);
@@ -168,13 +210,17 @@ namespace xt
         template <class... Args>
         const_reference unchecked(Args... args) const;
 
+        template <class... Args>
+        const_reference at(Args... args) const;
+
+        template <class S>
+        disable_integral_t<S, const_reference> operator[](const S& index) const;
+        template <class I>
+        const_reference operator[](std::initializer_list<I> index) const;
+        const_reference operator[](size_type i) const;
+
         template <class IT>
         const_reference element(IT first, IT last) const;
-
-        using accessible_base::at;
-        using accessible_base::operator[];
-        using accessible_base::periodic;
-        using accessible_base::in_bounds;
 
         xexpression_type& expression() noexcept;
         const xexpression_type& expression() const noexcept;
@@ -185,16 +231,16 @@ namespace xt
         template <class S>
         bool has_linear_assign(const S& strides) const;
 
-        template <class FCT = functor_type>
+        template <class FCT = F>
         auto data_element(size_type i)
-            -> decltype(std::declval<FCT>()(std::declval<undecay_expression>().data_element(i)))
+            -> decltype(std::declval<FCT>()(std::declval<CT>().data_element(i)))
         {
             return m_functor(m_e.data_element(i));
         }
 
-        template <class FCT = functor_type>
+        template <class FCT = F>
         auto data_element(size_type i) const
-            -> decltype(std::declval<FCT>()(std::declval<undecay_expression>().data_element(i)))
+            -> decltype(std::declval<FCT>()(std::declval<CT>().data_element(i)))
         {
             return m_functor(m_e.data_element(i));
         }
@@ -202,16 +248,16 @@ namespace xt
         // The following functions are defined inline because otherwise signatures
         // don't match on GCC.
         template <class align, class requested_type = typename xexpression_type::value_type,
-                  std::size_t N = xt_simd::simd_traits<requested_type>::size, class FCT = functor_type>
+                  std::size_t N = xsimd::simd_traits<requested_type>::size, class FCT = F>
         auto load_simd(size_type i) const
-            -> decltype(std::declval<FCT>().template proxy_simd_load<align, requested_type, N>(std::declval<undecay_expression>(), i))
+            -> decltype(std::declval<FCT>().template proxy_simd_load<align, requested_type, N>(std::declval<CT>(), i))
         {
             return m_functor.template proxy_simd_load<align, requested_type, N>(m_e, i);
         }
 
-        template <class align, class simd, class FCT = functor_type>
+        template <class align, class simd, class FCT = F>
         auto store_simd(size_type i, const simd& e)
-            -> decltype(std::declval<FCT>().template proxy_simd_store<align>(std::declval<undecay_expression>(), i, e))
+            -> decltype(std::declval<FCT>().template proxy_simd_store<align>(std::declval<CT>(), i, e))
         {
             return m_functor.template proxy_simd_store<align>(m_e, i, e);
         }
@@ -299,58 +345,8 @@ namespace xt
 
     protected:
 
-        undecay_expression m_e;
+        CT m_e;
         functor_type m_functor;
-
-    private:
-
-        friend class xaccessible<D>;
-        friend class xconst_accessible<D>;
-    };
-
-    /********************************
-     * xfunctor_view_temporary_type *
-     ********************************/
-
-    namespace detail
-    {
-        // TODO replace with xexpression_for_shape ...
-        template <class F, class S, layout_type L>
-        struct functorview_temporary_type_impl
-        {
-            using type = xarray<typename F::value_type, L>;
-        };
-
-        template <class F, class T, std::size_t N, layout_type L>
-        struct functorview_temporary_type_impl<F, std::array<T, N>, L>
-        {
-            using type = xtensor<typename F::value_type, N, L>;
-        };
-    }
-
-    template <class F, class E>
-    struct xfunctor_view_temporary_type
-    {
-        using type = typename detail::functorview_temporary_type_impl<F, typename E::shape_type, E::static_layout>::type;
-    };
-
-    /*****************************
-     * xfunctor_view declaration *
-     *****************************/
-
-    template <class F, class CT>
-    class xfunctor_view;
-
-    template <class F, class CT>
-    struct xcontainer_inner_types<xfunctor_view<F, CT>>
-    {
-        using xexpression_type = std::decay_t<CT>;
-        using undecay_expression = CT;
-        using functor_type = std::decay_t<F>;
-        using reference = decltype(std::declval<F>()(std::declval<xexpression_type>()()));
-        using const_reference = decltype(std::declval<F>()(std::declval<const xexpression_type>()()));
-        using size_type = typename xexpression_type::size_type;
-        using temporary_type = typename xfunctor_view_temporary_type<F, xexpression_type>::type;
     };
 
     /**
@@ -373,7 +369,7 @@ namespace xt
      * @sa real, imag
      */
     template <class F, class CT>
-    class xfunctor_view : public xfunctor_applier_base<xfunctor_view<F, CT>>,
+    class xfunctor_view : public xfunctor_applier_base<F, CT>,
                           public xview_semantic<xfunctor_view<F, CT>>,
                           public extension::xfunctor_view_base_t<F, CT>
     {
@@ -383,7 +379,7 @@ namespace xt
         using semantic_base = xview_semantic<self_type>;
 
         // constructors
-        using xfunctor_applier_base<self_type>::xfunctor_applier_base;
+        using xfunctor_applier_base<F, CT>::xfunctor_applier_base;
 
         template <class E>
         self_type& operator=(const xexpression<E>& e);
@@ -402,12 +398,7 @@ namespace xt
         using temporary_type = typename xcontainer_inner_types<self_type>::temporary_type;
         void assign_temporary_impl(temporary_type&& tmp);
         friend class xview_semantic<self_type>;
-        friend class xaccessible<self_type>;
     };
-
-    /********************************
-     * xfunctor_adaptor declaration *
-     ********************************/
 
     template <class F, class CT>
     class xfunctor_adaptor;
@@ -416,11 +407,6 @@ namespace xt
     struct xcontainer_inner_types<xfunctor_adaptor<F, CT>>
     {
         using xexpression_type = std::decay_t<CT>;
-        using undecay_expression = CT;
-        using functor_type = std::decay_t<F>;
-        using reference = typename functor_type::reference;
-        using const_reference = typename functor_type::const_reference;
-        using size_type = typename xexpression_type::size_type;
         using temporary_type = typename xfunctor_view_temporary_type<F, xexpression_type>::type;
     };
 
@@ -437,7 +423,7 @@ namespace xt
      * @sa xfunctor_view
      */
     template <class F, class CT>
-    class xfunctor_adaptor : public xfunctor_applier_base<xfunctor_adaptor<F, CT>>,
+    class xfunctor_adaptor : public xfunctor_applier_base<F, CT>,
                              public xcontainer_semantic<xfunctor_adaptor<F, CT>>,
                              public extension::xfunctor_view_base_t<F, CT>
     {
@@ -446,11 +432,11 @@ namespace xt
         using self_type = xfunctor_adaptor<F, CT>;
         using semantic_base = xcontainer_semantic<self_type>;
         using xexpression_type = std::decay_t<CT>;
-        using base_type = xfunctor_applier_base<self_type>;
+        using base_type = xfunctor_applier_base<F, CT>;
         using shape_type = typename base_type::shape_type;
         using strides_type = typename xexpression_type::strides_type;
         // constructors
-        using xfunctor_applier_base<self_type>::xfunctor_applier_base;
+        using xfunctor_applier_base<F, CT>::xfunctor_applier_base;
 
         template <class E>
         self_type& operator=(const xexpression<E>& e);
@@ -475,45 +461,63 @@ namespace xt
         using temporary_type = typename xcontainer_inner_types<self_type>::temporary_type;
         void assign_temporary_impl(temporary_type&& tmp);
         friend class xcontainer_semantic<self_type>;
-        friend class xaccessible<self_type>;
     };
+
+
+    template <class F, class CT>
+    template <class S>
+    auto xfunctor_adaptor<F, CT>::resize(S&& shape, bool force)
+    {
+        this->m_e.resize(std::forward<S>(shape), force);
+    }
+
+    template <class F, class CT>
+    template <class S>
+    auto xfunctor_adaptor<F, CT>::resize(S&& shape, layout_type l)
+    {
+        this->m_e.resize(std::forward<S>(shape), l);
+    }
+
+    template <class F, class CT>
+    template <class S>
+    auto xfunctor_adaptor<F, CT>::resize(S&& shape, const strides_type& strides)
+    {
+        this->m_e.resize(std::forward<S>(shape), strides);
+    }
+
+    template <class F, class CT>
+    template <class S>
+    auto xfunctor_adaptor<F, CT>::reshape(S&& shape, layout_type layout)
+    {
+        this->m_e.reshape(std::forward<S>(shape), layout);
+    }
 
     /*********************************
      * xfunctor_iterator declaration *
      *********************************/
 
-    template <class R>
+    template <class DT>
     struct xproxy_inner_types
     {
-        using reference = R;
-        using pointer = std::add_pointer_t<std::remove_reference_t<R>>;
+        using proxy = xtl::xproxy_wrapper<DT>;
+        using pointer = typename proxy::pointer;
+        using reference = typename proxy::reference;
     };
-
-    namespace detail
-    {
-        template <class F, class IT>
-        struct xfunctor_invoker
-        {
-            using type = decltype(std::declval<F>()(*(std::declval<IT>())));
-        };
-
-        template <class F, class IT>
-        using xfunctor_invoker_t = typename xfunctor_invoker<F, IT>::type;
-    }
 
     template <class F, class IT>
     class xfunctor_iterator : public xtl::xrandom_access_iterator_base<xfunctor_iterator<F, IT>,
                                                                        typename std::decay_t<F>::value_type,
                                                                        typename std::iterator_traits<IT>::difference_type,
-                                                                       typename xproxy_inner_types<detail::xfunctor_invoker_t<F, IT>>::pointer,
-                                                                       typename xproxy_inner_types<detail::xfunctor_invoker_t<F, IT>>::reference>
+                                                                       typename xproxy_inner_types<decltype(std::declval<F>()(*(IT())))>::pointer,
+                                                                       typename xproxy_inner_types<decltype(std::declval<F>()(*(IT())))>::reference>
     {
     public:
 
         using functor_type = F;
         using subiterator_traits = std::iterator_traits<IT>;
 
-        using proxy_inner = xproxy_inner_types<detail::xfunctor_invoker_t<F, IT>>;
+        using proxy_inner = xproxy_inner_types<decltype(std::declval<F>()(*(IT())))>;
+        using proxy = typename proxy_inner::proxy;
         using value_type = typename functor_type::value_type;
         using reference = typename proxy_inner::reference;
         using pointer = typename proxy_inner::pointer;
@@ -563,7 +567,8 @@ namespace xt
 
         using functor_type = F;
 
-        using proxy_inner = xproxy_inner_types<detail::xfunctor_invoker_t<F, ST>>;
+        using proxy_inner = xproxy_inner_types<decltype(std::declval<F>()(*std::declval<ST>()))>;
+        using proxy = typename proxy_inner::proxy;
         using value_type = typename functor_type::value_type;
         using reference = typename proxy_inner::reference;
         using pointer = std::remove_reference_t<reference>*;
@@ -605,8 +610,8 @@ namespace xt
      *
      * @param e the underlying expression
      */
-    template <class D>
-    inline xfunctor_applier_base<D>::xfunctor_applier_base(undecay_expression e) noexcept
+    template <class F, class CT>
+    inline xfunctor_applier_base<F, CT>::xfunctor_applier_base(CT e) noexcept
         : m_e(e), m_functor(functor_type())
     {
     }
@@ -617,9 +622,9 @@ namespace xt
     * @param func the functor to be applied to the elements of the underlying expression.
     * @param e the underlying expression
     */
-    template <class D>
+    template <class F, class CT>
     template <class Func, class E>
-    inline xfunctor_applier_base<D>::xfunctor_applier_base(Func&& func, E&& e) noexcept
+    inline xfunctor_applier_base<F, CT>::xfunctor_applier_base(Func&& func, E&& e) noexcept
         : m_e(std::forward<E>(e)), m_functor(std::forward<Func>(func))
     {
     }
@@ -631,17 +636,26 @@ namespace xt
     /**
      * Returns the size of the expression.
      */
-    template <class D>
-    inline auto xfunctor_applier_base<D>::size() const noexcept -> size_type
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::size() const noexcept -> size_type
     {
         return m_e.size();
     }
 
     /**
+     * Returns the number of dimensions of the expression.
+     */
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::dimension() const noexcept -> size_type
+    {
+        return m_e.dimension();
+    }
+
+    /**
      * Returns the shape of the expression.
      */
-    template <class D>
-    inline auto xfunctor_applier_base<D>::shape() const noexcept -> const inner_shape_type&
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::shape() const noexcept -> const inner_shape_type&
     {
         return m_e.shape();
     }
@@ -649,8 +663,8 @@ namespace xt
     /**
      * Returns the strides of the expression.
      */
-    template <class D>
-    inline auto xfunctor_applier_base<D>::strides() const noexcept -> const inner_strides_type&
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::strides() const noexcept -> const inner_strides_type&
     {
         return m_e.strides();
     }
@@ -658,8 +672,8 @@ namespace xt
     /**
      * Returns the backstrides of the expression.
      */
-    template <class D>
-    inline auto xfunctor_applier_base<D>::backstrides() const noexcept -> const inner_backstrides_type&
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::backstrides() const noexcept -> const inner_backstrides_type&
     {
         return m_e.backstrides();
     }
@@ -667,8 +681,8 @@ namespace xt
     /**
      * Returns the layout_type of the expression.
      */
-    template <class D>
-    inline layout_type xfunctor_applier_base<D>::layout() const noexcept
+    template <class F, class CT>
+    inline layout_type xfunctor_applier_base<F, CT>::layout() const noexcept
     {
         return m_e.layout();
     }
@@ -683,13 +697,30 @@ namespace xt
      * must be unsigned integers, the number of indices should be equal or greater than
      * the number of dimensions of the expression.
      */
-    template <class D>
+    template <class F, class CT>
     template <class... Args>
-    inline auto xfunctor_applier_base<D>::operator()(Args... args) -> reference
+    inline auto xfunctor_applier_base<F, CT>::operator()(Args... args) -> reference
     {
         XTENSOR_TRY(check_index(shape(), args...));
         XTENSOR_CHECK_DIMENSION(shape(), args...);
         return m_functor(m_e(args...));
+    }
+
+    /**
+     * Returns a reference to the element at the specified position in the expression,
+     * after dimension and bounds checking.
+     * @param args a list of indices specifying the position in the function. Indices
+     * must be unsigned integers, the number of indices should be equal to the number of dimensions
+     * of the expression.
+     * @exception std::out_of_range if the number of argument is greater than the number of dimensions
+     * or if indices are out of bounds.
+     */
+    template <class F, class CT>
+    template <class... Args>
+    inline auto xfunctor_applier_base<F, CT>::at(Args... args) -> reference
+    {
+        check_access(shape(), args...);
+        return this->operator()(args...);
     }
 
     /**
@@ -711,11 +742,39 @@ namespace xt
      * double res = fd.uncheked(0, 1);
      * \endcode
      */
-    template <class D>
+    template <class F, class CT>
     template <class... Args>
-    inline auto xfunctor_applier_base<D>::unchecked(Args... args) -> reference
+    inline auto xfunctor_applier_base<F, CT>::unchecked(Args... args) -> reference
     {
         return m_functor(m_e.unchecked(args...));
+    }
+
+    /**
+     * Returns a reference to the element at the specified position in the expression.
+     * @param index a sequence of indices specifying the position in the function. Indices
+     * must be unsigned integers, the number of indices in the sequence should be equal or greater
+     * than the number of dimensions of the container.
+     */
+    template <class F, class CT>
+    template <class S>
+    inline auto xfunctor_applier_base<F, CT>::operator[](const S& index)
+        -> disable_integral_t<S, reference>
+    {
+        return m_functor(m_e[index]);
+    }
+
+    template <class F, class CT>
+    template <class I>
+    inline auto xfunctor_applier_base<F, CT>::operator[](std::initializer_list<I> index)
+        -> reference
+    {
+        return m_functor(m_e[index]);
+    }
+
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::operator[](size_type i) -> reference
+    {
+        return operator()(i);
     }
 
     /**
@@ -725,9 +784,9 @@ namespace xt
      * The number of indices in the sequence should be equal to or greater
      * than the number of dimensions of the function.
      */
-    template <class D>
+    template <class F, class CT>
     template <class IT>
-    inline auto xfunctor_applier_base<D>::element(IT first, IT last) -> reference
+    inline auto xfunctor_applier_base<F, CT>::element(IT first, IT last) -> reference
     {
         XTENSOR_TRY(check_element_index(shape(), first, last));
         return m_functor(m_e.element(first, last));
@@ -739,13 +798,30 @@ namespace xt
      * must be unsigned integers, the number of indices should be equal or greater than
      * the number of dimensions of the expression.
      */
-    template <class D>
+    template <class F, class CT>
     template <class... Args>
-    inline auto xfunctor_applier_base<D>::operator()(Args... args) const -> const_reference
+    inline auto xfunctor_applier_base<F, CT>::operator()(Args... args) const -> const_reference
     {
         XTENSOR_TRY(check_index(shape(), args...));
         XTENSOR_CHECK_DIMENSION(shape(), args...);
         return m_functor(m_e(args...));
+    }
+
+    /**
+     * Returns a constant reference to the element at the specified position in the expression,
+     * after dimension and bounds checking.
+     * @param args a list of indices specifying the position in the function. Indices
+     * must be unsigned integers, the number of indices should be equal to the number of dimensions
+     * of the expression.
+     * @exception std::out_of_range if the number of argument is greater than the number of dimensions
+     * or if indices are out of bounds.
+     */
+    template <class F, class CT>
+    template <class... Args>
+    inline auto xfunctor_applier_base<F, CT>::at(Args... args) const -> const_reference
+    {
+        check_access(shape(), args...);
+        return this->operator()(args...);
     }
 
     /**
@@ -767,11 +843,39 @@ namespace xt
      * double res = fd.uncheked(0, 1);
      * \endcode
      */
-    template <class D>
+    template <class F, class CT>
     template <class... Args>
-    inline auto xfunctor_applier_base<D>::unchecked(Args... args) const -> const_reference
+    inline auto xfunctor_applier_base<F, CT>::unchecked(Args... args) const -> const_reference
     {
         return m_functor(m_e.unchecked(args...));
+    }
+
+    /**
+     * Returns a constant reference to the element at the specified position in the expression.
+     * @param index a sequence of indices specifying the position in the function. Indices
+     * must be unsigned integers, the number of indices in the sequence should be equal or greater
+     * than the number of dimensions of the container.
+     */
+    template <class F, class CT>
+    template <class S>
+    inline auto xfunctor_applier_base<F, CT>::operator[](const S& index) const
+        -> disable_integral_t<S, const_reference>
+    {
+        return m_functor(m_e[index]);
+    }
+
+    template <class F, class CT>
+    template <class I>
+    inline auto xfunctor_applier_base<F, CT>::operator[](std::initializer_list<I> index) const
+        -> const_reference
+    {
+        return m_functor(m_e[index]);
+    }
+
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::operator[](size_type i) const -> const_reference
+    {
+        return operator()(i);
     }
 
     /**
@@ -781,9 +885,9 @@ namespace xt
      * The number of indices in the sequence should be equal to or greater
      * than the number of dimensions of the function.
      */
-    template <class D>
+    template <class F, class CT>
     template <class IT>
-    inline auto xfunctor_applier_base<D>::element(IT first, IT last) const -> const_reference
+    inline auto xfunctor_applier_base<F, CT>::element(IT first, IT last) const -> const_reference
     {
         XTENSOR_TRY(check_element_index(shape(), first, last));
         return m_functor(m_e.element(first, last));
@@ -792,8 +896,8 @@ namespace xt
     /**
      * Returns a reference to the underlying expression of the view.
      */
-    template <class D>
-    inline auto xfunctor_applier_base<D>::expression() noexcept -> xexpression_type&
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::expression() noexcept -> xexpression_type&
     {
         return m_e;
     }
@@ -801,8 +905,8 @@ namespace xt
     /**
      * Returns a consttant reference to the underlying expression of the view.
      */
-    template <class D>
-    inline auto xfunctor_applier_base<D>::expression() const noexcept -> const xexpression_type&
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::expression() const noexcept -> const xexpression_type&
     {
         return m_e;
     }
@@ -818,9 +922,9 @@ namespace xt
      * @param reuse_cache boolean for reusing a previously computed shape
      * @return a boolean indicating whether the broadcasting is trivial
      */
-    template <class D>
+    template <class F, class CT>
     template <class S>
-    inline bool xfunctor_applier_base<D>::broadcast_shape(S& shape, bool reuse_cache) const
+    inline bool xfunctor_applier_base<F, CT>::broadcast_shape(S& shape, bool reuse_cache) const
     {
         return m_e.broadcast_shape(shape, reuse_cache);
     }
@@ -830,9 +934,9 @@ namespace xt
     * with the specified strides.
     * @return a boolean indicating whether a linear assign is possible
     */
-    template <class D>
+    template <class F, class CT>
     template <class S>
-    inline bool xfunctor_applier_base<D>::has_linear_assign(const S& strides) const
+    inline bool xfunctor_applier_base<F, CT>::has_linear_assign(const S& strides) const
     {
         return m_e.has_linear_assign(strides);
     }
@@ -846,9 +950,9 @@ namespace xt
      * Returns an iterator to the first element of the expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::begin() noexcept
+    inline auto xfunctor_applier_base<F, CT>::begin() noexcept
     {
         return xfunctor_iterator<functor_type, decltype(m_e.template begin<L>())>
             (m_e.template begin<L>(), &m_functor);
@@ -859,9 +963,9 @@ namespace xt
      * of the expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::end() noexcept
+    inline auto xfunctor_applier_base<F, CT>::end() noexcept
     {
         return xfunctor_iterator<functor_type, decltype(m_e.template end<L>())>
             (m_e.template end<L>(), &m_functor);
@@ -871,9 +975,9 @@ namespace xt
      * Returns a constant iterator to the first element of the expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::begin() const noexcept
+    inline auto xfunctor_applier_base<F, CT>::begin() const noexcept
     {
         return this->template cbegin<L>();
     }
@@ -883,9 +987,9 @@ namespace xt
      * of the expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::end() const noexcept
+    inline auto xfunctor_applier_base<F, CT>::end() const noexcept
     {
         return this->template cend<L>();
     }
@@ -894,9 +998,9 @@ namespace xt
      * Returns a constant iterator to the first element of the expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::cbegin() const noexcept
+    inline auto xfunctor_applier_base<F, CT>::cbegin() const noexcept
     {
         return xfunctor_iterator<const functor_type, decltype(m_e.template cbegin<L>())>
             (m_e.template cbegin<L>(), &m_functor);
@@ -907,9 +1011,9 @@ namespace xt
      * of the expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::cend() const noexcept
+    inline auto xfunctor_applier_base<F, CT>::cend() const noexcept
     {
         return xfunctor_iterator<const functor_type, decltype(m_e.template cend<L>())>
             (m_e.template cend<L>(), &m_functor);
@@ -927,9 +1031,9 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::begin(const S& shape) noexcept -> broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::begin(const S& shape) noexcept -> broadcast_iterator<S, L>
     {
         return broadcast_iterator<S, L>(m_e.template begin<S, L>(shape), &m_functor);
     }
@@ -941,9 +1045,9 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::end(const S& shape) noexcept -> broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::end(const S& shape) noexcept -> broadcast_iterator<S, L>
     {
         return broadcast_iterator<S, L>(m_e.template end<S, L>(shape), &m_functor);
     }
@@ -955,9 +1059,9 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::begin(const S& shape) const noexcept -> const_broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::begin(const S& shape) const noexcept -> const_broadcast_iterator<S, L>
     {
         return cbegin<S, L>(shape);
     }
@@ -969,9 +1073,9 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::end(const S& shape) const noexcept -> const_broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::end(const S& shape) const noexcept -> const_broadcast_iterator<S, L>
     {
         return cend<S, L>(shape);
     }
@@ -983,9 +1087,9 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::cbegin(const S& shape) const noexcept -> const_broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::cbegin(const S& shape) const noexcept -> const_broadcast_iterator<S, L>
     {
         return const_broadcast_iterator<S, L>(m_e.template cbegin<S, L>(shape), &m_functor);
     }
@@ -997,9 +1101,9 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::cend(const S& shape) const noexcept -> const_broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::cend(const S& shape) const noexcept -> const_broadcast_iterator<S, L>
     {
         return const_broadcast_iterator<S, L>(m_e.template cend<S, L>(shape), &m_functor);
     }
@@ -1013,9 +1117,9 @@ namespace xt
      * Returns an iterator to the first element of the reversed expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::rbegin() noexcept
+    inline auto xfunctor_applier_base<F, CT>::rbegin() noexcept
     {
         return xfunctor_iterator<functor_type, decltype(m_e.template rbegin<L>())>
             (m_e.template rbegin<L>(), &m_functor);
@@ -1026,9 +1130,9 @@ namespace xt
      * of the reversed expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::rend() noexcept
+    inline auto xfunctor_applier_base<F, CT>::rend() noexcept
     {
         return xfunctor_iterator<functor_type, decltype(m_e.template rend<L>())>
             (m_e.template rend<L>(), &m_functor);
@@ -1038,9 +1142,9 @@ namespace xt
      * Returns a constant iterator to the first element of the reversed expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::rbegin() const noexcept
+    inline auto xfunctor_applier_base<F, CT>::rbegin() const noexcept
     {
         return this->template crbegin<L>();
     }
@@ -1050,9 +1154,9 @@ namespace xt
      * of the reversed expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::rend() const noexcept
+    inline auto xfunctor_applier_base<F, CT>::rend() const noexcept
     {
         return this->template crend<L>();
     }
@@ -1061,9 +1165,9 @@ namespace xt
      * Returns a constant iterator to the first element of the reversed expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::crbegin() const noexcept
+    inline auto xfunctor_applier_base<F, CT>::crbegin() const noexcept
     {
         return xfunctor_iterator<functor_type, decltype(m_e.template rbegin<L>())>
             (m_e.template rbegin<L>(), &m_functor);
@@ -1074,9 +1178,9 @@ namespace xt
      * of the reversed expression.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <layout_type L>
-    inline auto xfunctor_applier_base<D>::crend() const noexcept
+    inline auto xfunctor_applier_base<F, CT>::crend() const noexcept
     {
         return xfunctor_iterator<functor_type, decltype(m_e.template rend<L>())>
             (m_e.template rend<L>(), &m_functor);
@@ -1093,9 +1197,9 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::rbegin(const S& shape) noexcept -> reverse_broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::rbegin(const S& shape) noexcept -> reverse_broadcast_iterator<S, L>
     {
         return reverse_broadcast_iterator<S, L>(m_e.template rbegin<S, L>(shape), &m_functor);
     }
@@ -1107,9 +1211,9 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::rend(const S& shape) noexcept -> reverse_broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::rend(const S& shape) noexcept -> reverse_broadcast_iterator<S, L>
     {
         return reverse_broadcast_iterator<S, L>(m_e.template rend<S, L>(shape), &m_functor);
     }
@@ -1121,9 +1225,9 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::rbegin(const S& shape) const noexcept -> const_reverse_broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::rbegin(const S& shape) const noexcept -> const_reverse_broadcast_iterator<S, L>
     {
         return crbegin<S, L>(shape);
     }
@@ -1135,9 +1239,9 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::rend(const S& /*shape*/) const noexcept -> const_reverse_broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::rend(const S& /*shape*/) const noexcept -> const_reverse_broadcast_iterator<S, L>
     {
         return crend<S, L>();
     }
@@ -1149,9 +1253,9 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::crbegin(const S& /*shape*/) const noexcept -> const_reverse_broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::crbegin(const S& /*shape*/) const noexcept -> const_reverse_broadcast_iterator<S, L>
     {
         return const_reverse_broadcast_iterator<S, L>(m_e.template crbegin<S, L>(), &m_functor);
     }
@@ -1163,82 +1267,82 @@ namespace xt
      * @tparam S type of the \c shape parameter.
      * @tparam L order used for the traversal. Default value is \c XTENSOR_DEFAULT_TRAVERSAL.
      */
-    template <class D>
+    template <class F, class CT>
     template <class S, layout_type L>
-    inline auto xfunctor_applier_base<D>::crend(const S& shape) const noexcept -> const_reverse_broadcast_iterator<S, L>
+    inline auto xfunctor_applier_base<F, CT>::crend(const S& shape) const noexcept -> const_reverse_broadcast_iterator<S, L>
     {
         return const_reverse_broadcast_iterator<S, L>(m_e.template crend<S, L>(shape), &m_functor);
     }
     //@}
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_begin() noexcept -> storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_begin() noexcept -> storage_iterator
     {
         return storage_iterator(m_e.storage_begin(), &m_functor);
     }
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_end() noexcept -> storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_end() noexcept -> storage_iterator
     {
         return storage_iterator(m_e.storage_end(), &m_functor);
     }
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_begin() const noexcept -> const_storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_begin() const noexcept -> const_storage_iterator
     {
         return const_storage_iterator(m_e.storage_begin(), &m_functor);
     }
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_end() const noexcept -> const_storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_end() const noexcept -> const_storage_iterator
     {
         return const_storage_iterator(m_e.storage_end(), &m_functor);
     }
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_cbegin() const noexcept -> const_storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_cbegin() const noexcept -> const_storage_iterator
     {
         return const_storage_iterator(m_e.storage_cbegin(), &m_functor);
     }
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_cend() const noexcept -> const_storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_cend() const noexcept -> const_storage_iterator
     {
         return const_storage_iterator(m_e.storage_cend(), &m_functor);
     }
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rbegin() noexcept -> reverse_storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_rbegin() noexcept -> reverse_storage_iterator
     {
         return reverse_storage_iterator(m_e.storage_rbegin(), &m_functor);
     }
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rend() noexcept -> reverse_storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_rend() noexcept -> reverse_storage_iterator
     {
         return reverse_storage_iterator(m_e.storage_rend(), &m_functor);
     }
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rbegin() const noexcept -> const_reverse_storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_rbegin() const noexcept -> const_reverse_storage_iterator
     {
         return const_reverse_storage_iterator(m_e.storage_rbegin(), &m_functor);
     }
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rend() const noexcept -> const_reverse_storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_rend() const noexcept -> const_reverse_storage_iterator
     {
         return const_reverse_storage_iterator(m_e.storage_rend(), &m_functor);
     }
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_crbegin() const noexcept -> const_reverse_storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_crbegin() const noexcept -> const_reverse_storage_iterator
     {
         return const_reverse_storage_iterator(m_e.storage_crbegin(), &m_functor);
     }
 
-    template <class D>
-    inline auto xfunctor_applier_base<D>::storage_crend() const noexcept -> const_reverse_storage_iterator
+    template <class F, class CT>
+    inline auto xfunctor_applier_base<F, CT>::storage_crend() const noexcept -> const_reverse_storage_iterator
     {
         return const_reverse_storage_iterator(m_e.storage_crend(), &m_functor);
     }
@@ -1247,36 +1351,43 @@ namespace xt
      * stepper api *
      ***************/
 
-    template <class D>
+    template <class F, class CT>
     template <class S>
-    inline auto xfunctor_applier_base<D>::stepper_begin(const S& shape) noexcept -> stepper
+    inline auto xfunctor_applier_base<F, CT>::stepper_begin(const S& shape) noexcept -> stepper
     {
         return stepper(m_e.stepper_begin(shape), &m_functor);
     }
 
-    template <class D>
+    template <class F, class CT>
     template <class S>
-    inline auto xfunctor_applier_base<D>::stepper_end(const S& shape, layout_type l) noexcept -> stepper
+    inline auto xfunctor_applier_base<F, CT>::stepper_end(const S& shape, layout_type l) noexcept -> stepper
     {
         return stepper(m_e.stepper_end(shape, l), &m_functor);
     }
 
-    template <class D>
+    template <class F, class CT>
     template <class S>
-    inline auto xfunctor_applier_base<D>::stepper_begin(const S& shape) const noexcept -> const_stepper
+    inline auto xfunctor_applier_base<F, CT>::stepper_begin(const S& shape) const noexcept -> const_stepper
     {
         const xexpression_type& const_m_e = m_e;
         return const_stepper(const_m_e.stepper_begin(shape), &m_functor);
     }
 
-    template <class D>
+    template <class F, class CT>
     template <class S>
-    inline auto xfunctor_applier_base<D>::stepper_end(const S& shape, layout_type l) const noexcept -> const_stepper
+    inline auto xfunctor_applier_base<F, CT>::stepper_end(const S& shape, layout_type l) const noexcept -> const_stepper
     {
         const xexpression_type& const_m_e = m_e;
         return const_stepper(const_m_e.stepper_end(shape, l), &m_functor);
     }
 
+    template <class F, class CT>
+    template <class E>
+    inline auto xfunctor_view<F, CT>::build_functor_view(E&& e) const -> rebind_t<E>
+    {
+        using functor_type = typename xfunctor_applier_base<F, CT>::functor_type;
+        return rebind_t<E>((this->m_functor), std::forward<E>(e));
+    }
 
     /********************************
      * xfunctor_view implementation *
@@ -1321,17 +1432,6 @@ namespace xt
         std::copy(tmp.cbegin(), tmp.cend(), this->begin());
     }
 
-    template <class F, class CT>
-    template <class E>
-    inline auto xfunctor_view<F, CT>::build_functor_view(E&& e) const -> rebind_t<E>
-    {
-        return rebind_t<E>((this->m_functor), std::forward<E>(e));
-    }
-
-    /***********************************
-     * xfunctor_adaptor implementation *
-     ***********************************/
-
     /**
      * @name Extended copy semantic
      */
@@ -1359,34 +1459,6 @@ namespace xt
         return *this;
     }
     //@}
-
-    template <class F, class CT>
-    template <class S>
-    auto xfunctor_adaptor<F, CT>::resize(S&& shape, bool force)
-    {
-        this->m_e.resize(std::forward<S>(shape), force);
-    }
-
-    template <class F, class CT>
-    template <class S>
-    auto xfunctor_adaptor<F, CT>::resize(S&& shape, layout_type l)
-    {
-        this->m_e.resize(std::forward<S>(shape), l);
-    }
-
-    template <class F, class CT>
-    template <class S>
-    auto xfunctor_adaptor<F, CT>::resize(S&& shape, const strides_type& strides)
-    {
-        this->m_e.resize(std::forward<S>(shape), strides);
-    }
-
-    template <class F, class CT>
-    template <class S>
-    auto xfunctor_adaptor<F, CT>::reshape(S&& shape, layout_type layout)
-    {
-        this->m_e.reshape(std::forward<S>(shape), layout);
-    }
 
     /************************************
      * xfunctor_iterator implementation *

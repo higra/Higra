@@ -9,7 +9,6 @@
 #ifndef XSIMD_ERROR_HPP
 #define XSIMD_ERROR_HPP
 
-#include "xsimd_basic_math.hpp"
 #include "xsimd_exponential.hpp"
 #include "xsimd_fp_sign.hpp"
 #include "xsimd_horner.hpp"
@@ -21,16 +20,16 @@ namespace xsimd
      * @param x batch of floating point values.
      * @return the error function of \c x.
      */
-    template <class B>
-    batch_type_t<B> erf(const simd_base<B>& x);
+    template <class T, std::size_t N>
+    batch<T, N> erf(const batch<T, N>& x);
 
     /**
      * Computes the complementary error function of the batch \c x.
      * @param x batch of floating point values.
      * @return the error function of \c x.
      */
-    template <class B>
-    batch_type_t<B> erfc(const simd_base<B>& x);
+    template <class T, std::size_t N>
+    batch<T, N> erfc(const batch<T, N>& x);
 
     /**********************
      * erf implementation *
@@ -229,7 +228,7 @@ namespace xsimd
                 r2 = select(a < B(0.), -r2, r2);
                 r1 = select(test1, r1, r2);
 #ifndef XSIMD_NO_INFINITIES
-                r1 = select(xsimd::isinf(a), sign(a), r1);
+                r1 = select(isinf(a), sign(a), r1);
 #endif
                 return r1;
             }
@@ -266,17 +265,17 @@ namespace xsimd
                 B z = B(1.) - ex * erf_kernel<B>::erfc3(x);
                 z = select(a < B(0.), -z, z);
 #ifndef XSIMD_NO_INFINITIES
-                z = select(xsimd::isinf(a), sign(a), z);
+                z = select(isinf(a), sign(a), z);
 #endif
                 return select(test2, r1, z);
             }
         };
     }
 
-    template <class B>
-    inline batch_type_t<B> erf(const simd_base<B>& x)
+    template <class T, std::size_t N>
+    inline batch<T, N> erf(const batch<T, N>& x)
     {
-        return detail::erf_impl<batch_type_t<B>>::compute(x());
+        return detail::erf_impl<batch<T, N>>::compute(x);
     }
 
     /***********************
@@ -352,10 +351,10 @@ namespace xsimd
         };
     }
 
-    template <class B>
-    inline batch_type_t<B> erfc(const simd_base<B>& x)
+    template <class T, std::size_t N>
+    inline batch<T, N> erfc(const batch<T, N>& x)
     {
-        return detail::erfc_impl<batch_type_t<B>>::compute(x());
+        return detail::erfc_impl<batch<T, N>>::compute(x);
     }
 }
 

@@ -15,7 +15,6 @@
 
 #include <xtl/xtype_traits.hpp>
 
-#include "xaccessible.hpp"
 #include "xexpression.hpp"
 #include "xiterable.hpp"
 #include "xlayout.hpp"
@@ -73,18 +72,8 @@ namespace xt
     };
 
     template <class CT>
-    struct xcontainer_inner_types<xscalar<CT>>
-    {
-        using value_type = std::decay_t<CT>;
-        using reference = value_type&;
-        using const_reference = const value_type&;
-        using size_type = std::size_t;
-    };
-
-    template <class CT>
     class xscalar : public xexpression<xscalar<CT>>,
                     private xiterable<xscalar<CT>>,
-                    private xaccessible<xscalar<CT>>,
                     public extension::xscalar_base_t<CT>
     {
     public:
@@ -92,18 +81,16 @@ namespace xt
         using self_type = xscalar<CT>;
         using xexpression_type = std::decay_t<CT>;
         using extension_base = extension::xscalar_base_t<CT>;
-        using accessible_base = xaccessible<self_type>;
         using expression_tag = typename extension_base::expression_tag;
-        using inner_types = xcontainer_inner_types<self_type>;
 
-        using value_type = typename inner_types::value_type;
-        using reference = typename inner_types::reference;
-        using const_reference = typename inner_types::const_reference;
+        using value_type = std::decay_t<CT>;
+        using reference = value_type&;
+        using const_reference = const value_type&;
         using pointer = value_type*;
         using const_pointer = const value_type*;
-        using size_type = typename inner_types::size_type;
+        using size_type = std::size_t;
         using difference_type = std::ptrdiff_t;
-        using simd_value_type = xt_simd::simd_type<value_type>;
+        using simd_value_type = xsimd::simd_type<value_type>;
 
         using iterable_base = xiterable<self_type>;
         using inner_shape_type = typename iterable_base::inner_shape_type;
@@ -150,25 +137,33 @@ namespace xt
         operator const value_type&() const noexcept;
 
         size_type size() const noexcept;
+        size_type dimension() const noexcept;
         const shape_type& shape() const noexcept;
         layout_type layout() const noexcept;
-        using accessible_base::dimension;
-        using accessible_base::shape;
 
         template <class... Args>
         reference operator()(Args...) noexcept;
         template <class... Args>
+        reference at(Args...);
+        template <class... Args>
         reference unchecked(Args...) noexcept;
+        template <class S>
+        disable_integral_t<S, reference> operator[](const S&) noexcept;
+        template <class I>
+        reference operator[](std::initializer_list<I>) noexcept;
+        reference operator[](size_type) noexcept;
 
         template <class... Args>
         const_reference operator()(Args...) const noexcept;
         template <class... Args>
+        const_reference at(Args...) const;
+        template <class... Args>
         const_reference unchecked(Args...) const noexcept;
-
-        using accessible_base::at;
-        using accessible_base::operator[];
-        using accessible_base::periodic;
-        using accessible_base::in_bounds;
+        template <class S>
+        disable_integral_t<S, const_reference> operator[](const S&) const noexcept;
+        template <class I>
+        const_reference operator[](std::initializer_list<I>) const noexcept;
+        const_reference operator[](size_type) const noexcept;
 
         template <class It>
         reference element(It, It) noexcept;
@@ -280,8 +275,8 @@ namespace xt
         template <class align, class simd = simd_value_type>
         void store_simd(size_type i, const simd& e);
         template <class align, class requested_type = value_type,
-                  std::size_t N = xt_simd::simd_traits<requested_type>::size>
-        xt_simd::simd_return_type<value_type, requested_type>
+                  std::size_t N = xsimd::simd_traits<requested_type>::size>
+        xsimd::simd_return_type<value_type, requested_type>
         load_simd(size_type i) const;
 
     private:
@@ -290,8 +285,6 @@ namespace xt
 
         friend class xconst_iterable<self_type>;
         friend class xiterable<self_type>;
-        friend class xaccessible<self_type>;
-        friend class xconst_accessible<self_type>;
     };
 
     namespace detail
@@ -375,7 +368,7 @@ namespace xt
         template <class R>
         R step_simd();
 
-        void step_leading();
+        value_type step_leading();
 
     private:
 
@@ -462,28 +455,31 @@ namespace xt
      * linear_begin / linear_end *
      *****************************/
 
-    template <class CT>
-    XTENSOR_CONSTEXPR_RETURN auto linear_begin(xscalar<CT>& c) noexcept -> decltype(c.dummy_begin())
+    namespace detail
     {
-        return c.dummy_begin();
-    }
+        template <class CT>
+        constexpr auto linear_begin(xscalar<CT>& c) noexcept -> decltype(c.dummy_begin())
+        {
+            return c.dummy_begin();
+        }
 
-    template <class CT>
-    XTENSOR_CONSTEXPR_RETURN auto linear_end(xscalar<CT>& c) noexcept -> decltype(c.dummy_end())
-    {
-        return c.dummy_end();
-    }
+        template <class CT>
+        constexpr auto linear_end(xscalar<CT>& c) noexcept -> decltype(c.dummy_end())
+        {
+            return c.dummy_end();
+        }
 
-    template <class CT>
-    XTENSOR_CONSTEXPR_RETURN auto linear_begin(const xscalar<CT>& c) noexcept -> decltype(c.dummy_begin())
-    {
-        return c.dummy_begin();
-    }
+        template <class CT>
+        constexpr auto linear_begin(const xscalar<CT>& c) noexcept -> decltype(c.dummy_begin())
+        {
+            return c.dummy_begin();
+        }
 
-    template <class CT>
-    XTENSOR_CONSTEXPR_RETURN auto linear_end(const xscalar<CT>& c) noexcept -> decltype(c.dummy_end())
-    {
-        return c.dummy_end();
+        template <class CT>
+        constexpr auto linear_end(const xscalar<CT>& c) noexcept -> decltype(c.dummy_end())
+        {
+            return c.dummy_end();
+        }
     }
 
     /**************************
@@ -522,6 +518,12 @@ namespace xt
     }
 
     template <class CT>
+    inline auto xscalar<CT>::dimension() const noexcept -> size_type
+    {
+        return 0;
+    }
+
+    template <class CT>
     inline auto xscalar<CT>::shape() const noexcept -> const shape_type&
     {
         static std::array<size_type, 0> zero_shape;
@@ -544,7 +546,37 @@ namespace xt
 
     template <class CT>
     template <class... Args>
+    inline auto xscalar<CT>::at(Args... args) -> reference
+    {
+        check_dimension(shape(), args...);
+        return this->operator()(args...);
+    }
+
+    template <class CT>
+    template <class... Args>
     inline auto xscalar<CT>::unchecked(Args...) noexcept -> reference
+    {
+        return m_value;
+    }
+
+    template <class CT>
+    template <class S>
+    inline auto xscalar<CT>::operator[](const S&) noexcept
+        -> disable_integral_t<S, reference>
+    {
+        return m_value;
+    }
+
+    template <class CT>
+    template <class I>
+    inline auto xscalar<CT>::operator[](std::initializer_list<I>) noexcept
+        -> reference
+    {
+        return m_value;
+    }
+
+    template <class CT>
+    inline auto xscalar<CT>::operator[](size_type) noexcept -> reference
     {
         return m_value;
     }
@@ -559,7 +591,37 @@ namespace xt
 
     template <class CT>
     template <class... Args>
+    inline auto xscalar<CT>::at(Args... args) const -> const_reference
+    {
+        check_dimension(shape(), args...);
+        return this->operator()(args...);
+    }
+
+    template <class CT>
+    template <class... Args>
     inline auto xscalar<CT>::unchecked(Args...) const noexcept -> const_reference
+    {
+        return m_value;
+    }
+
+    template <class CT>
+    template <class S>
+    inline auto xscalar<CT>::operator[](const S&) const noexcept
+        -> disable_integral_t<S, const_reference>
+    {
+        return m_value;
+    }
+
+    template <class CT>
+    template <class I>
+    inline auto xscalar<CT>::operator[](std::initializer_list<I>) const noexcept
+        -> const_reference
+    {
+        return m_value;
+    }
+
+    template <class CT>
+    inline auto xscalar<CT>::operator[](size_type) const noexcept -> const_reference
     {
         return m_value;
     }
@@ -922,9 +984,9 @@ namespace xt
     template <class CT>
     template <class align, class requested_type, std::size_t N>
     inline auto xscalar<CT>::load_simd(size_type) const
-        -> xt_simd::simd_return_type<value_type, requested_type>
+        -> xsimd::simd_return_type<value_type, requested_type>
     {
-        return xt_simd::set_simd<value_type, requested_type>(m_value);
+        return xsimd::set_simd<value_type, requested_type>(m_value);
     }
 
     template <class T>
@@ -993,8 +1055,10 @@ namespace xt
     }
 
     template <bool is_const, class CT>
-    inline void xscalar_stepper<is_const, CT>::step_leading()
+    inline auto xscalar_stepper<is_const, CT>::step_leading()
+        -> value_type
     {
+        return p_c->operator()();
     }
 
     /**********************************

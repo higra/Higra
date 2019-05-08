@@ -28,15 +28,7 @@ namespace xt
     struct xcontainer_inner_types<xdynamic_view<CT, S, L, FST>>
     {
         using xexpression_type = std::decay_t<CT>;
-        using undecay_expression = CT;
-        using reference = inner_reference_t<undecay_expression>;
-        using const_reference = typename xexpression_type::const_reference;
-        using size_type = typename xexpression_type::size_type;
-        using shape_type = std::decay_t<S>;
-        using undecay_shape = S;
-        using inner_storage_type = FST;
-        using temporary_type = xarray<std::decay_t<typename xexpression_type::value_type>, xexpression_type::static_layout>;
-        static constexpr layout_type layout = L;
+        using temporary_type = xarray<std::decay_t<typename xexpression_type::value_type>>;
     };
 
     template <class CT, class S, layout_type L, class FST>
@@ -95,12 +87,12 @@ namespace xt
     class xdynamic_view : public xview_semantic<xdynamic_view<CT, S, L, FST>>,
                           public xiterable<xdynamic_view<CT, S, L, FST>>,
                           public extension::xdynamic_view_base_t<CT, S, L, FST>,
-                          private xstrided_view_base<xdynamic_view<CT, S, L, FST>>
+                          private xstrided_view_base<CT, S, L, FST>
     {
     public:
 
         using self_type = xdynamic_view<CT, S, L, FST>;
-        using base_type = xstrided_view_base<self_type>;
+        using base_type = xstrided_view_base<CT, S, L, FST>;
         using semantic_base = xview_semantic<self_type>;
         using extension_base = extension::xdynamic_view_base_t<CT, S, L, FST>;
         using expression_tag = typename extension_base::expression_tag;
@@ -137,7 +129,7 @@ namespace xt
         using temporary_type = typename xcontainer_inner_types<self_type>::temporary_type;
         using base_index_type = xindex_type_t<shape_type>;
 
-        using simd_value_type = xt_simd::simd_type<value_type>;
+        using simd_value_type = xsimd::simd_type<value_type>;
         using strides_vt = typename strides_type::value_type;
         using slice_type = xtl::variant<detail::xfake_slice<strides_vt>, xkeep_slice<strides_vt>, xdrop_slice<strides_vt>>;
         using slice_vector_type = std::vector<slice_type>;
@@ -177,15 +169,28 @@ namespace xt
         const_reference operator()(Args... args) const;
 
         template <class... Args>
+        reference at(Args... args);
+
+        template <class... Args>
+        const_reference at(Args... args) const;
+
+        template <class... Args>
         reference unchecked(Args... args);
 
         template <class... Args>
         const_reference unchecked(Args... args) const;
 
-        using base_type::operator[];
-        using base_type::at;
-        using base_type::periodic;
-        using base_type::in_bounds;
+        template <class OS>
+        disable_integral_t<OS, reference> operator[](const OS& index);
+        template <class I>
+        reference operator[](std::initializer_list<I> index);
+        reference operator[](size_type i);
+
+        template <class OS>
+        disable_integral_t<OS, const_reference> operator[](const OS& index) const;
+        template <class I>
+        const_reference operator[](std::initializer_list<I> index) const;
+        const_reference operator[](size_type i) const;
 
         template <class It>
         reference element(It first, It last);
@@ -204,9 +209,7 @@ namespace xt
         using base_type::storage;
         using base_type::expression;
         using base_type::broadcast_shape;
-
-        template <class O>
-        bool has_linear_assign(const O& str) const noexcept;
+        using base_type::has_linear_assign;
 
         template <class T>
         void fill(const T& value);
@@ -265,9 +268,7 @@ namespace xt
 
         template <class C>
         friend class xstepper;
-        friend class xview_semantic<self_type>;
-        friend class xaccessible<self_type>;
-        friend class xconst_accessible<self_type>;
+        friend class xview_semantic<xdynamic_view<CT, S, L, FST>>;
     };
 
     /**************************
@@ -439,10 +440,19 @@ namespace xt
     }
 
     template <class CT, class S, layout_type L, class FST>
-    template <class O>
-    inline bool xdynamic_view<CT, S, L, FST>::has_linear_assign(const O&) const noexcept
+    template <class... Args>
+    inline auto xdynamic_view<CT, S, L, FST>::at(Args... args) -> reference
     {
-        return false;
+        check_access(shape(), static_cast<size_type>(args)...);
+        return this->operator()(args...);
+    }
+
+    template <class CT, class S, layout_type L, class FST>
+    template <class... Args>
+    inline auto xdynamic_view<CT, S, L, FST>::at(Args... args) const -> const_reference
+    {
+        check_access(shape(), static_cast<size_type>(args)...);
+        return this->operator()(args...);
     }
 
     template <class CT, class S, layout_type L, class FST>
@@ -461,6 +471,46 @@ namespace xt
         offset_type offset = base_type::compute_unchecked_index(args...);
         offset = adjust_offset(args...);
         return base_type::storage()[static_cast<size_type>(offset)];
+    }
+
+    template <class CT, class S, layout_type L, class FST>
+    template <class OS>
+    inline auto xdynamic_view<CT, S, L, FST>::operator[](const OS& index) -> disable_integral_t<OS, reference>
+    {
+        return element(index.cbegin(), index.cend());
+    }
+
+    template <class CT, class S, layout_type L, class FST>
+    template <class I>
+    inline auto xdynamic_view<CT, S, L, FST>::operator[](std::initializer_list<I> index) -> reference
+    {
+        return element(index.begin(), index.end());
+    }
+
+    template <class CT, class S, layout_type L, class FST>
+    inline auto xdynamic_view<CT, S, L, FST>::operator[](size_type i) -> reference
+    {
+        return operator()(i);
+    }
+
+    template <class CT, class S, layout_type L, class FST>
+    template <class OS>
+    inline auto xdynamic_view<CT, S, L, FST>::operator[](const OS& index) const -> disable_integral_t<OS, const_reference>
+    {
+        return element(index.cbegin(), index.cend());
+    }
+
+    template <class CT, class S, layout_type L, class FST>
+    template <class I>
+    inline auto xdynamic_view<CT, S, L, FST>::operator[](std::initializer_list<I> index) const -> const_reference
+    {
+        return element(index.begin(), index.end());
+    }
+
+    template <class CT, class S, layout_type L, class FST>
+    inline auto xdynamic_view<CT, S, L, FST>::operator[](size_type i) const -> const_reference
+    {
+        return operator()(i);
     }
 
     template <class CT, class S, layout_type L, class FST>

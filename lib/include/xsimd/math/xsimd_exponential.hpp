@@ -19,32 +19,32 @@ namespace xsimd
      * @param x batch of floating point values.
      * @return the natural exponential of \c x.
      */
-    template <class B>
-    batch_type_t<B> exp(const simd_base<B>& x);
+    template <class T, std::size_t N>
+    batch<T, N> exp(const batch<T, N>& x);
 
     /**
      * Computes the base 2 exponential of the batch \c x.
      * @param x batch of floating point values.
      * @return the base 2 exponential of \c x.
      */
-    template <class B>
-    batch_type_t<B> exp2(const simd_base<B>& x);
+    template <class T, std::size_t N>
+    batch<T, N> exp2(const batch<T, N>& x);
 
     /**
      * Computes the base 10 exponential of the batch \c x.
      * @param x batch of floating point values.
      * @return the base 10 exponential of \c x.
      */
-    template <class B>
-    batch_type_t<B> exp10(const simd_base<B>& x);
+    template <class T, std::size_t N>
+    batch<T, N> exp10(const batch<T, N>& x);
 
     /**
      * Computes the natural exponential of the batch \c x, minus one.
      * @param x batch of floating point values.
      * @return the natural exponential of \c x, minus one.
      */
-    template <class B>
-    batch_type_t<B> expm1(const simd_base<B>& x);
+    template <class T, std::size_t N>
+    batch<T, N> expm1(const batch<T, N>& x);
 
     /******************************
      * exponential implementation *
@@ -105,22 +105,22 @@ namespace xsimd
         };
     }
 
-    template <class B>
-    inline batch_type_t<B> exp(const simd_base<B>& x)
+    template <class T, std::size_t N>
+    inline batch<T, N> exp(const batch<T, N>& x)
     {
-        return detail::exp_kernel<batch_type_t<B>, exp_tag>::compute(x());
+        return detail::exp_kernel<batch<T, N>, exp_tag>::compute(x);
     }
 
-    template <class B>
-    inline batch_type_t<B> exp2(const simd_base<B>& x)
+    template <class T, std::size_t N>
+    inline batch<T, N> exp2(const batch<T, N>& x)
     {
-        return detail::exp_kernel<batch_type_t<B>, exp2_tag>::compute(x());
+        return detail::exp_kernel<batch<T, N>, exp2_tag>::compute(x);
     }
 
-    template <class B>
-    inline batch_type_t<B> exp10(const simd_base<B>& x)
+    template <class T, std::size_t N>
+    inline batch<T, N> exp10(const batch<T, N>& x)
     {
-        return detail::exp_kernel<batch_type_t<B>, exp10_tag>::compute(x());
+        return detail::exp_kernel<batch<T, N>, exp10_tag>::compute(x);
     }
 
     /************************
@@ -132,14 +132,15 @@ namespace xsimd
         template <class B, class T = typename B::value_type>
         struct expm1_kernel;
 
-        template <class B>
-        inline B expm1_real_impl(const B& x)
+        template <class T, std::size_t N>
+        inline batch<T, N> expm1_real_impl(const batch<T, N>& x)
         {
-            return select(x < logeps<B>(),
-                          B(-1.),
-                          select(x > maxlog<B>(),
-                                 infinity<B>(),
-                                 expm1_kernel<B>::compute_impl(x)));
+            using b_type = batch<T, N>;
+            return select(x < logeps<b_type>(),
+                          b_type(-1.),
+                          select(x > maxlog<b_type>(),
+                                 infinity<b_type>(),
+                                 expm1_kernel<b_type, T>::compute_impl(x)));
         }
 
         template <class B>
@@ -228,10 +229,11 @@ namespace xsimd
         };
     }
 
-    template <class B>
-    inline batch_type_t<B> expm1(const simd_base<B>& x)
+    template <class T, std::size_t N>
+    inline batch<T, N> expm1(const batch<T, N>& x)
     {
-        return detail::expm1_kernel<batch_type_t<B>>::compute(x());
+        using b_type = batch<T, N>;
+        return detail::expm1_kernel<b_type, T>::compute(x);
     }
 }
 

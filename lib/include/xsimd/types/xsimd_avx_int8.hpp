@@ -77,7 +77,6 @@ namespace xsimd
         static constexpr std::size_t size = 32;
         using batch_bool_type = batch_bool<int8_t, 32>;
         static constexpr std::size_t align = 32;
-        using storage_type = __m256i;
     };
 
     template <>
@@ -87,7 +86,6 @@ namespace xsimd
         static constexpr std::size_t size = 32;
         using batch_bool_type = batch_bool<uint8_t, 32>;
         static constexpr std::size_t align = 32;
-        using storage_type = __m256i;
     };
 
     template <>
