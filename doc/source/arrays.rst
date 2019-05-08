@@ -77,4 +77,155 @@ Therefore, using the most specific type compatible with your needs will provide 
 
 
 
+Quick start
+-----------
+
+Creating arrays
+***************
+
+*From scratch:*
+
+.. code-block:: cpp
+    :linenos:
+
+    // explicit initialization
+    array_2d<int> a1 {{1, 2, 3},
+                      {4, 5, 6}};
+
+    // empty (non initialized) array of given shape
+    array_2d<int> a2 = array_1d<int>::from_shape({2, 3});
+
+    // array of given shapes initialized with given value
+    array_2d<int> a3({2, 3}, 5);
+
+    // array of given shapes initialized with 0
+    array_2d<int> a4 = xt::zeros<int>({2, 3});
+
+    // array of given shapes initialized with 1
+    array_2d<int> a5 = xt::ones<int>({2, 3});
+
+*From an existing array:*
+
+.. code-block:: cpp
+    :linenos:
+
+
+    array_2d<int> a1 {{1, 2, 3},
+                      {4, 5, 6}};
+
+    // same shape and value type, non-initialized
+    auto a2 = xt::empty_like(a1);
+
+    // same shape and value type, initialized to 0
+    auto a3 = xt::zeros_like(a1);
+
+    // same shape and value type, initialized to 1
+    auto a4 = xt::ones_like(a1);
+
+    // same shape and value type, initialized to given value
+    auto a5 = xt::full_like(a1, 5);
+
+Properties
+**********
+
+.. code-block:: cpp
+    :linenos:
+
+
+    array_2d<int> a1 {{1, 2, 3},
+                      {4, 5, 6}};
+
+    // dimension
+    auto d = a1.dimension(); // 2
+
+    // size
+    auto s = a1.size(); // 6
+
+    // shape
+    auto sh = a1.shape();
+    sh[0]; // 2
+    sh[1]; // 3
+
+Element access
+**************
+
+.. code-block:: cpp
+    :linenos:
+
+
+    array_2d<int> a1 {{1, 2, 3},
+                      {4, 5, 6}};
+
+    // modify and read element at line 1, column 2
+    a1(1, 2) = 7;
+    int v = a1(1, 2);
+
+    // Same thing with the [] operator
+    a1[{1, 2}] = 7;
+    int v = a1[{1, 2}];
+
+Display
+*******
+
+.. code-block:: cpp
+    :linenos:
+
+    #include <iostream>
+    #include <xtensor/xio.hpp>
+    using namespace std;
+
+    array_2d<int> a1 {{1, 2, 3},
+                      {4, 5, 6}};
+
+    cout << a1 << "\n";
+
+Lazy Evaluation
+***************
+
+Most xtensor operations are lazily evaluated. In the following situation:
+
+.. code-block:: cpp
+    :linenos:
+
+
+    array_1d<int> a1{1, 2, 3};
+    array_1d<int> a2{4, 5, 6};
+
+    auto r = a2 * (a1 + a2);
+
+`r` does only store the expression, i.e. the symbolic operation, but no actual results. The result will be computed when elements are accessed:
+
+
+.. code-block:: cpp
+    :linenos:
+
+    auto v = r(1); // performs 5 * (2 + 5)
+
+If an expression is evaluated several times at the same position, the same result will be computed several times.
+
+An expression can be fully evaluated by assigning it to an actual array or by using the `eval` function:
+
+.. code-block:: cpp
+    :linenos:
+
+    array_1d<int> ar1 = r;  // evaluates the expression r and assigns the result to ar1
+    auto ar2 = xt::eval(r); // evaluates r and assigns it to an array called ar2
+
+.. attention::
+
+    Returning a non evaluated expression that refers to local variable will lead to undefined behaviors:
+
+    .. code-block:: cpp
+        :linenos:
+
+        auto function(){
+            array_1d<int> a1{1, 2, 3};
+            array_1d<int> a2{4, 5, 6};
+            //return a1 + a2;  => ERROR depends of local variables that are destructed at the end of the function
+            return xt::eval(a1 + a2); // OK
+        }
+
+
+
+
 
