@@ -45,6 +45,38 @@ struct def_is_leaf {
 };
 
 template<typename graph_t>
+struct def_find_region {
+    template<typename type, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("_find_region",
+              [](const graph_t &tree,
+                 const pyarray<hg::index_t> &vertices,
+                 const pyarray<type> &lambdas,
+                 const pyarray<type> &altitudes) {
+                  return hg::find_region(vertices, lambdas, altitudes, tree);
+              },
+              doc,
+              py::arg("vertices"),
+              py::arg("lambdas"),
+              py::arg("altitudes")
+        );
+        c.def("_find_region",
+              [](const graph_t &tree,
+                 hg::index_t vertex,
+                 type lambda,
+                 const pyarray<type> &altitudes) {
+                  return hg::find_region(vertex, lambda, altitudes, tree);
+              },
+              doc,
+              py::arg("vertex"),
+              py::arg("lambda"),
+              py::arg("altitudes")
+        );
+    }
+};
+
+template<typename graph_t>
 struct def_num_children {
     template<typename type, typename C>
     static
@@ -127,6 +159,8 @@ void py_init_tree_graph(pybind11::module &m) {
           py::arg("node"));
     add_type_overloads<def_child<graph_t>, int, unsigned int, long long, unsigned long long>
             (c, "Get the i-th (starting at 0) child of each vertex in the given array.");
+    add_type_overloads<def_find_region<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
+            (c, "Get largest vertex which contains the given vertex and whose altitude is stricly less than the given altitude lambda.");
 
     c.def("children",
           [](const graph_t &g, vertex_t v) {

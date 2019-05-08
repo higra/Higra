@@ -218,6 +218,14 @@ namespace hg {
                 return (size_t) v < _num_leaves;
             }
 
+            template<typename T>
+            auto find_region(vertex_descriptor v, const typename T::value_type &lambda, const T &altitudes) const {
+                while (parent(v) != v && altitudes[parent(v)] < lambda) {
+                    v = parent(v);
+                }
+                return v;
+            }
+
         private:
 
             vertex_descriptor _root;
@@ -600,6 +608,38 @@ namespace hg {
         return std::make_pair(
                 it(ita(v, par, g.children_cbegin(v)), fun),
                 it(ita(par, par, g.children_cend(v)), fun));
+    }
+
+    template<typename T>
+    auto find_region(tree::vertex_descriptor v,
+                     const typename T::value_type &lambda,
+                     const T &altitudes,
+                     const tree &tree) {
+        return tree.find_region(v, lambda, altitudes);
+    }
+
+    template<typename T1, typename T2, typename T3>
+    auto find_region(
+            const xt::xexpression<T1> &xvertices,
+            const xt::xexpression<T2> &xlambdas,
+            const xt::xexpression<T3> &xaltitudes,
+            const tree &t) {
+        HG_TRACE();
+        auto &vertices = xvertices.derived_cast();
+        auto &lambdas = xlambdas.derived_cast();
+        auto &altitudes = xaltitudes.derived_cast();
+        hg_assert_node_weights(t, altitudes);
+        hg_assert_1d_array(altitudes);
+        hg_assert_1d_array(vertices);
+        hg_assert_integral_value_type(vertices);
+        hg_assert_1d_array(lambdas);
+
+        array_1d <index_t> result = array_1d<index_t>::from_shape({vertices.size()});
+
+        for (index_t i = 0; i < (index_t) vertices.size(); i++) {
+            result(i) = t.find_region(vertices(i), lambdas(i), altitudes);
+        }
+        return result;
     }
 
 }
