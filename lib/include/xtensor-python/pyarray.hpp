@@ -256,16 +256,11 @@ namespace xt
         using array_type = A;
         using value_type = typename array_type::size_type;
         using const_reference = value_type;
-        using reference = const_reference;
         using const_pointer = const value_type*;
-        using pointer = const_pointer;
         using size_type = typename array_type::size_type;
         using difference_type = typename array_type::difference_type;
 
         using const_iterator = pybackstrides_iterator<self_type>;
-        using iterator = const_iterator;
-        using reverse_iterator = std::reverse_iterator<iterator>;
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         pyarray_backstrides() = default;
         pyarray_backstrides(const array_type& a);
@@ -283,11 +278,6 @@ namespace xt
         const_iterator cbegin() const;
         const_iterator cend() const;
 
-        const_reverse_iterator rbegin() const;
-        const_reverse_iterator rend() const;
-        const_reverse_iterator crbegin() const;
-        const_reverse_iterator crend() const;
-
     private:
 
         const array_type* p_a;
@@ -303,9 +293,6 @@ namespace xt
     struct xcontainer_inner_types<pyarray<T, L>>
     {
         using storage_type = xbuffer_adaptor<T*>;
-        using reference = typename storage_type::reference;
-        using const_reference = typename storage_type::const_reference;
-        using size_type = typename storage_type::size_type;
         using shape_type = std::vector<typename storage_type::size_type>;
         using strides_type = std::vector<typename storage_type::difference_type>;
         using backstrides_type = pyarray_backstrides<pyarray<T, L>>;
@@ -320,12 +307,10 @@ namespace xt
      * @class pyarray
      * @brief Multidimensional container providing the xtensor container semantics to a numpy array.
      *
-     * pyarray is similar to the xarray container in that it has a dynamic dimensionality.
-     * Reshapes of a pyarray container are reflected in the underlying numpy array.
+     * pyarray is similar to the xarray container in that it has a dynamic dimensionality. Reshapes of
+     * a pyarray container are reflected in the underlying numpy array.
      *
      * @tparam T The type of the element stored in the pyarray.
-     * @tparam L Static layout of the pyarray
-     *
      * @sa pytensor
      */
     template <class T, layout_type L>
@@ -479,30 +464,6 @@ namespace xt
     inline auto pyarray_backstrides<A>::cend() const -> const_iterator
     {
         return const_iterator(this, size());
-    }
-
-    template <class A>
-    inline auto pyarray_backstrides<A>::rbegin() const -> const_reverse_iterator
-    {
-        return crbegin();
-    }
-
-    template <class A>
-    inline auto pyarray_backstrides<A>::rend() const -> const_reverse_iterator
-    {
-        return crend();
-    }
-
-    template <class A>
-    inline auto pyarray_backstrides<A>::crbegin() const -> const_reverse_iterator
-    {
-        return const_reverse_iterator(end());
-    }
-
-    template <class A>
-    inline auto pyarray_backstrides<A>::crend() const -> const_reverse_iterator
-    {
-        return const_reverse_iterator(begin());
     }
 
     /**************************
@@ -793,7 +754,7 @@ namespace xt
         m_strides = inner_strides_type(reinterpret_cast<difference_type*>(PyArray_STRIDES(this->python_array())),
                                        static_cast<size_type>(PyArray_NDIM(this->python_array())));
 
-        if (L != layout_type::dynamic && !do_strides_match(m_shape, m_strides, L, 1))
+        if (L != layout_type::dynamic && !do_strides_match(m_shape, m_strides, L))
         {
             throw std::runtime_error("NumPy: passing container with bad strides for layout (is it a view?).");
         }

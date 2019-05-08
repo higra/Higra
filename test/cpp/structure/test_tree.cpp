@@ -396,7 +396,7 @@ namespace tree {
 
         array_1d<index_t> expected_results{0, 10, 12, 2, 9, 9, 10, 12};
 
-        for (index_t i = 0; i < vertices.size(); i++) {
+        for (index_t i = 0; i < (index_t)vertices.size(); i++) {
             REQUIRE((find_region(vertices(i), lambdas(i), altitudes, t) == expected_results(i)));
         }
 

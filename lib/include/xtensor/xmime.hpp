@@ -304,11 +304,11 @@ namespace xt
         return mime_bundle_repr_impl(expr);
     }
 
-    template <class F, class CT, class X, class O>
+    template <class F, class CT, class X>
     class xreducer;
 
-    template <class F, class CT, class X, class O>
-    nlohmann::json mime_bundle_repr(const xreducer<F, CT, X, O>& expr)
+    template <class F, class CT, class X>
+    nlohmann::json mime_bundle_repr(const xreducer<F, CT, X>& expr)
     {
         return mime_bundle_repr_impl(expr);
     }

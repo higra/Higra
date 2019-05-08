@@ -24,6 +24,7 @@ namespace xsimd
         std::size_t simd_size = traits::size;
 
         const auto* ptr_begin = &(*first);
+        const auto* ptr_end = &(*last);
         auto* ptr_out = &(*out_first);
 
         std::size_t align_begin = xsimd::get_alignment_offset(ptr_begin, size, simd_size);
@@ -82,6 +83,7 @@ namespace xsimd
 
         const auto* ptr_begin_1 = &(*first_1);
         const auto* ptr_begin_2 = &(*first_2);
+        const auto* ptr_end = &(*last_1);
         auto* ptr_out = &(*out_first);
 
         std::size_t align_begin_1 = xsimd::get_alignment_offset(ptr_begin_1, size, simd_size);
@@ -149,15 +151,6 @@ namespace xsimd
 
         std::size_t size = static_cast<std::size_t>(std::distance(first, last));
         constexpr std::size_t simd_size = traits::size;
-
-        if(size < simd_size)
-        {
-            while(first != last)
-            {
-                init = binfun(init, *first++);
-            }
-            return init;
-        }
 
         const auto* const ptr_begin = &(*first);
 

@@ -11,7 +11,6 @@
 
 #include <type_traits>
 
-#include "../types/xsimd_base.hpp"
 #include "xsimd_types_include.hpp"
 
 #undef XSIMD_BATCH_INT_SIZE
@@ -53,6 +52,7 @@
 
 namespace xsimd
 {
+
     template <class T>
     struct simd_traits
     {

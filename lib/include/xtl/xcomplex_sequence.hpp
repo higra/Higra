@@ -11,7 +11,6 @@
 
 #include <array>
 #include <vector>
-#include <algorithm>
 
 #include "xclosure.hpp"
 #include "xcomplex.hpp"

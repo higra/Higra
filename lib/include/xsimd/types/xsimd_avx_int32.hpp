@@ -78,7 +78,6 @@ namespace xsimd
         static constexpr std::size_t size = 8;
         using batch_bool_type = batch_bool<int32_t, 8>;
         static constexpr std::size_t align = 32;
-        using storage_type = __m256i;
     };
 
     template <>
@@ -88,7 +87,6 @@ namespace xsimd
         static constexpr std::size_t size = 8;
         using batch_bool_type = batch_bool<uint32_t, 8>;
         static constexpr std::size_t align = 32;
-        using storage_type = __m256i;
     };
 
     template <>
@@ -135,24 +133,24 @@ namespace xsimd
 
     inline batch<int32_t, 8>& batch<int32_t, 8>::load_aligned(const float* src)
     {
-        this->m_value = _mm256_cvtps_epi32(_mm256_load_ps(src));
+        m_value = _mm256_cvtps_epi32(_mm256_load_ps(src));
         return *this;
     }
 
     inline batch<int32_t, 8>& batch<int32_t, 8>::load_unaligned(const float* src)
     {
-        this->m_value = _mm256_cvtps_epi32(_mm256_loadu_ps(src));
+        m_value = _mm256_cvtps_epi32(_mm256_loadu_ps(src));
         return *this;
     }
 
     inline void batch<int32_t, 8>::store_aligned(float* dst) const
     {
-        _mm256_store_ps(dst, _mm256_cvtepi32_ps(this->m_value));
+        _mm256_store_ps(dst, _mm256_cvtepi32_ps(m_value));
     }
 
     inline void batch<int32_t, 8>::store_unaligned(float* dst) const
     {
-        _mm256_storeu_ps(dst, _mm256_cvtepi32_ps(this->m_value));
+        _mm256_storeu_ps(dst, _mm256_cvtepi32_ps(m_value));
     }
 
     XSIMD_DEFINE_LOAD_STORE(int32_t, 8, int8_t, 32)
