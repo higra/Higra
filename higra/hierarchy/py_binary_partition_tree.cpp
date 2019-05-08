@@ -65,14 +65,14 @@ struct def_binary_partition_tree_custom_linkage {
               [](const hg::ugraph &graph,
                  pyarray<T> &edge_weights,
                  py::object weighting_function) {
-                  using new_neighbours_type = const std::vector<binary_partition_tree_internal::new_neighbour<T> >;
+                  //using new_neighbours_type = const std::vector<binary_partition_tree_internal::new_neighbour<T> >;
                   auto weighter = [&weighting_function](
                           const undirected_graph<hg::undirected_graph_internal::hash_setS> &g,
                           index_t fusion_edge_index,
                           index_t new_region,
                           index_t merged_region1,
                           index_t merged_region2,
-                          new_neighbours_type &new_neighbours) {
+                          const std::vector<binary_partition_tree_internal::new_neighbour<T> > &new_neighbours) {
                       weighting_function(g, fusion_edge_index, new_region, merged_region1, merged_region2,
                                          pybind11::make_iterator(new_neighbours.begin(), new_neighbours.end()));
                   };
