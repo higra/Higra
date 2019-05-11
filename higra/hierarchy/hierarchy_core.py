@@ -65,19 +65,20 @@ def quasi_flat_zones_hierarchy(edge_weights, graph):
 
 
 @hg.argument_helper(hg.CptValuedHierarchy)
-def simplify_tree(deleted_vertices, tree):
+def simplify_tree(deleted_vertices, tree, process_leaves=False):
     """
-    Creates a copy of the current Tree and deletes the vertices i such that deletedVertices[i] is true.
+    Creates a copy of the given tree and deletes the vertices `i` of the tree such that `deletedVertices[i]` is true.
 
     The returned "node_map" of the returned tree is an array that maps any node index i of the new tree,
     to the index of this node in the original tree.
 
     :param deleted_vertices: boolean valuation of the input tree nodes (Concept :class:`~higra.CptValuedHierarchy`)
     :param tree: input tree (deduced from :class:`~higra.CptValuedHierarchy`)
+    :param process_leaves: If false, a leaf vertex `v` will never be removed disregarding the value of `deletedVertices[v]`
     :return: a simplified tree (Concept :class:`~higra.CptHierarchy`) and the node map
     """
 
-    res = hg.cpp._simplify_tree(tree, deleted_vertices)
+    res = hg.cpp._simplify_tree(tree, deleted_vertices, process_leaves)
     new_tree = res.tree()
     node_map = res.node_map()
 

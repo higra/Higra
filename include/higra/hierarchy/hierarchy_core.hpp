@@ -127,21 +127,20 @@ namespace hg {
 
 
     /**
-     * Creates a copy of the current Tree and deletes the inner nodes such that the criterion function is true.
+     * Creates a copy of the current Tree and deletes the nodes such that the criterion function is true.
      * Also returns an array that maps any node index i of the new tree, to the index of this node in the original tree.
      *
      * The criterion function is a predicate that associates true (this node must be deleted) or
      * false (do not delete this node) to a node index (with operator ()).
      *
-     * A leaf can NOT be deleted with this function !
-     *
      * @tparam criterion_t
-     * @param t
-     * @param criterion
-     * @return
+     * @param t input tree
+     * @param criterion For any vertex n of the tree, n has to be removed if criterion(n) == true
+     * @param process_leaves If false, a leaf vertex will never be removed disregarding the value of criterion
+     * @return a remapped_tree
      */
     template<typename criterion_t>
-    auto simplify_tree(const tree &t, const criterion_t &criterion) {
+    auto simplify_tree(const tree &t, const criterion_t &criterion, bool process_leaves=false) {
         HG_TRACE();
         auto n_nodes = num_vertices(t);
         auto copy_parent = parents(t);
@@ -152,7 +151,7 @@ namespace hg {
 
         // from root to leaves, compute the new parent relation,
         // don't care of the  holes in the parent tab
-        for (auto i: root_to_leaves_iterator(t, leaves_it::exclude, root_it::exclude)) {
+        for (auto i: root_to_leaves_iterator(t, (process_leaves)?leaves_it::include:leaves_it::exclude, root_it::exclude)) {
             auto parent = copy_parent(i);
             if (criterion(i)) {
                 for (auto c: children_iterator(i, t)) {
@@ -173,7 +172,7 @@ namespace hg {
         count = 0;
 
         for (auto i: leaves_to_root_iterator(t, leaves_it::include, root_it::exclude)) {
-            if (is_leaf(i, t) || !criterion(i)) {
+            if (!criterion(i) || (!process_leaves && is_leaf(i, t))) {
                 auto par = copy_parent(i);
                 auto new_par = par - deleted_map(par);
                 node_map(count) = i;

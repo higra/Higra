@@ -76,12 +76,13 @@ struct def_simplify_tree {
     static
     void def(C &m, const char *doc) {
         m.def("_simplify_tree",
-              [](const hg::tree &t, pyarray<value_t> &criterion) {
-                  return hg::simplify_tree(t, criterion);
+              [](const hg::tree &t, pyarray<value_t> &criterion, bool process_leaves) {
+                  return hg::simplify_tree(t, criterion, process_leaves);
               },
               doc,
               py::arg("tree"),
-              py::arg("deleted_nodes")
+              py::arg("deleted_nodes"),
+              py::arg("process_leaves")
         );
     }
 };
