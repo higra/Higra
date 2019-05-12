@@ -12,3 +12,4 @@ from .contour_2d import *
 from .graph_image import *
 from .image_utils import *
 from .hierarchy_mean_pb import *
+from .tree_of_shapes import *

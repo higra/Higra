@@ -11,6 +11,7 @@
 set(PY_FILES
         __init__.py
         test_contour_2d.py
-        test_graph_image.py)
+        test_graph_image.py
+        test_tree_of_shapes.py)
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")

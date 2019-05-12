@@ -1,0 +1,142 @@
+############################################################################
+# Copyright ESIEE Paris (2018)                                             #
+#                                                                          #
+# Contributor(s) : Benjamin Perret                                         #
+#                                                                          #
+# Distributed under the terms of the CECILL-B License.                     #
+#                                                                          #
+# The full license is in the file LICENSE, distributed with this software. #
+############################################################################
+
+import unittest
+import higra as hg
+import numpy as np
+
+
+class TestTreeOfShapesImage(unittest.TestCase):
+
+    def test_tree_of_shapes_no_padding(self):
+        image = np.asarray(((1, 1, 1, 1, 1, 1),
+                            (1, 0, 0, 3, 3, 1),
+                            (1, 0, 1, 1, 3, 1),
+                            (1, 0, 0, 3, 3, 1),
+                            (1, 1, 1, 1, 1, 1)), dtype=np.int8)
+
+        tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'none', False)
+        ref_parents = np.asarray((101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
+                                  101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
+                                  101, 101, 100, 100, 100, 101, 99, 99, 99, 101, 101,
+                                  101, 101, 100, 101, 101, 101, 101, 101, 99, 101, 101,
+                                  101, 101, 100, 101, 101, 101, 101, 101, 99, 101, 101,
+                                  101, 101, 100, 101, 101, 101, 101, 101, 99, 101, 101,
+                                  101, 101, 100, 100, 100, 101, 99, 99, 99, 101, 101,
+                                  101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
+                                  101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
+                                  101, 101, 101), dtype=np.int64)
+
+        ref_altitudes = np.asarray((1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                    1, 1, 0, 0, 0, 1, 3, 3, 3, 1, 1,
+                                    1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1,
+                                    1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1,
+                                    1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1,
+                                    1, 1, 0, 0, 0, 1, 3, 3, 3, 1, 1,
+                                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                    3, 0, 1), dtype=np.int8)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.all(altitudes == ref_altitudes))
+
+    def test_tree_of_shapes_no_padding_original_space(self):
+        image = np.asarray(((1, 1, 1, 1, 1, 1),
+                            (1, 0, 0, 3, 3, 1),
+                            (1, 0, 1, 1, 3, 1),
+                            (1, 0, 0, 3, 3, 1),
+                            (1, 1, 1, 1, 1, 1)), dtype=np.float64)
+
+        tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'none', True)
+        ref_parents = np.asarray((32, 32, 32, 32, 32, 32,
+                                  32, 31, 31, 30, 30, 32,
+                                  32, 31, 32, 32, 30, 32,
+                                  32, 31, 31, 30, 30, 32,
+                                  32, 32, 32, 32, 32, 32,
+                                  32, 32, 32), dtype=np.int64)
+
+        ref_altitudes = np.asarray((1, 1, 1, 1, 1, 1,
+                                    1, 0, 0, 3, 3, 1,
+                                    1, 0, 1, 1, 3, 1,
+                                    1, 0, 0, 3, 3, 1,
+                                    1, 1, 1, 1, 1, 1,
+                                    3, 0, 1), dtype=np.float64)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.all(altitudes == ref_altitudes))
+
+    def test_tree_of_shapes_padding_0(self):
+        image = np.asarray(((1, 1,  1),
+                            (1, -2, 3)), dtype=np.int32)
+
+        tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'zero', False)
+        ref_parents = np.asarray((66, 66, 66, 66, 66, 66, 66, 66, 66,
+                                  66, 66, 66, 66, 66, 66, 66, 66, 66,
+                                  66, 66, 65, 65, 65, 65, 65, 66, 66,
+                                  66, 66, 65, 66, 66, 66, 65, 66, 66,
+                                  66, 66, 65, 66, 63, 66, 64, 66, 66,
+                                  66, 66, 66, 66, 66, 66, 66, 66, 66,
+                                  66, 66, 66, 66, 66, 66, 66, 66, 66,
+                                  66, 65, 66, 66), dtype=np.int64)
+
+        ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 1, 1, 1, 1, 1, 0, 0,
+                                    0, 0, 1, 0, 0, 0, 1, 0, 0,
+                                    0, 0, 1, 0, -2, 0, 3, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                    -2, 3, 1, 0), dtype=np.int32)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.all(altitudes == ref_altitudes))
+
+    def test_tree_of_shapes_padding_0_original_space(self):
+        image = np.asarray(((1, 1,  1),
+                            (1, -2, 3)), dtype=np.int32)
+
+        tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'zero', True)
+        ref_parents = np.asarray((8, 8, 8,
+                                  8, 6, 7,
+                                  9, 8, 9, 9), dtype=np.int64)
+
+        ref_altitudes = np.asarray((1, 1, 1,
+                                    1, -2, 3,
+                                    -2, 3, 1, 0), dtype=np.int32)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.all(altitudes == ref_altitudes))
+
+    def test_tree_of_shapes_padding_mean_original_space(self):
+        image = np.asarray(((1, 1),
+                            (1, -2),
+                            (1, 7)), dtype=np.float64)
+
+        tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'mean', True)
+        ref_parents = np.asarray((8, 8,
+                                  8, 7,
+                                  8, 6,
+                                  9, 8, 9, 9), dtype=np.int64)
+
+        ref_altitudes = np.asarray((1., 1.,
+                                    1., -2.,
+                                    1., 7.,
+                                    7., -2., 1., 1.5), dtype=np.float64)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
+    def test_tree_of_shapes_self_dual(self):
+        np.random.seed(42)
+        image = np.random.rand(25, 38)
+        neg_image = -1 * image
+
+        tree1, altitudes1 = hg.component_tree_tree_of_shapes_image2d(image)
+        tree2, altitudes2 = hg.component_tree_tree_of_shapes_image2d(neg_image)
+
+        self.assertTrue(hg.test_tree_isomorphism(tree1, tree2))
+
+

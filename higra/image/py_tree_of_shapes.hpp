@@ -10,8 +10,6 @@
 
 #pragma once
 
-#include "py_contour_2d.hpp"
-#include "py_graph_image.hpp"
-#include "py_hierarchy_mean_pb.hpp"
-#include "py_tree_of_shapes.hpp"
+#include "pybind11/pybind11.h"
 
+void py_init_tree_of_shapes_image(pybind11::module &m);
