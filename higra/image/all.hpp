@@ -13,4 +13,5 @@
 #include "py_contour_2d.hpp"
 #include "py_graph_image.hpp"
 #include "py_hierarchy_mean_pb.hpp"
+#include "py_tree_of_shapes.hpp"
 

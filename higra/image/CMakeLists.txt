@@ -14,12 +14,14 @@ set(PY_FILES
         graph_image.py
         hierarchy_mean_pb.py
         image_utils.py
+        tree_of_shapes.py
         )
 
 set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/py_contour_2d.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_graph_image.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_hierarchy_mean_pb.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_tree_of_shapes.cpp
         PARENT_SCOPE)
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")

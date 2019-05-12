@@ -8,19 +8,8 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#define HG_DEBUG
+#pragma once
 
-#define CATCH_CONFIG_MAIN
+#include "pybind11/pybind11.h"
 
-
-#include "test_utils.hpp"
-
-using namespace hg;
-using namespace xt;
-using namespace std;
-
-TEST_CASE("unused", "[experimental]") {
-
-}
-
-
+void py_init_tree_of_shapes_image(pybind11::module &m);

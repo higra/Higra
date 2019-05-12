@@ -104,6 +104,25 @@ namespace hierarchy_core {
         REQUIRE((refnm == nm));
     }
 
+    TEST_CASE("simplify tree remove leaves", "[hierarchy_core]") {
+
+        tree t(xt::xarray<index_t>{8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12});
+
+        array_1d<bool> criterion{false, true, true, false, false, false, false, false, true, true, false, false};
+
+        auto res = hg::simplify_tree(t, criterion, true);
+        auto nt = res.tree;
+        auto nm = res.node_map;
+
+        REQUIRE(num_vertices(nt) == 9);
+
+        array_1d<index_t> refp{6, 5, 5, 7, 7, 6, 8, 8, 8};
+        REQUIRE((refp == hg::parents(nt)));
+
+        array_1d<index_t> refnm{0, 3, 4, 5, 6, 7, 10, 11, 12};
+        REQUIRE((refnm == nm));
+    }
+
     TEST_CASE("quasi flat zones hierarchy", "[hierarchy_core]") {
 
         auto graph = get_4_adjacency_graph({2, 3});

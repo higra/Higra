@@ -96,5 +96,22 @@ class TestHierarchyCore(unittest.TestCase):
         refnm = np.asarray((0, 1, 2, 3, 4, 5, 7))
         self.assertTrue(np.all(refnm == node_map))
 
+    def test_simplifyTreeWithLeaves(self):
+        t = hg.Tree((8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12))
+
+        criterion = np.asarray(
+            (False, True, True, False, False, False, False, False, True, True, False, False), dtype=np.bool)
+
+        new_tree, node_map = hg.simplify_tree(criterion, t, process_leaves=True)
+
+        self.assertTrue(new_tree.num_vertices() == 9)
+
+        refp = np.asarray((6, 5, 5, 7, 7, 6, 8, 8, 8))
+        self.assertTrue(np.all(refp == new_tree.parents()))
+
+        refnm = np.asarray((0, 3, 4, 5, 6, 7, 10, 11, 12))
+        self.assertTrue(np.all(refnm == node_map))
+
+
 if __name__ == '__main__':
     unittest.main()

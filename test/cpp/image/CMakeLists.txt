@@ -11,6 +11,7 @@
 set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/test_contour2d.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_graph_image.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_tree_of_shapes.cpp
         PARENT_SCOPE)
 
 
