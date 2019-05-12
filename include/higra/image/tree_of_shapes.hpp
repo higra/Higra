@@ -11,8 +11,14 @@
 #pragma once
 
 #include "higra/graph.hpp"
+#include "higra/image/graph_image.hpp"
+#include "higra/hierarchy/component_tree.hpp"
+#include "higra/hierarchy/hierarchy_core.hpp"
+#include "higra/accumulator/tree_accumulator.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xnoalias.hpp"
+#include "xtensor/xindex_view.hpp"
+
 #include <map>
 #include <deque>
 
@@ -270,6 +276,9 @@ namespace hg {
                                           const xt::xexpression<T> &xplain_map, index_t exterior_vertex = 0) {
 
             auto &plain_map = xplain_map.derived_cast();
+            hg_assert(plain_map.dimension() == 2, "Invalid plain map");
+            hg_assert(plain_map.shape()[1] == 2, "Invalid plain map");
+            hg_assert_vertex_weights(graph, plain_map);
             auto num_v = num_vertices(graph);
             array_1d<bool> dejavu({num_v}, false);
             array_1d<index_t> sorted_vertex_indices = array_1d<index_t>::from_shape({num_v});
@@ -324,4 +333,147 @@ namespace hg {
 
     }
 
-}
+    /**
+     * Padding mode for the function component_tree_tree_of_shapes
+     */
+    enum tos_padding {
+        none,
+        mean,
+        zero
+    };
+
+    /**
+     * Computes the tree of shapes of a 2d image.
+     * The Tree of Shapes was described in [1].
+     *
+     * The algorithm used in this implementation was first described in [2].
+     *
+     * The tree is computed in the interpolated multivalued Khalimsky space to provide a continuous and autodual representation of
+     * input image.
+     *
+     * If padding is different from tos_padding::none, an extra border of pixels is added to the input image before
+     * anything else. This will ensure the existence of a shape encompassing all the shapes inside the input image
+     * (if exterior_vertex is inside the extra border): this shape will be the root of the tree.
+     * The padding value can be:
+     *   - 0 is padding == tos_padding::zero
+     *   - the mean value of the boundary pixels of the input image if padding == tos_padding::mean
+     *
+     * If original_size is true, all the nodes corresponding to pixels not belonging to the input image are removed
+     * (except for the root node).
+     * If original_size is false, the returned tree is the tree constructed in the interpolated/padded space.
+     * In practice if the size of the input image is (h, w), the leaves of the returned tree will correspond to an image of size:
+     *   - (h, w) if original_size is true;
+     *   - (h * 2 - 1, w * 2 - 1) is original_size is false and padding is tos_padding::none; and
+     *   - ((h + 2) * 2 - 1, (w + 2) * 2 - 1) otherwise.
+     *
+     * Exterior_vertex defines the linear coordinates of the pixel corresponding to the exterior (interior and exterior
+     * of a shape is defined with respect to this point). The coordinate of this point must be given in the
+     * padded/interpolated space.
+     *
+     * [1] Pa. Monasse, and F. Guichard, "Fast computation of a contrast-invariant image representation,"
+     *     Image Processing, IEEE Transactions on, vol.9, no.5, pp.860-872, May 2000
+     *
+     * [2] Th. Géraud, E. Carlinet, S. Crozet, and L. Najman, "A Quasi-linear Algorithm to Compute the Tree
+     *     of Shapes of nD Images", ISMM 2013.
+     *
+     * @tparam T
+     * @param ximage Must be a 2d array
+     * @param padding Defines if an extra boundary of pixels is added to the original image (see enum tos_padding).
+     * @param original_size remove all nodes corresponding to interpolated/padded pixels
+     * @param exterior_vertex linear coordinate of the exterior point
+     * @return a node weighted tree
+     */
+    template<typename T>
+    auto component_tree_tree_of_shapes_image2d(const xt::xexpression<T> &ximage,
+                                               tos_padding padding = tos_padding::mean,
+                                               bool original_size = true,
+                                               index_t exterior_vertex = 0) {
+        HG_TRACE();
+        auto &image = ximage.derived_cast();
+        hg_assert(image.dimension() == 2, "image must be a 2d array");
+        embedding_grid_2d embedding(image.shape());
+        auto shape = embedding.shape();
+        size_t h = shape[0];
+        size_t w = shape[1];
+        auto vertex_weights = xt::flatten(image);
+        using value_type = typename T::value_type;
+
+        size_t rh;
+        size_t rw;
+
+        array_2d<value_type> cooked_vertex_values;
+
+        if (padding != tos_padding::none) {
+            value_type pad_value;
+            switch (padding) {
+                case tos_padding::zero:
+                    pad_value = 0;
+                    break;
+                case tos_padding::mean: {
+                    auto tmp = xt::sum(xt::view(image, 0, xt::all()))() +
+                               xt::sum(xt::view(image, h - 1, xt::all()))();
+                    if (h > 2) {
+                        tmp += xt::sum(xt::view(image, xt::range(1, h - 1), 0))() +
+                               xt::sum(xt::view(image, xt::range(1, h - 1), w - 1))();
+                    }
+                    pad_value = (value_type) (tmp / ((std::max)(2.0 * (w + h) - 4, 1.0)));
+                    break;
+                }
+                case none:
+                default:
+                    throw std::runtime_error("Incorrect padding value.");
+            }
+            array_1d<value_type> padded_vertices = array_1d<value_type>::from_shape({(w + 2) * (h + 2)});
+            auto padded_image = xt::reshape_view(padded_vertices, {h + 2, w + 2});
+            xt::noalias(xt::view(padded_image, xt::range(1, h + 1), xt::range(1, w + 1))) = image;
+            xt::view(padded_image, 0, xt::all()) = pad_value;
+            xt::view(padded_image, h + 1, xt::all()) = pad_value;
+            xt::view(padded_image, xt::all(), 0) = pad_value;
+            xt::view(padded_image, xt::all(), w + 1) = pad_value;
+
+
+            cooked_vertex_values =
+                    tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
+                            padded_vertices,
+                            {(index_t) (h + 2), (index_t) (w + 2)});
+            rh = (h + 2) * 2 - 1;
+            rw = (w + 2) * 2 - 1;
+        } else {
+            cooked_vertex_values =
+                    tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
+                            vertex_weights,
+                            embedding);
+            rh = h * 2 - 1;
+            rw = w * 2 - 1;
+        }
+
+        auto graph = get_4_adjacency_implicit_graph({(index_t) rh, (index_t) rw});
+        auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
+                                                                              exterior_vertex);
+
+        auto &sorted_vertex_indices = res_sort.first;
+        auto &enqueued_levels = res_sort.second;
+
+        auto res_tree = component_tree_internal::tree_from_sorted_vertices(graph, enqueued_levels,
+                                                                           sorted_vertex_indices);
+        auto &tree = res_tree.tree;
+        auto &altitudes = res_tree.altitudes;
+
+        if (!original_size) {
+            return res_tree;
+        }
+
+        array_1d<bool> deleted_vertices({num_leaves(res_tree.tree)}, true);
+        auto deleted = xt::reshape_view(deleted_vertices, {rh, rw});
+        if (padding != tos_padding::none) {
+            xt::view(deleted, xt::range(2, rh - 2, 2), xt::range(2, rw - 2, 2)) = false;
+        } else {
+            xt::view(deleted, xt::range(0, rh, 2), xt::range(0, rw, 2)) = false;
+        }
+        auto all_deleted = accumulate_sequential(tree, deleted_vertices, accumulator_min());
+
+        auto stree = simplify_tree(tree, all_deleted, true);
+        array_1d<value_type> saltitudes = xt::index_view(altitudes, stree.node_map);
+        return make_node_weighted_tree(std::move(stree.tree), std::move(saltitudes));
+    }
+};
