@@ -150,20 +150,46 @@ class TestAttributes(unittest.TestCase):
         attribute = hg.attribute_frontier_strength(tree, edge_weights)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
-    def test_perimeter_length(self):
+    def test_perimeter_length_partition_tree(self):
         tree, altitudes = TestAttributes.get_test_tree()
         ref_attribute = [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 8, 10, 16, 12]
         attribute = hg.attribute_perimeter_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
-    def test_perimeter_length2(self):
+    def test_perimeter_length_partition_tree2(self):
         tree, altitudes = TestAttributes.get_test_tree()
         hg.set_attribute(hg.CptHierarchy.get_leaf_graph(tree), "no_border_vertex_out_degree", None)
         ref_attribute = [2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 0]
         attribute = hg.attribute_perimeter_length(tree, no_cache=True)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
-    def test_perimeter_length_rag(self):
+    def test_perimeter_length_component_tree(self):
+        g = hg.get_4_adjacency_graph((4, 4))
+
+        # for reference, tree is a max tree on the following image
+        # 0, 1, 4, 4,
+        # 7, 5, 6, 8,
+        # 2, 3, 4, 1,
+        # 9, 8, 6, 7
+
+        t = hg.Tree((28, 27, 24, 24,
+                     20, 23, 22, 18,
+                     26, 25, 24, 27,
+                     16, 17, 21, 19,
+                     17, 21, 22, 21, 23, 24, 23, 24, 25, 26, 27, 28, 28),
+                    hg.TreeCategory.ComponentTree)
+
+        res = hg.attribute_perimeter_length(t, leaf_graph=g)
+
+        ref = np.asarray((4, 4, 4, 4,
+                          4, 4, 4, 4,
+                          4, 4, 4, 4,
+                          4, 4, 4, 4,
+                          4, 6, 4, 4, 4, 10, 6, 10, 22, 20, 18, 16, 16), dtype=np.float64)
+
+        self.assertTrue(np.all(res == ref))
+
+    def test_perimeter_length_rag_partition_tree(self):
         g = hg.get_4_adjacency_graph((3, 3))
         vertex_labels = np.asarray(((0, 1, 1),
                                     (0, 2, 2),

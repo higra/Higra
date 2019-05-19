@@ -10,6 +10,7 @@
 
 #include "../test_utils.hpp"
 #include "higra/attribute/tree_attribute.hpp"
+#include "higra/image/graph_image.hpp"
 
 namespace tree_attributes {
 
@@ -84,6 +85,45 @@ namespace tree_attributes {
         array_1d<index_t> ref2{1, 0, 4, 2, 3, 6, 5, 7};
         auto res2 = attribute_sibling(t, -1);
         REQUIRE((ref2 == res2));
+    }
+
+    TEST_CASE("tree attribute perimeter length component tree", "[tree_attributes]") {
+        auto g = get_4_adjacency_graph({4, 4});
+
+        /* for reference, tree is a max tree on the following image
+        array_1d<double> vertex_weights({0, 1, 4, 4,
+                                         7, 5, 6, 8,
+                                         2, 3, 4, 1,
+                                         9, 8, 6, 7});
+        */
+
+        array_1d<index_t> parents({28, 27, 24, 24,
+                                   20, 23, 22, 18,
+                                   26, 25, 24, 27,
+                                   16, 17, 21, 19,
+                                   17, 21, 22, 21, 23, 24, 23, 24, 25, 26, 27, 28, 28});
+        /*
+         array_1d<double> altitudes({0, 1, 4, 4,
+                                     7, 5, 6, 8,
+                                     2, 3, 4, 1,
+                                     9, 8, 6, 7, 
+                                     9, 8, 8, 7, 7, 6, 6, 5, 4, 3, 2, 1, 0});
+         */
+
+        tree t(parents, tree_category::component_tree);
+
+        array_1d<double> vertex_perimeters({num_vertices(g)}, 4);
+        array_1d<double> edge_length({num_edges(g)}, 1);
+
+        auto res = attribute_perimeter_length_component_tree(t, g, vertex_perimeters, edge_length);
+
+        array_1d<double> ref{4, 4, 4, 4,
+                             4, 4, 4, 4,
+                             4, 4, 4, 4,
+                             4, 4, 4, 4,
+                             4, 6, 4, 4, 4, 10, 6, 10, 22, 20, 18, 16, 16};
+
+        REQUIRE(xt::allclose(ref, res));
     }
 
 }

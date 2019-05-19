@@ -22,9 +22,11 @@ struct def_tree_ctr {
     template<typename type, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def(py::init([](const pyarray<type> &parent) { return graph_t(parent); }),
+        c.def(py::init(
+                [](const pyarray<type> &parent, hg::tree_category category) { return graph_t(parent, category); }),
               doc,
-              py::arg("parent_relation")
+              py::arg("parent_relation"),
+              py::arg("category") = hg::tree_category::partition_tree
         );
     }
 };
@@ -125,11 +127,11 @@ struct def_parent {
 void py_init_tree_graph(pybind11::module &m) {
     xt::import_numpy();
 
-    py::enum_<hg::tree_category >(m, "TreeCategory",
-                                "Category of hierarchies.")
+    py::enum_<hg::tree_category>(m, "TreeCategory",
+                                 "Category of hierarchies.")
             .value("ComponentTree", hg::tree_category::component_tree)
             .value("PartitionTree", hg::tree_category::partition_tree);
-    
+
     auto c = py::class_<graph_t>(m, "Tree");
 
     add_type_overloads<def_tree_ctr<graph_t>, HG_TEMPLATE_INTEGRAL_TYPES>
@@ -160,7 +162,8 @@ void py_init_tree_graph(pybind11::module &m) {
     add_type_overloads<def_child<graph_t>, int, unsigned int, long long, unsigned long long>
             (c, "Get the i-th (starting at 0) child of each vertex in the given array.");
     add_type_overloads<def_find_region<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
-            (c, "Get largest vertex which contains the given vertex and whose altitude is stricly less than the given altitude lambda.");
+            (c,
+             "Get largest vertex which contains the given vertex and whose altitude is stricly less than the given altitude lambda.");
 
     c.def("children",
           [](const graph_t &g, vertex_t v) {

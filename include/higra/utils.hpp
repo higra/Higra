@@ -92,6 +92,14 @@ namespace hg {
 #define hg_assert_same_shape(array1, array2) do { \
     hg_assert(xt::same_shape(array1.shape(), array2.shape()), "Shapes of '" #array1 "' and '" #array2 "' must be equal."); \
     } while (0)
+
+#define hg_assert_component_tree(tree) do { \
+    hg_assert(hg::category(tree) == hg::tree_category::component_tree, "The category of '" #tree "' must be 'component_tree'."); \
+    } while (0)
+
+#define hg_assert_partition_tree(tree) do { \
+    hg_assert(hg::category(tree) == hg::tree_category::partition_tree, "The category of '" #tree "' must be 'partition_tree'."); \
+    } while (0)
 #else
 #define hg_assert(test, msg) ((void)0)
 #define hg_assert_vertex_weights(graph, vertex_weights) ((void)0)
@@ -101,24 +109,26 @@ namespace hg {
 #define hg_assert_1d_array(array) ((void)0)
 #define hg_assert_integral_value_type(array) ((void)0)
 #define hg_assert_same_shape(array1, array2) ((void)0)
+#define hg_assert_component_tree(tree) ((void)0)
+#define hg_assert_partition_tree(tree) ((void)0)
 #endif
 
 // Check windows
 #if _WIN32 || _WIN64
-    #define HG_INT_64 long long
-    #define HG_UINT_64 unsigned long long
+#define HG_INT_64 long long
+#define HG_UINT_64 unsigned long long
 #elif __GNUC__ || __clang__
-    #if __x86_64__ || __ppc64__
-        #define HG_INT_64 long
-        #define HG_UINT_64 unsigned long
-    #else
-        #define HG_INT_64 long long
-        #define HG_UINT_64 unsigned long long
-    #endif
+#if __x86_64__ || __ppc64__
+#define HG_INT_64 long
+#define HG_UINT_64 unsigned long
 #else
-    #if !defined(HG_INT_64) && !defined(HG_UINT_64)
-        #error Unkown architecture, please provide the two macros HG_INT_64 and HG_UINT_64 defining respectively the types of 64 integers and unsigned 64 bits integers
-    #endif
+#define HG_INT_64 long long
+#define HG_UINT_64 unsigned long long
+#endif
+#else
+#if !defined(HG_INT_64) && !defined(HG_UINT_64)
+#error Unkown architecture, please provide the two macros HG_INT_64 and HG_UINT_64 defining respectively the types of 64 integers and unsigned 64 bits integers
+#endif
 #endif
 
 
