@@ -440,7 +440,6 @@ class CptMinimumSpanningTree(Concept):
         hg.add_tag(mst, CptMinimumSpanningTree)
         hg.set_attribute(mst, "base_graph", base_graph)
         hg.set_attribute(mst, "mst_edge_map", mst_edge_map)
-        CptEdgeWeightedGraph.link(mst_edge_map, mst)
 
     @staticmethod
     def get_base_graph(mst):
