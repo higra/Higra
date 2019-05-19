@@ -15,6 +15,7 @@
 #include "../structure/array.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xindex_view.hpp"
+#include "xtensor/xnoalias.hpp"
 
 namespace hg {
 
@@ -33,7 +34,7 @@ namespace hg {
     auto attribute_area(const tree_t &tree, const xt::xexpression<T> &xleaf_area) {
         auto &leaf_area = xleaf_area.derived_cast();
         hg_assert_leaf_weights(tree, leaf_area);
-        
+
         return accumulate_sequential(tree, leaf_area, accumulator_sum());
     }
 
@@ -72,7 +73,7 @@ namespace hg {
         hg_assert_1d_array(node_area);
         hg_assert_node_weights(tree, node_altitude);
         hg_assert_1d_array(node_altitude);
-        
+
         auto &parent = tree.parents();
         array_1d<double> volume = xt::empty<double>({tree.num_vertices()});
         xt::view(volume, xt::range(0, num_leaves(tree))) = 0;
@@ -128,7 +129,7 @@ namespace hg {
         auto &node_altitude = xnode_altitude.derived_cast();
         hg_assert_node_weights(tree, node_altitude);
         hg_assert_1d_array(node_altitude);
-        
+
         if (increasing_altitude) {
             auto extrema = accumulate_sequential(tree, xt::view(node_altitude, xt::range(0, num_leaves(tree))),
                                                  accumulator_min());
@@ -159,8 +160,8 @@ namespace hg {
         using value_type = typename T::value_type;
         hg_assert_node_weights(tree, altitude);
         hg_assert_1d_array(altitude);
-        
-        array_1d <index_t> min_son({num_vertices(tree)}, invalid_index);
+
+        array_1d<index_t> min_son({num_vertices(tree)}, invalid_index);
         auto min_depth = xt::empty_like(altitude);
         for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             min_depth(n) = std::numeric_limits<value_type>::max();
@@ -168,7 +169,7 @@ namespace hg {
             for (auto c: children_iterator(n, tree)) {
                 if (!is_leaf(c, tree)) {
                     flag = false;
-                    if(min_depth(c) < min_depth(n)){
+                    if (min_depth(c) < min_depth(n)) {
                         min_depth(n) = min_depth(c);
                         min_son(n) = c;
                     }
@@ -210,15 +211,15 @@ namespace hg {
      * @return an array with the sibling index of each node of the tree
      */
     template<typename tree_t>
-    auto attribute_sibling(const tree_t &tree, index_t skip=1){
+    auto attribute_sibling(const tree_t &tree, index_t skip = 1) {
 
         array_1d<index_t> attribute = xt::empty<index_t>({num_vertices(tree)});
-        for(auto n: leaves_to_root_iterator(tree, leaves_it::exclude, root_it::include)){
+        for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude, root_it::include)) {
             index_t nchs = num_children(n, tree);
-            for(index_t i = 0; i < nchs; i++){
+            for (index_t i = 0; i < nchs; i++) {
 
                 index_t j = (i + skip) % nchs;
-                if(j < 0){ // stupid c modulo
+                if (j < 0) { // stupid c modulo
                     j += nchs;
                 }
 
@@ -227,5 +228,53 @@ namespace hg {
         }
         attribute(root(tree)) = root(tree);
         return attribute;
+    }
+
+    /**
+     * Computes the perimeter length of each node of the input component tree.
+     *
+     * @tparam tree_t
+     * @tparam graph_t
+     * @tparam T1
+     * @tparam T2
+     * @param tree input tree
+     * @param base_graph graph on the leaves of tree
+     * @param xvertex_perimeter perimeter length of each vertex of the base graph
+     * @param xedge_length length of each edge of the base graph (length of the frontier between the two adjacent vertices)
+     * @return
+     */
+    template<typename tree_t, typename graph_t, typename T1, typename T2>
+    auto attribute_perimeter_length_component_tree(
+            const tree_t &tree,
+            const graph_t &base_graph,
+            const xt::xexpression<T1> &xvertex_perimeter,
+            const xt::xexpression<T2> &xedge_length) {
+        hg_assert_component_tree(tree);
+        auto &vertex_perimeter = xvertex_perimeter.derived_cast();
+        hg_assert_1d_array(vertex_perimeter);
+        hg_assert_leaf_weights(tree, vertex_perimeter);
+        auto &edge_length = xedge_length.derived_cast();
+        hg_assert_1d_array(edge_length);
+        hg_assert_edge_weights(base_graph, edge_length);
+
+        array_1d<double> res = array_1d<double>::from_shape({num_vertices(tree)});
+        xt::noalias(xt::view(res, xt::range(0, num_leaves(tree)))) = vertex_perimeter;
+        array_1d<bool> visited({num_leaves(tree)}, false);
+
+        for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
+            res(i) = 0;
+            for (auto c: children_iterator(i, tree)) {
+                res(i) += res(c);
+                if (is_leaf(c, tree)) {
+                    for (auto e: out_edge_iterator(c, base_graph)) {
+                        if (visited(target(e, base_graph))) {
+                            res(i) -= 2.0 * edge_length(e);
+                        }
+                    }
+                    visited(c) = true;
+                }
+            }
+        }
+        return res;
     }
 }

@@ -14,6 +14,35 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
+template<typename T>
+using pyarray = xt::pyarray<T>;
+
+namespace py = pybind11;
+
+struct def_perimeter_length_component_tree {
+    template<typename T>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_attribute_perimeter_length_component_tree",
+              [](const hg::tree &tree,
+                 const hg::ugraph &graph,
+                 pyarray<T> &vertex_perimeter,
+                 pyarray<T> &edge_length) {
+                  return hg::attribute_perimeter_length_component_tree(
+                          tree,
+                          graph,
+                          vertex_perimeter,
+                          edge_length
+                  );
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("graph"),
+              py::arg("vertex_perimeter"),
+              py::arg("edge_length"));
+    }
+};
+
 void py_init_attributes(pybind11::module &m) {
     xt::import_numpy();
     m.def("_attribute_sibling",
@@ -30,4 +59,7 @@ void py_init_attributes(pybind11::module &m) {
           },
           "Attribute depth.",
           pybind11::arg("tree"));
+
+    add_type_overloads<def_perimeter_length_component_tree,
+            HG_TEMPLATE_FLOAT_TYPES>(m, "");
 }

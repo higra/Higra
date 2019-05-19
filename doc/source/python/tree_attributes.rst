@@ -19,6 +19,10 @@ Tree attributes
 
 .. autofunction:: higra.attribute_perimeter_length
 
+.. autofunction:: higra.attribute_perimeter_length_partition_tree
+
+.. autofunction:: higra.attribute_perimeter_length_component_tree
+
 .. autofunction:: higra.attribute_frontier_strength
 
 .. autofunction:: higra.attribute_piecewise_constant_Mumford_Shah_energy

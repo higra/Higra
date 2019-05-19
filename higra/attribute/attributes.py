@@ -80,7 +80,7 @@ def attribute_vertex_perimeter(graph, edge_length):
     special_case_border_graph = hg.get_attribute(graph, "no_border_vertex_out_degree")
 
     if special_case_border_graph is not None:
-        res = np.full((graph.num_vertices(), ), special_case_border_graph, dtype=np.float64)
+        res = np.full((graph.num_vertices(),), special_case_border_graph, dtype=np.float64)
         res = hg.delinearize_vertex_weights(res, graph)
         hg.CptVertexWeightedGraph.link(res, graph)
         return res
@@ -241,12 +241,32 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
 
 
 @hg.data_provider("perimeter_length")
-@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("tree", "frontier_length"))
-def attribute_perimeter_length(tree, vertex_perimeter, frontier_length, leaf_graph=None):
+def attribute_perimeter_length(tree, **kwargs):
     """
     Compute the length of the perimeter of each node of the given tree.
 
+    This function simply dispatches the call to :func:`~higra.attribute_perimeter_length_partition_tree` or
+    :func:`~higra.attribute_perimeter_length_component_tree` depending on the tree category.
+    See those functions for supported extra arguments.
+
     **Provider name**: "perimeter_length"
+
+    :param tree: input tree
+    :return: a 1d array (Concept :class:`~higra.CptValuedHierarchy`)
+    """
+    if tree.category() == hg.TreeCategory.PartitionTree:
+        return attribute_perimeter_length_partition_tree(tree, **kwargs)
+    elif tree.category() == hg.TreeCategory.ComponentTree:
+        return attribute_perimeter_length_component_tree(tree, **kwargs)
+
+
+@hg.data_provider("perimeter_length_partition_tree")
+@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("tree", "frontier_length"))
+def attribute_perimeter_length_partition_tree(tree, vertex_perimeter, frontier_length, leaf_graph=None):
+    """
+    Compute the length of the perimeter of each node of the given partition tree.
+
+    **Provider name**: "perimeter_length_partition_tree"
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param vertex_perimeter: perimeter length of each vertex of the leaf graph (provided by :func:`~higra.attribute_vertex_perimeter` on `leaf_graph`)
@@ -254,10 +274,37 @@ def attribute_perimeter_length(tree, vertex_perimeter, frontier_length, leaf_gra
     :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array (Concept :class:`~higra.CptValuedHierarchy`)
     """
+    assert (tree.category() == hg.TreeCategory.PartitionTree)
     if leaf_graph is not None:
         vertex_perimeter = hg.linearize_vertex_weights(vertex_perimeter, leaf_graph)
 
     return hg.accumulate_and_add_sequential(-2 * frontier_length, vertex_perimeter, hg.Accumulators.sum, tree)
+
+
+@hg.data_provider("perimeter_length_component_tree")
+@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("leaf_graph", "edge_length"))
+def attribute_perimeter_length_component_tree(tree, vertex_perimeter, edge_length, leaf_graph):
+    """
+    Compute the length of the perimeter of each node of the given component tree.
+
+    **Provider name**: "perimeter_length_component_tree"
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param vertex_perimeter: perimeter length of each vertex of the leaf graph (provided by :func:`~higra.attribute_vertex_perimeter` on `leaf_graph`)
+    :param edge_length: length of each edge of the leaf graph (provided by :func:`~higra.attribute_edge_length` on `leaf_graph`)
+    :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
+    :return: a 1d array (Concept :class:`~higra.CptValuedHierarchy`)
+    """
+    assert (tree.category() == hg.TreeCategory.ComponentTree)
+
+    if leaf_graph is not None:
+        vertex_perimeter = hg.linearize_vertex_weights(vertex_perimeter, leaf_graph)
+
+    res = hg.cpp._attribute_perimeter_length_component_tree(tree, leaf_graph, vertex_perimeter, edge_length)
+
+    hg.CptValuedHierarchy.link(res, tree)
+
+    return res
 
 
 @hg.data_provider("compactness")
