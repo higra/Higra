@@ -244,6 +244,33 @@ class TestTree(unittest.TestCase):
 
         self.assertTrue(np.all(tree.find_region(vertices, lambdas, altitudes) == expected_results))
 
+    def test_lowest_common_ancestor_scalar(self):
+        t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+
+        self.assertTrue(t.lowest_common_ancestor(0, 0) == 0)
+        self.assertTrue(t.lowest_common_ancestor(3, 3) == 3)
+        self.assertTrue(t.lowest_common_ancestor(5, 5) == 5)
+        self.assertTrue(t.lowest_common_ancestor(7, 7) == 7)
+        self.assertTrue(t.lowest_common_ancestor(0, 1) == 5)
+        self.assertTrue(t.lowest_common_ancestor(1, 0) == 5)
+        self.assertTrue(t.lowest_common_ancestor(2, 3) == 6)
+        self.assertTrue(t.lowest_common_ancestor(2, 4) == 6)
+        self.assertTrue(t.lowest_common_ancestor(3, 4) == 6)
+        self.assertTrue(t.lowest_common_ancestor(5, 6) == 7)
+        self.assertTrue(t.lowest_common_ancestor(0, 2) == 7)
+        self.assertTrue(t.lowest_common_ancestor(1, 4) == 7)
+        self.assertTrue(t.lowest_common_ancestor(2, 6) == 6)
+
+    def test_lowest_common_ancestor_vectorial(self):
+        t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        v1 = np.asarray((0, 0, 1, 3), dtype=np.int64)
+        v2 = np.asarray((0, 3, 0, 0), dtype=np.int64)
+
+        res = t.lowest_common_ancestor(v1, v2)
+
+        ref = np.asarray((0, 7, 5, 7), dtype=np.int64)
+        self.assertTrue(np.all(res == ref))
+
 
 if __name__ == '__main__':
     unittest.main()

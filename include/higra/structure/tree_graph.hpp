@@ -642,6 +642,39 @@ namespace hg {
         return result;
     }
 
+    inline
+    auto lowest_common_ancestor(tree::vertex_descriptor v1,
+                                tree::vertex_descriptor v2,
+                                const tree &t) {
+        while (v1 != v2) {
+            if (v1 < v2) {
+                v1 = parent(v1, t);
+            } else {
+                v2 = parent(v2, t);
+            }
+        }
+        return v1;
+    }
+
+    template<typename T>
+    auto lowest_common_ancestor(const xt::xexpression<T> &xvertices_1,
+                                const xt::xexpression<T> &xvertices_2,
+                                const tree &t) {
+        auto &vertices_1 = xvertices_1.derived_cast();
+        auto &vertices_2 = xvertices_2.derived_cast();
+        hg_assert_1d_array(vertices_1);
+        hg_assert_same_shape(vertices_1, vertices_2);
+        hg_assert_integral_value_type(vertices_1);
+
+        array_1d <index_t> lcas = array_1d<index_t>::from_shape({vertices_1.size()});
+
+        for (index_t i = 0; i < (index_t) vertices_1.size(); i++) {
+            lcas(i) = lowest_common_ancestor(vertices_1(i), vertices_2(i), t);
+        }
+
+        return lcas;
+    }
+
 }
 
 #ifdef HG_USE_BOOST_GRAPH

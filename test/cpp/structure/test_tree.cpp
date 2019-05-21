@@ -387,7 +387,7 @@ namespace tree {
     }
 
     TEST_CASE("tree find_region", "[tree]") {
-        hg::tree t(array_1d<index_t> { 8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12 });
+        hg::tree t(array_1d<index_t>{8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12});
 
         array_1d<double> altitudes{0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 2, 2, 3};
 
@@ -396,10 +396,38 @@ namespace tree {
 
         array_1d<index_t> expected_results{0, 10, 12, 2, 9, 9, 10, 12};
 
-        for (index_t i = 0; i < (index_t)vertices.size(); i++) {
+        for (index_t i = 0; i < (index_t) vertices.size(); i++) {
             REQUIRE((find_region(vertices(i), lambdas(i), altitudes, t) == expected_results(i)));
         }
 
         REQUIRE((find_region(vertices, lambdas, altitudes, t) == expected_results));
+    }
+
+    TEST_CASE("test lca with altitudes pairs of vertices", "[tree]") {
+        hg::tree t(xt::xarray<index_t>{5, 5, 6, 6, 6, 7, 7, 7});
+        REQUIRE(hg::lowest_common_ancestor(0, 0, t) == 0);
+        REQUIRE(hg::lowest_common_ancestor(3, 3, t) == 3);
+        REQUIRE(hg::lowest_common_ancestor(5, 5, t) == 5);
+        REQUIRE(hg::lowest_common_ancestor(7, 7, t) == 7);
+        REQUIRE(hg::lowest_common_ancestor(0, 1, t) == 5);
+        REQUIRE(hg::lowest_common_ancestor(1, 0, t) == 5);
+        REQUIRE(hg::lowest_common_ancestor(2, 3, t) == 6);
+        REQUIRE(hg::lowest_common_ancestor(2, 4, t) == 6);
+        REQUIRE(hg::lowest_common_ancestor(3, 4, t) == 6);
+        REQUIRE(hg::lowest_common_ancestor(5, 6, t) == 7);
+        REQUIRE(hg::lowest_common_ancestor(0, 2, t) == 7);
+        REQUIRE(hg::lowest_common_ancestor(1, 4, t) == 7);
+        REQUIRE(hg::lowest_common_ancestor(2, 6, t) == 6);
+    }
+
+    TEST_CASE("test lca with altitudes vectorial", "[tree]") {
+        hg::tree t(xt::xarray<index_t>{5, 5, 6, 6, 6, 7, 7, 7});
+        array_1d<index_t> v1{0, 0, 1, 3};
+        array_1d<index_t> v2{0, 3, 0, 0};
+
+        auto l = hg::lowest_common_ancestor(v1, v2, t);
+
+        array_1d<index_t> ref{0, 7, 5, 7};
+        REQUIRE((l == ref));
     }
 }
