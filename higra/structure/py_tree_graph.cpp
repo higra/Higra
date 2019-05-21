@@ -78,6 +78,7 @@ struct def_find_region {
     }
 };
 
+
 template<typename graph_t>
 struct def_num_children {
     template<typename type, typename C>
@@ -165,6 +166,20 @@ void py_init_tree_graph(pybind11::module &m) {
             (c,
              "Get largest vertex which contains the given vertex and whose altitude is stricly less than the given altitude lambda.");
 
+    c.def("lowest_common_ancestor", [](const graph_t& tree, hg::index_t vertex1, hg::index_t vertex2){
+        return hg::lowest_common_ancestor(vertex1, vertex2, tree);
+        }, "Return the lowest common ancestor of `vertex1` and `vertex2`. Worst case complexity is linear `O(N)`: consider using the `LCAFast` if many lowest common ancestors are needed",
+          py::arg("vertex1"),
+          py::arg("vertex2"));
+
+    c.def("lowest_common_ancestor", [](const graph_t& tree, const pyarray<hg::index_t>& vertices1, const pyarray<hg::index_t>& vertices2){
+              return hg::lowest_common_ancestor(vertices1, vertices2, tree);
+          }, "Return the lowest common ancestor between any pairs of vertices in `vertices1` and `vertices2`.\n"
+             "`vertices1` and `vertices2` must be 1d arrays of integers of the same size K"
+             "Worst case complexity is `O(N*K)`: consider using the `LCAFast` if many lowest common ancestors are needed",
+          py::arg("vertices1"),
+          py::arg("vertices2"));
+    
     c.def("children",
           [](const graph_t &g, vertex_t v) {
               pybind11::list l;

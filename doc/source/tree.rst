@@ -269,6 +269,73 @@ Iterators
                     include_root = False):
                 ... // 10, 9, 8, 7
 
+Finding nodes
+-------------
+
+Common operations requires to find internal nodes corresponding to particular leaves of the tree.
+Higra tree offers two helper methods for this:
+
+  - ``lowest_common_ancestor`` finds the lowest common ancestor between two nodes ``n_1`` and ``n_2``, i.e.
+    the smallest node of the tree that contains both ``n_1`` and ``n_2``; and
+  - ``find_regions`` finds the highest node containing a node ``n_1`` and whose altitude is strictly lower than a given value.
+
+
+Both functions can operate on scalars or arrays.
+Both functions have a linear time complexity.
+
+In case of lower common ancestor the helper class ``lca_fast/LCAFast`` (cpp/python) can provide a constant query time in exchange of a
+linearithmic time pre-processing.
+
+.. list-table::
+    :header-rows: 1
+
+    *   - Function
+        - Returns
+        - Description
+    *   - ``lowest_common_ancestor``
+        - node index
+        - lowest common ancestor(s) of the given pair(s) of nodes
+    *   - ``find_region``
+        - node index
+        - highest region(s) containing the given node(s) whose altitude if lower than the given altitude(s)
+
+
+.. tabs::
+
+    .. tab:: c++
+
+        .. code-block:: cpp
+            :linenos:
+
+                // tree node altitudes
+                array_1d<double> altitudes{0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 4, 5};
+
+                // two set of vertices
+                array_1d<index_t> vertices1{2, 8, 0};
+                array_1d<index_t> vertices2{5, 6, 11};
+
+                auto lca = lowest_common_ancestor(2, 5, t);                    // 10
+                auto lcas = lowest_common_ancestor(vertices1, vertices2, t);   // {10, 10, 11}
+
+                // vertices and altitudes
+                array_1d<index_t> vertices3{2, 8, 0};
+                array_1d<double> alts{1, 6, 2};
+                auto r = find_region(vertices, alts, altitudes, t);             // {2, 11, 7}
+
+
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+                # tree node altitudes
+                altitudes = numpy.asarray((0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 4, 5))
+
+                lca = t.lowest_common_ancestor(2, 5)                    # 10
+                lcas = t.lowest_common_ancestor((2, 8, 0), (5, 6, 11))  # (10, 10, 11)
+
+                // vertices and altitudes
+                auto r = t.find_region((2, 8, 0), (1, 6, 2), altitudes) # (2, 11, 7)
 
 Accumulators
 ------------
