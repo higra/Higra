@@ -194,39 +194,41 @@ namespace hg {
             const auto image2d = xt::reshape_view(image, {h, w});
             auto plain_map2d = xt::reshape_view(plain_map, {h2, w2, (size_t) 2});
 
+            // TODO add noalias again when xtensor is fixed
+
             // 2 faces
-            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(0, w2, 2), 0)) = image2d;
-            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(0, w2, 2), 1)) = image2d;
+            /*xt::noalias*/(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(0, w2, 2), 0)) = image2d;
+            /*xt::noalias*/(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(0, w2, 2), 1)) = image2d;
 
             // horizontal 1 face
-            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(1, w2, 2), 0)) =
-                    xt::minimum(xt::view(image2d, xt::all(), xt::range(0, w - 1)),
-                                xt::view(image2d, xt::all(), xt::range(1, w)));
-            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(1, w2, 2), 1)) =
-                    xt::maximum(xt::view(image2d, xt::all(), xt::range(0, w - 1)),
-                                xt::view(image2d, xt::all(), xt::range(1, w)));
+            /*xt::noalias*/(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(1, w2, 2), 0)) =
+                                   xt::minimum(xt::view(image2d, xt::all(), xt::range(0, w - 1)),
+                                               xt::view(image2d, xt::all(), xt::range(1, w)));
+            /*xt::noalias*/(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(1, w2, 2), 1)) =
+                                   xt::maximum(xt::view(image2d, xt::all(), xt::range(0, w - 1)),
+                                               xt::view(image2d, xt::all(), xt::range(1, w)));
 
             // vertical 1 face
-            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(0, w2, 2), 0)) =
-                    xt::minimum(xt::view(image2d, xt::range(0, h - 1), xt::all()),
-                                xt::view(image2d, xt::range(1, h), xt::all()));
-            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(0, w2, 2), 1)) =
-                    xt::maximum(xt::view(image2d, xt::range(0, h - 1), xt::all()),
-                                xt::view(image2d, xt::range(1, h), xt::all()));
+            /*xt::noalias*/(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(0, w2, 2), 0)) =
+                                   xt::minimum(xt::view(image2d, xt::range(0, h - 1), xt::all()),
+                                               xt::view(image2d, xt::range(1, h), xt::all()));
+            /*xt::noalias*/(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(0, w2, 2), 1)) =
+                                   xt::maximum(xt::view(image2d, xt::range(0, h - 1), xt::all()),
+                                               xt::view(image2d, xt::range(1, h), xt::all()));
 
             // 0 face
-            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(1, w2, 2), 0)) =
-                    xt::minimum(
-                            xt::minimum(xt::view(image2d, xt::range(0, h - 1), xt::range(0, w - 1)),
-                                        xt::view(image2d, xt::range(0, h - 1), xt::range(1, w))),
-                            xt::minimum(xt::view(image2d, xt::range(1, h), xt::range(0, w - 1)),
-                                        xt::view(image2d, xt::range(1, h), xt::range(1, w))));
-            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(1, w2, 2), 1)) =
-                    xt::maximum(
-                            xt::maximum(xt::view(image2d, xt::range(0, h - 1), xt::range(0, w - 1)),
-                                        xt::view(image2d, xt::range(0, h - 1), xt::range(1, w))),
-                            xt::maximum(xt::view(image2d, xt::range(1, h), xt::range(0, w - 1)),
-                                        xt::view(image2d, xt::range(1, h), xt::range(1, w))));
+            /*xt::noalias*/(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(1, w2, 2), 0)) =
+                                   xt::minimum(
+                                           xt::minimum(xt::view(image2d, xt::range(0, h - 1), xt::range(0, w - 1)),
+                                                       xt::view(image2d, xt::range(0, h - 1), xt::range(1, w))),
+                                           xt::minimum(xt::view(image2d, xt::range(1, h), xt::range(0, w - 1)),
+                                                       xt::view(image2d, xt::range(1, h), xt::range(1, w))));
+            /*xt::noalias*/(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(1, w2, 2), 1)) =
+                                   xt::maximum(
+                                           xt::maximum(xt::view(image2d, xt::range(0, h - 1), xt::range(0, w - 1)),
+                                                       xt::view(image2d, xt::range(0, h - 1), xt::range(1, w))),
+                                           xt::maximum(xt::view(image2d, xt::range(1, h), xt::range(0, w - 1)),
+                                                       xt::view(image2d, xt::range(1, h), xt::range(1, w))));
             return plain_map;
         }
 
@@ -425,7 +427,9 @@ namespace hg {
             }
             array_1d<value_type> padded_vertices = array_1d<value_type>::from_shape({(w + 2) * (h + 2)});
             auto padded_image = xt::reshape_view(padded_vertices, {h + 2, w + 2});
-            xt::noalias(xt::view(padded_image, xt::range(1, h + 1), xt::range(1, w + 1))) = image;
+
+            // TODO noalias when xtensor is fixed
+            /*xt::noalias*/(xt::view(padded_image, xt::range(1, h + 1), xt::range(1, w + 1))) = image;
             xt::view(padded_image, 0, xt::all()) = pad_value;
             xt::view(padded_image, h + 1, xt::all()) = pad_value;
             xt::view(padded_image, xt::all(), 0) = pad_value;

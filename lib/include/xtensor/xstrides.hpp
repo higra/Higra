@@ -11,9 +11,13 @@
 
 #include <cstddef>
 #include <functional>
+#include <limits>
 #include <numeric>
 
+#include <xtl/xsequence.hpp>
+
 #include "xexception.hpp"
+#include "xshape.hpp"
 #include "xtensor_forward.hpp"
 
 namespace xt
@@ -73,6 +77,9 @@ namespace xt
      * broadcast functions *
      ***********************/
 
+    template <class S, class size_type>
+    S uninitialized_shape(size_type size);
+
     template <class S1, class S2>
     bool broadcast_shape(const S1& input, S2& output);
 
@@ -85,6 +92,20 @@ namespace xt
 
     template <layout_type L>
     struct check_strides_overlap;
+
+    /**********************************
+     * check bounds, without throwing *
+     **********************************/
+
+    template <class S, class... Args>
+    bool in_bounds(const S& shape, Args&... args);
+
+    /********************************
+     * apply periodicity to indices *
+     *******************************/
+
+    template <class S, class... Args>
+    void normalize_periodic(const S& shape, Args&... args);
 
     /********************************************
      * utility functions for strided containers *
@@ -334,8 +355,16 @@ namespace xt
         return detail::compute_strides<L>(shape, l, strides, &backstrides);
     }
 
+    template <class T1, class T2>
+    inline bool stride_match_condition(const T1& stride, const T2& shape, const T1& data_size, bool zero_strides)
+    {
+        return (shape == T2(1) && stride == T1(0) && zero_strides) || (stride == data_size);
+    }
+
+    // zero_strides should be true when strides are set to 0 if the corresponding dimensions are 1
     template <class shape_type, class strides_type>
-    inline bool do_strides_match(const shape_type& shape, const strides_type& strides, layout_type l)
+    inline bool do_strides_match(const shape_type& shape, const strides_type& strides,
+                                 layout_type l, bool zero_strides)
     {
         using value_type = typename strides_type::value_type;
         value_type data_size = 1;
@@ -343,7 +372,7 @@ namespace xt
         {
             for (std::size_t i = strides.size(); i != 0; --i)
             {
-                if ((shape[i - 1] == 1 && strides[i - 1] != 0) || (shape[i - 1] != 1 && strides[i - 1] != data_size))
+                if (!stride_match_condition(strides[i - 1], shape[i - 1], data_size, zero_strides))
                 {
                     return false;
                 }
@@ -355,7 +384,7 @@ namespace xt
         {
             for (std::size_t i = 0; i < strides.size(); ++i)
             {
-                if ((shape[i] != 1 && strides[i] != data_size) || (shape[i] == 1 && strides[i] != 0))
+                if (!stride_match_condition(strides[i], shape[i], data_size, zero_strides))
                 {
                     return false;
                 }
@@ -473,6 +502,14 @@ namespace xt
         return ravel_from_strides(static_cast<strides_value_type>(index), strides);
     }
 
+    template <class S, class stype>
+    inline S uninitialized_shape(stype size)
+    {
+        using value_type = typename S::value_type;
+        using size_type = typename S::size_type;
+        return xtl::make_sequence<S>(static_cast<size_type>(size), std::numeric_limits<value_type>::max());
+    }
+
     template <class S1, class S2>
     inline bool broadcast_shape(const S1& input, S2& output)
     {
@@ -488,14 +525,14 @@ namespace xt
         }
         for (; input_index != 0; --input_index, --output_index)
         {
-            // First case: output = (0, 0, ...., 0)
+            // First case: output = (MAX, MAX, ...., MAX)
             // output is a new shape that has not been through
             // the broadcast process yet; broadcast is trivial
-            if (output[output_index - 1] == 0)
+            if (output[output_index - 1] == std::numeric_limits<value_type>::max())
             {
                 output[output_index - 1] = static_cast<value_type>(input[input_index - 1]);
             }
-            // Second case: output has been initialized to 1. Broacast is trivial
+            // Second case: output has been initialized to 1. Broadcast is trivial
             // only if input is 1 to.
             else if (output[output_index - 1] == 1)
             {
@@ -565,7 +602,7 @@ namespace xt
             size_type index = 0;
 
             // This check is necessary as column major "broadcasting" is still
-            // peformed in a row major fashion
+            // performed in a row major fashion
             if (s1.size() != s2.size())
                 return 0;
 
@@ -581,6 +618,64 @@ namespace xt
             return index;
         }
     };
+
+    namespace detail
+    {
+        template <class S, std::size_t dim>
+        inline bool check_in_bounds_impl(const S&)
+        {
+            return true;
+        }
+
+        template <class S, std::size_t dim, class T, class... Args>
+        inline bool check_in_bounds_impl(const S& shape, T& arg, Args&... args)
+        {
+            if (sizeof...(Args) + 1 > shape.size())
+            {
+                return check_in_bounds_impl<S, dim>(shape, args...);
+            }
+            else
+            {
+                return arg >= T(0) && arg < static_cast<T>(shape[dim]) && check_in_bounds_impl<S, dim + 1>(shape, args...);
+            }
+        }
+    }
+
+    template <class S, class... Args>
+    inline bool check_in_bounds(const S& shape, Args&... args)
+    {
+        return detail::check_in_bounds_impl<S, 0>(shape, args...);
+    }
+
+    namespace detail
+    {
+        template <class S, std::size_t dim>
+        inline void normalize_periodic_impl(const S&)
+        {
+        }
+
+        template <class S, std::size_t dim, class T, class... Args>
+        inline void normalize_periodic_impl(const S& shape, T& arg, Args&... args)
+        {
+            if (sizeof...(Args) + 1 > shape.size())
+            {
+                normalize_periodic_impl<S, dim>(shape, args...);
+            }
+            else
+            {
+                T n = static_cast<T>(shape[dim]);
+                arg = (n + (arg%n)) % n;
+                normalize_periodic_impl<S, dim + 1>(shape, args...);
+            }
+        }
+    }
+
+    template <class S, class... Args>
+    inline void normalize_periodic(const S& shape, Args&... args)
+    {
+        check_dimension(shape, args...);
+        detail::normalize_periodic_impl<S, 0>(shape, args...);
+    }
 }
 
 #endif

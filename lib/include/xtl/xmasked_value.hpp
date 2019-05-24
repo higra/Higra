@@ -7,74 +7,19 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#ifndef XTENSOR_XMASKED_VALUE_HPP
-#define XTENSOR_XMASKED_VALUE_HPP
+#ifndef XTL_XMASKED_VALUE_HPP
+#define XTL_XMASKED_VALUE_HPP
 
-#include "xtl/xoptional.hpp"
+#include "xmasked_value_meta.hpp"
+#include "xtype_traits.hpp"
 
-#include "xutils.hpp"
-
-namespace xt
-{
-    template <class T, class B = bool>
-    class xmasked_value;
-}
-
-// Monkey patch on the xtl::common_optional_t implementation
 namespace xtl
-{
-    namespace detail
-    {
-        template <class T1, class T2, class B2>
-        struct common_optional_impl<T1, xt::xmasked_value<T2, B2>>
-            : common_optional_impl<T1, T2>
-        {
-        };
-
-        template <class T1, class B1, class T2>
-        struct common_optional_impl<xt::xmasked_value<T1, B1>, T2>
-            : common_optional_impl<T1, T2>
-        {
-        };
-    }
-}
-
-namespace xt
 {
     template <class T>
     inline xmasked_value<T, bool> masked() noexcept
     {
         return xmasked_value<T, bool>(T(0), false);
     }
-
-    namespace detail
-    {
-        template <class E>
-        struct is_xmasked_value_impl : std::false_type
-        {
-        };
-
-        template <class T, class B>
-        struct is_xmasked_value_impl<xmasked_value<T, B>> : std::true_type
-        {
-        };
-    }
-
-    template <class E>
-    using is_xmasked_value = detail::is_xmasked_value_impl<E>;
-
-    template <class E, class R>
-    using disable_xmasked_value = std::enable_if_t<!is_xmasked_value<E>::value, R>;
-
-    template <class E, class R>
-    using disable_xoptional_like = std::enable_if_t<!xtl::is_xoptional<E>::value && !is_xmasked_value<E>::value, R>;
-
-    template <class E1, class E2, class R = void>
-    using disable_both_xoptional_like = std::enable_if_t<
-        !xtl::is_xoptional<E1>::value && !is_xmasked_value<E1>::value &&
-            !xtl::is_xoptional<E2>::value && !is_xmasked_value<E2>::value,
-        R
-    >;
 
     /****************************
     * xmasked_value declaration *
@@ -99,7 +44,7 @@ namespace xt
         explicit constexpr xmasked_value();
 
         inline operator value_type() {
-            return convert<value_type>();
+            return m_value;
         }
 
         std::add_lvalue_reference_t<T> value() & noexcept;
@@ -115,8 +60,8 @@ namespace xt
         template <class T1, class B1>
         bool equal(const xmasked_value<T1, B1>& rhs) const noexcept;
 
-        template <class T1>
-        auto equal(const T1& rhs) const noexcept -> disable_xmasked_value<T1, bool>;
+        template <class T1, XTL_DISALLOW(is_xmasked_value<T1>)>
+        bool equal(const T1& rhs) const noexcept;
 
         template <class T1, class B1>
         void swap(xmasked_value<T1, B1>& other);
@@ -155,12 +100,6 @@ namespace xt
 #undef DEFINE_ASSIGN_OPERATOR
 
     private:
-
-        template <class V>
-        std::enable_if_t<xtl::is_xoptional<V>::value, V> convert() const;
-
-        template <class V>
-        std::enable_if_t<!xtl::is_xoptional<V>::value, V> convert() const;
 
         value_type m_value;
         flag_type m_visible;
@@ -258,8 +197,8 @@ namespace xt
     }
 
     template <class T, class B>
-    template <class T1>
-    inline auto xmasked_value<T, B>::equal(const T1& rhs) const noexcept -> disable_xmasked_value<T1, bool>
+    template <class T1, check_disallow<is_xmasked_value<T1>>>
+    inline bool xmasked_value<T, B>::equal(const T1& rhs) const noexcept
     {
         return m_visible && m_value == rhs;
     }
@@ -273,46 +212,20 @@ namespace xt
         swap(m_visible, other.m_visible);
     }
 
-    template <class T, class B>
-    template <class V>
-    inline auto xmasked_value<T, B>::convert() const -> std::enable_if_t<xtl::is_xoptional<V>::value, V>
-    {
-        return V(m_value.value(), m_value.has_value() && visible());
-    }
-
-    template <class T, class B>
-    template <class V>
-    inline auto xmasked_value<T, B>::convert() const -> std::enable_if_t<!xtl::is_xoptional<V>::value, V>
-    {
-        return m_value;
-    }
-
     template <class T1, class B1, class T2, class B2>
     inline bool operator==(const xmasked_value<T1, B1>& lhs, const xmasked_value<T2, B2>& rhs) noexcept
     {
         return lhs.equal(rhs);
     }
 
-    template <class T1, class B1, class T2, class B2>
-    inline bool operator==(const xmasked_value<T1, B1>& lhs, const xtl::xoptional<T2, B2>& rhs) noexcept
-    {
-        return lhs.equal(rhs);
-    }
-
-    template <class T1, class B1, class T2, class B2>
-    inline bool operator==(const xtl::xoptional<T1, B1>& lhs, const xmasked_value<T2, B2>& rhs) noexcept
+    template <class T1, class T2, class B2, XTL_REQUIRES(negation<is_xmasked_value<T1>>)>
+    inline bool operator==(const T1& lhs, const xmasked_value<T2, B2>& rhs) noexcept
     {
         return rhs.equal(lhs);
     }
 
-    template <class T1, class T2, class B2>
-    inline auto operator==(const T1& lhs, const xmasked_value<T2, B2>& rhs) noexcept -> disable_xoptional_like<T1, bool>
-    {
-        return rhs.equal(lhs);
-    }
-
-    template <class T1, class B1, class T2>
-    inline auto operator==(const xmasked_value<T1, B1>& lhs, const T2& rhs) noexcept -> disable_xoptional_like<T2, bool>
+    template <class T1, class B1, class T2, XTL_REQUIRES(negation<is_xmasked_value<T2>>)>
+    inline bool operator==(const xmasked_value<T1, B1>& lhs, const T2& rhs) noexcept
     {
         return lhs.equal(rhs);
     }
@@ -323,26 +236,14 @@ namespace xt
         return !lhs.equal(rhs);
     }
 
-    template <class T1, class B1, class T2, class B2>
-    inline bool operator!=(xmasked_value<T1, B1> lhs, xtl::xoptional<T2, B2> rhs) noexcept
-    {
-        return !lhs.equal(rhs);
-    }
-
-    template <class T1, class B1, class T2, class B2>
-    inline bool operator!=(xtl::xoptional<T1, B1> lhs, xmasked_value<T2, B2> rhs) noexcept
+    template <class T1, class T2, class B2, XTL_REQUIRES(negation<is_xmasked_value<T1>>)>
+    inline bool operator!=(const T1& lhs, const xmasked_value<T2, B2>& rhs) noexcept
     {
         return !rhs.equal(lhs);
     }
 
-    template <class T1, class T2, class B2>
-    inline auto operator!=(const T1& lhs, const xmasked_value<T2, B2>& rhs) noexcept -> disable_xoptional_like<T1, bool>
-    {
-        return !rhs.equal(lhs);
-    }
-
-    template <class T1, class B1, class T2>
-    inline auto operator!=(const xmasked_value<T1, B1>& lhs, const T2& rhs) noexcept -> disable_xoptional_like<T2, bool>
+    template <class T1, class B1, class T2, XTL_REQUIRES(negation<is_xmasked_value<T2>>)>
+    inline bool operator!=(const xmasked_value<T1, B1>& lhs, const T2& rhs) noexcept
     {
         return !lhs.equal(rhs);
     }
@@ -370,10 +271,11 @@ namespace xt
     }
 
     template <class T, class B>
-    inline auto operator!(const xmasked_value<T, B>& e) noexcept
-        -> xmasked_value<bool>
+    inline auto operator!(const xmasked_value<T, B>& e) noexcept -> xmasked_value<decltype(!e.value())>
     {
-        return e.visible() ? masked_value(!e.value()) : masked<bool>();
+        using return_type = xmasked_value<decltype(!e.value())>;
+        using value_type = typename return_type::value_type;
+        return e.visible() ? return_type(!e.value()) : masked<value_type>();
     }
 
     template <class T, class B, class OC, class OT>
@@ -396,64 +298,32 @@ namespace xt
         lhs.swap(rhs);
     }
 
-#define DEFINE_OPERATOR(OP)                                                                                                                \
-    /* Must be implemented in order to fix ambiguity with operators defined in xoptional */                                                \
-    template <class T1, class B1, class T2, class B2>                                                                                      \
-    inline auto operator OP(const xmasked_value<T1, B1>& e1, const xtl::xoptional<T2, B2>& e2) noexcept                                    \
-        -> std::enable_if_t<xtl::is_xoptional<T1>::value, xmasked_value<xtl::common_optional_t<std::decay_t<T1>, xtl::xoptional<T2, B2>>>> \
-    {                                                                                                                                      \
-        using value_type = xtl::common_optional_t<std::decay_t<T1>, xtl::xoptional<T2, B2>>;                                               \
-        return e1.visible() ? masked_value(e1.value() OP e2) : masked<value_type>();                                                       \
-    }                                                                                                                                      \
-                                                                                                                                           \
-    template <class T1, class B1, class T2, class B2>                                                                                      \
-    inline auto operator OP(const xtl::xoptional<T1, B1>& e1, const xmasked_value<T2, B2>& e2) noexcept                                    \
-        -> std::enable_if_t<xtl::is_xoptional<T2>::value, xmasked_value<xtl::common_optional_t<xtl::xoptional<T1, B1>, std::decay_t<T2>>>> \
-    {                                                                                                                                      \
-        using value_type = xtl::common_optional_t<xtl::xoptional<T1, B1>, std::decay_t<T2>>;                                               \
-        return e2.visible() ? masked_value(e1 OP e2.value()) : masked<value_type>();                                                       \
-    }                                                                                                                                      \
-                                                                                                                                           \
-    template <class T1, class B1, class T2, class B2>                                                                                      \
-    inline auto operator OP(const xmasked_value<T1, B1>& e1, const xmasked_value<T2, B2>& e2) noexcept                                     \
-        -> xmasked_value<xt::promote_type_t<std::decay_t<T1>, std::decay_t<T2>>>                                                           \
-    {                                                                                                                                      \
-        using value_type = xt::promote_type_t<std::decay_t<T1>, std::decay_t<T2>>;                                                         \
-        return e1.visible() && e2.visible() ? masked_value(e1.value() OP e2.value()) : masked<value_type>();                               \
-    }                                                                                                                                      \
-                                                                                                                                           \
-    template <class T1, class B1, class T2>                                                                                                \
-    inline auto operator OP(const xmasked_value<T1, B1>& e1, const T2& e2) noexcept                                                        \
-        -> disable_xoptional_like<T2, xmasked_value<xt::promote_type_t<std::decay_t<T1>, std::decay_t<T2>>>>                               \
-    {                                                                                                                                      \
-        using value_type = xt::promote_type_t<std::decay_t<T1>, std::decay_t<T2>>;                                                         \
-        return e1.visible() ? masked_value(e1.value() OP e2) : masked<value_type>();                                                       \
-    }                                                                                                                                      \
-                                                                                                                                           \
-    template <class T1, class T2, class B2>                                                                                                \
-    inline auto operator OP(const T1& e1, const xmasked_value<T2, B2>& e2) noexcept                                                        \
-        -> disable_xoptional_like<T1, xmasked_value<xt::promote_type_t<std::decay_t<T1>, std::decay_t<T2>>>>                               \
-    {                                                                                                                                      \
-        using value_type = xt::promote_type_t<std::decay_t<T1>, std::decay_t<T2>>;                                                         \
-        return e2.visible() ? masked_value(e1 OP e2.value()) : masked<value_type>();                                                       \
+#define DEFINE_OPERATOR(OP)                                                                                   \
+    template <class T1, class B1, class T2, class B2>                                                         \
+    inline auto operator OP(const xmasked_value<T1, B1>& e1, const xmasked_value<T2, B2>& e2) noexcept        \
+        -> xmasked_value<promote_type_t<std::decay_t<T1>, std::decay_t<T2>>>                                  \
+    {                                                                                                         \
+        using value_type = promote_type_t<std::decay_t<T1>, std::decay_t<T2>>;                                \
+        return e1.visible() && e2.visible() ? masked_value(e1.value() OP e2.value()) : masked<value_type>();  \
+    }                                                                                                         \
+                                                                                                              \
+    template <class T1, class B1, class T2, XTL_REQUIRES(negation<is_xmasked_value<T2>>)>                     \
+    inline auto operator OP(const xmasked_value<T1, B1>& e1, const T2& e2) noexcept                           \
+        -> xmasked_value<promote_type_t<std::decay_t<T1>, std::decay_t<T2>>>                                  \
+    {                                                                                                         \
+        using value_type = promote_type_t<std::decay_t<T1>, std::decay_t<T2>>;                                \
+        return e1.visible() ? masked_value(e1.value() OP e2) : masked<value_type>();                          \
+    }                                                                                                         \
+                                                                                                              \
+    template <class T1, class T2, class B2, XTL_REQUIRES(negation<is_xmasked_value<T1>>)>                     \
+    inline auto operator OP(const T1& e1, const xmasked_value<T2, B2>& e2) noexcept                           \
+        -> xmasked_value<promote_type_t<std::decay_t<T1>, std::decay_t<T2>>>                                  \
+    {                                                                                                         \
+        using value_type = promote_type_t<std::decay_t<T1>, std::decay_t<T2>>;                                \
+        return e2.visible() ? masked_value(e1 OP e2.value()) : masked<value_type>();                          \
     }
 
 #define DEFINE_BOOL_OPERATOR(OP)                                                                           \
-    /* Must be implemented in order to fix ambiguity with operators defined in xoptional */                \
-    template <class T1, class B1, class T2, class B2>                                                      \
-    inline auto operator OP(const xmasked_value<T1, B1>& e1, const xtl::xoptional<T2, B2>& e2) noexcept    \
-        -> std::enable_if_t<xtl::is_xoptional<T1>::value, xmasked_value<xtl::xoptional<bool>>>             \
-    {                                                                                                      \
-        return e1.visible() ? masked_value(e1.value() OP e2) : masked<xtl::xoptional<bool>>();             \
-    }                                                                                                      \
-                                                                                                           \
-    template <class T1, class B1, class T2, class B2>                                                      \
-    inline auto operator OP(const xtl::xoptional<T1, B1>& e1, const xmasked_value<T2, B2>& e2) noexcept    \
-        -> std::enable_if_t<xtl::is_xoptional<T2>::value, xmasked_value<xtl::xoptional<bool>>>             \
-    {                                                                                                      \
-        return e2.visible() ? masked_value(e1 OP e2.value()) : masked<xtl::xoptional<bool>>();             \
-    }                                                                                                      \
-                                                                                                           \
     template <class T1, class B1, class T2, class B2>                                                      \
     inline auto operator OP(const xmasked_value<T1, B1>& e1, const xmasked_value<T2, B2>& e2) noexcept     \
         -> xmasked_value<decltype(e1.value() OP e2.value())>                                               \
@@ -463,16 +333,16 @@ namespace xt
             masked<decltype(e1.value() OP e2.value())>();                                                  \
     }                                                                                                      \
                                                                                                            \
-    template <class T1, class B1, class T2>                                                                \
+    template <class T1, class B1, class T2, XTL_REQUIRES(negation<is_xmasked_value<T2>>)>                  \
     inline auto operator OP(const xmasked_value<T1, B1>& e1, const T2& e2) noexcept                        \
-        -> disable_xoptional_like<T2, xmasked_value<decltype(e1.value() OP e2)>>                           \
+        -> xmasked_value<decltype(e1.value() OP e2)>                                                       \
     {                                                                                                      \
         return e1.visible() ? masked_value(e1.value() OP e2) : masked<decltype(e1.value() OP e2)>();       \
     }                                                                                                      \
                                                                                                            \
-    template <class T1, class T2, class B2>                                                                \
+    template <class T1, class T2, class B2, XTL_REQUIRES(negation<is_xmasked_value<T1>>)>                  \
     inline auto operator OP(const T1& e1, const xmasked_value<T2, B2>& e2) noexcept                        \
-        -> disable_xoptional_like<T1, xmasked_value<decltype(e1 OP e2.value())>>                           \
+        -> xmasked_value<decltype(e1 OP e2.value())>                                                       \
     {                                                                                                      \
         return e2.visible() ? masked_value(e1 OP e2.value()) : masked<decltype(e1 OP e2.value())>();       \
     }

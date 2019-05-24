@@ -112,6 +112,9 @@ namespace xt
     struct xcontainer_inner_types<pytensor<T, N, L>>
     {
         using storage_type = xbuffer_adaptor<T*>;
+        using reference = typename storage_type::reference;
+        using const_reference = typename storage_type::const_reference;
+        using size_type = typename storage_type::size_type;
         using shape_type = std::array<npy_intp, N>;
         using strides_type = shape_type;
         using backstrides_type = shape_type;
@@ -128,7 +131,7 @@ namespace xt
      *
      * pytensor is similar to the xtensor container in that it has a static dimensionality.
      *
-     * Unlike with the pyarray container, pytensor cannot be reshaped with a different number of dimensions
+     * Unlike the pyarray container, pytensor cannot be reshaped with a different number of dimensions
      * and reshapes are not reflected on the Python side. However, pytensor has benefits compared to pyarray
      * in terms of performances. pytensor shapes are stack-allocated which makes iteration upon pytensor
      * faster than with pyarray.
@@ -457,7 +460,7 @@ namespace xt
                        [](auto v) { return v / sizeof(T); });
         adapt_strides(m_shape, m_strides, m_backstrides);
 
-        if (L != layout_type::dynamic && !do_strides_match(m_shape, m_strides, L))
+        if (L != layout_type::dynamic && !do_strides_match(m_shape, m_strides, L, 1))
         {
             throw std::runtime_error("NumPy: passing container with bad strides for layout (is it a view?).");
         }

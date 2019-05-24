@@ -34,7 +34,7 @@ namespace xt
     template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL, class E>
     auto ravel(E&& e);
 
-    template <class E>
+    template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL, class E>
     auto flatten(E&& e);
 
     template <class E>
@@ -115,8 +115,7 @@ namespace xt
                 new_layout = transpose_layout_noexcept(e.layout());
             }
 
-            using view_type = typename select_strided_view<std::decay_t<E>>::template type<xclosure_t<E>, shape_type>;
-            return view_type(std::forward<E>(e), std::move(temp_shape), std::move(temp_strides), get_offset(e), new_layout);
+            return strided_view(std::forward<E>(e), std::move(temp_shape), std::move(temp_strides), get_offset<XTENSOR_DEFAULT_LAYOUT>(e), new_layout);
         }
 
         template <class E, class S>
@@ -145,7 +144,10 @@ namespace xt
         template <class E, class S, class X, std::enable_if_t<!has_data_interface<std::decay_t<E>>::value>* = nullptr>
         inline void compute_transposed_strides(E&&, const S& shape, X& strides)
         {
-            layout_type l = transpose_layout(std::decay_t<E>::static_layout);
+            // In the case where E does not have a data interface, the transposition
+            // makes use of a flat storage adaptor that has layout XTENSOR_DEFAULT_TRAVERSAL
+            // which should be the one inverted.
+            layout_type l = transpose_layout(XTENSOR_DEFAULT_TRAVERSAL);
             compute_strides(shape, l, strides);
         }
     }
@@ -168,8 +170,7 @@ namespace xt
 
         layout_type new_layout = detail::transpose_layout_noexcept(e.layout());
 
-        using view_type = typename select_strided_view<std::decay_t<E>>::template type<xclosure_t<E>, shape_type>;
-        return view_type(std::forward<E>(e), std::move(shape), std::move(strides), detail::get_offset(e), new_layout);
+        return strided_view(std::forward<E>(e), std::move(shape), std::move(strides), detail::get_offset<XTENSOR_DEFAULT_TRAVERSAL>(e), new_layout);
     }
 
     /**
@@ -206,74 +207,8 @@ namespace xt
      * ravel and flatten views *
      ***************************/
 
-    namespace detail
-    {
-        template <class E>
-        inline auto build_ravel_view(E&& e)
-        {
-            using shape_type = static_shape<std::size_t, 1>;
-            using view_type = xstrided_view<xclosure_t<E>, shape_type>;
-
-            shape_type new_shape;
-            get_strides_t<shape_type> new_strides;
-            new_shape[0] = e.size();
-            new_strides[0] = std::size_t(1);
-            std::size_t offset = detail::get_offset(e);
-
-            return view_type(std::forward<E>(e),
-                             std::move(new_shape),
-                             std::move(new_strides),
-                             offset,
-                             layout_type::dynamic);
-        }
-
-        template <class E, class S>
-        inline auto build_ravel_view(E&& e, S&& flatten_strides, layout_type l)
-        {
-            using shape_type = static_shape<std::size_t, 1>;
-            using view_type = xstrided_view<xclosure_t<E>, shape_type, layout_type::dynamic, detail::flat_expression_adaptor<std::remove_reference_t<E>>>;
-
-            shape_type new_shape;
-            get_strides_t<shape_type> new_strides;
-            new_shape[0] = e.size();
-            new_strides[0] = std::size_t(1);
-            std::size_t offset = detail::get_offset(e);
-
-            return view_type(std::forward<E>(e),
-                             std::move(new_shape),
-                             std::move(new_strides),
-                             offset,
-                             layout_type::dynamic,
-                             std::move(flatten_strides),
-                             l);
-        }
-
-        template <bool same_layout>
-        struct ravel_impl
-        {
-            template <class E>
-            inline static auto run(E&& e)
-            {
-                return build_ravel_view(std::forward<E>(e));
-            }
-        };
-
-        template <>
-        struct ravel_impl<false>
-        {
-            template <class E>
-            inline static auto run(E&& e)
-            {
-                // Case where the static layout is either row_major or column major.
-                using shape_type = xindex_type_t<typename std::decay_t<E>::shape_type>;
-                get_strides_t<shape_type> strides;
-                resize_container(strides, e.shape().size());
-                layout_type l = detail::transpose_layout(e.layout());
-                compute_strides(e.shape(), l, strides);
-                return build_ravel_view(std::forward<E>(e), std::move(strides), l);
-            }
-        };
-    }
+    template <class I, class CI>
+    class xiterator_adaptor;
 
     /**
      * Returns a flatten view of the given expression. No copy is made.
@@ -285,19 +220,28 @@ namespace xt
     template <layout_type L, class E>
     inline auto ravel(E&& e)
     {
-        return detail::ravel_impl<std::decay_t<E>::static_layout == L>::run(std::forward<E>(e));
+        using iterator = decltype(e.template begin<L>());
+        using const_iterator = decltype(e.template cbegin<L>());
+        using adaptor_type = xiterator_adaptor<iterator, const_iterator>;
+        constexpr layout_type layout = std::is_pointer<iterator>::value ? L : layout_type::dynamic;
+        using type = xtensor_adaptor<adaptor_type, 1, layout, extension::get_expression_tag_t<E>>;
+        return type(adaptor_type(e.template begin<L>(), e.template cbegin<L>(), e.size()), { e.size() });
     }
 
     /**
-     * Returns a flatten view of the given expression. No copy is made.
-     * The layout used to read the elements is the one of e.
+     * Returns a flatten view of the given expression. No copy is made. This
+     * method is equivalent to ravel and is provided for API sameness with
+     * Numpy.
      * @param e the input expression
+     * @tparam L the layout used to read the elements of e. If no parameter
+     * is specified, XTENSOR_DEFAULT_TRAVERSAL is used.
      * @tparam E the type of the expression
+     * @sa ravel
      */
-    template <class E>
+    template <layout_type L, class E>
     inline auto flatten(E&& e)
     {
-        return ravel<std::decay_t<E>::static_layout>(std::forward<E>(e));
+        return ravel<L>(std::forward<E>(e));
     }
 
     /**
@@ -346,12 +290,11 @@ namespace xt
         dynamic_shape<std::ptrdiff_t> new_strides;
         std::copy_if(e.shape().cbegin(), e.shape().cend(), std::back_inserter(new_shape),
                      [](std::size_t i) { return i != 1; });
-        decltype(auto) old_strides = detail::get_strides(e);
+        decltype(auto) old_strides = detail::get_strides<XTENSOR_DEFAULT_LAYOUT>(e);
         std::copy_if(old_strides.cbegin(), old_strides.cend(), std::back_inserter(new_strides),
                      [](std::ptrdiff_t i) { return i != 0; });
 
-        using view_type = xstrided_view<xclosure_t<E>, dynamic_shape<std::size_t>>;
-        return view_type(std::forward<E>(e), std::move(new_shape), std::move(new_strides), 0, e.layout());
+        return strided_view(std::forward<E>(e), std::move(new_shape), std::move(new_strides), 0, e.layout());
     }
 
     namespace detail
@@ -363,7 +306,7 @@ namespace xt
             dynamic_shape<std::size_t> new_shape(new_dim);
             dynamic_shape<std::ptrdiff_t> new_strides(new_dim);
 
-            decltype(auto) old_strides = detail::get_strides(e);
+            decltype(auto) old_strides = detail::get_strides<XTENSOR_DEFAULT_LAYOUT>(e);
 
             for (std::size_t i = 0, ix = 0; i < e.dimension(); ++i)
             {
@@ -374,8 +317,7 @@ namespace xt
                 }
             }
 
-            using view_type = xstrided_view<xclosure_t<E>, dynamic_shape<std::size_t>>;
-            return view_type(std::forward<E>(e), std::move(new_shape), std::move(new_strides), 0, e.layout());
+            return strided_view(std::forward<E>(e), std::move(new_shape), std::move(new_strides), 0, e.layout());
         }
 
         template <class E, class S>
@@ -575,7 +517,7 @@ namespace xt
         std::copy(e.shape().cbegin(), e.shape().cend(), shape.begin());
 
         get_strides_t<shape_type> strides;
-        decltype(auto) old_strides = detail::get_strides(e);
+        decltype(auto) old_strides = detail::get_strides<XTENSOR_DEFAULT_LAYOUT>(e);
         resize_container(strides, old_strides.size());
         std::copy(old_strides.cbegin(), old_strides.cend(), strides.begin());
 

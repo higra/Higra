@@ -13,7 +13,7 @@
 #include <utility>
 
 #include "xassign.hpp"
-#include "xexpression.hpp"
+#include "xexpression_traits.hpp"
 
 namespace xt
 {
@@ -641,7 +641,7 @@ namespace xt
             using index_type = xindex_type_t<typename xfunction<F, R, CT...>::shape_type>;
             using size_type = typename index_type::size_type;
             size_type size = rhs.dimension();
-            index_type shape = xtl::make_sequence<index_type>(size, size_type(0));
+            index_type shape = uninitialized_shape<index_type>(size);
             bool trivial_broadcast = rhs.broadcast_shape(shape, true);
             return trivial_broadcast;
         }
@@ -665,6 +665,21 @@ namespace xt
         return this->derived_cast();
     }
 
+    namespace xview_semantic_detail
+    {
+        template <class D>
+        auto get_begin(D&& lhs, std::true_type)
+        {
+            return lhs.storage_begin();
+        }
+
+        template <class D>
+        auto get_begin(D&& lhs, std::false_type)
+        {
+            return lhs.begin();
+        }
+    }
+
     template <class D>
     template <class E, class F>
     inline auto xview_semantic<D>::scalar_computed_assign(const E& e, F&& f) -> derived_type&
@@ -672,7 +687,7 @@ namespace xt
         D& d = this->derived_cast();
 
         using size_type = typename D::size_type;
-        auto dst = d.begin();
+        auto dst = xview_semantic_detail::get_begin(d, std::integral_constant<bool, D::contiguous_layout>());
         for (size_type i = d.size(); i > 0; --i)
         {
             *dst = f(*dst, e);

@@ -455,6 +455,30 @@ namespace xt
         }
 #endif
     }
+
+#if defined(__GNUC__) && !defined(__clang__)
+    namespace workaround
+    {
+        // Fixes "undefined symbol" issues
+        inline void long_long_allocator()
+        {
+            std::allocator<long long> a;
+            std::allocator<unsigned long long> b;
+            std::allocator<double> c;
+            std::allocator<std::complex<double>> d;
+            std::allocator<unsigned short> e;
+            std::allocator<short> f;
+            std::allocator<float> g;
+            std::allocator<unsigned int> h;
+            std::allocator<int> i;
+            std::allocator<unsigned char> j;
+            std::allocator<char> k;
+            std::allocator<unsigned long> l;
+            std::allocator<long> m;
+            std::allocator<bool> n;
+        }
+    }
+#endif
 }
 
 #endif
