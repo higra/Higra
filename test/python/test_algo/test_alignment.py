@@ -25,12 +25,12 @@ class TestAlignement(unittest.TestCase):
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2), dtype=np.int32)
         
         sm = aligner.align_hierarchy(t, altitudes)
-        sm_k = hg.graph_4_adjacency_2_khalimsky(sm, g, (3, 3))
+        sm_k = hg.graph_4_adjacency_2_khalimsky(g, sm, (3, 3))
 
         sm_coarse = np.asarray((2, 0, 0, 1, 1, 2, 0, 0, 0, 0, 2, 0), dtype=np.int32)
         
         sm2 = aligner.align_hierarchy(g, sm_coarse)
-        sm2_k = hg.graph_4_adjacency_2_khalimsky(sm2, g, (3, 3))
+        sm2_k = hg.graph_4_adjacency_2_khalimsky(g, sm2, (3, 3))
         
         sm_k_ref = np.asarray(((0, 2, 0, 1, 0),
                                (0, 2, 1, 1, 0),

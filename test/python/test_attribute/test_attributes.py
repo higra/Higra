@@ -59,9 +59,8 @@ class TestAttributes(unittest.TestCase):
 
         g = hg.get_4_adjacency_graph((3, 3))
         edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
-        hg.CptEdgeWeightedGraph.link(edge_weights, g)
 
-        return hg.bpt_canonical(edge_weights)
+        return hg.bpt_canonical(g, edge_weights)
 
     def setUp(self):
         hg.clear_all_attributes()
@@ -84,7 +83,7 @@ class TestAttributes(unittest.TestCase):
 
         ref_area = (1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 6)
 
-        tree, altitudes = hg.bpt_canonical(edge_weights, g)
+        tree, altitudes = hg.bpt_canonical(g, edge_weights)
         area = hg.attribute_area(tree)
         self.assertTrue(np.all(ref_area == area))
 
@@ -96,7 +95,7 @@ class TestAttributes(unittest.TestCase):
         tree, altitudes = TestAttributes.get_test_tree()
 
         ref_attribute = [0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 4, 8, 2, 9, 12, 28, 36]
-        attribute = hg.attribute_volume(altitudes)
+        attribute = hg.attribute_volume(tree, altitudes)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_lca_map(self):
@@ -118,9 +117,9 @@ class TestAttributes(unittest.TestCase):
         vertex_labels = np.asarray(((0, 1, 1),
                                     (0, 2, 2),
                                     (3, 2, 4)))
-        rag = hg.make_region_adjacency_graph_from_labelisation(vertex_labels, g)
+        rag = hg.make_region_adjacency_graph_from_labelisation(g, vertex_labels)
         edge_weights = np.asarray((1, 5, 4, 3, 6, 2))
-        tree, altitudes = hg.bpt_canonical(edge_weights, rag)
+        tree, altitudes = hg.bpt_canonical(rag, edge_weights)
 
         ref_attribute = [0, 0, 0, 0, 0, 1, 2, 1, 4]
         attribute = hg.attribute_frontier_length(tree)
@@ -140,9 +139,9 @@ class TestAttributes(unittest.TestCase):
         vertex_labels = np.asarray(((0, 1, 1),
                                     (0, 2, 2),
                                     (3, 2, 4)))
-        rag = hg.make_region_adjacency_graph_from_labelisation(vertex_labels, g)
+        rag = hg.make_region_adjacency_graph_from_labelisation(g, vertex_labels)
         rag_edge_weights = np.asarray((1, 5, 4, 3, 6, 2))
-        tree, altitudes = hg.bpt_canonical(rag_edge_weights, rag)
+        tree, altitudes = hg.bpt_canonical(rag, rag_edge_weights)
         # tree is [5 5 6 7 6 7 8 8 8]
         edge_weights = np.asarray((1, 6, 2, 6, 1, 1, 5, 4, 5, 3, 1, 1), dtype=np.float64)
 
@@ -194,9 +193,9 @@ class TestAttributes(unittest.TestCase):
         vertex_labels = np.asarray(((0, 1, 1),
                                     (0, 2, 2),
                                     (3, 2, 4)))
-        rag = hg.make_region_adjacency_graph_from_labelisation(vertex_labels, g)
+        rag = hg.make_region_adjacency_graph_from_labelisation(g, vertex_labels)
         edge_weights = np.asarray((1, 5, 4, 3, 6, 2))
-        tree, altitudes = hg.bpt_canonical(edge_weights, rag)
+        tree, altitudes = hg.bpt_canonical(rag, edge_weights)
 
         ref_attribute = [3, 3, 6, 2, 2, 4, 4, 4, 0]
         attribute = hg.attribute_perimeter_length(tree)
@@ -261,7 +260,7 @@ class TestAttributes(unittest.TestCase):
         g = hg.get_4_adjacency_graph((2, 3))
         vertex_labels = np.asarray(((1, 2, 2),
                                     (3, 3, 3)))
-        rag = hg.make_region_adjacency_graph_from_labelisation(vertex_labels, g)
+        rag = hg.make_region_adjacency_graph_from_labelisation(g, vertex_labels)
         ref = np.asarray((1, 1, 2))
         res = hg.attribute_edge_length(rag)
         self.assertTrue(np.allclose(ref, res))
@@ -285,7 +284,7 @@ class TestAttributes(unittest.TestCase):
         g = hg.get_4_adjacency_graph((2, 3))
         vertex_labels = np.asarray(((1, 2, 2),
                                     (3, 3, 3)))
-        rag = hg.make_region_adjacency_graph_from_labelisation(vertex_labels, g)
+        rag = hg.make_region_adjacency_graph_from_labelisation(g, vertex_labels)
         ref = np.asarray((2, 3, 3))
         res = hg.attribute_vertex_perimeter(rag)
         self.assertTrue(np.allclose(ref, res))

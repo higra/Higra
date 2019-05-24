@@ -18,9 +18,8 @@ class TestHorizontalCuts(unittest.TestCase):
     def test_horizontal_cut_explorer_indexed(self):
         tree = hg.Tree((11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18))
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3))
-        hg.CptValuedHierarchy.link(altitudes, tree)
 
-        hch = hg.HorizontalCutExplorer(altitudes)
+        hch = hg.HorizontalCutExplorer(tree, altitudes)
 
         self.assertTrue(hch.num_cuts() == 4)
         cut_nodes = (
@@ -39,9 +38,8 @@ class TestHorizontalCuts(unittest.TestCase):
     def test_horizontal_cut_explorer_altitudes(self):
         tree = hg.Tree((11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18))
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3))
-        hg.CptValuedHierarchy.link(altitudes, tree)
 
-        hch = hg.HorizontalCutExplorer(altitudes)
+        hch = hg.HorizontalCutExplorer(tree, altitudes)
 
         self.assertTrue(hch.num_cuts() == 4)
         cut_nodes = (
@@ -59,9 +57,8 @@ class TestHorizontalCuts(unittest.TestCase):
     def test_horizontal_cut_explorer_num_regions(self):
         tree = hg.Tree((11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18))
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3))
-        hg.CptValuedHierarchy.link(altitudes, tree)
 
-        hch = hg.HorizontalCutExplorer(altitudes)
+        hch = hg.HorizontalCutExplorer(tree, altitudes)
 
         self.assertTrue(hch.num_cuts() == 4)
         cut_nodes = (
@@ -80,9 +77,8 @@ class TestHorizontalCuts(unittest.TestCase):
         tree = hg.Tree((11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18))
         hg.CptHierarchy.link(tree, g)
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3))
-        hg.CptValuedHierarchy.link(altitudes, tree)
 
-        hch = hg.HorizontalCutExplorer(altitudes)
+        hch = hg.HorizontalCutExplorer(tree, altitudes)
 
         cut_nodes = (
             (18,),
@@ -97,7 +93,7 @@ class TestHorizontalCuts(unittest.TestCase):
         ref_lbls = (17, 17, 17, 17, 17, 17, 13, 13, 13, 14, 14)
         self.assertTrue(np.all(lbls == ref_lbls))
 
-        rec = c.reconstruct_leaf_data(altitudes)
+        rec = c.reconstruct_leaf_data(tree, altitudes)
         ref_rec = (2, 2, 2, 2, 2, 2, 0, 0, 0, 1, 1)
         self.assertTrue(np.all(rec == ref_rec))
 
@@ -110,9 +106,8 @@ class TestHorizontalCuts(unittest.TestCase):
         tree = hg.Tree((4, 4, 5, 6, 5, 6, 6))
         hg.CptHierarchy.link(tree, g)
         altitudes = np.asarray((0, 0, 0, 0, 1, 2, 3))
-        hg.CptValuedHierarchy.link(altitudes, tree)
 
-        hch = hg.HorizontalCutExplorer(altitudes)
+        hch = hg.HorizontalCutExplorer(tree, altitudes)
 
         c = hch.horizontal_cut_from_num_regions(3)
 
@@ -121,20 +116,19 @@ class TestHorizontalCuts(unittest.TestCase):
         ref_lbls = np.array((0, 0, 1, 2))
         self.assertTrue(hg.is_in_bijection(lbls[:], ref_lbls))
 
-        vweights = c.reconstruct_leaf_data(altitudes)
+        vweights = c.reconstruct_leaf_data(tree, altitudes)
         ref_vweights = np.array(((1, 1), (0, 0)))
         self.assertTrue(np.all(vweights == ref_vweights))
 
     def test_horizontal_cut_nodes_rag_delinearization(self):
         g = hg.get_4_adjacency_graph((2, 2))
         labels = np.array((0, 0, 1, 2))
-        rag = hg.make_region_adjacency_graph_from_labelisation(labels, g)
+        rag = hg.make_region_adjacency_graph_from_labelisation(g, labels)
         tree = hg.Tree((3, 3, 4, 4, 4))
         hg.CptHierarchy.link(tree, rag)
         altitudes = np.asarray((0, 0, 0, 1, 2))
-        hg.CptValuedHierarchy.link(altitudes, tree)
 
-        hch = hg.HorizontalCutExplorer(altitudes)
+        hch = hg.HorizontalCutExplorer(tree, altitudes)
 
         c = hch.horizontal_cut_from_num_regions(2)
 
@@ -143,7 +137,7 @@ class TestHorizontalCuts(unittest.TestCase):
         ref_lbls = np.array((0, 0, 0, 1))
         self.assertTrue(hg.is_in_bijection(lbls[:], ref_lbls))
 
-        vweights = c.reconstruct_leaf_data(altitudes)
+        vweights = c.reconstruct_leaf_data(tree, altitudes)
         ref_vweights = np.array(((1, 1), (1, 0)))
         self.assertTrue(np.all(vweights == ref_vweights))
 

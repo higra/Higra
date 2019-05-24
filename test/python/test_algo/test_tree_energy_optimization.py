@@ -49,8 +49,8 @@ class TestTreeEnergyOptimization(unittest.TestCase):
         g = hg.get_4_adjacency_graph(shape)
         np.random.seed(2)
         vertex_weights = np.random.rand(*shape)
-        edge_weights = hg.weight_graph(vertex_weights, hg.WeightFunction.L1, g)
-        tree1, altitudes1 = hg.watershed_hierarchy_by_area(edge_weights)
+        edge_weights = hg.weight_graph(g, vertex_weights, hg.WeightFunction.L1)
+        tree1, altitudes1 = hg.watershed_hierarchy_by_area(g, edge_weights)
 
         tree, altitudes = hg.hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree1, vertex_weights,
                                                                                    approximation_piecewise_linear_function=999999)
@@ -58,7 +58,7 @@ class TestTreeEnergyOptimization(unittest.TestCase):
         for a in altitudes:
             if a != 0:
                 res = False
-                cut1 = hg.labelisation_horizontal_cut_from_threshold(altitudes, a)
+                cut1 = hg.labelisation_horizontal_cut_from_threshold(tree, altitudes, a)
                 # du to numerical issues, and especially as we test critical scale level lambda,
                 # we test several very close scale levels
                 for margin in [-1e-8, 0, 1e-8]:

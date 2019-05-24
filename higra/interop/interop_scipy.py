@@ -12,7 +12,6 @@ import higra as hg
 import numpy as np
 
 
-@hg.argument_helper(("altitudes", hg.CptValuedHierarchy))
 def binary_hierarchy_to_scipy_linkage_matrix(tree, altitudes=None, area=None):
     """
     Converts an Higra binary hierarchy to a SciPy linkage matrix.
@@ -56,11 +55,8 @@ def scipy_linkage_matrix_to_binary_hierarchy(linkage_matrix):
         - an array containing the area of the tree nodes
 
     :param linkage_matrix: a 2d array as produced by the `linkage` method of SciPy
-    :return: a tuple (tree, altitudes (Concept :class:`~higra.CptValuedHierarchy`), area (Concept :class:`~higra.CptValuedHierarchy`))
+    :return: a tuple (tree, altitudes, area)
     """
     tree, altitudes, area = hg.cpp._scipy_linkage_matrix_to_binary_hierarchy(linkage_matrix)
-
-    hg.CptValuedHierarchy.link(altitudes, tree)
-    hg.CptValuedHierarchy.link(area, tree)
 
     return tree, altitudes, area

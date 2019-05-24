@@ -43,18 +43,18 @@ def labelisation_optimal_cut_from_energy(tree, energy_attribute, accumulator=hg.
     :param energy_attribute: energy value of each node of the input tree
     :param accumulator: see :class:`~higra.Accumulators`
     :param leaf_graph: leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
-    :return: a labelisation of the leaves of the tree (Concept :class:`~higra.CptVertexLabeledGraph` if `leaf_graph` is not `None`)
+    :return: a labelisation of the leaves of the tree
     """
     labels = hg.cpp._labelisation_optimal_cut_from_energy(tree, energy_attribute, accumulator)
 
     if leaf_graph is not None:
         labels = hg.delinearize_vertex_weights(labels, leaf_graph)
-        hg.CptVertexLabeledGraph.link(labels, leaf_graph)
 
     return labels
 
 
-def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute,
+def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute,
+                                              regularization_attribute,
                                               approximation_piecewise_linear_function=10):
     """
     Transforms the given hierarchy into its optimal energy cut hierarchy for the given energy terms.
@@ -81,7 +81,7 @@ def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, reg
     :param data_fidelity_attribute: 1d array representing the data fidelity energy of each node of the input tree
     :param regularization_attribute: 1d array representing the regularization energy of each node of the input tree
     :param approximation_piecewise_linear_function: Maximum number of pieces used in the approximated piecewise linear model for the energy function (default 10).
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
     data_fidelity_attribute, regularization_attribute = hg.cast_to_common_type(data_fidelity_attribute, regularization_attribute)
     res = hg.cpp._hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute,
@@ -90,13 +90,14 @@ def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, reg
     altitudes = res.altitudes()
 
     hg.CptHierarchy.link(new_tree, hg.CptHierarchy.get_leaf_graph(tree))
-    hg.CptValuedHierarchy.link(altitudes, new_tree)
 
     return new_tree, altitudes
 
 
 @hg.argument_helper(hg.CptHierarchy)
-def hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree, vertex_weights, leaf_graph,
+def hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree,
+                                                          vertex_weights,
+                                                          leaf_graph,
                                                           approximation_piecewise_linear_function=10):
     """
     Transform the given hierarchy into an optimal energy cut hierarchy using the piecewise constant Mumford-Shah energy
@@ -111,7 +112,7 @@ def hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree, vertex_weights, 
     :param vertex_weights: vertex weights of the leaf graph of the input tree
     :param leaf_graph: leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
     :param approximation_piecewise_linear_function: Maximum number of pieces used in the approximated piecewise linear model for the energy function (default 10).
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
     area = hg.attribute_area(tree, leaf_graph=leaf_graph)
     _, variance = hg.attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph)
@@ -182,7 +183,7 @@ def binary_partition_tree_MumfordShah_energy(graph,
         value or 2d array for vectorial values, e.g. RGB pixel values).
         If this argument is not provided, it will default to `vertex_values * vertex_values` which is only correct if a
         vertex contains a single value.
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
     vertex_values = hg.linearize_vertex_weights(vertex_values, graph)
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
@@ -203,6 +204,5 @@ def binary_partition_tree_MumfordShah_energy(graph,
     altitudes = res.altitudes()
 
     hg.CptHierarchy.link(tree, graph)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes

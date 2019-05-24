@@ -26,7 +26,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         edge_weights = np.asarray([2, 3])
 
-        tree, altitudes = hg.bpt_canonical(edge_weights, graph)
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
         mst = hg.CptBinaryHierarchy.construct(tree)["mst"]
 
         self.assertTrue(tree.num_vertices() == 5)
@@ -41,7 +41,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
 
-        tree, altitudes = hg.bpt_canonical(edge_weights, graph)
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
         mst = hg.CptBinaryHierarchy.construct(tree)["mst"]
         mst_edge_map = hg.get_attribute(mst, "mst_edge_map")
 
@@ -69,7 +69,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
 
-        tree, altitudes = hg.quasi_flat_zones_hierarchy(edge_weights, graph)
+        tree, altitudes = hg.quasi_flat_zones_hierarchy(graph, edge_weights)
 
         tref = hg.Tree(np.asarray((6, 7, 8, 6, 7, 8, 7, 9, 9, 9), dtype=np.int64))
 
@@ -83,7 +83,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         criterion = np.equal(altitudes, altitudes[t.parents()])
 
-        new_tree, node_map = hg.simplify_tree(criterion, t)
+        new_tree, node_map = hg.simplify_tree(t, criterion)
 
         # for reference
         new_altitudes = altitudes[node_map]
@@ -102,7 +102,7 @@ class TestHierarchyCore(unittest.TestCase):
         criterion = np.asarray(
             (False, True, True, False, False, False, False, False, True, True, False, False), dtype=np.bool)
 
-        new_tree, node_map = hg.simplify_tree(criterion, t, process_leaves=True)
+        new_tree, node_map = hg.simplify_tree(t, criterion, process_leaves=True)
 
         self.assertTrue(new_tree.num_vertices() == 9)
 

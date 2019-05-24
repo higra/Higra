@@ -67,11 +67,11 @@ def assess_fragmentation_optimal_cut(tree,
     return assesser.fragmentation_curve()
 
 
-@hg.argument_helper(hg.CptValuedHierarchy, ("leaf_graph", hg.CptRegionAdjacencyGraph))
-def assess_fragmentation_horizontal_cut(altitudes,
+@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", hg.CptRegionAdjacencyGraph))
+def assess_fragmentation_horizontal_cut(tree,
+                                        altitudes,
                                         ground_truth,
                                         measure,
-                                        tree,
                                         max_regions=200,
                                         vertex_map=None):
     """
@@ -82,8 +82,8 @@ def assess_fragmentation_horizontal_cut(altitudes,
         * the leaf graph of the hierarchy if it is not a region adjacency graph
         * the original graph of the leaf graph of the hierarchy if it is a region adjacency graph
 
-    :param altitudes: altitudes of the nodes of the input hierarchy (Concept :class:`~higra.CptValuedHierarchy`)
-    :param tree: input hierarchy (deduced from:class:`~higra.CptValuedHierarchy`)
+    :param tree: input hierarchy (Concept :class:`~higra.CptHierarchy`)
+    :param altitudes: altitudes of the nodes of the input hierarchy
     :param ground_truth: labelisation of base graph vertices
     :param measure: evaluation measure to use (see enumeration :class:`~higra.PartitionMeasure`)
     :param max_regions: maximum number of regions in the cuts

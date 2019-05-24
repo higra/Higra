@@ -21,7 +21,7 @@ class TestConstrainedConnectivityHierarchy(unittest.TestCase):
                                            (7, 5, 6, 8),
                                            (2, 3, 4, 1),
                                            (9, 8, 6, 7)), dtype=np.float64)
-        tree, altitudes = hg.component_tree_min_tree(vertex_weights, graph)
+        tree, altitudes = hg.component_tree_min_tree(graph, vertex_weights)
 
         expected_parents = np.asarray((28, 27, 24, 24,
                                        20, 23, 22, 18,
@@ -45,7 +45,7 @@ class TestConstrainedConnectivityHierarchy(unittest.TestCase):
                                      (7, 5, 6, 8),
                                      (2, 3, 4, 1),
                                      (9, 8, 6, 7)), dtype=np.float64)
-        tree, altitudes = hg.component_tree_max_tree(vertex_weights, graph)
+        tree, altitudes = hg.component_tree_max_tree(graph, vertex_weights)
 
         expected_parents = np.asarray((28, 27, 24, 24,
                                        20, 23, 22, 18,
@@ -70,10 +70,10 @@ class TestConstrainedConnectivityHierarchy(unittest.TestCase):
                                      (3, 3, 3, 3, 3),
                                      (-2, -2, -2, 9, 7),
                                      (-1, 0, -2, 8, 9)), dtype=np.float64)
-        tree, altitudes = hg.component_tree_max_tree(vertex_weights, graph)
+        tree, altitudes = hg.component_tree_max_tree(graph, vertex_weights)
         area = hg.attribute_area(tree)
 
-        filtered_weights = hg.reconstruct_leaf_data(altitudes, area <= 4)
+        filtered_weights = hg.reconstruct_leaf_data(tree, altitudes, area <= 4)
 
         expected_filtered_weights = \
             np.asarray(((-5, 2, 2, 3, 3),

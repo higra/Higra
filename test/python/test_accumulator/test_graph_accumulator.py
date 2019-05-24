@@ -17,10 +17,9 @@ class TestGraphAccumulator(unittest.TestCase):
 
     def test_accumulate_graph_vertices(self):
         g = hg.get_4_adjacency_graph((2, 3))
-
         vertex_weights = np.asarray((1, 2, 3, 4, 5, 6))
-        hg.CptVertexWeightedGraph.link(vertex_weights, g)
-        res1 = hg.accumulate_graph_vertices(vertex_weights, hg.Accumulators.max)
+
+        res1 = hg.accumulate_graph_vertices(g, vertex_weights, hg.Accumulators.max)
         ref1 = (4, 5, 6, 5, 6, 5)
         self.assertTrue(np.all(res1 == ref1))
 
@@ -30,8 +29,8 @@ class TestGraphAccumulator(unittest.TestCase):
                                       (4, 3),
                                       (5, 2),
                                       (6, 1)))
-        hg.CptVertexWeightedGraph.link(vertex_weights2, g)
-        res2 = hg.accumulate_graph_vertices(vertex_weights2, hg.Accumulators.sum)
+
+        res2 = hg.accumulate_graph_vertices(g , vertex_weights2, hg.Accumulators.sum)
         ref2 = np.asarray(((6, 8),
                            (9, 12),
                            (8, 6),
@@ -44,8 +43,8 @@ class TestGraphAccumulator(unittest.TestCase):
         g = hg.get_4_adjacency_graph((2, 3))
 
         edge_weights = np.asarray((1, 2, 3, 4, 6, 5, 7))
-        hg.CptEdgeWeightedGraph.link(edge_weights, g)
-        res1 = hg.accumulate_graph_edges(edge_weights, hg.Accumulators.max)
+
+        res1 = hg.accumulate_graph_edges(g , edge_weights, hg.Accumulators.max)
         ref1 = (2, 4, 6, 5, 7, 7)
         self.assertTrue(np.all(res1 == ref1))
 
@@ -56,8 +55,7 @@ class TestGraphAccumulator(unittest.TestCase):
                                     (5, 2),
                                     (6, 1),
                                     (7, 9)))
-        hg.CptEdgeWeightedGraph.link(edge_weights2, g)
-        res2 = hg.accumulate_graph_edges(edge_weights2, hg.Accumulators.sum)
+        res2 = hg.accumulate_graph_edges(g, edge_weights2, hg.Accumulators.sum)
         ref2 = np.asarray(((3, 11),
                            (8, 13),
                            (8, 6),

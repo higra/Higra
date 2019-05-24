@@ -12,6 +12,20 @@ import higra as hg
 import numpy as np
 
 
+def is_iterable(obj):
+    """
+    Test if the given object is iterable
+
+    :param obj: an object
+    :return: True if obj is iterable, False otherwise
+    """
+    try:
+        _ = iter(obj)
+        return True
+    except TypeError:
+        return False
+
+
 def extend_class(cls, method_name=None):
     """
     Add the decorated function to the specified class.
@@ -42,7 +56,7 @@ def normalize_shape(shape):
     return tuple(int(i) for i in shape)
 
 
-@hg.argument_helper(hg.CptVertexWeightedGraph, ("graph", hg.CptGridGraph))
+@hg.argument_helper(("graph", hg.CptGridGraph))
 def linearize_vertex_weights(vertex_weights, graph=None, shape=None):
     if shape is None or graph.num_vertices() == vertex_weights.shape[0]:
         return vertex_weights
@@ -65,7 +79,7 @@ def linearize_vertex_weights(vertex_weights, graph=None, shape=None):
     return vertex_weights.reshape([graph.num_vertices()] + list(v_shape[len(shape):]))
 
 
-@hg.argument_helper(hg.CptVertexWeightedGraph, ("graph", hg.CptGridGraph))
+@hg.argument_helper(("graph", hg.CptGridGraph))
 def delinearize_vertex_weights(vertex_weights, graph=None, shape=None):
     if shape is None:
         return vertex_weights

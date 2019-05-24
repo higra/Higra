@@ -22,7 +22,7 @@ class TestGraphImage(unittest.TestCase):
         ref = np.asarray(((0, 1, 0, 2, 0),
                           (0, 1, 1, 2, 1),
                           (0, 1, 0, 2, 0)))
-        r = hg.graph_4_adjacency_2_khalimsky(data, g)
+        r = hg.graph_4_adjacency_2_khalimsky(g, data)
         self.assertTrue(np.allclose(ref, r))
 
     def test_khalimsky_2_graph_4_adjacency(self):

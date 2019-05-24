@@ -12,8 +12,7 @@ import higra as hg
 import numpy as np
 
 
-@hg.argument_helper(hg.CptVertexWeightedGraph)
-def constrained_connectivity_hierarchy_alpha_omega(vertex_weights, graph):
+def constrained_connectivity_hierarchy_alpha_omega(graph, vertex_weights):
     """
     Construct a alpha-omega constrained connectivity hierarchy based on the given vertex weighted graph.
 
@@ -39,9 +38,9 @@ def constrained_connectivity_hierarchy_alpha_omega(vertex_weights, graph):
 
     The algorithm runs in time :math:`\mathcal{O}(n\log(n))` and proceeds by filtering a quasi-flat zone hierarchy (see :func:`~higra.quasi_flat_zones_hierarchy`)
 
-    :param vertex_weights: edge_weights: edge weights of the input graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
-    :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :param graph: input graph
+    :param vertex_weights: edge_weights: edge weights of the input graph
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
     vertex_weights = hg.linearize_vertex_weights(vertex_weights, graph)
@@ -49,13 +48,13 @@ def constrained_connectivity_hierarchy_alpha_omega(vertex_weights, graph):
         raise ValueError("constrainted_connectivity_hierarchy_alpha_omega only works for scalar vertex weights.")
 
     # QFZ on the L1 distance weighted graph
-    edge_weights = hg.weight_graph(vertex_weights, hg.WeightFunction.L1, graph)
-    tree, altitudes = hg.quasi_flat_zones_hierarchy(edge_weights)
+    edge_weights = hg.weight_graph(graph, vertex_weights, hg.WeightFunction.L1)
+    tree, altitudes = hg.quasi_flat_zones_hierarchy(graph, edge_weights)
     altitude_parents = altitudes[tree.parents()]
 
     # vertex value range inside each region
-    min_value = hg.accumulate_sequential(vertex_weights, hg.Accumulators.min, tree)
-    max_value = hg.accumulate_sequential(vertex_weights, hg.Accumulators.max, tree)
+    min_value = hg.accumulate_sequential(tree, vertex_weights, hg.Accumulators.min)
+    max_value = hg.accumulate_sequential(tree, vertex_weights, hg.Accumulators.max)
     value_range = max_value - min_value
 
     # parent node can't be deleted
@@ -69,16 +68,14 @@ def constrained_connectivity_hierarchy_alpha_omega(vertex_weights, graph):
     altitudes[reparable_node_indices] = value_range[reparable_node_indices]
 
     # final  result construction
-    tree, node_map = hg.simplify_tree(violated_constraints, tree)
+    tree, node_map = hg.simplify_tree(tree, violated_constraints)
     altitudes = altitudes[node_map]
     hg.CptHierarchy.link(tree, graph)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph)
-def constrained_connectivity_hierarchy_strong_connection(edge_weights, graph):
+def constrained_connectivity_hierarchy_strong_connection(graph, edge_weights):
     """
     Construct a strongly constrained connectivity hierarchy based on the given edge weighted graph.
 
@@ -103,19 +100,22 @@ def constrained_connectivity_hierarchy_strong_connection(edge_weights, graph):
 
     The algorithm runs in time :math:`\mathcal{O}(n\log(n))` and proceeds by filtering a quasi-flat zone hierarchy (see :func:`~higra.quasi_flat_zones_hierarchy`)
 
-    :param vertex_weights: edge_weights: edge weights of the input graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
-    :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :param graph: input graph
+    :param vertex_weights: edge_weights: edge weights of the input graph
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
-    tree, altitudes = hg.quasi_flat_zones_hierarchy(edge_weights, graph)
+    tree, altitudes = hg.quasi_flat_zones_hierarchy(graph, edge_weights)
     altitude_parents = altitudes[tree.parents()]
-    
+
     # max edge weights inside each region
     lca_map = hg.attribute_lca_map(tree)
     max_edge_weights = np.zeros((tree.num_vertices(),), dtype=edge_weights.dtype)
     np.maximum.at(max_edge_weights, lca_map, edge_weights)
-    max_edge_weights = hg.accumulate_and_max_sequential(max_edge_weights, max_edge_weights[:tree.num_leaves()],hg.Accumulators.max, tree)
+    max_edge_weights = hg.accumulate_and_max_sequential(tree,
+                                                        max_edge_weights,
+                                                        max_edge_weights[:tree.num_leaves()],
+                                                        hg.Accumulators.max)
 
     # parent node can't be deleted
     altitude_parents[tree.root()] = max(altitudes[tree.root()], max_edge_weights[tree.root()])
@@ -124,13 +124,13 @@ def constrained_connectivity_hierarchy_strong_connection(edge_weights, graph):
     violated_constraints = max_edge_weights >= altitude_parents
 
     # the altitude of nodes with a range greater than their altitude but lower than the one of their parent must be changed
-    reparable_node_indices = np.nonzero(np.logical_and(max_edge_weights > altitudes, max_edge_weights < altitude_parents))
+    reparable_node_indices = np.nonzero(
+        np.logical_and(max_edge_weights > altitudes, max_edge_weights < altitude_parents))
     altitudes[reparable_node_indices] = max_edge_weights[reparable_node_indices]
 
     # final  result construction
-    tree, node_map = hg.simplify_tree(violated_constraints, tree)
+    tree, node_map = hg.simplify_tree(tree, violated_constraints)
     altitudes = altitudes[node_map]
     hg.CptHierarchy.link(tree, graph)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes

@@ -12,8 +12,7 @@ import higra as hg
 import numpy as np
 
 
-@hg.argument_helper(hg.CptVertexLabeledGraph)
-def align_hierarchies(vertex_labels, other_hierarchies, graph):
+def align_hierarchies(graph, vertex_labels, other_hierarchies):
     """
     Align hierarchies boundaries on the boundaries of the provided super-vertex decomposition of a graph
 
@@ -28,50 +27,43 @@ def align_hierarchies(vertex_labels, other_hierarchies, graph):
     The projection of t onto l1 is a hierarchy given by the saliency map sm on g defined by:
            for all {x,y} in edges(g), sm({x,y}) = a(lca_t(s(l1(x), l2), s(l1(y), l2)))
 
-    :param vertex_labels: labeling of the graph vertices into super-vertices (Concept :class:`~higra.CptVertexLabeledGraph`)
-    :param other_hierarchies: a hierarchy or a list of hierarchies: hierarchies can be given either as trees (Concept :class:`~higra.CptValuedHierarchy`) or as saliency maps (Concept :class:`~higra.CptSaliencyMap`), defined on the pixel graph or on a region adjacency graph (Concept :class:`~higra.CptRegionAdjacencyGraph`).
-    :param graph: the domain graph (deduced from :class:`~higra.CptVertexLabeledGraph`)
-    :return: a hierarchy or a list of hierarchies as saliency maps (Concept :class:`~higra.CptSaliencyMap`).
+    :param graph: the domain graph
+    :param vertex_labels: labeling of the graph vertices into super-vertices
+    :param other_hierarchies: a hierarchy or a list of hierarchies: hierarchies can be given either as valued trees (pairs (tree, altitudes) ) or as saliency maps (pairs (graph, edge_weights)), defined on the pixel graph or on a region adjacency graph (Concept :class:`~higra.CptRegionAdjacencyGraph`).
+    :return: a hierarchy or a list of hierarchies as saliency maps
     """
     result = []
     list_input = True
-    if type(other_hierarchies) is np.ndarray:
+    if not hg.is_iterable(other_hierarchies):
+        raise TypeError("bas format for other hierarchies.")
+
+    first_element = other_hierarchies[0]
+    if not hg.is_iterable(first_element):
         list_input = False
         other_hierarchies = (other_hierarchies,)
-    else:
-        try:
-            _ = iter(other_hierarchies)
-        except TypeError:  # other_hierachies is not iterable
-            list_input = False
-            other_hierarchies = (other_hierarchies,)
 
     aligner = hg.HierarchyAligner.from_labelisation(graph, vertex_labels)
 
     for hierarchy in other_hierarchies:
-        r = None
-
-        if hg.CptValuedHierarchy.validate(hierarchy):
-            h = hg.CptValuedHierarchy.construct(hierarchy)
-
+        obj, values = hierarchy
+        if type(obj) is hg.Tree:
+            h = hg.CptHierarchy.construct(obj)
             if hg.CptRegionAdjacencyGraph.validate(h["leaf_graph"]):
                 rag = hg.CptRegionAdjacencyGraph.construct(h["leaf_graph"])
-                r = aligner.align_hierarchy(rag["vertex_map"], h["tree"], h["altitudes"])
+                r = aligner.align_hierarchy(rag["vertex_map"], obj, values)
             else:
-                r = aligner.align_hierarchy(h["tree"], h["altitudes"])
+                r = aligner.align_hierarchy(obj, values)
 
-        elif hg.CptSaliencyMap.validate(hierarchy):
-            h = hg.CptSaliencyMap.construct(hierarchy)
-            if hg.CptRegionAdjacencyGraph.validate(h["graph"]):
-                rag = hg.CptRegionAdjacencyGraph.construct(h["graph"])
-                bpt, altitudes = hg.bpt_canonical(h["edge_weights"])
+        elif type(obj) is hg.UndirectedGraph:
+            if hg.CptRegionAdjacencyGraph.validate(obj):
+                rag = hg.CptRegionAdjacencyGraph.construct(obj)
+                bpt, altitudes = hg.bpt_canonical(values)
                 r = aligner.align_hierarchy(rag["vertex_map"], bpt, altitudes)
             else:
-                r = aligner.align_hierarchy(h["graph"], h["edge_weights"])
+                r = aligner.align_hierarchy(obj, values)
 
         else:
             raise Exception("Hierarchy format not recognized: " + str(hierarchy))
-
-        hg.CptSaliencyMap.link(r, graph)
         result.append(r)
     if not list_input:
         return result[0]

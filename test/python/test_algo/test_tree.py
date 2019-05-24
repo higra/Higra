@@ -29,7 +29,7 @@ class TestAlgorithmTree(unittest.TestCase):
 
         condition = np.asarray((True, False, True, False, True, True, False, False), np.bool_)
 
-        output = hg.reconstruct_leaf_data(input, condition, tree)
+        output = hg.reconstruct_leaf_data(tree, input, condition)
         ref = np.asarray(((8, 1),
                           (2, 7),
                           (7, 2),
@@ -47,9 +47,9 @@ class TestAlgorithmTree(unittest.TestCase):
         ref_t1 = np.asarray((1, 1, 2, 2, 2), dtype=np.int32)
         ref_t2 = np.asarray((1, 1, 1, 1, 1), dtype=np.int32)
 
-        output_t0 = hg.labelisation_horizontal_cut_from_threshold(altitudes, 0, tree)
-        output_t1 = hg.labelisation_horizontal_cut_from_threshold(altitudes, 0.5, tree)
-        output_t2 = hg.labelisation_horizontal_cut_from_threshold(altitudes, 0.7, tree)
+        output_t0 = hg.labelisation_horizontal_cut_from_threshold(tree, altitudes, 0)
+        output_t1 = hg.labelisation_horizontal_cut_from_threshold(tree, altitudes, 0.5)
+        output_t2 = hg.labelisation_horizontal_cut_from_threshold(tree, altitudes, 0.7)
 
         self.assertTrue(hg.is_in_bijection(ref_t0, output_t0))
         self.assertTrue(hg.is_in_bijection(ref_t1, output_t1))
@@ -62,7 +62,7 @@ class TestAlgorithmTree(unittest.TestCase):
 
         ref = np.asarray((0, 1, 2, 2, 2), dtype=np.int32)
 
-        output = hg.labelisation_hierarchy_supervertices(altitudes, tree)
+        output = hg.labelisation_hierarchy_supervertices(tree, altitudes)
 
         self.assertTrue(hg.is_in_bijection(ref, output))
         self.assertTrue(np.amax(output) == 2)
@@ -92,12 +92,12 @@ class TestAlgorithmTree(unittest.TestCase):
     def test_filter_binary_partition_tree(self):
         g = hg.get_4_adjacency_graph((1, 8))
         edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
-        tree, altitudes = hg.bpt_canonical(edge_weights, g)
+        tree, altitudes = hg.bpt_canonical(g, edge_weights)
         area = hg.attribute_area(tree)
-        area_min_children = hg.accumulate_parallel(area, hg.Accumulators.min)
-        res_tree, res_altitudes = hg.filter_binary_partition_tree(altitudes, area_min_children <= 2)
+        area_min_children = hg.accumulate_parallel(tree, area, hg.Accumulators.min)
+        res_tree, res_altitudes = hg.filter_binary_partition_tree(tree, altitudes, area_min_children <= 2)
 
-        sm = hg.saliency(res_altitudes)
+        sm = hg.saliency(res_tree, res_altitudes)
         sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
         self.assertTrue(np.all(sm == sm_ref))
 
@@ -116,7 +116,7 @@ class TestAlgorithmTree(unittest.TestCase):
         tree = hg.Tree(np.asarray((8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14)))
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 4, 6, 5, 7))
 
-        ntree, naltitudes, node_map = hg.sort_hierarchy_with_altitudes(altitudes, tree)
+        ntree, naltitudes, node_map = hg.sort_hierarchy_with_altitudes(tree, altitudes)
 
         ref_par = np.asarray((10, 10, 8, 8, 9, 9, 11, 12, 13, 11, 13, 12, 14, 14, 14))
         self.assertTrue(np.all(ref_par == ntree.parents()))

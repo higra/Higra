@@ -12,8 +12,7 @@ import higra as hg
 import numpy as np
 
 
-@hg.argument_helper(hg.CptVertexWeightedGraph)
-def component_tree_min_tree(vertex_weights, graph):
+def component_tree_min_tree(graph, vertex_weights):
     """
     Computes a Min Tree hierarchy from the input vertex weighted graph.
 
@@ -29,9 +28,9 @@ def component_tree_min_tree(vertex_weights, graph):
     Component Tree Computation with Application to Pattern Recognition in Astronomical Imaging," \
     IEEE ICIP 2007.
 
-    :param vertex_weights: vertex weights of the input graph (Concept :class:`~higra.CptVertexWeightedGraph`)
-    :param graph: input graph (deduced from :class:`~higra.CptVertexWeightedGraph`)
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :param graph: input graph
+    :param vertex_weights: vertex weights of the input graph
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
     vertex_weights = hg.linearize_vertex_weights(vertex_weights, graph)
 
@@ -40,13 +39,11 @@ def component_tree_min_tree(vertex_weights, graph):
     altitudes = res.altitudes()
 
     hg.CptHierarchy.link(tree, graph)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes
 
 
-@hg.argument_helper(hg.CptVertexWeightedGraph)
-def component_tree_max_tree(vertex_weights, graph):
+def component_tree_max_tree(graph, vertex_weights):
     """
     Computes a Max Tree hierarchy from the input vertex weighted graph.
 
@@ -54,9 +51,9 @@ def component_tree_max_tree(vertex_weights, graph):
     The algorithm used in this
     implementation was first described in [3]_.
 
-    :param vertex_weights: vertex weights of the input graph (Concept :class:`~higra.CptVertexWeightedGraph`)
-    :param graph: input graph (deduced from :class:`~higra.CptVertexWeightedGraph`)
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :param graph: input graph
+    :param vertex_weights: vertex weights of the input graph
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
     vertex_weights = hg.linearize_vertex_weights(vertex_weights, graph)
 
@@ -65,6 +62,5 @@ def component_tree_max_tree(vertex_weights, graph):
     altitudes = res.altitudes()
 
     hg.CptHierarchy.link(tree, graph)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes

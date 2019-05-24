@@ -11,13 +11,13 @@
 import higra as hg
 import numpy as np
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", hg.CptGridGraph))
-def graph_4_adjacency_2_khalimsky(edge_weights, graph, shape, add_extra_border=False):
+@hg.argument_helper(hg.CptGridGraph)
+def graph_4_adjacency_2_khalimsky(graph, edge_weights, shape, add_extra_border=False):
     """
     Create a contour image in the Khalimsky grid from a 4 adjacency edge-weighted graph.
 
-    :param edge_weights: edge weights of the graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
-    :param graph: must be a 4 adjacency 2d graph (deduced from :class:`~higra.CptEdgeWeightedGraph`, Concept :class:`~higra.CptGridGraph`)
+    :param graph: must be a 4 adjacency 2d graph (Concept :class:`~higra.CptGridGraph`)
+    :param edge_weights: edge weights of the graph
     :param shape: shape of the graph (deduced from :class:`~higra.CptGridGraph`)
     :param add_extra_border: if False result size is 2 * shape - 1 and 2 * shape + 1 otherwise
     :return: a 2d array
@@ -32,12 +32,11 @@ def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False):
 
     :param khalimsky: a 2d array
     :param extra_border: if False the shape of the Khalimsky image  is 2 * shape - 1 and 2 * shape + 1 otherwise, where shape is the shape of the resulting grid graph
-    :return: a graph (Concept :class:`~higra.CptGridGraph`) and its edge weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :return: a graph (Concept :class:`~higra.CptGridGraph`) and its edge weights
     """
 
     graph, embedding, edge_weights = hg.cpp._khalimsky_2_graph_4_adjacency(khalimsky, extra_border)
 
-    hg.CptEdgeWeightedGraph.link(edge_weights, graph)
     hg.CptGridGraph.link(graph, embedding.shape())
     hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
 

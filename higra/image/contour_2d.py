@@ -33,7 +33,7 @@ def rag_2d_vertex_perimeter_and_edge_length(rag,
     :param epsilon: larger epsilon values will provide stronger contour shapes simplification
     :param relative_epsilon: Is epsilon given in relative or absolute units
     :param min_size: Boundaries elements smaller than min_size will be deleted
-    :return: a pair composed of two 1d arrays: vertex_perimeter (Concept :class:`~higra.VertexWeightedGraph`) and edge_length (Concept :class:`~higra.EdgeWeightedGraph`)
+    :return: a pair composed of two 1d arrays: vertex_perimeter and edge_length
     """
     vertex_map = hg.CptRegionAdjacencyGraph.get_vertex_map(rag)
     edge_map = hg.CptRegionAdjacencyGraph.get_edge_map(rag)
@@ -51,8 +51,5 @@ def rag_2d_vertex_perimeter_and_edge_length(rag,
             epsilon,
             relative_epsilon,
             min_size)
-
-    hg.CptEdgeWeightedGraph.link(edge_length, rag)
-    hg.CptVertexWeightedGraph.link(vertex_perimeter, rag)
 
     return vertex_perimeter, edge_length

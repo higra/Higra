@@ -11,8 +11,9 @@
 import higra as hg
 import numpy as np
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", "vertex_area"))
-def watershed_hierarchy_by_area(edge_weights, graph, vertex_area):
+
+@hg.argument_helper("vertex_area")
+def watershed_hierarchy_by_area(graph, edge_weights, vertex_area):
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
 
     vertex_area = hg.cast_to_dtype(vertex_area, np.float64)
@@ -21,13 +22,12 @@ def watershed_hierarchy_by_area(edge_weights, graph, vertex_area):
     altitudes = res.altitudes()
 
     hg.CptHierarchy.link(tree, graph)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", "vertex_area"))
-def watershed_hierarchy_by_volume(edge_weights, graph, vertex_area):
+@hg.argument_helper("vertex_area")
+def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area):
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
 
     vertex_area = hg.cast_to_dtype(vertex_area, np.float64)
@@ -36,25 +36,21 @@ def watershed_hierarchy_by_volume(edge_weights, graph, vertex_area):
     altitudes = res.altitudes()
 
     hg.CptHierarchy.link(tree, graph)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph)
-def watershed_hierarchy_by_dynamics(edge_weights, graph):
+def watershed_hierarchy_by_dynamics(graph, edge_weights):
     res = hg.cpp._watershed_hierarchy_by_dynamics(graph, edge_weights)
     tree = res.tree()
     altitudes = res.altitudes()
 
     hg.CptHierarchy.link(tree, graph)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph)
-def watershed_hierarchy_by_number_of_parents(edge_weights, graph):
+def watershed_hierarchy_by_number_of_parents(graph, edge_weights):
     """
     See definition in:
 
@@ -63,13 +59,15 @@ def watershed_hierarchy_by_number_of_parents(edge_weights, graph):
         in IEEE Transactions on Image Processing, vol. 27, no. 4, pp. 1676-1688, April 2018.
         doi: 10.1109/TIP.2017.2779604
 
-    :param edge_weights: edge weights of the input graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
-    :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+
+    :param graph: input graph
+    :param edge_weights: edge weights of the input graph
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
+
     def num_parents(bpt_tree, altitudes):
         # construct quasi flat zone hierarchy from input bpt
-        tree, node_map = hg.simplify_tree(altitudes == altitudes[bpt_tree.parents()], bpt_tree)
+        tree, node_map = hg.simplify_tree(bpt_tree, altitudes == altitudes[bpt_tree.parents()])
 
         # determine inner nodes of the min tree, i.e. nodes of qfz having at least one node that is not a leaf
         num_children = tree.num_children(np.arange(tree.num_vertices()))
@@ -78,23 +76,25 @@ def watershed_hierarchy_by_number_of_parents(edge_weights, graph):
         inner_nodes = num_children != num_children_leaf
 
         # go back into bpt space
-        inner_nodes_bpt = np.zeros((bpt_tree.num_vertices(), ), dtype=np.int64)
+        inner_nodes_bpt = np.zeros((bpt_tree.num_vertices(),), dtype=np.int64)
         inner_nodes_bpt[node_map] = inner_nodes
         inner_nodes = inner_nodes_bpt
 
         # count number of min tree inner nodes in the subtree rooted in the given node
-        res = hg.accumulate_and_add_sequential(inner_nodes, inner_nodes[:tree.num_leaves()], hg.Accumulators.sum, bpt_tree)
+        res = hg.accumulate_and_add_sequential(bpt_tree,
+                                               inner_nodes,
+                                               inner_nodes[:tree.num_leaves()],
+                                               hg.Accumulators.sum)
 
         # add 1 to avoid having a zero measure in a minima
         res[bpt_tree.num_leaves():] = res[bpt_tree.num_leaves():] + 1
 
         return res
 
-    return hg.watershed_hierarchy_by_attribute(edge_weights, num_parents, graph)
+    return hg.watershed_hierarchy_by_attribute(graph, edge_weights, num_parents)
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph)
-def watershed_hierarchy_by_attribute(edge_weights, attribute_functor, graph):
+def watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor):
     """
     Compute the watershed hierarchy by a user defined attributes.
 
@@ -115,16 +115,14 @@ def watershed_hierarchy_by_attribute(edge_weights, attribute_functor, graph):
 
         tree = watershed_hierarchy_by_attribute(graph, lambda tree, _: hg.attribute_area(tree))
 
-
-    :param edge_weights: edge weights of the input graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: input graph
+    :param edge_weights: edge weights of the input graph
     :param attribute_functor: function computing the regional attribute
-    :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
     def helper_functor(tree, altitudes):
         hg.CptHierarchy.link(tree, graph)
-        hg.CptValuedHierarchy.link(altitudes, tree)
 
         return attribute_functor(tree, altitudes)
 
@@ -133,13 +131,11 @@ def watershed_hierarchy_by_attribute(edge_weights, attribute_functor, graph):
     altitudes = res.altitudes()
 
     hg.CptHierarchy.link(tree, graph)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph)
-def watershed_hierarchy_by_minima_ordering(edge_weights, minima_ranks, minima_altitudes, graph):
+def watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, minima_altitudes):
     """
     Computes a hierarchical watershed for the given minima ordering.
 
@@ -174,11 +170,11 @@ def watershed_hierarchy_by_minima_ordering(edge_weights, minima_ranks, minima_al
     Note that the first entry of the minima altitudes array, ie. the value at index 0, does not represent a minimum and
     its value should be 0.
 
-    :param edge_weights: edge weights of the input graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: input graph
+    :param edge_weights: edge weights of the input graph
     :param minima_ranks: input graph vertex weights containing the rank of each minima of the input edge weighted graph
     :param minima_altitudes: array mapping each minima rank to its altitude
-    :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
     minima_ranks = hg.cast_to_dtype(minima_ranks, np.uint64)
@@ -188,6 +184,5 @@ def watershed_hierarchy_by_minima_ordering(edge_weights, minima_ranks, minima_al
     altitudes = res.altitudes()
 
     hg.CptHierarchy.link(tree, graph)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes
