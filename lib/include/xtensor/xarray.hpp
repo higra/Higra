@@ -45,6 +45,9 @@ namespace xt
     struct xcontainer_inner_types<xarray_container<EC, L, SC, Tag>>
     {
         using storage_type = EC;
+        using reference = inner_reference_t<storage_type>;
+        using const_reference = typename storage_type::const_reference;
+        using size_type = typename storage_type::size_type;
         using shape_type = SC;
         using strides_type = get_strides_t<shape_type>;
         using backstrides_type = get_strides_t<shape_type>;
@@ -72,7 +75,7 @@ namespace xt
      * @tparam L The layout_type of the container.
      * @tparam SC The type of the containers holding the shape and the strides.
      * @tparam Tag The expression tag.
-     * @sa xarray
+     * @sa xarray, xstrided_container, xcontainer
      */
     template <class EC, layout_type L, class SC, class Tag>
     class xarray_container : public xstrided_container<xarray_container<EC, L, SC, Tag>>,
@@ -151,10 +154,28 @@ namespace xt
      * xarray_adaptor declaration *
      ******************************/
 
+    namespace extension
+    {
+        template <class EC, layout_type L, class SC, class Tag>
+        struct xarray_adaptor_base;
+
+        template <class EC, layout_type L, class SC>
+        struct xarray_adaptor_base<EC, L, SC, xtensor_expression_tag>
+        {
+            using type = xtensor_empty_base;
+        };
+
+        template <class EC, layout_type L, class SC, class Tag>
+        using xarray_adaptor_base_t = typename xarray_adaptor_base<EC, L, SC, Tag>::type;
+    }
+
     template <class EC, layout_type L, class SC, class Tag>
     struct xcontainer_inner_types<xarray_adaptor<EC, L, SC, Tag>>
     {
         using storage_type = std::remove_reference_t<EC>;
+        using reference = inner_reference_t<storage_type>;
+        using const_reference = typename storage_type::const_reference;
+        using size_type = typename storage_type::size_type;
         using shape_type = SC;
         using strides_type = get_strides_t<shape_type>;
         using backstrides_type = get_strides_t<shape_type>;
@@ -185,10 +206,12 @@ namespace xt
      * @tparam L The layout_type of the adaptor.
      * @tparam SC The type of the containers holding the shape and the strides.
      * @tparam Tag The expression tag.
+     * @sa xstrided_container, xcontainer
      */
     template <class EC, layout_type L, class SC, class Tag>
     class xarray_adaptor : public xstrided_container<xarray_adaptor<EC, L, SC, Tag>>,
-                           public xcontainer_semantic<xarray_adaptor<EC, L, SC, Tag>>
+                           public xcontainer_semantic<xarray_adaptor<EC, L, SC, Tag>>,
+                           public extension::xarray_adaptor_base_t<EC, L, SC, Tag>
     {
     public:
 
@@ -197,6 +220,7 @@ namespace xt
         using self_type = xarray_adaptor<EC, L, SC, Tag>;
         using base_type = xstrided_container<self_type>;
         using semantic_base = xcontainer_semantic<self_type>;
+        using extension_base = extension::xarray_adaptor_base_t<EC, L, SC, Tag>;
         using storage_type = typename base_type::storage_type;
         using allocator_type = typename base_type::allocator_type;
         using shape_type = typename base_type::shape_type;

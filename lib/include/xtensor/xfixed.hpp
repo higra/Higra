@@ -234,6 +234,9 @@ namespace xt
         using storage_type = aligned_array<ET, detail::fixed_compute_size<S>::value>;
     #endif
 
+        using reference = typename storage_type::reference;
+        using const_reference = typename storage_type::const_reference;
+        using size_type = typename storage_type::size_type;
         using temporary_type = xfixed_container<ET, S, L, Tag>;
         static constexpr layout_type layout = L;
     };
@@ -367,6 +370,9 @@ namespace xt
     struct xcontainer_inner_types<xfixed_adaptor<EC, S, L, Tag>>
     {
         using storage_type = std::remove_reference_t<EC>;
+        using reference = typename storage_type::reference;
+        using const_reference = typename storage_type::const_reference;
+        using size_type = typename storage_type::size_type;
         using shape_type = S;
         using inner_shape_type = typename S::cast_type;
         using strides_type = get_strides_t<inner_shape_type>;
@@ -774,8 +780,8 @@ namespace xt
     template <class EC, class S, layout_type L, class Tag>
     inline auto xfixed_adaptor<EC, S, L, Tag>::operator=(temporary_type&& rhs) -> self_type&
     {
-        using origin_type = decltype(std::move(rhs.storage()));
-        m_storage = xtl::forward_sequence<storage_type, origin_type>(std::move(rhs.storage()));
+        m_storage.resize(rhs.storage().size());
+        std::copy(rhs.storage().cbegin(), rhs.storage().cend(), m_storage.begin());
         return *this;
     }
 

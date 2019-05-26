@@ -21,34 +21,6 @@
 #include "xstrided_view.hpp"
 #include "xmanipulation.hpp"
 
-namespace xtl
-{
-    template <class CT, class CB>
-    class xoptional;
-
-    template <class... Args>
-    struct at_least_one_xoptional : disjunction<is_xoptional<Args>...>
-    {
-    };
-
-    template <class B, class T1, class T2, XTL_REQUIRES(negation<at_least_one_xoptional<B, T1, T2>>)>
-    inline std::common_type_t<T1, T2> select(const B& cond, const T1& v1, const T2& v2) noexcept
-    {
-        return cond ? v1 : v2;
-    }
-
-    template <class B, class T1, class T2, XTL_REQUIRES(at_least_one_xoptional<B, T1, T2>)>
-    inline common_optional_t<T1, T2> select(const B& cond, const T1& v1, const T2& v2) noexcept
-    {
-        using bool_type = common_optional_t<B>;
-        using return_type = common_optional_t<T1, T2>;
-        bool_type opt_cond(cond);
-        return opt_cond.has_value() ?
-            opt_cond.value() ? return_type(v1) : return_type(v2) :
-            missing<typename return_type::value_type>();
-    }
-}
-
 namespace xt
 {
 
@@ -121,7 +93,7 @@ namespace xt
         struct conditional_ternary
         {
             template <class B>
-            using get_batch_bool = typename xsimd::simd_traits<typename xsimd::revert_simd_traits<B>::type>::bool_type;
+            using get_batch_bool = typename xt_simd::simd_traits<typename xt_simd::revert_simd_traits<B>::type>::bool_type;
 
             template <class B, class A1, class A2>
             constexpr auto operator()(const B& cond, const A1& v1, const A2& v2) const noexcept
@@ -134,7 +106,7 @@ namespace xt
                                    const B& t2,
                                    const B& t3) const noexcept
             {
-                return xsimd::select(t1, t2, t3);
+                return xt_simd::select(t1, t2, t3);
             }
         };
 

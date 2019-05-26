@@ -21,14 +21,6 @@
 #include "xtensor_simd.hpp"
 #include "xutils.hpp"
 
-#ifndef XTENSOR_ALIGNMENT
-    #ifdef XTENSOR_USE_XSIMD
-        #define XTENSOR_ALIGNMENT XSIMD_DEFAULT_ALIGNMENT
-    #else
-        #define XTENSOR_ALIGNMENT 0
-    #endif
-#endif
-
 namespace xt
 {
 
@@ -601,7 +593,7 @@ namespace xt
         };
 
         template <class T, std::size_t A>
-        struct allocator_alignment<xsimd::aligned_allocator<T, A>>
+        struct allocator_alignment<xt_simd::aligned_allocator<T, A>>
         {
             constexpr static std::size_t value = A;
         };
@@ -1325,7 +1317,7 @@ namespace xt
         lhs.swap(rhs);
     }
 
-    #define XTENSOR_SELECT_ALIGN (XTENSOR_ALIGNMENT != 0 ? XTENSOR_ALIGNMENT : alignof(T))
+    #define XTENSOR_SELECT_ALIGN (XTENSOR_DEFAULT_ALIGNMENT != 0 ? XTENSOR_DEFAULT_ALIGNMENT : alignof(T))
 
     template <class X, class T, std::size_t N, class A, bool B>
     struct rebind_container<X, svector<T, N, A, B>>
@@ -1346,7 +1338,7 @@ namespace xt
         // Note: this is for alignment detection. The allocator serves no other purpose than
         //       that of a trait here.
         using allocator_type = std::conditional_t<Align != 0,
-                                                  xsimd::aligned_allocator<T, Align>,
+                                                  xt_simd::aligned_allocator<T, Align>,
                                                   std::allocator<T>>;
     };
 
@@ -1515,7 +1507,44 @@ namespace xt
 #undef GCC4_FALLBACK
 
 
-// Workaround for rebind_container problems on GCC 8  with C++17 enabled
+    template <class T, std::size_t N>
+    inline bool operator==(const const_array<T, N>& lhs, const const_array<T, N>& rhs)
+    {
+        return std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin());
+    }
+
+    template <class T, std::size_t N>
+    inline bool operator!=(const const_array<T, N>& lhs, const const_array<T, N>& rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    template <class T, std::size_t N>
+    inline bool operator<(const const_array<T, N>& lhs, const const_array<T, N>& rhs)
+    {
+        return std::lexicographical_compare(lhs.begin(), lhs.end(),
+                                            rhs.begin(), rhs.end());
+    }
+
+    template <class T, std::size_t N>
+    inline bool operator<=(const const_array<T, N>& lhs, const const_array<T, N>& rhs)
+    {
+        return !(lhs > rhs);
+    }
+
+    template <class T, std::size_t N>
+    inline bool operator>(const const_array<T, N>& lhs, const const_array<T, N>& rhs)
+    {
+        return rhs < lhs;
+    }
+
+    template <class T, std::size_t N>
+    inline bool operator>=(const const_array<T, N>& lhs, const const_array<T, N>& rhs)
+    {
+        return !(lhs < rhs);
+    }
+
+// Workaround for rebind_container problems on GCC 8 with C++17 enabled
 #if defined(__GNUC__) && __GNUC__ > 6 && !defined(__clang__) && __cplusplus >= 201703L
     template <class X, class T, std::size_t N>
     struct rebind_container<X, aligned_array<T, N>>
@@ -1800,8 +1829,8 @@ namespace xt
 // clang warnings here
 
 #if defined(__clang__)
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wmismatched-tags"
+    # pragma clang diagnostic push
+    # pragma clang diagnostic ignored "-Wmismatched-tags"
 #endif
 
 namespace std
@@ -1830,11 +1859,10 @@ namespace std
 }
 
 #if defined(__clang__)
-    #pragma clang diagnostic pop
+    # pragma clang diagnostic pop
 #endif
 
 #undef XTENSOR_CONST
-#undef XTENSOR_ALIGNMENT
 #undef XTENSOR_SELECT_ALIGN
 
 #endif
