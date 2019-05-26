@@ -12,7 +12,7 @@ image:
 
 environment:
   MINICONDA: C:\Miniconda36-x64
-  CIBW_TEST_COMMAND: "python -c \"import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
+  CIBW_TEST_COMMAND: "python -c \"exit(1)\""
   CIBW_BUILD_VERBOSITY: "1"
   CIBW_BEFORE_BUILD: "pip install cmake numpy==1.15.4"
   CIBW_SKIP: "*win32"
