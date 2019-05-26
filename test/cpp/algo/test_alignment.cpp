@@ -98,10 +98,6 @@ namespace test_alignment {
 
         altitudes = xt::index_view(altitudes, node_map_res);
 
-        std::cout << tree_res.parents() << std::endl;
-        std::cout << supervertex_labelisation_res << std::endl;
-        std::cout << altitudes << std::endl;
-
         auto sm = aligner.align_hierarchy(supervertex_labelisation_res, tree_res, altitudes);
         auto sm_k = graph_4_adjacency_2_khalimsky(g, {3, 3}, sm);
 
