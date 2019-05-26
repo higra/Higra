@@ -11,8 +11,7 @@
 import higra as hg
 
 
-@hg.argument_helper(hg.CptVertexLabeledGraph)
-def labelisation_2_graph_cut(vertex_labels, graph):
+def labelisation_2_graph_cut(graph, vertex_labels):
     """
     Determine the graph cut that corresponds to a given labeling
     of the graph vertices.
@@ -20,46 +19,43 @@ def labelisation_2_graph_cut(vertex_labels, graph):
     The result is a weighting of the graph edges where edges with
     a non zero weight are part of the cut.
 
-    :param vertex_labels: Weights on the vertices of the graph (Concept :class:`~higra.CptVertexLabeledGraph`)
-    :param graph: input graph (deduced from :class:`~higra.CptVertexLabeledGraph`)
-    :return: graph edge-weights representing the equivalent cut (Concept :class:`~higra.CptGraphCut`)
+    :param graph: input graph
+    :param vertex_labels: Weights on the vertices of the graph
+    :return: graph edge-weights representing the equivalent cut
     """
     vertex_labels = hg.linearize_vertex_weights(vertex_labels, graph)
     graph_cut = hg.cpp._labelisation_2_graph_cut(graph, vertex_labels)
-    hg.CptGraphCut.link(graph_cut, graph)
+
     return graph_cut
 
 
-@hg.argument_helper(hg.CptGraphCut)
-def graph_cut_2_labelisation(edge_weights, graph):
+def graph_cut_2_labelisation(graph, edge_weights):
     """
     Labelise graph vertices according to the given graph cut.
 
     Each edge having a non zero value in the given edge_weights
     are assumed to be part of the cut.
 
-    :param edge_weights: Weights on the edges of the graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
-    :param graph: Input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
-    :return: A labelisation of the graph vertices (Concept :class:`~higra.CptVertexWeightedGraph`)
+    :param graph: Input graph
+    :param edge_weights: Weights on the edges of the graph
+    :return: A labelisation of the graph vertices
     """
     vertex_labels = hg.cpp._graph_cut_2_labelisation(graph, edge_weights)
 
     vertex_labels = hg.delinearize_vertex_weights(vertex_labels, graph)
-    hg.CptVertexLabeledGraph.link(vertex_labels, graph)
 
     return vertex_labels
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph)
-def undirected_graph_2_adjacency_matrix(edge_weights, graph, non_edge_value=0):
+def undirected_graph_2_adjacency_matrix(graph, edge_weights, non_edge_value=0):
     """
     Create an adjacency matrix from an undirected edge-weighted graph (the result is thus symmetric).
 
     As the given graph is not necessarily complete, non-existing edges will receive the value `non_edge_value` in
     the adjacency matrix.
 
-    :param edge_weights: Graph edge weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
-    :param graph: Input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: Input graph
+    :param edge_weights: Graph edge weights
     :param non_edge_value: Value used to represent edges that are not in the input graph
     :return: A 2d symmetric square matrix
     """
@@ -76,13 +72,10 @@ def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
     :param non_edge_value: Value used to represent non existing edges in the adjacency matrix
     :return: a pair (UndirectedGraph, ndarray) representing the graph and its edge_weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
-    graph, edge_weights = hg.cpp._adjacency_matrix_2_undirected_graph(adjacency_matrix, float(non_edge_value))
-    hg.CptEdgeWeightedGraph.link(edge_weights, graph)
-    return graph, edge_weights
+    return hg.cpp._adjacency_matrix_2_undirected_graph(adjacency_matrix, float(non_edge_value))
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph)
-def ultrametric_open(edge_weights, graph):
+def ultrametric_open(graph, edge_weights):
     """
     Computes the subdominant ultrametric of the given edge weighted graph.
 
@@ -94,16 +87,15 @@ def ultrametric_open(edge_weights, graph):
 
     Complexity: `O(n*log(n))` with `n` the number of edges in the graph
 
-    :param edge_weights: Graph edge weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
-    :param graph: Input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
-    :return: edge weights corresponding to the subdominant ultrametric (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: Input graph
+    :param edge_weights: Graph edge weights
+    :return: edge weights corresponding to the subdominant ultrametric
     """
     tree, altitudes = hg.bpt_canonical(edge_weights, graph)
     return hg.saliency(altitudes)
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph)
-def minimum_spanning_tree(edge_weights, graph):
+def minimum_spanning_tree(graph, edge_weights):
     """
     Computes the minimum spanning tree of the given edge weighted graph with Kruskal's algorithm.
 
@@ -111,9 +103,9 @@ def minimum_spanning_tree(edge_weights, graph):
 
     Complexity: `O(n*log(n))` with `n` the number of edges in the graph
 
-    :param edge_weights: Graph edge weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
-    :param graph: Input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
-    :return: a minimum spanning tree of the input edge wieghted graph (Concept :class:`~higra.CptMinimumSpanningTree`)
+    :param graph: Input graph
+    :param edge_weights: Graph edge weights
+    :return: a minimum spanning tree of the input edge weighted graph (Concept :class:`~higra.CptMinimumSpanningTree`)
     """
     mst, edge_map = hg.cpp._minimum_spanning_tree(graph, edge_weights)
     hg.CptMinimumSpanningTree.link(mst, mst_edge_map=edge_map, base_graph=graph)

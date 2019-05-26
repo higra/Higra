@@ -26,21 +26,3 @@ def read_tree(filename):
         hg.set_attribute(tree, k, attribute_map[k])
 
     return tree, attribute_map
-
-
-def save_tree_attributes(filename, tree, attribute_names):
-    """
-    Save a tree in mixed ascii/binary format with the attributes listed in attribute_names list.
-
-    eg. save_tree_attribute("myfile.tree", tree, ("altitudes", "area"))
-
-    :param filename:
-    :param tree:
-    :param attribute_names: list of attribute names, for each name in attribute_names, hg.get_attribute(tree, name) must return a 1d numpy array
-    :return:
-    """
-    attribute_map = {}
-    for name in attribute_names:
-        attribute_map[name] = hg.get_attribute(tree, name)
-
-    hg.save_tree(filename, tree, attribute_map)

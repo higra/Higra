@@ -19,7 +19,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph = hg.get_4_adjacency_graph((3, 3))
         edge_weights = np.asarray((1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0), dtype=np.int32)
 
-        labels = hg.graph_cut_2_labelisation(edge_weights, graph)
+        labels = hg.graph_cut_2_labelisation(graph, edge_weights)
 
         ref_labels = np.asarray((1, 2, 2, 1, 1, 3, 1, 3, 3), dtype=np.int32)
         self.assertTrue(hg.is_in_bijection(labels, ref_labels))
@@ -28,7 +28,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph = hg.get_4_adjacency_graph((3, 3))
         labels = np.asarray((1, 2, 2, 1, 1, 3, 1, 3, 3), dtype=np.int32)
 
-        edge_weights = hg.labelisation_2_graph_cut(labels, graph)
+        edge_weights = hg.labelisation_2_graph_cut(graph, labels)
 
         ref_edge_weights = np.asarray((1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0), dtype=np.int32)
 
@@ -45,7 +45,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph.add_edge(2, 4)
 
         edge_weights = np.asarray((1, 2, 3, 4, 5, 6, 7))
-        adj_mat = hg.undirected_graph_2_adjacency_matrix(edge_weights, graph, -1)
+        adj_mat = hg.undirected_graph_2_adjacency_matrix(graph, edge_weights, -1)
 
         ref_adj_mat = np.asarray(((-1, 1, 2, 3, 4),
                                   (1, -1, 5, -1, -1),
@@ -56,7 +56,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
 
         t = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
         edge_weights = np.asarray((1, 2, 3, 4, 5, 6, 7))
-        adj_mat = hg.undirected_graph_2_adjacency_matrix(edge_weights, t)
+        adj_mat = hg.undirected_graph_2_adjacency_matrix(t, edge_weights)
 
         ref_adj_mat = np.asarray(((0, 0, 0, 0, 0, 1, 0, 0),
                                   (0, 0, 0, 0, 0, 2, 0, 0),
@@ -73,7 +73,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph.add_edge(0, 1)
 
         edge_weights = np.asarray((0.1,), dtype=np.float64)
-        adj_mat = hg.undirected_graph_2_adjacency_matrix(edge_weights, graph)
+        adj_mat = hg.undirected_graph_2_adjacency_matrix(graph, edge_weights)
 
         ref_adj_mat = np.asarray(((0, 0.1),
                                   (0.1, 0)))
@@ -128,7 +128,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph = hg.get_4_adjacency_graph((3, 3))
         edge_weights = np.asarray((2, 3, 9, 5, 10, 1, 5, 8, 2, 2, 4, 3), dtype=np.int32)
 
-        subd_ultrametric = hg.ultrametric_open(edge_weights, graph)
+        subd_ultrametric = hg.ultrametric_open(graph, edge_weights)
 
         ref_subd_ultrametric = np.asarray((2, 3, 9, 3, 9, 1, 4, 3, 2, 2, 4, 3), dtype=np.int32)
 
@@ -139,7 +139,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
 
         edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
 
-        mst = hg.minimum_spanning_tree(edge_weights, graph)
+        mst = hg.minimum_spanning_tree(graph, edge_weights)
         mst_edge_map = hg.CptMinimumSpanningTree.get_edge_map(mst)
 
         self.assertTrue(mst.num_vertices() == 6)
@@ -160,7 +160,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
 
         edge_weights = np.asarray((0, 1, 2, 3, 4, 5))
 
-        mst = hg.minimum_spanning_tree(edge_weights, graph)
+        mst = hg.minimum_spanning_tree(graph, edge_weights)
         mst_edge_map = hg.CptMinimumSpanningTree.get_edge_map(mst)
 
         self.assertTrue(mst.num_vertices() == 6)

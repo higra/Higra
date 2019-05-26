@@ -54,7 +54,7 @@ def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=T
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
     :param exterior_vertex: linear coordinate of the exterior point
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
     res = hg.cpp._component_tree_tree_of_shapes_image2d(image, padding, original_size, exterior_vertex)
@@ -63,6 +63,5 @@ def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=T
 
     g = hg.get_4_adjacency_implicit_graph(image.shape)
     hg.CptHierarchy.link(tree, g)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes

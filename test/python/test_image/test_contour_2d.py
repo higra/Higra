@@ -75,7 +75,7 @@ class TestContour2d(unittest.TestCase):
                                   3, 3,
                                   4, 4))
 
-        rag = hg.make_region_adjacency_graph_from_labelisation(vertex_labels, g)
+        rag = hg.make_region_adjacency_graph_from_labelisation(g, vertex_labels)
         vertex_perimeter, edge_length = hg.rag_2d_vertex_perimeter_and_edge_length(rag)
 
         ref_perimeter = (4, 4, 6, 6)

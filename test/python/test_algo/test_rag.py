@@ -23,7 +23,7 @@ class TestRag(unittest.TestCase):
                                     1, 1, 3, 3,
                                     1, 1, 10, 10))
 
-        return hg.make_region_adjacency_graph_from_labelisation(vertex_labels, g)
+        return hg.make_region_adjacency_graph_from_labelisation(g, vertex_labels)
 
     def test_make_rag(self):
         rag = TestRag.get_rag()
@@ -62,7 +62,7 @@ class TestRag(unittest.TestCase):
                                          0, 0, 1, 0, 0, 1, 1,
                                          0, 1, 0))
 
-        rag = hg.make_region_adjacency_graph_from_graph_cut(edge_weights, g)
+        rag = hg.make_region_adjacency_graph_from_graph_cut(g, edge_weights)
         detail = hg.CptRegionAdjacencyGraph.construct(rag)
         vertex_map = detail["vertex_map"]
         edge_map = detail["edge_map"]
@@ -94,7 +94,7 @@ class TestRag(unittest.TestCase):
         rag = TestRag.get_rag()
 
         rag_vertex_weights = np.asarray((5, 7, 1, 3))
-        vertex_weights = hg.rag_back_project_vertex_weights(rag_vertex_weights, rag)
+        vertex_weights = hg.rag_back_project_vertex_weights(rag, rag_vertex_weights)
         expected_vertex_weights = np.asarray(((5, 5, 7, 7),
                                               (5, 5, 7, 7),
                                               (5, 5, 1, 1),
@@ -105,7 +105,7 @@ class TestRag(unittest.TestCase):
         rag = TestRag.get_rag()
 
         rag_edge_weights = np.asarray((5, 7, 1, 3, 2))
-        edge_weights = hg.rag_back_project_edge_weights(rag_edge_weights, rag)
+        edge_weights = hg.rag_back_project_edge_weights(rag, rag_edge_weights)
         iv = 0
         expected_edge_weights = np.asarray((iv, iv, 5, iv, iv, iv, iv,
                                             iv, iv, 5, iv, iv, 7, 7,
@@ -137,7 +137,7 @@ class TestRag(unittest.TestCase):
         fine_labels = np.asarray((0, 1, 2, 3, 4, 2, 3, 4, 2), dtype=np.int32)
         coarse_labels = np.asarray((0, 1, 1, 0, 2, 2, 0, 2, 2), dtype=np.int32)
 
-        map = hg.project_fine_to_coarse_labelisation(fine_labels, coarse_labels);
+        map = hg.project_fine_to_coarse_labelisation(fine_labels, coarse_labels)
 
         ref_map = np.asarray((0, 1, 2, 0, 2), dtype=np.int32)
         self.assertTrue(np.all(map == ref_map))

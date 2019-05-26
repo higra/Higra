@@ -12,8 +12,8 @@ import higra as hg
 import numpy as np
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", hg.CptGridGraph))
-def oriented_watershed(edge_weights, graph, shape, edge_orientations=None):
+@hg.argument_helper(hg.CptGridGraph)
+def oriented_watershed(graph, edge_weights, shape, edge_orientations=None):
     """
     Compute the oriented watershed as described in :
 
@@ -26,26 +26,26 @@ def oriented_watershed(edge_weights, graph, shape, edge_orientations=None):
 
     This does not include gradient estimation.
 
-    :param edge_weights: gradient value on edges (Concept :class:`~higra.CptEdgeWeightedGraph`)
-    :param graph: must be a 4 adjacency graph (deduced from :class:`~higra.CptEdgeWeightedGraph`, Concept :class:`~higra.CptGridGraph`)
+    :param graph: must be a 4 adjacency graph (Concept :class:`~higra.CptGridGraph`)
+    :param edge_weights: gradient value on edges
     :param shape: shape of the graph, i.e. a pair (height, width) (deduced from :class:`~higra.CptGridGraph`)
     :param edge_orientations: estimated orientation of the gradient on edges (optional)
-    :return: a pair (rag, rag_edge_weights): the region adjacency graph (Concept :class:`~higra.CptRegionAdjacencyGraph`) and its estimated edge_weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :return: a pair (rag, rag_edge_weights): the region adjacency graph (Concept :class:`~higra.CptRegionAdjacencyGraph`) and its estimated edge_weights
     """
 
     shape = hg.normalize_shape(shape)
     if edge_orientations is not None:
         edge_weights, edge_orientations = hg.cast_to_common_type(edge_weights, edge_orientations)
-    rag, vertex_map, edge_map, rag_edge_weights = hg.cpp._oriented_watershed(graph, shape, edge_weights, edge_orientations)
+    rag, vertex_map, edge_map, rag_edge_weights = hg.cpp._oriented_watershed(graph, shape, edge_weights,
+                                                                             edge_orientations)
 
     hg.CptRegionAdjacencyGraph.link(rag, graph, vertex_map, edge_map)
-    hg.CptEdgeWeightedGraph.link(rag_edge_weights, rag)
 
     return rag, rag_edge_weights
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", hg.CptGridGraph))
-def mean_pb_hierarchy(edge_weights, graph, shape, edge_orientations=None):
+@hg.argument_helper(hg.CptGridGraph)
+def mean_pb_hierarchy(graph, edge_weights, shape, edge_orientations=None):
     """
     Compute the mean pb hierarchy as described in :
 
@@ -59,27 +59,27 @@ def mean_pb_hierarchy(edge_weights, graph, shape, edge_orientations=None):
 
     The final sigmoid scaling of the hierarchy altitude is not performed.
 
-    :param edge_weights: gradient value on edges (Concept :class:`~higra.CptEdgeWeightedGraph`)
-    :param graph: must be a 4 adjacency graph (deduced from :class:`~higra.CptEdgeWeightedGraph`, Concept :class:`~higra.CptGridGraph`)
+    :param graph: must be a 4 adjacency graph (Concept :class:`~higra.CptGridGraph`)
+    :param edge_weights: gradient value on edges
     :param shape: shape of the graph, i.e. a pair (height, width) (deduced from :class:`~higra.CptGridGraph`)
     :param edge_orientations: estimated orientation of the gradient on edges (optional)
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
     shape = hg.normalize_shape(shape)
     if edge_orientations is not None:
         edge_weights, edge_orientations = hg.cast_to_common_type(edge_weights, edge_orientations)
-    rag, vertex_map, edge_map, tree, altitudes = hg.cpp._mean_pb_hierarchy(graph, shape, edge_weights, edge_orientations)
+    rag, vertex_map, edge_map, tree, altitudes = hg.cpp._mean_pb_hierarchy(graph, shape, edge_weights,
+                                                                           edge_orientations)
 
     hg.CptRegionAdjacencyGraph.link(rag, graph, vertex_map, edge_map)
     hg.CptHierarchy.link(tree, rag)
-    hg.CptValuedHierarchy.link(altitudes, tree)
 
     return tree, altitudes
 
 
-@hg.argument_helper(hg.CptEdgeWeightedGraph, ("graph", hg.CptGridGraph))
-def multiscale_mean_pb_hierarchy(fine_edge_weights, others_edge_weights, graph, shape, edge_orientations=None):
+@hg.argument_helper(hg.CptGridGraph)
+def multiscale_mean_pb_hierarchy(graph, fine_edge_weights, others_edge_weights, shape, edge_orientations=None):
     """
     Compute the multiscale mean pb hierarchy as described in :
 
@@ -99,22 +99,23 @@ def multiscale_mean_pb_hierarchy(fine_edge_weights, others_edge_weights, graph, 
 
     The final sigmoid scaling of the hierarchy altitude is not performed.
 
-
-    :param fine_edge_weights: edge weights of the finest gradient (Concept :class:`~higra.CptEdgeWeightedGraph`)
+    :param graph: must be a 4 adjacency graph (Concept :class:`~higra.CptGridGraph`)
+    :param fine_edge_weights: edge weights of the finest gradient
     :param others_edge_weights: tuple of gradient value on edges
-    :param graph: must be a 4 adjacency graph (deduced from :class:`~higra.CptEdgeWeightedGraph`, Concept :class:`~higra.CptGridGraph`)
     :param shape: shape of the graph, i.e. a pair (height, width) (deduced from :class:`~higra.CptGridGraph`)
     :param edge_orientations: estimated orientation of the gradient on edges (optional)
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes (Concept :class:`~higra.CptValuedHierarchy`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
     shape = hg.normalize_shape(shape)
-    tree_fine, altitudes_fine = hg.mean_pb_hierarchy(fine_edge_weights, graph=graph, shape=shape, edge_orientations=edge_orientations)
-    saliency_fine = hg.saliency(altitudes_fine)
-    super_vertex_fine = hg.labelisation_hierarchy_supervertices(altitudes_fine)
+    tree_fine, altitudes_fine = hg.mean_pb_hierarchy(graph, fine_edge_weights, shape=shape,
+                                                     edge_orientations=edge_orientations)
+    saliency_fine = hg.saliency(tree_fine, altitudes_fine)
+    super_vertex_fine = hg.labelisation_hierarchy_supervertices(tree_fine, altitudes_fine)
 
     other_hierarchies = []
     for edge_weights in others_edge_weights:
-        tree_coarse, altitudes_coarse = hg.mean_pb_hierarchy(edge_weights, graph=graph, shape=shape, edge_orientations=edge_orientations)
+        tree_coarse, altitudes_coarse = hg.mean_pb_hierarchy(graph, edge_weights, shape=shape,
+                                                             edge_orientations=edge_orientations)
         other_hierarchies.append(altitudes_coarse)
 
     aligned_saliencies = hg.align_hierarchies(super_vertex_fine, other_hierarchies)
@@ -124,4 +125,4 @@ def multiscale_mean_pb_hierarchy(fine_edge_weights, others_edge_weights, graph, 
 
     saliency_fine *= (1.0 / (1 + len(others_edge_weights)))
 
-    return hg.mean_pb_hierarchy(saliency_fine, graph=graph, shape=shape)
+    return hg.mean_pb_hierarchy(graph, saliency_fine, shape=shape)

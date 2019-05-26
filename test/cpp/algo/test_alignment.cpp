@@ -11,7 +11,7 @@
 #include "higra/algo/alignment.hpp"
 #include "higra/image/graph_image.hpp"
 #include "../test_utils.hpp"
-
+#include "higra/algo/tree.hpp"
 
 using namespace hg;
 
@@ -78,6 +78,40 @@ namespace test_alignment {
 
         REQUIRE((sm_k == sm_k_ref));
         REQUIRE((sm2_k == sm_k_ref));
+    }
+
+    TEST_CASE("hierarchy alignment with rag", "[alignment]") {
+
+        auto g = get_4_adjacency_graph({3, 3});
+        array_1d<int> edge_weights{1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1};
+
+        auto aligner = make_hierarchy_aligner_from_graph_cut(g, edge_weights);
+
+
+        hg::tree t(array_1d<index_t>{9, 10, 10, 9, 11, 11, 9, 11, 11, 13, 12, 12, 13, 13});
+        array_1d<int> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2};
+
+        auto res = supervertices_hierarchy(t, altitudes);
+        auto &tree_res = res.tree;
+        auto &supervertex_labelisation_res = res.supervertex_labelisation;
+        auto &node_map_res = res.node_map;
+
+        altitudes = xt::index_view(altitudes, node_map_res);
+
+        std::cout << tree_res.parents() << std::endl;
+        std::cout << supervertex_labelisation_res << std::endl;
+        std::cout << altitudes << std::endl;
+
+        auto sm = aligner.align_hierarchy(supervertex_labelisation_res, tree_res, altitudes);
+        auto sm_k = graph_4_adjacency_2_khalimsky(g, {3, 3}, sm);
+
+        array_2d<int> sm_k_ref = {{0, 2, 0, 1, 0},
+                                  {0, 2, 1, 1, 0},
+                                  {0, 2, 0, 0, 0},
+                                  {0, 2, 0, 0, 0},
+                                  {0, 2, 0, 0, 0}};
+
+        REQUIRE((sm_k == sm_k_ref));
     }
 
 }

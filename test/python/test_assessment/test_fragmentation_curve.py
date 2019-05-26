@@ -90,10 +90,10 @@ class TestFragmentationCurve(unittest.TestCase):
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3))
         ground_truth = np.asarray((0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2), dtype=np.int16)
 
-        res = hg.assess_fragmentation_horizontal_cut(altitudes,
+        res = hg.assess_fragmentation_horizontal_cut(tree,
+                                                     altitudes,
                                                      ground_truth,
-                                                     hg.PartitionMeasure.DHamming,
-                                                     tree)
+                                                     hg.PartitionMeasure.DHamming)
         res_scores = res.scores()
         res_k = res.num_regions()
 
