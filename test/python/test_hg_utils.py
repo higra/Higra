@@ -30,10 +30,50 @@ class TestHGUtils(unittest.TestCase):
         r = hg.linearize_vertex_weights(np.ones((20, 4, 5, 2, 3)), g, (4, 5))
         self.assertTrue(r.shape == (20, 4, 5, 2, 3))
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             hg.linearize_vertex_weights(np.ones((5, 4)), g, (4, 5))
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
+            hg.linearize_vertex_weights(np.ones((25,)), g, (4, 5))
+
+        g = hg.get_4_adjacency_graph((4, 1))
+
+        r = hg.linearize_vertex_weights(np.ones((4,)), g)
+        self.assertTrue(r.shape == (4,))
+
+        r = hg.linearize_vertex_weights(np.ones((4, 1)), g)
+        self.assertTrue(r.shape == (4,))
+
+        r = hg.linearize_vertex_weights(np.ones((4, 1, 10, 12)), g)
+        self.assertTrue(r.shape == (4, 10, 12))
+
+        r = hg.linearize_vertex_weights(np.ones((4, 4, 5, 2, 3)), g)
+        self.assertTrue(r.shape == (4, 4, 5, 2, 3))
+
+        with self.assertRaises(ValueError):
+            hg.linearize_vertex_weights(np.ones((5, 4)), g, (4, 5))
+
+        with self.assertRaises(ValueError):
+            hg.linearize_vertex_weights(np.ones((25,)), g, (4, 5))
+
+        g = hg.get_4_adjacency_graph((1, 4))
+
+        r = hg.linearize_vertex_weights(np.ones((4,)), g)
+        self.assertTrue(r.shape == (4,))
+
+        r = hg.linearize_vertex_weights(np.ones((1, 4)), g)
+        self.assertTrue(r.shape == (4,))
+
+        r = hg.linearize_vertex_weights(np.ones((1, 4, 10, 12)), g)
+        self.assertTrue(r.shape == (4, 10, 12))
+
+        r = hg.linearize_vertex_weights(np.ones((4, 4, 5, 2, 3)), g)
+        self.assertTrue(r.shape == (4, 4, 5, 2, 3))
+
+        with self.assertRaises(ValueError):
+            hg.linearize_vertex_weights(np.ones((5, 4)), g, (4, 5))
+
+        with self.assertRaises(ValueError):
             hg.linearize_vertex_weights(np.ones((25,)), g, (4, 5))
 
     def test_delinearize_vertex_weights(self):
@@ -51,11 +91,51 @@ class TestHGUtils(unittest.TestCase):
         r = hg.delinearize_vertex_weights(np.ones((20, 4, 5, 2, 3)), g, (4, 5))
         self.assertTrue(r.shape == (4, 5, 4, 5, 2, 3))
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             hg.delinearize_vertex_weights(np.ones((5, 4)), g, (4, 5))
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             hg.delinearize_vertex_weights(np.ones((25,)), g, (4, 5))
+
+        shape = (1, 4)
+        g = hg.get_4_adjacency_graph(shape)
+        r = hg.delinearize_vertex_weights(np.ones((4,)), g)
+        self.assertTrue(r.shape == shape)
+
+        r = hg.delinearize_vertex_weights(np.ones(shape), g)
+        self.assertTrue(r.shape == shape)
+
+        r = hg.delinearize_vertex_weights(np.ones((1, 4, 10, 12)), g)
+        self.assertTrue(r.shape == (1, 4, 10, 12))
+
+        r = hg.delinearize_vertex_weights(np.ones((4, 5, 2, 3)), g)
+        self.assertTrue(r.shape == (1, 4, 5, 2, 3))
+
+        with self.assertRaises(ValueError):
+            hg.delinearize_vertex_weights(np.ones((5, 4)), g)
+
+        with self.assertRaises(ValueError):
+            hg.delinearize_vertex_weights(np.ones((8,)), g)
+
+        shape = (4, 1)
+        g = hg.get_4_adjacency_graph(shape)
+        r = hg.delinearize_vertex_weights(np.ones((4,)), g)
+        self.assertTrue(r.shape == shape)
+
+        r = hg.delinearize_vertex_weights(np.ones(shape), g)
+        self.assertTrue(r.shape == shape)
+
+        r = hg.delinearize_vertex_weights(np.ones((4, 1, 10, 12)), g)
+        self.assertTrue(r.shape == (4, 1, 10, 12))
+
+        r = hg.delinearize_vertex_weights(np.ones((4, 5, 2, 3)), g)
+        self.assertTrue(r.shape == (4, 1, 5, 2, 3))
+
+        with self.assertRaises(ValueError):
+            hg.delinearize_vertex_weights(np.ones((5, 4)), g)
+
+        with self.assertRaises(ValueError):
+            hg.delinearize_vertex_weights(np.ones((8,)), g)
 
     def test_common_type(self):
         a_uint16 = np.zeros((1, 1), dtype=np.uint16)
