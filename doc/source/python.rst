@@ -85,3 +85,9 @@ Python modules
 
     Pink Graph </python/pink_io.rst>
     Tree IO </python/tree_io.rst>
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Misc:
+
+    Utility functions </python/hg_utils.rst>
