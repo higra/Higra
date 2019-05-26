@@ -7,4 +7,4 @@ Tree IO allows de/serialization of a tree and associated attributes in a custom 
 
 .. autofunction:: higra.read_tree
 
-.. autofunction:: higra.save_tree_attributes
+.. autofunction:: higra.save_tree
