@@ -137,9 +137,9 @@ script:
       ctest -V;
     else
       cibuildwheel --output-dir wheelhouse;
-      python -m pip install twine;
     fi
   - if [ -n "$BUILD_WHEEL" -a -n "$TRAVIS_TAG" ]; then
+      python -m pip install twine &&
       python -m twine upload wheelhouse/*.whl || true;
     fi
 
