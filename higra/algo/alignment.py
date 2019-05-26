@@ -47,18 +47,18 @@ def align_hierarchies(graph, vertex_labels, other_hierarchies):
     for hierarchy in other_hierarchies:
         obj, values = hierarchy
         if type(obj) is hg.Tree:
-            h = hg.CptHierarchy.construct(obj)
-            if hg.CptRegionAdjacencyGraph.validate(h["leaf_graph"]):
-                rag = hg.CptRegionAdjacencyGraph.construct(h["leaf_graph"])
-                r = aligner.align_hierarchy(rag["vertex_map"], obj, values)
+            leaf_graph = hg.CptHierarchy.get_leaf_graph(obj)
+            if leaf_graph is not None and hg.CptRegionAdjacencyGraph.validate(leaf_graph):
+                vertex_map = hg.CptRegionAdjacencyGraph.get_vertex_map(leaf_graph)
+                r = aligner.align_hierarchy(vertex_map, obj, values)
             else:
                 r = aligner.align_hierarchy(obj, values)
 
         elif type(obj) is hg.UndirectedGraph:
             if hg.CptRegionAdjacencyGraph.validate(obj):
-                rag = hg.CptRegionAdjacencyGraph.construct(obj)
-                bpt, altitudes = hg.bpt_canonical(values)
-                r = aligner.align_hierarchy(rag["vertex_map"], bpt, altitudes)
+                vertex_map = hg.CptRegionAdjacencyGraph.get_vertex_map(obj)
+                bpt, altitudes = hg.bpt_canonical(obj, values)
+                r = aligner.align_hierarchy(vertex_map, bpt, altitudes)
             else:
                 r = aligner.align_hierarchy(obj, values)
 
