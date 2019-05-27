@@ -116,9 +116,9 @@ def multiscale_mean_pb_hierarchy(graph, fine_edge_weights, others_edge_weights, 
     for edge_weights in others_edge_weights:
         tree_coarse, altitudes_coarse = hg.mean_pb_hierarchy(graph, edge_weights, shape=shape,
                                                              edge_orientations=edge_orientations)
-        other_hierarchies.append(altitudes_coarse)
+        other_hierarchies.append((tree_coarse, altitudes_coarse))
 
-    aligned_saliencies = hg.align_hierarchies(super_vertex_fine, other_hierarchies)
+    aligned_saliencies = hg.align_hierarchies(graph, super_vertex_fine, other_hierarchies)
 
     for saliency in aligned_saliencies:
         saliency_fine += saliency
