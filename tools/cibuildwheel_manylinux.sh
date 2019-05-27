@@ -16,4 +16,4 @@ export CFLAGS="-I/toolchain/include ${MFLAG}"
 export CXXFLAGS="-I/toolchain/include ${MFLAG} -static-libstdc++"
 export LD_LIBRARY_PATH="/toolchain/lib64:/toolchain/lib:${LD_LIBRARY_PATH}"
 
-pip install numpy cmake
+pip install numpy==1.15.4 cmake==3.13.3
