@@ -102,6 +102,6 @@ def saliency(tree, altitudes, leaf_graph, handle_rag=True):
 
     sm = altitudes[lca_map]
     if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and handle_rag:
-        sm = hg.rag_back_project_edge_weights(sm, leaf_graph)
+        sm = hg.rag_back_project_edge_weights(leaf_graph, sm)
 
     return sm
