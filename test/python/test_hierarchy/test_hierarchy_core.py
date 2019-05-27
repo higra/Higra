@@ -112,6 +112,20 @@ class TestHierarchyCore(unittest.TestCase):
         refnm = np.asarray((0, 3, 4, 5, 6, 7, 10, 11, 12))
         self.assertTrue(np.all(refnm == node_map))
 
+    def test_saliency(self):
+        graph = hg.get_4_adjacency_graph((2, 3))
+        edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
+        sm = hg.saliency(*hg.bpt_canonical(graph, edge_weights))
+
+        self.assertTrue(np.all(sm == edge_weights))
+
+        labels = np.asarray(((1, 2, 3),
+                             (1, 4, 5)))
+        rag = hg.make_region_adjacency_graph_from_labelisation(graph, labels)
+        rag_edge_weights = (1, 2, 1, 1, 1, 2)
+        sm = hg.saliency(*hg.bpt_canonical(rag, rag_edge_weights))
+        self.assertTrue(np.all(sm == edge_weights))
+
 
 if __name__ == '__main__':
     unittest.main()
