@@ -11,6 +11,7 @@
 
 set(PY_FILES
         __init__.py
+        lca_fast.py
         tree_graph.py)
 
 set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}

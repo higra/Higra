@@ -8,5 +8,17 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-from .tree_graph import *
-from .lca_fast import *
+import higra as hg
+
+
+@hg.data_provider("LCAFast")
+def make_lca_fast(tree):
+    """
+    Create an object of type :class:`~higra.LCAFast` for the given tree
+
+    **Provider name**: "LCAFast"
+
+    :param tree: input tree
+    :return: a LCAFast object
+    """
+    return hg.LCAFast(tree)
