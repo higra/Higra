@@ -57,6 +57,21 @@ struct def_binary_partition_tree_average_linkage {
     }
 };
 
+struct def_binary_partition_tree_ward_linkage {
+    template<typename T>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_binary_partition_tree_ward_linkage",
+              [](const hg::ugraph &graph, pyarray<T> &vertex_centroids, pyarray<T> &vertex_sizes) {
+                  return binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes);
+              },
+              doc,
+              py::arg("graph"),
+              py::arg("vertex_centroids"),
+              py::arg("vertex_sizes"));
+    }
+};
+
 struct def_binary_partition_tree_custom_linkage {
     template<typename T>
     static
@@ -104,26 +119,12 @@ struct def_binary_partition_tree_complete_linkage {
 void py_init_binary_partition_tree(pybind11::module &m) {
     xt::import_numpy();
 
-
-    add_type_overloads<def_binary_partition_tree_average_linkage, HG_TEMPLATE_FLOAT_TYPES>
-            (m,
-             "Compute a binary partition tree with average linkage distance.\n"
-             "\n"
-             "Given a graph G, with initial edge values V with associated weights W,\n"
-             "the distance d(X,Y) between any two regions X, Y is defined as :\n"
-             "d(X,Y) = (1 / Z) + sum_{x in X, y in Y, {x,y} in G} V({x,y}) x W({x,y})\n"
-             "with Z = sum_{x in X, y in Y, {x,y} in G} W({x,y})");
-    add_type_overloads<def_binary_partition_tree_complete_linkage, HG_TEMPLATE_FLOAT_TYPES>
-            (m,
-             "Compute a binary partition tree with complete linkage distance.\n"
-             "\n"
-             "Given a graph G, with initial edge weights W,\n"
-             "the distance d(X,Y) between any two regions X, Y is defined as :\n"
-             "d(X,Y) = max {W({x,y}) | x in X, y in Y, {x,y} in G }");
+    add_type_overloads<def_binary_partition_tree_ward_linkage, HG_TEMPLATE_FLOAT_TYPES>(m, "");
+    add_type_overloads<def_binary_partition_tree_average_linkage, HG_TEMPLATE_FLOAT_TYPES>(m, "");
+    add_type_overloads<def_binary_partition_tree_complete_linkage, HG_TEMPLATE_FLOAT_TYPES>(m, "");
 
     def_new_neighbour<float>(m);
     def_new_neighbour<double>(m);
     add_type_overloads<def_binary_partition_tree_custom_linkage, HG_TEMPLATE_FLOAT_TYPES>
-            (m,
-             "Compute a binary partition tree with the given linkage distance.");
+            (m, "Compute a binary partition tree with the given linkage distance.");
 }

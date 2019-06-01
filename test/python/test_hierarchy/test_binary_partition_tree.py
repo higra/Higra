@@ -85,6 +85,27 @@ class TestBinaryPartitionTree(unittest.TestCase):
         self.assertTrue(np.all(expected_parents == tree.parents()))
         self.assertTrue(np.allclose(expected_altitudes, altitudes))
 
+    def test_binary_partition_tree_ward_linkage(self):
+        graph = hg.UndirectedGraph(5)
+
+        graph.add_edges((0, 0, 0, 1, 2, 2, 3), (1, 2, 3, 2, 3, 4, 4))
+
+        vertex_centroids = np.asarray(((0, 0),
+                                       (1, 1),
+                                       (1, 3),
+                                       (-3, 4),
+                                       (-1, 5)))
+
+        vertex_sizes = np.asarray((1, 1, 1, 2, 1))
+
+        tree, altitudes = hg.binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes)
+
+        expected_parents = np.asarray((5, 5, 7, 6, 6, 7, 8, 8, 8), dtype=np.int64)
+        expected_altitudes = np.asarray((0., 0., 0., 0., 0.,
+                                         1., 3.333333, 4.333333, 27.), dtype=np.float64)
+        self.assertTrue(np.all(expected_parents == tree.parents()))
+        self.assertTrue(np.allclose(expected_altitudes, altitudes))
+
 
 if __name__ == '__main__':
     unittest.main()

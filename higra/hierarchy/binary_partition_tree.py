@@ -16,9 +16,14 @@ def binary_partition_tree_complete_linkage(graph, edge_weights):
     """
     Compute a binary partition tree with complete linkage distance.
 
-    Given a graph G, with initial edge weights W,
-    the distance d(X,Y) between any two regions X, Y is defined as :\n
-    d(X,Y) = max {W({x,y}) | x in X, y in Y, {x,y} in G }
+    Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w`,
+    the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
+
+    .. math::
+
+        d(X,Y) = \max \{w(\{x,y\}) | x \in X, y \in Y, \{x,y\} \in E \}
+
+    Regions are then iteratively merged following the above distance (closest first) until a single region remains
 
     :param graph: input graph
     :param edge_weights: edge weights of the input graph
@@ -38,10 +43,14 @@ def binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weigh
     """
     Compute a binary partition tree with average linkage distance.
 
-    Given a graph G, with initial edge weights V with associated weighting W,
-    the distance d(X,Y) between any two regions X, Y is defined as:
-    d(X,Y) = (1 / Z) + sum_{x in X, y in Y, {x,y} in G} V({x,y}) x W({x,y})
-    with Z = sum_{x in X, y in Y, {x,y} in G} W({x,y})
+    Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w` with associated weights :math:`w_2`,
+    the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
+
+    .. math::
+
+        d(X,Y) = \\frac{1}{Z} \sum_{x \in X, y \in Y, \{x,y\} \in E} w(\{x,y\}) \\times w_2(\{x,y\})
+
+    with :math:`Z = \sum_{x \in X, y \in Y, \{x,y\} \in E} w_2({x,y})`.
 
     :param graph: input graph
     :param edge_weights: edge weights of the input graph
@@ -65,7 +74,16 @@ def binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weigh
 
 def binary_partition_tree_single_linkage(graph, edge_weights):
     """
-    Alias for bpt_canonical
+    Alias for bpt_canonical.
+
+    Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w`,
+    the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
+
+    .. math::
+
+        d(X,Y) = \min \{w(\{x,y\}) | x \in X, y \in Y, \{x,y\} \in E \}
+
+    Regions are then iteratively merged following the above distance (closest first) until a single region remains.
 
     :param edge_weights: edge weights of the input graph (Concept :class:`~higra.CptEdgeWeightedGraph`)
     :param graph: input graph (deduced from :class:`~higra.CptEdgeWeightedGraph`)
@@ -73,6 +91,41 @@ def binary_partition_tree_single_linkage(graph, edge_weights):
     """
 
     return hg.bpt_canonical(graph, edge_weights)
+
+
+def binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes=None):
+    """
+    Binary partition tree, i.e. the agglomerative clustering, with the Ward linkage rule.
+
+    Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w` with associated weights :math:`w'`,
+    the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
+
+    .. math::
+
+        d(X,Y) = \\frac{| X |\\times| Y |}{| X |+| Y |} \| \\vec{X} - \\vec{Y} \|^2
+
+    where :math:`\\vec{X}` and :math:`\\vec{Y}` are the centroids of  :math:`X` and  :math:`Y`.
+
+    Regions are then iteratively merged following the above distance (closest first) until a single region remains
+
+    :param graph: input graph
+    :param vertex_centroids: Centroids of the graph vertices (must be a 2d array)
+    :param vertex_sizes: Size (number of elements) of the graph vertices (default to an array of ones)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    """
+
+    if vertex_sizes is None:
+        vertex_sizes = np.ones((graph.num_vertices(),), dtype=vertex_centroids.dtype)
+    else:
+        vertex_centroids, vertex_sizes = hg.cast_to_common_type(vertex_centroids, vertex_sizes)
+
+    res = hg.cpp._binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes)
+    tree = res.tree()
+    altitudes = res.altitudes()
+
+    hg.CptHierarchy.link(tree, graph)
+
+    return tree, altitudes
 
 
 def binary_partition_tree(graph, weight_function, edge_weights):
