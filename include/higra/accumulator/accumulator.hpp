@@ -195,15 +195,19 @@ namespace hg {
             template<typename T = self_type, typename ...Args>
             typename std::enable_if_t<T::is_vectorial>
             finalize(Args &&...) const {
-                for (auto s = m_storage_begin; s != m_storage_end; s++) {
-                    *s /= m_counter;
+                if (m_counter != 0) {
+                    for (auto s = m_storage_begin; s != m_storage_end; s++) {
+                        *s /= (value_type) m_counter;
+                    }
                 }
             }
 
             template<typename T = self_type, typename ...Args>
             typename std::enable_if_t<!T::is_vectorial>
             finalize(Args &&...) const {
-                *m_storage_begin /= m_counter;
+                if (m_counter != 0) {
+                    *m_storage_begin /= (value_type) m_counter;
+                }
             }
 
             void set_storage(S storage_begin, S storage_end) {

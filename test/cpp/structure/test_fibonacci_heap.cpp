@@ -516,7 +516,7 @@ namespace test_fibonacci_heap {
 
             } else if (op < 90) {
                 if (heap.size() > 0) {
-                    std::uniform_int_distribution<std::mt19937::result_type> dist(0, heapset.size() - 1);
+                    std::uniform_int_distribution<std::mt19937::result_type> dist(0, (index_t)heapset.size() - 1);
                     auto nb = dist(rng);
 
                     auto it = heapset.begin();

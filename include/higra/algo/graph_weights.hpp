@@ -96,7 +96,7 @@ namespace hg {
                 hg_assert_1d_array(vertex_weights);
                 std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](
                         vertex_t i, vertex_t j) -> result_value_t {
-                    return std::min(vertex_weights(i), vertex_weights(j));
+                    return static_cast<result_value_t>(std::min(vertex_weights(i), vertex_weights(j)));
                 };
                 return weight_graph(graph, fun);
             }
@@ -104,7 +104,7 @@ namespace hg {
                 hg_assert_1d_array(vertex_weights);
                 std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
                                                                                           vertex_t j) -> result_value_t {
-                    return std::max(vertex_weights(i), vertex_weights(j));
+                    return static_cast<result_value_t>(std::max(vertex_weights(i), vertex_weights(j)));
                 };
                 return weight_graph(graph, fun);
             }
@@ -145,14 +145,14 @@ namespace hg {
                         for (auto it1 = v1.begin(), it2 = v2.begin(); it1 != v1.end(); it1++, it2++) {
                             res += std::abs(static_cast<promoted_type>(*it1) - static_cast<promoted_type>(*it2));
                         }
-                        return res;
+                        return static_cast<result_value_t>(res);
                     };
                     return weight_graph(graph, fun);
                 } else {
                     std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
                                                                                               vertex_t j) -> result_value_t {
-                        return std::abs(static_cast<promoted_type>(vertex_weights(i)) -
-                                        static_cast<promoted_type>(vertex_weights(j)));
+                        return static_cast<result_value_t>(std::abs(static_cast<promoted_type>(vertex_weights(i)) -
+                                        static_cast<promoted_type>(vertex_weights(j))));
                     };
                     return weight_graph(graph, fun);
                 }
@@ -171,7 +171,7 @@ namespace hg {
                             auto tmp = static_cast<promoted_type>(*it1) - static_cast<promoted_type>(*it2);
                             res += tmp * tmp;
                         }
-                        return std::sqrt(res);
+                        return static_cast<result_value_t>(std::sqrt(res));
                     };
                     return weight_graph(graph, fun);
                 } else {
@@ -180,7 +180,7 @@ namespace hg {
                         auto v1 = vertex_weights(i);
                         auto v2 = vertex_weights(j);
                         auto tmp = static_cast<promoted_type>(v1) - static_cast<promoted_type>(v2);
-                        return std::sqrt(tmp * tmp);
+                        return static_cast<result_value_t>(std::sqrt(tmp * tmp));
                     };
                     return weight_graph(graph, fun);
                 }
@@ -199,14 +199,14 @@ namespace hg {
                             res = std::max(res, std::abs(
                                     static_cast<promoted_type>(*it1) - static_cast<promoted_type>(*it2)));
                         }
-                        return res;
+                        return static_cast<result_value_t>(res);
                     };
                     return weight_graph(graph, fun);
                 } else {
                     std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
                                                                                               vertex_t j) -> result_value_t {
-                        return std::abs(static_cast<promoted_type>(vertex_weights(i)) -
-                                        static_cast<promoted_type>(vertex_weights(j)));
+                        return static_cast<result_value_t>(std::abs(static_cast<promoted_type>(vertex_weights(i)) -
+                                        static_cast<promoted_type>(vertex_weights(j))));
                     };
                     return weight_graph(graph, fun);
                 }
@@ -225,7 +225,7 @@ namespace hg {
                             auto tmp = static_cast<promoted_type>(*it1) - static_cast<promoted_type>(*it2);
                             res += tmp * tmp;
                         }
-                        return res;
+                        return static_cast<result_value_t>(res);
                     };
                     return weight_graph(graph, fun);
                 } else {
@@ -235,7 +235,7 @@ namespace hg {
                         auto v1 = vertex_weights(i);
                         auto v2 = vertex_weights(j);
                         auto tmp = static_cast<promoted_type>(v1) - static_cast<promoted_type>(v2);
-                        return tmp * tmp;
+                        return static_cast<result_value_t>(tmp * tmp);
                     };
                     return weight_graph(graph, fun);
                 }
@@ -244,7 +244,7 @@ namespace hg {
                 hg_assert_1d_array(vertex_weights);
                 std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
                                                                                           vertex_t j) -> result_value_t {
-                    return vertex_weights(i);
+                    return static_cast<result_value_t>(vertex_weights(i));
                 };
                 return weight_graph(graph, fun);
             }
@@ -252,12 +252,11 @@ namespace hg {
                 hg_assert_1d_array(vertex_weights);
                 std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
                                                                                           vertex_t j) -> result_value_t {
-                    return vertex_weights(j);
+                    return static_cast<result_value_t>(vertex_weights(j));
                 };
                 return weight_graph(graph, fun);
             }
         }
         throw std::runtime_error("Unknown weight function.");
-
     };
 }

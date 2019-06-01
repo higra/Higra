@@ -89,5 +89,14 @@ namespace test_graph_weights {
         array_1d<double> ref7{8, 32, 32, 8};
         auto r7 = weight_graph(g, data, hg::weight_functions::L2_squared);
         REQUIRE(xt::allclose(ref7, r7));
+
+        array_2d<double> data2{{0, 1},
+                              {2, 3},
+                              {0, 1},
+                              {6, 7}};
+
+        array_1d<double> ref8{1, 0, 1, 1};
+        auto r8 = weight_graph(g, data2, hg::weight_functions::L0);
+        REQUIRE(xt::allclose(ref8, r8));
     }
 }

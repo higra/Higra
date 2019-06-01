@@ -41,8 +41,8 @@ namespace regular_graph {
     TEST_CASE("vertex iterator", "[regular_graph]") {
         auto g = data.g;
 
-        vector<unsigned long> vref{0, 1, 2, 3, 4, 5};
-        vector<unsigned long> vtest;
+        vector<index_t> vref{0, 1, 2, 3, 4, 5};
+        vector<index_t> vtest;
 
         for (auto v: hg::vertex_iterator(g)) {
             vtest.push_back(v);
@@ -54,7 +54,7 @@ namespace regular_graph {
     TEST_CASE("regular graph out edge iterator", "[regular_graph]") {
         auto g = data.g;
 
-        vector<vector<pair<unsigned long, unsigned long>>> outListsRef{
+        vector<vector<pair<index_t, index_t>>> outListsRef{
                 {{0, 1}, {0, 3}},
                 {{1, 0}, {1, 2}, {1, 4}},
                 {{2, 1}, {2, 5}},
@@ -62,7 +62,7 @@ namespace regular_graph {
                 {{4, 1}, {4, 3}, {4, 5}},
                 {{5, 2}, {5, 4}}
         };
-        vector<vector<pair<unsigned long, unsigned long>>> outListsTest;
+        vector<vector<pair<index_t, index_t>>> outListsTest;
 
         for (size_t v = 0; v < 6; v++) {
             outListsTest.push_back({});
@@ -76,7 +76,7 @@ namespace regular_graph {
     TEST_CASE("regular graph in edge iterator", "[regular_graph]") {
         auto g = data.g;
 
-        vector<vector<pair<unsigned long, unsigned long>>> inListsRef{
+        vector<vector<pair<index_t, index_t>>> inListsRef{
                 {{1, 0}, {3, 0}},
                 {{0, 1}, {2, 1}, {4, 1}},
                 {{1, 2}, {5, 2}},
@@ -84,10 +84,10 @@ namespace regular_graph {
                 {{1, 4}, {3, 4}, {5, 4}},
                 {{2, 5}, {4, 5}}
         };
-        vector<vector<pair<unsigned long, unsigned long>>> inListsTest;
+        vector<vector<pair<index_t, index_t>>> inListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
-            inListsTest.push_back(vector<pair<unsigned long, unsigned long>>());
+            inListsTest.push_back(vector<pair<index_t, index_t>>());
             for (auto e: hg::in_edge_iterator(v, g))
                 inListsTest[v].push_back({source(e, g), target(e, g)});
             REQUIRE(vectorEqual(inListsRef[v], inListsTest[v]));
@@ -100,7 +100,7 @@ namespace regular_graph {
     TEST_CASE("regular graph adjacent vertex iterator", "[regular_graph]") {
         auto g = data.g;
 
-        vector<vector<unsigned long>> adjListsRef{
+        vector<vector<index_t>> adjListsRef{
                 {1, 3},
                 {0, 2, 4},
                 {1, 5},
@@ -108,10 +108,10 @@ namespace regular_graph {
                 {1, 3, 5},
                 {2, 4}
         };
-        vector<vector<unsigned long>> adjListsTest;
+        vector<vector<index_t>> adjListsTest;
 
         for (auto v: hg::vertex_iterator(g)) {
-            adjListsTest.push_back(vector<unsigned long>());
+            adjListsTest.push_back(vector<index_t>());
             for (auto av: hg::adjacent_vertex_iterator(v, g)) {
                 adjListsTest[v].push_back(av);
             }

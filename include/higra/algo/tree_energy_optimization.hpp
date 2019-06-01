@@ -145,8 +145,8 @@ namespace hg {
 
                 self_type result = self_type();
                 int count = 0;
-                int i1 = pieces.size() - 1;
-                int i2 = other.pieces.size() - 1;
+                int i1 = (int)pieces.size() - 1;
+                int i2 = (int)other.pieces.size() - 1;
                 while (i1 >= 0 && i2 >= 0 && count < max_pieces) {
                     const auto &piece1 = pieces[i1];
                     const auto &piece2 = other.pieces[i2];
@@ -195,7 +195,7 @@ namespace hg {
              * Warning: Modification is done in place
              */
             double infimum(const lp_t &linear_piece) {
-                int i = pieces.size() - 1;
+                int i = (int)pieces.size() - 1;
 
                 auto &last_piece = pieces[i];
                 if (linear_piece.slope() == last_piece.slope()) {

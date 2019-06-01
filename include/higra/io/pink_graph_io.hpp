@@ -133,7 +133,7 @@ namespace hg {
 
         out << "val sommets\n";
 
-        if (vertex_values.dimension() == 0) {
+        if (vertex_values.size() == 0) {
             for (std::size_t i = 0; i < num_vertices(graph); ++i) {
                 out << i << " 1\n";
             }
@@ -146,7 +146,7 @@ namespace hg {
 
         out << "arcs values\n";
 
-        if (edge_values.dimension() == 0) {
+        if (edge_values.size() == 0) {
             for (auto e: edge_iterator(graph)) {
                 out << source(e, graph) << " " << target(e, graph) << " 1\n";
             }
