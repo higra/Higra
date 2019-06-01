@@ -14,6 +14,8 @@
 #include "../graph.hpp"
 #include "hierarchy_core.hpp"
 #include "../structure/fibonacci_heap.hpp"
+#include "xtensor/xview.hpp"
+#include "xtensor/xnoalias.hpp"
 
 namespace hg {
 
@@ -282,6 +284,96 @@ namespace hg {
             }
         };
 
+        /**
+       * Weighting function to be used in conjunction to the binary_partition_tree method in order to perform a Ward linkage clustering.
+       *
+       * @tparam T
+       */
+        template<typename T1, typename T2>
+        struct binary_partition_tree_ward_linkage_weighting_functor {
+
+        private:
+            array_1d<double> m_sizes;
+            array_2d<double> m_centroids;
+            index_t m_dim;
+
+        public:
+
+            binary_partition_tree_ward_linkage_weighting_functor(
+                    const xt::xexpression<T1> &xvertex_centroids,
+                    const xt::xexpression<T2> &xvertex_sizes) {
+                auto &vertex_centroids = xvertex_centroids.derived_cast();
+                auto &vertex_sizes = xvertex_sizes.derived_cast();
+                hg_assert_1d_array(vertex_sizes);
+                hg_assert(vertex_centroids.dimension() == 2,
+                          "vertex_centroids must be 2d (each vertex centroid is a 1d vector).");
+                hg_assert(vertex_centroids.shape(0) == vertex_sizes.shape(0),
+                          "vertex_centroids and vertex_sizes first dimension must be equal.");
+
+                auto num_elem = vertex_sizes.size() * 2 - 1;
+                m_dim = vertex_centroids.shape(1);
+
+                m_sizes = xt::empty<double>({num_elem});
+                xt::noalias(xt::view(m_sizes, xt::range(0, vertex_sizes.size()))) = vertex_sizes;
+                m_centroids = xt::empty<double>({num_elem, vertex_centroids.shape(1)});
+                xt::noalias(
+                        xt::view(m_centroids, xt::range(0, vertex_centroids.shape(0)), xt::all())) = vertex_centroids;
+
+            }
+
+            template<typename graph_t>
+            auto get_weights(const graph_t &graph) {
+                array_1d<double> weights = xt::empty<double>({num_edges(graph)});
+                for (auto e: edge_iterator(graph)) {
+                    weights(e) = cluster_distance(source(e, graph), target(e, graph));
+                }
+                return weights;
+            };
+
+            template<typename graph_t, typename neighbours_t>
+            void operator()(const graph_t &g,
+                            index_t fusion_edge_index,
+                            index_t new_region,
+                            index_t merged_region1,
+                            index_t merged_region2,
+                            neighbours_t &new_neighbours) {
+
+                // merge of c1 and c2, neighbour is c3
+                auto n1 = m_sizes(merged_region1);
+                auto n2 = m_sizes(merged_region2);
+                auto new_size = n1 + n2;
+                m_sizes(new_region) = new_size;
+
+                for (index_t k = 0; k < m_dim; k++) {
+                    m_centroids(new_region, k) =
+                            (n1 * m_centroids(merged_region1, k) +
+                             n2 * m_centroids(merged_region2, k)) / new_size;
+                }
+
+                for (auto &n: new_neighbours) {
+                    double new_weight = cluster_distance(new_region, n.neighbour_vertex());
+
+                    n.new_edge_weight() = new_weight;
+                }
+            }
+
+        private:
+            auto cluster_distance(index_t ci, index_t cj) {
+                auto si = m_sizes(ci);
+                auto sj = m_sizes(cj);
+                return (si * sj) * squared_cluster_euclidean_distance(ci, cj) / (si + sj);
+            }
+
+            auto squared_cluster_euclidean_distance(index_t ci, index_t cj) {
+                double r = 0;
+                for (index_t k = 0; k < m_dim; k++) {
+                    double tmp = m_centroids(ci, k) - m_centroids(cj, k);
+                    r += tmp * tmp;
+                }
+                return r;
+            }
+        };
+
 
     }
 
@@ -335,7 +427,7 @@ namespace hg {
      * @param graph
      * @param xedge_weights
      * @param weight_function
-     * @return
+     * @return a node weighted tree
      */
     template<typename graph_t, typename weighter, typename T>
     auto
@@ -452,17 +544,22 @@ namespace hg {
 
 
     /**
-     * Compute the binary partition tree, i.e. the agglomerative clustering, with the  minimum/single linkage rule.
+     * Binary partition tree, i.e. the agglomerative clustering, with the  minimum/single linkage rule.
      *
-     * Given a graph G, with initial edge weights W,
-     * the distance d(X,Y) between any two regions X, Y is defined as :
-     *      d(X,Y) = min {W({x,y}) | x in X, y in Y, {x,y} in G }
-     * Regions are then iteratively merged following the above distance (closest first) until a single region remains
+     * Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w`,
+     * the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
+     *
+     * .. math::
+     *
+     *      d(X,Y) = \min \{w(\{x,y\}) | x \in X, y \in Y, \{x,y\} \in E \}
+     *
+     * Regions are then iteratively merged following the above distance (closest first) until a single region remains.
      *
      * @tparam graph_t
      * @tparam T
      * @param graph
      * @param xedge_weights
+     * @return a node weighted tree
      */
     template<typename graph_t, typename T>
     auto binary_partition_tree_min_linkage(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
@@ -471,17 +568,22 @@ namespace hg {
     }
 
     /**
-     * Compute the binary partition tree, i.e. the agglomerative clustering, with the  maximum/complete linkage rule.
+     * Binary partition tree, i.e. the agglomerative clustering, with the  maximum/complete linkage rule.
      *
-     * Given a graph G, with initial edge weights W,
-     * the distance d(X,Y) between any two regions X, Y is defined as :
-     *      d(X,Y) = max {W({x,y}) | x in X, y in Y, {x,y} in G }
+     * Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w`,
+     * the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
+     *
+     * .. math::
+     *
+     *      d(X,Y) = \max \{w(\{x,y\}) | x \in X, y \in Y, \{x,y\} \in E \}
+     *
      * Regions are then iteratively merged following the above distance (closest first) until a single region remains
      *
      * @tparam graph_t
      * @tparam T
      * @param graph
      * @param xedge_weights
+     * @return a node weighted tree
      */
     template<typename graph_t, typename T>
     auto binary_partition_tree_complete_linkage(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
@@ -493,12 +595,16 @@ namespace hg {
     }
 
     /**
-     * Compute the binary partition tree, i.e. the agglomerative clustering, with the  maximum/complete linkage rule.
+     * Binary partition tree, i.e. the agglomerative clustering, with the  average linkage rule.
      *
-     * Given a graph G, with initial edge weights W with associated weights WW,
-     * the distance d(X,Y) between any two regions X, Y is defined as :
-     *      d(X,Y) = (1 / Z) + sum_{x in X, y in Y, {x,y} in G} W({x,y}) x WW({x,y})
-     * with Z = sum_{x in X, y in Y, {x,y} in G} W({x,y})
+     * Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w` with associated weights :math:`w'`,
+     * the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
+     *
+     * .. math::
+     *
+     *      d(X,Y) = \\frac{1}{Z} sum_{x \in X, y \in Y, \{x,y\} in E} w(\{x,y\}) \\times w'(\{x,y\})
+     *
+     * with :math:`Z = \sum_{x \in X, y \in Y, \{x,y\} \in E} w'({x,y})`.
      *
      * Regions are then iteratively merged following the above distance (closest first) until a single region remains
      *
@@ -507,6 +613,7 @@ namespace hg {
      * @param graph
      * @param xedge_weights
      * @param xedge_weight_weights
+     * @return a node weighted tree
      */
     template<typename graph_t, typename T>
     auto binary_partition_tree_average_linkage(const graph_t &graph,
@@ -518,6 +625,42 @@ namespace hg {
                 binary_partition_tree_internal::binary_partition_tree_average_linkage_weighting_functor<T>(
                         xedge_weights,
                         xedge_weight_weights));
+    }
+
+    /**
+     * Binary partition tree, i.e. the agglomerative clustering, with the Ward linkage rule.
+     *
+     * Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w` with associated weights :math:`w'`,
+     * the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
+     *
+     * .. math::
+     *
+     *      d(X,Y) = \\frac{| X |\\times| Y |}{| X |+| Y |} \| \\vec{X} - \\vec{Y} \|^2
+     *
+     * where :math:`\\vec{X}` and :math:`\\vec{Y}` are the centroids of  :math:`X` and  :math:`Y`.
+     *
+     * Regions are then iteratively merged following the above distance (closest first) until a single region remains
+     *
+     * @tparam graph_t
+     * @tparam T1
+     * @tparam T2
+     * @param graph
+     * @param xvertex_centroids Centroids of the graph vertices (must be a 2d array)
+     * @param xvertex_sizes Size (number of elements) of the graph vertices
+     * @return a node weighted tree
+     */
+    template<typename graph_t, typename T1, typename T2>
+    auto binary_partition_tree_ward_linkage(const graph_t &graph,
+                                            const xt::xexpression<T1> &xvertex_centroids,
+                                            const xt::xexpression<T2> &xvertex_sizes) {
+
+        auto f = binary_partition_tree_internal::binary_partition_tree_ward_linkage_weighting_functor<T1, T2>
+                (xvertex_centroids, xvertex_sizes);
+
+        return binary_partition_tree(
+                graph,
+                f.get_weights(graph),
+                f);
     }
 
 }
