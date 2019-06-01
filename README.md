@@ -7,10 +7,10 @@
 [![codecov](https://codecov.io/gh/PerretB/Higra/branch/master/graph/badge.svg)](https://codecov.io/gh/PerretB/Higra)
 [![Documentation Status](https://readthedocs.org/projects/higra/badge/?version=latest)](https://higra.readthedocs.io/en/latest/?badge=latest)
 
-Higra is a C++/Python library for efficient graph analysis with a special focus on hierarchical methods. Some of the main features are:
+Higra is a C++/Python library for efficient sparse graph analysis with a special focus on hierarchical methods. Some of the main features are:
 
 - efficient methods and data structures to handle the dual representation of hierarchical clustering: dendrograms (trees) and ultra-metric distances (saliency maps);
-- hierarchical clustering algorithms: agglomerative clustering (single-linkage, average-linkage, complete-linkage, or custom rule), quasi-flat zones hierarchy, hierarchical watersheds;
+- hierarchical clustering algorithms: agglomerative clustering (single-linkage, average-linkage, complete-linkage, Ward, or custom rule), quasi-flat zones hierarchy, hierarchical watersheds;
 - component trees: min and max trees;
 - various algorithms to manipulate and explore hierarchical clustering: accumulators, filtering/simplification, cluster extraction, partitioning, horizontal and non-horizontal cuts, alignment;
 - optimization on hierarchies: optimal cuts, energy hierarchies;
