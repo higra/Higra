@@ -120,7 +120,7 @@ namespace test_horizontal_cuts {
         auto hch = make_horizontal_cut_explorer(tree, altitudes);
 
         for (index_t i = 0; i <= 3; i++) {
-            auto c = hch.horizontal_cut_from_altitude(i);
+            auto c = hch.horizontal_cut_from_altitude((int)i);
             auto r1 = c.labelisation_leaves(tree);
             auto r2 = labelisation_horizontal_cut_from_threshold(tree, altitudes, i);
             REQUIRE((r1 == r2));

@@ -106,7 +106,7 @@ namespace hg {
                 index_t nbNodes = (index_t)num_vertices(tree);
                 index_t nbRepresent = 2 * nbNodes - 1;
 
-                index_t logn = (index_t) (ceil(log((double) (nbRepresent)) / log(2.0)));
+                int logn = (int) (ceil(log((double) (nbRepresent)) / log(2.0)));
 
                 Minim.resize({(size_t)logn, (size_t)nbRepresent});
 
@@ -119,8 +119,8 @@ namespace hg {
                 }
                 Minim(0, nbRepresent - 1) = nbRepresent - 1;
 
-                for (index_t j = 1; j < logn; j++) {
-                    index_t k1 = 1 << (j - 1);
+                for (int j = 1; j < logn; j++) {
+                    index_t k1 = (index_t)(1 << (j - 1));
                     index_t k2 = k1 << 1;
                     for (index_t i = 0; i < nbRepresent; i++) {
                         if ((i + k2) >= nbRepresent) {
@@ -158,8 +158,8 @@ namespace hg {
              * @return
              */
             vertex_t lca(vertex_t n1, vertex_t n2) const {
-                index_t ii, jj, kk, k;
-
+                index_t ii, jj, kk;
+                int k;
                 ii = Number[n1];
                 jj = Number[n2];
                 if (ii == jj)
@@ -171,12 +171,12 @@ namespace hg {
                     ii = kk;
                 }
 
-                k = (index_t) (log((double) (jj - ii)) / log(2.));
+                k = (int) (log((double) (jj - ii)) / log(2.));
 
-                if (Depth[Euler[Minim(k, ii)]] < Depth[Euler[Minim(k, jj - (1 << (k)))]]) {
+                if (Depth[Euler[Minim(k, ii)]] < Depth[Euler[Minim(k, jj - (index_t)(1 << (k)))]]) {
                     return Represent[Number[Euler[Minim(k, ii)]]];
                 } else {
-                    return Represent[Number[Euler[Minim(k, jj - (1 << k))]]];
+                    return Represent[Number[Euler[Minim(k, jj - (index_t)(1 << k))]]];
                 }
             }
 

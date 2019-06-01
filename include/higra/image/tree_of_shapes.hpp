@@ -45,7 +45,7 @@ namespace hg {
              * Create a queue with the given number of levels
              * @param num_levels queue will have integer levels in [0, num_levels[
              */
-            integer_level_multi_queue(index_t min_level, index_t max_level) :
+            integer_level_multi_queue(level_type min_level, level_type max_level) :
                     m_min_level(min_level),
                     m_max_level(max_level),
                     m_num_levels(max_level - min_level + 1),

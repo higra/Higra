@@ -259,7 +259,7 @@ namespace hg {
             }
 
             return hg::fragmentation_curve<>{
-                    xt::eval(xt::arange<double>(1, final_scores.size() + 1)),
+                    xt::eval(xt::arange<double>(1, (index_t)final_scores.size() + 1)),
                     xt::eval(final_scores / (double) num_leaves(m_tree)),
                     m_num_regions_ground_truth};
         }

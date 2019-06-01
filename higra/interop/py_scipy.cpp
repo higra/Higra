@@ -36,10 +36,10 @@ auto binary_hierarchy_to_scipy_linkage_matrix(const tree_t &tree,
     for (auto i: hg::leaves_to_root_iterator(tree, hg::leaves_it::exclude)) {
         hg::index_t n = i - n_leaves;
         hg_assert(hg::num_children(i, tree) == 2, "Input hierarchy must be a binary hierarchy.");
-        M(n, 0) = hg::child(0, i, tree);
-        M(n, 1) = hg::child(1, i, tree);
-        M(n, 2) = altitudes(i);
-        M(n, 3) = area(i);
+        M(n, 0) = (value_t)hg::child(0, i, tree);
+        M(n, 1) = (value_t)hg::child(1, i, tree);
+        M(n, 2) = (value_t)altitudes(i);
+        M(n, 3) = (value_t)area(i);
     }
     return M;
 };
