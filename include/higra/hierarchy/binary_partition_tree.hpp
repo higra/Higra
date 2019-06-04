@@ -641,6 +641,10 @@ namespace hg {
      *
      * Regions are then iteratively merged following the above distance (closest first) until a single region remains
      *
+     * Note that the Ward distance is not necessarily strictly increasing when processing a non complete graph.
+     * To ensure that the altitudes of the resulting hierarchy are increasing, the final altitude of a node :math`n`
+     * is defined as the maximum of the the Ward distance associated to each note in the subtree rooted in `n`.
+     *
      * @tparam graph_t
      * @tparam T1
      * @tparam T2
@@ -657,10 +661,17 @@ namespace hg {
         auto f = binary_partition_tree_internal::binary_partition_tree_ward_linkage_weighting_functor<T1, T2>
                 (xvertex_centroids, xvertex_sizes);
 
-        return binary_partition_tree(
+        auto res = binary_partition_tree(
                 graph,
                 f.get_weights(graph),
                 f);
+
+        auto & tree = res.tree;
+        auto & altitudes = res.altitudes;
+        for (auto i: leaves_to_root_iterator(tree, leaves_it::include, root_it::exclude)) {
+            altitudes(parent(i, tree)) = (std::max)(altitudes(i), altitudes(parent(i, tree)));
+        }
+        return res;
     }
 
 }

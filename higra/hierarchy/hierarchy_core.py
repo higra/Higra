@@ -18,7 +18,7 @@ def bpt_canonical(graph, edge_weights):
 
     :param graph: input graph
     :param edge_weights: edge weights of the input graph
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    :return: a tree (Concept :class:`~higra.CptBinaryHierarchy`) and its node altitudes
     """
     res = hg.cpp._bpt_canonical(graph, edge_weights)
     tree = res.tree()

@@ -79,7 +79,7 @@ namespace binary_partition_tree {
 
     TEST_CASE("ward linkage clustering", "[binary_partition_tree]") {
         ugraph graph(5);
-        
+
         array_1d<index_t> sources{0, 0, 0, 1, 2, 2, 3};
         array_1d<index_t> targets{1, 2, 3, 2, 3, 4, 4};
         add_edges(sources, targets, graph);
@@ -96,7 +96,6 @@ namespace binary_partition_tree {
                                       2,
                                       1};
 
-
         auto res = binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes);
 
         auto &tree = res.tree;
@@ -105,6 +104,29 @@ namespace binary_partition_tree {
         array_1d<index_t> expected_parents{5, 5, 7, 6, 6, 7, 8, 8, 8};
         array_1d<double> expected_altitudes{0., 0., 0., 0., 0.,
                                             1., 3.333333, 4.333333, 27.};
+        REQUIRE((expected_parents == parents(tree)));
+        REQUIRE(xt::allclose(expected_altitudes, altitudes));
+    }
+
+    TEST_CASE("ward linkage non increasing", "[binary_partition_tree]") {
+        ugraph graph(3);
+
+        array_1d<index_t> sources{0, 1};
+        array_1d<index_t> targets{2, 2};
+        add_edges(sources, targets, graph);
+        array_2d<double> vertex_centroids{{0},
+                                          {1},
+                                          {5}};
+
+        array_1d<double> vertex_sizes{1, 1, 1};
+
+        auto res = binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes);
+
+        auto &tree = res.tree;
+        auto &altitudes = res.altitudes;
+
+        array_1d<index_t> expected_parents{4, 3, 3, 4, 4};
+        array_1d<double> expected_altitudes{0., 0., 0., 8, 8};
         REQUIRE((expected_parents == parents(tree)));
         REQUIRE(xt::allclose(expected_altitudes, altitudes));
     }

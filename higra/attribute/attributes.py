@@ -387,7 +387,7 @@ def attribute_depth(tree):
 @hg.argument_helper("depth")
 def attribute_regular_altitudes(tree, depth):
     """
-    The regular altitudes is comprised between 0 and 1 and is inversely proportional to its depth
+    The regular altitudes is comprised between 0 and 1 and is inversely proportional to the depth of a node
 
     **Provider name**: "regular_altitudes"
 

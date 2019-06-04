@@ -10,6 +10,7 @@
 
 set(PY_FILES
         __init__.py
+        test_dendrogram_purity.py
         test_fragmentation_curve.py
         test_partition.py)
 
