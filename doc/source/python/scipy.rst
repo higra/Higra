@@ -1,7 +1,7 @@
 .. _scipy:
 
-Tree attributes
-===============
+Scipy Interoperability functions
+================================
 
 .. autofunction:: higra.binary_hierarchy_to_scipy_linkage_matrix
 
