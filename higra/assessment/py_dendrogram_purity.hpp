@@ -10,6 +10,7 @@
 
 #pragma once
 
-#include "py_dendrogram_purity.hpp"
-#include "py_fragmentation_curve.hpp"
-#include "py_partition.hpp"
+#include "pybind11/pybind11.h"
+
+void py_init_dendrogram_purity(pybind11::module &m);
+

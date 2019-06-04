@@ -9,6 +9,7 @@
 ############################################################################
 
 set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_dendrogram_purity.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_fragmentation_curve.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_partition.cpp
         PARENT_SCOPE)
