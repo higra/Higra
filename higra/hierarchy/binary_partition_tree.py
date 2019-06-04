@@ -108,6 +108,10 @@ def binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes=Non
 
     Regions are then iteratively merged following the above distance (closest first) until a single region remains
 
+    Note that the Ward distance is not necessarily strictly increasing when processing a non complete graph.
+    To ensure that the altitudes of the resulting hierarchy are increasing, the final altitude of a node :math`n`
+    is defined as the maximum of the the Ward distance associated to each note in the subtree rooted in `n`.
+
     :param graph: input graph
     :param vertex_centroids: Centroids of the graph vertices (must be a 2d array)
     :param vertex_sizes: Size (number of elements) of the graph vertices (default to an array of ones)
