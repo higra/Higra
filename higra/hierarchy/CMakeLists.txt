@@ -14,6 +14,7 @@ set(PY_FILES
         component_tree.py
         constrained_connectivity_hierarchy.py
         hierarchy_core.py
+        random_hierarchy.py
         watershed_hierarchy.py)
 
 set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}

@@ -14,6 +14,7 @@ set(PY_FILES
         test_constrained_connectivity_hierarchy.py
         test_component_tree.py
         test_hierarchy_core.py
+        test_random_hierarchy.py
         test_watershed_hierarchy.py)
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")
