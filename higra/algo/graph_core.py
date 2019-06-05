@@ -9,6 +9,7 @@
 ############################################################################
 
 import higra as hg
+import numpy as np
 
 
 def labelisation_2_graph_cut(graph, vertex_labels):
@@ -47,7 +48,7 @@ def graph_cut_2_labelisation(graph, edge_weights):
     return vertex_labels
 
 
-def undirected_graph_2_adjacency_matrix(graph, edge_weights, non_edge_value=0):
+def undirected_graph_2_adjacency_matrix(graph, edge_weights=None, non_edge_value=0):
     """
     Create an adjacency matrix from an undirected edge-weighted graph (the result is thus symmetric).
 
@@ -55,10 +56,12 @@ def undirected_graph_2_adjacency_matrix(graph, edge_weights, non_edge_value=0):
     the adjacency matrix.
 
     :param graph: Input graph
-    :param edge_weights: Graph edge weights
+    :param edge_weights: Graph edge weights (default to ``np.ones(graph.num_edges())`` if ``None``)
     :param non_edge_value: Value used to represent edges that are not in the input graph
     :return: A 2d symmetric square matrix
     """
+    if edge_weights is None:
+        edge_weights = np.ones((graph.num_edges(),), np.float32)
     return hg.cpp._undirected_graph_2_adjacency_matrix(graph, edge_weights, float(non_edge_value))
 
 
