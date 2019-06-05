@@ -68,6 +68,19 @@ class TestAlgorithmGraphCore(unittest.TestCase):
                                   (0, 0, 0, 0, 0, 6, 7, 0)))
         self.assertTrue(np.all(ref_adj_mat == adj_mat))
 
+        t = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
+        adj_mat = hg.undirected_graph_2_adjacency_matrix(t)
+
+        ref_adj_mat = np.asarray(((0, 0, 0, 0, 0, 1, 0, 0),
+                                  (0, 0, 0, 0, 0, 1, 0, 0),
+                                  (0, 0, 0, 0, 0, 0, 1, 0),
+                                  (0, 0, 0, 0, 0, 0, 1, 0),
+                                  (0, 0, 0, 0, 0, 0, 1, 0),
+                                  (1, 1, 0, 0, 0, 0, 0, 1),
+                                  (0, 0, 1, 1, 1, 0, 0, 1),
+                                  (0, 0, 0, 0, 0, 1, 1, 0)))
+        self.assertTrue(np.all(ref_adj_mat == adj_mat))
+
     def test_undirected_graph_2_adjacency_matrix_overload_resolution(self):
         graph = hg.UndirectedGraph(2)
         graph.add_edge(0, 1)
