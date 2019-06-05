@@ -13,8 +13,8 @@
 #include "xtensor/xsort.hpp"
 
 #include "../graph.hpp"
-#include "../structure/details/light_axis_view.hpp"
-#include "../accumulator/accumulator.hpp"
+#include "../accumulator/at_accumulator.hpp"
+
 
 namespace hg {
 
@@ -226,51 +226,6 @@ namespace hg {
             return weights;
         }
 
-        template<bool vectorial,
-                typename T,
-                typename accumulator_t,
-                typename output_t = typename T::value_type>
-        auto
-        rag_accumulate(const array_1d<index_t> &rag_map,
-                       const xt::xexpression<T> &xweights,
-                       const accumulator_t &accumulator) {
-            HG_TRACE();
-            auto &weights = xweights.derived_cast();
-            hg_assert(weights.shape()[0] == rag_map.size(), "Weights dimension does not match rag map dimension.");
-
-            index_t size = xt::amax(rag_map)() + 1;
-            auto data_shape = std::vector<size_t>(weights.shape().begin() + 1, weights.shape().end());
-            auto output_shape = accumulator_t::get_output_shape(data_shape);
-            output_shape.insert(output_shape.begin(), size);
-            array_nd<typename T::value_type> rag_weights = array_nd<typename T::value_type>::from_shape(output_shape);
-
-            auto input_view = make_light_axis_view<vectorial>(weights);
-            auto output_view = make_light_axis_view<vectorial>(rag_weights);
-
-            std::vector<decltype(accumulator.template make_accumulator<vectorial>(output_view))> accs;
-            accs.reserve(size);
-
-
-            for (index_t i = 0; i < size; ++i) {
-                output_view.set_position(i);
-                accs.push_back(accumulator.template make_accumulator<vectorial>(output_view));
-                accs[i].initialize();
-            }
-
-            index_t map_size = rag_map.size();
-            for (index_t i = 0; i < map_size; ++i) {
-                if (rag_map.data()[i] != invalid_index) {
-                    input_view.set_position(i);
-                    accs[rag_map.data()[i]].accumulate(input_view.begin());
-                }
-            }
-
-            for (auto &acc: accs) {
-                acc.finalize();
-            }
-
-            return rag_weights;
-        }
     }
 
     /**
@@ -305,10 +260,6 @@ namespace hg {
     auto rag_accumulate(const array_1d<index_t> &rag_map,
                         const xt::xexpression<T> &xweights,
                         const accumulator_t &accumulator) {
-        if (xweights.derived_cast().dimension() == 1) {
-            return rag_internal::rag_accumulate<false, T, accumulator_t, output_t>(rag_map, xweights, accumulator);
-        } else {
-            return rag_internal::rag_accumulate<true, T, accumulator_t, output_t>(rag_map, xweights, accumulator);
-        }
-    };
+        return accumulate_at(rag_map, xweights, accumulator);
+    }
 }

@@ -10,6 +10,7 @@
 
 set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/test_accumulator.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_at_accumulator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_graph_accumulator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_tree_accumulator.cpp
         PARENT_SCOPE)
