@@ -129,6 +129,16 @@ namespace binary_partition_tree {
         array_1d<double> expected_altitudes{0., 0., 0., 8, 8};
         REQUIRE((expected_parents == parents(tree)));
         REQUIRE(xt::allclose(expected_altitudes, altitudes));
+
+        auto res2 = binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes, "none");
+
+        auto &tree2 = res2.tree;
+        auto &altitudes2 = res2.altitudes;
+
+        array_1d<index_t> expected_parents2{4, 3, 3, 4, 4};
+        array_1d<double> expected_altitudes2{0., 0., 0., 8, 6};
+        REQUIRE((expected_parents2 == parents(tree2)));
+        REQUIRE(xt::allclose(expected_altitudes2, altitudes2));
     }
 
     TEST_CASE("average linkage clustering", "[binary_partition_tree]") {

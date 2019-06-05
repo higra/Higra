@@ -93,7 +93,7 @@ def binary_partition_tree_single_linkage(graph, edge_weights):
     return hg.bpt_canonical(graph, edge_weights)
 
 
-def binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes=None):
+def binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes=None, altitude_correction="max"):
     """
     Binary partition tree, i.e. the agglomerative clustering, with the Ward linkage rule.
 
@@ -109,12 +109,17 @@ def binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes=Non
     Regions are then iteratively merged following the above distance (closest first) until a single region remains
 
     Note that the Ward distance is not necessarily strictly increasing when processing a non complete graph.
-    To ensure that the altitudes of the resulting hierarchy are increasing, the final altitude of a node :math`n`
-    is defined as the maximum of the the Ward distance associated to each note in the subtree rooted in `n`.
+    This can be corrected afterward with an altitude correction strategy. Valid values for ``altitude correction`` are:
+
+        - ``"none"``: nothing is done and the altitude of a node is equal to the Ward distance between its 2 children;
+            this may not be non-decreasing
+        - ``"max"``: the altitude of a node :math:`n` is defined as the maximum of the the Ward distance associated
+            to each node in the subtree rooted in :math:`n`.
 
     :param graph: input graph
     :param vertex_centroids: Centroids of the graph vertices (must be a 2d array)
     :param vertex_sizes: Size (number of elements) of the graph vertices (default to an array of ones)
+    :param altitude_correction: can be ``"none"`` or ``"max"`` (default)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
@@ -123,7 +128,7 @@ def binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes=Non
     else:
         vertex_centroids, vertex_sizes = hg.cast_to_common_type(vertex_centroids, vertex_sizes)
 
-    res = hg.cpp._binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes)
+    res = hg.cpp._binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes, altitude_correction)
     tree = res.tree()
     altitudes = res.altitudes()
 

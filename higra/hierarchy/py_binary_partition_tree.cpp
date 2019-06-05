@@ -62,13 +62,17 @@ struct def_binary_partition_tree_ward_linkage {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_binary_partition_tree_ward_linkage",
-              [](const hg::ugraph &graph, pyarray<T> &vertex_centroids, pyarray<T> &vertex_sizes) {
-                  return binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes);
+              [](const hg::ugraph &graph, 
+                      const pyarray<T> &vertex_centroids, 
+                      const pyarray<T> &vertex_sizes,
+                      const std::string & altitude_correction) {
+                  return binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes, altitude_correction);
               },
               doc,
               py::arg("graph"),
               py::arg("vertex_centroids"),
-              py::arg("vertex_sizes"));
+              py::arg("vertex_sizes"),
+              py::arg("altitude_correction")=std::string("max"));
     }
 };
 
