@@ -3,6 +3,17 @@
 Algorithms for graphs
 =====================
 
+.. currentmodule:: higra
+
+.. autosummary::
+
+    ultrametric_open
+    labelisation_2_graph_cut
+    graph_cut_2_labelisation
+    minimum_spanning_tree
+    undirected_graph_2_adjacency_matrix
+    adjacency_matrix_2_undirected_graph
+
 .. autofunction:: higra.ultrametric_open
 
 .. autofunction:: higra.labelisation_2_graph_cut

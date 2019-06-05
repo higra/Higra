@@ -13,8 +13,8 @@ import higra as hg
 
 def accumulate_graph_edges(graph, edge_weights, accumulator):
     """
-    For each vertex i of the graph: accumulates edge weights of the out edges of i and put the result
-    in output. i.e. output(i) = accumulate(edge_weights(out_edges(i)))
+    Accumulates edge weights of the out edges of each vertex :math:`i`:
+    ie :math:`output(i) = accumulator(edge\_weights(out\_edges(i)))`.
 
     :param graph: input graph
     :param edge_weights: Weights on the edges of the graph
@@ -27,8 +27,8 @@ def accumulate_graph_edges(graph, edge_weights, accumulator):
 
 def accumulate_graph_vertices(graph, vertex_weights, accumulator):
     """
-    For each vertex i of the graph: accumulates vertex weights of the adjacent vertices of i and put the result
-    in output. i.e. output(i) = accumulate(vertex_weights(adjacent_vertices(i)))
+    Accumulates vertex weights of the adjacent vertices of each vertex :math:`i`:
+    ie :math:`output(i) = accumulator(vertex\_weights(adjacent\_vertices(i)))`.
 
     :param graph: input graph
     :param vertex_weights: Weights on the vertices of the graph

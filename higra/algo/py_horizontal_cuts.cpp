@@ -35,7 +35,8 @@ struct def_reconstruct_leaf_data {
 template<typename tree_t>
 void def_horizontal_cut_nodes(pybind11::module &m) {
     using class_t = hg::horizontal_cut_nodes<double>;
-    auto c = py::class_<class_t>(m, "HorizontalCutNodes");
+    auto c = py::class_<class_t>(m, "HorizontalCutNodes",
+                                 R"""(Represents an horizontal cut in a hierarchy as a set of nodes.)""");
     c.def("nodes",
           [](const class_t &c) -> const array_1d<index_t> & { return c.nodes; },
           "Array containing the indices of the nodes of the cut.");
@@ -66,13 +67,13 @@ struct def_horizontal_cut_explorer_ctr {
     template<typename type, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def_static("_make_HorizontalCutExplorer",
-                     [](const typename c_t::tree_type &tree, const xt::pyarray<type> &altitudes) {
-                         return c_t(tree, altitudes);
-                     },
-                     doc,
-                     py::arg("tree"),
-                     py::arg("altitudes"));
+        c.def(py::init(
+                [](const typename c_t::tree_type &tree, const xt::pyarray<type> &altitudes) {
+                    return c_t(tree, altitudes);
+                }),
+              doc,
+              py::arg("tree"),
+              py::arg("altitudes"));
     }
 };
 
@@ -82,17 +83,24 @@ void def_horizontal_cut_explorer(pybind11::module &m) {
     auto c = py::class_<class_t>(
             m,
             "HorizontalCutExplorer",
-            "This class helps to explore and browse the horizontal cuts of a valued hierarchy.\n"
-            "Construction of the HorizontalCutExplorer if performed in linear time O(n) w.r.t. the number of nodes in the tree.\n"
-            "Each cut of the hierarchy can be accessed through:\n\n"
-            "\t- its index (the first single region cut has index 0). This operations runs in O(k), with k the number of regions in the retrieved cut ;\n"
-            "\t- the number of regions in the cut (the smallest partition having at least the given number of regions if found). This operations runs in O(k*log(n)), with k the number of regions in the retrieved cut;\n"
-            "\t- the altitude of the cut. This operations runs in O(k*log(n)), with k the number of regions in the retrieved cut.\n"
+            R"""(This class helps to explore and to browse the horizontal cuts of a valued hierarchy.
+Construction of the HorizontalCutExplorer if performed in linear time :math:`\mathcal{O}(n)` w.r.t. the number of nodes in the tree.
+Each cut of the hierarchy can be accessed through:
+
+  - its index (the first single region cut has index 0). This operations runs in :math:`\mathcal{O}(k)`, with :math:`k` the number of regions in the retrieved cut ;
+  - the number of regions in the cut (the smallest partition having at least the given number of regions if found). This operations runs in :math:`\mathcal{O}(k*\log(n))`, with :math:`k` the number of regions in the retrieved cut;
+  - the altitude of the cut. This operations runs in :math:`\mathcal{O}(k*\log(n))`, with :math:`k` the number of regions in the retrieved cut.)"""
     );
     add_type_overloads<def_horizontal_cut_explorer_ctr<class_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (c,
-             "Create an horizontal cut explorer for the provided valued hierarchy."
-            );
+             R"(Create an horizontal cut explorer for the provided valued hierarchy.
+
+Altitudes must be increasing
+
+:param tree: input tree
+:param altitudes: tree nodes altitudes
+:return: an ``HorizontalCutExplorer``
+)");
     c.def("num_cuts", &class_t::num_cuts, "Number of horizontal cuts in the hierarchy.");
     c.def("num_regions_cut",
           &class_t::num_regions_cut,

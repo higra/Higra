@@ -14,7 +14,7 @@ import numpy as np
 
 def binary_partition_tree_complete_linkage(graph, edge_weights):
     """
-    Compute a binary partition tree with complete linkage distance.
+    Binary partition tree with complete linkage distance.
 
     Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w`,
     the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
@@ -41,7 +41,7 @@ def binary_partition_tree_complete_linkage(graph, edge_weights):
 
 def binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weights=None):
     """
-    Compute a binary partition tree with average linkage distance.
+    Binary partition tree with average linkage distance.
 
     Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w` with associated weights :math:`w_2`,
     the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
@@ -74,7 +74,7 @@ def binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weigh
 
 def binary_partition_tree_single_linkage(graph, edge_weights):
     """
-    Alias for bpt_canonical.
+    Alias for :func:`~higra.bpt_canonical`.
 
     Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w`,
     the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
@@ -95,7 +95,7 @@ def binary_partition_tree_single_linkage(graph, edge_weights):
 
 def binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes=None, altitude_correction="max"):
     """
-    Binary partition tree, i.e. the agglomerative clustering, with the Ward linkage rule.
+    Binary partition tree with the Ward linkage rule.
 
     Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w` with associated weights :math:`w'`,
     the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
@@ -139,7 +139,7 @@ def binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes=Non
 
 def binary_partition_tree(graph, weight_function, edge_weights):
     """
-    Compute the binary partition tree of the graph.
+    Binary partition tree of the graph with a user provided cluster distance.
 
     At each step:
 

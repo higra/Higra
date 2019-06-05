@@ -3,6 +3,13 @@
 Partition score
 ===============
 
+.. currentmodule:: higra
+
+.. autosummary::
+
+    PartitionMeasure
+    assess_partition
+
 .. autoclass:: higra.PartitionMeasure
     :members:
     :undoc-members:

@@ -15,7 +15,9 @@ import numpy as np
 @hg.argument_helper(hg.CptGridGraph)
 def oriented_watershed(graph, edge_weights, shape, edge_orientations=None):
     """
-    Compute the oriented watershed as described in :
+    Creates a region adjacency graph (rag) with the oriented watershed transform.
+
+    The method is described in:
 
         P. Arbelaez, M. Maire, C. Fowlkes and J. Malik, "Contour Detection and Hierarchical Image Segmentation,"
         in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 33, no. 5, pp. 898-916, May 2011.
@@ -47,7 +49,9 @@ def oriented_watershed(graph, edge_weights, shape, edge_orientations=None):
 @hg.argument_helper(hg.CptGridGraph)
 def mean_pb_hierarchy(graph, edge_weights, shape, edge_orientations=None):
     """
-    Compute the mean pb hierarchy as described in :
+    Mean probability boundary hierarchy.
+
+    The method is described in:
 
         P. Arbelaez, M. Maire, C. Fowlkes and J. Malik, "Contour Detection and Hierarchical Image Segmentation,"
         in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 33, no. 5, pp. 898-916, May 2011.
@@ -81,7 +85,9 @@ def mean_pb_hierarchy(graph, edge_weights, shape, edge_orientations=None):
 @hg.argument_helper(hg.CptGridGraph)
 def multiscale_mean_pb_hierarchy(graph, fine_edge_weights, others_edge_weights, shape, edge_orientations=None):
     """
-    Compute the multiscale mean pb hierarchy as described in :
+    Multiscale mean probability boundary hierarchy.
+
+    The method is described in:
 
         J. Pont-Tuset, P. Arbeláez, J. Barron, F. Marques, and J. Malik
         Multiscale Combinatorial Grouping for Image Segmentation and Object Proposal Generation

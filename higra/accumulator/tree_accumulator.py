@@ -14,8 +14,8 @@ import numpy as np
 
 def accumulate_parallel(tree, node_weights, accumulator):
     """
-    For each node i of the tree: accumulates values of the children of i in the node_weights array and put the result
-    in output. i.e. output(i) = accumulate(node_weights(children(i)))
+    Accumulates values of the children of every node :math:`i` in the :math:`node\_weights` array and puts the result
+    in output: :math:`output(i) = accumulator(node\_weights(children(i)))`
 
     :param tree: input tree
     :param node_weights: Weights on the nodes of the tree
@@ -29,9 +29,9 @@ def accumulate_parallel(tree, node_weights, accumulator):
 @hg.argument_helper(hg.CptHierarchy)
 def accumulate_sequential(tree, leaf_data, accumulator, leaf_graph=None):
     """
-    Performs a sequential accumulation of node values from the leaves to the root.
-    For each leaf node i, output(i) = leaf_data(i).
-    For each node i from the leaves (excluded) to the root, output(i) = accumulate(output(children(i)))
+    Sequential accumulation of node values from the leaves to the root.
+    For each leaf node :math:`i`, :math:`output(i) = leaf_data(i)`.
+    For each node :math:`i` from the leaves (excluded) to the root, :math:`output(i) = accumulator(output(children(i)))`
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param leaf_data: array of weights on the leaves of the tree
@@ -47,9 +47,9 @@ def accumulate_sequential(tree, leaf_data, accumulator, leaf_graph=None):
 
 def propagate_sequential(tree, node_weights, condition):
     """
-    Conditionally propagates parent values to children.
-    For each node i from the root to the leaves, if condition(i) then output(i) = output(tree.parent(i)) otherwise
-    output(i) = input(i)
+    Sequentially propagates parent values to children:
+    for each node :math:`i` from the root to the leaves, if :math:`i` is not the root and if :math:`condition(i)` then
+    :math:`output(i) = output(tree.parent(i))` otherwise  :math:`output(i) = node\_weights(i)`.
 
     :param tree: input tree
     :param node_weights: Weights on the nodes of the tree
@@ -62,8 +62,9 @@ def propagate_sequential(tree, node_weights, condition):
 
 def propagate_sequential_and_accumulate(tree, node_weights, accumulator):
     """
-    Propagates parent values to children anc accumulate with current value.
-    For each node i from the root to the leaves, output(i) = accumulate(node_weights(i), output(parent(i))).
+    Sequentially propagates parent values to children and accumulates with current value:
+    for each node :math:`i` from the root to the leaves,
+    :math:`output(i) = accumulator(node\_weights(i), output(parent(i)))`.
 
     :param tree: input tree
     :param node_weights: Weights on the nodes of the tree
@@ -76,9 +77,9 @@ def propagate_sequential_and_accumulate(tree, node_weights, accumulator):
 
 def propagate_parallel(tree, node_weights, condition=None):
     """
-    The conditional parallel propagator defines the new value of a node as its parent value if the condition is true
-    and keeps its value otherwise. This process is done in parallel on the whole tree. The default condition
-    (if the user does not provide one) is true for all nodes: each node takes the value of its parent.
+    Propagates parent values to children:
+    for each node :math:`i`, if :math:`condition(i)` then
+    :math:`output(i) = node\_weights(tree.parent(i))` otherwise  :math:`output(i) = node\_weights(i)`.
 
     The conditional parallel propagator pseudo-code could be::
 
@@ -111,11 +112,10 @@ def propagate_parallel(tree, node_weights, condition=None):
 @hg.argument_helper(("tree", hg.CptHierarchy))
 def accumulate_and_add_sequential(tree, node_weights, leaf_data, accumulator, leaf_graph=None):
     """
-    Performs a sequential accumulation of node values from the leaves to the root and
-    add the result with the input array.
+    Accumulates node values from the leaves to the root and add the result with the input array.
 
-    For each leaf node i, output(i) = leaf_data(i).
-    For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))
+    For each leaf node :math:`i`, output(i) = :math:`leaf\_data(i)`.
+    For each node :math:`i` from the leaves (excluded) to the root, :math:`output(i) = input(i) + accumulator(output(children(i)))`
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param node_weights: Weights on the nodes of the tree
@@ -136,11 +136,10 @@ def accumulate_and_add_sequential(tree, node_weights, leaf_data, accumulator, le
 @hg.argument_helper(hg.CptHierarchy)
 def accumulate_and_multiply_sequential(tree, node_weights, leaf_data, accumulator, leaf_graph=None):
     """
-    Performs a sequential accumulation of node values from the leaves to the root and
-    add the result with the input array.
+    Accumulates node values from the leaves to the root and multiply the result with the input array.
 
-    For each leaf node i, output(i) = leaf_data(i).
-    For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))
+    For each leaf node :math:`i`, :math:`output(i) = leaf_data(i)`.
+    For each node :math:`i` from the leaves (excluded) to the root, :math:`output(i) = input(i) + accumulator(output(children(i)))`
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param node_weights: Weights on the nodes of the tree
@@ -161,11 +160,11 @@ def accumulate_and_multiply_sequential(tree, node_weights, leaf_data, accumulato
 @hg.argument_helper(hg.CptHierarchy)
 def accumulate_and_min_sequential(tree, node_weights, leaf_data, accumulator, leaf_graph=None):
     """
-    Performs a sequential accumulation of node values from the leaves to the root and
-    add the result with the input array.
+    Accumulates node values from the leaves to the root and takes the minimum of result and the input array.
 
-    For each leaf node i, output(i) = leaf_data(i).
-    For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))
+
+    For each leaf node :math:`i`, :math:`output(i) = leaf_data(i)`.
+    For each node :math:`i` from the leaves (excluded) to the root, :math:`output(i) = \min(input(i), accumulator(output(children(i)))`
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param node_weights: Weights on the nodes of the tree
@@ -185,11 +184,12 @@ def accumulate_and_min_sequential(tree, node_weights, leaf_data, accumulator, le
 @hg.argument_helper(hg.CptHierarchy)
 def accumulate_and_max_sequential(tree, node_weights, leaf_data, accumulator, leaf_graph=None):
     """
-    Performs a sequential accumulation of node values from the leaves to the root and
-    add the result with the input array.
+    Accumulates node values from the leaves to the root and takes the maximum of result and the input array.
 
-    For each leaf node i, output(i) = leaf_data(i).
-    For each node i from the leaves (excluded) to the root, output(i) = input(i) + accumulate(output(children(i)))
+
+    For each leaf node :math:`i`, :math:`output(i) = leaf_data(i)`.
+    For each node :math:`i` from the leaves (excluded) to the root, :math:`output(i) = \max(input(i), accumulator(output(children(i)))`
+
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param node_weights: Weights on the nodes of the tree

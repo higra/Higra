@@ -1,2 +1,3 @@
 sphinx-tabs
+breathe
 higra==0.3.3

@@ -107,11 +107,13 @@ def filter_binary_partition_tree(tree, altitudes, deleted_frontier_nodes, mst):
 @hg.argument_helper(hg.CptHierarchy)
 def binary_labelisation_from_markers(tree, object_marker, background_marker, leaf_graph=None):
     """
-    Given two binary markers o (object) and b (background) (given by their indicator functions)
-    on the leaves of a tree t, the corresponding binary labelization of the leaves of t is defined as
-    the union of all the nodes intersecting o but not b.
+    Given two binary markers :math:`o` (object) and :math:`b` (background) (given by their indicator functions)
+    on the leaves of a tree :math:`T`, the corresponding binary labelization of the leaves of :math:`T` is defined as
+    the union of all the nodes intersecting :math:`o` but not :math:`b`:
 
-    final_object = union {R in T | R cap o neq emptyset and R cap b = emptyset}
+    .. math::
+
+        res = \\bigcup \{R \in T \mid R \cap o \\neq \emptyset, \\textrm{ and } R \cap b = \emptyset\}
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param object_marker: indicator function of the object marker: 1d array of size tree.num_leaves() where non zero values correspond to the object marker
@@ -137,11 +139,14 @@ def binary_labelisation_from_markers(tree, object_marker, background_marker, lea
 def sort_hierarchy_with_altitudes(tree, altitudes):
     """
     Sort the nodes of a tree according to their altitudes.
-    The altitudes must be increasing, i.e. for any nodes :math:`i, j` such that :math:`j` is an ancestor of :math:`i`, then :math:`altitudes[i] <= altitudes[j]`.
+    The altitudes must be increasing, i.e. for any nodes :math:`i, j` such that :math:`j` is an ancestor of :math:`i`,
+    then :math:`altitudes[i] \leq altitudes[j]`.
 
-    The result is a new tree and a node map, isomorph to the input tree such that for any nodes :math:`i` and :math:`j`, :math:`i<j \Rightarrow altitudes[node\_map[i]] \leq altitudes[node\_map[j]]`
+    The result is a new tree and a node map, isomorph to the input tree such that for any nodes :math:`i` and
+    :math:`j`, :math:`i<j \Rightarrow altitudes[node\_map[i]] \leq altitudes[node\_map[j]]`
 
-    The latter condition is stronger than the original condition on the altitudes as :math:`j` is an ancestor of :math:`i` implies :math:`i<j` while the converse is not true.
+    The latter condition is stronger than the original condition on the altitudes as :math:`j` is an ancestor of
+    :math:`i` implies :math:`i<j` while the converse is not true.
 
     The returned "node_map" is an array that maps any node index :math:`i` of the new tree,
     to the index of this node in the original tree.

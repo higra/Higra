@@ -16,11 +16,11 @@ import higra as hg
 @hg.data_provider("vertex_area")
 def attribute_vertex_area(graph):
     """
-    Compute the vertex area of the given graph.
+    Vertex area of the given graph.
 
     In general the area of a vertex if simply equal to 1. But, if the graph is a region adjacency graph then the area of
     a region is equal to the sum of the area of the vertices inside the region (obtained with a recursive call to
-    attribute_vertex_area on the original graph).
+    ``attribute_vertex_area`` on the original graph).
 
     **Provider name**: "vertex_area"
 
@@ -39,11 +39,11 @@ def attribute_vertex_area(graph):
 @hg.data_provider("edge_length")
 def attribute_edge_length(graph):
     """
-    Compute the edge length of the given graph.
+    Edge length of the given graph.
 
     In general the length of an edge if simply equal to 1. But, if the graph is a region adjacency graph then the
     length of an edge is equal to the sum of length of the corresponding edges in the original graph (obtained with a
-    recursive call to attribute_edge_length on the original graph).
+    recursive call to ``attribute_edge_length`` on the original graph).
 
     **Provider name**: "edge_length"
 
@@ -62,7 +62,7 @@ def attribute_edge_length(graph):
 @hg.argument_helper("edge_length")
 def attribute_vertex_perimeter(graph, edge_length):
     """
-    Compute the vertex perimeter of the given graph.
+    Vertex perimeter of the given graph.
     The perimeter of a vertex is defined as the sum of the length of out-edges of the vertex.
 
     If the input graph has an attribute value `no_border_vertex_out_degree`, then each vertex perimeter is assumed to be
@@ -91,7 +91,7 @@ def attribute_vertex_perimeter(graph, edge_length):
 @hg.argument_helper(hg.CptGridGraph)
 def attribute_vertex_coordinates(graph, shape):
     """
-    Computes the coordinates of the given grid graph.
+    Coordinates of the vertices of the given grid graph.
 
     **Provider name**: "vertex_coordinates"
 
@@ -118,7 +118,7 @@ def attribute_vertex_coordinates(graph, shape):
 @hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_area"))
 def attribute_area(tree, vertex_area=None, leaf_graph=None):
     """
-    Compute the area of each node the given tree.
+    Area of each node the given tree.
     The area of a node is equal to the sum of the area of the leaves of the subtree rooted in the node.
 
     **Provider name**: "area"
@@ -140,12 +140,12 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
 @hg.argument_helper("area")
 def attribute_volume(tree, altitudes, area):
     """
-    Compute the volume of each node the given tree.
-    The volume :math:`V(n)` of a node :math:`n` defined recursively as:
+    Volume of each node the given tree.
+    The volume :math:`V(n)` of a node :math:`n` is defined recursively as:
 
     .. math::
 
-        V(n) = area(n) * |altitude(n) - altitude(parent(n))| + \sum_{c \in children(n)} V(c)
+        V(n) = area(n) * | altitude(n) - altitude(parent(n)) | +  \sum_{c \in children(n)} V(c)
 
     **Provider name**: "volume"
 
@@ -164,10 +164,10 @@ def attribute_volume(tree, altitudes, area):
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_lca_map(tree, leaf_graph):
     """
-    Compute for each edge `(i, j)` of the `leaf_graph`, the lowest common ancestor of `i` and `j` in the given tree.
+    Lowest common ancestor of `i` and `j` for each edge :math:`(i, j)` of the leaf graph of the given tree.
 
     Complexity: :math:`\mathcal{O}(n\log(n)) + \mathcal{O}(m)` where :math:`n` is the number of nodes in `tree` and
-    :math:`m` is the number of edges in `leaf_graph`.
+    :math:`m` is the number of edges in :attr:`leaf_graph`.
 
     **Provider name**: "lca_map"
 
@@ -184,6 +184,8 @@ def attribute_lca_map(tree, leaf_graph):
 @hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "edge_length"))
 def attribute_frontier_length(tree, edge_length, leaf_graph=None):
     """
+    Length of the frontier represented by each node the given partition tree.
+
     In a partition tree, each node represent the merging of 2 or more regions.
     The frontier of a node is then defined as the common contour between the merged regions.
     This function compute the length of these common contours as the sum of the length of edges going from one of the
@@ -209,6 +211,8 @@ def attribute_frontier_length(tree, edge_length, leaf_graph=None):
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     """
+    Mean edge weight along the frontier represented by each node the given partition tree.
+
     In a partition tree, each node represent the merging of 2 or more regions.
     The frontier of a node is then defined as the common contour between the merged regions.
     This function compute the strength of a common contour as the sum of the weights of edges going from one of the
@@ -223,8 +227,8 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array
     """
-    if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and edge_weights.shape[
-        0] != leaf_graph.num_edges():  # this is a rag like graph
+    # this is a rag like graph
+    if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and edge_weights.shape[0] != leaf_graph.num_edges():
         edge_weights = hg.rag_accumulate_on_edges(leaf_graph, hg.Accumulators.sum, edge_weights=edge_weights)
 
     frontier_length = hg.attribute_frontier_length(tree, leaf_graph=leaf_graph)
@@ -236,7 +240,7 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
 @hg.data_provider("perimeter_length")
 def attribute_perimeter_length(tree, **kwargs):
     """
-    Compute the length of the perimeter of each node of the given tree.
+    Length of the perimeter of each node of the given tree.
 
     This function simply dispatches the call to :func:`~higra.attribute_perimeter_length_partition_tree` or
     :func:`~higra.attribute_perimeter_length_component_tree` depending on the tree category.
@@ -257,7 +261,7 @@ def attribute_perimeter_length(tree, **kwargs):
 @hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("tree", "frontier_length"))
 def attribute_perimeter_length_partition_tree(tree, vertex_perimeter, frontier_length, leaf_graph=None):
     """
-    Compute the length of the perimeter of each node of the given partition tree.
+    Length of the perimeter of each node of the given partition tree.
 
     **Provider name**: "perimeter_length_partition_tree"
 
@@ -278,7 +282,7 @@ def attribute_perimeter_length_partition_tree(tree, vertex_perimeter, frontier_l
 @hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("leaf_graph", "edge_length"))
 def attribute_perimeter_length_component_tree(tree, vertex_perimeter, edge_length, leaf_graph):
     """
-    Compute the length of the perimeter of each node of the given component tree.
+    Length of the perimeter of each node of the given component tree.
 
     **Provider name**: "perimeter_length_component_tree"
 
@@ -324,7 +328,7 @@ def attribute_compactness(tree, area, perimeter_length, normalize=True):
 @hg.argument_helper(hg.CptHierarchy, "area")
 def attribute_mean_weights(tree, vertex_weights, area, leaf_graph=None):
     """
-    Compute for each node, the mean weight of the leaf graph vertices inside this node.
+    Mean weight of the leaf graph vertices inside each node of the given tree.
 
     **Provider name**: "mean_weights"
 
@@ -348,8 +352,10 @@ def attribute_mean_weights(tree, vertex_weights, area, leaf_graph=None):
 @hg.data_provider("sibling")
 def attribute_sibling(tree, skip=1):
     """
-    For each node `n` which is the `k`-th child of its parent node `p` among `N` children,
-    the attribute sibling of `n` is the index of the `(k + skip) % N`-th child of `p`.
+    Sibling index of each node of the given tree.
+
+    For each node :math:`n` which is the :math:`k`-th child of its parent node :math:`p` among :math:`N` children,
+    the attribute sibling of :math:`n` is the index of the :math:`(k + skip) % N`-th child of :math:`p`.
 
     The sibling of the root node is itself.
 
@@ -370,9 +376,9 @@ def attribute_sibling(tree, skip=1):
 @hg.data_provider("depth")
 def attribute_depth(tree):
     """
-    The depth of a node `n` of the tree `t` is equal to the number of ancestors of `n` in `t`.
+    The depth of a node :math:`n` of the tree :math:`T` is equal to the number of ancestors of :math:`n` in :math:`T`.
 
-    The depth of the root node is equalt to 0.
+    The depth of the root node is equal to 0.
 
     **Provider name**: "depth"
 
@@ -387,7 +393,7 @@ def attribute_depth(tree):
 @hg.argument_helper("depth")
 def attribute_regular_altitudes(tree, depth):
     """
-    The regular altitudes is comprised between 0 and 1 and is inversely proportional to the depth of a node
+    Regular altitudes is comprised between 0 and 1 and is inversely proportional to the depth of a node
 
     **Provider name**: "regular_altitudes"
 
@@ -404,7 +410,7 @@ def attribute_regular_altitudes(tree, depth):
 @hg.data_provider("vertex_list")
 def attribute_vertex_list(tree):
     """
-    Computes the list of leaf nodes inside the sub-tree rooted in a node.
+    List of leaf nodes inside the sub-tree rooted in a node.
 
     **WARNING**: This function is slow and will use O(n²) space, with n the number of leaf nodes !
 
@@ -430,7 +436,7 @@ def attribute_vertex_list(tree):
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=None):
     """
-    Estimate a gaussian model (mean, (co-)variance) for leaf weights inside a node.
+    Estimates a gaussian model (mean, (co-)variance) for leaf weights inside a node.
 
     The result is composed of two arrays:
 

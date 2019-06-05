@@ -14,6 +14,26 @@ import numpy as np
 
 @hg.argument_helper("vertex_area")
 def watershed_hierarchy_by_area(graph, edge_weights, vertex_area):
+    """
+    Watershed hierarchy by area.
+
+    The definition of hierarchical watershed follows the one given in:
+
+        J. Cousty, L. Najman.
+        `Incremental algorithm for hierarchical minimum spanning forests and saliency of watershed cuts <https://hal-upec-upem.archives-ouvertes.fr/hal-00622505/document>`_.
+        ISMM 2011: 272-283.
+
+    The algorithm used is described in:
+
+        Laurent Najman, Jean Cousty, Benjamin Perret.
+        `Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs <https://hal.archives-ouvertes.fr/file/index/docid/798621/filename/ismm2013-algo.pdf>`_.
+        ISMM 2013: 135-146.
+
+    :param graph: input graph
+    :param edge_weights: input graph edge weights
+    :param vertex_area: area of the input graph vertices (provided by :func:`~higra.attribute_vertex_area`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    """
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
 
     vertex_area = hg.cast_to_dtype(vertex_area, np.float64)
@@ -28,6 +48,26 @@ def watershed_hierarchy_by_area(graph, edge_weights, vertex_area):
 
 @hg.argument_helper("vertex_area")
 def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area):
+    """
+    Watershed hierarchy by volume.
+
+    The definition of hierarchical watershed follows the one given in:
+
+        J. Cousty, L. Najman.
+        `Incremental algorithm for hierarchical minimum spanning forests and saliency of watershed cuts <https://hal-upec-upem.archives-ouvertes.fr/hal-00622505/document>`_.
+        ISMM 2011: 272-283.
+
+    The algorithm used is described in:
+
+        Laurent Najman, Jean Cousty, Benjamin Perret.
+        `Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs <https://hal.archives-ouvertes.fr/file/index/docid/798621/filename/ismm2013-algo.pdf>`_.
+        ISMM 2013: 135-146.
+
+    :param graph: input graph
+    :param edge_weights: input graph edge weights
+    :param vertex_area: area of the input graph vertices (provided by :func:`~higra.attribute_vertex_area`)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    """
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
 
     vertex_area = hg.cast_to_dtype(vertex_area, np.float64)
@@ -41,6 +81,25 @@ def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area):
 
 
 def watershed_hierarchy_by_dynamics(graph, edge_weights):
+    """
+    Watershed hierarchy by dynamics.
+
+    The definition of hierarchical watershed follows the one given in:
+
+        J. Cousty, L. Najman.
+        `Incremental algorithm for hierarchical minimum spanning forests and saliency of watershed cuts <https://hal-upec-upem.archives-ouvertes.fr/hal-00622505/document>`_.
+        ISMM 2011: 272-283.
+
+    The algorithm used is described in:
+
+        Laurent Najman, Jean Cousty, Benjamin Perret.
+        `Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs <https://hal.archives-ouvertes.fr/file/index/docid/798621/filename/ismm2013-algo.pdf>`_.
+        ISMM 2013: 135-146.
+
+    :param graph: input graph
+    :param edge_weights: input graph edge weights
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    """
     res = hg.cpp._watershed_hierarchy_by_dynamics(graph, edge_weights)
     tree = res.tree()
     altitudes = res.altitudes()
@@ -52,12 +111,27 @@ def watershed_hierarchy_by_dynamics(graph, edge_weights):
 
 def watershed_hierarchy_by_number_of_parents(graph, edge_weights):
     """
-    See definition in:
+    Watershed hierarchy by number of parents.
+
+    The definition of *number of parents* was proposed in:
 
         B. Perret, J. Cousty, S. J. F. Guimarães and D. S. Maia,
         `Evaluation of Hierarchical Watersheds <https://hal.archives-ouvertes.fr/hal-01430865/file/PCGM%20-%20TIP%202018%20-%20Evaluation%20of%20hierarchical%20watersheds.pdf>`_ ,
         in IEEE Transactions on Image Processing, vol. 27, no. 4, pp. 1676-1688, April 2018.
         doi: 10.1109/TIP.2017.2779604
+
+
+    The definition of hierarchical watershed follows the one given in:
+
+        J. Cousty, L. Najman.
+        `Incremental algorithm for hierarchical minimum spanning forests and saliency of watershed cuts <https://hal-upec-upem.archives-ouvertes.fr/hal-00622505/document>`_.
+        ISMM 2011: 272-283.
+
+    The algorithm used is described in:
+
+        Laurent Najman, Jean Cousty, Benjamin Perret.
+        `Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs <https://hal.archives-ouvertes.fr/file/index/docid/798621/filename/ismm2013-algo.pdf>`_.
+        ISMM 2013: 135-146.
 
 
     :param graph: input graph
@@ -96,7 +170,13 @@ def watershed_hierarchy_by_number_of_parents(graph, edge_weights):
 
 def watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor):
     """
-    Compute the watershed hierarchy by a user defined attributes.
+    Watershed hierarchy by a user defined attributes.
+
+    The definition of hierarchical watershed follows the one given in:
+
+        J. Cousty, L. Najman.
+        `Incremental algorithm for hierarchical minimum spanning forests and saliency of watershed cuts <https://hal-upec-upem.archives-ouvertes.fr/hal-00622505/document>`_.
+        ISMM 2011: 272-283.
 
     The algorithm used is described in:
 
@@ -137,7 +217,7 @@ def watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor):
 
 def watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, minima_altitudes):
     """
-    Computes a hierarchical watershed for the given minima ordering.
+    Watershed hierarchy for the given minima ordering.
 
     The definition used follows the one given in:
 
@@ -158,15 +238,15 @@ def watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, mi
         ISMM 2013: 135-146.
      
      
-    The ranking ranking of the minima of the given edge weighted graph (G,w) is given as vertex weights with values in
-    {0..n} with n the number of minima of (G,w). It must satisfy the following pre-conditions:
+    The ranking ranking of the minima of the given edge weighted graph :math:`(G,w)` is given as vertex weights with values in
+    :math:`\{0, \ldots, n\}` with :math:`n` the number of minima of :math:`(G,w)`. It must satisfy the following pre-conditions:
 
-        - each minimum of (G,w) contains at least one non zero vertex,
+        - each minimum of :math:`(G,w)` contains at least one non zero vertex,
         - all non zero vertices in a minimum have the same weight,
         - there is no non zero value vertex outside minima, and
         - no two minima contain non zero vertices with the same weight.
      
-    The altitude associated to each minimum is a non decreasing 1d array of size n + 1 with non negative values.
+    The altitude associated to each minimum is a non decreasing 1d array of size :math:`n + 1` with non negative values.
     Note that the first entry of the minima altitudes array, ie. the value at index 0, does not represent a minimum and
     its value should be 0.
 

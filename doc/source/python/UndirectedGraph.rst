@@ -6,4 +6,5 @@ Undirected graph
 The ``UndirectedGraph`` class is suited to represent general undirected graphs.
 
 .. autoclass:: higra.UndirectedGraph
+    :special-members:
     :members:

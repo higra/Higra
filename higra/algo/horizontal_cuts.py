@@ -77,11 +77,20 @@ def __labelisation_leaves(self, tree, leaf_graph, handle_rag=True):
     return labels
 
 
-@hg.extend_class(hg.HorizontalCutExplorer, method_name="__new__")
-def __make_HorizontalCutExplorer(cls, tree, altitudes):
-    return cls._make_HorizontalCutExplorer(tree, altitudes)
-
-
-@hg.extend_class(hg.HorizontalCutExplorer, method_name="__init__")
-def __dummy_init_HorizontalCutExplorer(*_):
-    pass
+# @hg.extend_class(hg.HorizontalCutExplorer, method_name="__new__")
+# def __make_HorizontalCutExplorer(cls, tree, altitudes):
+#     """
+#     Creates an horizontal cut explorer for th given valued hierarchy.
+#
+#     Altitudes must be increasing
+#
+#     :param tree: input tree
+#     :param altitudes: tree nodes altitudes
+#     :return: an ``HorizontalCutExplorer``
+#     """
+#     return cls._make_HorizontalCutExplorer(tree, altitudes)
+#
+#
+# @hg.extend_class(hg.HorizontalCutExplorer, method_name="__init__")
+# def __dummy_init_HorizontalCutExplorer(*_):
+#     pass

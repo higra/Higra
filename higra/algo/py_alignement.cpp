@@ -23,7 +23,7 @@ struct def_project_fine_to_coarse_labelisation {
     template<typename value_t, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("project_fine_to_coarse_labelisation",
+        c.def("_project_fine_to_coarse_labelisation",
               [](const pyarray<value_t> &labelisation_fine,
                  const pyarray<value_t> &labelisation_coarse,
                  size_t num_regions_fine,
@@ -126,17 +126,7 @@ void py_init_alignement(pybind11::module &m) {
     xt::import_numpy();
 
     add_type_overloads<def_project_fine_to_coarse_labelisation, HG_TEMPLATE_INTEGRAL_TYPES>
-            (m,
-             "Given two labelisations, a fine and a coarse one, of a same set of elements.\n"
-             "Find for each label (ie. region) of the fine labelisation, the label of the region in the\n"
-             "coarse labelisation that maximises the intersection with the \"fine\" region.\n"
-             "\n"
-             "Pre-condition:\n"
-             "\trange(labelisation_fine) = [0..num_regions_fine[\n"
-             "\trange(labelisation_coarse) = [0..num_regions_coarse[\n"
-             "\n"
-             "If num_regions_fine or num_regions_coarse are not provided, they will\n"
-             "be determined as max(labelisation_fine) + 1 and max(labelisation_coarse) + 1");
+            (m, "");
 
 
     auto c = py::class_<hg::hierarchy_aligner>(m, "HierarchyAligner");

@@ -14,7 +14,7 @@ import numpy as np
 
 def constrained_connectivity_hierarchy_alpha_omega(graph, vertex_weights):
     """
-    Construct a alpha-omega constrained connectivity hierarchy based on the given vertex weighted graph.
+    Alpha-omega constrained connectivity hierarchy based on the given vertex weighted graph.
 
     For  :math:`(i,j)` be an edge of the graph, we define :math:`w(i,j)=|w(i) - w(j)|`, the weight of this edge.
     Let :math:`X` be a set of vertices, the range of :math:`X` is the maximal absolute difference between the weights of any two vertices in :math:`X`:
@@ -77,7 +77,7 @@ def constrained_connectivity_hierarchy_alpha_omega(graph, vertex_weights):
 
 def constrained_connectivity_hierarchy_strong_connection(graph, edge_weights):
     """
-    Construct a strongly constrained connectivity hierarchy based on the given edge weighted graph.
+    Strongly constrained connectivity hierarchy based on the given edge weighted graph.
 
     Let :math:`X` be a set of vertices, the range of :math:`X` is the maximal weight of the edges linking two vertices inside :math:`X`.
 
@@ -101,7 +101,7 @@ def constrained_connectivity_hierarchy_strong_connection(graph, edge_weights):
     The algorithm runs in time :math:`\mathcal{O}(n\log(n))` and proceeds by filtering a quasi-flat zone hierarchy (see :func:`~higra.quasi_flat_zones_hierarchy`)
 
     :param graph: input graph
-    :param vertex_weights: edge_weights: edge weights of the input graph
+    :param edge_weights: edge_weights: edge weights of the input graph
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 

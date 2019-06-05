@@ -3,6 +3,14 @@
 Utility functions to weight the edges of a graph
 ================================================
 
+.. currentmodule:: higra
+
+.. autosummary::
+
+    WeightFunction
+    weight_graph
+    weight_graph_function
+
 .. autoclass:: higra.WeightFunction
     :members:
     :undoc-members:

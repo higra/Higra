@@ -14,7 +14,7 @@ import numpy as np
 
 def random_binary_partition_tree(num_leaves, asymmetry_probability):
     """
-    Generates a random binary trees with a controlled amount of asymmetry/unbalancedness.
+    Random binary partition tree with a controlled amount of asymmetry/unbalancedness.
 
     The tree is grown from the root to the leaves.
     At each step, the algorithm randomly select one of the *growable* leaf node of the current tree.
@@ -31,7 +31,7 @@ def random_binary_partition_tree(num_leaves, asymmetry_probability):
 
     :param num_leaves: expected number of leaves in the generated tree
     :param asymmetry_probability: real value between 0 and 1. At 0 the tree is perfectly unbalanced, at 1 it is
-            perfectly balanced (if ``num_leaves`` is  a power of 2)
+            perfectly balanced (if :attr:`num_leaves` is  a power of 2)
     :return: a tree (Concept :class:`~higra.CptBinaryHierarchy`) and its node altitudes
     """
     import random

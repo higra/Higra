@@ -133,7 +133,8 @@ void py_init_tree_graph(pybind11::module &m) {
             .value("ComponentTree", hg::tree_category::component_tree)
             .value("PartitionTree", hg::tree_category::partition_tree);
 
-    auto c = py::class_<graph_t>(m, "Tree");
+    auto c = py::class_<graph_t>(m, "Tree",
+            "An optimized static tree structure with nodes stored linearly in topological order (from leaves to root).");
 
     add_type_overloads<def_tree_ctr<graph_t>, HG_TEMPLATE_INTEGRAL_TYPES>
             (c, "Create a tree from the given parent relation.");

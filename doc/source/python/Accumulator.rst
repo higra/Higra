@@ -3,6 +3,13 @@
 Accumulators
 ============
 
+.. currentmodule:: higra
+
+.. autosummary::
+
+    Accumulators
+    accumulate_at
+
 .. autoclass:: higra.Accumulators
     :members:
     :undoc-members:

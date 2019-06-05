@@ -63,7 +63,7 @@ def extend_class(cls, method_name=None):
 def normalize_shape(shape):
     """
     This function ensure that the given shape will be easily convertible
-    in a c++ callback (ie. that it won't interfere badly in pybind11
+    in a c++ callback (ie that it won't interfere badly in pybind11
     overload resolution algorithm)
 
     :example:
@@ -80,7 +80,7 @@ def normalize_shape(shape):
 @hg.argument_helper(("graph", hg.CptGridGraph))
 def linearize_vertex_weights(vertex_weights, graph=None, shape=None):
     """
-    Linearize the given ndarray according to the given shape
+    Linearize the given ndarray according to the given shape.
 
     If ``shape`` is ``None``, the input array is returned.
 
@@ -153,7 +153,7 @@ def linearize_vertex_weights(vertex_weights, graph=None, shape=None):
 @hg.argument_helper(("graph", hg.CptGridGraph))
 def delinearize_vertex_weights(vertex_weights, graph=None, shape=None):
     """
-    De-Linearize the given ndarray according to the given shape
+    De-Linearize the given ndarray according to the given shape.
 
     If ``shape`` is ``None``, the input array is returned.
 
@@ -216,9 +216,11 @@ def delinearize_vertex_weights(vertex_weights, graph=None, shape=None):
 
 def is_in_bijection(a, b):
     """
-    Given two numpy arrays a and b returns ``True`` if
+    Test if a bijection exists between the elements of :attr:`a` and the elements of :attr:`b`.
 
-        - ``a`` and ``b`` have same size
+    Given two numpy arrays :attr:`a` and :attr:`b` returns ``True`` if
+
+        - :attr:`a` and :attr:`b` have same size
         - there exists a bijective function :math:`f` such that, for all :math:`i`, :math:`a(i) = f(b(i))`
 
     Note that input arrays are flattened.
@@ -257,7 +259,7 @@ def is_in_bijection(a, b):
 
 def mean_angle_mod_pi(angles1, angles2):
     """
-    Compute the element wise mean of two arrays of angles (radian) handling a modulo :math:`\pi` wrapping
+    Compute the element wise mean of two arrays of angles (radian) handling a modulo :math:`\pi` wrapping.
 
     eg: the modulo :math:`\pi` mean angle between 0 and 3.0 is roughly 3.07
 
@@ -474,7 +476,8 @@ def common_type(*arrays, safety_level='minimum'):
 
 def cast_to_common_type(*arrays, safety_level='minimum'):
     """
-    Find a common type to a list of numpy arrays, cast all arrays that need to be cast to this type and returns the list of arrays (with some of them casted).
+    Find a common type to a list of numpy arrays, cast all arrays that need to be cast to this type and returns the
+    list of arrays (with some of them casted).
 
 
 

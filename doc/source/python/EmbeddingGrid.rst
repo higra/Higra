@@ -11,4 +11,5 @@ For a given dimension :math:`N\in\{1,2,3,4,5\}`, there is a specific grid embedd
 All the specific grid embedding classes implement the same interface.
 
 .. autoclass:: higra.EmbeddingGrid2d
+    :special-members:
     :members:
