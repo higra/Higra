@@ -46,7 +46,8 @@ struct def_assess_partition {
 void py_init_assessment_partition(pybind11::module &m) {
     xt::import_numpy();
 
-    py::enum_<partition_measure>(m, "PartitionMeasure")
+    py::enum_<partition_measure>(m, "PartitionMeasure",
+                                 "Quality measures usable with partition assessment")
             .value("BCE", partition_measure::BCE)
             .value("DHamming", partition_measure::DHamming)
             .value("DCovering", partition_measure::DCovering);

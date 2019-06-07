@@ -3,6 +3,22 @@
 Utility functions
 =================
 
+.. currentmodule:: higra
+
+.. autosummary::
+
+    is_iterable
+    extend_class
+    normalize_shape
+    linearize_vertex_weights
+    delinearize_vertex_weights
+    is_in_bijection
+    mean_angle_mod_pi
+    dtype_info
+    common_type
+    cast_to_common_type
+    cast_to_dtype
+
 .. autofunction:: higra.is_iterable
 
 .. autofunction:: higra.extend_class

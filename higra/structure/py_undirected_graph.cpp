@@ -77,12 +77,14 @@ void init_graph(class_t &c) {
     c.def("remove_edge", &graph_t::remove_edge,
           py::arg("edge_index"),
           "Remove the given edge from the graph (the edge is not really removed: "
-                  "its source and target are attached to a virtual node of index -1).");
+          "its source and target are attached to a virtual node of index -1).");
 }
 
 void py_init_undirected_graph(py::module &m) {
     xt::import_numpy();
-    auto c = py::class_<hg::undirected_graph<hg::vecS> >(m, "UndirectedGraph");
+    auto c = py::class_<hg::undirected_graph<hg::vecS> >(m,
+                                                         "UndirectedGraph",
+                                                         "A class to represent sparse undirected graph as adjacency lists.");
     init_graph<hg::ugraph>(c);
 
     auto c2 = py::class_<hg::undirected_graph<hg::hash_setS>>(m, "UndirectedGraphOptimizedDelete");

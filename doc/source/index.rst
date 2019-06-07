@@ -1,27 +1,40 @@
-.. Higra documentation master file, created by
-    sphinx-quickstart on Wed May  2 16:06:20 2018.
-    You can adapt this file completely to your liking, but it should at least
-    contain the root `toctree` directive.
 
 Welcome to Higra's documentation!
 =================================
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
     :caption: Fundamentals
 
     Graphs <graph.rst>
     Trees <tree.rst>
+
+
+
+.. toctree::
+    :maxdepth: 3
+    :caption: Python API
+
+    Hierarchy core functions </python/hierarchy_core.rst>
+    Hierarchy construction algorithms </python/_hierarchy_algo_creation.rst>
+    Hierarchy processing algorithms </python/_hierarchy_algo.rst>
+    Quality Assessment </python/_assessment.rst>
+    Graph processing algorithms </python/_graph_algo.rst>
+    Data structures </python/_data_structures.rst>
+    Interoperability </python/_interop.rst>
+    Image applications </python/_image.rst>
+    IO </python/_io.rst>
+    Misc </python/_misc.rst>
+
+.. toctree::
+    :maxdepth: 3
+    :caption: c++ API
+
     Arrays <arrays.rst>
+    HG namespace </cpp/cpp_all.rst>
 
 .. toctree::
-    :maxdepth: 2
-    :caption: Python interface
-
-    Python module </python/index.rst>
-
-.. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
     :caption: Contributing
 
     Contributing <contributing.rst>
@@ -29,5 +42,6 @@ Welcome to Higra's documentation!
 
 
 * :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+
+..  * :ref:`modindex`
+..  * :ref:`search`

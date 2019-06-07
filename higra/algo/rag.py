@@ -16,8 +16,8 @@ def make_region_adjacency_graph_from_labelisation(graph, vertex_labels):
     Create a region adjacency graph (rag) of a vertex labelled graph.
     Each maximal connected set of vertices having the same label is a region.
     Each region is represented by a vertex in the rag.
-    There is an edge between two regions of labels l1 and l2 in the rag iff there exists an edge linking 2
-    vertices of labels l1 and l2 int he original graph.
+    There is an edge between two regions of labels :math:`l_1` and :math:`l_2` in the rag iff there exists an edge
+    linking two vertices of labels :math:`l_1` and :math:`l_2` int he original graph.
 
     :param graph: input graph
     :param vertex_labels: vertex labels on the input graph
@@ -35,10 +35,10 @@ def make_region_adjacency_graph_from_labelisation(graph, vertex_labels):
 def make_region_adjacency_graph_from_graph_cut(graph, edge_weights):
     """
     Create a region adjacency graph (rag) from a graph cut.
-    Two vertices v1, v2 are in the same region if there exists a v1v2-path composed of edges weighted 0.
+    Two vertices :math:`v_1`, :math:`v_2` are in the same region if there exists a :math:`v_1v_2`-path composed of edges weighted 0.
     Each region is represented by a vertex in the rag.
-    There is an edge between two regions of labels l1 and l2 in the rag iff there exists an edge linking 2
-    vertices of labels l1 and l2 int he original graph.
+    There is an edge between two regions of labels :math:`l_1` and :math:`l_2` in the rag iff there exists an edge
+    linking two vertices of labels :math:`l_1` and :math:`l_2` int he original graph.
 
     :param graph: input graph
     :param edge_weights: edge weights on the input graph, non zero weights are part of the cut
@@ -55,11 +55,11 @@ def rag_back_project_vertex_weights(graph, vertex_weights):
     """
     Projects rag vertex weights onto original graph vertices.
     The result is an array weighting the vertices of the original graph of the rag such that:
-    for any vertex v of the original graph, its weight is equal to the weight of the vertex of the rag that represents
-    the region that contains v.
+    for any vertex :math:`v` of the original graph, its weight is equal to the weight of the vertex of the rag that represents
+    the region that contains :math:`v`.
 
-    For any vertex index i,
-    result[i] = rag_vertex_weight[rag_vertex_map[i]]
+    For any vertex index :math:`i`,
+    :math:`result[i] = rag\_vertex\_weight[rag\_vertex_map[i]]`
 
     :param graph: input region adjacency graph
     :param vertex_weights: vertex weights on the input region adjacency graph
@@ -81,12 +81,12 @@ def rag_back_project_edge_weights(graph, edge_weights):
     """
     Projects rag edge weights onto original graph edges.
     The result is an array weighting the edges of the original graph of the rag such that:
-    for any edge e of the original graph, its weight is equal to the weight of the edge of the rag that represents
-    that links the two regions containing the extremities of e. If no such edge exists (if the extremities of e are
-    in the same region), its value is 0.
+    for any edge :math:`e` of the original graph, its weight is equal to the weight of the edge of the rag that
+    represents that links the two regions containing the extremities of :math:`e`. If no such edge exists
+    (if the extremities of :math:`e` are in the same region), its value is 0.
 
-    For any edge index ei,
-    result[ei] = rag_edge_weight[rag_edge_map[ei]] if rag_edge_map[ei] != -1 and 0 otherwise
+    For any edge index :math:`ei`,
+    :math:`result[ei] = rag\_edge\_weight[rag\_edge\_map[ei]]` if :math:`rag\_edge\_map[ei] != -1` and 0 otherwise.
 
     :param graph: input region adjacency graph
     :param edge_weights: edge weights on the input region adjacency graph
@@ -105,10 +105,10 @@ def rag_back_project_edge_weights(graph, edge_weights):
 @hg.argument_helper(hg.CptRegionAdjacencyGraph)
 def rag_accumulate_on_vertices(rag, accumulator, vertex_weights):
     """
-    Computes rag vertex weights by accumulating values from the vertex weights of the original graph.
+    Weights rag vertices by accumulating values from the vertex weights of the original graph.
 
-    For any vertex index i of the rag,
-    result[i] = accumulate({vertex_weights[j] | rag_vertex_map[j] == i})
+    For any vertex index :math:`i` of the rag,
+    :math:`result[i] = accumulator(\{vertex\_weights[j] | rag\_vertex\_map[j] == i\})`
 
     :param rag: input region adjacency graph (Concept :class:`~higra.RegionAdjacencyGraph`)
     :param vertex_weights: vertex weights on the original graph
@@ -127,10 +127,10 @@ def rag_accumulate_on_vertices(rag, accumulator, vertex_weights):
 @hg.argument_helper(hg.CptRegionAdjacencyGraph)
 def rag_accumulate_on_edges(rag, accumulator, edge_weights):
     """
-    Computes rag edge weights by accumulating values from the edge weights of the original graph.
+    Weights rag edges by accumulating values from the edge weights of the original graph.
 
-    For any edge index i of the rag,
-    result[i] = accumulate({vertex_weights[j] | rag_vertex_map[j] == i})
+    For any edge index :math:`ei` of the rag,
+    :math:`result[ei] = accumulate(\{edge\_weights[j] | rag\_edge\_map[j] == ei\})`
 
     :param rag: input region adjacency graph (Concept :class:`~higra.RegionAdjacencyGraph`)
     :param edge_weights: edge weights on the original graph

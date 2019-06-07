@@ -100,7 +100,8 @@ void py_init_fragmentation_curve(pybind11::module &m) {
                  "Array of scores of the different cuts");
 
 
-    py::enum_<optimal_cut_measure>(m, "OptimalCutMeasure")
+    py::enum_<optimal_cut_measure>(m, "OptimalCutMeasure",
+            "Quality measures usable with optimal cut assessment")
             .value("BCE", optimal_cut_measure::BCE)
             .value("DHamming", optimal_cut_measure::DHamming)
             .value("DCovering", optimal_cut_measure::DCovering);

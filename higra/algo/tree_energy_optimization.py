@@ -15,7 +15,7 @@ import numpy as np
 @hg.argument_helper(hg.CptHierarchy)
 def labelisation_optimal_cut_from_energy(tree, energy_attribute, accumulator=hg.Accumulators.sum, leaf_graph=None):
     """
-    Computes the labelisation of the input tree leaves corresponding to the optimal cut according to the given energy attribute.
+    Labelisation of the input tree leaves corresponding to the optimal cut according to the given energy attribute.
 
     Given a node :math:`i`, the value :math:`energy(i)` represents the energy fo the partial partition composed of the single region :math:`i`.
     Given a node :math:`i`, the energy of the partial partition composed of the children of :math:`i` is given by :math:`accumulator(energy(children(i)))`
@@ -128,7 +128,7 @@ def hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree,
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_piecewise_constant_Mumford_Shah_energy(tree, vertex_weights, gamma, leaf_graph):
     """
-    Computes the piecewise constant Mumford-Shah energy of each node of the input tree.
+    Piecewise constant Mumford-Shah energy of each node of the input tree.
     The energy of a node is equal to its data fidelity energy plus gamma times its regularization energy.
 
     For the piecewise constant Mumford-Shah model:
@@ -160,8 +160,7 @@ def binary_partition_tree_MumfordShah_energy(graph,
                                              edge_length,
                                              squared_vertex_values=None):
     """
-    Compute the binary partition tree, i.e. the agglomerative clustering, according to the Mumford-Shah energy
-    with a constant piecewise model.
+    Binary partition tree according to the Mumford-Shah energy with a constant piecewise model.
 
     The distance between two regions is equal to the apparition scale of the merged region.
 

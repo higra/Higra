@@ -3,6 +3,17 @@
 Concepts
 ========
 
+.. currentmodule:: higra
+
+.. autosummary::
+
+    Concept
+    CptGridGraph
+    CptRegionAdjacencyGraph
+    CptHierarchy
+    CptBinaryHierarchy
+    CptMinimumSpanningTree
+
 .. autoclass:: higra.Concept
     :members:
 

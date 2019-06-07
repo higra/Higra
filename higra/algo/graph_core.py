@@ -14,7 +14,7 @@ import numpy as np
 
 def labelisation_2_graph_cut(graph, vertex_labels):
     """
-    Determine the graph cut that corresponds to a given labeling
+    Determines the graph cut that corresponds to a given labeling
     of the graph vertices.
 
     The result is a weighting of the graph edges where edges with
@@ -32,7 +32,7 @@ def labelisation_2_graph_cut(graph, vertex_labels):
 
 def graph_cut_2_labelisation(graph, edge_weights):
     """
-    Labelise graph vertices according to the given graph cut.
+    Labelises graph vertices according to the given graph cut.
 
     Each edge having a non zero value in the given edge_weights
     are assumed to be part of the cut.
@@ -50,9 +50,9 @@ def graph_cut_2_labelisation(graph, edge_weights):
 
 def undirected_graph_2_adjacency_matrix(graph, edge_weights=None, non_edge_value=0):
     """
-    Create an adjacency matrix from an undirected edge-weighted graph (the result is thus symmetric).
+    Adjacency matrix corresponding to an undirected edge-weighted graph (the result is thus symmetric).
 
-    As the given graph is not necessarily complete, non-existing edges will receive the value `non_edge_value` in
+    As the given graph is not necessarily complete, non-existing edges will receive the value :attr:`non_edge_value` in
     the adjacency matrix.
 
     :param graph: Input graph
@@ -67,9 +67,9 @@ def undirected_graph_2_adjacency_matrix(graph, edge_weights=None, non_edge_value
 
 def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
     """
-    Creates an undirected edge-weighted graph from an adjacency matrix.
+    Undirected edge-weighted graph corresponding to an adjacency matrix.
 
-    Adjacency matrix entries which are equal to `non_edge_value` are not considered to be part of the graph.
+    Adjacency matrix entries which are equal to :attr:`non_edge_value` are not considered to be part of the graph.
 
     :param adjacency_matrix: Input adjacency matrix (A 2d symmetric square matrix)
     :param non_edge_value: Value used to represent non existing edges in the adjacency matrix
@@ -80,15 +80,15 @@ def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
 
 def ultrametric_open(graph, edge_weights):
     """
-    Computes the subdominant ultrametric of the given edge weighted graph.
+    Subdominant ultrametric of the given edge weighted graph.
 
     The subdominant ultrametric relative to a given dissimilarity measure (here the graph edge weights)
     is defined as the largest ultrametric smaller than the dissimilarity measure.
 
-    In the case of an edge weighted undirected graph, the value of the subdominant ultrametric on the edge `{x,y}`
-    is given by the min-max distance between `x` and `y`.
+    In the case of an edge weighted undirected graph, the value of the subdominant ultrametric on the
+    edge :math:`e_{xy}` is given by the min-max distance between :math:`x` and :math:`y`.
 
-    Complexity: `O(n*log(n))` with `n` the number of edges in the graph
+    Complexity: :math:`\mathcal{O}(n*log(n))` with :math:`n` the number of edges in the graph
 
     :param graph: Input graph
     :param edge_weights: Graph edge weights
@@ -104,7 +104,7 @@ def minimum_spanning_tree(graph, edge_weights):
 
     If the input graph is not connected, the result is indeed a minimum spanning forest.
 
-    Complexity: `O(n*log(n))` with `n` the number of edges in the graph
+    Complexity: :math:`\mathcal{O}(n*log(n))` with :math:`n` the number of edges in the graph
 
     :param graph: Input graph
     :param edge_weights: Graph edge weights

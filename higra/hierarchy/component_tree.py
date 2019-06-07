@@ -14,7 +14,7 @@ import numpy as np
 
 def component_tree_min_tree(graph, vertex_weights):
     """
-    Computes a Min Tree hierarchy from the input vertex weighted graph.
+    Min Tree hierarchy from the input vertex weighted graph.
 
     The Min/Max Tree structure were proposed in [1]_, [2]_.
     The algorithm used in this
@@ -45,7 +45,7 @@ def component_tree_min_tree(graph, vertex_weights):
 
 def component_tree_max_tree(graph, vertex_weights):
     """
-    Computes a Max Tree hierarchy from the input vertex weighted graph.
+    Max Tree hierarchy from the input vertex weighted graph.
 
     The Min/Max Tree structure were proposed in [1]_, [2]_.
     The algorithm used in this

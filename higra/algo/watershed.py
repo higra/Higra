@@ -14,7 +14,7 @@ import numpy as np
 
 def labelisation_watershed(graph, edge_weights):
     """
-    Compute a watershed cut of the given edge weighted graph.
+    Watershed cut of the given edge weighted graph.
 
     The definition and algorithm used are described in:
 
@@ -37,7 +37,7 @@ def labelisation_watershed(graph, edge_weights):
 
 def labelisation_seeded_watershed(graph, edge_weights, vertex_seeds):
     """
-    Computes a seeded watershed cut on an edge weighted graph.
+    Seeded watershed cut on an edge weighted graph.
     Seeds are defined as vertex weights: any flat zone of value strictly greater than 0 is considered as a seed.
 
     Note that if two different seeds are places in a minima of the edge weighted graph, and if the altitude of this minima

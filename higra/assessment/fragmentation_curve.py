@@ -18,7 +18,7 @@ def make_assesser_fragmentation_optimal_cut(tree,
                                             max_regions=200,
                                             vertex_map=None):
     """
-    Create an assesser for hierarchy optimal cuts w.r.t. a given ground-truth partition of the base graph vertices
+    Creates an assesser for hierarchy optimal cuts w.r.t. a given ground-truth partition of the base graph vertices
     and the given optimal cut measure (see :class:`~higra.OptimalCutMeasure`).
     The algorithms will explore optimal cuts containing at most max_regions regions.
 
@@ -49,7 +49,7 @@ def assess_fragmentation_optimal_cut(tree,
                                      max_regions=200,
                                      vertex_map=None):
     """
-    Compute the fragmentation curve of the optimal cuts in a hierarchy w.r.t. a given measure.
+    Fragmentation curve of the optimal cuts in a hierarchy w.r.t. a given measure.
 
     The base graph of the hierarchy is:
 
@@ -75,7 +75,7 @@ def assess_fragmentation_horizontal_cut(tree,
                                         max_regions=200,
                                         vertex_map=None):
     """
-    Compute the fragmentation curve of the horizontal cuts in a hierarchy w.r.t. a given measure.
+    Fragmentation curve of the horizontal cuts in a hierarchy w.r.t. a given measure.
 
     The base graph of the hierarchy is:
 
