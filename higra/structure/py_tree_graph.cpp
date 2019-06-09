@@ -99,7 +99,7 @@ struct def_child {
     template<typename type, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("child",
+        c.def("_child",
               [](const graph_t &tree, hg::index_t i, const pyarray<type> &vertices) {
                   return hg::child(i, vertices, tree);
               },
@@ -134,7 +134,7 @@ void py_init_tree_graph(pybind11::module &m) {
             .value("PartitionTree", hg::tree_category::partition_tree);
 
     auto c = py::class_<graph_t>(m, "Tree",
-            "An optimized static tree structure with nodes stored linearly in topological order (from leaves to root).");
+                                 "An optimized static tree structure with nodes stored linearly in topological order (from leaves to root).");
 
     add_type_overloads<def_tree_ctr<graph_t>, HG_TEMPLATE_INTEGRAL_TYPES>
             (c, "Create a tree from the given parent relation.");
@@ -158,7 +158,7 @@ void py_init_tree_graph(pybind11::module &m) {
     add_type_overloads<def_num_children<graph_t>, int, unsigned int, long long, unsigned long long>
             (c, "Get the number of children of each vertex in the given array.");
 
-    c.def("child", &graph_t::child, "Get the i-th (starting at 0) child of the given node of the tree.",
+    c.def("_child", &graph_t::child, "Get the i-th (starting at 0) child of the given node of the tree.",
           py::arg("i"),
           py::arg("node"));
     add_type_overloads<def_child<graph_t>, int, unsigned int, long long, unsigned long long>
@@ -167,27 +167,28 @@ void py_init_tree_graph(pybind11::module &m) {
             (c,
              "Get largest vertex which contains the given vertex and whose altitude is stricly less than the given altitude lambda.");
 
-    c.def("lowest_common_ancestor", [](const graph_t& tree, hg::index_t vertex1, hg::index_t vertex2){
-        return hg::lowest_common_ancestor(vertex1, vertex2, tree);
-        }, "Return the lowest common ancestor of `vertex1` and `vertex2`. Worst case complexity is linear `O(N)`: consider using the `LCAFast` if many lowest common ancestors are needed",
+    c.def("lowest_common_ancestor", [](const graph_t &tree, hg::index_t vertex1, hg::index_t vertex2) {
+              return hg::lowest_common_ancestor(vertex1, vertex2, tree);
+          },
+          "Return the lowest common ancestor of `vertex1` and `vertex2`. Worst case complexity is linear `O(N)`: consider using the `LCAFast` if many lowest common ancestors are needed",
           py::arg("vertex1"),
           py::arg("vertex2"));
 
-    c.def("lowest_common_ancestor", [](const graph_t& tree, const pyarray<hg::index_t>& vertices1, const pyarray<hg::index_t>& vertices2){
+    c.def("lowest_common_ancestor",
+          [](const graph_t &tree, const pyarray<hg::index_t> &vertices1, const pyarray<hg::index_t> &vertices2) {
               return hg::lowest_common_ancestor(vertices1, vertices2, tree);
           }, "Return the lowest common ancestor between any pairs of vertices in `vertices1` and `vertices2`.\n"
              "`vertices1` and `vertices2` must be 1d arrays of integers of the same size K"
              "Worst case complexity is `O(N*K)`: consider using the `LCAFast` if many lowest common ancestors are needed",
           py::arg("vertices1"),
           py::arg("vertices2"));
-    
+
     c.def("children",
           [](const graph_t &g, vertex_t v) {
-              pybind11::list l;
-              for (auto c: hg::children_iterator(v, g)) {
-                  l.append(c);
-              }
-              return l;
+              hg::array_1d<hg::index_t> a = hg::array_1d<hg::index_t>::from_shape({hg::num_children(v, g)});
+              auto it = hg::children(v, g);
+              std::copy(it.first, it.second, a.begin());
+              return a;
           },
           "Get a copy of the list of children of the given node.",
           py::arg("node"));
@@ -199,11 +200,13 @@ void py_init_tree_graph(pybind11::module &m) {
             (c, "Get the parent of each vertex in the given array.");
 
     c.def("ancestors", [](const graph_t &tree, vertex_t v) {
-              pybind11::list l;
+              std::vector<hg::index_t> vec;
               for (auto c: hg::ancestors_iterator(v, tree)) {
-                  l.append(c);
+                  vec.push_back(c);
               }
-              return l;
+              hg::array_1d<hg::index_t> a = hg::array_1d<hg::index_t>::from_shape({vec.size()});
+              std::copy(vec.begin(), vec.end(), a.begin());
+              return a;
           },
           "Get the list of ancestors of the given node in topological order (starting from the given node included).",
           py::arg("node"));
