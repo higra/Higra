@@ -1,6 +1,7 @@
 PROJECT_NAME      = "higra"
 XML_OUTPUT        = xml
 INPUT             = ../include
+EXCLUDE_SYMBOLS   = *internal*
 GENERATE_LATEX    = NO
 GENERATE_MAN      = NO
 GENERATE_RTF      = NO
