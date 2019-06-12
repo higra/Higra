@@ -119,16 +119,43 @@ class TestAlgorithmTree(unittest.TestCase):
         self.assertTrue(not hg.test_tree_isomorphism(t4, t2))
         self.assertTrue(not hg.test_tree_isomorphism(t4, t3))
 
-    def test_filter_binary_partition_tree(self):
+    def test_filter_non_relevant_node_from_tree(self):
         g = hg.get_4_adjacency_graph((1, 8))
         edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
         tree, altitudes = hg.bpt_canonical(g, edge_weights)
-        area = hg.attribute_area(tree)
-        area_min_children = hg.accumulate_parallel(tree, area, hg.Accumulators.min)
-        res_tree, res_altitudes = hg.filter_binary_partition_tree(tree, altitudes, area_min_children <= 2)
+
+        def functor(tree, altitudes):
+            area = hg.attribute_area(tree)
+            area_min_children = hg.accumulate_parallel(tree, area, hg.Accumulators.min)
+            return area_min_children < 3
+
+        res_tree, res_altitudes = hg.filter_non_relevant_node_from_tree(tree, altitudes, functor)
 
         sm = hg.saliency(res_tree, res_altitudes)
         sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
+        self.assertTrue(np.all(sm == sm_ref))
+
+
+    def test_filter_non_relevant_node_from_tree(self):
+        g = hg.get_4_adjacency_graph((1, 8))
+        edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
+        tree, altitudes = hg.quasi_flat_zones_hierarchy(g, edge_weights)
+
+        res_tree, res_altitudes = hg.filter_small_nodes_from_tree(tree, altitudes, 3)
+
+        sm = hg.saliency(res_tree, res_altitudes)
+        sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
+        self.assertTrue(np.all(sm == sm_ref))
+
+    def test_filter_weak_frontier_nodes_from_tree(self):
+        g = hg.get_4_adjacency_graph((1, 8))
+        edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
+        tree, altitudes = hg.bpt_canonical(g, edge_weights)
+
+        res_tree, res_altitudes = hg.filter_weak_frontier_nodes_from_tree(tree, altitudes, edge_weights, 2)
+
+        sm = hg.saliency(res_tree, res_altitudes)
+        sm_ref = np.asarray((0, 2, 0, 0, 0, 0, 0))
         self.assertTrue(np.all(sm == sm_ref))
 
     def test_binary_labelisation_from_markers(self):

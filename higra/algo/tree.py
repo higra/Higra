@@ -121,25 +121,111 @@ def labelisation_hierarchy_supervertices(tree, altitudes, leaf_graph=None, handl
     return leaf_labels
 
 
-@hg.argument_helper(hg.CptBinaryHierarchy)
-def filter_binary_partition_tree(tree, altitudes, deleted_frontier_nodes, mst):
+@hg.argument_helper(hg.CptHierarchy)
+def filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, leaf_graph):
     """
-    Filter the given binary partition tree according to the given list of frontiers to remove.
+    Filter the given tree according to a functor telling if nodes are relevant or not.
 
+    The given tree is first transformed into a binary tree (arbitrary choices are made).
     In a binary a tree, each inner node (non leaf node) is associated to the frontier separating its two children.
-    If this node frontier is marked for deletion then the corresponding frontier is removed
-    effectively merging its two children.
+    If a the frontier associated to a node is considered as non relevant (for example because on of the two children
+    of the node is too small) then the corresponding frontier is removed effectively merging its two children.
 
-    :param tree: input binary partition tree (Concept :class:`~higra.CptBinaryPartitionHierarchy`)
+    This function returns a new tree such that:
+
+        - the frontiers associated to nodes marked *non-relevant* do not exist anymore;
+        - the regions of the new tree are either regions of the initial tree or regions obtained by merging adjacent
+          regions of the initial tree.
+
+    :attr:`non_relevant_functor` must be a function that accepts two arguments, a binary tree and its node altitudes,
+    and must return a boolean node attribute for the given tree (ie a 1d array of boolean-ish values of size
+    ``tree.num_vertices()``. A value of ``True`` is interpreted as *this node is not relevant and its associated
+    frontier must be removed*.
+
+    :See:
+
+        :func:`~higra.filter_small_nodes_from_tree`
+        :func:`~higra.filter_weak_frontier_nodes_from_tree`
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param altitudes: node altitudes of the input tree
-    :param deleted_frontier_nodes: a boolean array indicating for each node of the tree is its children must be merged (True) or not (False)
-    :param mst: minimum spanning tree associated to the given binary partition tree (deduced from :class:`~higra.CptBinaryPartitionHierarchy`)
-    :return: a binary partition tree (Concept :class:`~higra.CptBinaryHierarchy`) and its node altitudes
+    :param non_relevant_functor: a function that computes an attribute on a binary tree
+    :param leaf_graph: graph of the tree leaves (deduced from :class:`~higra.CptHierarchy`)
+    :return: a binary tree (Concept :class:`~higra.CptBinaryHierarchy`) and its node altitudes
     """
+
+    if not hg.CptBinaryHierarchy.validate(tree):
+        saliency = hg.saliency(tree, altitudes, leaf_graph)
+        tree, altitudes = hg.bpt_canonical(leaf_graph, saliency)
+
+    mst = hg.CptBinaryHierarchy.get_mst(tree)
+    deleted_frontier_nodes = non_relevant_functor(tree, altitudes)
 
     mst_edge_weights = altitudes[tree.num_leaves():]
     mst_edge_weights[deleted_frontier_nodes[tree.num_leaves():]] = 0
     return hg.bpt_canonical(mst, mst_edge_weights)
+
+
+@hg.argument_helper(hg.CptHierarchy)
+def filter_small_nodes_from_tree(tree, altitudes, size_threshold, leaf_graph):
+    """
+    Filter the given tree according to node size:
+
+    This function returns a new tree such that:
+
+        - it does not contain any region whose size is below the given threshold;
+        - the regions of the new tree are either regions of the initial tree or regions obtained by merging adjacent
+          regions of the initial tree.
+
+    :See:
+
+        :func:`~higra.filter_non_relevant_node_from_tree`
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param altitudes: node altitudes of the input tree
+    :param size_threshold: regions whose size is smaller than this threshold will be removed (see :func:`~higra.attribute_area`)
+    :param leaf_graph: graph of the tree leaves (deduced from :class:`~higra.CptHierarchy`)
+    :return: a binary tree (Concept :class:`~higra.CptBinaryHierarchy`) and its node altitudes
+    """
+
+    def non_relevant_functor(tree, _):
+        area = hg.attribute_area(tree)
+        return hg.accumulate_parallel(tree, area, hg.Accumulators.min) < size_threshold
+
+    return filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, leaf_graph)
+
+
+@hg.argument_helper(hg.CptHierarchy)
+def filter_weak_frontier_nodes_from_tree(tree, altitudes, edge_weights, strength_threshold, leaf_graph):
+    """
+    Filter the given tree according to the frontier strength.
+
+    The strength of a frontier is defined as the mean weights of the edges crossing the frontier
+    (see :func:`~higra.attribute_frontier_strength`).
+
+    This function returns a new tree such that:
+
+        - it does not contain any contour whose strength is lower than the given threshold;
+        - the regions of the new tree are either regions of the initial tree or regions obtained by merging adjacent
+          regions of the initial tree.
+
+    :See:
+
+        :func:`~higra.filter_non_relevant_node_from_tree`
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param altitudes: node altitudes of the input tree
+    :param leaf_graph: graph of the tree leaves (deduced from :class:`~higra.CptHierarchy`)
+    :param edge_weights: edge weights of the leaf graph
+    :param strength_threshold: regions whose associated frontier strength is smaller than the given threshold are
+        removed (see :func:`~higra.attribute_frontier_strength`)
+    :return: a binary tree (Concept :class:`~higra.CptBinaryHierarchy`) and its node altitudes
+    """
+
+    def non_relevant_functor(tree, _):
+        return hg.attribute_frontier_strength(tree, edge_weights, leaf_graph) < strength_threshold
+
+    return filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, leaf_graph)
 
 
 @hg.argument_helper(hg.CptHierarchy)
