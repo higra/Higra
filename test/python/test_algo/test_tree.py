@@ -55,6 +55,36 @@ class TestAlgorithmTree(unittest.TestCase):
         self.assertTrue(hg.is_in_bijection(ref_t1, output_t1))
         self.assertTrue(hg.is_in_bijection(ref_t2, output_t2))
 
+    def test_labelisation_horizontal_cut_num_regions(self):
+        g = hg.get_4_adjacency_graph((1, 11))
+        tree = hg.Tree((11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18))
+        hg.CptHierarchy.link(tree, g)
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3))
+
+        ref_labels = (
+            np.asarray((1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)),
+            np.asarray((1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3)),
+            np.asarray((0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3)),
+            np.asarray((0, 1, 2, 3, 4, 5, 6, 6, 6, 7, 8))
+        )
+
+        k_cuts = (1, 3, 4, 9)
+        for i in range(4):
+            labels = hg.labelisation_horizontal_cut_from_num_regions(tree, altitudes, k_cuts[i])
+            self.assertTrue(hg.is_in_bijection(labels, ref_labels[i]))
+
+        # cuts with at least the given number of regions
+        k_cuts = (1, 2, 4, 5)
+        for i in range(4):
+            labels = hg.labelisation_horizontal_cut_from_num_regions(tree, altitudes, k_cuts[i])
+            self.assertTrue(hg.is_in_bijection(labels, ref_labels[i]))
+
+        # cuts with at most the given number of regions
+        k_cuts = (2, 3, 8, 20)
+        for i in range(4):
+            labels = hg.labelisation_horizontal_cut_from_num_regions(tree, altitudes, k_cuts[i], "at_most")
+            self.assertTrue(hg.is_in_bijection(labels, ref_labels[i]))
+
     def test_labelisation_hierarchy_supervertices(self):
         tree = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
 
@@ -89,16 +119,43 @@ class TestAlgorithmTree(unittest.TestCase):
         self.assertTrue(not hg.test_tree_isomorphism(t4, t2))
         self.assertTrue(not hg.test_tree_isomorphism(t4, t3))
 
-    def test_filter_binary_partition_tree(self):
+    def test_filter_non_relevant_node_from_tree(self):
         g = hg.get_4_adjacency_graph((1, 8))
         edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
         tree, altitudes = hg.bpt_canonical(g, edge_weights)
-        area = hg.attribute_area(tree)
-        area_min_children = hg.accumulate_parallel(tree, area, hg.Accumulators.min)
-        res_tree, res_altitudes = hg.filter_binary_partition_tree(tree, altitudes, area_min_children <= 2)
+
+        def functor(tree, altitudes):
+            area = hg.attribute_area(tree)
+            area_min_children = hg.accumulate_parallel(tree, area, hg.Accumulators.min)
+            return area_min_children < 3
+
+        res_tree, res_altitudes = hg.filter_non_relevant_node_from_tree(tree, altitudes, functor)
 
         sm = hg.saliency(res_tree, res_altitudes)
         sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
+        self.assertTrue(np.all(sm == sm_ref))
+
+
+    def test_filter_non_relevant_node_from_tree(self):
+        g = hg.get_4_adjacency_graph((1, 8))
+        edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
+        tree, altitudes = hg.quasi_flat_zones_hierarchy(g, edge_weights)
+
+        res_tree, res_altitudes = hg.filter_small_nodes_from_tree(tree, altitudes, 3)
+
+        sm = hg.saliency(res_tree, res_altitudes)
+        sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
+        self.assertTrue(np.all(sm == sm_ref))
+
+    def test_filter_weak_frontier_nodes_from_tree(self):
+        g = hg.get_4_adjacency_graph((1, 8))
+        edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
+        tree, altitudes = hg.bpt_canonical(g, edge_weights)
+
+        res_tree, res_altitudes = hg.filter_weak_frontier_nodes_from_tree(tree, altitudes, edge_weights, 2)
+
+        sm = hg.saliency(res_tree, res_altitudes)
+        sm_ref = np.asarray((0, 2, 0, 0, 0, 0, 0))
         self.assertTrue(np.all(sm == sm_ref))
 
     def test_binary_labelisation_from_markers(self):

@@ -68,7 +68,8 @@ namespace hg {
         using value_type = value_t;
 
         template<typename T>
-        horizontal_cut_explorer(const tree_t &tree, const xt::xexpression<T> &xaltitudes):m_original_tree(tree) {
+        horizontal_cut_explorer(const tree_t &tree, const xt::xexpression<T> &xaltitudes):
+                m_original_tree(tree) {
             auto &altitudes = xaltitudes.derived_cast();
             hg_assert_node_weights(tree, altitudes);
 
@@ -79,37 +80,17 @@ namespace hg {
                               static_cast<typename T::value_type>(0)),
                       "The altitude of the nodes must be greater than or equal to 0.");
 
-            auto res = sort_hierarchy_with_altitudes(tree, altitudes);
-            m_tree = std::move(res.tree);
-            m_node_map = std::move(res.node_map);
-            m_altitudes = xt::index_view(altitudes, m_node_map);
-
-            auto min_alt_children = accumulate_parallel(m_tree, m_altitudes, accumulator_min());
-
-            // single region partition... edge case
-            m_num_regions_cuts.push_back(1);
-            m_altitudes_cuts.push_back(m_altitudes(root(m_tree)));
-            m_range_nodes_cuts.push_back({invalid_index, invalid_index});
-            index_t range_start = root(m_tree);
-            index_t range_end = root(m_tree);
-            index_t num_regions = num_children(root(m_tree), m_tree);
-            auto current_threshold = m_altitudes(range_start);
-
-            while (current_threshold != 0 && range_start >= (index_t) num_leaves(m_tree)) {
-
-                while (min_alt_children(range_end) >= current_threshold) {
-                    range_end--;
-                }
-                while (m_altitudes(range_start - 1) >= current_threshold) {
-                    range_start--;
-                    num_regions += num_children(range_start, m_tree) - 1;
-                }
-
-                current_threshold = m_altitudes(range_start - 1);
-
-                m_num_regions_cuts.push_back(num_regions);
-                m_altitudes_cuts.push_back(current_threshold);
-                m_range_nodes_cuts.push_back({range_start, range_end});
+            if (!is_sorted(altitudes)) {
+                m_use_node_map = true;
+                auto res = sort_hierarchy_with_altitudes(tree, altitudes);
+                m_sorted_tree = std::move(res.tree);
+                m_node_map = std::move(res.node_map);
+                m_altitudes = xt::index_view(altitudes, m_node_map);
+                init(m_sorted_tree, m_altitudes);
+            } else {
+                m_use_node_map = false;
+                m_altitudes = altitudes;
+                init(m_original_tree, m_altitudes);
             }
         }
 
@@ -137,20 +118,25 @@ namespace hg {
         auto horizontal_cut_from_index(index_t cut_index) {
             auto num_regions = m_num_regions_cuts[cut_index];
             array_1d<index_t> nodes = array_1d<index_t>::from_shape({(size_t) num_regions});
+            const tree & ct = (m_use_node_map)? m_sorted_tree: m_original_tree;
+
             if (cut_index == 0) { // special case for single region partition
-                nodes(0) = root(m_tree);
+                nodes(0) = root(ct);
             } else {
                 auto altitude = m_altitudes_cuts[cut_index];
                 auto &range = m_range_nodes_cuts[cut_index];
                 for (index_t i = range.first, j = 0; i <= range.second; i++) {
-                    for (auto c: children_iterator(i, m_tree)) {
+                    for (auto c: children_iterator(i, ct)) {
                         if (m_altitudes(c) <= altitude) {
-                            nodes(j++) = m_node_map(c);
+                            nodes(j++) = c;
                         }
                     }
                 }
             }
 
+            if(m_use_node_map){
+                nodes = xt::index_view(m_node_map, nodes);
+            }
             return make_horizontal_cut_nodes(std::move(nodes), m_altitudes_cuts[cut_index]);
         }
 
@@ -167,7 +153,7 @@ namespace hg {
             return horizontal_cut_from_index(cut_index);
         }
 
-        auto horizontal_cut_from_num_regions(index_t num_regions) {
+        auto horizontal_cut_from_num_regions(index_t num_regions, bool at_least=true) {
             index_t cut_index;
             auto pos = std::lower_bound(m_num_regions_cuts.begin(),
                                         m_num_regions_cuts.end(),
@@ -177,12 +163,60 @@ namespace hg {
             } else {
                 cut_index = std::distance(m_num_regions_cuts.begin(), pos);
             }
+            if(m_num_regions_cuts[cut_index] > num_regions && !at_least){
+                if(cut_index > 0){
+                    cut_index--;
+                }
+            }
             return horizontal_cut_from_index(cut_index);
         }
 
     private:
+
+        template<typename T, typename E>
+        void init(const T &t, const E &a) {
+            auto min_alt_children = accumulate_parallel(t, a, accumulator_min());
+
+            // single region partition... edge case
+            m_num_regions_cuts.push_back(1);
+            m_altitudes_cuts.push_back(a(root(t)));
+            m_range_nodes_cuts.push_back({invalid_index, invalid_index});
+            index_t range_start = root(t);
+            index_t range_end = root(t);
+            index_t num_regions = num_children(root(t), t);
+            auto current_threshold = a(range_start);
+
+            while (current_threshold != 0 && range_start >= (index_t) num_leaves(t)) {
+
+                while (min_alt_children(range_end) >= current_threshold) {
+                    range_end--;
+                }
+                while (a(range_start - 1) >= current_threshold) {
+                    range_start--;
+                    num_regions += num_children(range_start, t) - 1;
+                }
+
+                current_threshold = a(range_start - 1);
+
+                m_num_regions_cuts.push_back(num_regions);
+                m_altitudes_cuts.push_back(current_threshold);
+                m_range_nodes_cuts.push_back({range_start, range_end});
+            }
+        }
+
+        template<typename T>
+        static bool is_sorted(const T &a) {
+            for (index_t i = 1; i < (index_t) a.size(); i++) {
+                if (a[i - 1] > a[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        bool m_use_node_map;
         const tree_t &m_original_tree;
-        hg::tree m_tree;
+        hg::tree m_sorted_tree;
         array_1d<index_t> m_node_map;
         array_1d<value_t> m_altitudes;
         std::vector<index_t> m_num_regions_cuts;

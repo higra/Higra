@@ -126,8 +126,14 @@ Altitudes must be increasing
           py::arg("threshold"));
     c.def("horizontal_cut_from_num_regions",
           &class_t::horizontal_cut_from_num_regions,
-          "Retrieve the smallest horizontal cut having at least the given number of regions.",
-          py::arg("num_regions"));
+          R"""(Horizontal cut with a given number of regions.
+
+If :attr:`at_least` is ``True`` (default), the the smallest horizontal cut having at least the given number of
+regions is returned.
+If :attr:`at_least` is ``False``, the the largest horizontal cut having at most the given number of
+regions is returned.)""",
+          py::arg("num_regions"),
+          py::arg("at_least")=true);
 }
 
 void py_init_horizontal_cuts(pybind11::module &m) {

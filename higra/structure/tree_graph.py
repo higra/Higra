@@ -38,3 +38,27 @@ def __find_region(self, vertex, level, altitudes):
     result = self._find_region(vertex, level, altitudes)
 
     return result
+
+
+@hg.extend_class(hg.Tree, method_name="child")
+def __child(self, index, vertex=None):
+    """
+    Get the :attr:`index`-th (starting at 0) child of the given vertex/array of vertices.
+
+    If :attr:`vertex` is ``None``, the function will return the :attr:`index`-th child of every non leaf
+    node of the tree.
+
+    :param index: positive integer
+    :param vertex: a vertex index or a 1d array of vertex indices
+        (default to ``np.arange(self.num_leaves(), self.num_vertices()``)
+    :return: a vertex index or a 1d array of vertex indices
+    """
+
+    index = int(index)
+
+    if vertex is None:
+        vertex = np.arange(self.num_leaves(), self.num_vertices())
+
+    result = self._child(index, vertex)
+
+    return result

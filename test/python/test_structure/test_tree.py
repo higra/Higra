@@ -226,9 +226,9 @@ class TestTree(unittest.TestCase):
     def test_ancestors_iterator(self):
         t = TestTree.get_tree()
 
-        self.assertTrue([1, 5, 7] == t.ancestors(1))
-        self.assertTrue([6, 7] == t.ancestors(6))
-        self.assertTrue([7] == t.ancestors(7))
+        self.assertTrue(np.all([1, 5, 7] == t.ancestors(1)))
+        self.assertTrue(np.all([6, 7] == t.ancestors(6)))
+        self.assertTrue(np.all([7] == t.ancestors(7)))
 
     def test_find_region(self):
         tree = hg.Tree((8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12))
