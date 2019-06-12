@@ -53,6 +53,33 @@ namespace test_horizontal_cuts {
         }
     }
 
+    TEST_CASE("horizontal cut explorer indexed accessor on sorted tree", "[horizontal_cuts]") {
+
+        hg::tree tree{
+                array_1d<index_t>{5, 5, 5, 6, 6, 7, 7, 7}
+        };
+        array_1d<int> altitudes{0, 0, 0, 0, 0, 1, 2, 3};
+
+        auto hch = make_horizontal_cut_explorer(tree, altitudes);
+
+        REQUIRE(hch.num_cuts() == 4);
+
+        std::vector<array_1d<index_t>> cut_nodes{
+                {7},
+                {5, 6},
+                {5, 3, 4},
+                {0, 1, 2, 3, 4}
+        };
+
+        std::vector<int> alt_cuts{3, 2, 1, 0};
+
+        for (index_t i = 0; i < (index_t) hch.num_cuts(); i++) {
+            auto c = hch.horizontal_cut_from_index(i);
+            REQUIRE(vectorSame(c.nodes, cut_nodes[i]));
+            REQUIRE(c.altitude == alt_cuts[i]);
+        }
+    }
+
     TEST_CASE("horizontal cut explorer altitudes accessor", "[horizontal_cuts]") {
 
         hg::tree tree{
@@ -68,6 +95,32 @@ namespace test_horizontal_cuts {
                 {17, 13, 14},
                 {11, 16, 13, 14},
                 {0,  1,  2,  3, 4, 5, 13, 9, 10}
+        };
+
+        std::vector<int> alt_cuts{3, 2, 1, 0};
+
+        for (index_t i = 0; i < (index_t) hch.num_cuts(); i++) {
+            auto c = hch.horizontal_cut_from_altitude(alt_cuts[i]);
+            REQUIRE(vectorSame(c.nodes, cut_nodes[i]));
+            REQUIRE(c.altitude == alt_cuts[i]);
+        }
+    }
+
+    TEST_CASE("horizontal cut explorer altitudes accessor sorted tree", "[horizontal_cuts]") {
+
+        hg::tree tree{
+                array_1d<index_t>{5, 5, 5, 6, 6, 7, 7, 7}
+        };
+        array_1d<int> altitudes{0, 0, 0, 0, 0, 1, 2, 3};
+        auto hch = make_horizontal_cut_explorer(tree, altitudes);
+
+        REQUIRE(hch.num_cuts() == 4);
+
+        std::vector<array_1d<index_t>> cut_nodes{
+                {7},
+                {5, 6},
+                {5, 3, 4},
+                {0, 1, 2, 3, 4}
         };
 
         std::vector<int> alt_cuts{3, 2, 1, 0};
@@ -104,6 +157,38 @@ namespace test_horizontal_cuts {
         }
 
         std::vector<int> k_cuts2{1, 2, 4, 5};
+
+        for (index_t i = 0; i < (index_t) hch.num_cuts(); i++) {
+            auto c = hch.horizontal_cut_from_num_regions(k_cuts2[i]);
+            REQUIRE(vectorSame(c.nodes, cut_nodes[i]));
+        }
+    }
+
+    TEST_CASE("horizontal cut explorer number of regions accessor sorted tree", "[horizontal_cuts]") {
+
+        hg::tree tree{
+                array_1d<index_t>{5, 5, 5, 6, 6, 7, 7, 7}
+        };
+        array_1d<int> altitudes{0, 0, 0, 0, 0, 1, 2, 3};
+        auto hch = make_horizontal_cut_explorer(tree, altitudes);
+
+        REQUIRE(hch.num_cuts() == 4);
+
+        std::vector<array_1d<index_t>> cut_nodes{
+                {7},
+                {5, 6},
+                {5, 3, 4},
+                {0, 1, 2, 3, 4}
+        };
+
+        std::vector<int> k_cuts{1, 2, 3, 4};
+
+        for (index_t i = 0; i < (index_t) hch.num_cuts(); i++) {
+            auto c = hch.horizontal_cut_from_num_regions(k_cuts[i]);
+            REQUIRE(vectorSame(c.nodes, cut_nodes[i]));
+        }
+
+        std::vector<int> k_cuts2{1, 2, 3, 5};
 
         for (index_t i = 0; i < (index_t) hch.num_cuts(); i++) {
             auto c = hch.horizontal_cut_from_num_regions(k_cuts2[i]);
