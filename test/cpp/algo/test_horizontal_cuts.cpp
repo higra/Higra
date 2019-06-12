@@ -162,6 +162,13 @@ namespace test_horizontal_cuts {
             auto c = hch.horizontal_cut_from_num_regions(k_cuts2[i]);
             REQUIRE(vectorSame(c.nodes, cut_nodes[i]));
         }
+
+        std::vector<int> k_cuts3{2, 3, 8, 20};
+
+        for (index_t i = 0; i < (index_t) hch.num_cuts(); i++) {
+            auto c = hch.horizontal_cut_from_num_regions(k_cuts3[i], false);
+            REQUIRE(vectorSame(c.nodes, cut_nodes[i]));
+        }
     }
 
     TEST_CASE("horizontal cut explorer number of regions accessor sorted tree", "[horizontal_cuts]") {

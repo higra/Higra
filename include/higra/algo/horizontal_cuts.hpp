@@ -153,7 +153,7 @@ namespace hg {
             return horizontal_cut_from_index(cut_index);
         }
 
-        auto horizontal_cut_from_num_regions(index_t num_regions) {
+        auto horizontal_cut_from_num_regions(index_t num_regions, bool at_least=true) {
             index_t cut_index;
             auto pos = std::lower_bound(m_num_regions_cuts.begin(),
                                         m_num_regions_cuts.end(),
@@ -162,6 +162,11 @@ namespace hg {
                 cut_index = m_num_regions_cuts.size() - 1;
             } else {
                 cut_index = std::distance(m_num_regions_cuts.begin(), pos);
+            }
+            if(m_num_regions_cuts[cut_index] > num_regions && !at_least){
+                if(cut_index > 0){
+                    cut_index--;
+                }
             }
             return horizontal_cut_from_index(cut_index);
         }

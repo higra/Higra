@@ -72,6 +72,18 @@ class TestHorizontalCuts(unittest.TestCase):
             c = hch.horizontal_cut_from_num_regions(k_cuts[i])
             self.assertTrue(np.all(np.sort(c.nodes()) == np.sort(cut_nodes[i])))
 
+        # cuts with at least the given number of regions
+        k_cuts = (1, 2, 4, 5)
+        for i in range(hch.num_cuts()):
+            c = hch.horizontal_cut_from_num_regions(k_cuts[i])
+            self.assertTrue(np.all(np.sort(c.nodes()) == np.sort(cut_nodes[i])))
+
+        # cuts with at most the given number of regions
+        k_cuts = (2, 3, 8, 20)
+        for i in range(hch.num_cuts()):
+            c = hch.horizontal_cut_from_num_regions(k_cuts[i], False)
+            self.assertTrue(np.all(np.sort(c.nodes()) == np.sort(cut_nodes[i])))
+
     def test_horizontal_cut_nodes(self):
         g = hg.get_4_adjacency_graph((1, 11))
         tree = hg.Tree((11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18))
