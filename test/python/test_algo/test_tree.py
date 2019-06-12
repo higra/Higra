@@ -55,6 +55,36 @@ class TestAlgorithmTree(unittest.TestCase):
         self.assertTrue(hg.is_in_bijection(ref_t1, output_t1))
         self.assertTrue(hg.is_in_bijection(ref_t2, output_t2))
 
+    def test_labelisation_horizontal_cut_num_regions(self):
+        g = hg.get_4_adjacency_graph((1, 11))
+        tree = hg.Tree((11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18))
+        hg.CptHierarchy.link(tree, g)
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3))
+
+        ref_labels = (
+            np.asarray((1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)),
+            np.asarray((1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3)),
+            np.asarray((0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3)),
+            np.asarray((0, 1, 2, 3, 4, 5, 6, 6, 6, 7, 8))
+        )
+
+        k_cuts = (1, 3, 4, 9)
+        for i in range(4):
+            labels = hg.labelisation_horizontal_cut_from_num_regions(tree, altitudes, k_cuts[i])
+            self.assertTrue(hg.is_in_bijection(labels, ref_labels[i]))
+
+        # cuts with at least the given number of regions
+        k_cuts = (1, 2, 4, 5)
+        for i in range(4):
+            labels = hg.labelisation_horizontal_cut_from_num_regions(tree, altitudes, k_cuts[i])
+            self.assertTrue(hg.is_in_bijection(labels, ref_labels[i]))
+
+        # cuts with at most the given number of regions
+        k_cuts = (2, 3, 8, 20)
+        for i in range(4):
+            labels = hg.labelisation_horizontal_cut_from_num_regions(tree, altitudes, k_cuts[i], "at_most")
+            self.assertTrue(hg.is_in_bijection(labels, ref_labels[i]))
+
     def test_labelisation_hierarchy_supervertices(self):
         tree = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
 

@@ -10,6 +10,7 @@ Algorithm for trees
     binary_labelisation_from_markers
     filter_binary_partition_tree
     labelisation_hierarchy_supervertices
+    labelisation_horizontal_cut_from_num_regions
     labelisation_horizontal_cut_from_threshold
     reconstruct_leaf_data
     sort_hierarchy_with_altitudes
@@ -20,6 +21,8 @@ Algorithm for trees
 .. autofunction:: higra.filter_binary_partition_tree
 
 .. autofunction:: higra.labelisation_hierarchy_supervertices
+
+.. autofunction:: higra.labelisation_horizontal_cut_from_num_regions
 
 .. autofunction:: higra.labelisation_horizontal_cut_from_threshold
 

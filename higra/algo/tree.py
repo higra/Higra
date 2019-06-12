@@ -34,7 +34,7 @@ def reconstruct_leaf_data(tree, altitudes, deleted_nodes, leaf_graph=None):
 @hg.argument_helper(hg.CptHierarchy)
 def labelisation_horizontal_cut_from_threshold(tree, altitudes, threshold, leaf_graph=None):
     """
-    Labelize tree leaves according to an horizontal cut in the tree.
+    Labelize tree leaves according to an horizontal cut of the tree given by its altitude.
 
     Two leaves are in the same region (ie. have the same label) if
     the altitude of their lowest common ancestor is strictly greater
@@ -48,6 +48,44 @@ def labelisation_horizontal_cut_from_threshold(tree, altitudes, threshold, leaf_
     """
 
     leaf_labels = hg.cpp._labelisation_horizontal_cut_from_threshold(tree, float(threshold), altitudes)
+
+    if leaf_graph is not None:
+        leaf_labels = hg.delinearize_vertex_weights(leaf_labels, leaf_graph)
+
+    return leaf_labels
+
+
+@hg.argument_helper(hg.CptHierarchy)
+def labelisation_horizontal_cut_from_num_regions(tree, altitudes, num_regions, mode="at_least", leaf_graph=None):
+    """
+    Labelize tree leaves according to an horizontal cut of the tree given by its number of regions.
+
+    If :attr:`mode` is ``"at_least"`` (default), the the smallest horizontal cut having at least the given number of
+    regions is considered.
+    If :attr:`mode` is ``"at_most"``, the the largest horizontal cut having at most the given number of
+    regions is considered.
+
+    :param tree: input tree (deduced from :class:`~higra.CptHierarchy`)
+    :param altitudes: node altitudes of the input tree
+    :param num_regions: a number of regions
+    :param mode: ``"at_least"`` or ``"at_most"``
+    :param leaf_graph: graph of the tree leaves (optional, deduced from :class:`~higra.CptHierarchy`)
+    :return: Leaf labels
+    """
+
+    num_regions = int(num_regions)
+
+    if mode == "at_least":
+        modeb = True
+    elif mode == "at_most":
+        modeb = False
+    else:
+        raise ValueError("Incorrect mode")
+
+    hc = hg.HorizontalCutExplorer(tree, altitudes)
+    cut = hc.horizontal_cut_from_num_regions(num_regions, modeb)
+
+    leaf_labels = cut.labelisation_leaves(tree)
 
     if leaf_graph is not None:
         leaf_labels = hg.delinearize_vertex_weights(leaf_labels, leaf_graph)
