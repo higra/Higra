@@ -57,6 +57,22 @@ struct def_binary_partition_tree_average_linkage {
     }
 };
 
+struct def_binary_partition_tree_exponential_linkage {
+    template<typename T>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_binary_partition_tree_exponential_linkage",
+              [](const hg::ugraph &graph, pyarray<T> &edge_weights, T alpha, pyarray<T> &edge_weight_weights) {
+                  return binary_partition_tree_exponential_linkage(graph, edge_weights, alpha, edge_weight_weights);
+              },
+              doc,
+              py::arg("graph"),
+              py::arg("edge_weights"),
+              py::arg("alpha"),
+              py::arg("edge_weight_weights"));
+    }
+};
+
 struct def_binary_partition_tree_ward_linkage {
     template<typename T>
     static
@@ -126,6 +142,7 @@ void py_init_binary_partition_tree(pybind11::module &m) {
     add_type_overloads<def_binary_partition_tree_ward_linkage, HG_TEMPLATE_FLOAT_TYPES>(m, "");
     add_type_overloads<def_binary_partition_tree_average_linkage, HG_TEMPLATE_FLOAT_TYPES>(m, "");
     add_type_overloads<def_binary_partition_tree_complete_linkage, HG_TEMPLATE_FLOAT_TYPES>(m, "");
+    add_type_overloads<def_binary_partition_tree_exponential_linkage, HG_TEMPLATE_FLOAT_TYPES>(m, "");
 
     def_new_neighbour<float>(m);
     def_new_neighbour<double>(m);

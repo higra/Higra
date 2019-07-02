@@ -126,6 +126,48 @@ class TestBinaryPartitionTree(unittest.TestCase):
         self.assertTrue(np.all(expected_parents == tree.parents()))
         self.assertTrue(np.allclose(expected_altitudes, altitudes))
 
+    def test_binary_partition_tree_exponential_linkage(self):
+        graph = hg.UndirectedGraph(5)
+        sources = np.asarray((0, 0, 1, 2, 2, 3))
+        targets = np.asarray((1, 2, 4, 3, 4, 4))
+        graph.add_edges(sources, targets)
+
+        edge_weights = np.asarray((1, 3, 5, 2, 4, 6), dtype=np.float64)
+        edge_weight_weights = np.asarray((2, 2, 1, 3, 3, 1), dtype=np.float64)
+
+        tree, altitudes = hg.binary_partition_tree_exponential_linkage(graph, edge_weights, -1, edge_weight_weights)
+
+        ref_parents = np.asarray((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        ref_altitudes = np.asarray((0., 0., 0., 0., 0., 1.,
+                                    2., 3., 4.182275))
+
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
+    def test_binary_partition_tree_exponential_linkage_equiv(self):
+        np.random.seed(10)
+
+        g = hg.get_4_adjacency_graph((10, 10))
+        edge_weights = np.random.rand(g.num_edges())
+        edge_weight_weights = np.random.randint(1, 10, g.num_edges())
+
+        tree, altitudes = hg.binary_partition_tree_exponential_linkage(g, edge_weights, 0, edge_weight_weights)
+        t_ref, alt_ref = hg.binary_partition_tree_average_linkage(g, edge_weights, edge_weight_weights)
+        self.assertTrue(np.all(tree.parents() == t_ref.parents()))
+        self.assertTrue(np.allclose(altitudes, alt_ref))
+
+        tree, altitudes = hg.binary_partition_tree_exponential_linkage(g, edge_weights, float('inf'),
+                                                                       edge_weight_weights)
+        t_ref, alt_ref = hg.binary_partition_tree_complete_linkage(g, edge_weights)
+        self.assertTrue(np.all(tree.parents() == t_ref.parents()))
+        self.assertTrue(np.allclose(altitudes, alt_ref))
+
+        tree, altitudes = hg.binary_partition_tree_exponential_linkage(g, edge_weights, float('-inf'),
+                                                                       edge_weight_weights)
+        t_ref, alt_ref = hg.binary_partition_tree_single_linkage(g, edge_weights)
+        self.assertTrue(np.all(tree.parents() == t_ref.parents()))
+        self.assertTrue(np.allclose(altitudes, alt_ref))
+
 
 if __name__ == '__main__':
     unittest.main()

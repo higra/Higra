@@ -286,6 +286,62 @@ namespace hg {
         };
 
         /**
+       * Weighting function to be used in conjunction to the binary_partition_tree method in order to perform an exponential linkage clustering.
+       *
+       * Given a graph G, with initial edge values V with associated weights W and a parameter alpha in R,
+       * the distance d(X,Y) between any two regions X, Y is defined as :
+       *      d(X,Y) = (1 / Z) + sum_{x in X, y in Y, {x,y} in G} W({x,y}) x exp(alpha * V({x,y})) x V({x,y})
+       * with Z = sum_{x in X, y in Y, {x,y} in G} W({x,y}) x exp(alpha * V({x,y}))
+       *
+       * @tparam T
+       */
+        template<typename T>
+        struct binary_partition_tree_exponential_linkage_weighting_functor {
+            using value_type = typename T::value_type;
+
+            array_1d<value_type> m_values;
+            array_1d<value_type> m_weights;
+            value_type m_alpha;
+
+            binary_partition_tree_exponential_linkage_weighting_functor(
+                    const xt::xexpression<T> &xvalues,
+                    const xt::xexpression<T> &xweights,
+                    const value_type &alpha)
+                    : m_alpha(alpha) {
+                auto &values = xvalues.derived_cast();
+                auto &weights = xweights.derived_cast();
+                hg_assert_same_shape(values, weights);
+
+                m_weights = weights * xt::exp(alpha * values);
+                m_values = m_weights * values;
+            }
+
+            template<typename graph_t, typename neighbours_t>
+            void operator()(const graph_t &g,
+                            index_t fusion_edge_index,
+                            index_t new_region,
+                            index_t merged_region1,
+                            index_t merged_region2,
+                            neighbours_t &new_neighbours) {
+
+                for (auto &n: new_neighbours) {
+                    value_type new_value;
+                    value_type new_weight;
+                    if (n.num_edges() > 1) {
+                        new_weight = m_weights[n.first_edge_index()] + m_weights[n.second_edge_index()];
+                        new_value = (m_values[n.first_edge_index()] + m_values[n.second_edge_index()]);
+                    } else {
+                        new_weight = m_weights[n.first_edge_index()];
+                        new_value = m_values[n.first_edge_index()];
+                    }
+                    n.new_edge_weight() = new_value / new_weight;
+                    m_values[n.new_edge_index()] = new_value;
+                    m_weights[n.new_edge_index()] = new_weight;
+                }
+            }
+        };
+
+        /**
        * Weighting function to be used in conjunction to the binary_partition_tree method in order to perform a Ward linkage clustering.
        *
        * @tparam T
@@ -629,6 +685,54 @@ namespace hg {
     }
 
     /**
+     * Binary partition tree, i.e. the agglomerative clustering, with the exponential linkage rule.
+     *
+     * Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w` with associated weights :math:`w'` and
+     * real parameter :math:`\\aplha`, the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
+     *
+     * .. math::
+     *
+     *      d(X,Y) = \\frac{1}{Z} \sum_{x \in X, y \in Y, \{x,y\} in E} w'(\{x,y\}) \\times \exp(\\alpha * w(\{x,y\})) \\times w({x,y})
+     *
+     * with :math:`Z = \sum_{x \in X, y \in Y, \{x,y\} \in E} w'(\{x,y\}) \\times \exp(\\alpha * w(\{x,y\}))`.
+     *
+     * Regions are then iteratively merged following the above distance (closest first) until a single region remains
+     *
+     * Note that:
+     *
+     *   - :math:`\\apha=0` is equivalent to average linkage clustering
+     *   - :math:`\\alpha=-\infty` is equivalent to single linkage clustering
+     *   - :math:`\\alpha=+\infty` is equivalent to complete linkage clustering
+     *
+     * See:
+     *
+     *      Nishant Yadav, Ari Kobren, Nicholas Monath, Andrew Mccallum ;
+     *      Supervised Hierarchical Clustering with Exponential Linkage
+     *      Proceedings of the 36th International Conference on Machine Learning, PMLR 97:6973-6983, 2019.
+     *
+     * @tparam graph_t
+     * @tparam T
+     * @param graph
+     * @param xedge_weights
+     * @param alpha
+     * @param xedge_weight_weights
+     * @return a node weighted tree
+     */
+    template<typename graph_t, typename T>
+    auto binary_partition_tree_exponential_linkage(const graph_t &graph,
+                                               const xt::xexpression<T> &xedge_weights,
+                                               const typename T::value_type &alpha,
+                                               const xt::xexpression<T> &xedge_weight_weights) {
+        return binary_partition_tree(
+                graph,
+                xedge_weights,
+                binary_partition_tree_internal::binary_partition_tree_exponential_linkage_weighting_functor<T>(
+                        xedge_weights,
+                        xedge_weight_weights,
+                        alpha));
+    }
+
+    /**
      * Binary partition tree, i.e. the agglomerative clustering, with the Ward linkage rule.
      *
      * Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w` with associated weights :math:`w'`,
@@ -663,7 +767,7 @@ namespace hg {
     auto binary_partition_tree_ward_linkage(const graph_t &graph,
                                             const xt::xexpression<T1> &xvertex_centroids,
                                             const xt::xexpression<T2> &xvertex_sizes,
-                                            const std::string& altitude_correction="max") {
+                                            const std::string &altitude_correction = "max") {
 
         auto f = binary_partition_tree_internal::binary_partition_tree_ward_linkage_weighting_functor<T1, T2>
                 (xvertex_centroids, xvertex_sizes);
@@ -673,15 +777,15 @@ namespace hg {
                 f.get_weights(graph),
                 f);
 
-        auto & tree = res.tree;
-        auto & altitudes = res.altitudes;
-        if(altitude_correction.compare("max") == 0) {
+        auto &tree = res.tree;
+        auto &altitudes = res.altitudes;
+        if (altitude_correction.compare("max") == 0) {
             for (auto i: leaves_to_root_iterator(tree, leaves_it::include, root_it::exclude)) {
                 altitudes(parent(i, tree)) = (std::max)(altitudes(i), altitudes(parent(i, tree)));
             }
-        }else if(altitude_correction.compare("none") == 0) {
+        } else if (altitude_correction.compare("none") == 0) {
 
-        } else{
+        } else {
             throw std::runtime_error("Invalid altitude_correction mode.");
         }
         return res;
