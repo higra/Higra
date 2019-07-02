@@ -49,7 +49,7 @@ def constrained_connectivity_hierarchy_alpha_omega(graph, vertex_weights):
 
     # QFZ on the L1 distance weighted graph
     edge_weights = hg.weight_graph(graph, vertex_weights, hg.WeightFunction.L1)
-    tree, altitudes = hg.quasi_flat_zones_hierarchy(graph, edge_weights)
+    tree, altitudes = hg.quasi_flat_zone_hierarchy(graph, edge_weights)
     altitude_parents = altitudes[tree.parents()]
 
     # vertex value range inside each region
@@ -105,7 +105,7 @@ def constrained_connectivity_hierarchy_strong_connection(graph, edge_weights):
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
-    tree, altitudes = hg.quasi_flat_zones_hierarchy(graph, edge_weights)
+    tree, altitudes = hg.quasi_flat_zone_hierarchy(graph, edge_weights)
     altitude_parents = altitudes[tree.parents()]
 
     # max edge weights inside each region

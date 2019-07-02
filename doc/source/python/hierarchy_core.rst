@@ -9,7 +9,7 @@ Core hierarchy algorithm
 
     bpt_canonical
     saliency
-    quasi_flat_zones_hierarchy
+    quasi_flat_zone_hierarchy
     simplify_tree
     canonize_hierarchy
 
@@ -17,7 +17,7 @@ Core hierarchy algorithm
 
 .. autofunction:: higra.canonize_hierarchy
 
-.. autofunction:: higra.quasi_flat_zones_hierarchy
+.. autofunction:: higra.quasi_flat_zone_hierarchy
 
 .. autofunction:: higra.simplify_tree
 

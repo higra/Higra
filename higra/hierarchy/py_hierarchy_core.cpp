@@ -56,12 +56,12 @@ struct def_bptCanonical {
 };
 
 template<typename graph_t>
-struct def_quasi_flat_zones_hierarchy {
+struct def_quasi_flat_zone_hierarchy {
     template<typename value_t, typename C>
     static
     void def(C &m, const char *doc) {
-        m.def("_quasi_flat_zones_hierarchy", [](const graph_t &graph, const pyarray<value_t> &edge_weights) {
-                  return hg::quasi_flat_zones_hierarchy(graph, edge_weights);
+        m.def("_quasi_flat_zone_hierarchy", [](const graph_t &graph, const pyarray<value_t> &edge_weights) {
+                  return hg::quasi_flat_zone_hierarchy(graph, edge_weights);
               },
               doc,
               py::arg("graph"),
@@ -116,7 +116,7 @@ void py_init_hierarchy_core(pybind11::module &m) {
              "The criterion is an array that associates true (this node must be deleted) or\n"
              "false (do not delete this node) to a node index."
             );
-    add_type_overloads<def_quasi_flat_zones_hierarchy<hg::ugraph>, HG_TEMPLATE_SNUMERIC_TYPES>
+    add_type_overloads<def_quasi_flat_zone_hierarchy<hg::ugraph>, HG_TEMPLATE_SNUMERIC_TYPES>
             (m,
              "Compute the quasi flat zones hierarchy of the given weighted graph."
             );

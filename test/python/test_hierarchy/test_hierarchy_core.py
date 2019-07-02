@@ -69,7 +69,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
 
-        tree, altitudes = hg.quasi_flat_zones_hierarchy(graph, edge_weights)
+        tree, altitudes = hg.quasi_flat_zone_hierarchy(graph, edge_weights)
 
         tref = hg.Tree(np.asarray((6, 7, 8, 6, 7, 8, 7, 9, 9, 9), dtype=np.int64))
 

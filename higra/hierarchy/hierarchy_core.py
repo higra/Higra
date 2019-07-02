@@ -38,10 +38,10 @@ def bpt_canonical(graph, edge_weights):
     return tree, altitudes
 
 
-def quasi_flat_zones_hierarchy(graph, edge_weights):
+def quasi_flat_zone_hierarchy(graph, edge_weights):
     """
-    Computes the quasi flat zones hierarchy of the given weighted graph.
-    The nodes of the quasi flat zones hierarchy corresponds to the connected components of all the possible
+    Computes the quasi flat zone hierarchy of the given weighted graph.
+    The nodes of the quasi flat zone hierarchy corresponds to the connected components of all the possible
     thresholds of the edge weights.
 
     :param graph: input graph
@@ -49,7 +49,7 @@ def quasi_flat_zones_hierarchy(graph, edge_weights):
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
-    res = hg.cpp._quasi_flat_zones_hierarchy(graph, edge_weights)
+    res = hg.cpp._quasi_flat_zone_hierarchy(graph, edge_weights)
     tree = res.tree()
     altitudes = res.altitudes()
 
