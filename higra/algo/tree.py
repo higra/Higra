@@ -131,7 +131,7 @@ def filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, le
     If a the frontier associated to a node is considered as non relevant (for example because on of the two children
     of the node is too small) then the corresponding frontier is removed effectively merging its two children.
 
-    This function returns a new tree such that:
+    This function returns a binary partition tree such that:
 
         - the frontiers associated to nodes marked *non-relevant* do not exist anymore;
         - the regions of the new tree are either regions of the initial tree or regions obtained by merging adjacent
@@ -171,7 +171,7 @@ def filter_small_nodes_from_tree(tree, altitudes, size_threshold, leaf_graph):
     """
     Filter the given tree according to node size:
 
-    This function returns a new tree such that:
+    This function returns a binary partition tree such that:
 
         - it does not contain any region whose size is below the given threshold;
         - the regions of the new tree are either regions of the initial tree or regions obtained by merging adjacent
@@ -203,7 +203,7 @@ def filter_weak_frontier_nodes_from_tree(tree, altitudes, edge_weights, strength
     The strength of a frontier is defined as the mean weights of the edges crossing the frontier
     (see :func:`~higra.attribute_frontier_strength`).
 
-    This function returns a new tree such that:
+    This function returns a binary partition tree such that:
 
         - it does not contain any contour whose strength is lower than the given threshold;
         - the regions of the new tree are either regions of the initial tree or regions obtained by merging adjacent

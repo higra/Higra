@@ -123,13 +123,13 @@ namespace hierarchy_core {
         REQUIRE((refnm == nm));
     }
 
-    TEST_CASE("quasi flat zones hierarchy", "[hierarchy_core]") {
+    TEST_CASE("quasi flat zone hierarchy", "[hierarchy_core]") {
 
         auto graph = get_4_adjacency_graph({2, 3});
 
         array_1d<double> edge_weights{1, 0, 2, 1, 1, 1, 2};
 
-        auto res = quasi_flat_zones_hierarchy(graph, edge_weights);
+        auto res = quasi_flat_zone_hierarchy(graph, edge_weights);
         auto rtree = res.tree;
         auto altitudes = res.altitudes;
         tree tref(array_1d<index_t>{6, 7, 8, 6, 7, 8, 7, 9, 9, 9});
@@ -157,7 +157,7 @@ namespace hierarchy_core {
         auto edge_weights = xt::eval(xt::random::randint<int>({num_edges(graph)}, 0, 25));
 
         auto bpt = bpt_canonical(graph, edge_weights);
-        auto qfz = quasi_flat_zones_hierarchy(graph, edge_weights);
+        auto qfz = quasi_flat_zone_hierarchy(graph, edge_weights);
 
         auto sm_bpt = saliency_map(graph, bpt.tree, bpt.altitudes);
         auto sm_qfz = saliency_map(graph, qfz.tree, qfz.altitudes);

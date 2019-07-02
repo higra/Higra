@@ -13,7 +13,7 @@ import higra as hg
 
 def bpt_canonical(graph, edge_weights):
     """
-    Compute the canonical binary partition tree (binary tree by altitude ordering) of the given weighted graph.
+    Computes the canonical binary partition tree (binary tree by altitude ordering) of the given weighted graph.
     This is also known as single/min linkage clustering.
 
     :param graph: input graph
@@ -38,10 +38,10 @@ def bpt_canonical(graph, edge_weights):
     return tree, altitudes
 
 
-def quasi_flat_zones_hierarchy(graph, edge_weights):
+def quasi_flat_zone_hierarchy(graph, edge_weights):
     """
-    Compute the quasi flat zones hierarchy of the given weighted graph.
-    The nodes of the quasi flat zones hierarchy corresponds to the connected components of all the possible
+    Computes the quasi flat zone hierarchy of the given weighted graph.
+    The nodes of the quasi flat zone hierarchy corresponds to the connected components of all the possible
     thresholds of the edge weights.
 
     :param graph: input graph
@@ -49,7 +49,7 @@ def quasi_flat_zones_hierarchy(graph, edge_weights):
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
-    res = hg.cpp._quasi_flat_zones_hierarchy(graph, edge_weights)
+    res = hg.cpp._quasi_flat_zone_hierarchy(graph, edge_weights)
     tree = res.tree()
     altitudes = res.altitudes()
 
@@ -105,3 +105,22 @@ def saliency(tree, altitudes, leaf_graph, handle_rag=True):
         sm = hg.rag_back_project_edge_weights(leaf_graph, sm)
 
     return sm
+
+
+def canonize_hierarchy(tree, altitudes):
+    """
+    Removes consecutive tree nodes with equal altitudes.
+
+    The new tree is composed of the inner nodes :math:`n` of the input tree such that
+    :math:`altitudes[n] \\neq altitudes[tree.parent(n)]` or :math:`n = tree.root(n)`.
+
+    For example, applying this function to the result of :func:`~higra.bpt_canonical` on an edge weighted graph
+    is the same as computing the :func:`~higra.quasi_flat_zone_hierarchy` of the same edge weighted graph.
+
+    :param tree: input tree
+    :param altitudes: altitudes of the vertices of the tree
+    :return: a tree (Concept :class:`~higra.CptHierarchy` if input tree already satisfied this concept)
+            and its node altitudes
+    """
+    ctree, node_map = hg.simplify_tree(tree, altitudes == altitudes[tree.parents()])
+    return ctree, altitudes[node_map]

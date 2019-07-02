@@ -139,7 +139,7 @@ class TestAlgorithmTree(unittest.TestCase):
     def test_filter_non_relevant_node_from_tree(self):
         g = hg.get_4_adjacency_graph((1, 8))
         edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
-        tree, altitudes = hg.quasi_flat_zones_hierarchy(g, edge_weights)
+        tree, altitudes = hg.quasi_flat_zone_hierarchy(g, edge_weights)
 
         res_tree, res_altitudes = hg.filter_small_nodes_from_tree(tree, altitudes, 3)
 

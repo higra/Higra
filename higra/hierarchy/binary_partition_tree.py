@@ -72,6 +72,56 @@ def binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weigh
     return tree, altitudes
 
 
+def binary_partition_tree_exponential_linkage(graph, edge_weights, alpha, edge_weight_weights=None):
+    """
+    Binary partition tree with exponential linkage distance.
+
+    Given a graph :math:`G=(V, E)`, with initial edge weights :math:`w` with associated weights :math:`w_2`,
+    the distance :math:`d(X,Y)` between any two clusters :math:`X` and :math:`Y` is
+
+    .. math::
+
+         d(X,Y) = \\frac{1}{Z} \sum_{x \in X, y \in Y, \{x,y\} in E} w_2(\{x,y\}) \\times \exp(\\alpha * w(\{x,y\})) \\times w(\{x,y\})
+
+    with :math:`Z = \sum_{x \in X, y \in Y, \{x,y\} \in E} w_2(\{x,y\}) \\times \exp(\\alpha * w(\{x,y\}))`.
+
+    :See:
+
+         Nishant Yadav, Ari Kobren, Nicholas Monath, Andrew Mccallum.
+         `Supervised Hierarchical Clustering with Exponential Linkage <http://proceedings.mlr.press/v97/yadav19a.html>`_
+         Proceedings of the 36th International Conference on Machine Learning, PMLR 97:6973-6983, 2019.
+
+    :param graph: input graph
+    :param edge_weights: edge weights of the input graph
+    :param alpha: exponential parameter
+    :param edge_weight_weights: weighting of edge weights of the input graph (default to an array of ones)
+    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    """
+
+    alpha = float(alpha)
+
+    if edge_weight_weights is None:
+        edge_weight_weights = np.ones_like(edge_weights)
+    else:
+        edge_weights, edge_weight_weights = hg.cast_to_common_type(edge_weights, edge_weight_weights)
+
+    # special cases: improve efficiency and avoid numerical issues
+    if alpha == 0:
+        tree, altitudes = hg.binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weights)
+    elif alpha == float('-inf'):
+        tree, altitudes = hg.binary_partition_tree_single_linkage(graph, edge_weights)
+    elif alpha == float('inf'):
+        tree, altitudes = hg.binary_partition_tree_complete_linkage(graph, edge_weights)
+    else:
+        res = hg.cpp._binary_partition_tree_exponential_linkage(graph, edge_weights, alpha, edge_weight_weights)
+        tree = res.tree()
+        altitudes = res.altitudes()
+
+    hg.CptHierarchy.link(tree, graph)
+
+    return tree, altitudes
+
+
 def binary_partition_tree_single_linkage(graph, edge_weights):
     """
     Alias for :func:`~higra.bpt_canonical`.
@@ -112,9 +162,9 @@ def binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes=Non
     This can be corrected afterward with an altitude correction strategy. Valid values for ``altitude correction`` are:
 
         - ``"none"``: nothing is done and the altitude of a node is equal to the Ward distance between its 2 children;
-            this may not be non-decreasing
+          this may not be non-decreasing
         - ``"max"``: the altitude of a node :math:`n` is defined as the maximum of the the Ward distance associated
-            to each node in the subtree rooted in :math:`n`.
+          to each node in the subtree rooted in :math:`n`.
 
     :param graph: input graph
     :param vertex_centroids: Centroids of the graph vertices (must be a 2d array)

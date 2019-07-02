@@ -11,6 +11,7 @@ Binary partition hierarchy
     binary_partition_tree_single_linkage
     binary_partition_tree_complete_linkage
     binary_partition_tree_average_linkage
+    binary_partition_tree_exponential_linkage
     binary_partition_tree_ward_linkage
     binary_partition_tree_MumfordShah_energy
 
@@ -19,6 +20,8 @@ Binary partition hierarchy
 .. autofunction:: higra.binary_partition_tree_complete_linkage
 
 .. autofunction:: higra.binary_partition_tree_average_linkage
+
+.. autofunction:: higra.binary_partition_tree_exponential_linkage
 
 .. autofunction:: higra.binary_partition_tree_ward_linkage
 

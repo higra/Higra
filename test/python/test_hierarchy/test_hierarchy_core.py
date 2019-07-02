@@ -69,7 +69,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
 
-        tree, altitudes = hg.quasi_flat_zones_hierarchy(graph, edge_weights)
+        tree, altitudes = hg.quasi_flat_zone_hierarchy(graph, edge_weights)
 
         tref = hg.Tree(np.asarray((6, 7, 8, 6, 7, 8, 7, 9, 9, 9), dtype=np.int64))
 
@@ -125,6 +125,18 @@ class TestHierarchyCore(unittest.TestCase):
         rag_edge_weights = (1, 2, 1, 1, 1, 2)
         sm = hg.saliency(*hg.bpt_canonical(rag, rag_edge_weights))
         self.assertTrue(np.all(sm == edge_weights))
+
+    def test_canonize_tree(self):
+        t = TestHierarchyCore.getTree()
+        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 2))
+
+        new_tree, new_altitudes = hg.canonize_hierarchy(t, altitudes)
+
+        refp = np.asarray((5, 5, 6, 6, 6, 6, 6))
+        self.assertTrue(np.all(refp == new_tree.parents()))
+
+        refa = np.asarray((0, 0, 0, 0, 0, 1, 2))
+        self.assertTrue(np.all(refa == new_altitudes))
 
 
 if __name__ == '__main__':

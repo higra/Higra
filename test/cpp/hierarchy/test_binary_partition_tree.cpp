@@ -167,4 +167,48 @@ namespace binary_partition_tree {
         REQUIRE(xt::allclose(expected_altitudes, altitudes));
     }
 
+    TEST_CASE("exponential linkage clustering", "[binary_partition_tree]") {
+        ugraph graph(5);
+        array_1d<index_t> sources{0, 0, 1, 2, 2, 3};
+        array_1d<index_t> targets{1, 2, 4, 3, 4, 4};
+        add_edges(sources, targets, graph);
+
+        array_1d<double> edge_weights{1, 3, 5, 2, 4, 6};
+        array_1d<double> edge_weight_weights{2, 2, 1, 3, 3, 1};
+
+        auto r = binary_partition_tree_exponential_linkage(graph, edge_weights, -1, edge_weight_weights);
+        auto &tree = r.tree;
+        auto &altitudes = r.altitudes;
+
+        array_1d<index_t> ref_parents{5, 5, 6, 6, 8, 7, 7, 8, 8};
+        array_1d<double> ref_altitudes{0., 0., 0., 0., 0., 1.,
+                                       2., 3., 4.182275};
+        
+        REQUIRE(tree.parents() == ref_parents);
+        REQUIRE(xt::allclose(altitudes, ref_altitudes));
+    }
+
+    TEST_CASE("exponential linkage clustering equiv", "[binary_partition_tree]") {
+        xt::random::seed(10);
+        auto g = get_4_adjacency_graph({5, 5});
+        array_1d<double> edge_weights = xt::random::rand<double>({num_edges(g)});
+        array_1d<double> edge_weight_weights = xt::random::randint<int>({num_edges(g)}, 1, 10);
+
+        auto r1 = binary_partition_tree_exponential_linkage(g, edge_weights, 0, edge_weight_weights);
+        auto r1_ref = binary_partition_tree_average_linkage(g, edge_weights, edge_weight_weights);
+
+        REQUIRE(r1.tree.parents() == r1_ref.tree.parents());
+        REQUIRE(xt::allclose(r1.altitudes, r1_ref.altitudes));
+
+        auto r2 = binary_partition_tree_exponential_linkage(g, edge_weights, 200, edge_weight_weights);
+        auto r2_ref = binary_partition_tree_complete_linkage(g, edge_weights);
+
+        REQUIRE(r2.tree.parents() == r2_ref.tree.parents());
+
+        auto r3 = binary_partition_tree_exponential_linkage(g, edge_weights, -600, edge_weight_weights);
+        auto r3_ref = binary_partition_tree_min_linkage(g, edge_weights);
+
+        REQUIRE(r3.tree.parents() == r3_ref.tree.parents());
+    }
+
 }
