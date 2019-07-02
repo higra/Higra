@@ -11,8 +11,11 @@ Core hierarchy algorithm
     saliency
     quasi_flat_zones_hierarchy
     simplify_tree
+    canonize_hierarchy
 
 .. autofunction:: higra.bpt_canonical
+
+.. autofunction:: higra.canonize_hierarchy
 
 .. autofunction:: higra.quasi_flat_zones_hierarchy
 
