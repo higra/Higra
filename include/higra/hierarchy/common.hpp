@@ -34,7 +34,7 @@ namespace hg {
 
     /**
      * A simple structure to hold the result of a remapping operation on the nodes of a tree.
-     * When algorithm transforms a tree into a new tree by removing some of its nodes or reordering them,
+     * When algorithm transforms a tree into a new tree by removing or duplicating or reordering some of its nodes,
      * it is useful to know the relation between the nodes of the new tree and the nodes of the original one.
      *
      * For each node i of the new tree, node_map[i] gives the corresponding node in the original tree.

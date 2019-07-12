@@ -165,4 +165,17 @@ namespace hierarchy_core {
         REQUIRE((sm_bpt == sm_qfz));
     }
 
+    TEST_CASE("tree_2_binary_tree", "[hierarchy_core]") {
+        array_1d<index_t> parents{9, 9, 10, 10, 10, 10, 11, 11, 11, 12, 12, 12, 12};
+        tree t(parents);
+
+        auto res = tree_2_binary_tree(t);
+        array_1d<index_t> exp_parents{9, 9, 10, 10, 11, 12, 13, 13, 14, 15, 11, 12, 15, 14, 16, 16, 16};
+        array_1d<index_t> exp_node_map{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 11, 11, 12, 12};
+
+
+        REQUIRE((res.tree.parents() == exp_parents));
+        REQUIRE((res.node_map == exp_node_map));
+    }
+
 }
