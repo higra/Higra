@@ -138,6 +138,17 @@ class TestHierarchyCore(unittest.TestCase):
         refa = np.asarray((0, 0, 0, 0, 0, 1, 2))
         self.assertTrue(np.all(refa == new_altitudes))
 
+    def test_tree_2_binary_tree(self):
+        t = hg.Tree((9, 9, 10, 10, 10, 10, 11, 11, 11, 12, 12, 12, 12))
+
+        new_tree, node_map = hg.tree_2_binary_tree(t)
+
+        exp_parents = np.asarray((9, 9, 10, 10, 11, 12, 13, 13, 14, 15, 11, 12, 15, 14, 16, 16, 16), dtype=np.int64)
+        exp_node_map = np.asarray((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 11, 11, 12, 12), dtype=np.int64)
+
+        self.assertTrue(np.all(new_tree.parents() == exp_parents))
+        self.assertTrue(np.all(node_map == exp_node_map))
+
 
 if __name__ == '__main__':
     unittest.main()
