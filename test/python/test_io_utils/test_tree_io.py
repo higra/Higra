@@ -48,6 +48,42 @@ class TestTreeIO(unittest.TestCase):
         self.assertTrue("attr2" in attributes)
         self.assertTrue(np.allclose(attr2, attributes["attr2"]))
 
+    def test_print_partition_tree(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        s = hg.print_partition_tree(tree, altitudes=np.asarray([0, 0, 0, 0, 0, 100, 1100, 20000]),
+                                    scale="log",
+                                    return_string=True)
+        ref = ("0------\n"
+               "      |\n"
+               "    100------------------------------------------------------------------------------------------------\n"
+               "      |                                                                                               |\n"
+               "1------                                                                                               |\n"
+               "                                                                                                      |\n"
+               "                                                                                                   2e+04\n"
+               "2-------------                                                                                        |\n"
+               "             |                                                                                        |\n"
+               "             |                                                                                        |\n"
+               "3---------1.1e+03--------------------------------------------------------------------------------------\n"
+               "             |\n"
+               "             |\n"
+               "             |\n"
+               "4-------------")
+
+        self.assertTrue(ref == s)
+
+    # this is really just a non throw test...
+    def test_print_partition_tree(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+
+        for o in ['altitudes', 'area', 'none', 'leaves']:
+            for s in ["linear", "log"]:
+                hg.print_partition_tree(tree,
+                                        altitudes=np.asarray([0, 0, 0, 0, 0, 100, 1100, 20000]),
+                                        attribute=np.asarray([0, 0, 0, 0, 0, 100, 1100, 20000]),
+                                        ordering=o,
+                                        scale=s,
+                                        return_string=True)
+
 
 if __name__ == '__main__':
     unittest.main()
