@@ -4,6 +4,13 @@ Welcome to Higra's documentation!
 
 .. toctree::
     :maxdepth: 3
+    :caption: Informations
+
+    Changelog <changelog.rst>
+
+
+.. toctree::
+    :maxdepth: 2
     :caption: Fundamentals
 
     Graphs <graph.rst>
@@ -12,7 +19,7 @@ Welcome to Higra's documentation!
 
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
     :caption: Python API
 
     Hierarchy core functions </python/hierarchy_core.rst>
