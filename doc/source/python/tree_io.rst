@@ -9,8 +9,11 @@ Tree IO allows de/serialization of a tree and associated attributes in a custom 
 
 .. autosummary::
 
+    print_partition_tree
     read_tree
     save_tree
+
+.. autofunction:: higra.print_partition_tree
 
 .. autofunction:: higra.read_tree
 
