@@ -16,6 +16,7 @@
 #include "higra/accumulator/tree_accumulator.hpp"
 #include "higra/structure/lca_fast.hpp"
 #include "xtensor/xindex_view.hpp"
+#include "xtensor/xnoalias.hpp"
 #include <algorithm>
 #include <utility>
 #include <tuple>
@@ -44,11 +45,11 @@ namespace hg {
             tree_t &&tree,
             altitude_t &&node_altitude,
             mst_t &&mst,
-            array_1d<index_t> && mst_edge_map) {
+            array_1d<index_t> &&mst_edge_map) {
         return node_weighted_tree_and_mst<tree_t, altitude_t, mst_t>{std::forward<tree_t>(tree),
                                                                      std::forward<altitude_t>(node_altitude),
                                                                      std::forward<mst_t>(mst),
-                                                                     std::forward< array_1d<index_t> >(mst_edge_map)};
+                                                                     std::forward<array_1d<index_t> >(mst_edge_map)};
     }
 
     /**
@@ -125,7 +126,6 @@ namespace hg {
     };
 
 
-
     /**
      * Creates a copy of the current Tree and deletes the nodes such that the criterion function is true.
      * Also returns an array that maps any node index i of the new tree, to the index of this node in the original tree.
@@ -140,7 +140,7 @@ namespace hg {
      * @return a remapped_tree
      */
     template<typename criterion_t>
-    auto simplify_tree(const tree &t, const criterion_t &criterion, bool process_leaves=false) {
+    auto simplify_tree(const tree &t, const criterion_t &criterion, bool process_leaves = false) {
         HG_TRACE();
         auto n_nodes = num_vertices(t);
         auto copy_parent = parents(t);
@@ -151,7 +151,8 @@ namespace hg {
 
         // from root to leaves, compute the new parent relation,
         // don't care of the  holes in the parent tab
-        for (auto i: root_to_leaves_iterator(t, (process_leaves)?leaves_it::include:leaves_it::exclude, root_it::exclude)) {
+        for (auto i: root_to_leaves_iterator(t, (process_leaves) ? leaves_it::include : leaves_it::exclude,
+                                             root_it::exclude)) {
             auto parent = copy_parent(i);
             if (criterion(i)) {
                 for (auto c: children_iterator(i, t)) {
@@ -208,7 +209,7 @@ namespace hg {
         auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
-    
+
         auto bpt = bpt_canonical(graph, edge_weights);
         auto &tree = bpt.tree;
         auto &altitudes = bpt.altitudes;
@@ -239,12 +240,67 @@ namespace hg {
      * @return An array of shape (num_edges(graph)) and with the same value type as T.
      */
     template<typename graph_t, typename tree_t, typename T>
-    auto saliency_map(const graph_t & graph,
-            const tree_t & tree,
-            const xt::xexpression<T> & xaltitudes){
-        auto & altitudes = xaltitudes.derived_cast();
+    auto saliency_map(const graph_t &graph,
+                      const tree_t &tree,
+                      const xt::xexpression<T> &xaltitudes) {
+        auto &altitudes = xaltitudes.derived_cast();
         lca_fast lca(tree);
         auto lca_edges = lca.lca(edge_iterator(graph));
         return xt::eval(xt::index_view(altitudes, lca_edges));
+    }
+
+    /**
+     * Transforms a tree into a binary tree.
+     *
+     * Each non-leaf node of the input tree must have at least 2 children!
+     *
+     * Whenever a non-leaf node :math:`n` with :math:`k > 2` children is found:
+     *
+     *  - an extra node :math:`m` is created;
+     *  - the first 2 children of :math:`n` become children of the new node :math:`m`; and
+     *  - the new node :math:`m` becomes the first child of :math:`n`.
+     *
+     * The number of children of :math:`n` is thus reduced by 1.
+     * This operation is repeated :math:`k-2` times, i.e. until :math:`n` has only 2 children.
+     *
+     * @tparam tree_t Input tree type
+     * @param tree Input tree
+     * @return a remapped_tree
+     */
+    template<typename tree_t>
+    auto tree_2_binary_tree(const tree_t &tree) {
+
+        auto num_v = num_vertices(tree);
+        auto num_l = num_leaves(tree);
+        auto num_v_res = num_l * 2 - 1;
+        array_1d<index_t> node_map = array_1d<index_t>::from_shape({num_v});
+        array_1d<index_t> reverse_node_map = array_1d<index_t>::from_shape({num_v_res});
+        for (index_t i = 0; i < (index_t)num_l; i++) {
+            node_map(i) = i;
+            reverse_node_map(i) = i;
+        }
+
+        array_1d<index_t> new_parents = array_1d<index_t>::from_shape({num_v_res});
+        index_t cur_par_index = num_l;
+
+        for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
+            auto num_c = (index_t)num_children(i, tree);
+            new_parents(node_map(child(0, i, tree))) = cur_par_index;
+            new_parents(node_map(child(1, i, tree))) = cur_par_index;
+
+            for (index_t c = 2; c < num_c; c++) {
+                new_parents(cur_par_index) = cur_par_index + 1;
+                reverse_node_map(cur_par_index) = i;
+                cur_par_index++;
+                new_parents(node_map(child(c, i, tree))) = cur_par_index;
+            }
+            node_map(i) = cur_par_index;
+            reverse_node_map(cur_par_index) = i;
+            cur_par_index++;
+        }
+
+        new_parents(num_v_res - 1) = num_v_res - 1;
+
+        return make_remapped_tree(hg::tree(new_parents), std::move(reverse_node_map));
     }
 }

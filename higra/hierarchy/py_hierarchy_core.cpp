@@ -120,4 +120,12 @@ void py_init_hierarchy_core(pybind11::module &m) {
             (m,
              "Compute the quasi flat zones hierarchy of the given weighted graph."
             );
+
+    m.def("_tree_2_binary_tree",
+          [](const hg::tree &t) {
+              return hg::tree_2_binary_tree(t);
+          },
+          "",
+          py::arg("tree")
+    );
 }

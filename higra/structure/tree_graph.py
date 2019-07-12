@@ -62,3 +62,22 @@ def __child(self, index, vertex=None):
     result = self._child(index, vertex)
 
     return result
+
+
+@hg.extend_class(hg.Tree, method_name="num_children")
+def __num_children(self, vertex=None):
+    """
+    Get the the number of children of the given vertices.
+
+    If :attr:`vertex` is ``None``, the function will return the number of children of every non leaf
+    node of the tree.
+
+    :param vertex: a vertex index or a 1d array of vertex indices
+        (default to ``np.arange(self.num_leaves(), self.num_vertices()``)
+    :return: an integer or a 1d array of integers
+    """
+
+    if vertex is None:
+        vertex = np.arange(self.num_leaves(), self.num_vertices())
+
+    return self._num_children(vertex)

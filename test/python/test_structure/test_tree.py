@@ -35,6 +35,7 @@ class TestTree(unittest.TestCase):
 
         self.assertTrue(t.num_children(6) == 3)
         self.assertTrue(np.all(t.num_children((5, 7, 6)) == (2, 2, 3)))
+        self.assertTrue(np.all(t.num_children() == (2, 3, 2)))
 
         self.assertTrue(t.parent(4) == 6)
         self.assertTrue(np.all(t.parent((0, 5, 2, 3, 7)) == (5, 7, 6, 6, 7)))

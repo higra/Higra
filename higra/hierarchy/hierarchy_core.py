@@ -9,6 +9,7 @@
 ############################################################################
 
 import higra as hg
+import numpy as np
 
 
 def bpt_canonical(graph, edge_weights):
@@ -62,13 +63,13 @@ def simplify_tree(tree, deleted_vertices, process_leaves=False):
     """
     Creates a copy of the given tree and deletes the vertices `i` of the tree such that `deletedVertices[i]` is true.
 
-    The returned "node_map" of the returned tree is an array that maps any node index i of the new tree,
-    to the index of this node in the original tree.
+    The returned ``node_map`` is an array that maps any node index :math:`i` of the new tree,
+    to the index of the corresponding node in the original tree.
 
     :param tree: input tree
     :param deleted_vertices: boolean valuation of the input tree nodes
     :param process_leaves: If false, a leaf vertex `v` will never be removed disregarding the value of `deletedVertices[v]`
-    :return: a simplified tree (Concept :class:`~higra.CptHierarchy`) and the node map
+    :return: a tree (Concept :class:`~higra.CptHierarchy` if input tree already satisfied this concept) and the node map
     """
 
     res = hg.cpp._simplify_tree(tree, deleted_vertices, process_leaves)
@@ -76,7 +77,7 @@ def simplify_tree(tree, deleted_vertices, process_leaves=False):
     node_map = res.node_map()
 
     if hg.CptHierarchy.validate(tree):
-        hg.CptHierarchy().link(tree, hg.CptHierarchy.construct(tree)["leaf_graph"])
+        hg.CptHierarchy().link(new_tree, hg.CptHierarchy.get_leaf_graph(tree))
 
     return new_tree, node_map
 
@@ -124,3 +125,55 @@ def canonize_hierarchy(tree, altitudes):
     """
     ctree, node_map = hg.simplify_tree(tree, altitudes == altitudes[tree.parents()])
     return ctree, altitudes[node_map]
+
+
+def tree_2_binary_tree(tree):
+    """
+    Transforms a tree into a binary tree.
+
+    Each non-leaf node of the input tree must have at least 2 children!
+
+    Whenever a non-leaf node :math:`n` with :math:`k > 2` children is found:
+
+        - an extra node :math:`m` is created;
+        - the first 2 children of :math:`n` become children of the new node :math:`m`; and
+        - the new node :math:`m` becomes the first child of :math:`n`.
+
+    The number of children of :math:`n` is thus reduced by 1.
+    This operation is repeated :math:`k-2` times, i.e. until :math:`n` has only 2 children.
+
+    The returned ``node_map`` is an array that maps any node index :math:`i` of the new tree,
+    to the index of the corresponding node in the original tree.
+
+    :Complexity:
+
+    This algorithms runs in linear time :math:`O(tree.num\_vertices())`.
+
+    :Examples:
+
+
+    Compute the watershed hierarchy by area of an edge weighted graph and
+    get the corresponding binary hierarchy. The returned ``node_map`` enables
+    to recover the altitudes of the new hierarchy from the altitudes of the input
+    hierarchy.
+
+    .. code-block:: python
+
+        tree, altitudes = watershed_hierarchy_by_area(graph, edge_weights)
+        new_tree, node_map = tree_2_binary_tree(tree)
+        new_altitudes = altitudes[node_map]
+
+    :param tree: Input tree
+    :return: a tree (Concept :class:`~higra.CptHierarchy` if input tree already satisfied this concept) and the node map
+    """
+
+    assert np.all(tree.num_children() >= 2), "Each non-leaf node of the input tree must have at least 2 children!"
+
+    res = hg.cpp._tree_2_binary_tree(tree)
+    ntree = res.tree()
+    node_map = res.node_map()
+
+    if hg.CptHierarchy.validate(tree):
+        hg.CptHierarchy().link(ntree, hg.CptHierarchy.get_leaf_graph(tree))
+
+    return ntree, node_map
