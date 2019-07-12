@@ -84,7 +84,7 @@ struct def_num_children {
     template<typename type, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def("num_children",
+        c.def("_num_children",
               [](const graph_t &tree, const pyarray<type> &vertices) {
                   return hg::num_children(vertices, tree);
               },
@@ -153,10 +153,8 @@ void py_init_tree_graph(pybind11::module &m) {
     add_type_overloads<def_is_leaf<graph_t>, int, unsigned int, long long, unsigned long long>
             (c, "Indicates if each vertex in the given array is a leaf or not.");
 
-    c.def("num_children", &graph_t::num_children, "Get the number of children nodes of the given node.",
-          py::arg("node"));
-    add_type_overloads<def_num_children<graph_t>, int, unsigned int, long long, unsigned long long>
-            (c, "Get the number of children of each vertex in the given array.");
+    c.def("_num_children", &graph_t::num_children, "", py::arg("node"));
+    add_type_overloads<def_num_children<graph_t>, int, unsigned int, long long, unsigned long long>(c, "");
 
     c.def("_child", &graph_t::child, "Get the i-th (starting at 0) child of the given node of the tree.",
           py::arg("i"),
