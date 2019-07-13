@@ -1,13 +1,20 @@
 Changelog
 =========
 
-Upcoming version
------------------
+0.3.6
+-----
 
+- Add ``plot_graph`` and ``plot_partition_tree``
+  `#104 <https://github.com/PerretB/Higra/pull/104>`_
+- Add ``make_graph_from_points``
+  `#104 <https://github.com/PerretB/Higra/pull/104>`_
+- Add ``print_partition_tree``
+  `#103 <https://github.com/PerretB/Higra/pull/103>`_
 - Add ``tree_2_binary_tree``
   `#101 <https://github.com/PerretB/Higra/pull/101>`_
-- In Python ``tree.num_children()`` now returns the number of children of every non leaf nodes
+- Add ``tree.num_children()`` overload that returns the number of children of every non leaf nodes
   `#101 <https://github.com/PerretB/Higra/pull/101>`_
+
 
 0.3.5
 -----
@@ -37,7 +44,7 @@ Other changes
   `<https://github.com/PerretB/Higra/commit/7b5d00422562840de93df9fcef247b27a2d7365d>`_
 - Optimize Horizontal cut explorer construction
   `<https://github.com/PerretB/Higra/commit/68128b9f0201360888d7409dad397ceba23b100d>`_
-- In Python ``tree.child(i)`` now returns the i-th child of every non leaf nodes
+- Add ``tree.child(i)`` overload that returns the i-th child of every non leaf nodes
   `<https://github.com/PerretB/Higra/commit/6d47a21e942debfdebb633d6e7b7de88238c30ba>`_
 
 0.3.3
