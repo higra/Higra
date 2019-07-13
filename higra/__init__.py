@@ -36,6 +36,7 @@ from .hierarchy import *
 from .image import *
 from .interop import *
 from .io_utils import *
+from .plot import *
 from .structure import *
 
 
