@@ -13,12 +13,15 @@ Algorithms for graphs
     minimum_spanning_tree
     undirected_graph_2_adjacency_matrix
     adjacency_matrix_2_undirected_graph
+    make_graph_from_points
 
 .. autofunction:: higra.ultrametric_open
 
 .. autofunction:: higra.labelisation_2_graph_cut
 
 .. autofunction:: higra.graph_cut_2_labelisation
+
+.. autofunction:: higra.make_graph_from_points
 
 .. autofunction:: higra.minimum_spanning_tree
 

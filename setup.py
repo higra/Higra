@@ -103,6 +103,7 @@ setup(
         'higra.image',
         'higra.interop',
         'higra.io_utils',
+        'higra.plot',
         'higra.structure'],
     ext_modules=[CMakeExtension('higram')],
     cmdclass=dict(build_ext=CMakeBuild),

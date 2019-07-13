@@ -30,6 +30,7 @@ add_subdirectory(hierarchy)
 add_subdirectory(image)
 add_subdirectory(interop)
 add_subdirectory(io_utils)
+add_subdirectory(plot)
 add_subdirectory(structure)
 
 pybind11_add_module(higram ${PYMODULE_COMPONENTS})
