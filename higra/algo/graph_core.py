@@ -1,7 +1,9 @@
 ############################################################################
 # Copyright ESIEE Paris (2018)                                             #
 #                                                                          #
-# Contributor(s) : Benjamin Perret                                         #
+# Contributor(s) :                                                         #
+#   - Benjamin Perret                                                      #
+#   - Giovanni Chierchia                                                   #
 #                                                                          #
 # Distributed under the terms of the CECILL-B License.                     #
 #                                                                          #
@@ -113,3 +115,85 @@ def minimum_spanning_tree(graph, edge_weights):
     mst, edge_map = hg.cpp._minimum_spanning_tree(graph, edge_weights)
     hg.CptMinimumSpanningTree.link(mst, mst_edge_map=edge_map, base_graph=graph)
     return mst
+
+
+def make_graph_from_points(X, graph_type="knn+mst", **kwargs):
+    """
+    Creates a graph from vertex coordinates.
+
+    Possible graph creation methods are:
+
+        - 'complete': creates the complete graph
+        - 'knn': creates a :math:`k`-nearest neighbor graph, the parameter :math:`k` can be controlled
+          with the extra parameter 'n_neighbors' (default value 5).
+          The resulting graph may have several connected components.
+        - 'knn+mst' (default): creates a :math:`k`-nearest neighbor graph and add the edges of an mst of the complete graph.
+          This method ensures that the resulting graph is connected.
+          The parameter :math:`k` can be controlled with the extra parameter 'n_neighbors' (default value 5).
+        - 'delaunay': creates a graph corresponding to the Delaunay triangulation of the points
+          (only works in low dimensions).
+
+    The weight of an edge :math:`\{x,y\}` is equal to the Euclidean distance between
+    :math:`x` and :math:`y`: :math:`w(\{x,y\})=\|X[x, :] - X[y, :]\|`.
+
+    This method is not suited for large set of points.
+
+    :param X: A 2d array of vertex coordinates
+    :param graph_type: 'complete', 'knn', 'knn+mst' (default), or 'delaunay'
+    :param kwargs: extra args depends of chosen graph type
+    :return: a graph and its edge weights
+    """
+    try:
+        from scipy.spatial.distance import pdist, squareform, euclidean
+        from sklearn.neighbors import kneighbors_graph
+        from scipy.sparse.csgraph import minimum_spanning_tree
+        from scipy.spatial import Delaunay
+    except:
+        raise RuntimeError("scipy and sklearn required.")
+
+    n_neighbors = kwargs.get('n_neighbors', 5)
+    mode = kwargs.get('mode', 'distance')
+
+    if graph_type == "complete":
+        d = pdist(X)
+        A = squareform(d)
+        g, edge_weights = hg.adjacency_matrix_2_undirected_graph(A)
+    elif graph_type == "knn":
+        A = kneighbors_graph(X, n_neighbors, mode).toarray()
+        g, edge_weights = hg.adjacency_matrix_2_undirected_graph(A)
+    elif graph_type == "knn+mst":
+        A = kneighbors_graph(X, n_neighbors, mode).toarray()
+        D = squareform(pdist(X))
+        MST = minimum_spanning_tree(D).toarray()
+        MST = MST + MST.T
+        A = np.maximum(A, MST)
+        g, edge_weights = hg.adjacency_matrix_2_undirected_graph(A)
+    elif graph_type == "delaunay":
+        g = hg.UndirectedGraph(X.shape[0])
+        edge_weights = []
+
+        # add QJ to ensure that coplanar point are not discarded
+        tmp = Delaunay(X)
+        nbp = X.shape[0]
+        if tmp.coplanar.size != 0:
+            print("Warning coplanar points detected!")
+        indices, indptr = tmp.vertex_neighbor_vertices
+
+        for k in range(nbp):
+            neighbours = indptr[indices[k]:indices[k+1]]
+            for n in neighbours:
+                if n > k:
+                    d = euclidean(X[k, :], X[n, :])
+                    g.add_edge(k, n)
+                    edge_weights.append(d)
+
+        edge_weights = np.asarray(edge_weights, dtype=np.float64)
+    elif graph_type == "mst":
+        D = squareform(pdist(X))
+        MST = minimum_spanning_tree(D).toarray()
+        MST = MST + MST.T
+        g, edge_weights = hg.adjacency_matrix_2_undirected_graph(MST)
+    else:
+        raise ValueError("Unknown graph_type: " + str(graph_type))
+
+    return g, edge_weights
