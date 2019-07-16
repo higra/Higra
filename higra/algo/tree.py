@@ -9,21 +9,39 @@
 ############################################################################
 
 import higra as hg
+import numpy as np
 
 
 @hg.argument_helper(hg.CptHierarchy)
-def reconstruct_leaf_data(tree, altitudes, deleted_nodes, leaf_graph=None):
+def reconstruct_leaf_data(tree, altitudes, deleted_nodes=None, leaf_graph=None):
     """
     Each leaf of the tree takes the altitude of its closest non deleted ancestor.
 
+    The root node is never deleted.
+    In a component tree, leaves are always deleted.
+
+    If :attr:`deleted_nodes` is ``None`` then its default value is set to `np.zeros((tree.numvertices(),)`
+    (no nodes are deleted).
+
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param altitudes: node altitudes of the input tree
-    :param deleted_nodes: binary node weights indicating which nodes are deleted
+    :param deleted_nodes: binary node weights indicating which nodes are deleted (optional)
     :param leaf_graph: graph of the tree leaves (optional, deduced from :class:`~higra.CptHierarchy`)
     :return: Leaf weights
     """
-    reconstruction = hg.propagate_sequential(tree, altitudes, deleted_nodes)
-    leaf_weights = reconstruction[0:tree.num_leaves(), ...]
+
+    if deleted_nodes is None:
+        if tree.category() == hg.TreeCategory.PartitionTree:
+            leaf_weights = altitudes[0:tree.num_leaves(), ...]
+        elif tree.category() == hg.TreeCategory.ComponentTree:
+            parents = tree.parents()
+            leaf_weights = altitudes[parents[np.arange(tree.num_leaves())], ...]
+    else:
+        if tree.category() == hg.TreeCategory.ComponentTree:
+            deleted_nodes[:tree.num_leaves()] = True
+
+        reconstruction = hg.propagate_sequential(tree, altitudes, deleted_nodes)
+        leaf_weights = reconstruction[0:tree.num_leaves(), ...]
 
     if leaf_graph is not None:
         leaf_weights = hg.delinearize_vertex_weights(leaf_weights, leaf_graph)

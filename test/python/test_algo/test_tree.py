@@ -38,6 +38,50 @@ class TestAlgorithmTree(unittest.TestCase):
 
         self.assertTrue(np.all(ref == output))
 
+    def test_reconstruct_leaf_data_component_tree(self):
+        g = hg.get_4_adjacency_implicit_graph((1, 6))
+        vertex_values = np.asarray((1, 5, 4, 3, 3, 6), dtype=np.int32)
+        tree, altitudes = hg.component_tree_max_tree(g, vertex_values)
+
+        condition = np.asarray((True, False, True, False, True, True, False, True, False, True, False), np.bool_)
+
+        output = hg.reconstruct_leaf_data(tree, altitudes, condition)
+        ref = np.asarray((1, 4, 4, 1, 1, 6), dtype=np.int32)
+
+        self.assertTrue(np.all(ref == output))
+
+    def test_reconstruct_leaf_data_default(self):
+        tree = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
+
+        input = np.asarray(((1, 8),
+                            (2, 7),
+                            (3, 6),
+                            (4, 5),
+                            (5, 4),
+                            (6, 3),
+                            (7, 2),
+                            (8, 1)), dtype=np.int32)
+
+        output = hg.reconstruct_leaf_data(tree, input)
+        ref = np.asarray(((1, 8),
+                          (2, 7),
+                          (3, 6),
+                          (4, 5),
+                          (5, 4)), dtype=np.int32)
+
+        self.assertTrue(np.all(ref == output))
+
+    def test_reconstruct_leaf_data_component_tree_default(self):
+        g = hg.get_4_adjacency_implicit_graph((1, 6))
+        vertex_values = np.asarray((1, 5, 4, 3, 3, 6), dtype=np.int32)
+        tree, altitudes = hg.component_tree_max_tree(g, vertex_values)
+
+        area = hg.attribute_area(tree)
+        output = hg.reconstruct_leaf_data(tree, area)
+        ref = np.asarray((6, 1, 2, 5, 5, 1), dtype=np.int32)
+
+        self.assertTrue(np.all(ref == output))
+
     def test_labelisation_horizontal_cut(self):
         tree = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
 
