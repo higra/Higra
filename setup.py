@@ -14,7 +14,7 @@ force_debug = False
 force_debug_arg = '--force_debug'
 if force_debug_arg in sys.argv:
     index = sys.argv.index(force_debug_arg)
-    sys.argv.pop(index)  # Removes the arguement
+    sys.argv.pop(index)  # Removes the argument
     force_debug = True
 
 
@@ -86,30 +86,40 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
-setup(
-    name='higra',
-    version=get_version(),
-    author='Benjamin Perret',
-    author_email='benjamin.perret@esiee.fr',
-    description='Hierarchical Graph Analysis',
-    long_description=open('README.md').read(),
-    packages=[
-        'higra',
-        'higra.accumulator',
-        'higra.algo',
-        'higra.assessment',
-        'higra.attribute',
-        'higra.hierarchy',
-        'higra.image',
-        'higra.interop',
-        'higra.io_utils',
-        'higra.plot',
-        'higra.structure'],
-    ext_modules=[CMakeExtension('higram')],
-    cmdclass=dict(build_ext=CMakeBuild),
-    install_requires=[
-        'numpy>=1.15.4',
-    ],
-    zip_safe=False,
-    license='CeCILL-B',
-)
+try:
+    # hack because setuptools wont install files which are not inside a python package
+    os.symlink('../include', 'higra/include')
+    os.symlink('../lib/', 'higra/lib')
+    setup(
+        name='higra',
+        version=get_version(),
+        author='Benjamin Perret',
+        author_email='benjamin.perret@esiee.fr',
+        description='Hierarchical Graph Analysis',
+        url='https://github.com/PerretB/Higra',
+        long_description=open('README.md').read(),
+        packages=[
+            'higra',
+            'higra.accumulator',
+            'higra.algo',
+            'higra.assessment',
+            'higra.attribute',
+            'higra.hierarchy',
+            'higra.image',
+            'higra.interop',
+            'higra.io_utils',
+            'higra.plot',
+            'higra.structure'],
+        ext_modules=[CMakeExtension('higram')],
+        cmdclass=dict(build_ext=CMakeBuild),
+        include_package_data=True,
+        install_requires=[
+            'numpy>=1.15.4',
+        ],
+        zip_safe=False,
+        license='CeCILL-B',
+    )
+finally:
+    os.unlink('higra/include')
+    os.unlink('higra/lib')
+
