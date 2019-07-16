@@ -27,6 +27,9 @@ printf "Cleaning previous library versions..."
 rm -rf lib
 rm -rf include
 rm -rf share
+rm -rf license
+
+mkdir -p license
 
 mkdir -p tmp
 cd tmp
@@ -64,6 +67,7 @@ unzip -q -o catch2.zip
 
 printf "\n\nInstalling pybind11..."
 cd pybind11-${pybind11_target_version}
+cp LICENSE ../../license/LICENSE_pybind11
 rm -rf build
 mkdir build
 cd build
@@ -75,6 +79,7 @@ cd ../..
 
 printf "\n\nInstalling xtl..."
 cd xtl-${xtl_target_version}
+cp LICENSE ../../license/LICENSE_xtl
 rm -rf build
 mkdir build
 cd build
@@ -86,6 +91,7 @@ cd ../..
 
 printf "\n\nInstalling xsimd..."
 cd xsimd-${xsimd_target_version}
+cp LICENSE ../../license/LICENSE_xsimd
 rm -rf build
 mkdir build
 cd build
@@ -97,6 +103,7 @@ cd ../..
 
 printf "\n\nInstalling xtensor..."
 cd xtensor-${xtensor_target_version}
+cp LICENSE ../../license/LICENSE_xtensor
 rm -rf build
 mkdir build
 cd build
@@ -107,6 +114,7 @@ cd ../..
 
 printf "\n\nInstalling xtensor-python..."
 cd xtensor-python-${xtensor_python_target_version}
+cp LICENSE ../../license/LICENSE_xtensor-python
 rm -rf build
 mkdir build
 cd build
@@ -117,6 +125,7 @@ cd ../..
 
 printf "\n\nInstalling catch2..."
 cd Catch2-${catch_target_version}
+cp LICENSE.txt ../../license/LICENSE_catch2
 rm -rf build
 mkdir build
 cd build
