@@ -88,8 +88,9 @@ class CMakeBuild(build_ext):
 
 try:
     # hack because setuptools wont install files which are not inside a python package
-    os.symlink('../include', 'higra/include')
-    os.symlink('../lib/', 'higra/lib')
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    os.symlink(os.path.join(cur_dir, 'include'), 'higra/include')
+    os.symlink(os.path.join(cur_dir, 'lib'), 'higra/lib')
     setup(
         name='higra',
         version=get_version(),
