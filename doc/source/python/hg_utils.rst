@@ -18,6 +18,9 @@ Utility functions
     common_type
     cast_to_common_type
     cast_to_dtype
+    get_include
+    get_lib_include
+    get_lib_cmake
 
 .. autofunction:: higra.is_iterable
 
@@ -40,3 +43,9 @@ Utility functions
 .. autofunction:: higra.cast_to_common_type
 
 .. autofunction:: higra.cast_to_dtype
+
+.. autofunction:: higra.get_include
+
+.. autofunction:: higra.get_lib_include
+
+.. autofunction:: higra.get_lib_cmake

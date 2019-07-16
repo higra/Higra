@@ -517,3 +517,57 @@ def cast_to_dtype(array, dtype):
     if array.dtype != dtype:
         array = array.astype(dtype)
     return array
+
+
+def get_include():
+    """
+    Return the path to higra include files.
+    To be used for c++ extension writing.
+
+    :return:
+    """
+    import os.path
+    d = os.path.join(os.path.dirname(hg.__file__), 'include')
+
+    if not os.path.exists(d):
+        import warnings
+        warnings.warn("Include directory does not seem to exist, get_include only works when "
+                      "higra is installed with pip.")
+
+    return d
+
+
+def get_lib_include():
+    """
+    Return the path to higra lib include files.
+    To be used for c++ extension writing.
+
+    :return:
+    """
+    import os.path
+    d = os.path.join(os.path.dirname(hg.__file__), 'lib', 'include')
+
+    if not os.path.exists(d):
+        import warnings
+        warnings.warn("Include directory does not seem to exist, get_lib_include only works when higra "
+                      "is installed with pip.")
+
+    return d
+
+
+def get_lib_cmake():
+    """
+    Return the path to higra lib cmake files.
+    To be used for c++ extension writing.
+
+    :return:
+    """
+    import os.path
+    d = os.path.join(os.path.dirname(hg.__file__), 'lib', 'lib', 'cmake')
+
+    if not os.path.exists(d):
+        import warnings
+        warnings.warn("Cmake lib directory does not seem to exist, get_lib_cmake only works when higra "
+                      "is installed with pip.")
+
+    return d
