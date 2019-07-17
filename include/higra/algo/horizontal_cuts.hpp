@@ -94,31 +94,31 @@ namespace hg {
             }
         }
 
-        auto num_cuts() {
+        auto num_cuts() const {
             return m_num_regions_cuts.size();
         }
 
-        auto num_regions_cut(index_t i) {
+        auto num_regions_cut(index_t i) const {
             return m_num_regions_cuts[i];
         }
 
-        const auto &num_regions_cuts() {
+        const auto &num_regions_cuts() const {
             return m_num_regions_cuts;
         }
 
-        auto altitude_cut(index_t i) {
+        auto altitude_cut(index_t i) const {
             return m_altitudes_cuts[i];
         }
 
-        const auto &altitude_cuts() {
+        const auto &altitude_cuts() const {
             return m_altitudes_cuts;
         }
 
         inline
-        auto horizontal_cut_from_index(index_t cut_index) {
+        auto horizontal_cut_from_index(index_t cut_index) const {
             auto num_regions = m_num_regions_cuts[cut_index];
             array_1d<index_t> nodes = array_1d<index_t>::from_shape({(size_t) num_regions});
-            const tree & ct = (m_use_node_map)? m_sorted_tree: m_original_tree;
+            const tree &ct = (m_use_node_map) ? m_sorted_tree : m_original_tree;
 
             if (cut_index == 0) { // special case for single region partition
                 nodes(0) = root(ct);
@@ -134,13 +134,13 @@ namespace hg {
                 }
             }
 
-            if(m_use_node_map){
+            if (m_use_node_map) {
                 nodes = xt::index_view(m_node_map, nodes);
             }
             return make_horizontal_cut_nodes(std::move(nodes), m_altitudes_cuts[cut_index]);
         }
 
-        auto horizontal_cut_from_altitude(value_t threshold) {
+        auto horizontal_cut_from_altitude(value_t threshold) const {
             index_t cut_index;
             auto pos = std::upper_bound(m_altitudes_cuts.rbegin(),
                                         m_altitudes_cuts.rend(),
@@ -153,7 +153,7 @@ namespace hg {
             return horizontal_cut_from_index(cut_index);
         }
 
-        auto horizontal_cut_from_num_regions(index_t num_regions, bool at_least=true) {
+        auto horizontal_cut_from_num_regions(index_t num_regions, bool at_least = true) const {
             index_t cut_index;
             auto pos = std::lower_bound(m_num_regions_cuts.begin(),
                                         m_num_regions_cuts.end(),
@@ -163,8 +163,8 @@ namespace hg {
             } else {
                 cut_index = std::distance(m_num_regions_cuts.begin(), pos);
             }
-            if(m_num_regions_cuts[cut_index] > num_regions && !at_least){
-                if(cut_index > 0){
+            if (m_num_regions_cuts[cut_index] > num_regions && !at_least) {
+                if (cut_index > 0) {
                     cut_index--;
                 }
             }

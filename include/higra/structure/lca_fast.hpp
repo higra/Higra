@@ -28,6 +28,8 @@ namespace hg {
             using array2d = xt::xtensor<std::size_t, 2>;
             using vertex_t = typename tree_t::vertex_descriptor;
 
+            size_t m_num_vertices;
+
             array Euler;
             array Depth;
             array Represent;
@@ -103,7 +105,7 @@ namespace hg {
                 */
                 computeDepth(tree);
                 LCApreprocessEuler(tree);
-                index_t nbNodes = (index_t)num_vertices(tree);
+                index_t nbNodes = m_num_vertices;
                 index_t nbRepresent = 2 * nbNodes - 1;
 
                 int logn = (int) (ceil(log((double) (nbRepresent)) / log(2.0)));
@@ -140,8 +142,8 @@ namespace hg {
         public:
             lca_fast(const tree_t &tree) {
                 HG_TRACE();
-                auto nbNodes = num_vertices(tree);
-
+                auto nbNodes = hg::num_vertices(tree);
+                m_num_vertices = nbNodes;
                 Depth.resize({nbNodes});
                 Number.resize({nbNodes});
 
@@ -226,6 +228,10 @@ namespace hg {
                     result(i) = lca(vertices1(i), vertices2(i));
                 }
                 return result;
+            }
+
+            auto num_vertices() const{
+                return m_num_vertices;
             }
 
 

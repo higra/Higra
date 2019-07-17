@@ -38,6 +38,7 @@ struct def_is_leaf {
     void def(C &c, const char *doc) {
         c.def("is_leaf",
               [](const graph_t &tree, const pyarray<type> &vertices) {
+                  hg_assert_vertex_indices(tree, vertices);
                   return hg::is_leaf(vertices, tree);
               },
               doc,
@@ -56,6 +57,7 @@ struct def_find_region {
                  const pyarray<hg::index_t> &vertices,
                  const pyarray<type> &lambdas,
                  const pyarray<type> &altitudes) {
+                  hg_assert_vertex_indices(tree, vertices);
                   return hg::find_region(vertices, lambdas, altitudes, tree);
               },
               doc,
@@ -68,6 +70,7 @@ struct def_find_region {
                  hg::index_t vertex,
                  type lambda,
                  const pyarray<type> &altitudes) {
+                  hg_assert_vertex_index(tree, vertex);
                   return hg::find_region(vertex, lambda, altitudes, tree);
               },
               doc,
@@ -86,6 +89,7 @@ struct def_num_children {
     void def(C &c, const char *doc) {
         c.def("_num_children",
               [](const graph_t &tree, const pyarray<type> &vertices) {
+                  hg_assert_vertex_indices(tree, vertices);
                   return hg::num_children(vertices, tree);
               },
               doc,
@@ -101,6 +105,10 @@ struct def_child {
     void def(C &c, const char *doc) {
         c.def("_child",
               [](const graph_t &tree, hg::index_t i, const pyarray<type> &vertices) {
+                  hg_assert_vertex_indices(tree, vertices);
+                  hg_assert(i >= 0, "Child index cannot be negative.");
+                  hg_assert(i < (index_t)(xt::amin)(num_children(vertices, tree))(),
+                            "Child index is larger than the number of children.");
                   return hg::child(i, vertices, tree);
               },
               doc,
@@ -117,6 +125,7 @@ struct def_parent {
     void def(C &c, const char *doc) {
         c.def("parent",
               [](const graph_t &tree, const pyarray<type> &vertices) {
+                  hg_assert_vertex_indices(tree, vertices);
                   return hg::parent(vertices, tree);
               },
               doc,
@@ -149,14 +158,29 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("category", &graph_t::category, "Get the tree category (see enumeration TreeCategory)");
     c.def("root", &graph_t::root, "Get the index of the root node (i.e. self.num_vertices() - 1)");
     c.def("num_leaves", &graph_t::num_leaves, "Get the number of leaves nodes.");
-    c.def("is_leaf", &graph_t::is_leaf, "Returns true if the given node is a leaf of true and false otherwise.");
+    c.def("is_leaf", [](const graph_t &t, index_t i) {
+              hg_assert_vertex_index(t, i);
+              return t.is_leaf(i);
+          },
+          "Returns true if the given node is a leaf of true and false otherwise.",
+          py::arg("vertex"));
+
     add_type_overloads<def_is_leaf<graph_t>, int, unsigned int, long long, unsigned long long>
             (c, "Indicates if each vertex in the given array is a leaf or not.");
 
-    c.def("_num_children", &graph_t::num_children, "", py::arg("node"));
+    c.def("_num_children", [](const graph_t &t, index_t i) {
+        hg_assert_vertex_index(t, i);
+        return t.num_children(i);
+    }, "", py::arg("vertex"));
     add_type_overloads<def_num_children<graph_t>, int, unsigned int, long long, unsigned long long>(c, "");
 
-    c.def("_child", &graph_t::child, "Get the i-th (starting at 0) child of the given node of the tree.",
+    c.def("_child", [](const graph_t &t, index_t i, index_t vertex) {
+              hg_assert_vertex_index(t, vertex);
+              hg_assert(i >= 0, "Child index cannot be negative.");
+              hg_assert(i < (index_t)t.num_children(vertex),
+                        "Child index is larger than the number of children.");
+              return t.child(i, vertex);
+          }, "Get the i-th (starting at 0) child of the given node of the tree.",
           py::arg("i"),
           py::arg("node"));
     add_type_overloads<def_child<graph_t>, int, unsigned int, long long, unsigned long long>
@@ -166,6 +190,8 @@ void py_init_tree_graph(pybind11::module &m) {
              "Get largest vertex which contains the given vertex and whose altitude is stricly less than the given altitude lambda.");
 
     c.def("lowest_common_ancestor", [](const graph_t &tree, hg::index_t vertex1, hg::index_t vertex2) {
+              hg_assert_vertex_index(tree, vertex1);
+              hg_assert_vertex_index(tree, vertex2);
               return hg::lowest_common_ancestor(vertex1, vertex2, tree);
           },
           "Return the lowest common ancestor of `vertex1` and `vertex2`. Worst case complexity is linear `O(N)`: consider using the `LCAFast` if many lowest common ancestors are needed",
@@ -174,6 +200,8 @@ void py_init_tree_graph(pybind11::module &m) {
 
     c.def("lowest_common_ancestor",
           [](const graph_t &tree, const pyarray<hg::index_t> &vertices1, const pyarray<hg::index_t> &vertices2) {
+              hg_assert_vertex_indices(tree, vertices1);
+              hg_assert_vertex_indices(tree, vertices2);
               return hg::lowest_common_ancestor(vertices1, vertices2, tree);
           }, "Return the lowest common ancestor between any pairs of vertices in `vertices1` and `vertices2`.\n"
              "`vertices1` and `vertices2` must be 1d arrays of integers of the same size K"
@@ -183,6 +211,7 @@ void py_init_tree_graph(pybind11::module &m) {
 
     c.def("children",
           [](const graph_t &g, vertex_t v) {
+              hg_assert_vertex_index(g, v);
               hg::array_1d<hg::index_t> a = hg::array_1d<hg::index_t>::from_shape({hg::num_children(v, g)});
               auto it = hg::children(v, g);
               std::copy(it.first, it.second, a.begin());
@@ -192,12 +221,17 @@ void py_init_tree_graph(pybind11::module &m) {
           py::arg("node"));
 
     c.def("parents", &graph_t::parents, "Get the parents array representing the tree.");
-    c.def("parent", [](const graph_t &tree, vertex_t v) { return tree.parent(v); }, "Get the parent of the given node.",
+    c.def("parent", [](const graph_t &tree, vertex_t v) {
+              hg_assert_vertex_index(tree, v);
+              return tree.parent(v);
+          },
+          "Get the parent of the given node.",
           py::arg("node"));
     add_type_overloads<def_parent<graph_t>, int, unsigned int, long long, unsigned long long>
             (c, "Get the parent of each vertex in the given array.");
 
     c.def("ancestors", [](const graph_t &tree, vertex_t v) {
+              hg_assert_vertex_index(tree, v);
               std::vector<hg::index_t> vec;
               for (auto c: hg::ancestors_iterator(v, tree)) {
                   vec.push_back(c);

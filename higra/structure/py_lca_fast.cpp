@@ -28,6 +28,12 @@ struct def_lca_vertices {
         c.def("lca", [](const lca_fast &l,
                         const pyarray<value_t> &vertices1,
                         const pyarray<value_t> &vertices2) {
+                  hg_assert((xt::amin)(vertices1)() >= 0, "Vertex indices cannot be negative.");
+                  hg_assert((index_t)(index_t)(xt::amax)(vertices1)() < (index_t)l.num_vertices(),
+                            "Vertex indices must be smaller than the number of vertices in the tree.");
+                  hg_assert((xt::amin)(vertices2)() >= 0, "Vertex indices cannot be negative.");
+                  hg_assert((index_t)(xt::amax)(vertices2)() < (index_t)l.num_vertices(),
+                            "Vertex indices must be smaller than the number of vertices in the tree.");
                   return l.lca(vertices1, vertices2);
               },
               doc,
@@ -39,8 +45,8 @@ struct def_lca_vertices {
 void py_init_lca_fast(pybind11::module &m) {
     xt::import_numpy();
     auto c = py::class_<lca_fast>(m, "LCAFast",
-            "Provides fast :math:`\\mathcal{O}(1)` lowest common ancestor computation in a tree thanks "
-            "to a linearithmic preprocessing of the tree.");
+                                  "Provides fast :math:`\\mathcal{O}(1)` lowest common ancestor computation in a tree thanks "
+                                  "to a linearithmic preprocessing of the tree.");
 
     c.def(py::init<tree>(),
           "Preprocess the given tree in order for fast lowest common ancestor (LCA) computation.\n\n"
@@ -49,7 +55,12 @@ void py_init_lca_fast(pybind11::module &m) {
           py::arg("tree"));
 
     c.def("lca",
-          [](const lca_fast &l, index_t v1, index_t v2) { return l.lca(v1, v2); },
+          [](const lca_fast &l, index_t v1, index_t v2) {
+              hg_assert(v1 >= 0 && v2 >= 0, "Vertex indices cannot be negative.");
+              hg_assert(v1 < (index_t)l.num_vertices() && v2 < (index_t)l.num_vertices(),
+                        "Vertex indices must be smaller than the number of vertices in the tree.");
+              return l.lca(v1, v2);
+          },
           "Get LCA of given two vertices.",
           py::arg("v1"),
           py::arg("v2"));

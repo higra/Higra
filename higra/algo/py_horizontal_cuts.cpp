@@ -110,14 +110,22 @@ Altitudes must be increasing
           &class_t::num_regions_cuts,
           "Number of regions in each cut of the hierarchy.");
     c.def("altitude_cut",
-          &class_t::altitude_cut,
+          [](const class_t &c, index_t i) {
+              hg_assert(i >= 0, "Cut index cannot be negative.");
+              hg_assert(i < (index_t)c.num_cuts(), "Cut index out of bounds.");
+              return c.altitude_cut(i);
+          },
           "Altitude of the i-th cut of the hierarchy (cut numbering start at 0 with the cut with a single region).",
-          py::arg("i"));
+          py::arg("cut_index"));
     c.def("altitude_cuts",
           &class_t::altitude_cuts,
           "Altitude of each cut of the hierarchy.");
     c.def("horizontal_cut_from_index",
-          &class_t::horizontal_cut_from_index,
+          [](const class_t &c, index_t i) {
+              hg_assert(i >= 0, "Cut index cannot be negative.");
+              hg_assert(i < (index_t)c.num_cuts(), "Cut index out of bounds.");
+              return c.horizontal_cut_from_index(i);
+          },
           "Retrieve the i-th horizontal cut of tree (cut numbering start at 0 with the cut with a single region).",
           py::arg("i"));
     c.def("horizontal_cut_from_altitude",
@@ -133,7 +141,7 @@ regions is returned.
 If :attr:`at_least` is ``False``, the the largest horizontal cut having at most the given number of
 regions is returned.)""",
           py::arg("num_regions"),
-          py::arg("at_least")=true);
+          py::arg("at_least") = true);
 }
 
 void py_init_horizontal_cuts(pybind11::module &m) {
