@@ -22,6 +22,8 @@ struct def_add_edges {
                               pyarray<value_t> sources,
                               pyarray<value_t> targets
               ) {
+                  hg_assert_vertex_indices(g, sources);
+                  hg_assert_vertex_indices(g, targets);
                   hg::add_edges(sources, targets, g);
               },
               doc,
@@ -51,6 +53,8 @@ void init_graph(class_t &c) {
     c.def("add_edge", [](graph_t &g,
                          const vertex_t source,
                          const vertex_t target) {
+              hg_assert_vertex_index(g, source);
+              hg_assert_vertex_index(g, target);
               return cpp_edge_2_python(hg::add_edge(source, target, g));
           },
           "Add an (undirected) edge between 'vertex1' and 'vertex2'. Returns the new edge.",
@@ -69,12 +73,20 @@ void init_graph(class_t &c) {
           },
           py::arg("num"),
           "Add the given number of vertices to the graph.");
-    c.def("set_edge", &graph_t::set_edge,
+    c.def("set_edge", [](graph_t &g, index_t edge, index_t source, index_t target) {
+              hg_assert_edge_index(g, edge);
+              hg_assert_vertex_index(g, source);
+              hg_assert_vertex_index(g, target);
+              g.set_edge(edge, source, target);
+          },
           py::arg("edge_index"),
           py::arg("source"),
           py::arg("target"),
           "Modify the source and the target of the given edge.");
-    c.def("remove_edge", &graph_t::remove_edge,
+    c.def("remove_edge", [](graph_t &g, index_t edge) {
+              hg_assert_edge_index(g, edge);
+              g.remove_edge(edge);
+          },
           py::arg("edge_index"),
           "Remove the given edge from the graph (the edge is not really removed: "
           "its source and target are attached to a virtual node of index -1).");

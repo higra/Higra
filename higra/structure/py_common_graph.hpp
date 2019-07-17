@@ -17,6 +17,7 @@
 
 template<typename T>
 using pyarray = xt::pyarray<T>;
+using namespace hg;
 
 template<typename graph_t>
 struct def_out_degree {
@@ -25,6 +26,7 @@ struct def_out_degree {
     void def(C &c, const char *doc) {
         c.def("out_degree", [](graph_t &g,
                                pyarray<value_t> vertices) {
+                  hg_assert_vertex_indices(g, vertices);
                   return hg::out_degree(vertices, g);
               },
               doc,
@@ -59,6 +61,7 @@ void add_incidence_graph_concept(pyc &c) {
 
     c.def("out_edges", [](const graph_t &g,
                           const vertex_t v) {
+              hg_assert_vertex_index(g, v);
               auto it = hg::out_edges(v, g);
               // wrapping out edge iterator to python friendly type
               auto it1 = out_edge_iterator(it.first, cpp_edge_2_python<edge_t>);
@@ -69,7 +72,10 @@ void add_incidence_graph_concept(pyc &c) {
           "Iterator over all out edges from 'vertex'. An out edge is a tuple '(vertex, adjacent_vertex)'.",
           pybind11::arg("vertex"));
 
-    c.def("out_degree", [](graph_t &g, vertex_t vertex) { return hg::out_degree(vertex, g); },
+    c.def("out_degree", [](graph_t &g, vertex_t vertex) {
+              hg_assert_vertex_index(g, vertex);
+              return hg::out_degree(vertex, g);
+          },
           "Return the out degree of the given vertex.",
           pybind11::arg("vertex"));
 
@@ -87,6 +93,7 @@ struct def_degree {
     void def(C &c, const char *doc) {
         c.def("degree", [](graph_t &g,
                            pyarray<value_t> vertices) {
+                  hg_assert_vertex_indices(g, vertices);
                   return hg::degree(vertices, g);
               },
               doc,
@@ -101,6 +108,7 @@ struct def_in_degree {
     void def(C &c, const char *doc) {
         c.def("in_degree", [](graph_t &g,
                               pyarray<value_t> vertices) {
+                  hg_assert_vertex_indices(g, vertices);
                   return hg::in_degree(vertices, g);
               },
               doc,
@@ -120,6 +128,7 @@ void add_bidirectionnal_graph_concept(pyc &c) {
 
     c.def("in_edges", [](graph_t &g,
                          const vertex_t v) {
+              hg_assert_vertex_index(g, v);
               auto it = hg::in_edges(v, g);
               // wrapping in edge iterator to python friendly type
               auto it1 = in_edge_iterator(it.first, cpp_edge_2_python<edge_t>);
@@ -130,14 +139,20 @@ void add_bidirectionnal_graph_concept(pyc &c) {
           "Iterator over all in edges from 'vertex'. An in edge is a tuple '(adjacent_vertex, vertex)'.",
           pybind11::arg("vertex"));
 
-    c.def("degree", [](graph_t &g, vertex_t vertex) { return hg::degree(vertex, g); },
+    c.def("degree", [](graph_t &g, vertex_t vertex) {
+              hg_assert_vertex_index(g, vertex);
+              return hg::degree(vertex, g);
+          },
           "Return the degree of the given vertex.",
           pybind11::arg("vertex"));
 
     add_type_overloads<def_degree<graph_t>, int, unsigned int, long long, unsigned long long>
             (c, "Return the degree of the given vertices.");
 
-    c.def("in_degree", [](graph_t &g, vertex_t vertex) { return hg::in_degree(vertex, g); },
+    c.def("in_degree", [](graph_t &g, vertex_t vertex) {
+              hg_assert_vertex_index(g, vertex);
+              return hg::in_degree(vertex, g);
+          },
           "Return the in degree of the given vertex.",
           pybind11::arg("vertex"));
 
@@ -151,6 +166,7 @@ void add_adjacency_graph_concept(pyc &c) {
 
     c.def("adjacent_vertices", [](graph_t &g,
                                   const vertex_t v) {
+              hg_assert_vertex_index(g, v);
               auto it = hg::adjacent_vertices(v, g);
               return pybind11::make_iterator(it.first, it.second);
           },
@@ -187,16 +203,17 @@ void add_edge_list_graph_concept(pyc &c) {
               return pybind11::make_iterator(it1, it2);
           },
           "Iterator over all edges of the graph.");
-    
-    c.def("edge_list", [](const graph_t &g){
+
+    c.def("edge_list", [](const graph_t &g) {
         hg::array_1d<hg::index_t> sources = hg::array_1d<hg::index_t>::from_shape({hg::num_edges(g)});
         hg::array_1d<hg::index_t> targets = hg::array_1d<hg::index_t>::from_shape({hg::num_edges(g)});
         auto s = sources.begin();
         auto t = targets.begin();
-        for(auto e: hg::edge_iterator(g)){
+        for (auto e: hg::edge_iterator(g)) {
             *s = hg::source(e, g);
             *t = hg::target(e, g);
-            s++; t++;
+            s++;
+            t++;
         }
         return pybind11::make_tuple(std::move(sources), std::move(targets));
     }, "Returns a tuple of two arrays (sources, targets) defining all the edges of the graph.");
@@ -230,6 +247,7 @@ void add_edge_index_graph_concept(pyc &c) {
     using edge_index_t = typename hg::graph_traits<graph_t>::edge_index;
 
     c.def("edge_from_index", [](graph_t &g, edge_index_t v) {
+              hg_assert_edge_index(g, v);
               auto e = hg::edge_from_index(v, g);
               return cpp_edge_2_python(e);
           },
