@@ -105,40 +105,72 @@ namespace hg {
     };
 
     /**
-     * In a tree t, given that the altitudes of the nodes vary monotically from the leaves to the root,
-     * the height of a node n of t is equal to the difference between the altitude of n and
-     * the altitude of the deepest leave in the subtree of t rooted in n.
+     * In a tree :math:`t`, given that the altitudes of the nodes vary monotically from the leaves to the root,
+     * the height of a node :math:`n` of :math:`t` is equal to the difference between the altitude of the parent
+     * of :math:`n` and the altitude of the deepest non-leaf node in the subtree of :math:`t` rooted in :math:`n`.
      *
-     *
-     * If increasing_altitude is true, this means that altitudes are increasing from the leaves to the root
-     * (ie. for any node n, altitude(n) <= altitude(parent(n)).
-     * Else, if increasing_altitude is false, this means that altitudes are decreasing from the leaves to the root
-     * (ie. for any node n, altitude(n) >= altitude(parent(n)).
-     *
-     * PRE-CONDITION: altitudes of the nodes vary monotically from the leaves to the root
+     * If :attr:`increasing_altitude` is true, this means that altitudes are increasing from the leaves to the root
+     * (ie. for any node :math:`n`, :math:`altitudes(n) \leq altitudes(parent(n))`.
+     * Else, if :attr:`increasing_altitude` is false, this means that altitudes are decreasing from the leaves to the root
+     * (ie. for any node :math:`n`, :math:`altitude(n) \geq altitude(parent(n))`.
      *
      * @tparam tree_t tree type
      * @tparam T xexpression derived type of xnode_altitude
      * @param tree input tree
      * @param xnode_altitude altitude of the nodes of the input tree
-     * @param increasing_altitude true if altitude is increasing, false if it is decreasing
+     * @param increasing_altitudes must be true if altitude is increasing, false if it is decreasing
      * @return an array with the height of each node of the tree
      */
     template<typename tree_t, typename T>
     auto
-    attribute_height(const tree_t &tree, const xt::xexpression<T> &xnode_altitude, bool increasing_altitude = true) {
-        auto &node_altitude = xnode_altitude.derived_cast();
-        hg_assert_node_weights(tree, node_altitude);
-        hg_assert_1d_array(node_altitude);
+    attribute_height(const tree_t &tree,
+                     const xt::xexpression<T> &xaltitudes,
+                     bool increasing_altitudes) {
+        auto &altitudes = xaltitudes.derived_cast();
+        hg_assert_node_weights(tree, altitudes);
+        hg_assert_1d_array(altitudes);
+        using value_type = typename T::value_type;
 
-        if (increasing_altitude) {
-            auto extrema = accumulate_sequential(tree, xt::view(node_altitude, xt::range(0, num_leaves(tree))),
-                                                 accumulator_min());
-            return xt::eval(node_altitude - extrema);
+        if (increasing_altitudes) {
+            auto min_depth = xt::empty_like(altitudes);
+            xt::noalias(xt::view(min_depth, xt::range(0, num_leaves(tree)))) =
+                    xt::view(xt::index_view(altitudes, tree.parents()), xt::range(0, num_leaves(tree)));
+            for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
+                min_depth(n) = std::numeric_limits<value_type>::max();
+                bool flag = true;
+                for (auto c: children_iterator(n, tree)) {
+                    if (!is_leaf(c, tree)) {
+                        flag = false;
+                        if (min_depth(c) < min_depth(n)) {
+                            min_depth(n) = min_depth(c);
+                        }
+                    }
+                }
+                if (flag) {
+                    min_depth(n) = altitudes(n);
+                }
+            }
+            return xt::eval(xt::index_view(altitudes, tree.parents()) - min_depth);
         } else {
-            auto extrema = accumulate_sequential(tree, xt::view(node_altitude, xt::range(0, num_leaves(tree))),
-                                                 accumulator_max());
-            return xt::eval(extrema - node_altitude);
+            auto max_depth = xt::empty_like(altitudes);
+            xt::noalias(xt::view(max_depth, xt::range(0, num_leaves(tree)))) =
+                    xt::view(xt::index_view(altitudes, tree.parents()), xt::range(0, num_leaves(tree)));
+            for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
+                max_depth(n) = std::numeric_limits<value_type>::lowest();
+                bool flag = true;
+                for (auto c: children_iterator(n, tree)) {
+                    if (!is_leaf(c, tree)) {
+                        flag = false;
+                        if (max_depth(c) > max_depth(n)) {
+                            max_depth(n) = max_depth(c);
+                        }
+                    }
+                }
+                if (flag) {
+                    max_depth(n) = altitudes(n);
+                }
+            }
+            return xt::eval(max_depth - xt::index_view(altitudes, tree.parents()));
         }
     };
 

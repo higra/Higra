@@ -59,7 +59,19 @@ namespace tree_attributes {
     }
 
     TEST_CASE("tree attribute height", "[tree_attributes]") {
-        auto t = data.t;
+        hg::tree t(xt::xarray<index_t>{7, 7, 8, 8, 8, 9, 9, 10, 10, 11, 11, 11});
+        SECTION("increasing") {
+            array_1d<double> node_altitude{0, 0, 0, 0, 0, 0, 0, 3, 2, 1, 5, 8};
+            array_1d<index_t> ref{0, 0, 0, 0, 0, 0, 0, 2, 3, 7, 6, 7};
+            auto res = attribute_height(t, node_altitude, true);
+            REQUIRE((ref == res));
+        }SECTION("decreasing") {
+            array_1d<double> node_altitude{0, 0, 0, 0, 0, 0, 0, 8, 5, 9, 4, 1};
+            array_1d<index_t> ref{0, 0, 0, 0, 0, 0, 0, 4, 1, 8, 7, 8};
+            auto res = attribute_height(t, node_altitude, false);
+            REQUIRE((ref == res));
+        }
+    }
 
     TEST_CASE("tree attribute extrema", "[tree_attributes]") {
         tree t(xt::xarray<index_t>{11, 11, 9, 9, 8, 8, 13, 13, 10, 10, 12, 12, 14, 14, 14});
@@ -99,7 +111,7 @@ namespace tree_attributes {
         array_1d<index_t> ref{0, 0, 0, 0, 0, 0, 0, 10, 3, 10, 10, 2, 10};
         auto res = attribute_dynamics(t, node_altitude);
         REQUIRE((ref == res));
-    }
+    }*/
 
     TEST_CASE("tree attribute siblings", "[tree_attributes]") {
         auto t = data.t;
