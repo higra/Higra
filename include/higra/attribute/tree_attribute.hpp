@@ -13,6 +13,7 @@
 #include "../graph.hpp"
 #include "../accumulator/tree_accumulator.hpp"
 #include "../structure/array.hpp"
+#include "../hierarchy/hierarchy_core.hpp"
 #include "xtensor/xview.hpp"
 #include "xtensor/xindex_view.hpp"
 #include "xtensor/xnoalias.hpp"
@@ -140,6 +141,69 @@ namespace hg {
             return xt::eval(extrema - node_altitude);
         }
     };
+
+    /**
+     * Identify nodes in a hierarchy that represent extrema.
+     *
+     * An extremum of the hierarchy :math:`(t, alt)` is a node :math:`n` of :math`t` such that the altitude of
+     * any non leaf node included in :math:`n` is equal to the altitude of :math:`n` and the altitude of the parent of
+     * :math:`n` is different from the altitude of :math:`n`.
+     *
+     * The result is a boolean array such that :math:`result(n)=true` if the node :math:`n` is an extremum.
+     *
+     * @tparam tree_t
+     * @tparam T
+     * @param tree Input tree
+     * @param xaltitudes Tree node altitudes
+     * @return
+     */
+    template<typename tree_t, typename T>
+    auto
+    attribute_extrema(const tree_t &tree,
+                      const xt::xexpression<T> &xaltitudes) {
+        auto &altitudes = xaltitudes.derived_cast();
+        hg_assert_node_weights(tree, altitudes);
+        hg_assert_1d_array(altitudes);
+
+        auto duplicated_levels = xt::eval(xt::equal(altitudes, xt::index_view(altitudes, parents(tree))));
+        if ((xt::amax)(xt::view(duplicated_levels, xt::range(num_leaves(tree), num_vertices(tree))))() > 0) {
+
+            auto s = simplify_tree(tree, duplicated_levels);
+
+            auto &ntree = s.tree;
+            auto &node_map = s.node_map;
+
+            array_1d<bool> extrema = xt::zeros<bool>({num_vertices(tree)});
+            for (auto n: leaves_to_root_iterator(ntree, leaves_it::exclude)) {
+                bool flag = true;
+                for (auto c: children_iterator(n, ntree)) {
+                    if (!is_leaf(c, ntree)) {
+                        flag = false;
+                        break;
+                    }
+                }
+                if (flag) {
+                    extrema(node_map(n)) = true;
+                }
+            }
+            return extrema;
+        } else {
+            array_1d<bool> extrema = xt::zeros<bool>({num_vertices(tree)});
+            for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
+                bool flag = true;
+                for (auto c: children_iterator(n, tree)) {
+                    if (!is_leaf(c, tree)) {
+                        flag = false;
+                        break;
+                    }
+                }
+                if (flag) {
+                    extrema(n) = true;
+                }
+            }
+            return extrema;
+        }
+    }
 
     /**
      * Given a node n of the tree t, the dynamics of n is the difference between
