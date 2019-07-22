@@ -76,7 +76,7 @@ class TestHierarchyCore(unittest.TestCase):
         self.assertTrue(hg.test_tree_isomorphism(tree, tref))
         self.assertTrue(np.allclose(altitudes, (0, 0, 0, 0, 0, 0, 0, 1, 1, 2)))
 
-    def test_simplifyTree(self):
+    def test_simplify_tree(self):
         t = TestHierarchyCore.getTree()
 
         altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 2))
@@ -96,7 +96,7 @@ class TestHierarchyCore(unittest.TestCase):
         refnm = np.asarray((0, 1, 2, 3, 4, 5, 7))
         self.assertTrue(np.all(refnm == node_map))
 
-    def test_simplifyTreeWithLeaves(self):
+    def test_simplify_tree_with_leaves(self):
         t = hg.Tree((8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12))
 
         criterion = np.asarray(
@@ -111,6 +111,22 @@ class TestHierarchyCore(unittest.TestCase):
 
         refnm = np.asarray((0, 3, 4, 5, 6, 7, 10, 11, 12))
         self.assertTrue(np.all(refnm == node_map))
+
+    def test_simplify_tree_propagate_category(self):
+        g = hg.get_4_adjacency_implicit_graph((1, 6))
+        vertex_values = np.asarray((1, 5, 4, 3, 3, 6), dtype=np.int32)
+        tree, altitudes = hg.component_tree_max_tree(g, vertex_values)
+
+        condition = np.asarray((False, False, False, False, False, False, False, True, False, True, False), np.bool)
+
+        new_tree, node_map = hg.simplify_tree(tree, condition)
+
+        self.assertTrue(np.all(new_tree.parents() == (8, 7, 7, 8, 8, 6, 8, 8, 8)))
+        self.assertTrue(np.all(node_map == (0, 1, 2, 3, 4, 5, 6, 8, 10)))
+        self.assertTrue(new_tree.category() == hg.TreeCategory.ComponentTree)
+
+        rec = hg.reconstruct_leaf_data(new_tree, altitudes[node_map])
+        self.assertTrue(np.all(rec == (1, 4, 4, 1, 1, 6)))
 
     def test_saliency(self):
         graph = hg.get_4_adjacency_graph((2, 3))

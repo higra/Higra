@@ -183,7 +183,7 @@ namespace hg {
         }
 
         node_map(node_map.size() - 1) = root(t);
-        return make_remapped_tree(tree(new_parent), std::move(node_map));
+        return make_remapped_tree(tree(new_parent, t.category()), std::move(node_map));
     };
 
     /**
@@ -301,6 +301,6 @@ namespace hg {
 
         new_parents(num_v_res - 1) = num_v_res - 1;
 
-        return make_remapped_tree(hg::tree(new_parents), std::move(reverse_node_map));
+        return make_remapped_tree(hg::tree(new_parents, tree.category()), std::move(reverse_node_map));
     }
 }
