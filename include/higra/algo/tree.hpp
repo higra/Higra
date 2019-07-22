@@ -230,7 +230,7 @@ namespace hg {
         auto supervertex_labels = xt::eval(xt::view(new_order, xt::range(0, num_leaves(tree))));
 
         return supervertex_hierarchy<array_1d<index_t>, hg::tree, array_1d<index_t>>{
-                std::move(supervertex_labels), hg::tree{parents}, std::move(node_map)
+                std::move(supervertex_labels), hg::tree(parents, tree.category()), std::move(node_map)
         };
     };
 
@@ -384,7 +384,7 @@ namespace hg {
             new_par(i) = reverse_sorted(par(sorted(i)));
         }
 
-        return make_remapped_tree(hg::tree(new_par), std::move(sorted));
+        return make_remapped_tree(hg::tree(new_par, tree.category()), std::move(sorted));
     };
 
 
