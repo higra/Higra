@@ -221,7 +221,7 @@ namespace hg {
                 graph,
                 edge_weights,
                 [](const tree &t, const auto &altitude) {
-                    return attribute_dynamics(t, altitude);
+                    return attribute_dynamics(t, altitude, true);
                 });
     };
 

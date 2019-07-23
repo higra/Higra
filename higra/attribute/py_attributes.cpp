@@ -26,8 +26,8 @@ struct def_perimeter_length_component_tree {
         m.def("_attribute_perimeter_length_component_tree",
               [](const hg::tree &tree,
                  const hg::ugraph &graph,
-                 pyarray<T> &vertex_perimeter,
-                 pyarray<T> &edge_length) {
+                 const pyarray<T> &vertex_perimeter,
+                 const pyarray<T> &edge_length) {
                   return hg::attribute_perimeter_length_component_tree(
                           tree,
                           graph,
@@ -40,6 +40,69 @@ struct def_perimeter_length_component_tree {
               py::arg("graph"),
               py::arg("vertex_perimeter"),
               py::arg("edge_length"));
+    }
+};
+
+struct def_attribute_extrema {
+    template<typename T>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_attribute_extrema",
+              [](const hg::tree &tree,
+                 const pyarray<T> &altitudes) {
+                  return hg::attribute_extrema(
+                          tree,
+                          altitudes
+                  );
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("altitudes"));
+    }
+};
+
+struct def_attribute_height {
+    template<typename T>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_attribute_height",
+              [](const hg::tree &tree,
+                 const pyarray<T> &altitudes,
+                 bool increasing_altitudes) {
+                  return hg::attribute_height(
+                          tree,
+                          altitudes,
+                          increasing_altitudes
+                  );
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("altitudes"),
+              py::arg("increasing_altitudes"));
+    }
+};
+
+struct def_attribute_extinction_value {
+    template<typename T>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_attribute_extinction_value",
+              [](const hg::tree &tree,
+                 const pyarray<T> &altitudes,
+                 const pyarray<T> &attribute,
+                 bool increasing_altitudes) {
+                  return hg::attribute_extinction_value(
+                          tree,
+                          altitudes,
+                          attribute,
+                          increasing_altitudes
+                  );
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("altitudes"),
+              py::arg("attribute"),
+              py::arg("increasing_altitudes"));
     }
 };
 
@@ -62,4 +125,13 @@ void py_init_attributes(pybind11::module &m) {
 
     add_type_overloads<def_perimeter_length_component_tree,
             HG_TEMPLATE_FLOAT_TYPES>(m, "");
+
+    add_type_overloads<def_attribute_extrema,
+            HG_TEMPLATE_NUMERIC_TYPES>(m, "");
+
+    add_type_overloads<def_attribute_extinction_value,
+            HG_TEMPLATE_FLOAT_TYPES>(m, "");
+
+    add_type_overloads<def_attribute_height,
+            HG_TEMPLATE_NUMERIC_TYPES>(m, "");
 }

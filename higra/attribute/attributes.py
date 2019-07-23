@@ -476,3 +476,155 @@ def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=Non
         variance = mean2 - mean[:, :, None] * mean[:, None, :]
 
     return mean, variance
+
+
+@hg.data_provider("extrema")
+def attribute_extrema(tree, altitudes):
+    """
+    Identify nodes in a hierarchy that represent extrema.
+
+    An extremum of the hierarchy :math:`T` with altitudes :math:`alt` is a node :math:`n` of :math:`T` such that the
+    altitude of any non leaf node included in :math:`n` is equal to the altitude of :math:`n` and the altitude of
+    the parent of :math:`n` is different from the altitude of :math:`n`.
+
+    The result is a boolean array such that :math:`result(n)` is ``True`` if the node :math:`n` is an extremum and ``False``
+    otherwise.
+
+    :param tree: Input tree
+    :param altitudes: Tree node altitudes
+    :return: a 1d boolean array
+    """
+
+    res = hg.cpp._attribute_extrema(tree, altitudes)
+
+    return res
+
+
+def __process_param_increasing_altitudes(tree, altitudes, increasing_altitudes):
+    """
+    Assuming that altitudes are monotone for the input tree, test if they are increasing or decreasing.
+
+    :param tree:
+    :param altitudes:
+    :return:
+    """
+    if isinstance(increasing_altitudes, bool):
+        return increasing_altitudes
+
+    if increasing_altitudes == "auto":
+        alt_root = altitudes[tree.root()]
+        alt_min = np.min(altitudes[tree.num_leaves():])
+        return bool(alt_root > alt_min)
+    elif increasing_altitudes == "increasing":
+        return True
+    elif increasing_altitudes == "decreasing":
+        return False
+    else:
+        raise ValueError("Unknown mode '" + str(increasing_altitudes) + "' valid values are 'auto', True, False, "
+                                                                        "'increasing', and 'decreasing'.")
+
+
+def attribute_extinction_value(tree, altitudes, attribute, increasing_altitudes="auto"):
+    """
+    The extinction value of a node :math:`n` of the input tree :math:`T` with increasing altitudes :math:`alt`
+    for the increasing attribute :math:`att` is the equal to the threshold :math:`k` such that the node :math:`n`
+    is still in an minima of :math:`t` when all nodes having an attribute value smaller than :math:`k` are removed.
+
+    Formally, let :math:`\{M_i\}` be the set of minima of the hierarchy :math:`T` with altitudes :math:`alt`.
+    Let :math:`prec` be a total ordering of :math:`\{M_i\}` such that :math:`M_i \prec M_j \Rightarrow alt(M_i) \leq alt(M_j)`.
+    Let :math:`r(M_i)` be the smallest node of :math:`t` containing :math:`M_i` and another minima :math:`M_j` such
+    that :math:`M_j \prec M_i`. The extinction value of :math:`M_i` is then defined as :math:`alt(r(M_i)) - alt(M_i)`.
+
+    Extinction values of minima are then extended to other nodes in the tree with the following rules:
+
+        - the extinction value of a non-leaf node :math:`n` which is not a minimum is defined as the largest
+          extinction values among all the minima contained in :math:`n`
+          (and 0 if :math:`n` does not contain any minima); and
+        - the extinction value of a leaf node :math:`n` belonging to a minima :math:`M_i` is equal to the extinction
+          value of :math:`M_i`. I :math:`n` does not belong to any minima its extinction value is 0.
+
+    The function can also handle decreasing altitudes, in which case *minima* should be replaced by *maxima*
+    in the description above. Possible values of :attr:`increasing_altitude` are:
+
+        - ``'auto'``: the function will automatically determine if :attr:`altitudes` are increasing or decreasing (this has
+          small computational cost but does not impact the runtime complexity).
+        - ``True`` or ``'increasing'``: this means that altitudes are increasing from the leaves to the root
+          (ie. for any node :math:`n`, :math:`altitudes(n) \leq altitudes(parent(n))`.
+        - ``False`` or ``'decreasing'``: this means that altitudes are decreasing from the leaves to the root
+          (ie. for any node :math:`n`, :math:`altitude(n) \geq altitude(parent(n))`.
+
+
+    :param tree: Input tree
+    :param altitudes: Tree node altitudes
+    :param attribute: Tree node attribute
+    :param increasing_altitudes: possible values 'auto', True, False, 'increasing', and 'decreasing'
+    :return: a 1d array like :attr:`attribute`
+    """
+    inc = __process_param_increasing_altitudes(tree, altitudes, increasing_altitudes)
+
+    altitudes, attribute = hg.cast_to_common_type(altitudes, attribute)
+
+    res = hg.cpp._attribute_extinction_value(tree, altitudes, attribute, inc)
+
+    return res
+
+
+def attribute_height(tree, altitudes, increasing_altitudes="auto"):
+    """
+    In a tree :math:`T`, given that the altitudes of the nodes vary monotically from the leaves to the root,
+    the height of a node :math:`n` of :math:`T` is equal to the difference between the altitude of the parent
+    of :math:`n` and the altitude of the deepest non-leaf node in the subtree of :math:`T` rooted in :math:`n`.
+
+    Possible values of :attr:`increasing_altitude` are:
+
+        - ``'auto'``: the function will automatically determine if :attr:`altitudes` are increasing or decreasing (this has
+          small computational cost but does not impact the runtime complexity).
+        - ``True`` or ``'increasing'``: this means that altitudes are increasing from the leaves to the root
+          (ie. for any node :math:`n`, :math:`altitudes(n) \leq altitudes(parent(n))`.
+        - ``False`` or ``'decreasing'``: this means that altitudes are decreasing from the leaves to the root
+          (ie. for any node :math:`n`, :math:`altitude(n) \geq altitude(parent(n))`.
+
+    :param tree: Input tree
+    :param altitudes: Tree node altitudes
+    :param increasing_altitudes: possible values 'auto', True, False, 'increasing', and 'decreasing'
+    :return: a 1d array like :attr:`altitudes`
+    """
+    inc = __process_param_increasing_altitudes(tree, altitudes, increasing_altitudes)
+
+    res = hg.cpp._attribute_height(tree, altitudes, inc)
+
+    return res
+
+
+def attribute_dynamics(tree, altitudes, increasing_altitudes="auto"):
+    """
+    Given a node :math:`n` of the tree :math:`T`, the dynamics of :math:`n` is the difference between
+    the altitude of the deepest minima of the subtree rooted in :math:`n` and the altitude
+    of the closest ancestor of :math:`n` that has a deeper minima in its subtree. If no such
+    ancestor exists then, the dynamics of :math:`n` is equal to the difference between the
+    altitude of the highest node of the tree (the root) and the depth of the deepest minima.
+
+    The dynamics is the *extinction values* (:func:`~higra.attribute_extinction_value`) for the attribute *height*
+    (:func:`~higra.attribute_height`).
+
+    Possible values of :attr:`increasing_altitude` are:
+
+        - ``'auto'``: the function will automatically determine if :attr:`altitudes` are increasing or decreasing (this has
+          small computational cost but does not impact the runtime complexity).
+        - ``True`` or ``'increasing'``: this means that altitudes are increasing from the leaves to the root
+          (ie. for any node :math:`n`, :math:`altitudes(n) \leq altitudes(parent(n))`.
+        - ``False`` or ``'decreasing'``: this means that altitudes are decreasing from the leaves to the root
+          (ie. for any node :math:`n`, :math:`altitude(n) \geq altitude(parent(n))`.
+
+
+    :param tree: Input tree
+    :param altitudes: Tree node altitudes
+    :param increasing_altitudes: possible values 'auto', True, False, 'increasing', and 'decreasing'
+    :return: a 1d array like :attr:`altitudes`
+    """
+
+    inc = __process_param_increasing_altitudes(tree, altitudes, increasing_altitudes)
+
+    height = hg.attribute_height(tree, altitudes, inc)
+
+    return hg.attribute_extinction_value(tree, altitudes, height, inc)
