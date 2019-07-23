@@ -10,6 +10,7 @@ Tree attributes
     attribute_area
     attribute_compactness
     attribute_depth
+    attribute_extrema
     attribute_frontier_length
     attribute_gaussian_region_weights_model
     attribute_lca_map
@@ -33,6 +34,8 @@ Tree attributes
 .. autofunction:: higra.attribute_compactness
 
 .. autofunction:: higra.attribute_depth
+
+.. autofunction:: higra.attribute_extrema
 
 .. autofunction:: higra.attribute_frontier_length
 

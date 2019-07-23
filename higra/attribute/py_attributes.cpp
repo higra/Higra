@@ -43,6 +43,24 @@ struct def_perimeter_length_component_tree {
     }
 };
 
+struct def_attribute_extrema {
+    template<typename T>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_attribute_extrema",
+              [](const hg::tree &tree,
+                 pyarray<T> &altitudes) {
+                  return hg::attribute_extrema(
+                          tree,
+                          altitudes
+                  );
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("altitudes"));
+    }
+};
+
 void py_init_attributes(pybind11::module &m) {
     xt::import_numpy();
     m.def("_attribute_sibling",
@@ -62,4 +80,7 @@ void py_init_attributes(pybind11::module &m) {
 
     add_type_overloads<def_perimeter_length_component_tree,
             HG_TEMPLATE_FLOAT_TYPES>(m, "");
+
+    add_type_overloads<def_attribute_extrema,
+            HG_TEMPLATE_NUMERIC_TYPES>(m, "");
 }

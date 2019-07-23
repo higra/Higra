@@ -476,3 +476,25 @@ def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=Non
         variance = mean2 - mean[:, :, None] * mean[:, None, :]
 
     return mean, variance
+
+
+@hg.data_provider("extrema")
+def attribute_extrema(tree, altitudes):
+    """
+    Identify nodes in a hierarchy that represent extrema.
+
+    An extremum of the hierarchy :math:`T` with altitudes :math:`alt` is a node :math:`n` of :math:`T` such that the
+    altitude of any non leaf node included in :math:`n` is equal to the altitude of :math:`n` and the altitude of
+    the parent of :math:`n` is different from the altitude of :math:`n`.
+
+    The result is a boolean array such that :math:`result(n)` is ``True`` if the node :math:`n` is an extremum and ``False``
+    otherwise.
+
+    :param tree: Input tree
+    :param altitudes: Tree node altitudes
+    :return: a 1d boolean array
+    """
+
+    res = hg.cpp._attribute_extrema(tree, altitudes)
+
+    return res

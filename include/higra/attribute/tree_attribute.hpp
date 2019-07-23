@@ -177,9 +177,9 @@ namespace hg {
     /**
      * Identify nodes in a hierarchy that represent extrema.
      *
-     * An extremum of the hierarchy :math:`(t, alt)` is a node :math:`n` of :math`t` such that the altitude of
-     * any non leaf node included in :math:`n` is equal to the altitude of :math:`n` and the altitude of the parent of
-     * :math:`n` is different from the altitude of :math:`n`.
+     * An extremum of the hierarchy :math:`T` with altitudes :math:`alt` is a node :math:`n` of :math:`T` such that
+     * the altitude of any non leaf node included in :math:`n` is equal to the altitude of :math:`n` and the altitude
+     * of the parent of :math:`n` is different from the altitude of :math:`n`.
      *
      * The result is a boolean array such that :math:`result(n)=true` if the node :math:`n` is an extremum.
      *

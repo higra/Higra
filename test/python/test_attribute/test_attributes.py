@@ -337,6 +337,30 @@ class TestAttributes(unittest.TestCase):
                 v = np.zeros_like(variance[i, ...])
                 self.assertTrue(np.allclose(v, variance[i, ...]))
 
+    def test_tree_attribute_extrema(self):
+        t = hg.Tree((11, 11, 9, 9, 8, 8, 13, 13, 10, 10, 12, 12, 14, 14, 14))
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 1, 4, 8, 10.))
+        ref = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0))
+        res = hg.attribute_extrema(t, altitudes)
+        self.assertTrue(np.all(ref == res))
+
+    def test_tree_attribute_extrema2(self):
+        graph = hg.get_4_adjacency_implicit_graph((4, 4))
+        vertex_weights = np.asarray((0, 1, 4, 4,
+                                     7, 5, 6, 8,
+                                     2, 3, 4, 1,
+                                     9, 8, 6, 7))
+
+        tree, altitudes = hg.component_tree_max_tree(graph, vertex_weights)
+
+        extrema = hg.attribute_extrema(tree, altitudes)
+        expected_extrema = np.asarray((0, 0, 0, 0,
+                                       0, 0, 0, 0,
+                                       0, 0, 0, 0,
+                                       0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0))
+        self.assertTrue(np.all(expected_extrema == extrema))
+
 
 if __name__ == '__main__':
     unittest.main()
