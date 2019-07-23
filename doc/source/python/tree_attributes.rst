@@ -10,6 +10,7 @@ Tree attributes
     attribute_area
     attribute_compactness
     attribute_depth
+    attribute_dynamics
     attribute_extinction_value
     attribute_extrema
     attribute_frontier_length
@@ -36,6 +37,8 @@ Tree attributes
 .. autofunction:: higra.attribute_compactness
 
 .. autofunction:: higra.attribute_depth
+
+.. autofunction:: higra.attribute_dynamics
 
 .. autofunction:: higra.attribute_extinction_value
 

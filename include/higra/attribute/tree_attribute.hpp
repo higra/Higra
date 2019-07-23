@@ -198,7 +198,7 @@ namespace hg {
         hg_assert_1d_array(altitudes);
 
         auto duplicated_levels = xt::eval(xt::equal(altitudes, xt::index_view(altitudes, parents(tree))));
-        if ((xt::amax)(xt::view(duplicated_levels, xt::range(num_leaves(tree), num_vertices(tree))))() > 0) {
+        if ((xt::amax)(xt::view(duplicated_levels, xt::range(num_leaves(tree), num_vertices(tree) - 1)))() > 0) {
 
             auto s = simplify_tree(tree, duplicated_levels);
 

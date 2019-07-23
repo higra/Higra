@@ -401,7 +401,6 @@ class TestAttributes(unittest.TestCase):
         ext = hg.attribute_extinction_value(tree, altitudes, area, "decreasing")
         self.assertTrue(np.all(expected_ext == ext))
 
-
     def test_attribute_height_inc(self):
         t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 10, 10, 11, 11, 11))
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 3, 2, 1, 5, 8.))
@@ -428,6 +427,22 @@ class TestAttributes(unittest.TestCase):
         self.assertTrue(np.all(res == ref))
 
         res = hg.attribute_height(t, altitudes, "decreasing")
+        self.assertTrue(np.all(res == ref))
+
+    def test_attribute_dynamics(self):
+        t = hg.Tree((8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 8, 10.))
+        ref = np.asarray((3, 3, 0, 10, 10, 2, 2, 10, 3, 10, 10, 2, 10))
+
+        res = hg.attribute_dynamics(t, altitudes)
+        self.assertTrue(np.all(res == ref))
+
+    def test_attribute_dynamics2(self):
+        t = hg.Tree((11, 11, 9, 9, 8, 8, 13, 13, 10, 10, 12, 12, 14, 14, 14))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 1, 4, 8, 10.))
+        ref = np.asarray((3, 3, 0, 0, 10, 10, 2, 2, 10, 0, 10, 3, 10, 2, 10))
+
+        res = hg.attribute_dynamics(t, altitudes)
         self.assertTrue(np.all(res == ref))
 
 
