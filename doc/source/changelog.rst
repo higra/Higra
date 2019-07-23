@@ -1,6 +1,15 @@
 Changelog
 =========
 
+0.3.8
+-----
+
+- Add attributes: :func:`~higra.attribute_height`, :func:`~higra.attribute_extrema`,
+  :func:`~higra.attribute_extinction_value`, and :func:`~higra.attribute_dynamics`
+  `#110 <https://github.com/PerretB/Higra/pull/110>`_
+- Fix tree category propagation
+  `#109 <https://github.com/PerretB/Higra/pull/109>`_
+
 0.3.7
 -----
 
