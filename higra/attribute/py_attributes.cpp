@@ -61,6 +61,27 @@ struct def_attribute_extrema {
     }
 };
 
+struct def_attribute_height {
+    template<typename T>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_attribute_height",
+              [](const hg::tree &tree,
+                 const pyarray<T> &altitudes,
+                 bool increasing_altitudes) {
+                  return hg::attribute_height(
+                          tree,
+                          altitudes,
+                          increasing_altitudes
+                  );
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("altitudes"),
+              py::arg("increasing_altitudes"));
+    }
+};
+
 struct def_attribute_extinction_value {
     template<typename T>
     static
@@ -110,4 +131,7 @@ void py_init_attributes(pybind11::module &m) {
 
     add_type_overloads<def_attribute_extinction_value,
             HG_TEMPLATE_FLOAT_TYPES>(m, "");
+
+    add_type_overloads<def_attribute_height,
+            HG_TEMPLATE_NUMERIC_TYPES>(m, "");
 }

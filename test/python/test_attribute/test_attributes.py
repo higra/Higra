@@ -402,5 +402,34 @@ class TestAttributes(unittest.TestCase):
         self.assertTrue(np.all(expected_ext == ext))
 
 
+    def test_attribute_height_inc(self):
+        t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 10, 10, 11, 11, 11))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 3, 2, 1, 5, 8.))
+        ref = np.asarray((0, 0, 0, 0, 0, 0, 0, 2, 3, 7, 6, 7))
+
+        res = hg.attribute_height(t, altitudes)
+        self.assertTrue(np.all(res == ref))
+
+        res = hg.attribute_height(t, altitudes, True)
+        self.assertTrue(np.all(res == ref))
+
+        res = hg.attribute_height(t, altitudes, "increasing")
+        self.assertTrue(np.all(res == ref))
+
+    def test_attribute_height_dec(self):
+        t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 10, 10, 11, 11, 11))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 8, 5, 9, 4, 1.))
+        ref = np.asarray((0, 0, 0, 0, 0, 0, 0, 4, 1, 8, 7, 8))
+
+        res = hg.attribute_height(t, altitudes)
+        self.assertTrue(np.all(res == ref))
+
+        res = hg.attribute_height(t, altitudes, False)
+        self.assertTrue(np.all(res == ref))
+
+        res = hg.attribute_height(t, altitudes, "decreasing")
+        self.assertTrue(np.all(res == ref))
+
+
 if __name__ == '__main__':
     unittest.main()

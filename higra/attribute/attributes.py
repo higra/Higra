@@ -509,11 +509,10 @@ def __guess_if_increasing(tree, altitudes):
     :return:
     """
     alt_root = altitudes[tree.root()]
-    alt_min = np.min(altitudes)
+    alt_min = np.min(altitudes[tree.num_leaves():])
     return alt_root > alt_min
 
 
-@hg.data_provider("extrema")
 def attribute_extinction_value(tree, altitudes, attribute, increasing_altitudes="auto"):
     """
     The extinction value of a node :math:`n` of the input tree :math:`T` with increasing altitudes :math:`alt`
@@ -536,7 +535,7 @@ def attribute_extinction_value(tree, altitudes, attribute, increasing_altitudes=
     The function can also handle decreasing altitudes, in which case *minima* should be replaced by *maxima*
     in the description above. Possible values of :attr:`increasing_altitude` are:
 
-        - 'auto': the function will automatically determine if :attr:`altitudes` are increasing or decreasing (this has
+        - ``'auto'``: the function will automatically determine if :attr:`altitudes` are increasing or decreasing (this has
           small computational cost but does not impact the runtime complexity).
         - ``True`` or ``'increasing'``: this means that altitudes are increasing from the leaves to the root
           (ie. for any node :math:`n`, :math:`altitudes(n) \leq altitudes(parent(n))`.
@@ -552,9 +551,9 @@ def attribute_extinction_value(tree, altitudes, attribute, increasing_altitudes=
     """
     if increasing_altitudes == "auto":
         inc = __guess_if_increasing(tree, altitudes)
-    elif increasing_altitudes == "increasing" or increasing_altitudes:
+    elif increasing_altitudes == "increasing" or (isinstance(increasing_altitudes, bool) and increasing_altitudes):
         inc = True
-    elif increasing_altitudes == "increasing" or not increasing_altitudes:
+    elif increasing_altitudes == "decreasing" or (isinstance(increasing_altitudes, bool) and not increasing_altitudes):
         inc = False
     else:
         raise ValueError("Unknown mode '" + increasing_altitudes + "' valid values are 'auto', True, False, "
@@ -566,3 +565,37 @@ def attribute_extinction_value(tree, altitudes, attribute, increasing_altitudes=
 
     return res
 
+
+def attribute_height(tree, altitudes, increasing_altitudes="auto"):
+    """
+    In a tree :math:`T`, given that the altitudes of the nodes vary monotically from the leaves to the root,
+    the height of a node :math:`n` of :math:`T` is equal to the difference between the altitude of the parent
+    of :math:`n` and the altitude of the deepest non-leaf node in the subtree of :math:`T` rooted in :math:`n`.
+
+    Possible values of :attr:`increasing_altitude` are:
+
+        - ``'auto'``: the function will automatically determine if :attr:`altitudes` are increasing or decreasing (this has
+          small computational cost but does not impact the runtime complexity).
+        - ``True`` or ``'increasing'``: this means that altitudes are increasing from the leaves to the root
+          (ie. for any node :math:`n`, :math:`altitudes(n) \leq altitudes(parent(n))`.
+        - ``False`` or ``'decreasing'``: this means that altitudes are decreasing from the leaves to the root
+          (ie. for any node :math:`n`, :math:`altitude(n) \geq altitude(parent(n))`.
+
+    :param tree: Input tree
+    :param altitudes: Tree node altitudes
+    :param increasing_altitudes: possible values 'auto', True, False, 'increasing', and 'decreasing'
+    :return: a 1d array like :attr:`altitudes`
+    """
+    if increasing_altitudes == "auto":
+        inc = __guess_if_increasing(tree, altitudes)
+    elif increasing_altitudes == "increasing" or (isinstance(increasing_altitudes, bool) and increasing_altitudes):
+        inc = True
+    elif increasing_altitudes == "decreasing" or (isinstance(increasing_altitudes, bool) and not increasing_altitudes):
+        inc = False
+    else:
+        raise ValueError("Unknown mode '" + increasing_altitudes + "' valid values are 'auto', True, False, "
+                                                                   "'increasing', and 'decreasing'.")
+
+    res = hg.cpp._attribute_height(tree, altitudes, inc)
+
+    return res
