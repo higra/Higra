@@ -325,7 +325,7 @@ namespace hg {
         }
 
         // extinction of non leaf nodes
-        auto extinction = xt::empty_like(attribute);
+        array_1d<typename T2::value_type> extinction = array_1d<typename T2::value_type>::from_shape({num_vertices(tree)});
         extinction(root(tree)) = attribute(root(tree));
         for (auto n: root_to_leaves_iterator(tree, leaves_it::exclude, root_it::exclude)) {
             auto pn = parent(n, tree);

@@ -361,6 +361,46 @@ class TestAttributes(unittest.TestCase):
                                        0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0))
         self.assertTrue(np.all(expected_extrema == extrema))
 
+    def test_attribute_extinction_value(self):
+        # same as dynamics
+        t = hg.Tree((8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 8, 10.))
+        attribute = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 4, 2, 10.))
+        ref = np.asarray((3, 3, 0, 10, 10, 2, 2, 10, 3, 10, 10, 2, 10))
+        res = hg.attribute_extinction_value(t, altitudes, attribute)
+        self.assertTrue(np.all(ref == res))
+
+        res = hg.attribute_extinction_value(t, altitudes, attribute, True)
+        self.assertTrue(np.all(ref == res))
+
+        res = hg.attribute_extinction_value(t, altitudes, attribute, "increasing")
+        self.assertTrue(np.all(ref == res))
+
+    def test_attribute_extinction_value2(self):
+        graph = hg.get_4_adjacency_implicit_graph((4, 4))
+        vertex_weights = np.asarray((0, 1, 4, 4,
+                                     7, 5, 6, 8,
+                                     2, 3, 4, 1,
+                                     9, 8, 6, 7))
+
+        tree, altitudes = hg.component_tree_max_tree(graph, vertex_weights)
+        area = hg.attribute_area(tree)
+
+        expected_ext = np.asarray((0, 0, 0, 0,
+                                   1, 0, 0, 4,
+                                   0, 0, 0, 0,
+                                   16, 0, 0, 1,
+                                   16, 16, 4, 1, 1, 16, 4, 4, 16, 16, 16, 16, 16))
+
+        ext = hg.attribute_extinction_value(tree, altitudes, area)
+        self.assertTrue(np.all(expected_ext == ext))
+
+        ext = hg.attribute_extinction_value(tree, altitudes, area, False)
+        self.assertTrue(np.all(expected_ext == ext))
+
+        ext = hg.attribute_extinction_value(tree, altitudes, area, "decreasing")
+        self.assertTrue(np.all(expected_ext == ext))
+
 
 if __name__ == '__main__':
     unittest.main()
