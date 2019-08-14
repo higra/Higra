@@ -97,7 +97,7 @@ try:
         author='Benjamin Perret',
         author_email='benjamin.perret@esiee.fr',
         description='Hierarchical Graph Analysis',
-        url='https://github.com/PerretB/Higra',
+        url='https://github.com/higra/Higra',
         long_description=open('README.md').read(),
         packages=[
             'higra',

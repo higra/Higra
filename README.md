@@ -2,9 +2,9 @@
 
 # Higra: Hierarchical Graph Analysis
 
-[![Build Status](https://travis-ci.org/PerretB/Higra.svg?branch=master)](https://travis-ci.org/PerretB/Higra) 
-[![Build status](https://ci.appveyor.com/api/projects/status/5op4qm2cddm7iuj2/branch/master?svg=true)](https://ci.appveyor.com/project/PerretB/higra/branch/master)
-[![codecov](https://codecov.io/gh/PerretB/Higra/branch/master/graph/badge.svg)](https://codecov.io/gh/PerretB/Higra)
+[![Build Status](https://travis-ci.org/higra/Higra.svg?branch=master)](https://travis-ci.org/higra/Higra) 
+[![Build status](https://ci.appveyor.com/api/projects/status/oo0v2uepcxihvwno?svg=true)](https://ci.appveyor.com/project/PerretB/higra-21ed3)
+[![codecov](https://codecov.io/gh/higra/Higra/branch/master/graph/badge.svg)](https://codecov.io/gh/higra/Higra)
 [![Documentation Status](https://readthedocs.org/projects/higra/badge/?version=latest)](https://higra.readthedocs.io/en/latest/?badge=latest)
 
 Higra is a C++/Python library for efficient sparse graph analysis with a special focus on hierarchical methods. Some of the main features are:
@@ -45,7 +45,7 @@ The C++ backend is an header only library. No facilities for system wide install
 
 ## Demonstration and tutorials
 
-Check the dedicated repository [Higra-Notebooks](https://github.com/PerretB/Higra-Notebooks) for a collection of Jupyter Notebooks dedicated to Higra.
+Check the dedicated repository [Higra-Notebooks](https://github.com/higra/Higra-Notebooks) for a collection of Jupyter Notebooks dedicated to Higra.
 
 ## Build
 
@@ -59,7 +59,7 @@ Requires:
 Commands:
 
 ```bash
-git clone https://github.com/PerretB/Higra.git
+git clone https://github.com/higra/Higra.git
 mkdir build
 cd build
 cmake ../Higra/
