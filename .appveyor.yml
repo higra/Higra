@@ -68,7 +68,7 @@ build_script:
   - if %CIBUILDWHEEL% == 0 (
       cd dist &&
       for  %%s in (higra*whl) do ( pip install %%s ) &&
-      python -c "import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('c:\\projects\\higra\\test\\python\\'));exit(0 if result.wasSuccessful() else 1)" &&
+      python -c "import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('c:\\projects\\higra-21ed3\\test\\python\\'));exit(0 if result.wasSuccessful() else 1)" &&
       cd ..\build &&
       cd temp* &&
       cd Release &&
