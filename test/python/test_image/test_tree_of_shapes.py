@@ -47,6 +47,13 @@ class TestTreeOfShapesImage(unittest.TestCase):
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.all(altitudes == ref_altitudes))
 
+        leaf_graph = hg.CptHierarchy.get_leaf_graph(tree)
+        res_shape = hg.CptGridGraph.get_shape(leaf_graph)
+        self.assertTrue(len(res_shape) == 2)
+        self.assertTrue(res_shape[0] * res_shape[1] == tree.num_leaves())
+        self.assertTrue(res_shape[0] == image.shape[0] * 2 - 1)
+        self.assertTrue(res_shape[1] == image.shape[1] * 2 - 1)
+
     def test_tree_of_shapes_no_padding_original_space(self):
         image = np.asarray(((1, 1, 1, 1, 1, 1),
                             (1, 0, 0, 3, 3, 1),
@@ -71,8 +78,15 @@ class TestTreeOfShapesImage(unittest.TestCase):
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.all(altitudes == ref_altitudes))
 
+        leaf_graph = hg.CptHierarchy.get_leaf_graph(tree)
+        res_shape = hg.CptGridGraph.get_shape(leaf_graph)
+        self.assertTrue(len(res_shape) == 2)
+        self.assertTrue(res_shape[0] * res_shape[1] == tree.num_leaves())
+        self.assertTrue(res_shape[0] == image.shape[0])
+        self.assertTrue(res_shape[1] == image.shape[1])
+
     def test_tree_of_shapes_padding_0(self):
-        image = np.asarray(((1, 1,  1),
+        image = np.asarray(((1, 1, 1),
                             (1, -2, 3)), dtype=np.int32)
 
         tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'zero', False)
@@ -96,8 +110,15 @@ class TestTreeOfShapesImage(unittest.TestCase):
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.all(altitudes == ref_altitudes))
 
+        leaf_graph = hg.CptHierarchy.get_leaf_graph(tree)
+        res_shape = hg.CptGridGraph.get_shape(leaf_graph)
+        self.assertTrue(len(res_shape) == 2)
+        self.assertTrue(res_shape[0] * res_shape[1] == tree.num_leaves())
+        self.assertTrue(res_shape[0] == (image.shape[0] + 2) * 2 - 1)
+        self.assertTrue(res_shape[1] == (image.shape[1] + 2) * 2 - 1)
+
     def test_tree_of_shapes_padding_0_original_space(self):
-        image = np.asarray(((1, 1,  1),
+        image = np.asarray(((1, 1, 1),
                             (1, -2, 3)), dtype=np.int32)
 
         tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'zero', True)
@@ -110,6 +131,13 @@ class TestTreeOfShapesImage(unittest.TestCase):
                                     -2, 3, 1, 0), dtype=np.int32)
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.all(altitudes == ref_altitudes))
+
+        leaf_graph = hg.CptHierarchy.get_leaf_graph(tree)
+        res_shape = hg.CptGridGraph.get_shape(leaf_graph)
+        self.assertTrue(len(res_shape) == 2)
+        self.assertTrue(res_shape[0] * res_shape[1] == tree.num_leaves())
+        self.assertTrue(res_shape[0] == image.shape[0])
+        self.assertTrue(res_shape[1] == image.shape[1])
 
     def test_tree_of_shapes_padding_mean_original_space(self):
         image = np.asarray(((1, 1),
@@ -138,5 +166,3 @@ class TestTreeOfShapesImage(unittest.TestCase):
         tree2, altitudes2 = hg.component_tree_tree_of_shapes_image2d(neg_image)
 
         self.assertTrue(hg.test_tree_isomorphism(tree1, tree2))
-
-

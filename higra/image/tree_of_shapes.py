@@ -58,11 +58,21 @@ def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=T
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
+    assert(len(image.shape) == 2, "This tree of shapes implementation only supports 2d images.")
+
     res = hg.cpp._component_tree_tree_of_shapes_image2d(image, padding, original_size, exterior_vertex)
     tree = res.tree()
     altitudes = res.altitudes()
 
-    g = hg.get_4_adjacency_implicit_graph(image.shape)
+    if original_size:
+        size = image.shape
+    else:
+        if padding == "none":
+            size = (image.shape[0] * 2 - 1, image.shape[1] * 2 - 1)
+        else:
+            size = ((image.shape[0] + 2) * 2 - 1, (image.shape[1] + 2) * 2 - 1)
+
+    g = hg.get_4_adjacency_graph(size)
     hg.CptHierarchy.link(tree, g)
 
     return tree, altitudes
