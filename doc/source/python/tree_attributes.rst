@@ -19,8 +19,6 @@ Tree attributes
     attribute_lca_map
     attribute_mean_weights
     attribute_perimeter_length
-    attribute_perimeter_length_partition_tree
-    attribute_perimeter_length_component_tree
     attribute_frontier_strength
     attribute_piecewise_constant_Mumford_Shah_energy
     attribute_regular_altitudes
@@ -55,10 +53,6 @@ Tree attributes
 .. autofunction:: higra.attribute_mean_weights
 
 .. autofunction:: higra.attribute_perimeter_length
-
-.. autofunction:: higra.attribute_perimeter_length_partition_tree
-
-.. autofunction:: higra.attribute_perimeter_length_component_tree
 
 .. autofunction:: higra.attribute_frontier_strength
 

@@ -238,53 +238,12 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
 
 
 @hg.data_provider("perimeter_length")
-def attribute_perimeter_length(tree, **kwargs):
+@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("leaf_graph", "edge_length"))
+def attribute_perimeter_length(tree, vertex_perimeter, edge_length, leaf_graph=None):
     """
     Length of the perimeter of each node of the given tree.
 
-    This function simply dispatches the call to :func:`~higra.attribute_perimeter_length_partition_tree` or
-    :func:`~higra.attribute_perimeter_length_component_tree` depending on the tree category.
-    See those functions for supported extra arguments.
-
     **Provider name**: "perimeter_length"
-
-    :param tree: input tree
-    :return: a 1d array
-    """
-    if tree.category() == hg.TreeCategory.PartitionTree:
-        return attribute_perimeter_length_partition_tree(tree, **kwargs)
-    elif tree.category() == hg.TreeCategory.ComponentTree:
-        return attribute_perimeter_length_component_tree(tree, **kwargs)
-
-
-@hg.data_provider("perimeter_length_partition_tree")
-@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("tree", "frontier_length"))
-def attribute_perimeter_length_partition_tree(tree, vertex_perimeter, frontier_length, leaf_graph=None):
-    """
-    Length of the perimeter of each node of the given partition tree.
-
-    **Provider name**: "perimeter_length_partition_tree"
-
-    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
-    :param vertex_perimeter: perimeter length of each vertex of the leaf graph (provided by :func:`~higra.attribute_vertex_perimeter` on `leaf_graph`)
-    :param frontier_length: length of common contour between merging regions (provided by :func:`~higra.attribute_frontier_length` on `tree`)
-    :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
-    :return: a 1d array
-    """
-    assert (tree.category() == hg.TreeCategory.PartitionTree)
-    if leaf_graph is not None:
-        vertex_perimeter = hg.linearize_vertex_weights(vertex_perimeter, leaf_graph)
-
-    return hg.accumulate_and_add_sequential(tree, -2 * frontier_length, vertex_perimeter, hg.Accumulators.sum)
-
-
-@hg.data_provider("perimeter_length_component_tree")
-@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("leaf_graph", "edge_length"))
-def attribute_perimeter_length_component_tree(tree, vertex_perimeter, edge_length, leaf_graph):
-    """
-    Length of the perimeter of each node of the given component tree.
-
-    **Provider name**: "perimeter_length_component_tree"
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param vertex_perimeter: perimeter length of each vertex of the leaf graph (provided by :func:`~higra.attribute_vertex_perimeter` on `leaf_graph`)
@@ -292,14 +251,18 @@ def attribute_perimeter_length_component_tree(tree, vertex_perimeter, edge_lengt
     :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array
     """
-    assert (tree.category() == hg.TreeCategory.ComponentTree)
-
     if leaf_graph is not None:
         vertex_perimeter = hg.linearize_vertex_weights(vertex_perimeter, leaf_graph)
 
-    res = hg.cpp._attribute_perimeter_length_component_tree(tree, leaf_graph, vertex_perimeter, edge_length)
+    if tree.category() == hg.TreeCategory.PartitionTree:
+        frontier_length = hg.attribute_frontier_length(tree, edge_length, leaf_graph)
+        perimeter_length = hg.accumulate_and_add_sequential(tree, -2 * frontier_length, vertex_perimeter,
+                                                            hg.Accumulators.sum)
+    elif tree.category() == hg.TreeCategory.ComponentTree:
+        perimeter_length = hg.cpp._attribute_perimeter_length_component_tree(tree, leaf_graph, vertex_perimeter,
+                                                                             edge_length)
 
-    return res
+    return perimeter_length
 
 
 @hg.data_provider("compactness")
