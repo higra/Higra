@@ -29,9 +29,13 @@ class MyException(Exception):
         super().__init__(message)
 
 
+crash_provider1 = False
+
+
 @hg.data_provider("attr1")
-def provider1(obj, crash=False):
-    if crash:
+def provider1(obj, a=None):
+    global crash_provider1
+    if crash_provider1:
         raise Exception("Should not have been called")
     return 1
 
@@ -51,44 +55,61 @@ def accept_RegularGraph2d(graph, shape):
 class TestDataCache(unittest.TestCase):
 
     def test_provider_caching_and_force_recompute(self):
+        global crash_provider1
         obj1 = Dummy(1)
-        self.assertTrue(provider1(obj1, False) == 1)
-        self.assertTrue(provider1(obj1, True) == 1)
-        self.assertRaises(Exception, provider1, obj1, True, force_recompute=True)
+        crash_provider1 = False
+        self.assertTrue(provider1(obj1, 1) == 1)
+        crash_provider1 = True
+        self.assertTrue(provider1(obj1, 1) == 1)
+        self.assertRaises(Exception, provider1, obj1, 2)
+        self.assertRaises(Exception, provider1, obj1, force_recompute=True)
         hg.clear_all_attributes()
 
     def test_provider_caching_global_setting(self):
+        global crash_provider1
         obj1 = Dummy(1)
+        crash_provider1 = False
         hg.set_provider_caching(False)
-        self.assertTrue(provider1(obj1, False) == 1)
-        self.assertRaises(Exception, provider1, obj1, True)
+        self.assertTrue(provider1(obj1, 1) == 1)
+        crash_provider1 = True
+        self.assertRaises(Exception, provider1, obj1, 1)
         hg.set_provider_caching(True)
-        self.assertTrue(provider1(obj1, False) == 1)
-        self.assertTrue(provider1(obj1, True) == 1)
+        crash_provider1 = False
+        self.assertTrue(provider1(obj1, 2) == 1)
+        crash_provider1 = True
+        self.assertTrue(provider1(obj1, 2) == 1)
         hg.set_provider_caching(False)
-        self.assertRaises(Exception, provider1, obj1, True)
+        self.assertRaises(Exception, provider1, obj1, 1)
         hg.set_provider_caching(True)
         hg.clear_all_attributes()
 
     def test_provider_no_cache_implies_force_recompute(self):
+        global crash_provider1
         obj1 = Dummy(1)
-        self.assertTrue(provider1(obj1, False) == 1)
-        self.assertTrue(provider1(obj1, True) == 1)
-        self.assertRaises(Exception, provider1, obj1, True, no_cache=True)
+        crash_provider1 = False
+        self.assertTrue(provider1(obj1, 3) == 1)
+        crash_provider1 = True
+        self.assertTrue(provider1(obj1, 3) == 1)
+        self.assertRaises(Exception, provider1, obj1, 3, no_cache=True)
         hg.clear_all_attributes()
 
     def test_provider_no_cache_doesnt_store_result(self):
+        global crash_provider1
         obj1 = Dummy(1)
-        self.assertTrue(provider1(obj1, False, no_cache=True) == 1)
-        self.assertRaises(Exception, provider1, obj1, True)
+        crash_provider1 = False
+        self.assertTrue(provider1(obj1, 2, no_cache=True) == 1)
+        crash_provider1 = True
+        self.assertRaises(Exception, provider1, obj1, 2)
         hg.clear_all_attributes()
 
     def test_provider_rename_attribute(self):
+        global crash_provider1
         obj1 = Dummy(1)
-        self.assertTrue(provider1(obj1, False, attribute_name="xxx") == 1)
-        self.assertRaises(Exception, provider1, obj1, True)
-        self.assertTrue(hg.get_attribute(obj1, "xxx") == 1)
-        self.assertTrue(provider1(obj1, True, attribute_name="xxx") == 1)
+        crash_provider1 = False
+        self.assertTrue(provider1(obj1, "aa", attribute_name="xxx") == 1)
+        crash_provider1 = True
+        self.assertRaises(Exception, provider1, obj1, "aa")
+        self.assertTrue(provider1(obj1, "aa", attribute_name="xxx") == 1)
         hg.clear_all_attributes()
 
     def test_argument_helper_accept_everything(self):

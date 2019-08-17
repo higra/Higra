@@ -176,6 +176,60 @@ def clear_all_attributes():
     hg.__higra_global_cache.clear_all_data()
 
 
+def __hash_combine(h1, h2):
+    """
+    Combine two hash values to create a new hash value
+    :param h1: int
+    :param h2: int
+    :return: int
+    """
+    h1 = h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h2 >> 2))
+    return h1
+
+
+def __has_method(o, m):
+    """
+    Test if a given object has a given method
+    :param o: object
+    :param m: method name
+    :return: True or False
+    """
+    mm = getattr(o, m, None)
+    return callable(mm)
+
+
+def __make_key(o):
+    """
+    Computes a hash of the given object
+    :param o:
+    :return:
+    """
+    if isinstance(o, int):
+        # because for an int x hash(x) == x which is not very usefull
+        return hash(str(o))
+    elif isinstance(o, (set, tuple, list)):
+        if len(o) != 0:
+            return functools.reduce(__hash_combine, [__make_key(e) for e in o])
+        else:
+            return 0x9e3775b2
+    elif isinstance(o, dict):
+        # not ideal but we use sum to be commutative, i.e. robust to arbitrary ordering of dictionary elements
+        keys = sum([__make_key(k) for k in o.keys()])
+        values = sum([__make_key(v) for v in o.values()])
+        return __hash_combine(keys, values)
+    elif __has_method(o, "__hash__"):
+        try:
+            return hash(o)
+        except TypeError:
+            pass
+
+    return hash(id(o))
+
+
+def __make_hash(*args, **kwargs):
+    return __hash_combine(__make_key(args), __make_key(kwargs))
+
+
 class DataProvider:
 
     def __init__(self, name, fun, description):
@@ -206,13 +260,16 @@ def data_provider(name, description=""):
                 return fun(obj, *args, **kwargs)
 
             try:
-                obj_cache = data_cache.get_data(obj)
+                cache = data_cache.get_data(obj)
+                cache = cache.setdefault("data_provider_cache", {})
+                cache = cache.setdefault(data_name, {})
+                h = __make_hash(*args, **kwargs)
 
-                if data_name not in obj_cache or force_recompute:
-                    obj_cache[data_name] = fun(obj, *args, **kwargs)
+                if force_recompute or h not in cache:
+                    cache[h] = fun(obj, *args, **kwargs)
 
-                return obj_cache[data_name]
-            except TypeError:
+                return cache[h]
+            except TypeError as e:
                 # cannot cache obj...
                 return fun(obj, *args, **kwargs)
 
