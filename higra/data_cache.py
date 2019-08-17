@@ -104,6 +104,7 @@ def get_provider_caching():
     """
     return hg.__provider_caching
 
+
 class DataCache:
 
     def __init__(self):
@@ -297,46 +298,6 @@ def __transfer_to_kw_arguments(signature, args, kwargs):
             kwargs[p.name] = nargs[0]
             del nargs[0]
     return nargs
-
-
-def data_consumer(*dependencies, **dependencies_path):
-    def decorator(fun):
-
-        signature = inspect.signature(fun)
-
-        @functools.wraps(fun)
-        def wrapper(*args, **kwargs):
-            obj = args[0]
-            args = __transfer_to_kw_arguments(signature, args, kwargs)
-            data_debug = kwargs.pop("data_debug", False)
-            data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
-
-            try:
-                for dep_name in dependencies:
-                    __resolve_dependency(obj, dep_name, dep_name, data_cache, kwargs)
-
-                for dep_name in dependencies_path:
-                    __resolve_dependency(obj, dep_name, dependencies_path[dep_name], data_cache, kwargs)
-            except __CacheLookupException as e:
-
-                if data_debug:
-                    err = "Error during the resolution of the arguments of the function '" \
-                          + fun.__name__
-                    raise Exception(err) from e
-                else:  # swallow exception chain for readability
-                    err = "Error during the resolution of the arguments of the function '" + fun.__name__ + "'.\n" \
-                          + str(e) \
-                          + "\nYou can call your function with the extra parameter 'data_debug=True' to " \
-                            "get more information about this error."
-                    raise Exception(err) from None
-
-            return fun(*args, **kwargs)
-
-        wrapper.original = fun
-
-        return wrapper
-
-    return decorator
 
 
 def __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache):
