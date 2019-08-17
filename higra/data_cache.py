@@ -246,42 +246,85 @@ class DataProvider:
         return self.name
 
 
+def auto_cache(fun):
+    """
+    Function decorator that provides automatic caching of function result.
+
+    :return:
+    """
+
+    original_fun = fun
+    while hasattr(original_fun, 'original'):
+        original_fun = original_fun.original
+
+    signature = inspect.signature(original_fun)
+    __check_valid_signature(signature)
+
+    @functools.wraps(fun)
+    def wrapper(*args, **kwargs):
+        data_name = kwargs.pop("attribute_name", fun.__name__)
+        force_recompute = kwargs.pop("force_recompute", False)
+        data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
+        no_cache = kwargs.pop("no_cache", False)
+
+        if no_cache or not hg.__provider_caching:
+            return fun(*args, **kwargs)
+
+        try:
+            obj = None
+            if len(args) > 0:
+                obj = args[0]
+            elif len(kwargs) > 0:
+                first_param_name = signature.parameters.values().__iter__().__next__().name
+                if first_param_name in kwargs:
+                    obj = kwargs[first_param_name]
+
+            if obj is None:
+                raise TypeError("cannot find first parameter")
+
+            cache = data_cache.get_data(obj)
+            cache = cache.setdefault("data_provider_cache", {})
+            cache = cache.setdefault(data_name, {})
+
+            args = __transfer_to_kw_arguments(signature, args, kwargs)
+            __add_default_parameter(signature, args, kwargs)
+            if len(args) > 0:
+                import warnings
+                warnings.warn('Auto cache: all positional parameters could not be transformed into '
+                              'named parameters.')
+
+            h = __make_hash(*args, **kwargs)
+
+            if force_recompute or h not in cache:
+                cache[h] = fun(*args, **kwargs)
+
+            return cache[h]
+        except TypeError as e:
+            # cannot cache obj...
+            return fun(*args, **kwargs)
+
+    wrapper.original = fun
+
+    return wrapper
+
+
 def data_provider(name, description=""):
+    """
+    Function decorator that associates the given function to the global data provider
+    registry.
+
+    :param name:
+    :param description:
+    :return:
+    """
+
     def decorator(fun):
-
-        @functools.wraps(fun)
-        def wrapper(obj, *args, **kwargs):
-            data_name = kwargs.pop("attribute_name", name)
-            force_recompute = kwargs.pop("force_recompute", False)
-            data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
-            no_cache = kwargs.pop("no_cache", False)
-
-            if no_cache or not hg.__provider_caching:
-                return fun(obj, *args, **kwargs)
-
-            try:
-                cache = data_cache.get_data(obj)
-                cache = cache.setdefault("data_provider_cache", {})
-                cache = cache.setdefault(data_name, {})
-                h = __make_hash(*args, **kwargs)
-
-                if force_recompute or h not in cache:
-                    cache[h] = fun(obj, *args, **kwargs)
-
-                return cache[h]
-            except TypeError as e:
-                # cannot cache obj...
-                return fun(obj, *args, **kwargs)
-
-        wrapper.name = name
-        wrapper.original = fun
-
         if name in hg.__data_providers:
             print("Warning, a data provider with the same name was already defined: ", name, file=sys.stderr)
 
-        hg.__data_providers[name] = DataProvider(name, wrapper, description)
+        hg.__data_providers[name] = DataProvider(name, fun, description)
 
-        return wrapper
+        return fun
 
     return decorator
 
@@ -346,6 +389,12 @@ def __resolve_dependency(obj, dep_name, dep_path, data_cache, kwargs):
             raise __CacheLookupException(err) from e
 
 
+def __check_valid_signature(signature):
+    for p in signature.parameters.values():
+        if p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD:
+            raise Exception("Can only handle simple functions, ie with only position and keyword parameters.")
+
+
 def __transfer_to_kw_arguments(signature, args, kwargs):
     nargs = list(args)
     for p in signature.parameters.values():
@@ -355,6 +404,12 @@ def __transfer_to_kw_arguments(signature, args, kwargs):
             kwargs[p.name] = nargs[0]
             del nargs[0]
     return nargs
+
+
+def __add_default_parameter(signature, args, kwargs):
+    for p in signature.parameters.values():
+        if p.name not in kwargs and p.default is not p.empty:
+            kwargs[p.name] = p.default
 
 
 def __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache):
@@ -382,7 +437,13 @@ def __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kw
 def argument_helper(*concepts):
     def decorator(fun):
 
-        signature = inspect.signature(fun)
+        original_fun = fun
+        while hasattr(original_fun, 'original'):
+            original_fun = original_fun.original
+
+        signature = inspect.signature(original_fun)
+        __check_valid_signature(signature)
+
         all_parameters_name = set()
         for p in signature.parameters.values():
             all_parameters_name.add(p.name)
@@ -424,6 +485,10 @@ def argument_helper(*concepts):
                                         "get more information about this error."
                                 raise Exception(err) from None
 
+            if len(args) > 0:
+                import warnings
+                warnings.warn('Argument helper: all positional parameters could not be transformed into '
+                              'named parameters.')
             return fun(*args, **kwargs)
 
         wrapper.original = fun

@@ -74,7 +74,7 @@ class TestAttributes(unittest.TestCase):
 
         leaf_area = np.asarray([1, 2, 1, 1, 2, 1, 1, 1, 3])
         ref_area = [1, 2, 1, 1, 2, 1, 1, 1, 3, 3, 2, 3, 2, 5, 5, 10, 13]
-        area = hg.attribute_area(tree, vertex_area=leaf_area, force_recompute=True)
+        area = hg.attribute_area(tree, vertex_area=leaf_area)
         self.assertTrue(np.allclose(ref_area, area))
 
     def test_area_default_param(self):
@@ -159,7 +159,7 @@ class TestAttributes(unittest.TestCase):
         tree, altitudes = TestAttributes.get_test_tree()
         hg.set_attribute(hg.CptHierarchy.get_leaf_graph(tree), "no_border_vertex_out_degree", None)
         ref_attribute = [2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 0]
-        attribute = hg.attribute_perimeter_length(tree, no_cache=True)
+        attribute = hg.attribute_perimeter_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_perimeter_length_component_tree(self):
