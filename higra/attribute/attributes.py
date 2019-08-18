@@ -14,6 +14,7 @@ import higra as hg
 
 
 @hg.data_provider("vertex_area")
+@hg.auto_cache
 def attribute_vertex_area(graph):
     """
     Vertex area of the given graph.
@@ -37,6 +38,7 @@ def attribute_vertex_area(graph):
 
 
 @hg.data_provider("edge_length")
+@hg.auto_cache
 def attribute_edge_length(graph):
     """
     Edge length of the given graph.
@@ -60,6 +62,7 @@ def attribute_edge_length(graph):
 
 @hg.data_provider("vertex_perimeter")
 @hg.argument_helper("edge_length")
+@hg.auto_cache
 def attribute_vertex_perimeter(graph, edge_length):
     """
     Vertex perimeter of the given graph.
@@ -89,6 +92,7 @@ def attribute_vertex_perimeter(graph, edge_length):
 
 @hg.data_provider("vertex_coordinates")
 @hg.argument_helper(hg.CptGridGraph)
+@hg.auto_cache
 def attribute_vertex_coordinates(graph, shape):
     """
     Coordinates of the vertices of the given grid graph.
@@ -116,6 +120,7 @@ def attribute_vertex_coordinates(graph, shape):
 
 @hg.data_provider("area")
 @hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_area"))
+@hg.auto_cache
 def attribute_area(tree, vertex_area=None, leaf_graph=None):
     """
     Area of each node the given tree.
@@ -138,6 +143,7 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
 
 @hg.data_provider("volume")
 @hg.argument_helper("area")
+@hg.auto_cache
 def attribute_volume(tree, altitudes, area):
     """
     Volume of each node the given tree.
@@ -162,6 +168,7 @@ def attribute_volume(tree, altitudes, area):
 
 @hg.data_provider("lca_map")
 @hg.argument_helper(hg.CptHierarchy)
+@hg.auto_cache
 def attribute_lca_map(tree, leaf_graph):
     """
     Lowest common ancestor of `i` and `j` for each edge :math:`(i, j)` of the leaf graph of the given tree.
@@ -182,6 +189,7 @@ def attribute_lca_map(tree, leaf_graph):
 
 @hg.data_provider("frontier_length")
 @hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "edge_length"))
+@hg.auto_cache
 def attribute_frontier_length(tree, edge_length, leaf_graph=None):
     """
     Length of the frontier represented by each node the given partition tree.
@@ -209,6 +217,7 @@ def attribute_frontier_length(tree, edge_length, leaf_graph=None):
 
 @hg.data_provider("frontier_strength")
 @hg.argument_helper(hg.CptHierarchy)
+@hg.auto_cache
 def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     """
     Mean edge weight along the frontier represented by each node the given partition tree.
@@ -232,13 +241,14 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
         edge_weights = hg.rag_accumulate_on_edges(leaf_graph, hg.Accumulators.sum, edge_weights=edge_weights)
 
     frontier_length = hg.attribute_frontier_length(tree, leaf_graph=leaf_graph)
-    frontier_strength = hg.attribute_frontier_length(tree, edge_weights, leaf_graph, no_cache=True)
+    frontier_strength = hg.attribute_frontier_length(tree, edge_weights, leaf_graph)
     frontier_strength[tree.num_leaves():] = frontier_strength[tree.num_leaves():] / frontier_length[tree.num_leaves():]
     return frontier_strength
 
 
 @hg.data_provider("perimeter_length")
 @hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("leaf_graph", "edge_length"))
+@hg.auto_cache
 def attribute_perimeter_length(tree, vertex_perimeter, edge_length, leaf_graph=None):
     """
     Length of the perimeter of each node of the given tree.
@@ -267,6 +277,7 @@ def attribute_perimeter_length(tree, vertex_perimeter, edge_length, leaf_graph=N
 
 @hg.data_provider("compactness")
 @hg.argument_helper("area", "perimeter_length")
+@hg.auto_cache
 def attribute_compactness(tree, area, perimeter_length, normalize=True):
     """
     The compactness of a node is defined as its area divided by the square of its perimeter length.
@@ -289,6 +300,7 @@ def attribute_compactness(tree, area, perimeter_length, normalize=True):
 
 @hg.data_provider("mean_weights")
 @hg.argument_helper(hg.CptHierarchy, "area")
+@hg.auto_cache
 def attribute_mean_weights(tree, vertex_weights, area, leaf_graph=None):
     """
     Mean weight of the leaf graph vertices inside each node of the given tree.
@@ -313,6 +325,7 @@ def attribute_mean_weights(tree, vertex_weights, area, leaf_graph=None):
 
 
 @hg.data_provider("sibling")
+@hg.auto_cache
 def attribute_sibling(tree, skip=1):
     """
     Sibling index of each node of the given tree.
@@ -337,6 +350,7 @@ def attribute_sibling(tree, skip=1):
 
 
 @hg.data_provider("depth")
+@hg.auto_cache
 def attribute_depth(tree):
     """
     The depth of a node :math:`n` of the tree :math:`T` is equal to the number of ancestors of :math:`n` in :math:`T`.
@@ -354,6 +368,7 @@ def attribute_depth(tree):
 
 @hg.data_provider("regular_altitudes")
 @hg.argument_helper("depth")
+@hg.auto_cache
 def attribute_regular_altitudes(tree, depth):
     """
     Regular altitudes is comprised between 0 and 1 and is inversely proportional to the depth of a node
@@ -371,6 +386,7 @@ def attribute_regular_altitudes(tree, depth):
 
 
 @hg.data_provider("vertex_list")
+@hg.auto_cache
 def attribute_vertex_list(tree):
     """
     List of leaf nodes inside the sub-tree rooted in a node.
@@ -397,6 +413,7 @@ def attribute_vertex_list(tree):
 
 @hg.data_provider("gaussian_region_weights_model")
 @hg.argument_helper(hg.CptHierarchy)
+@hg.auto_cache
 def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=None):
     """
     Estimates a gaussian model (mean, (co-)variance) for leaf weights inside a node.
@@ -442,6 +459,7 @@ def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=Non
 
 
 @hg.data_provider("extrema")
+@hg.auto_cache
 def attribute_extrema(tree, altitudes):
     """
     Identify nodes in a hierarchy that represent extrema.
@@ -532,6 +550,7 @@ def attribute_extinction_value(tree, altitudes, attribute, increasing_altitudes=
     return res
 
 
+@hg.auto_cache
 def attribute_height(tree, altitudes, increasing_altitudes="auto"):
     """
     In a tree :math:`T`, given that the altitudes of the nodes vary monotically from the leaves to the root,
@@ -559,6 +578,7 @@ def attribute_height(tree, altitudes, increasing_altitudes="auto"):
     return res
 
 
+@hg.auto_cache
 def attribute_dynamics(tree, altitudes, increasing_altitudes="auto"):
     """
     Given a node :math:`n` of the tree :math:`T`, the dynamics of :math:`n` is the difference between

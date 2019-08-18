@@ -12,6 +12,7 @@ import higra as hg
 
 
 @hg.data_provider("LCAFast")
+@hg.auto_cache
 def make_lca_fast(tree):
     """
     Create an object of type :class:`~higra.LCAFast` for the given tree
