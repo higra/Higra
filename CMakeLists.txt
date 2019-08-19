@@ -151,7 +151,7 @@ if (DO_BENCHMARK)
     find_package(benchmark REQUIRED)
 endif ()
 
-if(${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
+if(NOT ${U_CMAKE_BUILD_TYPE} MATCHES RELEASE)
     add_definitions("-DHG_ENABLE_TRACE")
 endif()
 
