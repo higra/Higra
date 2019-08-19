@@ -398,7 +398,7 @@ namespace hg {
     }
 
     /**
-     * Computes the perimeter length of each node of the input component tree.
+     * Computes the contour length (perimeter) of each node of the input component tree.
      *
      * @tparam tree_t
      * @tparam graph_t
@@ -406,12 +406,12 @@ namespace hg {
      * @tparam T2
      * @param tree input tree
      * @param base_graph graph on the leaves of tree
-     * @param xvertex_perimeter perimeter length of each vertex of the base graph
+     * @param xvertex_perimeter perimeter of each vertex of the base graph
      * @param xedge_length length of each edge of the base graph (length of the frontier between the two adjacent vertices)
      * @return
      */
     template<typename tree_t, typename graph_t, typename T1, typename T2>
-    auto attribute_perimeter_length_component_tree(
+    auto attribute_contour_length_component_tree(
             const tree_t &tree,
             const graph_t &base_graph,
             const xt::xexpression<T1> &xvertex_perimeter,

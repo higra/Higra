@@ -246,17 +246,17 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     return frontier_strength
 
 
-@hg.data_provider("perimeter_length")
+@hg.data_provider("contour_length")
 @hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("leaf_graph", "edge_length"))
 @hg.auto_cache
-def attribute_perimeter_length(tree, vertex_perimeter, edge_length, leaf_graph=None):
+def attribute_contour_length(tree, vertex_perimeter, edge_length, leaf_graph=None):
     """
-    Length of the perimeter of each node of the given tree.
+    Length of the contour (perimeter) of each node of the given tree.
 
-    **Provider name**: "perimeter_length"
+    **Provider name**: "contour_length"
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
-    :param vertex_perimeter: perimeter length of each vertex of the leaf graph (provided by :func:`~higra.attribute_vertex_perimeter` on `leaf_graph`)
+    :param vertex_perimeter: perimeter of each vertex of the leaf graph (provided by :func:`~higra.attribute_vertex_perimeter` on `leaf_graph`)
     :param edge_length: length of each edge of the leaf graph (provided by :func:`~higra.attribute_edge_length` on `leaf_graph`)
     :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array
@@ -266,19 +266,19 @@ def attribute_perimeter_length(tree, vertex_perimeter, edge_length, leaf_graph=N
 
     if tree.category() == hg.TreeCategory.PartitionTree:
         frontier_length = hg.attribute_frontier_length(tree, edge_length, leaf_graph)
-        perimeter_length = hg.accumulate_and_add_sequential(tree, -2 * frontier_length, vertex_perimeter,
+        perimeter = hg.accumulate_and_add_sequential(tree, -2 * frontier_length, vertex_perimeter,
                                                             hg.Accumulators.sum)
     elif tree.category() == hg.TreeCategory.ComponentTree:
-        perimeter_length = hg.cpp._attribute_perimeter_length_component_tree(tree, leaf_graph, vertex_perimeter,
+        perimeter = hg.cpp._attribute_contour_length_component_tree(tree, leaf_graph, vertex_perimeter,
                                                                              edge_length)
 
-    return perimeter_length
+    return perimeter
 
 
 @hg.data_provider("compactness")
-@hg.argument_helper("area", "perimeter_length")
+@hg.argument_helper("area", "contour_length")
 @hg.auto_cache
-def attribute_compactness(tree, area, perimeter_length, normalize=True):
+def attribute_compactness(tree, area, contour_length, normalize=True):
     """
     The compactness of a node is defined as its area divided by the square of its perimeter length.
 
@@ -286,11 +286,11 @@ def attribute_compactness(tree, area, perimeter_length, normalize=True):
 
     :param tree: input tree
     :param area: node area of the input tree (provided by :func:`~higra.attribute_area` on `tree`)
-    :param perimeter_length: node perimeter length of the input tree (provided by :func:`~higra.attribute_perimeter_length` on `tree`)
+    :param contour_length: node contour length of the input tree (provided by :func:`~higra.attribute_perimeter_length` on `tree`)
     :param normalize: if True the result is divided by the maximal compactness value in the tree
     :return: a 1d array
     """
-    compactness = area / (perimeter_length * perimeter_length)
+    compactness = area / (contour_length * contour_length)
     if normalize:
         max_compactness = np.nanmax(compactness)
         compactness = compactness / max_compactness

@@ -106,7 +106,7 @@ def hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree,
     In this context:
 
         - the data fidelity energy assumes a piecewise constant model in each node and is given by the variance of the vertex values inside the node  (see function :func:`~higra.attribute_gaussian_region_weights_model`) multiplied by its area,
-        - the regularity energy is given by the length of the perimeter of the node (see function :func:`~higra.attribute_perimeter_length`).
+        - the regularity energy is given by the length of the contour of the node (see function :func:`~higra.attribute_contour_length`).
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param vertex_weights: vertex weights of the leaf graph of the input tree
@@ -116,7 +116,7 @@ def hierarchy_to_optimal_MumfordShah_energy_cut_hierarchy(tree,
     """
     area = hg.attribute_area(tree, leaf_graph=leaf_graph)
     _, variance = hg.attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph)
-    perimeter = hg.attribute_perimeter_length(tree, leaf_graph=leaf_graph)
+    perimeter = hg.attribute_contour_length(tree, leaf_graph=leaf_graph)
 
     if variance.ndim > 1:
         variance = np.trace(variance, axis1=1, axis2=2)
@@ -134,7 +134,7 @@ def attribute_piecewise_constant_Mumford_Shah_energy(tree, vertex_weights, gamma
     For the piecewise constant Mumford-Shah model:
 
         - the data fidelity energy assumes a piecewise constant model in each node and is given by the variance of the vertex values inside the node  (see function :func:`~higra.attribute_gaussian_region_weights_model`) multiplied by its area,
-        - the regularity energy is given by the length of the perimeter of the node (see function :func:`~higra.attribute_perimeter_length`).
+        - the regularity energy is given by the length of the contour of the node (see function :func:`~higra.attribute_contour_length`).
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param vertex_weights: vertex weights of the leaf graph of the input tree
@@ -144,7 +144,7 @@ def attribute_piecewise_constant_Mumford_Shah_energy(tree, vertex_weights, gamma
     """
     area = hg.attribute_area(tree, leaf_graph=leaf_graph)
     _, variance = hg.attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph)
-    perimeter = hg.attribute_perimeter_length(tree, leaf_graph=leaf_graph)
+    perimeter = hg.attribute_contour_length(tree, leaf_graph=leaf_graph)
 
     if variance.ndim > 1:
         variance = np.trace(variance, axis1=1, axis2=2)

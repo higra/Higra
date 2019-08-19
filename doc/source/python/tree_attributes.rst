@@ -8,18 +8,18 @@ Tree attributes
 .. autosummary::
 
     attribute_area
+    attribute_contour_length
     attribute_compactness
     attribute_depth
     attribute_dynamics
     attribute_extinction_value
     attribute_extrema
     attribute_frontier_length
+    attribute_frontier_strength
     attribute_gaussian_region_weights_model
     attribute_height
     attribute_lca_map
     attribute_mean_weights
-    attribute_perimeter_length
-    attribute_frontier_strength
     attribute_piecewise_constant_Mumford_Shah_energy
     attribute_regular_altitudes
     attribute_sibling
@@ -31,6 +31,8 @@ Tree attributes
     attribute_volume
 
 .. autofunction:: higra.attribute_area
+
+.. autofunction:: higra.attribute_contour_length
 
 .. autofunction:: higra.attribute_compactness
 
@@ -44,6 +46,8 @@ Tree attributes
 
 .. autofunction:: higra.attribute_frontier_length
 
+.. autofunction:: higra.attribute_frontier_strength
+
 .. autofunction:: higra.attribute_gaussian_region_weights_model
 
 .. autofunction:: higra.attribute_height
@@ -51,10 +55,6 @@ Tree attributes
 .. autofunction:: higra.attribute_lca_map
 
 .. autofunction:: higra.attribute_mean_weights
-
-.. autofunction:: higra.attribute_perimeter_length
-
-.. autofunction:: higra.attribute_frontier_strength
 
 .. autofunction:: higra.attribute_piecewise_constant_Mumford_Shah_energy
 

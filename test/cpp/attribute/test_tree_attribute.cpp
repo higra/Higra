@@ -167,7 +167,7 @@ namespace tree_attributes {
         REQUIRE((ref2 == res2));
     }
 
-    TEST_CASE("tree attribute perimeter length component tree", "[tree_attributes]") {
+    TEST_CASE("tree attribute contour length component tree", "[tree_attributes]") {
         auto g = get_4_adjacency_graph({4, 4});
 
         /* for reference, tree is a max tree on the following image
@@ -195,7 +195,7 @@ namespace tree_attributes {
         array_1d<double> vertex_perimeters({num_vertices(g)}, 4);
         array_1d<double> edge_length({num_edges(g)}, 1);
 
-        auto res = attribute_perimeter_length_component_tree(t, g, vertex_perimeters, edge_length);
+        auto res = attribute_contour_length_component_tree(t, g, vertex_perimeters, edge_length);
 
         array_1d<double> ref{4, 4, 4, 4,
                              4, 4, 4, 4,
