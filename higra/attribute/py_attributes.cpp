@@ -19,16 +19,16 @@ using pyarray = xt::pyarray<T>;
 
 namespace py = pybind11;
 
-struct def_perimeter_length_component_tree {
+struct def_contour_length_component_tree {
     template<typename T>
     static
     void def(pybind11::module &m, const char *doc) {
-        m.def("_attribute_perimeter_length_component_tree",
+        m.def("_attribute_contour_length_component_tree",
               [](const hg::tree &tree,
                  const hg::ugraph &graph,
                  const pyarray<T> &vertex_perimeter,
                  const pyarray<T> &edge_length) {
-                  return hg::attribute_perimeter_length_component_tree(
+                  return hg::attribute_contour_length_component_tree(
                           tree,
                           graph,
                           vertex_perimeter,
@@ -123,7 +123,7 @@ void py_init_attributes(pybind11::module &m) {
           "Attribute depth.",
           pybind11::arg("tree"));
 
-    add_type_overloads<def_perimeter_length_component_tree,
+    add_type_overloads<def_contour_length_component_tree,
             HG_TEMPLATE_FLOAT_TYPES>(m, "");
 
     add_type_overloads<def_attribute_extrema,

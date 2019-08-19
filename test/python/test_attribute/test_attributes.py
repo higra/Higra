@@ -149,20 +149,20 @@ class TestAttributes(unittest.TestCase):
         attribute = hg.attribute_frontier_strength(tree, edge_weights)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
-    def test_perimeter_length_partition_tree(self):
+    def test_contour_length_partition_tree(self):
         tree, altitudes = TestAttributes.get_test_tree()
         ref_attribute = [4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 8, 10, 16, 12]
-        attribute = hg.attribute_perimeter_length(tree)
+        attribute = hg.attribute_contour_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
-    def test_perimeter_length_partition_tree2(self):
+    def test_contour_length_partition_tree2(self):
         tree, altitudes = TestAttributes.get_test_tree()
         hg.set_attribute(hg.CptHierarchy.get_leaf_graph(tree), "no_border_vertex_out_degree", None)
         ref_attribute = [2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 0]
-        attribute = hg.attribute_perimeter_length(tree)
+        attribute = hg.attribute_contour_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
-    def test_perimeter_length_component_tree(self):
+    def test_contour_length_component_tree(self):
         g = hg.get_4_adjacency_graph((4, 4))
 
         # for reference, tree is a max tree on the following image
@@ -178,7 +178,7 @@ class TestAttributes(unittest.TestCase):
                      17, 21, 22, 21, 23, 24, 23, 24, 25, 26, 27, 28, 28),
                     hg.TreeCategory.ComponentTree)
 
-        res = hg.attribute_perimeter_length(t, leaf_graph=g)
+        res = hg.attribute_contour_length(t, leaf_graph=g)
 
         ref = np.asarray((4, 4, 4, 4,
                           4, 4, 4, 4,
@@ -188,7 +188,7 @@ class TestAttributes(unittest.TestCase):
 
         self.assertTrue(np.all(res == ref))
 
-    def test_perimeter_length_rag_partition_tree(self):
+    def test_contour_length_rag_partition_tree(self):
         g = hg.get_4_adjacency_graph((3, 3))
         vertex_labels = np.asarray(((0, 1, 1),
                                     (0, 2, 2),
@@ -198,8 +198,78 @@ class TestAttributes(unittest.TestCase):
         tree, altitudes = hg.bpt_canonical(rag, edge_weights)
 
         ref_attribute = [3, 3, 6, 2, 2, 4, 4, 4, 0]
-        attribute = hg.attribute_perimeter_length(tree)
+        attribute = hg.attribute_contour_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
+
+    def test_contour_strength_partition_tree(self):
+        tree, altitudes = TestAttributes.get_test_tree()
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+        attribute = hg.attribute_contour_strength(tree, edge_weights)
+
+        ref_perimeter = np.asarray([4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 8, 10, 16, 12])
+        ref_weights = np.asarray([6, 8, 2, 11, 15, 7, 5, 6, 4, 14, 9, 26, 11, 13, 19, 26, 0])
+        self.assertTrue(np.allclose(ref_weights / ref_perimeter, attribute))
+
+    def test_contour_strength_partition_tree2(self):
+        tree, altitudes = TestAttributes.get_test_tree()
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+        hg.set_attribute(hg.CptHierarchy.get_leaf_graph(tree), "no_border_vertex_out_degree", None)
+        attribute = hg.attribute_contour_strength(tree, edge_weights)
+
+        ref_perimeter = np.asarray([2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 1])
+        ref_weights = np.asarray([6, 8, 2, 11, 15, 7, 5, 6, 4, 14, 9, 26, 11, 13, 19, 26, 0])
+        self.assertTrue(np.allclose(ref_weights / ref_perimeter, attribute))
+
+    def test_contour_strength_component_tree(self):
+        g = hg.get_4_adjacency_graph((4, 4))
+
+        edge_weights = np.arange(g.num_edges())
+        # for reference, tree is a max tree on the following image
+        # 0, 1, 4, 4,
+        # 7, 5, 6, 8,
+        # 2, 3, 4, 1,
+        # 9, 8, 6, 7
+
+        t = hg.Tree((28, 27, 24, 24,
+                     20, 23, 22, 18,
+                     26, 25, 24, 27,
+                     16, 17, 21, 19,
+                     17, 21, 22, 21, 23, 24, 23, 24, 25, 26, 27, 28, 28),
+                    hg.TreeCategory.ComponentTree)
+        hg.CptHierarchy.link(t, g)
+        res = hg.attribute_contour_strength(t, edge_weights)
+
+        ref_perimeter = np.asarray((4, 4, 4, 4,
+                                    4, 4, 4, 4,
+                                    4, 4, 4, 4,
+                                    4, 4, 4, 4,
+                                    4, 6, 4, 4, 4, 10, 6, 10, 22, 20, 18, 16, 16), dtype=np.float64)
+
+        ref_weights = np.asarray((1, 5, 11, 10,
+                                  16, 29, 37, 30,
+                                  37, 57, 65, 51,
+                                  36, 60, 64, 43,
+                                  36, 54, 30, 43, 16, 71, 45, 58, 123, 94, 57, 1, 0), dtype=np.float64)
+
+        self.assertTrue(np.allclose(ref_weights / ref_perimeter, res))
+
+    def test_contour_strength_rag_partition_tree(self):
+        g = hg.get_4_adjacency_graph((3, 3))
+        vertex_labels = np.asarray(((0, 1, 1),
+                                    (0, 2, 2),
+                                    (3, 2, 4)))
+
+        base_edge_weights = np.arange(g.num_edges())
+
+        rag = hg.make_region_adjacency_graph_from_labelisation(g, vertex_labels)
+        edge_weights = np.asarray((1, 5, 4, 3, 6, 2))
+        tree, altitudes = hg.bpt_canonical(rag, edge_weights)
+
+        attribute = hg.attribute_contour_strength(tree, base_edge_weights)
+
+        ref_perimeter = np.asarray([3, 3, 6, 2, 2, 4, 4, 4, 1])
+        ref_weights = np.asarray([11, 7, 42, 16, 20, 18, 22, 22, 0])
+        self.assertTrue(np.allclose(ref_weights / ref_perimeter, attribute))
 
     def test_compactness(self):
         tree, altitudes = TestAttributes.get_test_tree()
