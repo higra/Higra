@@ -7,6 +7,7 @@ Welcome to Higra's documentation!
     :caption: Informations
 
     Changelog <changelog.rst>
+    Installation <install.rst>
 
 
 .. toctree::

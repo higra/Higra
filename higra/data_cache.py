@@ -487,7 +487,7 @@ def auto_cache(fun):
     if wrapper.__doc__ is not None:
         wrapper.__doc__ = wrapper.__doc__ + \
                           "\n\n    **Auto-cache**: This function is decorated with the :func:`~higra.auto_cache` decorator."
-    print(wrapper.__doc__)
+
     return wrapper
 
 

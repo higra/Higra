@@ -142,24 +142,18 @@ if (USE_SIMD)
     add_definitions("-DXTENSOR_USE_XSIMD")
 endif()
 
-
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
-    find_package(benchmark QUIET)
-    if (benchmark_FOUND)
-        option(DO_BENCHMARK
-                "Execute benchmark suit." ON)
-    else ()
-        message("Benchmarking disabled as 'Google benchmark' cannot be found. Please install it or manually provide its location to cmake in order to enable testing.")
-        option(DO_BENCHMARK
-                "Execute benchmark suit." OFF)
-    endif ()
-else ()
-    message("Benchmarking disabled in 'debug' mode.")
-    option(DO_BENCHMARK
-            "Execute benchmark suit." OFF)
-    add_definitions("-DHG_ENABLE_TRACE")
+option(DO_BENCHMARK
+        "Build benchmark suit." OFF)
+if (DO_BENCHMARK)
+    if(${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
+        message(FATAL_ERROR "Benchmark cannot be built in Debug mode")
+    endif()
+    find_package(benchmark REQUIRED)
 endif ()
 
+if(NOT ${U_CMAKE_BUILD_TYPE} MATCHES RELEASE)
+    add_definitions("-DHG_ENABLE_TRACE")
+endif()
 
 ##########################
 #  Build Python bindings
