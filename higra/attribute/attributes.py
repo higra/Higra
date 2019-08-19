@@ -267,12 +267,43 @@ def attribute_contour_length(tree, vertex_perimeter, edge_length, leaf_graph=Non
     if tree.category() == hg.TreeCategory.PartitionTree:
         frontier_length = hg.attribute_frontier_length(tree, edge_length, leaf_graph)
         perimeter = hg.accumulate_and_add_sequential(tree, -2 * frontier_length, vertex_perimeter,
-                                                            hg.Accumulators.sum)
+                                                     hg.Accumulators.sum)
     elif tree.category() == hg.TreeCategory.ComponentTree:
         perimeter = hg.cpp._attribute_contour_length_component_tree(tree, leaf_graph, vertex_perimeter,
-                                                                             edge_length)
+                                                                    edge_length)
 
     return perimeter
+
+
+@hg.data_provider("contour_strength")
+@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("leaf_graph", "edge_length"))
+@hg.auto_cache
+def attribute_contour_strength(tree, edge_weights, vertex_perimeter, edge_length, leaf_graph=None):
+    """
+    Strength of the contour of each node of the given tree. The strength of the contour of a node is defined as the
+    mean edge weights on the contour.
+
+    **Provider name**: "contour_strength"
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param edge_weights: edge_weights of the leaf graph
+    :param vertex_perimeter: perimeter of each vertex of the leaf graph (provided by :func:`~higra.attribute_vertex_perimeter` on `leaf_graph`)
+    :param edge_length: length of each edge of the leaf graph (provided by :func:`~higra.attribute_edge_length` on `leaf_graph`)
+    :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
+    :return: a 1d array
+    """
+
+    perimeter = attribute_contour_length(tree, vertex_perimeter, edge_length, leaf_graph)
+    if perimeter[-1] == 0:
+        perimeter[-1] = 1
+
+    if hg.CptRegionAdjacencyGraph.validate(leaf_graph):
+        edge_weights = hg.rag_accumulate_on_edges(leaf_graph, hg.Accumulators.sum, edge_weights)
+
+    vertex_weights_sum = hg.accumulate_graph_edges(leaf_graph, edge_weights, hg.Accumulators.sum)
+    edge_weights_sum = attribute_contour_length(tree, vertex_weights_sum, edge_weights, leaf_graph)
+
+    return edge_weights_sum / perimeter
 
 
 @hg.data_provider("compactness")
