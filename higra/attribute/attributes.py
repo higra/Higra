@@ -469,6 +469,9 @@ def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=Non
     if vertex_weights.ndim > 2:
         raise ValueError("Vertex weight can either be scalar or 1 dimensional.")
 
+    if vertex_weights.dtype not in (np.float32, np.float64):
+        vertex_weights = vertex_weights.astype(np.float64)
+
     area = hg.attribute_area(tree, leaf_graph=leaf_graph)
     mean = hg.accumulate_sequential(tree, vertex_weights, hg.Accumulators.sum, leaf_graph)
 

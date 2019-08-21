@@ -385,6 +385,20 @@ class TestAttributes(unittest.TestCase):
             self.assertTrue(np.isclose(m, mean[i]))
             self.assertTrue(np.isclose(v, variance[i]))
 
+    def test_attribute_gaussian_region_weights_model_scalar_int(self):
+        tree, altitudes = TestAttributes.get_test_tree()
+        vertex_list = hg.attribute_vertex_list(tree)
+
+        np.random.seed(42)
+        vertex_weights = np.random.randint(255, size=tree.num_leaves())
+        mean, variance = hg.attribute_gaussian_region_weights_model(tree, vertex_weights)
+
+        for i in tree.leaves_to_root_iterator():
+            m = np.mean(vertex_weights[vertex_list[i]])
+            v = np.var(vertex_weights[vertex_list[i]])
+            self.assertTrue(np.isclose(m, mean[i]))
+            self.assertTrue(np.isclose(v, variance[i]))
+
     def test_attribute_gaussian_region_weights_model_vectorial(self):
         tree, altitudes = TestAttributes.get_test_tree()
         vertex_list = hg.attribute_vertex_list(tree)
