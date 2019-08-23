@@ -12,8 +12,7 @@ import higra as hg
 import numpy as np
 
 
-@hg.argument_helper("vertex_area")
-def watershed_hierarchy_by_area(graph, edge_weights, vertex_area):
+def watershed_hierarchy_by_area(graph, edge_weights, vertex_area=None):
     """
     Watershed hierarchy by area.
 
@@ -34,6 +33,9 @@ def watershed_hierarchy_by_area(graph, edge_weights, vertex_area):
     :param vertex_area: area of the input graph vertices (provided by :func:`~higra.attribute_vertex_area`)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
+    if vertex_area is None:
+        vertex_area = hg.attribute_vertex_area(graph)
+
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
 
     vertex_area = hg.cast_to_dtype(vertex_area, np.float64)
@@ -46,8 +48,7 @@ def watershed_hierarchy_by_area(graph, edge_weights, vertex_area):
     return tree, altitudes
 
 
-@hg.argument_helper("vertex_area")
-def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area):
+def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area=None):
     """
     Watershed hierarchy by volume.
 
@@ -68,6 +69,9 @@ def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area):
     :param vertex_area: area of the input graph vertices (provided by :func:`~higra.attribute_vertex_area`)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
+    if vertex_area is None:
+        vertex_area = hg.attribute_vertex_area(graph)
+
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
 
     vertex_area = hg.cast_to_dtype(vertex_area, np.float64)
