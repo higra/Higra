@@ -12,8 +12,8 @@ Data cache
 
 .. autodecorator:: higra.auto_cache
 
-.. autodecorator:: higra.set_auto_cache_state
+.. autofunction:: higra.set_auto_cache_state
 
-.. autodecorator:: higra.get_auto_cache_state
+.. autofunction:: higra.get_auto_cache_state
 
-.. autodecorator:: higra.clear_auto_cache
+.. autofunction:: higra.clear_auto_cache

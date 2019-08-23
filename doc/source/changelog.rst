@@ -1,6 +1,37 @@
 Changelog
 =========
 
+0.4.0
+-----
+
+Breaking change
+***************
+
+- Refactor attributes related to perimeter: there is now a single homogeneous function
+  :func:`~higra.attribute_contour_length` that replaces `attribute_perimeter_length`,
+  `attribute_perimeter_length_component_tree`, and `attribute_perimeter_length_partition_tree`
+  `#121 <https://github.com/higra/Higra/pull/121>`_ and `#124 <https://github.com/higra/Higra/pull/124>`_
+- Add decorator :func:`~higra.auto_cache` for auto-caching of function results which replaces the
+  decorator `data_provider`.
+  `#122 <https://github.com/higra/Higra/pull/122>`_ and `#127 <https://github.com/higra/Higra/pull/127>`_
+
+Other changes
+*************
+
+- Add a Cookiecutter project for c++ higra extension development `Higra-cppextension-cookiecutter <https://github.com/higra/Higra-cppextension-cookiecutter>`_
+- Add more documentation for installation and compiling
+  `#123 <https://github.com/higra/Higra/pull/123>`_
+- Fix bug with integer data in  :func:`~higra.attribute_gaussian_region_weights_model`
+  `#126 <https://github.com/higra/Higra/pull/126>`_
+- Fix bug in graph associated to the :func:`~higra.component_tree_tree_of_shapes_image2d`
+  `#120 <https://github.com/higra/Higra/pull/120>`_
+- Improve algorithm for :func:`~higra.attribute_extrema`
+  `#119 <https://github.com/higra/Higra/pull/119>`_
+- Moved repository to `higra` Github organization
+  `#118 <https://github.com/higra/Higra/pull/118>`_
+
+
+
 0.3.8
 -----
 
