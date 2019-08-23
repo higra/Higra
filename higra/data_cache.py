@@ -120,11 +120,6 @@ class DataCache:
         return iter(self.__data)
 
 
-def list_data_providers():
-    for p in hg.__data_providers:
-        print(hg.__data_providers[p])
-
-
 def list_attributes(key):
     try:
         return list(hg.__higra_global_cache.get_data(key).keys())
@@ -243,18 +238,18 @@ def set_auto_cache_state(boolean):
     instead of recomputing a new result (except if this behaviour is locally overridden with the name arguments
     "force_recompute=True" or "no_cache=True").
 
-    If set to ``False``, provider will behave as normal function: they won't try to cache results.
+    If set to ``False``, auto-cached functions will behave as normal function: they won't try to cache results.
 
     :See:
 
     :func:`~higra.get_auto_cache_state`: get current state of the automatic caching.
 
-    :param boolean: ``True`` to globally activate caching for provider, ``False`` to deactivate it
+    :param boolean: ``True`` to globally activate caching, ``False`` to deactivate it
     :return: nothing
     """
     if not isinstance(boolean, type(True)):
         raise TypeError("Parameter must be a bool.")
-    hg.__provider_caching = boolean
+    hg.__auto_caching = boolean
 
 
 def get_auto_cache_state():
@@ -265,20 +260,20 @@ def get_auto_cache_state():
 
     :func:`~higra.set_auto_cache_state`: modify the state of the automatic caching.
 
-    :return: True if caching of providers result is globally active, False otherwise
+    :return: True if auto-caching is globally active, False otherwise
     """
-    return hg.__provider_caching
+    return hg.__auto_caching
 
 
 # keyword used to store auto cached results in reference object data cache
 _auto_cache_keyword = "data_auto_cache"
 
 
-def clear_auto_cache(*, function_name=None, reference_object=None, data_cache=None):
+def clear_auto_cache(*, function=None, reference_object=None, data_cache=None):
     """
     Cleanup the result cache for the specified elements
 
-    :param function_name: name of the :func:`~higra.auto_cache` decorated function to clear (if ``None`` all functions
+    :param function: function or name of a :func:`~higra.auto_cache` decorated function to clear (if ``None`` all functions
         are cleared)
     :param reference_object: reference object whose cached data have to be cleared (if ``None`` cache data
         of all objects are cleared)
@@ -287,6 +282,17 @@ def clear_auto_cache(*, function_name=None, reference_object=None, data_cache=No
     """
     if data_cache is None:
         data_cache = hg.__higra_global_cache
+
+    if function is None:
+        function_name = None
+    else:
+        if isinstance(function, str):
+            function_name = function
+        else:
+            if hasattr(function, "__name__"):
+                function_name = function.__name__
+            else:
+                raise TypeError("Cannot determine name of " + str(function))
 
     if function_name is None and reference_object is None:
         for obj, cache in data_cache:
@@ -447,7 +453,7 @@ def auto_cache(fun):
         data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
         no_cache = kwargs.pop("no_cache", False)
 
-        if no_cache or not hg.__provider_caching:
+        if no_cache or not hg.__auto_caching:
             return fun(*args, **kwargs)
 
         try:
@@ -490,132 +496,11 @@ def auto_cache(fun):
 
     return wrapper
 
-
-###########################################################
-#                                                         #
-#               DATA PROVIDER DECORATOR                   #
-#                                                         #
-###########################################################
-
-class DataProvider:
-
-    def __init__(self, name, fun, description):
-        self.name = name
-        self.fun = fun
-        self.description = description
-
-    def __call__(self, *args, **kwargs):
-        return self.fun(*args, **kwargs)
-
-    def __str__(self):
-        if self.description != "":
-            return self.name + ": " + self.description
-        return self.name
-
-
-def data_provider(name, description=""):
-    """
-    Function decorator that associates the given function to the global data provider
-    registry.
-
-    :param name:
-    :param description:
-    :return:
-    """
-
-    def decorator(fun):
-        if name in hg.__data_providers:
-            print("Warning, a data provider with the same name was already defined: ", name, file=sys.stderr)
-
-        hg.__data_providers[name] = DataProvider(name, fun, description)
-
-        return fun
-
-    return decorator
-
-
 ###########################################################
 #                                                         #
 #              ARGUMENT HELPER DECORATOR                  #
 #                                                         #
 ###########################################################
-
-
-class __CacheLookupException(Exception):
-    pass
-
-
-def __cache_lookup(obj, dep_path, data_cache):
-    """
-    Tries to find the dependency name in the object data_cache or use a registered data provider
-
-    :param obj: reference object
-    :param dep_path: path to the related data
-    :param data_cache:
-    :return:
-    """
-    if obj is None:
-        raise __CacheLookupException("Cannot lookup into None-type object cache")
-
-    try:
-        obj_cache = data_cache.get_data(obj)
-    except TypeError:
-        obj_cache = None
-
-    if obj_cache is not None and dep_path in obj_cache:
-        name_data = obj_cache[dep_path]
-    elif dep_path in hg.__data_providers:  # look in providers
-        name_data = hg.__data_providers[dep_path](obj)
-    else:
-        raise __CacheLookupException("Lookup of "
-                                     + dep_path
-                                     + " in data cache of "
-                                     + str(obj)
-                                     + " and in data provider list failed.")
-
-    return name_data
-
-
-def __resolve_dependency(obj, dep_name, dep_path, data_cache, kwargs):
-    """
-    If :attr:`dep_name` is not already present in the dictionary :attr:`kwargs`, then tries to find it
-    in the data_cache or with a data_provider
-
-    :param obj: reference object
-    :param dep_name:
-    :param dep_path:
-    :param data_cache:
-    :param kwargs:
-    :return:
-    """
-    # if user has provided an explicit initialization for current dependency
-    if dep_name in kwargs and kwargs[dep_name] is not None:
-        pass
-        # old path rewriting functionality
-        # provided_dep = kwargs[dep_name]
-        # # if user has provided a path
-        # if isinstance(provided_dep, str):
-        #     raise Exception("patatra")
-        #     # restart dependency resolution with new path
-        #     del kwargs[dep_name]
-        #     __resolve_dependency(obj, dep_name, provided_dep, data_cache, kwargs)
-        # # else use provided_dep as depName argument value
-    else:
-        try:
-            kwargs[dep_name] = __cache_lookup(obj, dep_path, data_cache)
-        except __CacheLookupException as e:
-            err = "Lookup for the following argument failed: '" \
-                  + dep_name \
-                  + "' with associated data path '" \
-                  + dep_path \
-                  + "' as:\n" \
-                    "\t-the caller function did not provide an explicit value for this argument, and\n" \
-                    "\t-the reference object '" \
-                  + str(obj) \
-                  + "' does not contain any attribute at this path, and\n" \
-                    "\t-there is no automatic data provider for this path.\n\n" \
-                    "Did you forget to specify an argument in the function call?"
-            raise __CacheLookupException(err) from e
 
 
 def __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache):
@@ -651,7 +536,7 @@ def __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kw
             # tries to map the given element name to a new name or itself if no such mapping exists
             argument_name = concept_name_to_arg_name_map.get(data_element_name, data_element_name)
             # if element name is requested by function and not already in kwargs
-            if argument_name not in kwargs and argument_name in all_parameters_name:
+            if argument_name in all_parameters_name and (argument_name not in kwargs or kwargs[argument_name] is None):
                 kwargs[argument_name] = data_element
 
         # add all found elements to found data
@@ -659,6 +544,28 @@ def __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kw
 
 
 def argument_helper(*concepts):
+    """
+    Argument helper decorator helps to unpack :class:`~higra.Concept` data elements.
+
+    The decorator expresses that a function parameter :attr:`p` is designed as *possibly* satisfying the concept `c`.
+    Then, whenever the function is called, the decorator will check if :attr:`p` satisfies `c`, it will extract all the
+    data elements associated to :attr:`p` for `c`. Let `e` be one of these data element associated to the name `n`, if
+    the function has a parameter called *n* that is either undefined or ``None`` in the current call, then the decorator
+    will inject ``n=e`` as a new keyword parameter in the function call.
+
+    :param concepts:
+    :return:
+    """
+    for concept_elem in concepts:
+        try:
+            _, concept = concept_elem
+        except (ValueError, TypeError):  # failed to unpack, use first parameter name
+            concept = concept_elem
+
+        if not (type(concept) is type or issubclass(type(concept), hg.Concept)):
+            raise TypeError("Argument helper can only proceed Concept types or "
+                            "object instances deriving of Concept. Invalid element is: " + concept)
+
     def decorator(fun):
 
         original_fun = fun
@@ -675,39 +582,17 @@ def argument_helper(*concepts):
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
             args = __transfer_to_kw_arguments(signature, args, kwargs)
-            data_debug = kwargs.pop("data_debug", False)
             data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
             all_data_found = dict(kwargs)
             for concept_elem in concepts:
 
                 try:
                     arg_name, concept = concept_elem
-                except:  # failed to unpack, use first parameter name
+                except (ValueError, TypeError):  # failed to unpack, use first parameter name
                     concept = concept_elem
                     arg_name = signature.parameters.values().__iter__().__next__().name
 
-                if type(concept) is type or issubclass(type(concept), hg.Concept):
-                    __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache)
-                else:
-                    try:
-                        if arg_name in all_data_found:
-                            arg_value = all_data_found[arg_name]
-                        else:
-                            arg_value = None
-                        __resolve_dependency(arg_value, concept, concept, data_cache, kwargs)
-
-                    except __CacheLookupException as e:
-                        if signature.parameters[arg_name].default is signature.parameters[arg_name].empty:
-                            if data_debug:
-                                err = "Error during the resolution of the arguments of the function '" \
-                                      + fun.__name__
-                                raise Exception(err) from e
-                            else:  # swallow exception chain for readability
-                                err = "Error during the resolution of the arguments of the function '" + fun.__name__ + "'.\n" \
-                                      + str(e) \
-                                      + "\nYou can call your function with the extra parameter 'data_debug=True' to " \
-                                        "get more information about this error."
-                                raise Exception(err) from None
+                __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache)
 
             if len(args) > 0:
                 import warnings

@@ -13,7 +13,6 @@ import numpy as np
 import higra as hg
 
 
-@hg.data_provider("vertex_area")
 @hg.auto_cache
 def attribute_vertex_area(graph):
     """
@@ -22,8 +21,6 @@ def attribute_vertex_area(graph):
     In general the area of a vertex if simply equal to 1. But, if the graph is a region adjacency graph then the area of
     a region is equal to the sum of the area of the vertices inside the region (obtained with a recursive call to
     ``attribute_vertex_area`` on the original graph).
-
-    **Provider name**: "vertex_area"
 
     :param graph: input graph
     :return: a 1d array
@@ -37,7 +34,6 @@ def attribute_vertex_area(graph):
     return res
 
 
-@hg.data_provider("edge_length")
 @hg.auto_cache
 def attribute_edge_length(graph):
     """
@@ -46,8 +42,6 @@ def attribute_edge_length(graph):
     In general the length of an edge if simply equal to 1. But, if the graph is a region adjacency graph then the
     length of an edge is equal to the sum of length of the corresponding edges in the original graph (obtained with a
     recursive call to ``attribute_edge_length`` on the original graph).
-
-    **Provider name**: "edge_length"
 
     :param graph: input graph
     :return: a nd array
@@ -60,10 +54,8 @@ def attribute_edge_length(graph):
     return res
 
 
-@hg.data_provider("vertex_perimeter")
-@hg.argument_helper("edge_length")
 @hg.auto_cache
-def attribute_vertex_perimeter(graph, edge_length):
+def attribute_vertex_perimeter(graph, edge_length=None):
     """
     Vertex perimeter of the given graph.
     The perimeter of a vertex is defined as the sum of the length of out-edges of the vertex.
@@ -72,12 +64,13 @@ def attribute_vertex_perimeter(graph, edge_length):
     equal to this attribute value. This is a convenient method to handle image type graphs where an outer border has to be
     considered.
 
-    **Provider name**: "vertex_perimeter"
-
     :param graph: input graph
     :param edge_length: length of the edges of the input graph (provided by :func:`~higra.attribute_edge_length` on `graph`)
     :return: a nd array
     """
+    if edge_length is None:
+        edge_length = hg.attribute_edge_length(graph)
+
     special_case_border_graph = hg.get_attribute(graph, "no_border_vertex_out_degree")
 
     if special_case_border_graph is not None:
@@ -90,14 +83,11 @@ def attribute_vertex_perimeter(graph, edge_length):
     return res
 
 
-@hg.data_provider("vertex_coordinates")
 @hg.argument_helper(hg.CptGridGraph)
 @hg.auto_cache
 def attribute_vertex_coordinates(graph, shape):
     """
     Coordinates of the vertices of the given grid graph.
-
-    **Provider name**: "vertex_coordinates"
 
     Example
     =======
@@ -118,15 +108,12 @@ def attribute_vertex_coordinates(graph, shape):
     return attribute
 
 
-@hg.data_provider("area")
-@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_area"))
+@hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
 def attribute_area(tree, vertex_area=None, leaf_graph=None):
     """
     Area of each node the given tree.
     The area of a node is equal to the sum of the area of the leaves of the subtree rooted in the node.
-
-    **Provider name**: "area"
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param vertex_area: area of the vertices of the leaf graph of the tree (provided by :func:`~higra.attribute_vertex_area` on `leaf_graph` )
@@ -134,17 +121,18 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
     :return: a 1d array
     """
     if vertex_area is None:
-        vertex_area = np.ones((tree.num_leaves(),), dtype=np.float64)
+        if leaf_graph is not None:
+            vertex_area = hg.attribute_vertex_area(leaf_graph)
+        else:
+            vertex_area = np.ones((tree.num_leaves(),), dtype=np.float64)
 
     if leaf_graph is not None:
         vertex_area = hg.linearize_vertex_weights(vertex_area, leaf_graph)
     return hg.accumulate_sequential(tree, vertex_area, hg.Accumulators.sum)
 
 
-@hg.data_provider("volume")
-@hg.argument_helper("area")
 @hg.auto_cache
-def attribute_volume(tree, altitudes, area):
+def attribute_volume(tree, altitudes, area=None):
     """
     Volume of each node the given tree.
     The volume :math:`V(n)` of a node :math:`n` is defined recursively as:
@@ -153,20 +141,20 @@ def attribute_volume(tree, altitudes, area):
 
         V(n) = area(n) * | altitude(n) - altitude(parent(n)) | +  \sum_{c \in children(n)} V(c)
 
-    **Provider name**: "volume"
-
     :param tree: input tree
     :param altitudes: node altitudes of the input tree
     :param area: area of the nodes of the input hierarchy (provided by :func:`~higra.attribute_area` on `tree`)
     :return: a 1d array
     """
+    if area is None:
+        area = hg.attribute_area(tree)
+
     height = np.abs(altitudes[tree.parents()] - altitudes)
     height = height * area
     volume_leaves = height[:tree.num_leaves()]
     return hg.accumulate_and_add_sequential(tree, height, volume_leaves, hg.Accumulators.sum)
 
 
-@hg.data_provider("lca_map")
 @hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
 def attribute_lca_map(tree, leaf_graph):
@@ -175,8 +163,6 @@ def attribute_lca_map(tree, leaf_graph):
 
     Complexity: :math:`\mathcal{O}(n\log(n)) + \mathcal{O}(m)` where :math:`n` is the number of nodes in `tree` and
     :math:`m` is the number of edges in :attr:`leaf_graph`.
-
-    **Provider name**: "lca_map"
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy` on `tree`)
@@ -187,10 +173,9 @@ def attribute_lca_map(tree, leaf_graph):
     return res
 
 
-@hg.data_provider("frontier_length")
-@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "edge_length"))
+@hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
-def attribute_frontier_length(tree, edge_length, leaf_graph=None):
+def attribute_frontier_length(tree, edge_length=None, leaf_graph=None):
     """
     Length of the frontier represented by each node the given partition tree.
 
@@ -199,8 +184,6 @@ def attribute_frontier_length(tree, edge_length, leaf_graph=None):
     This function compute the length of these common contours as the sum of the length of edges going from one of the
     merged region to the other one.
 
-    **Provider name**: "frontier_length"
-
     The result has the same dtype as the edge_length array.
 
     :param tree: input tree
@@ -208,6 +191,10 @@ def attribute_frontier_length(tree, edge_length, leaf_graph=None):
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array
     """
+
+    if edge_length is None:
+        edge_length = hg.attribute_edge_length(leaf_graph)
+
     lca_map = attribute_lca_map(tree, leaf_graph)
 
     frontier_length = np.zeros((tree.num_vertices(),), dtype=edge_length.dtype)
@@ -215,7 +202,6 @@ def attribute_frontier_length(tree, edge_length, leaf_graph=None):
     return frontier_length
 
 
-@hg.data_provider("frontier_strength")
 @hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
 def attribute_frontier_strength(tree, edge_weights, leaf_graph):
@@ -226,8 +212,6 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     The frontier of a node is then defined as the common contour between the merged regions.
     This function compute the strength of a common contour as the sum of the weights of edges going from one of the
     merged region to the other one divided by the length of the contour.
-
-    **Provider name**: "frontier_strength"
 
     The result has the same dtype as the edge_weights array.
 
@@ -246,14 +230,11 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     return frontier_strength
 
 
-@hg.data_provider("contour_length")
-@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("leaf_graph", "edge_length"))
+@hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
-def attribute_contour_length(tree, vertex_perimeter, edge_length, leaf_graph=None):
+def attribute_contour_length(tree, vertex_perimeter=None, edge_length=None, leaf_graph=None):
     """
     Length of the contour (perimeter) of each node of the given tree.
-
-    **Provider name**: "contour_length"
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param vertex_perimeter: perimeter of each vertex of the leaf graph (provided by :func:`~higra.attribute_vertex_perimeter` on `leaf_graph`)
@@ -261,6 +242,13 @@ def attribute_contour_length(tree, vertex_perimeter, edge_length, leaf_graph=Non
     :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array
     """
+
+    if vertex_perimeter is None:
+        vertex_perimeter = hg.attribute_vertex_perimeter(leaf_graph)
+
+    if edge_length is None:
+        edge_length = hg.attribute_edge_length(leaf_graph)
+
     if leaf_graph is not None:
         vertex_perimeter = hg.linearize_vertex_weights(vertex_perimeter, leaf_graph)
 
@@ -275,15 +263,12 @@ def attribute_contour_length(tree, vertex_perimeter, edge_length, leaf_graph=Non
     return perimeter
 
 
-@hg.data_provider("contour_strength")
-@hg.argument_helper(hg.CptHierarchy, ("leaf_graph", "vertex_perimeter"), ("leaf_graph", "edge_length"))
+@hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
-def attribute_contour_strength(tree, edge_weights, vertex_perimeter, edge_length, leaf_graph=None):
+def attribute_contour_strength(tree, edge_weights, vertex_perimeter=None, edge_length=None, leaf_graph=None):
     """
     Strength of the contour of each node of the given tree. The strength of the contour of a node is defined as the
     mean edge weights on the contour.
-
-    **Provider name**: "contour_strength"
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param edge_weights: edge_weights of the leaf graph
@@ -292,6 +277,12 @@ def attribute_contour_strength(tree, edge_weights, vertex_perimeter, edge_length
     :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array
     """
+
+    if vertex_perimeter is None:
+        vertex_perimeter = hg.attribute_vertex_perimeter(leaf_graph)
+
+    if edge_length is None:
+        edge_length = hg.attribute_edge_length(leaf_graph)
 
     perimeter = attribute_contour_length(tree, vertex_perimeter, edge_length, leaf_graph)
     if perimeter[-1] == 0:
@@ -306,21 +297,25 @@ def attribute_contour_strength(tree, edge_weights, vertex_perimeter, edge_length
     return edge_weights_sum / perimeter
 
 
-@hg.data_provider("compactness")
-@hg.argument_helper("area", "contour_length")
+@hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
-def attribute_compactness(tree, area, contour_length, normalize=True):
+def attribute_compactness(tree, area=None, contour_length=None, normalize=True, leaf_graph=None):
     """
     The compactness of a node is defined as its area divided by the square of its perimeter length.
 
-    **Provider name**: "compactness"
-
-    :param tree: input tree
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param area: node area of the input tree (provided by :func:`~higra.attribute_area` on `tree`)
     :param contour_length: node contour length of the input tree (provided by :func:`~higra.attribute_perimeter_length` on `tree`)
     :param normalize: if True the result is divided by the maximal compactness value in the tree
+    :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
     :return: a 1d array
     """
+    if area is None:
+        area = hg.attribute_area(tree)
+
+    if contour_length is None:
+        contour_length = hg.attribute_contour_length(tree, leaf_graph=leaf_graph)
+
     compactness = area / (contour_length * contour_length)
     if normalize:
         max_compactness = np.nanmax(compactness)
@@ -329,21 +324,20 @@ def attribute_compactness(tree, area, contour_length, normalize=True):
     return compactness
 
 
-@hg.data_provider("mean_weights")
-@hg.argument_helper(hg.CptHierarchy, "area")
+@hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
-def attribute_mean_weights(tree, vertex_weights, area, leaf_graph=None):
+def attribute_mean_weights(tree, vertex_weights, area=None, leaf_graph=None):
     """
     Mean weight of the leaf graph vertices inside each node of the given tree.
 
-    **Provider name**: "mean_weights"
-
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param vertex_weights: vertex weights of the leaf graph of the input tree
-    :param area: area of the tree nodes  (provided by :func:`~higra.attribute_area` on `tree`)
+    :param area: area of the tree nodes  (provided by :func:`~higra.attribute_area`)
     :param leaf_graph: leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
     :return: a nd array
     """
+    if area is None:
+        area = hg.attribute_area(tree)
 
     if leaf_graph is not None:
         vertex_weights = hg.linearize_vertex_weights(vertex_weights, leaf_graph)
@@ -355,7 +349,6 @@ def attribute_mean_weights(tree, vertex_weights, area, leaf_graph=None):
     return attribute
 
 
-@hg.data_provider("sibling")
 @hg.auto_cache
 def attribute_sibling(tree, skip=1):
     """
@@ -370,8 +363,6 @@ def attribute_sibling(tree, skip=1):
 
     In a binary tree, the sibling attribute of a node is effectively its only brother (with `skip` equals to 1).
 
-    **Provider name**: "sibling"
-
     :param tree: Input tree
     :param skip: Number of skipped element in the children list (including yourself)
     :return: a nd array
@@ -380,15 +371,12 @@ def attribute_sibling(tree, skip=1):
     return attribute
 
 
-@hg.data_provider("depth")
 @hg.auto_cache
 def attribute_depth(tree):
     """
     The depth of a node :math:`n` of the tree :math:`T` is equal to the number of ancestors of :math:`n` in :math:`T`.
 
     The depth of the root node is equal to 0.
-
-    **Provider name**: "depth"
 
     :param tree: Input tree
     :return: a nd array
@@ -397,26 +385,24 @@ def attribute_depth(tree):
     return attribute
 
 
-@hg.data_provider("regular_altitudes")
-@hg.argument_helper("depth")
 @hg.auto_cache
-def attribute_regular_altitudes(tree, depth):
+def attribute_regular_altitudes(tree, depth=None):
     """
     Regular altitudes is comprised between 0 and 1 and is inversely proportional to the depth of a node
 
-    **Provider name**: "regular_altitudes"
-
     :param tree: input tree
-    :param depth: depth of the tree node (provided by :func:`~higra.attribute_depth` on `tree`)
+    :param depth: depth of the tree node (provided by :func:`~higra.attribute_depth`)
     :return: a nd array
     """
+
+    if depth is None:
+        depth = hg.attribute_depth(tree)
 
     altitudes = 1 - depth / np.max(depth)
     altitudes[:tree.num_leaves()] = 0
     return altitudes
 
 
-@hg.data_provider("vertex_list")
 @hg.auto_cache
 def attribute_vertex_list(tree):
     """
@@ -425,8 +411,6 @@ def attribute_vertex_list(tree):
     **WARNING**: This function is slow and will use O(n²) space, with n the number of leaf nodes !
 
     **SHOULD ONLY BE USED FOR DEBUGGING AND TESTING**
-
-    **Provider name**: "vertex_list"
 
     :param tree: input tree
     :return: a list of lists
@@ -442,7 +426,6 @@ def attribute_vertex_list(tree):
     return result
 
 
-@hg.data_provider("gaussian_region_weights_model")
 @hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
 def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=None):
@@ -455,8 +438,6 @@ def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=Non
         - the second one contains the variance of the values inside each node, scalar if vertex weights are scalar and a (biased) covariance matrix otherwise.
 
     Vertex weights must be scalar or 1 dimensional.
-
-    **Provider name**: "gaussian_region_weights_model"
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param vertex_weights: vertex weights of the leaf graph of the input tree
@@ -492,7 +473,6 @@ def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=Non
     return mean, variance
 
 
-@hg.data_provider("extrema")
 @hg.auto_cache
 def attribute_extrema(tree, altitudes):
     """

@@ -152,12 +152,11 @@ def attribute_piecewise_constant_Mumford_Shah_energy(tree, vertex_weights, gamma
     return variance * area + gamma * perimeter
 
 
-@hg.argument_helper(("graph", "vertex_area"), ("graph", "vertex_perimeter"), ("graph", "edge_length"))
 def binary_partition_tree_MumfordShah_energy(graph,
                                              vertex_values,
-                                             vertex_area,
-                                             vertex_perimeter,
-                                             edge_length,
+                                             vertex_area=None,
+                                             vertex_perimeter=None,
+                                             edge_length=None,
                                              squared_vertex_values=None):
     """
     Binary partition tree according to the Mumford-Shah energy with a constant piecewise model.
@@ -184,6 +183,15 @@ def binary_partition_tree_MumfordShah_energy(graph,
         vertex contains a single value.
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
+    if vertex_area is None:
+        vertex_area = hg.attribute_vertex_area(graph)
+
+    if edge_length is None:
+        edge_length = hg.attribute_edge_length(graph)
+
+    if vertex_perimeter is None:
+        vertex_perimeter = hg.attribute_vertex_perimeter(graph, edge_length)
+
     vertex_values = hg.linearize_vertex_weights(vertex_values, graph)
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
     vertex_perimeter = hg.linearize_vertex_weights(vertex_perimeter, graph)

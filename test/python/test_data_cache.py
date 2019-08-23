@@ -29,42 +29,29 @@ class MyException(Exception):
         super().__init__(message)
 
 
-crash_provider1 = False
+crash_fun1 = False
 
 
 @hg.auto_cache
-def provider1(obj, a=None):
-    """
-    Provider 1
-
-    :param obj:
-    :param a:
-    :return:
-    """
-    global crash_provider1
-    if crash_provider1:
+def fun1(obj, a=None):
+    global crash_fun1
+    if crash_fun1:
         raise Exception("Should not have been called")
     return 1
 
 
-crash_provider2 = False
+crash_fun2 = False
 
 
 @hg.auto_cache
-def provider2(obj, a=None):
-    global crash_provider2
-    if crash_provider2:
+def fun2(obj, a=None):
+    global crash_fun2
+    if crash_fun2:
         raise Exception("Should not have been called")
     return 1
 
 
-@hg.data_provider("attr1")
-def attribute1(obj):
-    return 1
-
-
-@hg.argument_helper("attr1")
-def accept_everything(dummy, attr1):
+def accept_everything(dummy, attr1=1):
     return attr1
 
 
@@ -78,9 +65,8 @@ def accept_RegularGraph2d(graph, shape):
 crash_cached_attr = False
 
 
-@hg.argument_helper("attr1")
 @hg.auto_cache
-def cached_attr(o, attr1):
+def cached_attr(o, attr1=1):
     global crash_cached_attr
     if crash_cached_attr:
         raise Exception("Should not have been called")
@@ -101,123 +87,123 @@ def default_attr(o, v=1):
 class TestDataCache(unittest.TestCase):
 
     def test_auto_cache_and_force_recompute(self):
-        global crash_provider1
+        global crash_fun1
         obj1 = Dummy(1)
-        crash_provider1 = False
-        self.assertTrue(provider1(obj1, 1) == 1)
-        crash_provider1 = True
-        self.assertTrue(provider1(obj1, 1) == 1)
-        self.assertRaises(Exception, provider1, obj1, 2)
-        self.assertRaises(Exception, provider1, obj1, force_recompute=True)
+        crash_fun1 = False
+        self.assertTrue(fun1(obj1, 1) == 1)
+        crash_fun1 = True
+        self.assertTrue(fun1(obj1, 1) == 1)
+        self.assertRaises(Exception, fun1, obj1, 2)
+        self.assertRaises(Exception, fun1, obj1, force_recompute=True)
         hg.clear_all_attributes()
 
     def test_auto_cache_global_setting(self):
-        global crash_provider1
+        global crash_fun1
         obj1 = Dummy(1)
-        crash_provider1 = False
+        crash_fun1 = False
         hg.set_auto_cache_state(False)
-        self.assertTrue(provider1(obj1, 1) == 1)
-        crash_provider1 = True
-        self.assertRaises(Exception, provider1, obj1, 1)
+        self.assertTrue(fun1(obj1, 1) == 1)
+        crash_fun1 = True
+        self.assertRaises(Exception, fun1, obj1, 1)
         hg.set_auto_cache_state(True)
-        crash_provider1 = False
-        self.assertTrue(provider1(obj1, 2) == 1)
-        crash_provider1 = True
-        self.assertTrue(provider1(obj1, 2) == 1)
+        crash_fun1 = False
+        self.assertTrue(fun1(obj1, 2) == 1)
+        crash_fun1 = True
+        self.assertTrue(fun1(obj1, 2) == 1)
         hg.set_auto_cache_state(False)
-        self.assertRaises(Exception, provider1, obj1, 1)
+        self.assertRaises(Exception, fun1, obj1, 1)
         hg.set_auto_cache_state(True)
         hg.clear_all_attributes()
 
     def test_auto_cache_clearing(self):
-        global crash_provider1
-        global crash_provider2
+        global crash_fun1
+        global crash_fun2
         obj1 = Dummy(1)
         obj2 = Dummy(2)
 
-        crash_provider1 = False
-        crash_provider2 = False
-        self.assertTrue(provider1(obj1) == 1)
-        self.assertTrue(provider1(obj2) == 1)
-        self.assertTrue(provider2(obj1) == 1)
-        self.assertTrue(provider2(obj2) == 1)
-        hg.clear_auto_cache(function_name="provider1")
-        crash_provider1 = True
-        crash_provider2 = True
-        self.assertRaises(Exception, provider1, obj1)
-        self.assertRaises(Exception, provider1, obj2)
-        self.assertTrue(provider2(obj1) == 1)
-        self.assertTrue(provider2(obj2) == 1)
+        crash_fun1 = False
+        crash_fun2 = False
+        self.assertTrue(fun1(obj1) == 1)
+        self.assertTrue(fun1(obj2) == 1)
+        self.assertTrue(fun2(obj1) == 1)
+        self.assertTrue(fun2(obj2) == 1)
+        hg.clear_auto_cache(function=fun1)
+        crash_fun1 = True
+        crash_fun2 = True
+        self.assertRaises(Exception, fun1, obj1)
+        self.assertRaises(Exception, fun1, obj2)
+        self.assertTrue(fun2(obj1) == 1)
+        self.assertTrue(fun2(obj2) == 1)
 
-        crash_provider1 = False
-        crash_provider2 = False
-        self.assertTrue(provider1(obj1) == 1)
-        self.assertTrue(provider1(obj2) == 1)
-        self.assertTrue(provider2(obj1) == 1)
-        self.assertTrue(provider2(obj2) == 1)
+        crash_fun1 = False
+        crash_fun2 = False
+        self.assertTrue(fun1(obj1) == 1)
+        self.assertTrue(fun1(obj2) == 1)
+        self.assertTrue(fun2(obj1) == 1)
+        self.assertTrue(fun2(obj2) == 1)
         hg.clear_auto_cache(reference_object=obj2)
-        crash_provider1 = True
-        crash_provider2 = True
-        self.assertTrue(provider1(obj1) == 1)
-        self.assertRaises(Exception, provider1, obj2)
-        self.assertTrue(provider2(obj1) == 1)
-        self.assertRaises(Exception, provider2, obj2)
+        crash_fun1 = True
+        crash_fun2 = True
+        self.assertTrue(fun1(obj1) == 1)
+        self.assertRaises(Exception, fun1, obj2)
+        self.assertTrue(fun2(obj1) == 1)
+        self.assertRaises(Exception, fun2, obj2)
 
-        crash_provider1 = False
-        crash_provider2 = False
-        self.assertTrue(provider1(obj1) == 1)
-        self.assertTrue(provider1(obj2) == 1)
-        self.assertTrue(provider2(obj1) == 1)
-        self.assertTrue(provider2(obj2) == 1)
-        hg.clear_auto_cache(function_name="provider1", reference_object=obj2)
-        crash_provider1 = True
-        crash_provider2 = True
-        self.assertTrue(provider1(obj1) == 1)
-        self.assertRaises(Exception, provider1, obj2)
-        self.assertTrue(provider2(obj1) == 1)
-        self.assertTrue(provider2(obj2) == 1)
+        crash_fun1 = False
+        crash_fun2 = False
+        self.assertTrue(fun1(obj1) == 1)
+        self.assertTrue(fun1(obj2) == 1)
+        self.assertTrue(fun2(obj1) == 1)
+        self.assertTrue(fun2(obj2) == 1)
+        hg.clear_auto_cache(function="fun1", reference_object=obj2)
+        crash_fun1 = True
+        crash_fun2 = True
+        self.assertTrue(fun1(obj1) == 1)
+        self.assertRaises(Exception, fun1, obj2)
+        self.assertTrue(fun2(obj1) == 1)
+        self.assertTrue(fun2(obj2) == 1)
 
-        crash_provider1 = False
-        crash_provider2 = False
-        self.assertTrue(provider1(obj1) == 1)
-        self.assertTrue(provider1(obj2) == 1)
-        self.assertTrue(provider2(obj1) == 1)
-        self.assertTrue(provider2(obj2) == 1)
+        crash_fun1 = False
+        crash_fun2 = False
+        self.assertTrue(fun1(obj1) == 1)
+        self.assertTrue(fun1(obj2) == 1)
+        self.assertTrue(fun2(obj1) == 1)
+        self.assertTrue(fun2(obj2) == 1)
         hg.clear_auto_cache()
-        crash_provider1 = True
-        crash_provider2 = True
-        self.assertRaises(Exception, provider1, obj1)
-        self.assertRaises(Exception, provider1, obj2)
-        self.assertRaises(Exception, provider2, obj1)
-        self.assertRaises(Exception, provider2, obj2)
+        crash_fun1 = True
+        crash_fun2 = True
+        self.assertRaises(Exception, fun1, obj1)
+        self.assertRaises(Exception, fun1, obj2)
+        self.assertRaises(Exception, fun2, obj1)
+        self.assertRaises(Exception, fun2, obj2)
 
     def test_auto_cache_no_cache_implies_force_recompute(self):
-        global crash_provider1
+        global crash_fun1
         obj1 = Dummy(1)
-        crash_provider1 = False
-        self.assertTrue(provider1(obj1, 3) == 1)
-        crash_provider1 = True
-        self.assertTrue(provider1(obj1, 3) == 1)
-        self.assertRaises(Exception, provider1, obj1, 3, no_cache=True)
+        crash_fun1 = False
+        self.assertTrue(fun1(obj1, 3) == 1)
+        crash_fun1 = True
+        self.assertTrue(fun1(obj1, 3) == 1)
+        self.assertRaises(Exception, fun1, obj1, 3, no_cache=True)
         hg.clear_all_attributes()
 
     def test_auto_cache_no_cache_doesnt_store_result(self):
-        global crash_provider1
+        global crash_fun1
         obj1 = Dummy(1)
-        crash_provider1 = False
-        self.assertTrue(provider1(obj1, 2, no_cache=True) == 1)
-        crash_provider1 = True
-        self.assertRaises(Exception, provider1, obj1, 2)
+        crash_fun1 = False
+        self.assertTrue(fun1(obj1, 2, no_cache=True) == 1)
+        crash_fun1 = True
+        self.assertRaises(Exception, fun1, obj1, 2)
         hg.clear_all_attributes()
 
     def test_auto_cache_rename_attribute(self):
-        global crash_provider1
+        global crash_fun1
         obj1 = Dummy(1)
-        crash_provider1 = False
-        self.assertTrue(provider1(obj1, "aa", attribute_name="xxx") == 1)
-        crash_provider1 = True
-        self.assertRaises(Exception, provider1, obj1, "aa")
-        self.assertTrue(provider1(obj1, "aa", attribute_name="xxx") == 1)
+        crash_fun1 = False
+        self.assertTrue(fun1(obj1, "aa", attribute_name="xxx") == 1)
+        crash_fun1 = True
+        self.assertRaises(Exception, fun1, obj1, "aa")
+        self.assertTrue(fun1(obj1, "aa", attribute_name="xxx") == 1)
         hg.clear_all_attributes()
 
     def test_argument_helper_accept_everything(self):
