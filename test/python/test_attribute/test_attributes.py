@@ -188,6 +188,25 @@ class TestAttributes(unittest.TestCase):
 
         self.assertTrue(np.all(res == ref))
 
+    def test_contour_length_tree_of_shapes(self):
+
+        image = np.asarray(((0, 0, 0, 0),
+                            (0, -2, 2, 0),
+                            (0, -1, 1, 0),
+                            (0, 0, 0, 0)))
+
+        tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image)
+
+        res = hg.attribute_contour_length(tree)
+
+        ref = np.asarray((4, 4, 4, 4,
+                          4, 4, 4, 4,
+                          4, 4, 4, 4,
+                          4, 4, 4, 4,
+                          4, 6, 4, 6, 16), dtype=np.float64)
+
+        self.assertTrue(np.all(res == ref))
+
     def test_contour_length_rag_partition_tree(self):
         g = hg.get_4_adjacency_graph((3, 3))
         vertex_labels = np.asarray(((0, 1, 1),

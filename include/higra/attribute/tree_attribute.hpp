@@ -400,6 +400,9 @@ namespace hg {
     /**
      * Computes the contour length (perimeter) of each node of the input component tree.
      *
+     * Warning: does not work for tree of shapes left in original space (the problem is that
+    # two children of a node may become adjacent when the interpolated pixels are removed).
+     *
      * @tparam tree_t
      * @tparam graph_t
      * @tparam T1
