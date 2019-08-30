@@ -252,13 +252,21 @@ def attribute_contour_length(tree, vertex_perimeter=None, edge_length=None, leaf
     if leaf_graph is not None:
         vertex_perimeter = hg.linearize_vertex_weights(vertex_perimeter, leaf_graph)
 
-    if tree.category() == hg.TreeCategory.PartitionTree:
-        frontier_length = hg.attribute_frontier_length(tree, edge_length, leaf_graph)
-        perimeter = hg.accumulate_and_add_sequential(tree, -2 * frontier_length, vertex_perimeter,
-                                                     hg.Accumulators.sum)
-    elif tree.category() == hg.TreeCategory.ComponentTree:
-        perimeter = hg.cpp._attribute_contour_length_component_tree(tree, leaf_graph, vertex_perimeter,
-                                                                    edge_length)
+    frontier_length = hg.attribute_frontier_length(tree, edge_length, leaf_graph)
+    perimeter = hg.accumulate_and_add_sequential(tree, -2 * frontier_length, vertex_perimeter,
+                                                 hg.Accumulators.sum)
+
+    # hg.cpp._attribute_contour_length_component_tree is more efficient than the partition tree
+    # algorithm but it does not work for tree of shapes left in original space (the problem is that
+    # two children of a node may become adjacent when the interpolated pixels are removed).
+
+    # if tree.category() == hg.TreeCategory.PartitionTree:
+    #     frontier_length = hg.attribute_frontier_length(tree, edge_length, leaf_graph)
+    #     perimeter = hg.accumulate_and_add_sequential(tree, -2 * frontier_length, vertex_perimeter,
+    #                                                  hg.Accumulators.sum)
+    # elif tree.category() == hg.TreeCategory.ComponentTree:
+    #     perimeter = hg.cpp._attribute_contour_length_component_tree(tree, leaf_graph, vertex_perimeter,
+    #                                                                 edge_length)
 
     return perimeter
 
