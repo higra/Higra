@@ -270,7 +270,7 @@ class TestAttributes(unittest.TestCase):
                                   36, 60, 64, 43,
                                   36, 54, 30, 43, 16, 71, 45, 58, 123, 94, 57, 1, 0), dtype=np.float64)
 
-        self.assertTrue(np.allclose(ref_weights / ref_perimeter, res))
+        self.assertTrue(np.allclose(ref_weights / ref_perimeter, res, rtol=1e-04, atol=1e-07))
 
     def test_contour_strength_rag_partition_tree(self):
         g = hg.get_4_adjacency_graph((3, 3))

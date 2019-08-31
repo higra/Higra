@@ -306,6 +306,7 @@ def dtype_info(dtype):
         raise ValueError("Given dtype is not suported or invalid.")
 
 
+__bool = 'bool'
 __int8 = 'int8'
 __int16 = 'int16'
 __int32 = 'int32'
@@ -318,7 +319,21 @@ __float32 = 'float32'
 __float64 = 'float64'
 
 __minimum_type_order = {
+    __bool: {
+        __bool: __bool,
+        __int8: __int8,
+        __uint8: __int16,
+        __int16: __int16,
+        __uint16: __int32,
+        __int32: __int32,
+        __uint32: __int64,
+        __int64: __int64,
+        __uint64: __int64,
+        __float32: __float32,
+        __float64: __float64
+    },
     __int8: {
+        __bool: __int8,
         __int8: __int8,
         __uint8: __int16,
         __int16: __int16,
@@ -331,6 +346,7 @@ __minimum_type_order = {
         __float64: __float64
     },
     __uint8: {
+        __bool: __uint8,
         __int8: __int16,
         __uint8: __uint8,
         __int16: __int16,
@@ -343,6 +359,7 @@ __minimum_type_order = {
         __float64: __float64
     },
     __int16: {
+        __bool: __int16,
         __int8: __int16,
         __uint8: __int16,
         __int16: __int16,
@@ -355,6 +372,7 @@ __minimum_type_order = {
         __float64: __float64
     },
     __uint16: {
+        __bool: __uint16,
         __int8: __int32,
         __uint8: __uint16,
         __int16: __int32,
@@ -367,6 +385,7 @@ __minimum_type_order = {
         __float64: __float64
     },
     __int32: {
+        __bool: __int32,
         __int8: __int32,
         __uint8: __int32,
         __int16: __int32,
@@ -379,6 +398,7 @@ __minimum_type_order = {
         __float64: __float64
     },
     __uint32: {
+        __bool: __uint32,
         __int8: __int64,
         __uint8: __uint32,
         __int16: __int64,
@@ -391,6 +411,7 @@ __minimum_type_order = {
         __float64: __float64
     },
     __int64: {
+        __bool: __int64,
         __int8: __int64,
         __uint8: __int64,
         __int16: __int64,
@@ -403,6 +424,7 @@ __minimum_type_order = {
         __float64: __float64
     },
     __uint64: {
+        __bool: __uint64,
         __int8: __int64,
         __uint8: __uint64,
         __int16: __int64,
@@ -415,6 +437,7 @@ __minimum_type_order = {
         __float64: __float64
     },
     __float32: {
+        __bool: __float32,
         __int8: __float32,
         __uint8: __float32,
         __int16: __float32,
@@ -427,6 +450,7 @@ __minimum_type_order = {
         __float64: __float64
     },
     __float64: {
+        __bool: __float64,
         __int8: __float64,
         __uint8: __float64,
         __int16: __float64,
@@ -462,7 +486,10 @@ def common_type(*arrays, safety_level='minimum'):
     """
 
     if safety_level == 'overflow':
-        return np.common_type(*arrays)
+        non_bool_arrays = [a for a in arrays if str(a.dtype) != __bool]
+        if len(non_bool_arrays) == 0:
+            return np.float32
+        return np.common_type(*non_bool_arrays)
 
     if safety_level != 'minimum':
         raise ValueError('Unknown safety level: should be "minimum" or "overflow"')
