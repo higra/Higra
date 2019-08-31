@@ -138,16 +138,17 @@ class TestHGUtils(unittest.TestCase):
             hg.delinearize_vertex_weights(np.ones((8,)), g)
 
     def test_common_type(self):
+        a_bool = np.zeros((1, 1), dtype=np.bool)
         a_uint16 = np.zeros((1, 1), dtype=np.uint16)
         a_int8 = np.zeros((1, 1), dtype=np.int8)
         a_uint64 = np.zeros((1, 1), dtype=np.uint64)
 
         self.assertTrue(hg.common_type(a_uint16, a_int8, a_uint64) == np.int64)
-        self.assertTrue(hg.common_type(a_uint16, a_int8) == np.int32)
+        self.assertTrue(hg.common_type(a_bool, a_uint16, a_int8) == np.int32)
         self.assertTrue(hg.common_type(a_uint16, a_uint16) == np.uint16)
 
         self.assertTrue(hg.common_type(a_uint16, a_int8, a_uint64, safety_level='overflow') == np.float64)
-        self.assertTrue(hg.common_type(a_uint16, a_int8, safety_level='overflow') == np.float64)
+        self.assertTrue(hg.common_type(a_bool, a_uint16, a_int8, safety_level='overflow') == np.float64)
         self.assertTrue(hg.common_type(a_uint16, a_uint16, safety_level='overflow') == np.float64)
 
     def cast_to_common_type(self):
