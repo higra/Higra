@@ -9,6 +9,7 @@ Welcome to Higra's documentation!
     Changelog <changelog.rst>
     Installation <install.rst>
     Developing c++ extensions <extensions.rst>
+    Examples <notebooks.rst>
 
 
 .. toctree::
