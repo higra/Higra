@@ -213,7 +213,7 @@ class TestAttributes(unittest.TestCase):
                                     (0, 2, 2),
                                     (3, 2, 4)))
         rag = hg.make_region_adjacency_graph_from_labelisation(g, vertex_labels)
-        edge_weights = np.asarray((1, 5, 4, 3, 6, 2))
+        edge_weights = np.asarray((1, 5, 4, 3, 6, 2), dtype=np.float64)
         tree, altitudes = hg.bpt_canonical(rag, edge_weights)
 
         ref_attribute = [3, 3, 6, 2, 2, 4, 4, 4, 0]
@@ -222,7 +222,7 @@ class TestAttributes(unittest.TestCase):
 
     def test_contour_strength_partition_tree(self):
         tree, altitudes = TestAttributes.get_test_tree()
-        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1), dtype=np.float64)
         attribute = hg.attribute_contour_strength(tree, edge_weights)
 
         ref_perimeter = np.asarray([4, 4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6, 8, 10, 16, 12])
@@ -231,7 +231,7 @@ class TestAttributes(unittest.TestCase):
 
     def test_contour_strength_partition_tree2(self):
         tree, altitudes = TestAttributes.get_test_tree()
-        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1), dtype=np.float64)
         hg.set_attribute(hg.CptHierarchy.get_leaf_graph(tree), "no_border_vertex_out_degree", None)
         attribute = hg.attribute_contour_strength(tree, edge_weights)
 
@@ -242,7 +242,7 @@ class TestAttributes(unittest.TestCase):
     def test_contour_strength_component_tree(self):
         g = hg.get_4_adjacency_graph((4, 4))
 
-        edge_weights = np.arange(g.num_edges())
+        edge_weights = np.arange(g.num_edges(), dtype=np.float64)
         # for reference, tree is a max tree on the following image
         # 0, 1, 4, 4,
         # 7, 5, 6, 8,
@@ -278,7 +278,7 @@ class TestAttributes(unittest.TestCase):
                                     (0, 2, 2),
                                     (3, 2, 4)))
 
-        base_edge_weights = np.arange(g.num_edges())
+        base_edge_weights = np.arange(g.num_edges(), dtype=np.float64)
 
         rag = hg.make_region_adjacency_graph_from_labelisation(g, vertex_labels)
         edge_weights = np.asarray((1, 5, 4, 3, 6, 2))
