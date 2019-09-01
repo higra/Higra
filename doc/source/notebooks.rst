@@ -1,5 +1,7 @@
-Examples
-========
+.. _notebooks:
+
+Python notebooks
+================
 
 The following python notebooks contain examples demonstrating Higra usage.
 

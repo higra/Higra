@@ -1,6 +1,21 @@
 Changelog
 =========
 
+0.4.1
+-----
+
+- Add function :func:`~higra.accumulate_on_contours`.
+  `#134 <https://github.com/higra/Higra/pull/134>`_
+- Better handling of null perimeter in :func:`~higra.attribute_contour_strength`.
+  `#133 <https://github.com/higra/Higra/pull/133>`_
+- Add links to :ref:`notebooks` in the documentation.
+  `#132 <https://github.com/higra/Higra/pull/132>`_
+- Fix bug in :func:`~higra.common_type` support for `bool` type was missing.
+  `#131 <https://github.com/higra/Higra/pull/131>`_
+- Fix bug in :func:`~higra.attribute_contour_length` with tree of shapes when interpolated are removed.
+  `#129 <https://github.com/higra/Higra/pull/129>`_
+
+
 0.4.0
 -----
 
