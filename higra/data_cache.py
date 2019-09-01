@@ -366,7 +366,7 @@ def __make_key(o):
         except TypeError:
             pass
 
-    return hash(id(o))
+    return hash(str(id(o)))
 
 
 def __make_hash(*args, **kwargs):
