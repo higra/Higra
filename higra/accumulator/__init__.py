@@ -11,4 +11,5 @@
 from .at_accumulator import *
 from .graph_accumulator import *
 from .tree_accumulator import *
+from .tree_contour_accumulator import *
 

@@ -10,8 +10,6 @@
 
 #pragma once
 
-#include "py_accumulators.hpp"
-#include "py_at_accumulator.hpp"
-#include "py_graph_accumulator.hpp"
-#include "py_tree_accumulators.hpp"
-#include "py_tree_contour_accumulator.hpp"
+#include "pybind11/pybind11.h"
+
+void py_init_tree_contour_accumulator(pybind11::module &m);

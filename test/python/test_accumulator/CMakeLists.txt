@@ -12,6 +12,7 @@ set(PY_FILES
         __init__.py
         test_at_accumulator.py
         test_graph_accumulator.py
-        test_tree_accumulators.py)
+        test_tree_accumulators.py
+        test_tree_contour_accumulator.py)
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")
