@@ -15,6 +15,7 @@ Utility functions move and accumulates values along trees
     accumulate_and_multiply_sequential
     accumulate_and_max_sequential
     accumulate_and_min_sequential
+    accumulate_on_contours
 
 .. autofunction:: higra.propagate_parallel
 
@@ -32,3 +33,4 @@ Utility functions move and accumulates values along trees
 
 .. autofunction:: higra.accumulate_and_min_sequential
 
+.. autofunction:: higra.accumulate_on_contours
