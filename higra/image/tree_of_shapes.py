@@ -58,7 +58,7 @@ def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=T
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
-    assert(len(image.shape) == 2, "This tree of shapes implementation only supports 2d images.")
+    assert len(image.shape) == 2, "This tree of shapes implementation only supports 2d images."
 
     res = hg.cpp._component_tree_tree_of_shapes_image2d(image, padding, original_size, exterior_vertex)
     tree = res.tree()

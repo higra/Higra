@@ -270,6 +270,11 @@ class TestAttributes(unittest.TestCase):
                                   36, 60, 64, 43,
                                   36, 54, 30, 43, 16, 71, 45, 58, 123, 94, 57, 1, 0), dtype=np.float64)
 
+        print("test_contour_strength_component_tree")
+        print(ref_perimeter)
+        print(ref_weights)
+        print(ref_weights / ref_perimeter)
+        print(res)
         self.assertTrue(np.allclose(ref_weights / ref_perimeter, res, rtol=1e-04, atol=1e-07))
 
     def test_contour_strength_rag_partition_tree(self):
@@ -288,6 +293,11 @@ class TestAttributes(unittest.TestCase):
 
         ref_perimeter = np.asarray([3, 3, 6, 2, 2, 4, 4, 4, 1])
         ref_weights = np.asarray([11, 7, 42, 16, 20, 18, 22, 22, 0])
+        print("test_contour_strength_rag_partition_tree")
+        print(ref_perimeter)
+        print(ref_weights)
+        print(ref_weights / ref_perimeter)
+        print(attribute)
         self.assertTrue(np.allclose(ref_weights / ref_perimeter, attribute))
 
     def test_compactness(self):
