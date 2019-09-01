@@ -293,7 +293,9 @@ def attribute_contour_strength(tree, edge_weights, vertex_perimeter=None, edge_l
         edge_length = hg.attribute_edge_length(leaf_graph)
 
     perimeter = attribute_contour_length(tree, vertex_perimeter, edge_length, leaf_graph)
-    if perimeter[-1] == 0:
+
+    # perimeter of the root may be null
+    if np.isclose(perimeter[-1], 0):
         perimeter[-1] = 1
 
     if hg.CptRegionAdjacencyGraph.validate(leaf_graph):
