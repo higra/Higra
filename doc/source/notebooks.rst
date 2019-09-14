@@ -5,17 +5,17 @@ Python notebooks
 
 The following python notebooks contain examples demonstrating Higra usage.
 
-=============================================== ============= ============= ============
-Title                                            View          Download       Colab
-=============================================== ============= ============= ============
-Hierarchy filtering                               |v1|_        |dl1|_        |co1|_
-Watershed hierarchies                             |v2|_        |dl2|_        |co2|_
-Connected image filtering with component trees    |v3|_        |dl3|_        |co3|_
-Multiscale Hierarchy Alignment and Combination    |v4|_        |dl4|_        |co4|_
-Region Adjacency Graph                            |v5|_        |dl5|_        |co5|_
-Interactive object segmentation                   |v6|_        |dl6|_        |co6|_
-Contour Simplification                            |v7|_        |dl7|_        |co7|_
-=============================================== ============= ============= ============
+================================================================= ============= ============= ============
+Hierarchy filtering                                                   |v1|_        |dl1|_        |co1|_
+Watershed hierarchies                                                 |v2|_        |dl2|_        |co2|_
+Connected image filtering with component trees                        |v3|_        |dl3|_        |co3|_
+Computing a saliency map with the shaping framework                   |v8|_        |dl8|_        |co8|_
+Filtering with non-increasing criterion - The shaping framework       |v9|_        |dl9|_        |co9|_
+Multiscale Hierarchy Alignment and Combination                        |v4|_        |dl4|_        |co4|_
+Region Adjacency Graph                                                |v5|_        |dl5|_        |co5|_
+Interactive object segmentation                                       |v6|_        |dl6|_        |co6|_
+Contour Simplification                                                |v7|_        |dl7|_        |co7|_
+================================================================= ============= ============= ============
 
 .. |v1| unicode:: &#x1f441; .. view
 .. _v1: https://github.com/higra/Higra-Notebooks/blob/master/Hierarchy%20filtering.ipynb
@@ -85,3 +85,23 @@ Contour Simplification                            |v7|_        |dl7|_        |co
 
 .. |co7| image:: /images/colab.png
 .. _co7: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Contour%20Simplification.ipynb
+
+
+.. |v8| unicode:: &#x1f441; .. view
+.. _v8: https://github.com/higra/Higra-Notebooks/blob/master/Computing%20a%20saliency%20map%20with%20the%20shaping%20framework.ipynb
+
+.. |dl8| unicode:: &#x1f4be; .. download
+.. _dl8: https://cdn.jsdelivr.net/gh/higra/Higra-Notebooks/Computing%20a%20saliency%20map%20with%20the%20shaping%20framework.ipynb
+
+.. |co8| image:: /images/colab.png
+.. _co8: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Computing%20a%20saliency%20map%20with%20the%20shaping%20framework.ipynb
+
+
+.. |v9| unicode:: &#x1f441; .. view
+.. _v9: https://github.com/higra/Higra-Notebooks/blob/master/Filtering%20with%20non%20increasing%20criterion%20-%20The%20shaping%20framework.ipynb
+
+.. |dl9| unicode:: &#x1f4be; .. download
+.. _dl9: https://cdn.jsdelivr.net/gh/higra/Higra-Notebooks/Filtering%20with%20non%20increasing%20criterion%20-%20The%20shaping%20framework.ipynb
+
+.. |co9| image:: /images/colab.png
+.. _co9: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Filtering%20with%20non%20increasing%20criterion%20-%20The%20shaping%20framework.ipynb
