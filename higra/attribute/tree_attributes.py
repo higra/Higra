@@ -56,7 +56,7 @@ def attribute_volume(tree, altitudes, area=None):
 
     height = np.abs(altitudes[tree.parents()] - altitudes)
     height = height * area
-    volume_leaves = height[:tree.num_leaves()]
+    volume_leaves = np.zeros(tree.num_leaves(), dtype=np.float64)
     return hg.accumulate_and_add_sequential(tree, height, volume_leaves, hg.Accumulators.sum)
 
 

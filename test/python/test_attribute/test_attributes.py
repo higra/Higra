@@ -91,11 +91,22 @@ class TestAttributes(unittest.TestCase):
         area2 = hg.attribute_area(tree2)
         self.assertTrue(np.all(ref_area == area2))
 
-    def test_volume(self):
+    def test_attribute_volume(self):
         tree, altitudes = TestAttributes.get_test_tree()
 
-        ref_attribute = [0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 4, 8, 2, 9, 12, 28, 36]
+        ref_attribute = [0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 8, 2, 8, 12, 27, 35.]
         attribute = hg.attribute_volume(tree, altitudes)
+
+        self.assertTrue(np.allclose(ref_attribute, attribute))
+
+    def test_attribute_volume_with_area(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 2, 1, 4.))
+        area = np.asarray((2, 1, 1, 3, 2, 3, 6, 9))
+
+        ref_attribute = [0, 0, 0, 0, 0, 6, 18, 24]
+        attribute = hg.attribute_volume(tree, altitudes, area)
+
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_lca_map(self):
