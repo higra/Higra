@@ -299,7 +299,7 @@ class TestAttributes(unittest.TestCase):
         attribute = hg.attribute_compactness(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
-    def test_mean_weights(self):
+    def test_mean_vertex_weights(self):
         tree, altitudes = TestAttributes.get_test_tree()
 
         leaf_data = np.asarray((0, 1, 2, 3, 4, 5, 6, 7, 8),
@@ -308,11 +308,10 @@ class TestAttributes(unittest.TestCase):
                                     1. / 2, 7. / 2, 7. / 2, 13. / 2, 7.,
                                     2., 29. / 7, 4.))
 
-        attribute = hg.attribute_mean_weights(tree, vertex_weights=leaf_data)
-        print(attribute)
+        attribute = hg.attribute_mean_vertex_weights(tree, vertex_weights=leaf_data)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
-    def test_mean_weights_vectorial(self):
+    def test_mean_vertex_weights_vectorial(self):
         tree, altitudes = TestAttributes.get_test_tree()
 
         leaf_data = np.asarray(((0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8)),
@@ -321,7 +320,7 @@ class TestAttributes(unittest.TestCase):
                                     (1. / 2, 1. / 2), (7. / 2, 7. / 2), (7. / 2, 7. / 2), (13. / 2, 13. / 2), (7., 7.),
                                     (2., 2.), (29. / 7, 29. / 7), (4., 4.)))
 
-        attribute = hg.attribute_mean_weights(tree, vertex_weights=leaf_data)
+        attribute = hg.attribute_mean_vertex_weights(tree, vertex_weights=leaf_data)
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_sibling(self):

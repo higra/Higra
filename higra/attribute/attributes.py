@@ -336,9 +336,15 @@ def attribute_compactness(tree, area=None, contour_length=None, normalize=True, 
 
 @hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
-def attribute_mean_weights(tree, vertex_weights, area=None, leaf_graph=None):
+def attribute_mean_vertex_weights(tree, vertex_weights, area=None, leaf_graph=None):
     """
-    Mean weight of the leaf graph vertices inside each node of the given tree.
+    Mean vertex weights of the leaf graph vertices inside each node of the given tree.
+
+    For any node :math:`n`, the mean vertex weights :math:`a(n)` of :math:`n` is
+
+    .. math::
+
+        a(n) = \\frac{\sum_{x\in n} vertex\_weights(x)}{area(n)}
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param vertex_weights: vertex weights of the leaf graph of the input tree
