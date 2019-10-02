@@ -20,7 +20,7 @@ Tree attributes
     attribute_gaussian_region_weights_model
     attribute_height
     attribute_lca_map
-    attribute_mean_weights
+    attribute_mean_vertex_weights
     attribute_piecewise_constant_Mumford_Shah_energy
     attribute_regular_altitudes
     attribute_sibling
@@ -57,7 +57,7 @@ Tree attributes
 
 .. autofunction:: higra.attribute_lca_map
 
-.. autofunction:: higra.attribute_mean_weights
+.. autofunction:: higra.attribute_mean_vertex_weights
 
 .. autofunction:: higra.attribute_piecewise_constant_Mumford_Shah_energy
 
