@@ -38,14 +38,8 @@ def watershed_hierarchy_by_area(graph, edge_weights, vertex_area=None):
 
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
 
-    vertex_area = hg.cast_to_dtype(vertex_area, np.float64)
-    res = hg.cpp._watershed_hierarchy_by_area(graph, edge_weights, vertex_area)
-    tree = res.tree()
-    altitudes = res.altitudes()
-
-    hg.CptHierarchy.link(tree, graph)
-
-    return tree, altitudes
+    return watershed_hierarchy_by_attribute(graph, edge_weights,
+                                            lambda tree, _: hg.attribute_area(tree, vertex_area, graph))
 
 
 def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area=None):
@@ -74,14 +68,11 @@ def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area=None):
 
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
 
-    vertex_area = hg.cast_to_dtype(vertex_area, np.float64)
-    res = hg.cpp._watershed_hierarchy_by_volume(graph, edge_weights, vertex_area)
-    tree = res.tree()
-    altitudes = res.altitudes()
-
-    hg.CptHierarchy.link(tree, graph)
-
-    return tree, altitudes
+    return watershed_hierarchy_by_attribute(graph, edge_weights,
+                                            lambda tree, altitudes:
+                                            hg.attribute_volume(tree,
+                                                                altitudes,
+                                                                hg.attribute_area(tree, vertex_area)))
 
 
 def watershed_hierarchy_by_dynamics(graph, edge_weights):
@@ -104,13 +95,11 @@ def watershed_hierarchy_by_dynamics(graph, edge_weights):
     :param edge_weights: input graph edge weights
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
-    res = hg.cpp._watershed_hierarchy_by_dynamics(graph, edge_weights)
-    tree = res.tree()
-    altitudes = res.altitudes()
-
-    hg.CptHierarchy.link(tree, graph)
-
-    return tree, altitudes
+    return watershed_hierarchy_by_attribute(graph, edge_weights,
+                                            lambda tree, altitudes:
+                                            hg.attribute_dynamics(tree,
+                                                                  altitudes,
+                                                                  "increasing"))
 
 
 def watershed_hierarchy_by_number_of_parents(graph, edge_weights):
@@ -197,7 +186,7 @@ def watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor):
 
     .. code-block:: python
 
-        tree = watershed_hierarchy_by_attribute(graph, lambda tree, _: hg.attribute_area(tree))
+        tree = watershed_hierarchy_by_attribute(graph, edge_weights, lambda tree, _: hg.attribute_area(tree))
 
     :param graph: input graph
     :param edge_weights: edge weights of the input graph

@@ -40,58 +40,6 @@ struct def_watershed_hierarchy_by_attribute {
 };
 
 template<typename graph_t>
-struct def_watershed_hierarchy_by_dynamics {
-    template<typename value_t, typename C>
-    static
-    void def(C &c, const char *doc) {
-        c.def("_watershed_hierarchy_by_dynamics",
-              [](const graph_t &graph,
-                 const pyarray<value_t> &edge_weights) {
-                  return hg::watershed_hierarchy_by_dynamics(graph, edge_weights);
-              },
-              doc,
-              py::arg("graph"),
-              py::arg("edge_weights"));
-    }
-};
-
-template<typename graph_t>
-struct def_watershed_hierarchy_by_area {
-    template<typename value_t, typename C>
-    static
-    void def(C &c, const char *doc) {
-        c.def("_watershed_hierarchy_by_area",
-              [](const graph_t &graph,
-                 const pyarray<value_t> &edge_weights,
-                 const pyarray<double> &vertex_area) {
-                  return hg::watershed_hierarchy_by_area(graph, edge_weights, vertex_area);
-              },
-              doc,
-              py::arg("graph"),
-              py::arg("edge_weights"),
-              py::arg("vertex_area"));
-    }
-};
-
-template<typename graph_t>
-struct def_watershed_hierarchy_by_volume {
-    template<typename value_t, typename C>
-    static
-    void def(C &c, const char *doc) {
-        c.def("_watershed_hierarchy_by_volume",
-              [](const graph_t &graph,
-                 const pyarray<value_t> &edge_weights,
-                 const pyarray<double> &vertex_area) {
-                  return hg::watershed_hierarchy_by_volume(graph, edge_weights, vertex_area);
-              },
-              doc,
-              py::arg("graph"),
-              py::arg("edge_weights"),
-              py::arg("vertex_area"));
-    }
-};
-
-template<typename graph_t>
 struct def_watershed_hierarchy_by_minima_ordering {
     template<typename value_t, typename C>
     static
@@ -118,12 +66,6 @@ void py_init_watershed_hierarchy(pybind11::module &m) {
     add_type_overloads<def_watershed_hierarchy_by_attribute<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
 
     add_type_overloads<def_watershed_hierarchy_by_minima_ordering<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
-
-    add_type_overloads<def_watershed_hierarchy_by_dynamics<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
-
-    add_type_overloads<def_watershed_hierarchy_by_area<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
-
-    add_type_overloads<def_watershed_hierarchy_by_volume<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
 }
 
 
