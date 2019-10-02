@@ -24,11 +24,6 @@ Tree attributes
     attribute_piecewise_constant_Mumford_Shah_energy
     attribute_regular_altitudes
     attribute_sibling
-    attribute_edge_length
-    attribute_vertex_area
-    attribute_vertex_coordinates
-    attribute_vertex_list
-    attribute_vertex_perimeter
     attribute_volume
 
 .. autofunction:: higra.attribute_area
@@ -64,15 +59,5 @@ Tree attributes
 .. autofunction:: higra.attribute_regular_altitudes
 
 .. autofunction:: higra.attribute_sibling
-
-.. autofunction:: higra.attribute_edge_length
-
-.. autofunction:: higra.attribute_vertex_area
-
-.. autofunction:: higra.attribute_vertex_coordinates
-
-.. autofunction:: higra.attribute_vertex_list
-
-.. autofunction:: higra.attribute_vertex_perimeter
 
 .. autofunction:: higra.attribute_volume
