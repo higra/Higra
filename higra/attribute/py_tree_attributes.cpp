@@ -8,7 +8,7 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "py_attributes.hpp"
+#include "py_tree_attributes.hpp"
 #include "../py_common.hpp"
 #include "higra/attribute/tree_attribute.hpp"
 #include "xtensor-python/pyarray.hpp"

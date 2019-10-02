@@ -10,10 +10,11 @@
 
 set(PY_FILES
         __init__.py
-        attributes.py)
+        graph_attributes.py
+        tree_attributes.py)
 
 set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
-        ${CMAKE_CURRENT_SOURCE_DIR}/py_attributes.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_tree_attributes.cpp
         PARENT_SCOPE)
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")

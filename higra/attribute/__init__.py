@@ -8,4 +8,5 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-from .attributes import *
+from .graph_attributes import *
+from .tree_attributes import *
