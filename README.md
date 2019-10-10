@@ -10,7 +10,7 @@
 Higra is a C++/Python library for efficient sparse graph analysis with a special focus on hierarchical methods. Some of the main features are:
 
 - efficient methods and data structures to handle the dual representations of hierarchical clustering: trees (dendrograms) and saliency maps (ultrametric distances);
-- hierarchical clusterings: quasi-flat zone hierarchy, hierarchical watersheds, agglomerative clustering (single-linkage, average-linkage, complete-linkage, exponential-linkage, Ward, or custom rule), constrained connectivity hierarchy;
+- hierarchical clusterings: quasi-flat zone hierarchy, hierarchical watersheds, agglomerative clustering (single-linkage, average-linkage, complete-linkage, exponential-linkage, Ward, or user provided linkage rule), constrained connectivity hierarchy;
 - component trees: min and max trees;
 - manipulate and explore hierarchies:  simplification, accumulators, cluster extraction, various attributes (size, volume, dynamics, perimeter, compactness, moments, etc.), horizontal and non-horizontal cuts, hierarchies alignment;
 - optimization on hierarchies: optimal cuts, energy hierarchies;
@@ -21,8 +21,6 @@ Higra is a C++/Python library for efficient sparse graph analysis with a special
 Higra is thought for modularity, performance and seamless integration with classical data analysis pipelines. The data structures (graphs and trees) are decoupled from data (vertex and edge weights ) which are simply arrays ([xtensor](https://github.com/QuantStack/xtensor) arrays in C++ and [numpy](https://github.com/numpy/numpy) arrays in Python).
 
 ## Installation
-
-### Python
 
 The Python package can be installed with Pypi:
 
@@ -35,62 +33,27 @@ Supported systems:
  - Python 3.4, 3.5, 3.6, 3.7
  - Linux 64 bits, macOS, Windows 64 bits
 
-### C++ backend
-
-The C++ backend is an header only library. No facilities for system wide installation is currently provided: just copy/past where you need it!
 
 ## Documentation
 
 [https://higra.readthedocs.io/](https://higra.readthedocs.io/)
 
-## Demonstration and tutorials
+### Demonstration and tutorials
 
-Check the dedicated repository [Higra-Notebooks](https://github.com/higra/Higra-Notebooks) for a collection of Jupyter Notebooks dedicated to Higra.
+A collection of demonstration notebooks is available in the [documentation](https://higra.readthedocs.io/en/stable/notebooks.html). 
+Notebooks are stored in a dedicated repository [Higra-Notebooks](https://github.com/higra/Higra-Notebooks).
 
-## Build
+### Code samples
 
-### With cmake
+This example demonstrates the construction of a single-linkage hierarchical clustering and its simplification by a cluster size criterion.
 
-Requires:
+[![Example on clustering](doc/source/fig/example_graph_filtering.png)](https://github.com/higra/Higra-Notebooks/blob/master/Illustrations%20of%20SoftwareX%202019%20article.ipynb)
 
-* cmake 
-* Python + Numpy
+This example demonstrates the use of hierarchical clustering for image filtering.
 
-Commands:
+[![Example on image filtering](doc/source/fig/example_image_filtering.png)](https://github.com/higra/Higra-Notebooks/blob/master/Illustrations%20of%20SoftwareX%202019%20article.ipynb)
 
-```bash
-git clone https://github.com/higra/Higra.git
-mkdir build
-cd build
-cmake ../Higra/
-make
-```
-
-Sometimes, cmake gets confused when several Python versions are installed on the system.
-You can specify which version to use with `-DPYTHON_EXECUTABLE:FILEPATH=/PATH-TO-PYTHON/python`, e.g.
-
-```
-cmake -DPYTHON_EXECUTABLE:FILEPATH=/anaconda3/bin/python ../Higra/
-```
-
-The python package is build in the directory
-
-```
-build/higra/
-```
-
-### With setup.py
-
-The file `setup.py` is a thin wrapper around the `cmake` script to provide compatibility with python `setuptools`. 
-
-```
-pip install cmake
-python setup.py bdist_wheel
-cd dist
-pip install higra*.whl
-```
-
-## Developing extensions
+## Developing C++ extensions
 
 While Higra provides many vectorized operators to implement algorithms efficiently in Python, it is possible that
 some operations cannot be done efficiently in Python. 
