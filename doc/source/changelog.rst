@@ -1,6 +1,31 @@
 Changelog
 =========
 
+
+0.4.2
+-----
+
+Breaking change
+***************
+
+- Rename function `attribute_mean_weights` into :func:`~higra.attribute_mean_vertex_weights`
+  `#136 <https://github.com/higra/Higra/pull/136>`_
+
+
+Other changes
+*************
+
+- Add SoftwareX illustrations notebook
+  `#140 <https://github.com/higra/Higra/pull/140>`_
+- Replace specialized C++ bindings for hierarchical watershed by a generic calls to :func:`~higra.watershed_hierarchy_by_attribute`
+  `#139 <https://github.com/higra/Higra/pull/139>`_
+- Fix inconsistency between Python and C++ definitions of :func:`~higra.attribute_volume`
+  `#138 <https://github.com/higra/Higra/pull/138>`_
+- Separate code and documentation on graph and tree attributes
+  `#137 <https://github.com/higra/Higra/pull/137>`_
+- Fix bug in  :func:`~higra.attribute_mean_vertex_weights`
+  `#136 <https://github.com/higra/Higra/pull/136>`_
+
 0.4.1
 -----
 
