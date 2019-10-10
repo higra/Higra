@@ -60,6 +60,32 @@ some operations cannot be done efficiently in Python.
 In such case, the [Higra-cppextension-cookiecutter](https://github.com/higra/Higra-cppextension-cookiecutter) enables
 to easily setup and generate c++ extension using Higra with Python bindings.
 
+## License and how-to cite
+
+The license [Cecill-B](http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.txt) is fully compatible with BSD-like licenses (BSD, X11, MIT) with an attribution requirement.
+
+The recommended way to give attribution is by citing the following presentation article:
+
+>  B. Perret, G. Chierchia, J. Cousty, S.J. F. Guimarães, Y. Kenmochi, L. Najman, [Higra: Hierarchical Graph Analysis](http://www.sciencedirect.com/science/article/pii/S235271101930247X), SoftwareX, Volume 10, 2019. DOI: 10.1016/j.softx.2019.100335
+
+<details> 
+ <summary><b>Bibtex</b></summary>
+ 
+    @article{PCCGKN:softwarex2019,
+         title = "Higra: Hierarchical Graph Analysis",
+         journal = "SoftwareX",
+         volume = "10",
+         pages = "1--6",
+         year = "2019",
+         issn = "2352-7110",
+         doi = "10.1016/j.softx.2019.100335",
+         author = "B. Perret and G. Chierchia and J. Cousty and S.J. F. Guimar\~{a}es and Y. Kenmochi and L. Najman",
+     }
+        
+</details>
+
+
+ 
 ## Third-party libraries
 
 Higra bundles several third-party libraries (inside the `lib` folder): 
