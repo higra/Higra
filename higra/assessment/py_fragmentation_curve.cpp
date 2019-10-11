@@ -26,7 +26,7 @@ struct def_assesser_optimal_cut_ctr {
                       const xt::pyarray<value_type> &,
                       optimal_cut_measure,
                       const xt::pytensor<index_t, 1> &,
-                      size_t>(),
+                      hg::size_t>(),
               doc,
               py::arg("tree"),
               py::arg("ground_truth"),
@@ -47,7 +47,7 @@ struct def_assesse_horizontal_cut {
                  const xt::pyarray<index_t> &ground_truth,
                  hg::partition_measure measure,
                  const xt::pytensor<index_t, 1> &vertex_map,
-                 size_t max_regions
+                 hg::size_t max_regions
               ) {
                   switch (measure) {
                       case partition_measure::DHamming:

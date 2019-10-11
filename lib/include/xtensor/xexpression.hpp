@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -24,12 +25,6 @@
 
 namespace xt
 {
-
-    template <class D>
-    class xexpression;
-
-    template <class E>
-    auto make_xshared(xexpression<E>&&);
 
     /***************************
      * xexpression declaration *
@@ -60,7 +55,7 @@ namespace xt
 
     protected:
 
-        xexpression();
+        xexpression() = default;
         ~xexpression() = default;
 
         xexpression(const xexpression&) = default;
@@ -68,23 +63,48 @@ namespace xt
 
         xexpression(xexpression&&) = default;
         xexpression& operator=(xexpression&&) = default;
+    };
+
+    /************************************
+     * xsharable_expression declaration *
+     ************************************/
+
+    template <class E>
+    class xshared_expression;
+
+    template <class E>
+    class xsharable_expression;
+
+    namespace detail
+    {
+        template <class E>
+        xshared_expression<E> make_xshared_impl(xsharable_expression<E>&&);
+    }
+
+    template <class D>
+    class xsharable_expression : public xexpression<D>
+    {
+    protected:
+
+        xsharable_expression();
+        ~xsharable_expression() = default;
+
+        xsharable_expression(const xsharable_expression&) = default;
+        xsharable_expression& operator=(const xsharable_expression&) = default;
+
+        xsharable_expression(xsharable_expression&&) = default;
+        xsharable_expression& operator=(xsharable_expression&&) = default;
 
     private:
 
         std::shared_ptr<D> p_shared;
 
-        friend auto make_xshared<D>(xexpression<D>&&);
+        friend xshared_expression<D> detail::make_xshared_impl<D>(xsharable_expression<D>&&);
     };
 
     /******************************
      * xexpression implementation *
      ******************************/
-
-    template <class D>
-    inline xexpression<D>::xexpression()
-        : p_shared(nullptr)
-    {
-    }
 
     /**
      * @name Downcast functions
@@ -118,14 +138,25 @@ namespace xt
     }
     //@}
 
-    /* is_crtp_base_of<B, E>
-    * Resembles std::is_base_of, but adresses the problem of whether _some_ instantiation
-    * of a CRTP templated class B is a base of class E. A CRTP templated class is correctly
-    * templated with the most derived type in the CRTP hierarchy. Using this assumption,
-    * this implementation deals with either CRTP final classes (checks for inheritance
-    * with E as the CRTP parameter of B) or CRTP base classes (which are singly templated
-    * by the most derived class, and that's pulled out to use as a templete parameter for B).
-    */
+    /***************************************
+     * xsharable_expression implementation *
+     ***************************************/
+
+    template <class D>
+    inline xsharable_expression<D>::xsharable_expression()
+        : p_shared(nullptr)
+    {
+    }
+
+    /**
+     * is_crtp_base_of<B, E>
+     * Resembles std::is_base_of, but adresses the problem of whether _some_ instantiation
+     * of a CRTP templated class B is a base of class E. A CRTP templated class is correctly
+     * templated with the most derived type in the CRTP hierarchy. Using this assumption,
+     * this implementation deals with either CRTP final classes (checks for inheritance
+     * with E as the CRTP parameter of B) or CRTP base classes (which are singly templated
+     * by the most derived class, and that's pulled out to use as a templete parameter for B).
+     */
 
     namespace detail
     {
@@ -151,6 +182,15 @@ namespace xt
 
     template <class... E>
     using has_xexpression = xtl::disjunction<is_xexpression<E>...>;
+
+    template <class E>
+    using is_xsharable_expression = is_crtp_base_of<xsharable_expression, E>;
+
+    template <class E, class R = void>
+    using enable_xsharable_expression = typename std::enable_if<is_xsharable_expression<E>::value, R>::type;
+
+    template <class E, class R = void>
+    using disable_xsharable_expression = typename std::enable_if<!is_xsharable_expression<E>::value, R>::type;
 
     /***********************
      * evaluation_strategy *
@@ -185,9 +225,6 @@ namespace xt
 
     template <class T>
     class xscalar;
-
-    template <class E>
-    class xshared_expression;
 
     template <class E, class EN = void>
     struct xclosure
@@ -489,6 +526,8 @@ namespace xt
         using storage_iterator = typename E::storage_iterator;
         using const_storage_iterator = typename E::const_storage_iterator;
 
+        using bool_load_type = typename E::bool_load_type;
+
         static constexpr layout_type static_layout = E::static_layout;
         static constexpr bool contiguous_layout = static_layout != layout_type::dynamic;
 
@@ -661,6 +700,19 @@ namespace xt
         return m_ptr.use_count();
     }
 
+    namespace detail
+    {
+        template <class E>
+        inline xshared_expression<E> make_xshared_impl(xsharable_expression<E>&& expr)
+        {
+            if(expr.p_shared == nullptr)
+            {
+                expr.p_shared = std::make_shared<E>(std::move(expr).derived_cast());
+            }
+            return xshared_expression<E>(expr.p_shared);
+        }
+    }
+
     /**
      * Helper function to create shared expression from any xexpression
      *
@@ -668,13 +720,10 @@ namespace xt
      * @return xshared expression
      */
     template <class E>
-    inline auto make_xshared(xexpression<E>&& expr)
+    inline xshared_expression<E> make_xshared(xexpression<E>&& expr)
     {
-        if(expr.p_shared == nullptr)
-        {
-            expr.p_shared = std::make_shared<E>(std::move(expr).derived_cast());
-        }
-        return xshared_expression<E>(expr.p_shared);
+        static_assert(is_xsharable_expression<E>::value, "make_shared requires E to inherit from xsharable_expression");
+        return detail::make_xshared_impl(std::move(expr.derived_cast()));
     }
 
     /**

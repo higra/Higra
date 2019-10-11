@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -295,11 +296,11 @@ namespace xt
         return mime_bundle_repr_impl(expr);
     }
 
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     class xfixed_container;
 
-    template <class ET, class S, layout_type L, class Tag>
-    nlohmann::json mime_bundle_repr(const xfixed_container<ET, S, L, Tag>& expr)
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    nlohmann::json mime_bundle_repr(const xfixed_container<ET, S, L, SH, Tag>& expr)
     {
         return mime_bundle_repr_impl(expr);
     }

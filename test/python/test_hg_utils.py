@@ -151,16 +151,24 @@ class TestHGUtils(unittest.TestCase):
         self.assertTrue(hg.common_type(a_bool, a_uint16, a_int8, safety_level='overflow') == np.float64)
         self.assertTrue(hg.common_type(a_uint16, a_uint16, safety_level='overflow') == np.float64)
 
-    def cast_to_common_type(self):
+    def test_cast_to_common_type(self):
         a_uint16 = np.zeros((1, 1), dtype=np.uint16)
         a_int8 = np.zeros((1, 1), dtype=np.int8)
         a_uint64 = np.zeros((1, 1), dtype=np.uint64)
         a_int64 = np.zeros((1, 1), dtype=np.int64)
 
-        a, b, c, d = hg.common_type(a_uint16, a_int8, a_int64, a_uint64)
+        a, b, c, d = hg.cast_to_common_type(a_uint16, a_int8, a_int64, a_uint64)
         self.assertTrue(a.dtype == np.int64)
         self.assertTrue(b.dtype == np.int64)
         self.assertTrue(c.dtype == np.int64)
         self.assertTrue(d.dtype == np.int64)
 
         self.assertTrue(id(c) == id(a_int64))
+
+    def test_type_consistency(self):
+        tree = hg.Tree((2, 2, 2))
+        for t in (np.bool, np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, np.int64, np.uint64, np.float, np.double):
+            a = np.zeros(3, dtype=t)
+            res = hg.reconstruct_leaf_data(tree, a)
+            self.assertTrue(a.dtype == res.dtype)
+

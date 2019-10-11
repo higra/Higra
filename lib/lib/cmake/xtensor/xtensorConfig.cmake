@@ -1,5 +1,6 @@
 ############################################################################
-# Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     #
+# Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          #
+# Copyright (c) QuantStack
 #                                                                          #
 # Distributed under the terms of the BSD 3-Clause License.                 #
 #                                                                          #
@@ -40,7 +41,7 @@ endmacro()
 ####################################################################################
 
 include(CMakeFindDependencyMacro)
-find_dependency(xtl 0.6.1)
+find_dependency(xtl 0.6.7)
 
 if(XTENSOR_USE_XSIMD)
     find_dependency(xsimd )

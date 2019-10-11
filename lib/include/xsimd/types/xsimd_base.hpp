@@ -520,7 +520,7 @@ namespace xsimd
     inline batch<TYPE, N> bitwise_cast(const batch_bool<TYPE, N>& src)         \
     {                                                                          \
         TYPE z(0);                                                             \
-        return select(src, batch<TYPE, N>(~z), batch<TYPE, N>(z));             \
+        return select(src, batch<TYPE, N>(TYPE(~z)), batch<TYPE, N>(z));       \
     }
 
 #define XSIMD_DEFINE_BITWISE_CAST_FLOAT(TYPE, N)                               \
@@ -967,26 +967,26 @@ namespace xsimd
         return lhs() OP batch_type_t<X>(rhs);                                                      \
     }
 
-#define XSIMD_BINARY_BOOL_OP_DERIVED(OP, FUNC)                                                     \
+#define XSIMD_BINARY_BOOL_OP_DERIVED(OP, BASE_OP)                                                  \
     template <class X>                                                                             \
     inline typename simd_batch_traits<X>::batch_bool_type operator OP(const simd_base<X>& lhs,     \
                                                                       const simd_base<X>& rhs)     \
     {                                                                                              \
-        return FUNC;                                                                               \
+        return rhs() BASE_OP lhs();                                                                \
     }                                                                                              \
                                                                                                    \
     template <class X>                                                                             \
     inline typename simd_batch_traits<X>::batch_bool_type operator OP(                             \
         const typename simd_batch_traits<X>::value_type& lhs, const simd_base<X>& rhs)             \
     {                                                                                              \
-        return FUNC;                                                                               \
+        return rhs() BASE_OP batch_type_t<X>(lhs);                                                 \
     }                                                                                              \
                                                                                                    \
     template <class X>                                                                             \
     inline typename simd_batch_traits<X>::batch_bool_type operator OP(                             \
         const simd_base<X>& lhs, const typename simd_batch_traits<X>::value_type& rhs)             \
     {                                                                                              \
-        return FUNC;                                                                               \
+        return batch_type_t<X>(rhs) BASE_OP lhs();                                                 \
     }
 
     /**
@@ -1302,7 +1302,7 @@ namespace xsimd
     typename simd_batch_traits<X>::batch_bool_type
     operator>(const simd_base<X>& lhs, const simd_base<X>& rhs);
 
-    XSIMD_BINARY_BOOL_OP_DERIVED(>, rhs() < lhs())
+    XSIMD_BINARY_BOOL_OP_DERIVED(>, <)
 
     /**
      * @ingroup simd_batch_comparison
@@ -1317,7 +1317,7 @@ namespace xsimd
     typename simd_batch_traits<X>::batch_bool_type
     operator>=(const simd_base<X>& lhs, const simd_base<X>& rhs);
 
-    XSIMD_BINARY_BOOL_OP_DERIVED(>=, rhs() <= lhs())
+    XSIMD_BINARY_BOOL_OP_DERIVED(>=, <=)
 
     /**
      * @defgroup simd_batch_bitwise Bitwise operators
@@ -1400,8 +1400,9 @@ namespace xsimd
     inline typename simd_batch_traits<X>::batch_bool_type
     operator!(const simd_base<X>& rhs)
     {
-        using b_type = typename simd_batch_traits<X>::batch_type;
-        return rhs() == b_type(0);
+        using b_type = typename X::batch_type;
+        using value_type = typename simd_batch_traits<b_type>::value_type;
+        return rhs() == b_type(value_type(0));
     }
 
     /**
@@ -1731,6 +1732,37 @@ namespace xsimd
     {
         return batch<T, N>(src.get_value());
     }
+
+
+    /***********************************
+     * Workaround for Clang on Windows *
+     ***********************************/
+
+#if defined(_WIN32) && defined(__clang__)
+    /**
+     * On Windows, the return type of fma is the promote type of its
+     * arguments if they are integral or floating point types, float
+     * otherwise. The implementation does not rely on SFINAE to
+     * remove it from the overload resolution set when the argument
+     * types are neither integral types nor floating point type.
+     *
+     * The fma overload defined xsimd accepts simd_base<batch<T, N>>
+     * arguments, not batch<T, N>. Thus a call to this latter is not
+     * more specialized than a call to the STL overload, which is
+     * considered. Since there is no mean to convert batch<double, 2>
+     * to float for instance, this results in a compilation error.
+     */
+
+    template <class T, std::size_t N>
+    inline batch<T, N> fma(const batch<T, N>& a, const batch<T, N>& b, const batch<T, N>& c)
+    {
+        using base_type = simd_base<batch<T, N>>;
+        const base_type& sba = a;
+        const base_type& sbb = b;
+        const base_type& sbc = c;
+        return fma(sba, sbb, sbc);
+    }
+#endif
 }
 
 #endif

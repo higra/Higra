@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -46,7 +47,7 @@ namespace xt
      * xfixed declaration *
      **********************/
 
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     class xfixed_container;
 
     namespace detail
@@ -122,12 +123,35 @@ namespace xt
             constexpr static std::ptrdiff_t value = calculate_stride_row_major<sizeof...(X) - I - 1, X...>::value;
         };
 
+        namespace workaround
+        {
+            template <layout_type L, size_t I, class SEQ>
+            struct computed_strides;
+
+            template <layout_type L, size_t I, size_t... X>
+            struct computed_strides<L, I, std::index_sequence<X...>>
+            {
+                constexpr static std::ptrdiff_t value = calculate_stride<L, I, X...>::value;
+            };
+
+            template <layout_type L, size_t I, class SEQ >
+            constexpr std::ptrdiff_t get_computed_strides(bool cond)
+            {
+                return cond ? 0 : computed_strides<L, I, SEQ>::value;
+            }
+        }
+
         template <layout_type L, class R, std::size_t... X, std::size_t... I>
         constexpr R get_strides_impl(const xt::fixed_shape<X...>& shape, std::index_sequence<I...>)
         {
             static_assert((L == layout_type::row_major) || (L == layout_type::column_major),
                           "Layout not supported for fixed array");
-            return R({shape[I] == 1 ? 0 : calculate_stride<L, I, X...>::value...});
+#if (_MSC_VER >= 1910)
+            using temp_type = std::index_sequence<X...>;
+            return R({ workaround::get_computed_strides<L, I, temp_type>(shape[I] == 1)... });
+#else
+            return R({ shape[I] == 1 ? 0 : calculate_stride<L, I, X...>::value... });
+#endif
         }
 
         template <class S, class T, std::size_t... I>
@@ -216,8 +240,8 @@ namespace xt
     template <class V, class S>
     using get_init_type_t = typename get_init_type<V, S>::type;
 
-    template <class ET, class S, layout_type L, class Tag>
-    struct xcontainer_inner_types<xfixed_container<ET, S, L, Tag>>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    struct xcontainer_inner_types<xfixed_container<ET, S, L, SH, Tag>>
     {
         using shape_type = S;
         using inner_shape_type = typename S::cast_type;
@@ -237,13 +261,13 @@ namespace xt
         using reference = typename storage_type::reference;
         using const_reference = typename storage_type::const_reference;
         using size_type = typename storage_type::size_type;
-        using temporary_type = xfixed_container<ET, S, L, Tag>;
+        using temporary_type = xfixed_container<ET, S, L, SH, Tag>;
         static constexpr layout_type layout = L;
     };
 
-    template <class ET, class S, layout_type L, class Tag>
-    struct xiterable_inner_types<xfixed_container<ET, S, L, Tag>>
-        : xcontainer_iterable_types<xfixed_container<ET, S, L, Tag>>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    struct xiterable_inner_types<xfixed_container<ET, S, L, SH, Tag>>
+        : xcontainer_iterable_types<xfixed_container<ET, S, L, SH, Tag>>
     {
     };
 
@@ -258,16 +282,17 @@ namespace xt
      * @tparam ET The type of the elements.
      * @tparam S The xshape template paramter of the container. 
      * @tparam L The layout_type of the tensor.
+     * @tparam SH Wether the tensor can be used as a shared expression.
      * @tparam Tag The expression tag.
      * @sa xtensor_fixed
      */
-    template <class ET, class S, layout_type L, class Tag>
-    class xfixed_container : public xcontainer<xfixed_container<ET, S, L, Tag>>,
-                             public xcontainer_semantic<xfixed_container<ET, S, L, Tag>>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    class xfixed_container : public xcontainer<xfixed_container<ET, S, L, SH, Tag>>,
+                             public xcontainer_semantic<xfixed_container<ET, S, L, SH, Tag>>
     {
     public:
 
-        using self_type = xfixed_container<ET, S, L, Tag>;
+        using self_type = xfixed_container<ET, S, L, SH, Tag>;
         using base_type = xcontainer<self_type>;
         using semantic_base = xcontainer_semantic<self_type>;
 
@@ -344,30 +369,30 @@ namespace xt
         XTENSOR_CONSTEXPR_RETURN const inner_strides_type& strides_impl() const noexcept;
         XTENSOR_CONSTEXPR_RETURN const inner_backstrides_type& backstrides_impl() const noexcept;
 
-        friend class xcontainer<xfixed_container<ET, S, L, Tag>>;
+        friend class xcontainer<xfixed_container<ET, S, L, SH, Tag>>;
     };
 
 #ifdef XTENSOR_HAS_CONSTEXPR_ENHANCED
     // Out of line definitions to prevent linker errors prior to C++17
-    template <class ET, class S, layout_type L, class Tag>
-    constexpr typename xfixed_container<ET, S, L, Tag>::inner_shape_type xfixed_container<ET, S, L, Tag>::m_shape;
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    constexpr typename xfixed_container<ET, S, L, SH, Tag>::inner_shape_type xfixed_container<ET, S, L, SH, Tag>::m_shape;
 
-    template <class ET, class S, layout_type L, class Tag>
-    constexpr typename xfixed_container<ET, S, L, Tag>::inner_strides_type xfixed_container<ET, S, L, Tag>::m_strides;
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    constexpr typename xfixed_container<ET, S, L, SH, Tag>::inner_strides_type xfixed_container<ET, S, L, SH, Tag>::m_strides;
 
-    template <class ET, class S, layout_type L, class Tag>
-    constexpr typename xfixed_container<ET, S, L, Tag>::inner_backstrides_type xfixed_container<ET, S, L, Tag>::m_backstrides;
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    constexpr typename xfixed_container<ET, S, L, SH, Tag>::inner_backstrides_type xfixed_container<ET, S, L, SH, Tag>::m_backstrides;
 #endif
 
     /****************************************
      * xfixed_container_adaptor declaration *
      ****************************************/
 
-    template <class EC, class S, layout_type L, class Tag>
+    template <class EC, class S, layout_type L, bool SH, class Tag>
     class xfixed_adaptor;
 
-    template <class EC, class S, layout_type L, class Tag>
-    struct xcontainer_inner_types<xfixed_adaptor<EC, S, L, Tag>>
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    struct xcontainer_inner_types<xfixed_adaptor<EC, S, L, SH, Tag>>
     {
         using storage_type = std::remove_reference_t<EC>;
         using reference = typename storage_type::reference;
@@ -379,13 +404,13 @@ namespace xt
         using backstrides_type = strides_type;
         using inner_strides_type = strides_type;
         using inner_backstrides_type = backstrides_type;
-        using temporary_type = xfixed_container<typename storage_type::value_type, S, L, Tag>;
+        using temporary_type = xfixed_container<typename storage_type::value_type, S, L, SH, Tag>;
         static constexpr layout_type layout = L;
     };
 
-    template <class EC, class S, layout_type L, class Tag>
-    struct xiterable_inner_types<xfixed_adaptor<EC, S, L, Tag>>
-        : xcontainer_iterable_types<xfixed_adaptor<EC, S, L, Tag>>
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    struct xiterable_inner_types<xfixed_adaptor<EC, S, L, SH, Tag>>
+        : xcontainer_iterable_types<xfixed_adaptor<EC, S, L, SH, Tag>>
     {
     };
 
@@ -402,17 +427,18 @@ namespace xt
      * @tparam EC The closure for the container type to adapt.
      * @tparam S The xshape template parameter for the fixed shape of the adaptor
      * @tparam L The layout_type of the adaptor.
+     * @tparam SH Wether the adaptor can be used as a shared expression.
      * @tparam Tag The expression tag.
      */
-    template <class EC, class S, layout_type L, class Tag>
-    class xfixed_adaptor : public xcontainer<xfixed_adaptor<EC, S, L, Tag>>,
-                           public xcontainer_semantic<xfixed_adaptor<EC, S, L, Tag>>
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    class xfixed_adaptor : public xcontainer<xfixed_adaptor<EC, S, L, SH, Tag>>,
+                           public xcontainer_semantic<xfixed_adaptor<EC, S, L, SH, Tag>>
     {
     public:
 
         using container_closure_type = EC;
 
-        using self_type = xfixed_adaptor<EC, S, L, Tag>;
+        using self_type = xfixed_adaptor<EC, S, L, SH, Tag>;
         using base_type = xcontainer<self_type>;
         using semantic_base = xcontainer_semantic<self_type>;
         using storage_type = typename base_type::storage_type;
@@ -475,19 +501,19 @@ namespace xt
         XTENSOR_CONSTEXPR_RETURN const inner_strides_type& strides_impl() const noexcept;
         XTENSOR_CONSTEXPR_RETURN const inner_backstrides_type& backstrides_impl() const noexcept;
 
-        friend class xcontainer<xfixed_adaptor<EC, S, L, Tag>>;
+        friend class xcontainer<xfixed_adaptor<EC, S, L, SH, Tag>>;
     };
 
 #ifdef XTENSOR_HAS_CONSTEXPR_ENHANCED
     // Out of line definitions to prevent linker errors prior to C++17
-    template <class EC, class S, layout_type L, class Tag>
-    constexpr typename xfixed_adaptor<EC, S, L, Tag>::inner_shape_type xfixed_adaptor<EC, S, L, Tag>::m_shape;
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    constexpr typename xfixed_adaptor<EC, S, L, SH, Tag>::inner_shape_type xfixed_adaptor<EC, S, L, SH, Tag>::m_shape;
 
-    template <class EC, class S, layout_type L, class Tag>
-    constexpr typename xfixed_adaptor<EC, S, L, Tag>::inner_strides_type xfixed_adaptor<EC, S, L, Tag>::m_strides;
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    constexpr typename xfixed_adaptor<EC, S, L, SH, Tag>::inner_strides_type xfixed_adaptor<EC, S, L, SH, Tag>::m_strides;
 
-    template <class EC, class S, layout_type L, class Tag>
-    constexpr typename xfixed_adaptor<EC, S, L, Tag>::inner_backstrides_type xfixed_adaptor<EC, S, L, Tag>::m_backstrides;
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    constexpr typename xfixed_adaptor<EC, S, L, SH, Tag>::inner_backstrides_type xfixed_adaptor<EC, S, L, SH, Tag>::m_backstrides;
 #endif
 
     /************************************
@@ -507,8 +533,8 @@ namespace xt
      * @param shape the shape of the xfixed_container (unused!)
      * @param l the layout_type of the xfixed_container (unused!)
      */
-    template <class ET, class S, layout_type L, class Tag>
-    inline xfixed_container<ET, S, L, Tag>::xfixed_container(const inner_shape_type& shape, layout_type l)
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    inline xfixed_container<ET, S, L, SH, Tag>::xfixed_container(const inner_shape_type& shape, layout_type l)
     {
         (void)(shape);
         (void)(l);
@@ -516,8 +542,8 @@ namespace xt
         XTENSOR_ASSERT(L == l);
     }
 
-    template <class ET, class S, layout_type L, class Tag>
-    inline xfixed_container<ET, S, L, Tag>::xfixed_container(const value_type& v)
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    inline xfixed_container<ET, S, L, SH, Tag>::xfixed_container(const value_type& v)
     {
         if (this->size() != 1)
         {
@@ -535,8 +561,8 @@ namespace xt
      * @param v the fill value
      * @param l the layout_type of the xfixed_container (unused!)
      */
-    template <class ET, class S, layout_type L, class Tag>
-    inline xfixed_container<ET, S, L, Tag>::xfixed_container(const inner_shape_type& shape, value_type v, layout_type l)
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    inline xfixed_container<ET, S, L, SH, Tag>::xfixed_container(const inner_shape_type& shape, value_type v, layout_type l)
     {
         (void)(shape);
         (void)(l);
@@ -574,9 +600,9 @@ namespace xt
         };
     }
 
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline xfixed_container<ET, S, L, Tag> xfixed_container<ET, S, L, Tag>::from_shape(ST&& shape)
+    inline xfixed_container<ET, S, L, SH, Tag> xfixed_container<ET, S, L, SH, Tag>::from_shape(ST&& shape)
     {
         (void) shape;
         self_type tmp;
@@ -591,9 +617,9 @@ namespace xt
      * time to prevent errors.
      * Note: for clang < 3.8 this is an initializer_list and the size is not checked at compile-or runtime.
      */
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class IX, class EN>
-    inline xfixed_container<ET, S, L, Tag>::xfixed_container(nested_initializer_list_t<value_type, N> t)
+    inline xfixed_container<ET, S, L, SH, Tag>::xfixed_container(nested_initializer_list_t<value_type, N> t)
     {
         XTENSOR_ASSERT_MSG(detail::check_initializer_list_shape<N>::run(t, this->shape()) == true, "initializer list shape does not match fixed shape");
         L == layout_type::row_major ? nested_copy(m_storage.begin(), t) : nested_copy(this->template begin<layout_type::row_major>(), t);
@@ -607,9 +633,9 @@ namespace xt
     /**
      * The extended copy constructor.
      */
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class E>
-    inline xfixed_container<ET, S, L, Tag>::xfixed_container(const xexpression<E>& e)
+    inline xfixed_container<ET, S, L, SH, Tag>::xfixed_container(const xexpression<E>& e)
     {
         semantic_base::assign(e);
     }
@@ -617,9 +643,9 @@ namespace xt
     /**
      * The extended assignment operator.
      */
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class E>
-    inline auto xfixed_container<ET, S, L, Tag>::operator=(const xexpression<E>& e) -> self_type&
+    inline auto xfixed_container<ET, S, L, SH, Tag>::operator=(const xexpression<E>& e) -> self_type&
     {
         return semantic_base::operator=(e);
     }
@@ -629,9 +655,9 @@ namespace xt
      * Note that the xfixed_container **cannot** be resized. Attempting to resize with a different
      * size throws an assert in debug mode.
      */
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline void xfixed_container<ET, S, L, Tag>::resize(ST&& shape, bool) const
+    inline void xfixed_container<ET, S, L, SH, Tag>::resize(ST&& shape, bool) const
     {
         (void)(shape);  // remove unused parameter warning if XTENSOR_ASSERT undefined
         XTENSOR_ASSERT(std::equal(shape.begin(), shape.end(), m_shape.begin()) && shape.size() == m_shape.size());
@@ -641,9 +667,9 @@ namespace xt
      * Note that the xfixed_container **cannot** be resized. Attempting to resize with a different
      * size throws an assert in debug mode.
      */
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline void xfixed_container<ET, S, L, Tag>::resize(ST&& shape, layout_type l) const
+    inline void xfixed_container<ET, S, L, SH, Tag>::resize(ST&& shape, layout_type l) const
     {
         (void)(shape);  // remove unused parameter warning if XTENSOR_ASSERT undefined
         (void)(l);
@@ -654,9 +680,9 @@ namespace xt
      * Note that the xfixed_container **cannot** be resized. Attempting to resize with a different
      * size throws an assert in debug mode.
      */
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline void xfixed_container<ET, S, L, Tag>::resize(ST&& shape, const strides_type& strides) const
+    inline void xfixed_container<ET, S, L, SH, Tag>::resize(ST&& shape, const strides_type& strides) const
     {
         (void)(shape);  // remove unused parameter warning if XTENSOR_ASSERT undefined
         (void)(strides);
@@ -667,9 +693,9 @@ namespace xt
     /**
      * Note that the xfixed_container **cannot** be reshaped to a shape different from ``S``.
      */
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline void xfixed_container<ET, S, L, Tag>::reshape(ST&& shape, layout_type layout) const
+    inline void xfixed_container<ET, S, L, SH, Tag>::reshape(ST&& shape, layout_type layout) const
     {
         if (!(std::equal(shape.begin(), shape.end(), m_shape.begin()) && shape.size() == m_shape.size() && layout == L))
         {
@@ -677,45 +703,45 @@ namespace xt
         }
     }
 
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline bool xfixed_container<ET, S, L, Tag>::broadcast_shape(ST& shape, bool) const
+    inline bool xfixed_container<ET, S, L, SH, Tag>::broadcast_shape(ST& shape, bool) const
     {
         return xt::broadcast_shape(m_shape, shape);
     }
 
-    template <class ET, class S, layout_type L, class Tag>
-    constexpr layout_type xfixed_container<ET, S, L, Tag>::layout() const noexcept
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    constexpr layout_type xfixed_container<ET, S, L, SH, Tag>::layout() const noexcept
     {
         return base_type::static_layout;
     }
 
-    template <class ET, class S, layout_type L, class Tag>
-    inline auto xfixed_container<ET, S, L, Tag>::storage_impl() noexcept -> storage_type&
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    inline auto xfixed_container<ET, S, L, SH, Tag>::storage_impl() noexcept -> storage_type&
     {
         return m_storage;
     }
 
-    template <class ET, class S, layout_type L, class Tag>
-    inline auto xfixed_container<ET, S, L, Tag>::storage_impl() const noexcept -> const storage_type&
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    inline auto xfixed_container<ET, S, L, SH, Tag>::storage_impl() const noexcept -> const storage_type&
     {
         return m_storage;
     }
 
-    template <class ET, class S, layout_type L, class Tag>
-    XTENSOR_CONSTEXPR_RETURN auto xfixed_container<ET, S, L, Tag>::shape_impl() const noexcept -> const inner_shape_type&
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    XTENSOR_CONSTEXPR_RETURN auto xfixed_container<ET, S, L, SH, Tag>::shape_impl() const noexcept -> const inner_shape_type&
     {
         return m_shape;
     }
 
-    template <class ET, class S, layout_type L, class Tag>
-    XTENSOR_CONSTEXPR_RETURN auto xfixed_container<ET, S, L, Tag>::strides_impl() const noexcept -> const inner_strides_type&
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    XTENSOR_CONSTEXPR_RETURN auto xfixed_container<ET, S, L, SH, Tag>::strides_impl() const noexcept -> const inner_strides_type&
     {
         return m_strides;
     }
 
-    template <class ET, class S, layout_type L, class Tag>
-    XTENSOR_CONSTEXPR_RETURN auto xfixed_container<ET, S, L, Tag>::backstrides_impl() const noexcept -> const inner_backstrides_type&
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    XTENSOR_CONSTEXPR_RETURN auto xfixed_container<ET, S, L, SH, Tag>::backstrides_impl() const noexcept -> const inner_backstrides_type&
     {
         return m_backstrides;
     }
@@ -732,8 +758,8 @@ namespace xt
      * Constructs an xfixed_adaptor of the given stl-like container.
      * @param data the container to adapt
      */
-    template <class EC, class S, layout_type L, class Tag>
-    inline xfixed_adaptor<EC, S, L, Tag>::xfixed_adaptor(storage_type&& data)
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    inline xfixed_adaptor<EC, S, L, SH, Tag>::xfixed_adaptor(storage_type&& data)
         : base_type(), m_storage(std::move(data))
     {
     }
@@ -742,8 +768,8 @@ namespace xt
      * Constructs an xfixed_adaptor of the given stl-like container.
      * @param data the container to adapt
      */
-    template <class EC, class S, layout_type L, class Tag>
-    inline xfixed_adaptor<EC, S, L, Tag>::xfixed_adaptor(const storage_type& data)
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    inline xfixed_adaptor<EC, S, L, SH, Tag>::xfixed_adaptor(const storage_type& data)
         : base_type(), m_storage(data)
     {
     }
@@ -753,32 +779,32 @@ namespace xt
      * with the specified shape and layout_type.
      * @param data the container to adapt
      */
-    template <class EC, class S, layout_type L, class Tag>
+    template <class EC, class S, layout_type L, bool SH, class Tag>
     template <class D>
-    inline xfixed_adaptor<EC, S, L, Tag>::xfixed_adaptor(D&& data)
+    inline xfixed_adaptor<EC, S, L, SH, Tag>::xfixed_adaptor(D&& data)
         : base_type(), m_storage(std::forward<D>(data))
     {
     }
     //@}
 
-    template <class EC, class S, layout_type L, class Tag>
-    inline auto xfixed_adaptor<EC, S, L, Tag>::operator=(const xfixed_adaptor& rhs) -> self_type&
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    inline auto xfixed_adaptor<EC, S, L, SH, Tag>::operator=(const xfixed_adaptor& rhs) -> self_type&
     {
         base_type::operator=(rhs);
         m_storage = rhs.m_storage;
         return *this;
     }
 
-    template <class EC, class S, layout_type L, class Tag>
-    inline auto xfixed_adaptor<EC, S, L, Tag>::operator=(xfixed_adaptor&& rhs) -> self_type&
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    inline auto xfixed_adaptor<EC, S, L, SH, Tag>::operator=(xfixed_adaptor&& rhs) -> self_type&
     {
         base_type::operator=(std::move(rhs));
         m_storage = rhs.m_storage;
         return *this;
     }
 
-    template <class EC, class S, layout_type L, class Tag>
-    inline auto xfixed_adaptor<EC, S, L, Tag>::operator=(temporary_type&& rhs) -> self_type&
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    inline auto xfixed_adaptor<EC, S, L, SH, Tag>::operator=(temporary_type&& rhs) -> self_type&
     {
         m_storage.resize(rhs.storage().size());
         std::copy(rhs.storage().cbegin(), rhs.storage().cend(), m_storage.begin());
@@ -792,9 +818,9 @@ namespace xt
     /**
      * The extended assignment operator.
      */
-    template <class EC, class S, layout_type L, class Tag>
+    template <class EC, class S, layout_type L, bool SH, class Tag>
     template <class E>
-    inline auto xfixed_adaptor<EC, S, L, Tag>::operator=(const xexpression<E>& e) -> self_type&
+    inline auto xfixed_adaptor<EC, S, L, SH, Tag>::operator=(const xexpression<E>& e) -> self_type&
     {
         return semantic_base::operator=(e);
     }
@@ -804,9 +830,9 @@ namespace xt
      * Note that the xfixed_adaptor **cannot** be resized. Attempting to resize with a different
      * size throws an assert in debug mode.
      */
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline void xfixed_adaptor<ET, S, L, Tag>::resize(ST&& shape, bool) const
+    inline void xfixed_adaptor<ET, S, L, SH, Tag>::resize(ST&& shape, bool) const
     {
         (void)(shape);  // remove unused parameter warning if XTENSOR_ASSERT undefined
         XTENSOR_ASSERT(std::equal(shape.begin(), shape.end(), m_shape.begin()) && shape.size() == m_shape.size());
@@ -816,9 +842,9 @@ namespace xt
      * Note that the xfixed_adaptor **cannot** be resized. Attempting to resize with a different
      * size throws an assert in debug mode.
      */
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline void xfixed_adaptor<ET, S, L, Tag>::resize(ST&& shape, layout_type l) const
+    inline void xfixed_adaptor<ET, S, L, SH, Tag>::resize(ST&& shape, layout_type l) const
     {
         (void)(shape);  // remove unused parameter warning if XTENSOR_ASSERT undefined
         (void)(l);
@@ -829,9 +855,9 @@ namespace xt
      * Note that the xfixed_adaptor **cannot** be resized. Attempting to resize with a different
      * size throws an assert in debug mode.
      */
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline void xfixed_adaptor<ET, S, L, Tag>::resize(ST&& shape, const strides_type& strides) const
+    inline void xfixed_adaptor<ET, S, L, SH, Tag>::resize(ST&& shape, const strides_type& strides) const
     {
         (void)(shape);  // remove unused parameter warning if XTENSOR_ASSERT undefined
         (void)(strides);
@@ -842,9 +868,9 @@ namespace xt
     /**
      * Note that the xfixed_container **cannot** be reshaped to a shape different from ``S``.
      */
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline void xfixed_adaptor<ET, S, L, Tag>::reshape(ST&& shape, layout_type layout) const
+    inline void xfixed_adaptor<ET, S, L, SH, Tag>::reshape(ST&& shape, layout_type layout) const
     {
         if (!(std::equal(shape.begin(), shape.end(), m_shape.begin()) && shape.size() == m_shape.size() && layout == L))
         {
@@ -852,45 +878,45 @@ namespace xt
         }
     }
 
-    template <class ET, class S, layout_type L, class Tag>
+    template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline bool xfixed_adaptor<ET, S, L, Tag>::broadcast_shape(ST& shape, bool) const
+    inline bool xfixed_adaptor<ET, S, L, SH, Tag>::broadcast_shape(ST& shape, bool) const
     {
         return xt::broadcast_shape(m_shape, shape);
     }
 
-    template <class EC, class S, layout_type L, class Tag>
-    inline auto xfixed_adaptor<EC, S, L, Tag>::storage_impl() noexcept -> storage_type&
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    inline auto xfixed_adaptor<EC, S, L, SH, Tag>::storage_impl() noexcept -> storage_type&
     {
         return m_storage;
     }
 
-    template <class EC, class S, layout_type L, class Tag>
-    inline auto xfixed_adaptor<EC, S, L, Tag>::storage_impl() const noexcept -> const storage_type&
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    inline auto xfixed_adaptor<EC, S, L, SH, Tag>::storage_impl() const noexcept -> const storage_type&
     {
         return m_storage;
     }
 
-    template <class EC, class S, layout_type L, class Tag>
-    constexpr layout_type xfixed_adaptor<EC, S, L, Tag>::layout() const noexcept
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    constexpr layout_type xfixed_adaptor<EC, S, L, SH, Tag>::layout() const noexcept
     {
         return base_type::static_layout;
     }
 
-    template <class EC, class S, layout_type L, class Tag>
-    XTENSOR_CONSTEXPR_RETURN auto xfixed_adaptor<EC, S, L, Tag>::shape_impl() const noexcept -> const inner_shape_type&
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    XTENSOR_CONSTEXPR_RETURN auto xfixed_adaptor<EC, S, L, SH, Tag>::shape_impl() const noexcept -> const inner_shape_type&
     {
         return m_shape;
     }
 
-    template <class EC, class S, layout_type L, class Tag>
-    XTENSOR_CONSTEXPR_RETURN auto xfixed_adaptor<EC, S, L, Tag>::strides_impl() const noexcept -> const inner_strides_type&
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    XTENSOR_CONSTEXPR_RETURN auto xfixed_adaptor<EC, S, L, SH, Tag>::strides_impl() const noexcept -> const inner_strides_type&
     {
         return m_strides;
     }
 
-    template <class EC, class S, layout_type L, class Tag>
-    XTENSOR_CONSTEXPR_RETURN auto xfixed_adaptor<EC, S, L, Tag>::backstrides_impl() const noexcept -> const inner_backstrides_type&
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    XTENSOR_CONSTEXPR_RETURN auto xfixed_adaptor<EC, S, L, SH, Tag>::backstrides_impl() const noexcept -> const inner_backstrides_type&
     {
         return m_backstrides;
     }

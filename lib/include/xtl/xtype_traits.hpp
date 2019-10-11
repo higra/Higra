@@ -9,8 +9,9 @@
 #ifndef XTL_TYPE_TRAITS_HPP
 #define XTL_TYPE_TRAITS_HPP
 
-#include <type_traits>
 #include <complex>
+#include <chrono>
+#include <type_traits>
 
 #include "xtl_config.hpp"
 
@@ -40,6 +41,12 @@ namespace xtl
         using type = typename promote_type<T, T>::type;
     };
 
+    template <class C, class D1, class D2>
+    struct promote_type<std::chrono::time_point<C, D1>, std::chrono::time_point<C, D2>>
+    {
+        using type = std::chrono::time_point<C, typename promote_type<D1, D2>::type>;
+    };
+
     template <class T0, class T1>
     struct promote_type<T0, T1>
     {
@@ -62,6 +69,30 @@ namespace xtl
     struct promote_type<bool, T>
     {
         using type = T;
+    };
+
+    template <class T>
+    struct promote_type<bool, std::complex<T>>
+    {
+        using type = std::complex<T>;
+    };
+
+    template <class T1, class T2>
+    struct promote_type<T1, std::complex<T2>>
+    {
+        using type = std::complex<typename promote_type<T1, T2>::type>;
+    };
+
+    template <class T1, class T2>
+    struct promote_type<std::complex<T1>, T2>
+        : promote_type<T2, std::complex<T1>>
+    {
+    };
+
+    template <class T>
+    struct promote_type<std::complex<T>, std::complex<T>>
+    {
+        using type = std::complex<T>;
     };
 
     template <class... REST>

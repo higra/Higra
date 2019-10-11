@@ -421,7 +421,7 @@ namespace hg {
         hg_assert_1d_array(vertices);
         hg_assert_integral_value_type(vertices);
 
-        array_1d <index_t> result = xt::empty<bool>({vertices.size()});
+        array_1d <index_t> result = xt::empty<index_t>({vertices.size()});
         for (index_t j = 0; j < (index_t) vertices.size(); j++) {
             result(j) = parent(vertices(j), t);
         }
