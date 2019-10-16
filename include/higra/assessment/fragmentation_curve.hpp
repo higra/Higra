@@ -224,15 +224,15 @@ namespace hg {
                 auto &backtrack_c1 = backtracking[c1];
                 auto &backtrack_c2 = backtracking[c2];
 
-                auto max_regions_combination = backtrack_c1.size() + backtrack_c2.size(); // unlimited combinations
+                size_t max_regions_combination = backtrack_c1.size() + backtrack_c2.size(); // unlimited combinations
                 max_regions_combination = std::min(max_regions, max_regions_combination);
 
                 backtrack_i.resize(max_regions_combination);
 
-                for (size_t k_c1 = 0; k_c1 < std::min(backtrack_c1.size(), max_regions); k_c1++) {
+                for (size_t k_c1 = 0; k_c1 < std::min(static_cast<size_t>(backtrack_c1.size()), max_regions); k_c1++) {
                     auto &match_k_c1 = backtrack_c1[k_c1];
                     for (size_t k_c2 = 0;
-                         k_c2 < std::min(backtrack_c2.size(), max_regions_combination - k_c1 - 1); k_c2++) {
+                         k_c2 < std::min(static_cast<size_t>(backtrack_c2.size()), max_regions_combination - k_c1 - 1); k_c2++) {
                         auto &match_k_c2 = backtrack_c2[k_c2];
                         size_t fusion_num_regions = k_c1 + k_c2 + 2; // +2 for indexing
 

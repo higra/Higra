@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -592,6 +593,17 @@ namespace xt
 
     template <class E>
     struct has_strides<E, void_t<decltype(std::declval<E>().strides())>>
+        : std::true_type
+    {
+    };
+
+    template <class E, class = void>
+    struct has_iterator_interface : std::false_type
+    {
+    };
+
+    template <class E>
+    struct has_iterator_interface<E, void_t<decltype(std::declval<E>().begin())>>
         : std::true_type
     {
     };

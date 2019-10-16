@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -34,6 +35,9 @@ namespace xt
 
     template <class CT>
     class xscalar;
+
+    template <bool is_const, class CT>
+    class xscalar_stepper;
 
     namespace detail
     {
@@ -111,7 +115,10 @@ namespace xt
         using difference_type = typename subiterator_traits::difference_type;
         using size_type = typename storage_type::size_type;
         using shape_type = typename storage_type::shape_type;
-        using simd_type = xt_simd::simd_type<value_type>;
+        using simd_value_type = xt_simd::simd_type<value_type>;
+
+        template <class requested_type>
+        using simd_return_type = xt_simd::simd_return_type<value_type, requested_type>;
 
         xstepper() = default;
         xstepper(storage_type* c, subiterator_type it, size_type offset) noexcept;
@@ -126,8 +133,8 @@ namespace xt
         void to_begin();
         void to_end(layout_type l);
 
-        template <class R>
-        R step_simd();
+        template <class T>
+        simd_return_type<T> step_simd();
 
         void step_leading();
 
@@ -517,13 +524,38 @@ namespace xt
         m_it = p_c->data_xend(l, m_offset);
     }
 
-    template <class C>
-    template <class R>
-    inline R xstepper<C>::step_simd()
+    namespace detail
     {
-        R reg;
-        reg.load_unaligned(&(*m_it));
-        m_it += xt_simd::revert_simd_traits<R>::size;
+        template <class It>
+        struct step_simd_invoker
+        {
+            template <class R>
+            static R apply(const It& it)
+            {
+                R reg;
+                reg.load_unaligned(&(*it));
+                return reg;
+            }
+        };
+
+        template <bool is_const, class T, class S, layout_type L>
+        struct step_simd_invoker<xiterator<xscalar_stepper<is_const, T>, S, L>>
+        {
+            template <class R>
+            static R apply(const xiterator<xscalar_stepper<is_const, T>, S, L>& it)
+            {
+                return R(*it);
+            }
+        };
+    }
+
+    template <class C>
+    template <class T>
+    inline auto xstepper<C>::step_simd() -> simd_return_type<T>
+    {
+        using simd_type = simd_return_type<T>;
+        simd_type reg = detail::step_simd_invoker<subiterator_type>::template apply<simd_type>(m_it);
+        m_it += xt_simd::revert_simd_traits<simd_type>::size;
         return reg;
     }
 

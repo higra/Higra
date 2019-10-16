@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -82,7 +83,7 @@ namespace xt
     };
 
     template <class CT>
-    class xscalar : public xexpression<xscalar<CT>>,
+    class xscalar : public xsharable_expression<xscalar<CT>>,
                     private xiterable<xscalar<CT>>,
                     private xaccessible<xscalar<CT>>,
                     public extension::xscalar_base_t<CT>
@@ -104,6 +105,7 @@ namespace xt
         using size_type = typename inner_types::size_type;
         using difference_type = std::ptrdiff_t;
         using simd_value_type = xt_simd::simd_type<value_type>;
+        using bool_load_type = xt::bool_load_type<value_type>;
 
         using iterable_base = xiterable<self_type>;
         using inner_shape_type = typename iterable_base::inner_shape_type;
@@ -151,6 +153,7 @@ namespace xt
 
         size_type size() const noexcept;
         const shape_type& shape() const noexcept;
+        size_type shape(size_type i) const noexcept;
         layout_type layout() const noexcept;
         using accessible_base::dimension;
         using accessible_base::shape;
@@ -360,6 +363,9 @@ namespace xt
         using size_type = typename storage_type::size_type;
         using difference_type = typename storage_type::difference_type;
 
+        template <class requested_type>
+        using simd_return_type = xt_simd::simd_return_type<value_type, requested_type>;
+
         xscalar_stepper(storage_type* c) noexcept;
 
         reference operator*() const noexcept;
@@ -372,8 +378,8 @@ namespace xt
         void to_begin() noexcept;
         void to_end(layout_type l) noexcept;
 
-        template <class R>
-        R step_simd();
+        template <class T>
+        simd_return_type<T> step_simd();
 
         void step_leading();
 
@@ -526,6 +532,12 @@ namespace xt
     {
         static std::array<size_type, 0> zero_shape;
         return zero_shape;
+    }
+
+    template <class CT>
+    inline auto xscalar<CT>::shape(size_type) const noexcept -> size_type
+    {
+        return 0;
     }
 
     template <class CT>
@@ -986,10 +998,10 @@ namespace xt
     }
 
     template <bool is_const, class CT>
-    template <class R>
-    inline R xscalar_stepper<is_const, CT>::step_simd()
+    template <class T>
+    inline auto xscalar_stepper<is_const, CT>::step_simd() -> simd_return_type<T>
     {
-        return R(p_c->operator()());
+        return simd_return_type<T>(p_c->operator()());
     }
 
     template <bool is_const, class CT>

@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -10,12 +11,21 @@
 #define XTENSOR_SIMD_HPP
 
 #include <vector>
+#include <xtl/xdynamic_bitset.hpp>
 
 #include "xutils.hpp"
 
 #ifdef XTENSOR_USE_XSIMD
 
 #include <xsimd/xsimd.hpp>
+
+#if defined(_MSV_VER) && (_MSV_VER < 1910)
+template <class T, std::size_t N>
+inline xsimd::batch_bool<T, N> isnan(const xsimd::batch<T, N>& b)
+{
+    return xsimd::isnan(b);
+}
+#endif
 
 namespace xt_simd
 {
@@ -217,22 +227,84 @@ namespace xt
     template <class A1, class A2>
     using driven_align_mode_t = typename detail::driven_align_mode_impl<A1, A2>::type;
 
-    template <class E, class = void>
-    struct test_simd_interface_impl : std::false_type
+    namespace detail
+    {
+        template <class E, class T, class = void>
+        struct has_simd_interface_impl : std::false_type
+        {
+        };
+
+        template <class E, class T>
+        struct has_simd_interface_impl<E, T, void_t<decltype(std::declval<E>().template load_simd<aligned_mode, T>(typename E::size_type(0)))>>
+            : std::true_type
+        {
+        };
+    }
+
+    template <class E, class T = typename std::decay_t<E>::value_type>
+    struct has_simd_interface : detail::has_simd_interface_impl<E, T>
     {
     };
 
-    template <class E>
-    struct test_simd_interface_impl<E, void_t<decltype(std::declval<E>().template load_simd<aligned_mode>(typename E::size_type(0)))>>
-        : std::true_type
+    template <class T>
+    struct has_simd_type
+        : std::integral_constant<bool, !std::is_same<T, xt_simd::simd_type<T>>::value>
     {
     };
 
-    template <class E>
-    struct has_simd_interface
-        : test_simd_interface_impl<E>
+    namespace detail
+    {
+        template <class F, class B, class = void>
+        struct has_simd_apply_impl : std::false_type {};
+
+        template <class F, class B>
+        struct has_simd_apply_impl<F, B, void_t<decltype(&F::template simd_apply<B>)>>
+            : std::true_type
+        {
+        };
+    }
+
+    template <class F, class B>
+    struct has_simd_apply : detail::has_simd_apply_impl<F, B>
     {
     };
+
+    template <class T>
+    using bool_load_type = std::conditional_t<std::is_same<T, bool>::value, uint8_t, T>;
+
+    template <class T>
+    struct forbid_simd : std::false_type
+    {
+    };
+
+    template <class A>
+    struct forbid_simd<std::vector<bool, A>> : std::true_type
+    {
+    };
+
+    template <class A>
+    struct forbid_simd<const std::vector<bool, A>> : std::true_type
+    {
+    };
+
+    template <class B, class A>
+    struct forbid_simd<xtl::xdynamic_bitset<B, A>> : std::true_type
+    {
+    };
+
+    template <class B, class A>
+    struct forbid_simd<const xtl::xdynamic_bitset<B, A>> : std::true_type
+    {
+    };
+
+    template <class C, class T1, class T2>
+    struct container_simd_return_type
+        : std::enable_if<!forbid_simd<C>::value, xt_simd::simd_return_type<T1, bool_load_type<T2>>>
+    {
+    };
+
+    template <class C, class T1, class T2>
+    using container_simd_return_type_t = typename container_simd_return_type<C, T1, T2>::type;
 }
 
 #endif

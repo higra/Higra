@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -102,6 +103,8 @@ namespace xt
         using inner_backstrides_type = xtl::mpl::eval_if_t<has_strides<xexpression_type>,
                                                            detail::expr_inner_backstrides_type<xexpression_type>,
                                                            get_strides_type<shape_type>>;
+
+        using bool_load_type = xt::bool_load_type<value_type>;
 
         static constexpr layout_type static_layout = xexpression_type::static_layout;
         static constexpr bool contiguous_layout = xexpression_type::contiguous_layout;
@@ -308,6 +311,14 @@ namespace xt
         friend class xconst_accessible<D>;
     };
 
+    template <class D, class T>
+    struct has_simd_interface<xfunctor_applier_base<D>, T>
+        : xtl::conjunction<has_simd_type<T>,
+                           has_simd_interface<typename xfunctor_applier_base<D>::xexpression_type>,
+                           detail::has_simd_interface_impl<xfunctor_applier_base<D>, T>>
+    {
+    };
+
     /********************************
      * xfunctor_view_temporary_type *
      ********************************/
@@ -351,6 +362,12 @@ namespace xt
         using const_reference = decltype(std::declval<F>()(std::declval<const xexpression_type>()()));
         using size_type = typename xexpression_type::size_type;
         using temporary_type = typename xfunctor_view_temporary_type<F, xexpression_type>::type;
+    };
+
+    template <class F, class CT, class T>
+    struct has_simd_interface<xfunctor_view<F, CT>, T>
+        : has_simd_interface<xfunctor_applier_base<xfunctor_view<F, CT>>, T>
+    {
     };
 
     /**
@@ -422,6 +439,12 @@ namespace xt
         using const_reference = typename functor_type::const_reference;
         using size_type = typename xexpression_type::size_type;
         using temporary_type = typename xfunctor_view_temporary_type<F, xexpression_type>::type;
+    };
+
+    template <class F, class CT, class T>
+    struct has_simd_interface<xfunctor_adaptor<F, CT>, T>
+        : has_simd_interface<xfunctor_applier_base<xfunctor_adaptor<F, CT>>, T>
+    {
     };
 
     /**

@@ -24,7 +24,7 @@ namespace hg {
     /**
      * Preferred type to represent an index
      */
-    using index_t = std::ptrdiff_t;
+    using index_t = int64_t;
 
     /**
      * Constant used to represent an invalid index (eg. not initialized)
@@ -141,38 +141,19 @@ namespace hg {
 #define hg_assert_edge_index(graph, edge_index)((void)0)
 #endif
 
-// Check windows
-#if _WIN32 || _WIN64
-#define HG_INT_64 long long
-#define HG_UINT_64 unsigned long long
-#elif __GNUC__ || __clang__
-#if __x86_64__ || __ppc64__
-#define HG_INT_64 long
-#define HG_UINT_64 unsigned long
-#else
-#define HG_INT_64 long long
-#define HG_UINT_64 unsigned long long
-#endif
-#else
-#if !defined(HG_INT_64) && !defined(HG_UINT_64)
-#error Unkown architecture, please provide the two macros HG_INT_64 and HG_UINT_64 defining respectively the types of 64 integers and unsigned 64 bits integers
-#endif
-#endif
-
-
 #define HG_XSTR(a) HG_STR(a)
 #define HG_STR(a) #a
 
 
-#define HG_TEMPLATE_SINTEGRAL_TYPES   char, short, int, HG_INT_64
+#define HG_TEMPLATE_SINTEGRAL_TYPES   int8_t, int16_t, int32_t, int64_t
 
-#define HG_TEMPLATE_INTEGRAL_TYPES    char, unsigned char, short, unsigned short, int, unsigned int, HG_INT_64, HG_UINT_64
+#define HG_TEMPLATE_INTEGRAL_TYPES    int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t
 
 #define HG_TEMPLATE_FLOAT_TYPES       float, double
 
-#define HG_TEMPLATE_NUMERIC_TYPES     char, unsigned char, short, unsigned short, int, unsigned int, HG_INT_64, HG_UINT_64, float, double
+#define HG_TEMPLATE_NUMERIC_TYPES     int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double
 
-#define HG_TEMPLATE_SNUMERIC_TYPES    char, short, int, HG_INT_64, float, double
+#define HG_TEMPLATE_SNUMERIC_TYPES    int8_t, int16_t, int32_t, int64_t, float, double
 
 
 namespace xt {

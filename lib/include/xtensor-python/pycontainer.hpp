@@ -473,6 +473,9 @@ namespace xt
             std::allocator<int> i;
             std::allocator<unsigned char> j;
             std::allocator<char> k;
+            if(!std::is_same<char, signed char>::value){
+                std::allocator<signed char> k;
+            }
             std::allocator<unsigned long> l;
             std::allocator<long> m;
             std::allocator<bool> n;

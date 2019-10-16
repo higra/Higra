@@ -104,7 +104,7 @@ install:
 - export PATH="$HOME/miniconda/bin:$PATH"
 - hash -r
 - conda config --set always_yes yes --set changeps1 no
-- conda update -q conda
+#- conda update -q conda
 - if [ -n "$COVERAGE" ]; then
     conda install numpy  -c conda-forge &&
     mkdir build &&

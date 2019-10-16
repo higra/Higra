@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -17,6 +18,7 @@
 
 #include "xexpression.hpp"
 #include "xiterable.hpp"
+#include "xoperation.hpp"
 #include "xsemantic.hpp"
 #include "xstrides.hpp"
 #include "xutils.hpp"
@@ -95,7 +97,7 @@ namespace xt
         using self_type = xindex_view<CT, I>;
         using xexpression_type = std::decay_t<CT>;
         using semantic_base = xview_semantic<self_type>;
-        
+
         using extension_base = extension::xindex_view_base_t<CT, I>;
         using expression_tag = typename extension_base::expression_tag;
 
@@ -118,6 +120,8 @@ namespace xt
 
         using temporary_type = typename xcontainer_inner_types<self_type>::temporary_type;
         using base_index_type = xindex_type_t<shape_type>;
+
+        using bool_load_type = typename xexpression_type::bool_load_type;
 
         static constexpr layout_type static_layout = layout_type::dynamic;
         static constexpr bool contiguous_layout = false;
@@ -761,6 +765,7 @@ namespace xt
      * elements. In that case, you should consider using the \ref filtration function
      * instead.
      *
+     * @tparam L the traversal order
      * @param e the underlying xexpression
      * @param condition xexpression with shape of \a e which selects indices
      *
@@ -772,10 +777,10 @@ namespace xt
      *
      * \sa filtration
      */
-    template <class E, class O>
+    template <layout_type L = XTENSOR_DEFAULT_TRAVERSAL, class E, class O>
     inline auto filter(E&& e, O&& condition) noexcept
     {
-        auto indices = argwhere(std::forward<O>(condition));
+        auto indices = argwhere<L>(std::forward<O>(condition));
         using view_type = xindex_view<xclosure_t<E>, decltype(indices)>;
         return view_type(std::forward<E>(e), std::move(indices));
     }

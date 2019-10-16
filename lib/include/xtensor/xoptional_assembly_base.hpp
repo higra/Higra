@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -63,6 +64,7 @@ namespace xt
         using size_type = typename raw_value_expression::size_type;
         using difference_type = typename raw_value_expression::difference_type;
         using simd_value_type = xt_simd::simd_type<value_type>;
+        using bool_load_type = xt::bool_load_type<value_type>;
 
         using shape_type = typename raw_value_expression::shape_type;
         using strides_type = typename raw_value_expression::strides_type;

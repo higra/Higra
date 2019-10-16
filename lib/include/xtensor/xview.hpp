@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -22,6 +23,7 @@
 #include <xtl/xtype_traits.hpp>
 
 #include "xaccessible.hpp"
+#include "xarray.hpp"
 #include "xbroadcast.hpp"
 #include "xcontainer.hpp"
 #include "xiterable.hpp"
@@ -344,12 +346,14 @@ namespace xt
         using semantic_base = xview_semantic<self_type>;
         using temporary_type = typename xcontainer_inner_types<self_type>::temporary_type;
 
+        using accessible_base = xaccessible<self_type>;
         using extension_base = extension::xview_base_t<CT, S...>;
         using expression_tag = typename extension_base::expression_tag;
 
         static constexpr bool is_const = std::is_const<std::remove_reference_t<CT>>::value;
         using value_type = typename xexpression_type::value_type;
         using simd_value_type = xt_simd::simd_type<value_type>;
+        using bool_load_type = typename xexpression_type::bool_load_type;
         using reference = typename inner_types::reference;
         using const_reference = typename inner_types::const_reference;
         using pointer = std::conditional_t<is_const,
@@ -432,6 +436,7 @@ namespace xt
         const inner_shape_type& shape() const noexcept;
         const slice_type& slices() const noexcept;
         layout_type layout() const noexcept;
+        using accessible_base::shape;
 
         template <class T>
         void fill(const T& value);
@@ -1582,7 +1587,7 @@ namespace xt
     inline void xview<CT, S...>::assign_temporary_impl(temporary_type&& tmp)
     {
         constexpr bool fast_assign = detail::is_strided_view<xexpression_type, S...>::value && \
-                                     xassign_traits<xview<CT, S...>, temporary_type>::simd_strided_loop();
+                                     xassign_traits<xview<CT, S...>, temporary_type>::simd_strided_assign();
         xview_detail::run_assign_temporary_impl(*this, tmp, std::integral_constant<bool, fast_assign>{});
     }
 

@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -123,6 +124,9 @@ namespace xt
 
         using undecay_shape = typename inner_types::undecay_shape;
 
+        using simd_value_type = xt_simd::simd_type<value_type>;
+        using bool_load_type = typename xexpression_type::bool_load_type;
+
         static constexpr layout_type static_layout = inner_types::layout;
         static constexpr bool contiguous_layout = static_layout != layout_type::dynamic && xexpression_type::contiguous_layout;
 
@@ -137,6 +141,7 @@ namespace xt
         const inner_strides_type& strides() const noexcept;
         const inner_backstrides_type& backstrides() const noexcept;
         layout_type layout() const noexcept;
+        using base_type::shape;
 
         reference operator()();
         const_reference operator()() const;

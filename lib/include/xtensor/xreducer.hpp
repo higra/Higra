@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -294,9 +295,13 @@ namespace xt
         dynamic_shape<std::size_t> iter_shape = xtl::forward_sequence<dynamic_shape<std::size_t>, decltype(e.shape())>(e.shape());
         dynamic_shape<std::size_t> iter_strides(e.dimension());
 
-        if (!std::is_sorted(axes.cbegin(), axes.cend()))
+        // using std::less_equal is counter-intuitive, but as the standard says (24.4.5):
+        // A sequence is sorted with respect to a comparator comp if for any iterator i pointing to the sequence and any non-negative integer n
+        // such that i + n is a valid iterator pointing to an element of the sequence, comp(*(i + n), *i) == false.
+        // Therefore less_equal is required to detect duplicates.
+        if (!std::is_sorted(axes.cbegin(), axes.cend(), std::less_equal<>()))
         {
-            throw std::runtime_error("Reducing axes should be sorted");
+            throw std::runtime_error("Reducing axes should be sorted and should not contain duplicates");
         }
         if (axes.size() != 0 && axes[axes.size() - 1] > e.dimension() - 1)
         {
@@ -667,7 +672,7 @@ namespace xt
      * @sa reduce
      */
     template <class F, class CT, class X, class O>
-    class xreducer : public xexpression<xreducer<F, CT, X, O>>,
+    class xreducer : public xsharable_expression<xreducer<F, CT, X, O>>,
                      public xconst_iterable<xreducer<F, CT, X, O>>,
                      public xaccessible<xreducer<F, CT, X, O>>,
                      public extension::xreducer_base_t<F, CT, X, O>
@@ -703,6 +708,7 @@ namespace xt
 
         using stepper = typename iterable_base::stepper;
         using const_stepper = typename iterable_base::const_stepper;
+        using bool_load_type = typename xexpression_type::bool_load_type;
 
         static constexpr layout_type static_layout = layout_type::dynamic;
         static constexpr bool contiguous_layout = false;
@@ -949,6 +955,7 @@ namespace xt
 
     private:
 
+        reference initial_value() const;
         reference aggregate(size_type dim) const;
         reference aggregate_impl(size_type dim, /*keep_dims=*/ std::false_type) const;
         reference aggregate_impl(size_type dim, /*keep_dims=*/ std::true_type) const;
@@ -1190,9 +1197,13 @@ namespace xt
         , m_dim_mapping(xtl::make_sequence<dim_mapping_type>(typename O::keep_dims() ? m_e.dimension() : m_e.dimension() - m_axes.size(), 0))
         , m_options(std::forward<OX>(options))
     {
-        if (!std::is_sorted(m_axes.cbegin(), m_axes.cend()))
+        // using std::less_equal is counter-intuitive, but as the standard says (24.4.5):
+        // A sequence is sorted with respect to a comparator comp if for any iterator i pointing to the sequence and any non-negative integer n
+        // such that i + n is a valid iterator pointing to an element of the sequence, comp(*(i + n), *i) == false.
+        // Therefore less_equal is required to detect duplicates.
+        if (!std::is_sorted(m_axes.cbegin(), m_axes.cend(), std::less_equal<>()))
         {
-            throw std::runtime_error("Reducing axes should be sorted");
+            throw std::runtime_error("Reducing axes should be sorted and should not contain duplicates");
         }
         if (m_axes.size() != 0 && m_axes[m_axes.size() - 1] > m_e.dimension() - 1)
         {
@@ -1483,30 +1494,39 @@ namespace xt
     }
 
     template <class F, class CT, class X, class O>
+    inline auto xreducer_stepper<F, CT, X, O>::initial_value() const -> reference
+    {
+        return O::has_initial_value ? m_reducer->m_options.initial_value : static_cast<reference>(m_reducer->m_init());
+    }
+
+    template <class F, class CT, class X, class O>
     inline auto xreducer_stepper<F, CT, X, O>::aggregate(size_type dim) const -> reference
     {
-        if (m_reducer->m_e.shape().empty() || m_reducer->m_axes.size() == 0)
+        reference res;
+        if (m_reducer->m_e.size() == size_type(0))
         {
-            reference res =
-                m_reducer->m_reduce(O::has_initial_value ? m_reducer->m_options.initial_value : static_cast<reference>(m_reducer->m_init()),
-                                    *m_stepper);
-            return res;
+            res = initial_value();
+        }
+        else if (m_reducer->m_e.shape().empty() || m_reducer->m_axes.size() == 0)
+        {
+            res = m_reducer->m_reduce(initial_value(), *m_stepper);
         }
         else
         {
-            reference res = aggregate_impl(dim, typename O::keep_dims());
+            res = aggregate_impl(dim, typename O::keep_dims());
             if (O::has_initial_value && dim == 0)
             {
                 res = m_reducer->m_merge(m_reducer->m_options.initial_value, res);
             }
-            return res;
         }
+        return res;
     }
 
     template <class F, class CT, class X, class O>
     inline auto xreducer_stepper<F, CT, X, O>::aggregate_impl(size_type dim, std::false_type) const -> reference
     {
-        reference res;
+        // reference can be std::array, hence the {} initializer
+        reference res = {};
         size_type index = axis(dim);
         size_type size = shape(index);
         if (dim != m_reducer->m_axes.size() - 1)
@@ -1534,7 +1554,8 @@ namespace xt
     template <class F, class CT, class X, class O>
     inline auto xreducer_stepper<F, CT, X, O>::aggregate_impl(size_type dim, std::true_type) const -> reference
     {
-        reference res(0);
+        // reference can be std::array, hence the {} initializer
+        reference res = {};
         auto ax_it = std::find(m_reducer->m_axes.begin(), m_reducer->m_axes.end(), dim);
         if (ax_it != m_reducer->m_axes.end())
         {

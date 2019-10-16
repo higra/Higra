@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -136,7 +137,7 @@ namespace xt
      * @sa broadcast
      */
     template <class CT, class X>
-    class xbroadcast : public xexpression<xbroadcast<CT, X>>,
+    class xbroadcast : public xsharable_expression<xbroadcast<CT, X>>,
                        public xconst_iterable<xbroadcast<CT, X>>,
                        public xconst_accessible<xbroadcast<CT, X>>,
                        public extension::xbroadcast_base_t<CT, X>
@@ -164,6 +165,8 @@ namespace xt
         using stepper = typename iterable_base::stepper;
         using const_stepper = typename iterable_base::const_stepper;
 
+        using bool_load_type = typename xexpression_type::bool_load_type;
+
         static constexpr layout_type static_layout = layout_type::dynamic;
         static constexpr bool contiguous_layout = false;
 
@@ -174,6 +177,7 @@ namespace xt
         xbroadcast(CTA&& e, shape_type&& s);
 
         const inner_shape_type& shape() const noexcept;
+        size_type shape(size_type i) const noexcept;
         layout_type layout() const noexcept;
 
         template <class... Args>
@@ -308,6 +312,15 @@ namespace xt
     inline auto xbroadcast<CT, X>::shape() const noexcept -> const inner_shape_type&
     {
         return m_shape;
+    }
+
+    /**
+     * Returns the shape of the expression.
+     */
+    template <class CT, class X>
+    inline auto xbroadcast<CT, X>::shape(size_type i) const noexcept -> size_type
+    {
+        return m_shape[i];
     }
 
     /**

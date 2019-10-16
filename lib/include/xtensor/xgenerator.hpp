@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -87,7 +88,7 @@ namespace xt
      * @tparam S the shape type of the generator
      */
     template <class F, class R, class S>
-    class xgenerator : public xexpression<xgenerator<F, R, S>>,
+    class xgenerator : public xsharable_expression<xgenerator<F, R, S>>,
                        public xconst_iterable<xgenerator<F, R, S>>,
                        public xconst_accessible<xgenerator<F, R, S>>,
                        public extension::xgenerator_base_t<F, R, S>
@@ -97,6 +98,7 @@ namespace xt
         using self_type = xgenerator<F, R, S>;
         using functor_type = typename std::remove_reference<F>::type;
 
+        using accessible_base = xconst_accessible<self_type>;
         using extension_base = extension::xgenerator_base_t<F, R, S>;
         using expression_tag = typename extension_base::expression_tag;
 
@@ -116,6 +118,8 @@ namespace xt
         using stepper = typename iterable_base::stepper;
         using const_stepper = typename iterable_base::const_stepper;
 
+        using bool_load_type = xt::bool_load_type<R>;
+
         static constexpr layout_type static_layout = layout_type::dynamic;
         static constexpr bool contiguous_layout = false;
 
@@ -124,6 +128,7 @@ namespace xt
 
         const inner_shape_type& shape() const noexcept;
         layout_type layout() const noexcept;
+        using accessible_base::shape;
 
         template <class... Args>
         const_reference operator()(Args... args) const;

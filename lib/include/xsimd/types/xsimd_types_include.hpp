@@ -67,12 +67,20 @@
 #include "xsimd_neon_complex.hpp"
 #endif
 
-#if XSIMD_ARM_INSTR_SET == XSIMD_VERSION_NUMBER_NOT_AVAILABLE && XSIMD_X86_INSTR_SET == XSIMD_VERSION_NUMBER_NOT_AVAILABLE
-	#if defined(XSIMD_ENABLE_FALLBACK)
-		#warning "No SIMD instructions enabled, using fallback mode."
-	#else
-		#warning "Please compile with SIMD instructions enabled or activate the fallback mode. (e.g. for x86 -march=native or for ARM -mfpu=neon)"
+#if !defined(XSIMD_INSTR_SET_AVAILABLE)
+    #if defined(XSIMD_ENABLE_FALLBACK)
+        #ifdef _MSC_VER
+	    #pragma message("Warning: No SIMD instructions set detected, using fallback mode.")
+        #else
+	    #warning "No SIMD instructions set detected, using fallback mode."
+        #endif
+    #else
+        #ifdef _MSC_VER
+	    #pragma message("Warning: No SIMD instructions set detected, please enable SIMD instructions or activate the fallback mode. (e.g. for x86 -march=native or for ARM -mfpu=neon)")
+        #else
+	    #warning "No SIMD instructions set detected, please enable SIMD instructions or activate the fallback mode. (e.g. for x86 -march=native or for ARM -mfpu=neon)"
 	#endif
+    #endif
 #endif
 
 #include "xsimd_utils.hpp"

@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -32,12 +33,6 @@
 
 namespace xt
 {
-    template <class F, class... CT>
-    struct has_simd_interface<xfunction<F, CT...>>
-        : xfunction<F, CT...>::has_simd_interface
-    {
-    };
-
     namespace detail
     {
 
@@ -77,46 +72,6 @@ namespace xt
             template <std::size_t... N, class is_shape_trivial>
             constexpr bool xfunction_cache_impl<fixed_shape<N...>, is_shape_trivial>::is_initialized;
         #endif
-
-        /**********************
-         * simd metafunctions *
-         **********************/
-
-        template <class F, class B, class = void>
-        struct has_simd_apply : std::false_type {};
-
-        template <class F, class B>
-        struct has_simd_apply<F, B, void_t<decltype(&F::template simd_apply<B>)>>
-            : std::true_type
-        {
-        };
-
-        template <class V>
-        struct has_simd_type
-            : std::integral_constant<bool, !std::is_same<V, xt_simd::simd_type<V>>::value>
-        {
-        };
-
-        // This meta struct checks wether SIMD should be activated for our
-        // functor "F"
-        template <class V, class F, class... CT>
-        struct xsimd_meta_getter
-        {
-            using scalar_result_type = V;
-
-            // check if all arguments are supported by SIMD
-            using simd_arguments_exist = xtl::conjunction<has_simd_type<scalar_result_type>,
-                                                          has_simd_type<xvalue_type_t<std::decay_t<CT>>>...>;
-            // if yes, insert correct type here
-            using simd_value_type = xtl::mpl::eval_if_t<simd_arguments_exist,
-                                                        meta_identity<xt_simd::simd_type<scalar_result_type>>,
-                                                        make_invalid_type<>>;
-            // if all types are supported, check that the functor has a working
-            // simd_apply and all arguments have the simd interface
-            using use_xsimd = xtl::conjunction<simd_arguments_exist,
-                                               has_simd_apply<F, scalar_result_type>,
-                                               has_simd_interface<std::decay_t<CT>>...>;
-        };
     }
 
     /************************
@@ -175,6 +130,14 @@ namespace xt
         using size_type = common_size_type_t<std::decay_t<CT>...>;
     };
 
+    template <class T, class F, class... CT>
+    struct has_simd_interface<xfunction<F, CT...>, T>
+        : xtl::conjunction<has_simd_type<T>,
+                           has_simd_apply<F, xt_simd::simd_type<T>>,
+                           has_simd_interface<std::decay_t<CT>, T>...>
+    {
+    };
+                            
     /*************
      * xfunction *
      *************/
@@ -192,7 +155,7 @@ namespace xt
      */
     template <class F, class... CT>
     class xfunction : private xconst_iterable<xfunction<F, CT...>>,
-                      public xexpression<xfunction<F, CT...>>,
+                      public xsharable_expression<xfunction<F, CT...>>,
                       private xconst_accessible<xfunction<F, CT...>>,
                       public extension::xfunction_base_t<F, CT...>
     {
@@ -214,11 +177,9 @@ namespace xt
         using const_pointer = const value_type*;
         using size_type = typename inner_types::size_type;
         using difference_type = common_difference_type_t<std::decay_t<CT>...>;
-        using simd_meta_getter = detail::xsimd_meta_getter<value_type, F, CT...>;
 
-        using has_simd_interface = typename simd_meta_getter::use_xsimd;
-        using simd_value_type = typename simd_meta_getter::simd_value_type;
-        using simd_argument_type = simd_value_type;
+        using simd_value_type = xt_simd::simd_type<value_type>;
+        using bool_load_type = xtl::promote_type_t<typename std::decay_t<CT>::bool_load_type...>;
 
         template <class requested_type>
         using simd_return_type = xt_simd::simd_return_type<value_type, requested_type>;
@@ -276,6 +237,7 @@ namespace xt
         size_type dimension() const noexcept;
         const inner_shape_type& shape() const;
         layout_type layout() const noexcept;
+        using accessible_base::shape;
 
         template <class... Args>
         const_reference operator()(Args... args) const;
@@ -456,6 +418,9 @@ namespace xt
 
         using shape_type = typename xfunction_type::shape_type;
 
+        template <class requested_type>
+        using simd_return_type = xt_simd::simd_return_type<value_type, requested_type>;
+
         template <class... St>
         xfunction_stepper(const xfunction_type* func, St&&... st) noexcept;
 
@@ -471,8 +436,8 @@ namespace xt
 
         reference operator*() const;
 
-        template <class ST>
-        ST step_simd();
+        template <class T>
+        simd_return_type<T> step_simd();
 
         void step_leading();
 
@@ -481,8 +446,8 @@ namespace xt
         template <std::size_t... I>
         reference deref_impl(std::index_sequence<I...>) const;
 
-        template <class ST, std::size_t... I>
-        ST step_simd_impl(std::index_sequence<I...>);
+        template <class T, std::size_t... I>
+        simd_return_type<T> step_simd_impl(std::index_sequence<I...>);
 
         const xfunction_type* p_f;
         std::tuple<typename std::decay_t<CT>::const_stepper...> m_st;
@@ -792,29 +757,6 @@ namespace xt
         return m_f((std::get<I>(m_e).data_element(i))...);
     }
 
-    namespace detail
-    {
-        // This metafunction avoids loading boolean values as batches of floating points and
-        // reciprocally. However, we cannot always load data as batches of their scalar type
-        // since this prevents mixed arithmetic.
-        template <class T, class simd, class common_simd>
-        struct get_simd_type
-        {
-            using simd_value_type = typename std::decay_t<T>::simd_value_type;
-            static constexpr bool is_arg_bool = ::xt_simd::is_batch_bool<simd_value_type>::value;
-            static constexpr bool is_res_bool = ::xt_simd::is_batch_bool<simd>::value;
-            static constexpr bool is_arg_cplx = ::xt_simd::is_batch_complex<simd_value_type>::value;
-            using type = std::conditional_t<is_res_bool,
-                                            common_simd,
-                                            std::conditional_t<is_arg_bool || is_arg_cplx,
-                                                               simd_value_type,
-                                                               simd>>;
-        };
-
-        template <class T, class simd, class common_simd>
-        using get_simd_type_t = typename get_simd_type<T, simd, common_simd>::type;
-    }
-
     template <class F, class... CT>
     template <class align, class requested_type, std::size_t N, std::size_t... I>
     inline auto xfunction<F, CT...>::load_simd_impl(std::index_sequence<I...>, size_type i) const
@@ -1032,21 +974,17 @@ namespace xt
     }
 
     template <class F, class... CT>
-    template <class ST, std::size_t... I>
-    inline ST xfunction_stepper<F, CT...>::step_simd_impl(std::index_sequence<I...>)
+    template <class T, std::size_t... I>
+    inline auto xfunction_stepper<F, CT...>::step_simd_impl(std::index_sequence<I...>) -> simd_return_type<T>
     {
-        return (p_f->m_f.simd_apply)(std::get<I>(m_st).template
-            step_simd<detail::get_simd_type_t<std::tuple_element_t<I, typename xfunction_type::tuple_type>,
-                                              ST,
-                                              typename xfunction_type::simd_argument_type
-                                              >>()...);
+        return (p_f->m_f.simd_apply)(std::get<I>(m_st). template step_simd<T>()...);
     }
 
     template <class F, class... CT>
-    template <class ST>
-    inline ST xfunction_stepper<F, CT...>::step_simd()
+    template <class T>
+    inline auto xfunction_stepper<F, CT...>::step_simd() -> simd_return_type<T>
     {
-        return step_simd_impl<ST>(std::make_index_sequence<sizeof...(CT)>());
+        return step_simd_impl<T>(std::make_index_sequence<sizeof...(CT)>());
     }
 
     template <class F, class... CT>

@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -181,10 +182,10 @@ namespace xt
                 return apply_impl(args...);
             }
 
-            template <class... Args>
-            constexpr simd_result_type simd_apply(const Args&... args) const
+            template <class B, class... Args>
+            constexpr B simd_apply(const B& b, const Args&... args) const
             {
-                return simd_apply_impl(args...);
+                return simd_apply_impl(b, args...);
             }
 
         private:
@@ -200,15 +201,17 @@ namespace xt
                 return t & apply_impl(args...);
             }
 
-            constexpr simd_result_type simd_apply_impl() const
+
+            template <class B>
+            constexpr B simd_apply_impl(const B& b) const
             {
-                return simd_result_type(true);
+                return b;
             }
 
-            template <class U, class... Args>
-            constexpr simd_result_type simd_apply_impl(const U& t, const Args&... args) const
+            template <class B1, class B2, class... Args>
+            constexpr B1 simd_apply_impl(const B1& b1, const B2& b2, const Args&... args) const
             {
-                return t & simd_apply_impl(args...);
+                return b1 & simd_apply_impl(b2, args...);
             }
         };
     }
@@ -424,6 +427,26 @@ namespace xt
         struct xtensor_adaptor_base<EC, N, L, xoptional_expression_tag>
         {
             using traits = xtensor_adaptor_optional_traits<EC, N, L>;
+            using type = xcontainer_optional_base<traits>;
+        };
+    }
+
+    /***************************************
+     * xtensor_view extension for optional *
+     ***************************************/
+
+    namespace extension
+    {
+        template <class EC, std::size_t N, layout_type L>
+        struct xtensor_view_optional_traits : xtensor_optional_traits<EC, N, L>
+        {
+            using derived_type = xtensor_view<EC, N, L, xoptional_expression_tag>;
+        };
+
+        template <class EC, std::size_t N, layout_type L>
+        struct xtensor_view_base<EC, N, L, xoptional_expression_tag>
+        {
+            using traits = xtensor_view_optional_traits<EC, N, L>;
             using type = xcontainer_optional_base<traits>;
         };
     }
