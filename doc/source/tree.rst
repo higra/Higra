@@ -137,13 +137,13 @@ Example:
             :linenos:
 
             # creates the tree shown in the figure above
-            g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
+            t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
             t.num_leaves()              # 7
             t.root()                    # 11
 
             t.parent(2)                 # 8
-            t.parents((0, 11, 8))       # array {7, 11, 10}
+            t.parent((0, 11, 8))       # array {7, 11, 10}
             t.parents()                 # array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11}
 
             t.num_children(8)           # 3
@@ -238,7 +238,7 @@ Iterators
             :linenos:
 
             # creates the tree shown in the figure above
-            g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
+            t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
             for n in t.children(8):
                 ... # 2, 3, 4
