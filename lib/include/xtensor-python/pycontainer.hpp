@@ -474,11 +474,11 @@ namespace xt
             std::allocator<unsigned char> j;
             std::allocator<char> k;
             if(!std::is_same<char, signed char>::value){
-                std::allocator<signed char> k;
+                std::allocator<signed char> l;
             }
-            std::allocator<unsigned long> l;
-            std::allocator<long> m;
-            std::allocator<bool> n;
+            std::allocator<unsigned long> m;
+            std::allocator<long> n;
+            std::allocator<bool> o;
         }
     }
 #endif

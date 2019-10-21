@@ -584,7 +584,7 @@ namespace xt
           });
 #elif defined(XTENSOR_USE_OPENMP)
         #pragma omp parallel for default(none) shared(align_begin, align_end, e1, e2)
-        for (size_type i = align_begin; i < align_end; i += simd_size)
+        for (ptrdiff_t i = align_begin; i < static_cast<ptrdiff_t>(align_end); i += simd_size)
         {
           e1.template store_simd<lhs_align_mode>(i, e2.template load_simd<rhs_align_mode, value_type>(i));
         }

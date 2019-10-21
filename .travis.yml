@@ -28,11 +28,11 @@ matrix:
       apt:
         sources:
         - ubuntu-toolchain-r-test
-        - llvm-toolchain-trusty-4.0
+        - llvm-toolchain-trusty-8.0
         packages:
         - g++-4.9
-        - clang-4.0
-    env: COMPILER=clang CLANG=4.0
+        - clang-8.0
+    env: COMPILER=clang CLANG=8.0
   - os: osx
     osx_image: xcode8
     compiler: clang
@@ -91,6 +91,8 @@ before_install:
       export CXX=clang++-$CLANG CC=clang-$CLANG;
     fi
   elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+    brew update &&
+    brew install libomp &&
     export CXX=clang++ CC=clang;
   fi
 install:

@@ -34,6 +34,7 @@ add_subdirectory(plot)
 add_subdirectory(structure)
 
 pybind11_add_module(higram ${PYMODULE_COMPONENTS})
+
 get_target_property(_higram_file_name higram OUTPUT_NAME)
 set(HIGRA_CPP_MODULE_NAME $<TARGET_FILE:${higram}> PARENT_SCOPE)
 set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} higram CACHE INTERNAL "" FORCE)

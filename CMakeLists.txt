@@ -39,6 +39,14 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/tools")
 include(higraTools)
 
 ##########################
+#  Required packages
+##########################
+
+find_package(PythonInterp 3 REQUIRED)
+find_package(pybind11 REQUIRED)
+find_package(NumPy REQUIRED)
+
+##########################
 #  Build Type and flags
 ##########################
 
@@ -122,6 +130,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     endif()
 endif()
 
+
 ##########################
 #  Options
 ##########################
@@ -134,6 +143,20 @@ option(DO_EMBEDDED_PYTHON_CPP_TEST
         "Build c++ test with python interpreter embedded suit." OFF)
 
 enable_testing()
+
+option(USE_OPENMP
+        "Enable OpenMP support." ON)
+
+if(USE_OPENMP)
+    add_definitions("-DXTENSOR_USE_OPENMP")
+
+    if(WIN32)
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp ")
+    else()
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp ")
+    endif()
+
+endif()
 
 option (USE_SIMD
         "Enabled SIMD support for xtensor." ON)
@@ -159,9 +182,6 @@ endif()
 #  Build Python bindings
 ##########################
 
-find_package(PythonInterp 3 REQUIRED)
-find_package(pybind11 REQUIRED)
-find_package(NumPy REQUIRED)
 add_subdirectory(higra)
 configure_file(setup.py ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
 configure_file(README.md ${CMAKE_CURRENT_BINARY_DIR}/README.md COPYONLY)
