@@ -11,7 +11,8 @@ Watershed hierarchies                                                 |v2|_     
 Connected image filtering with component trees                        |v3|_        |dl3|_        |co3|_
 Computing a saliency map with the shaping framework                   |v8|_        |dl8|_        |co8|_
 Filtering with non-increasing criterion - The shaping framework       |v9|_        |dl9|_        |co9|_
-Illustrations of SoftwareX 2019 article.ipynb                         |v10|_       |dl10|_       |co10|_
+Illustrations of SoftwareX 2019 article                               |v10|_       |dl10|_       |co10|_
+Illustrations of Pattern Recognition Letters 2019 article             |v11|_       |dl11|_       |co11|_
 Multiscale Hierarchy Alignment and Combination                        |v4|_        |dl4|_        |co4|_
 Region Adjacency Graph                                                |v5|_        |dl5|_        |co5|_
 Interactive object segmentation                                       |v6|_        |dl6|_        |co6|_
@@ -117,3 +118,13 @@ Contour Simplification                                                |v7|_     
 
 .. |co10| image:: /images/colab.png
 .. _co10: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Illustrations%20of%20SoftwareX%202019%20article.ipynb
+
+
+.. |v11| unicode:: &#x1f441; .. view
+.. _v11: https://github.com/higra/Higra-Notebooks/blob/master/Illustrations%20of%20Pattern%20Recognition%20Letters%202019%20article.ipynb
+
+.. |dl11| unicode:: &#x1f4be; .. download
+.. _dl11: https://cdn.jsdelivr.net/gh/higra/Higra-Notebooks/Illustrations%20of%20Pattern%20Recognition%20Letters%202019%20article.ipynb
+
+.. |co11| image:: /images/colab.png
+.. _co11: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Illustrations%20of%20Pattern%20Recognition%20Letters%202019%20article.ipynb
