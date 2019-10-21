@@ -13,6 +13,7 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "higra/accumulator/graph_accumulator.hpp"
+#include "common.hpp"
 
 // @TODO Remove layout_type when xtensor solves the issue with iterators
 template<typename T>
@@ -20,7 +21,7 @@ using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
 
 namespace py = pybind11;
 
-using graph_t = hg::ugraph ;
+using graph_t = hg::ugraph;
 using edge_t = graph_t::edge_descriptor;
 using vertex_t = graph_t::vertex_descriptor;
 
@@ -31,34 +32,12 @@ struct def_accumulate_graph_edges {
     static
     void def(C &c, const char *doc) {
         c.def("_accumulate_graph_edges", [](const graph_t &graph, const pyarray<value_t> &input,
-                                         hg::accumulators accumulator) {
-                  switch (accumulator) {
-                      case hg::accumulators::min:
-                          return hg::accumulate_graph_edges(graph, input, hg::accumulator_min());
-                          break;
-                      case hg::accumulators::max:
-                          return hg::accumulate_graph_edges(graph, input, hg::accumulator_max());
-                          break;
-                      case hg::accumulators::mean:
-                          return hg::accumulate_graph_edges(graph, input, hg::accumulator_mean());
-                          break;
-                      case hg::accumulators::counter:
-                          return hg::accumulate_graph_edges(graph, input, hg::accumulator_counter());
-                          break;
-                      case hg::accumulators::sum:
-                          return hg::accumulate_graph_edges(graph, input, hg::accumulator_sum());
-                          break;
-                      case hg::accumulators::prod:
-                          return hg::accumulate_graph_edges(graph, input, hg::accumulator_prod());
-                          break;
-                      case hg::accumulators::first:
-                          return hg::accumulate_graph_edges(graph, input, hg::accumulator_first());
-                          break;
-                      case hg::accumulators::last:
-                          return hg::accumulate_graph_edges(graph, input, hg::accumulator_last());
-                          break;
-                  }
-                  throw std::runtime_error("Unknown accumulator.");
+                                            hg::accumulators accumulator) {
+                  return dispatch_accumulator(
+                          [&graph, &input](const auto &acc) {
+                              return hg::accumulate_graph_edges(graph, input, acc);
+                          },
+                          accumulator);
               },
               doc,
               py::arg("graph"),
@@ -74,34 +53,12 @@ struct def_accumulate_graph_vertices {
     static
     void def(C &c, const char *doc) {
         c.def("_accumulate_graph_vertices", [](const graph_t &graph, const pyarray<value_t> &input,
-                                            hg::accumulators accumulator) {
-                  switch (accumulator) {
-                      case hg::accumulators::min:
-                          return hg::accumulate_graph_vertices(graph, input, hg::accumulator_min());
-                          break;
-                      case hg::accumulators::max:
-                          return hg::accumulate_graph_vertices(graph, input, hg::accumulator_max());
-                          break;
-                      case hg::accumulators::mean:
-                          return hg::accumulate_graph_vertices(graph, input, hg::accumulator_mean());
-                          break;
-                      case hg::accumulators::counter:
-                          return hg::accumulate_graph_vertices(graph, input, hg::accumulator_counter());
-                          break;
-                      case hg::accumulators::sum:
-                          return hg::accumulate_graph_vertices(graph, input, hg::accumulator_sum());
-                          break;
-                      case hg::accumulators::prod:
-                          return hg::accumulate_graph_vertices(graph, input, hg::accumulator_prod());
-                          break;
-                      case hg::accumulators::first:
-                          return hg::accumulate_graph_vertices(graph, input, hg::accumulator_first());
-                          break;
-                      case hg::accumulators::last:
-                          return hg::accumulate_graph_vertices(graph, input, hg::accumulator_last());
-                          break;
-                  }
-                  throw std::runtime_error("Unknown accumulator.");
+                                               hg::accumulators accumulator) {
+                  return dispatch_accumulator(
+                          [&graph, &input](const auto &acc) {
+                              return hg::accumulate_graph_vertices(graph, input, acc);
+                          },
+                          accumulator);
               },
               doc,
               py::arg("graph"),

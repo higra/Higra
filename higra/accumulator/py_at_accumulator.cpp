@@ -14,7 +14,7 @@
 #include "xtensor-python/pytensor.hpp"
 #include "higra/accumulator/accumulator.hpp"
 #include "higra/accumulator/at_accumulator.hpp"
-
+#include "common.hpp"
 
 
 namespace py = pybind11;
@@ -31,33 +31,11 @@ struct def_at_accumulate {
               [](const pyarray<hg::index_t> &rag_map,
                  const pyarray<value_t> &weights,
                  hg::accumulators accumulator) {
-                  switch (accumulator) {
-                      case hg::accumulators::min:
-                          return hg::accumulate_at(rag_map, weights, hg::accumulator_min());
-                          break;
-                      case hg::accumulators::max:
-                          return hg::accumulate_at(rag_map, weights, hg::accumulator_max());
-                          break;
-                      case hg::accumulators::mean:
-                          return hg::accumulate_at(rag_map, weights, hg::accumulator_mean());
-                          break;
-                      case hg::accumulators::counter:
-                          return hg::accumulate_at(rag_map, weights, hg::accumulator_counter());
-                          break;
-                      case hg::accumulators::sum:
-                          return hg::accumulate_at(rag_map, weights, hg::accumulator_sum());
-                          break;
-                      case hg::accumulators::prod:
-                          return hg::accumulate_at(rag_map, weights, hg::accumulator_prod());
-                          break;
-                      case hg::accumulators::first:
-                          return hg::accumulate_at(rag_map, weights, hg::accumulator_first());
-                          break;
-                      case hg::accumulators::last:
-                          return hg::accumulate_at(rag_map, weights, hg::accumulator_last());
-                          break;
-                  }
-                  throw std::runtime_error("Unknown accumulator.");
+                  return dispatch_accumulator(
+                          [&rag_map, &weights](const auto &acc) {
+                              return hg::accumulate_at(rag_map, weights, acc);
+                          },
+                          accumulator);
               },
               doc,
               py::arg("indices"),
