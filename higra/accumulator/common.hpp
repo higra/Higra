@@ -32,5 +32,9 @@ auto dispatch_accumulator(const functor_t & fun, const hg::accumulators & accumu
             return fun(hg::accumulator_first());
         case hg::accumulators::last:
             return fun(hg::accumulator_last());
+        case hg::accumulators::argmin:
+            return fun(hg::accumulator_argmin());
+        case hg::accumulators::argmax:
+            return fun(hg::accumulator_argmax());
     }
 }

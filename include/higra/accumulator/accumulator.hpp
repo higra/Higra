@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "../utils.hpp"
 #include <functional>
 #include <limits>
 #include <vector>
@@ -26,7 +27,9 @@ namespace hg {
         max,
         counter,
         sum,
-        prod
+        prod,
+        argmin,
+        argmax
     };
 
     namespace accumulator_detail {
@@ -274,6 +277,174 @@ namespace hg {
         };
 
         /**
+         * Argmin accumulator
+         * @tparam S the storage type
+         * @tparam vectorial bool: is dimension of storage > 0 (different from scalar)
+         */
+        template<typename S, bool vectorial = true>
+        struct acc_argmin_impl {
+            using value_type = hg::index_t;
+            using self_type = acc_argmin_impl<S, vectorial>;
+            static const bool is_vectorial = vectorial;
+            using storage_value_type = typename std::iterator_traits<S>::value_type;
+
+
+            acc_argmin_impl(S storage_begin, S storage_end) :
+                    m_storage_begin(storage_begin),
+                    m_storage_end(storage_end) {
+                m_temp.resize(storage_end - storage_begin);
+            }
+
+            template<typename ...Args>
+            void initialize(Args &&...) {
+                *m_storage_begin = -1;
+                cur_index = 0;
+                std::fill(m_temp.begin(), m_temp.end(), std::numeric_limits<storage_value_type>::max());
+            }
+
+            template<typename T1 = self_type, typename T, typename ...Args>
+            std::enable_if_t<T1::is_vectorial>
+            accumulate(T value_begin, Args &&...) {
+
+                auto t = m_temp.begin();
+                auto v = value_begin;
+                bool flag = true;
+                for (; flag && t != m_temp.end(); t++, v++) {
+                    if (*t < *v)
+                        flag = false;
+                }
+                if (flag) {
+                    t = m_temp.begin();
+                    v = value_begin;
+                    for (; flag && t != m_temp.end(); t++, v++) {
+                        *t = *v;
+                    }
+                    *m_storage_begin = cur_index;
+                }
+
+                cur_index++;
+            }
+
+            template<typename T1 = self_type, typename T, typename ...Args>
+            std::enable_if_t<!T1::is_vectorial>
+            accumulate(T value_begin, Args &&...) {
+
+                if (*value_begin < *m_temp.begin()) {
+                    *m_temp.begin() = *value_begin;
+                    *m_storage_begin = cur_index;
+                }
+
+                cur_index++;
+            }
+
+            template<typename ...Args>
+            void finalize(Args &&...) const {}
+
+
+            void set_storage(S storage_begin, S storage_end) {
+                m_storage_begin = storage_begin;
+                m_storage_end = storage_end;
+            }
+
+            template<typename T>
+            void set_storage(T &range) {
+                m_storage_begin = range.begin();
+                m_storage_end = range.end();
+            }
+
+        private:
+            std::vector<storage_value_type> m_temp;
+            index_t cur_index;
+            S m_storage_begin;
+            S m_storage_end;
+        };
+
+
+        /**
+         * Argmax accumulator
+         * @tparam S the storage type
+         * @tparam vectorial bool: is dimension of storage > 0 (different from scalar)
+         */
+        template<typename S, bool vectorial = true>
+        struct acc_argmax_impl {
+            using value_type = hg::index_t;
+            using self_type = acc_argmin_impl<S, vectorial>;
+            static const bool is_vectorial = vectorial;
+            using storage_value_type = typename std::iterator_traits<S>::value_type;
+
+
+            acc_argmax_impl(S storage_begin, S storage_end) :
+                    m_storage_begin(storage_begin),
+                    m_storage_end(storage_end) {
+                m_temp.resize(storage_end - storage_begin);
+            }
+
+            template<typename ...Args>
+            void initialize(Args &&...) {
+                *m_storage_begin = -1;
+                cur_index = 0;
+                std::fill(m_temp.begin(), m_temp.end(), std::numeric_limits<storage_value_type>::lowest());
+            }
+
+            template<typename T1 = self_type, typename T, typename ...Args>
+            std::enable_if_t<T1::is_vectorial>
+            accumulate(T value_begin, Args &&...) {
+
+                auto t = m_temp.begin();
+                auto v = value_begin;
+                bool flag = true;
+                for (; flag && t != m_temp.end(); t++, v++) {
+                    if (*t > *v)
+                        flag = false;
+                }
+                if (flag) {
+                    t = m_temp.begin();
+                    v = value_begin;
+                    for (; flag && t != m_temp.end(); t++, v++) {
+                        *t = *v;
+                    }
+                    *m_storage_begin = cur_index;
+                }
+
+                cur_index++;
+            }
+
+            template<typename T1 = self_type, typename T, typename ...Args>
+            std::enable_if_t<!T1::is_vectorial>
+            accumulate(T value_begin, Args &&...) {
+
+                if (*value_begin > *m_temp.begin()) {
+                    *m_temp.begin() = *value_begin;
+                    *m_storage_begin = cur_index;
+                }
+
+                cur_index++;
+            }
+
+            template<typename ...Args>
+            void finalize(Args &&...) const {}
+
+
+            void set_storage(S storage_begin, S storage_end) {
+                m_storage_begin = storage_begin;
+                m_storage_end = storage_end;
+            }
+
+            template<typename T>
+            void set_storage(T &range) {
+                m_storage_begin = range.begin();
+                m_storage_end = range.end();
+            }
+
+        private:
+            std::vector<storage_value_type> m_temp;
+            index_t cur_index;
+            S m_storage_begin;
+            S m_storage_end;
+        };
+
+
+        /**
          * First accumulator
          * @tparam S the storage type
          * @tparam vectorial bool: is dimension of storage > 0 (different from scalar)
@@ -484,7 +655,7 @@ namespace hg {
 
         template<bool vectorial = true, typename S>
         auto make_accumulator(S &storage) const {
-            using value_type = typename S::value_type;
+            using value_type = index_t;
             using iterator_type = decltype(storage.begin());
             return accumulator_detail::acc_counter_impl<iterator_type, vectorial>(storage.begin(), storage.end());
         }
@@ -521,6 +692,42 @@ namespace hg {
             using value_type = typename S::value_type;
             using iterator_type = decltype(storage.begin());
             return accumulator_detail::acc_last_impl<iterator_type, vectorial>(
+                    storage.begin(),
+                    storage.end());
+        }
+
+        template<typename shape_t>
+        static
+        auto get_output_shape(const shape_t &input_shape) {
+            return input_shape;
+        }
+    };
+
+    struct accumulator_argmin {
+
+        template<bool vectorial = true, typename S>
+        auto make_accumulator(S &storage) const {
+            using value_type = index_t;
+            using iterator_type = decltype(storage.begin());
+            return accumulator_detail::acc_argmin_impl<iterator_type, vectorial>(
+                    storage.begin(),
+                    storage.end());
+        }
+
+        template<typename shape_t>
+        static
+        auto get_output_shape(const shape_t &input_shape) {
+            return input_shape;
+        }
+    };
+
+    struct accumulator_argmax {
+
+        template<bool vectorial = true, typename S>
+        auto make_accumulator(S &storage) const {
+            using value_type = index_t;
+            using iterator_type = decltype(storage.begin());
+            return accumulator_detail::acc_argmax_impl<iterator_type, vectorial>(
                     storage.begin(),
                     storage.end());
         }

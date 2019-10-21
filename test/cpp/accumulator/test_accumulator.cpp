@@ -49,16 +49,18 @@ namespace accumulator {
     }
 
     TEST_CASE("accumulator scalar", "[accumulator]") {
-        hg::array_nd<double> values{-5, 10, 5, 2, -2};
+        hg::array_nd<double> values{-5, 10, -20, 5, 2, -2};
         double r = applyAccG(values, hg::accumulator_max())();
         REQUIRE(r == 10.0);
-        REQUIRE((applyAccG(values, hg::accumulator_min()))() == -5);
-        REQUIRE((applyAccG(values, hg::accumulator_sum()))() == 10);
-        REQUIRE((applyAccG(values, hg::accumulator_counter()))() == 5);
+        REQUIRE((applyAccG(values, hg::accumulator_min()))() == -20);
+        REQUIRE((applyAccG(values, hg::accumulator_sum()))() == -10);
+        REQUIRE((applyAccG(values, hg::accumulator_counter()))() == 6);
         REQUIRE((applyAccG(values, hg::accumulator_first()))() == -5);
         REQUIRE((applyAccG(values, hg::accumulator_last()))() == -2);
-        REQUIRE((isclose(applyAccG(values, hg::accumulator_mean())(), 2)));
-        REQUIRE((isclose(applyAccG(values, hg::accumulator_prod())(), 1000)));
+        REQUIRE((applyAccG(values, hg::accumulator_argmin()))() == 2);
+        REQUIRE((applyAccG(values, hg::accumulator_argmax()))() == 1);
+        REQUIRE((isclose(applyAccG(values, hg::accumulator_mean())(), (-5 + 10 + -20 + 5 + 2 + -2) / 6.0)));
+        REQUIRE((isclose(applyAccG(values, hg::accumulator_prod())(), -5 * 10 * -20 * 5 * 2 * -2)));
 
     }
 
@@ -93,6 +95,19 @@ namespace accumulator {
         hg::array_nd<double> ref5{{-2, 2},
                                   {1,  -1}};
         REQUIRE(xt::allclose(res5, ref5));
+
+        hg::array_nd<double> values2{{0,  1},
+                                     {-1, -2},
+                                     {5,  9},
+                                     {-1, 4},
+                                     {-2, 10},
+                                     {1,  -1}};
+
+        auto res6 = applyAccG(values2, hg::accumulator_argmin())();
+        REQUIRE(res6 == 1);
+
+        auto res7 = applyAccG(values2, hg::accumulator_argmax())();
+        REQUIRE(res7 == 2);
 
     }
 }
