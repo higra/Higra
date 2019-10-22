@@ -352,7 +352,7 @@ namespace hg {
                                            const xt::xexpression<T1> &xinput,
                                            const xt::xexpression<T2> &xvertex_data,
                                            const accumulator_t &accumulator,
-                                           combination_fun_t combine) {
+                                           const combination_fun_t &combine) {
         auto &input = xinput.derived_cast();
 
         if (input.dimension() == 1) {

@@ -13,6 +13,7 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
+#include "common.hpp"
 
 // @TODO Remove layout_type when xtensor solves the issue with iterators
 template<typename T>
@@ -32,33 +33,11 @@ struct def_accumulate_parallel {
     void def(C &c, const char *doc) {
         c.def("_accumulate_parallel", [](const graph_t &tree, const pyarray<value_t> &input,
                                          hg::accumulators accumulator) {
-                  switch (accumulator) {
-                      case hg::accumulators::min:
-                          return hg::accumulate_parallel(tree, input, hg::accumulator_min());
-                          break;
-                      case hg::accumulators::max:
-                          return hg::accumulate_parallel(tree, input, hg::accumulator_max());
-                          break;
-                      case hg::accumulators::mean:
-                          return hg::accumulate_parallel(tree, input, hg::accumulator_mean());
-                          break;
-                      case hg::accumulators::counter:
-                          return hg::accumulate_parallel(tree, input, hg::accumulator_counter());
-                          break;
-                      case hg::accumulators::sum:
-                          return hg::accumulate_parallel(tree, input, hg::accumulator_sum());
-                          break;
-                      case hg::accumulators::prod:
-                          return hg::accumulate_parallel(tree, input, hg::accumulator_prod());
-                          break;
-                      case hg::accumulators::first:
-                          return hg::accumulate_parallel(tree, input, hg::accumulator_first());
-                          break;
-                      case hg::accumulators::last:
-                          return hg::accumulate_parallel(tree, input, hg::accumulator_last());
-                          break;
-                  }
-                  throw std::runtime_error("Unknown accumulator.");
+                  return dispatch_accumulator(
+                          [&tree, &input](const auto &acc) {
+                              return hg::accumulate_parallel(tree, input, acc);
+                          },
+                          accumulator);
               },
               doc,
               py::arg("tree"),
@@ -74,33 +53,11 @@ struct def_accumulate_sequential {
     void def(C &c, const char *doc) {
         c.def("_accumulate_sequential",
               [](const graph_t &tree, const pyarray<value_t> &vertex_data, hg::accumulators accumulator) {
-                  switch (accumulator) {
-                      case hg::accumulators::min:
-                          return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_min());
-                          break;
-                      case hg::accumulators::max:
-                          return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_max());
-                          break;
-                      case hg::accumulators::mean:
-                          return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_mean());
-                          break;
-                      case hg::accumulators::counter:
-                          return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_counter());
-                          break;
-                      case hg::accumulators::sum:
-                          return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_sum());
-                          break;
-                      case hg::accumulators::prod:
-                          return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_prod());
-                          break;
-                      case hg::accumulators::first:
-                          return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_first());
-                          break;
-                      case hg::accumulators::last:
-                          return hg::accumulate_sequential(tree, vertex_data, hg::accumulator_last());
-                          break;
-                  }
-                  throw std::runtime_error("Unknown accumulator.");
+                  return dispatch_accumulator(
+                          [&tree, &vertex_data](const auto &acc) {
+                              return hg::accumulate_sequential(tree, vertex_data, acc);
+                          },
+                          accumulator);
               },
               doc,
               py::arg("tree"),
@@ -147,49 +104,11 @@ struct def_accumulate_and_combine_sequential {
         c.def(name,
               [&f](const graph_t &tree, const pyarray<value_t> &input, const pyarray<value_t> &vertex_data,
                    hg::accumulators accumulator) {
-                  switch (accumulator) {
-                      case hg::accumulators::min:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_min(),
-                                                                       f);
-                          break;
-                      case hg::accumulators::max:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_max(),
-                                                                       f);
-                          break;
-                      case hg::accumulators::mean:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_mean(),
-                                                                       f);
-                          break;
-                      case hg::accumulators::counter:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_counter(),
-                                                                       f);
-                          break;
-                      case hg::accumulators::sum:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_sum(),
-                                                                       f);
-                          break;
-                      case hg::accumulators::prod:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_prod(),
-                                                                       f);
-                          break;
-                      case hg::accumulators::first:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_first(),
-                                                                       f);
-                          break;
-                      case hg::accumulators::last:
-                          return hg::accumulate_and_combine_sequential(tree, input, vertex_data,
-                                                                       hg::accumulator_last(),
-                                                                       f);
-                          break;
-                  }
-                  throw std::runtime_error("Unknown accumulator.");
+                  return dispatch_accumulator(
+                          [&tree, &input, &vertex_data, &f](const auto &acc) {
+                              return hg::accumulate_and_combine_sequential(tree, input, vertex_data, acc, f);
+                          },
+                          accumulator);
               },
               doc,
               py::arg("tree"),
@@ -246,33 +165,11 @@ struct def_propagate_sequential_and_accumulate {
     void def(C &c, const char *doc) {
         c.def("_propagate_sequential_and_accumulate",
               [](const graph_t &tree, const pyarray<value_t> &vertex_data, hg::accumulators accumulator) {
-                  switch (accumulator) {
-                      case hg::accumulators::min:
-                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_min());
-                          break;
-                      case hg::accumulators::max:
-                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_max());
-                          break;
-                      case hg::accumulators::mean:
-                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_mean());
-                          break;
-                      case hg::accumulators::counter:
-                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_counter());
-                          break;
-                      case hg::accumulators::sum:
-                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_sum());
-                          break;
-                      case hg::accumulators::prod:
-                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_prod());
-                          break;
-                      case hg::accumulators::first:
-                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_first());
-                          break;
-                      case hg::accumulators::last:
-                          return hg::propagate_sequential_and_accumulate(tree, vertex_data, hg::accumulator_last());
-                          break;
-                  }
-                  throw std::runtime_error("Unknown accumulator.");
+                  return dispatch_accumulator(
+                          [&tree, &vertex_data](const auto &acc) {
+                              return hg::propagate_sequential_and_accumulate(tree, vertex_data, acc);
+                          },
+                          accumulator);
               },
               doc,
               py::arg("tree"),

@@ -12,6 +12,7 @@
 #include "../py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "higra/accumulator/tree_contour_accumulator.hpp"
+#include "common.hpp"
 
 // @TODO Remove layout_type when xtensor solves the issue with iterators
 template<typename T>
@@ -31,33 +32,11 @@ struct def_accumulate_on_contours {
                  const pyarray<value_t> &vertex_data,
                  const pyarray<hg::index_t> &depth,
                  hg::accumulators accumulator) {
-                  switch (accumulator) {
-                      case hg::accumulators::min:
-                          return hg::accumulate_on_contours(graph, tree, vertex_data, depth, hg::accumulator_min());
-                          break;
-                      case hg::accumulators::max:
-                          return hg::accumulate_on_contours(graph, tree, vertex_data, depth, hg::accumulator_max());
-                          break;
-                      case hg::accumulators::mean:
-                          return hg::accumulate_on_contours(graph, tree, vertex_data, depth, hg::accumulator_mean());
-                          break;
-                      case hg::accumulators::counter:
-                          return hg::accumulate_on_contours(graph, tree, vertex_data, depth, hg::accumulator_counter());
-                          break;
-                      case hg::accumulators::sum:
-                          return hg::accumulate_on_contours(graph, tree, vertex_data, depth, hg::accumulator_sum());
-                          break;
-                      case hg::accumulators::prod:
-                          return hg::accumulate_on_contours(graph, tree, vertex_data, depth, hg::accumulator_prod());
-                          break;
-                      case hg::accumulators::first:
-                          return hg::accumulate_on_contours(graph, tree, vertex_data, depth, hg::accumulator_first());
-                          break;
-                      case hg::accumulators::last:
-                          return hg::accumulate_on_contours(graph, tree, vertex_data, depth, hg::accumulator_last());
-                          break;
-                  }
-                  throw std::runtime_error("Unknown accumulator.");
+                  return dispatch_accumulator(
+                          [&graph, &tree, &vertex_data, &depth](const auto &acc) {
+                              return hg::accumulate_on_contours(graph, tree, vertex_data, depth, acc);
+                          },
+                          accumulator);
               },
               doc,
               py::arg("graph"),
@@ -72,6 +51,4 @@ void py_init_tree_contour_accumulator(pybind11::module &m) {
     add_type_overloads<def_accumulate_on_contours<hg::ugraph, hg::tree>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
              "");
-
-
 }

@@ -52,6 +52,15 @@ class TestTreeAccumulators(unittest.TestCase):
         ref6 = np.asarray((1, 1, 1, 1, 1, 2, 2, 4))
         self.assertTrue(np.allclose(ref6, res6))
 
+        input_array = np.asarray((0, 1, 0, 1, 2, 0, 1, 1))
+        res = hg.accumulate_parallel(tree, input_array, hg.Accumulators.argmin)
+        ref = np.asarray((-1, -1, -1, -1, -1, 0, 0, 0))
+        self.assertTrue(np.allclose(ref, res))
+
+        res = hg.accumulate_parallel(tree, input_array, hg.Accumulators.argmax)
+        ref = np.asarray((-1, -1, -1, -1, -1, 1, 2, 1))
+        self.assertTrue(np.allclose(ref, res))
+
     def test_tree_accumulatorVec(self):
         tree = TestTreeAccumulators.get_tree()
         input_array = np.asarray(((1, 0),
