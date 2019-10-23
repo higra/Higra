@@ -61,16 +61,23 @@ def quasi_flat_zone_hierarchy(graph, edge_weights):
 
 def simplify_tree(tree, deleted_vertices, process_leaves=False):
     """
-    Creates a copy of the given tree and deletes the vertices `i` of the tree such that `deletedVertices[i]` is true.
+    Creates a copy of the given tree and deletes the vertices :math:`i` of the tree such that :math:`deletedVertices[i]`
+    is ``True``.
 
     The returned ``node_map`` is an array that maps any node index :math:`i` of the new tree,
     to the index of the corresponding node in the original tree.
 
+
     :param tree: input tree
     :param deleted_vertices: boolean valuation of the input tree nodes
-    :param process_leaves: If false, a leaf vertex `v` will never be removed disregarding the value of `deletedVertices[v]`
+    :param process_leaves: If ``False``, a leaf vertex :math:`v` will never be removed disregarding the value of
+                            :math:`deletedVertices[v]`. If ``True``, leaves node may be removed. Note that in this
+                            case, a reordering of the nodes may be necessary, which is a more complex and slower operation.
     :return: a tree (Concept :class:`~higra.CptHierarchy` if input tree already satisfied this concept) and the node map
     """
+
+    if len(deleted_vertices.shape) != 1 or deleted_vertices.shape[0] != tree.num_vertices():
+        raise ValueError("Parameter 'deleted_vertices' must an array of shape [tree.num_vertices()].")
 
     res = hg.cpp._simplify_tree(tree, deleted_vertices, process_leaves)
     new_tree = res.tree()

@@ -63,9 +63,9 @@ class TestTreeOfShapesImage(unittest.TestCase):
 
         tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'none', True)
         ref_parents = np.asarray((32, 32, 32, 32, 32, 32,
-                                  32, 31, 31, 30, 30, 32,
-                                  32, 31, 32, 32, 30, 32,
-                                  32, 31, 31, 30, 30, 32,
+                                  32, 30, 30, 31, 31, 32,
+                                  32, 30, 32, 32, 31, 32,
+                                  32, 30, 30, 31, 31, 32,
                                   32, 32, 32, 32, 32, 32,
                                   32, 32, 32), dtype=np.int64)
 
@@ -74,7 +74,7 @@ class TestTreeOfShapesImage(unittest.TestCase):
                                     1, 0, 1, 1, 3, 1,
                                     1, 0, 0, 3, 3, 1,
                                     1, 1, 1, 1, 1, 1,
-                                    3, 0, 1), dtype=np.float64)
+                                    0, 3, 1), dtype=np.float64)
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.all(altitudes == ref_altitudes))
 
@@ -122,13 +122,13 @@ class TestTreeOfShapesImage(unittest.TestCase):
                             (1, -2, 3)), dtype=np.int32)
 
         tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'zero', True)
-        ref_parents = np.asarray((8, 8, 8,
-                                  8, 6, 7,
-                                  9, 8, 9, 9), dtype=np.int64)
+        ref_parents = np.asarray((7, 7, 7,
+                                  7, 8, 6,
+                                  7, 9, 9, 9), dtype=np.int64)
 
         ref_altitudes = np.asarray((1, 1, 1,
                                     1, -2, 3,
-                                    -2, 3, 1, 0), dtype=np.int32)
+                                    3, 1, -2, 0), dtype=np.int32)
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.all(altitudes == ref_altitudes))
 
@@ -145,15 +145,15 @@ class TestTreeOfShapesImage(unittest.TestCase):
                             (1, 7)), dtype=np.float64)
 
         tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'mean', True)
-        ref_parents = np.asarray((8, 8,
-                                  8, 7,
-                                  8, 6,
-                                  9, 8, 9, 9), dtype=np.int64)
+        ref_parents = np.asarray((7, 7,
+                                  7, 6,
+                                  7, 8,
+                                  7, 9, 9, 9), dtype=np.int64)
 
         ref_altitudes = np.asarray((1., 1.,
                                     1., -2.,
                                     1., 7.,
-                                    7., -2., 1., 1.5), dtype=np.float64)
+                                    -2., 1., 7., 1.5), dtype=np.float64)
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 

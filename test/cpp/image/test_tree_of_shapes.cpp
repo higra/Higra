@@ -35,8 +35,7 @@ namespace tree_of_shapes {
             for (int i = -2; i < 8; i++) {
                 REQUIRE(q.level_empty(i));
             }
-        }
-        SECTION("push top pop") {
+        }SECTION("push top pop") {
             q.push(1, 10);
             REQUIRE(!q.level_empty(1));
             REQUIRE(q.size() == 1);
@@ -49,8 +48,7 @@ namespace tree_of_shapes {
             q.pop(1);
             REQUIRE(q.size() == 0);
             REQUIRE(q.level_empty(1));
-        }
-        SECTION("closest non empty") {
+        }SECTION("closest non empty") {
             q.push(0, 4);
             q.push(5, 7);
             std::vector<int> res{0, 0, 0, 0, 0, 5, 5, 5, 5, 5};
@@ -165,150 +163,150 @@ namespace tree_of_shapes {
         REQUIRE((enqueued_level == expected_enqueued_level));
     }
 
-    TEMPLATE_TEST_CASE("test tree of shapes no padding", "[tree_of_shapes]", char, float) {
-        array_2d<TestType> image{{1, 1, 1, 1, 1, 1},
-                                 {1, 0, 0, 3, 3, 1},
-                                 {1, 0, 1, 1, 3, 1},
-                                 {1, 0, 0, 3, 3, 1},
-                                 {1, 1, 1, 1, 1, 1}};
+TEMPLATE_TEST_CASE("test tree of shapes no padding", "[tree_of_shapes]", char, float) {
+    array_2d <TestType> image{{1, 1, 1, 1, 1, 1},
+                              {1, 0, 0, 3, 3, 1},
+                              {1, 0, 1, 1, 3, 1},
+                              {1, 0, 0, 3, 3, 1},
+                              {1, 1, 1, 1, 1, 1}};
 
-        auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::none, false);
-        auto &tree = result.tree;
-        auto &altitudes = result.altitudes;
-        array_1d<index_t>
-                ref_parents{101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
-                            101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
-                            101, 101, 100, 100, 100, 101, 99, 99, 99, 101, 101,
-                            101, 101, 100, 101, 101, 101, 101, 101, 99, 101, 101,
-                            101, 101, 100, 101, 101, 101, 101, 101, 99, 101, 101,
-                            101, 101, 100, 101, 101, 101, 101, 101, 99, 101, 101,
-                            101, 101, 100, 100, 100, 101, 99, 99, 99, 101, 101,
-                            101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
-                            101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
-                            101, 101, 101};
-        array_1d<TestType>
-                ref_altitudes{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                              1, 1, 0, 0, 0, 1, 3, 3, 3, 1, 1,
-                              1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1,
-                              1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1,
-                              1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1,
-                              1, 1, 0, 0, 0, 1, 3, 3, 3, 1, 1,
-                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                              1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                              3, 0, 1};
-        REQUIRE((tree.parents() == ref_parents));
-        REQUIRE((altitudes == ref_altitudes));
-    }
+    auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::none, false);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
+    array_1d <index_t>
+            ref_parents{101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
+                        101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
+                        101, 101, 100, 100, 100, 101, 99, 99, 99, 101, 101,
+                        101, 101, 100, 101, 101, 101, 101, 101, 99, 101, 101,
+                        101, 101, 100, 101, 101, 101, 101, 101, 99, 101, 101,
+                        101, 101, 100, 101, 101, 101, 101, 101, 99, 101, 101,
+                        101, 101, 100, 100, 100, 101, 99, 99, 99, 101, 101,
+                        101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
+                        101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101,
+                        101, 101, 101};
+    array_1d <TestType>
+            ref_altitudes{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                          1, 1, 0, 0, 0, 1, 3, 3, 3, 1, 1,
+                          1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1,
+                          1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1,
+                          1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 1,
+                          1, 1, 0, 0, 0, 1, 3, 3, 3, 1, 1,
+                          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                          3, 0, 1};
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
+}
 
-    TEMPLATE_TEST_CASE("test tree of shapes no padding original space", "[tree_of_shapes]", char, float) {
-        array_2d<TestType> image{{1, 1, 1, 1, 1, 1},
-                                 {1, 0, 0, 3, 3, 1},
-                                 {1, 0, 1, 1, 3, 1},
-                                 {1, 0, 0, 3, 3, 1},
-                                 {1, 1, 1, 1, 1, 1}};
+TEMPLATE_TEST_CASE("test tree of shapes no padding original space", "[tree_of_shapes]", char, float) {
+    array_2d <TestType> image{{1, 1, 1, 1, 1, 1},
+                              {1, 0, 0, 3, 3, 1},
+                              {1, 0, 1, 1, 3, 1},
+                              {1, 0, 0, 3, 3, 1},
+                              {1, 1, 1, 1, 1, 1}};
 
-        auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::none, true);
-        auto &tree = result.tree;
-        auto &altitudes = result.altitudes;
+    auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::none, true);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
 
-        array_1d<index_t>
-                ref_parents{32, 32, 32, 32, 32, 32,
-                            32, 31, 31, 30, 30, 32,
-                            32, 31, 32, 32, 30, 32,
-                            32, 31, 31, 30, 30, 32,
-                            32, 32, 32, 32, 32, 32,
-                            32, 32, 32};
-        array_1d<TestType>
-                ref_altitudes{1, 1, 1, 1, 1, 1,
-                              1, 0, 0, 3, 3, 1,
-                              1, 0, 1, 1, 3, 1,
-                              1, 0, 0, 3, 3, 1,
-                              1, 1, 1, 1, 1, 1,
-                              3, 0, 1};
-        REQUIRE((tree.parents() == ref_parents));
-        REQUIRE((altitudes == ref_altitudes));
-    }
+    array_1d <index_t>
+            ref_parents{32, 32, 32, 32, 32, 32,
+                        32, 30, 30, 31, 31, 32,
+                        32, 30, 32, 32, 31, 32,
+                        32, 30, 30, 31, 31, 32,
+                        32, 32, 32, 32, 32, 32,
+                        32, 32, 32};
+    array_1d <TestType>
+            ref_altitudes{1, 1, 1, 1, 1, 1,
+                          1, 0, 0, 3, 3, 1,
+                          1, 0, 1, 1, 3, 1,
+                          1, 0, 0, 3, 3, 1,
+                          1, 1, 1, 1, 1, 1,
+                          0, 3, 1};
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
+}
 
-    TEST_CASE("test tree of shapes padding 0", "[tree_of_shapes]") {
-        array_2d<float> image{{1, 1,  1},
-                              {1, -2, 3}};
+TEST_CASE("test tree of shapes padding 0", "[tree_of_shapes]") {
+    array_2d<float> image{{1, 1,  1},
+                          {1, -2, 3}};
 
-        auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::zero, false);
-        auto &tree = result.tree;
-        auto &altitudes = result.altitudes;
+    auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::zero, false);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
 
-        array_1d<index_t>
-                ref_parents{66, 66, 66, 66, 66, 66, 66, 66, 66,
-                            66, 66, 66, 66, 66, 66, 66, 66, 66,
-                            66, 66, 65, 65, 65, 65, 65, 66, 66,
-                            66, 66, 65, 66, 66, 66, 65, 66, 66,
-                            66, 66, 65, 66, 63, 66, 64, 66, 66,
-                            66, 66, 66, 66, 66, 66, 66, 66, 66,
-                            66, 66, 66, 66, 66, 66, 66, 66, 66,
-                            66, 65, 66, 66};
-        array_1d<float>
-                ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 1, 1, 1, 1, 1, 0, 0,
-                              0, 0, 1, 0, 0, 0, 1, 0, 0,
-                              0, 0, 1, 0, -2, 0, 3, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              -2, 3, 1, 0};
-        REQUIRE((tree.parents() == ref_parents));
-        REQUIRE((altitudes == ref_altitudes));
-    }
+    array_1d <index_t>
+            ref_parents{66, 66, 66, 66, 66, 66, 66, 66, 66,
+                        66, 66, 66, 66, 66, 66, 66, 66, 66,
+                        66, 66, 65, 65, 65, 65, 65, 66, 66,
+                        66, 66, 65, 66, 66, 66, 65, 66, 66,
+                        66, 66, 65, 66, 63, 66, 64, 66, 66,
+                        66, 66, 66, 66, 66, 66, 66, 66, 66,
+                        66, 66, 66, 66, 66, 66, 66, 66, 66,
+                        66, 65, 66, 66};
+    array_1d<float>
+            ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 1, 1, 1, 1, 1, 0, 0,
+                          0, 0, 1, 0, 0, 0, 1, 0, 0,
+                          0, 0, 1, 0, -2, 0, 3, 0, 0,
+                          0, 0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 0, 0, 0, 0, 0,
+                          -2, 3, 1, 0};
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
+}
 
-    TEST_CASE("test tree of shapes padding 0 original space", "[tree_of_shapes]") {
-        array_2d<float> image{{1, 1,  1},
-                              {1, -2, 3}};
+TEST_CASE("test tree of shapes padding 0 original space", "[tree_of_shapes]") {
+    array_2d<float> image{{1, 1,  1},
+                          {1, -2, 3}};
 
-        auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::zero, true);
-        auto &tree = result.tree;
-        auto &altitudes = result.altitudes;
+    auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::zero, true);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
 
-        array_1d<index_t>
-                ref_parents{8, 8, 8,
-                            8, 6, 7,
-                            9, 8, 9, 9};
-        array_1d<char>
-                ref_altitudes{1, 1, 1,
-                              1, -2, 3,
-                              -2, 3, 1, 0};
-        REQUIRE((tree.parents() == ref_parents));
-        REQUIRE((altitudes == ref_altitudes));
-    }
+    array_1d <index_t>
+            ref_parents{7, 7, 7,
+                        7, 8, 6,
+                        7, 9, 9, 9};
+    array_1d<char>
+            ref_altitudes{1, 1, 1,
+                          1, -2, 3,
+                          3, 1, -2, 0};
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
+}
 
-    TEST_CASE("test tree of shapes padding mean original space", "[tree_of_shapes]") {
-        array_2d<float> image{{1, 1},
-                              {1, -2},
-                              {1, 7}};
+TEST_CASE("test tree of shapes padding mean original space", "[tree_of_shapes]") {
+    array_2d<float> image{{1, 1},
+                          {1, -2},
+                          {1, 7}};
 
-        auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::mean, true);
-        auto &tree = result.tree;
-        auto &altitudes = result.altitudes;
+    auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::mean, true);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
 
-        array_1d<index_t>
-                ref_parents{8, 8,
-                            8, 7,
-                            8, 6,
-                            9, 8, 9, 9};
-        array_1d<float>
-                ref_altitudes{1., 1.,
-                              1., -2.,
-                              1., 7.,
-                              7., -2., 1., 1.5};
-        REQUIRE((tree.parents() == ref_parents));
-        REQUIRE((altitudes == ref_altitudes));
-    }
+    array_1d <index_t>
+            ref_parents{7, 7,
+                        7, 6,
+                        7, 8,
+                        7, 9, 9, 9};
+    array_1d<float>
+            ref_altitudes{1., 1.,
+                          1., -2.,
+                          1., 7.,
+                          -2., 1., 7., 1.5};
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
+}
 
-    TEST_CASE("test tree of shapes self duality", "[tree_of_shapes]") {
-        xt::random::seed(42);
-        array_2d<double> image = xt::random::rand<double>({25, 38});
-        auto res1 = component_tree_tree_of_shapes_image2d(image);
-        auto res2 = component_tree_tree_of_shapes_image2d(-image);
-        REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
-    }
+TEST_CASE("test tree of shapes self duality", "[tree_of_shapes]") {
+    xt::random::seed(42);
+    array_2d<double> image = xt::random::rand<double>({25, 38});
+    auto res1 = component_tree_tree_of_shapes_image2d(image);
+    auto res2 = component_tree_tree_of_shapes_image2d(-image);
+    REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
+}
 
 }

@@ -129,7 +129,7 @@ namespace hg {
     };
 
     /**
-     * Extract the supervertices associated to the given and create the equivalent tree on this supervertices.
+     * Extract the supervertices associated to the given tree and create the equivalent tree on this supervertices.
      *
      * Two leaves are in the same supervertex if they have a common ancestor of altitude 0.
      *
