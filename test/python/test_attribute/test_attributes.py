@@ -573,6 +573,14 @@ class TestAttributes(unittest.TestCase):
         res = hg.attribute_dynamics(t, altitudes)
         self.assertTrue(np.all(res == ref))
 
+    def test_attribute_child_number(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+
+        ref = np.asarray((0, 1, 0, 1, 2, 0, 1, -1), dtype=np.int64)
+
+        res = hg.attribute_child_number(tree)
+        self.assertTrue(np.all(res == ref))
+
 
 if __name__ == '__main__':
     unittest.main()

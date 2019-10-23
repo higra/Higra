@@ -119,7 +119,7 @@ def rag_accumulate_on_vertices(rag, accumulator, vertex_weights):
     detail = hg.CptRegionAdjacencyGraph.construct(rag)
     vertex_weights = hg.linearize_vertex_weights(vertex_weights, detail["pre_graph"])
 
-    new_weights = hg.cpp._rag_accumulate(detail["vertex_map"], vertex_weights, accumulator)
+    new_weights = hg.accumulate_at(detail["vertex_map"], vertex_weights, accumulator)
 
     return new_weights
 
@@ -140,6 +140,6 @@ def rag_accumulate_on_edges(rag, accumulator, edge_weights):
 
     detail = hg.CptRegionAdjacencyGraph.construct(rag)
 
-    new_weights = hg.cpp._rag_accumulate(detail["edge_map"], edge_weights, accumulator)
+    new_weights = hg.accumulate_at(detail["edge_map"], edge_weights, accumulator)
 
     return new_weights

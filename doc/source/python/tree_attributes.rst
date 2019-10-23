@@ -8,6 +8,7 @@ Tree attributes
 .. autosummary::
 
     attribute_area
+    attribute_child_number
     attribute_contour_length
     attribute_contour_strength
     attribute_compactness
@@ -27,6 +28,8 @@ Tree attributes
     attribute_volume
 
 .. autofunction:: higra.attribute_area
+
+.. autofunction:: higra.attribute_child_number
 
 .. autofunction:: higra.attribute_contour_length
 

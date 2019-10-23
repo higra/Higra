@@ -206,4 +206,12 @@ namespace tree_attributes {
         REQUIRE(xt::allclose(ref, res));
     }
 
+    TEST_CASE("tree attribute child number", "[tree_attributes]") {
+        auto t = data.t;
+
+        array_1d<index_t> ref{0, 1, 0, 1, 2, 0, 1, -1};
+        auto res = attribute_child_number(t);
+        REQUIRE((ref == res));
+    }
+
 }
