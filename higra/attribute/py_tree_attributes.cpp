@@ -112,7 +112,7 @@ void py_init_attributes(pybind11::module &m) {
           [](const hg::tree &tree, hg::index_t skip) {
               return hg::attribute_sibling(tree, skip);
           },
-          "Attribute sibling.",
+          "",
           pybind11::arg("tree"),
           pybind11::arg("skip") = 1);
 
@@ -120,7 +120,14 @@ void py_init_attributes(pybind11::module &m) {
           [](const hg::tree &tree) {
               return hg::attribute_depth(tree);
           },
-          "Attribute depth.",
+          "",
+          pybind11::arg("tree"));
+
+    m.def("_attribute_child_number",
+          [](const hg::tree &tree) {
+              return hg::attribute_child_number(tree);
+          },
+          "",
           pybind11::arg("tree"));
 
     add_type_overloads<def_contour_length_component_tree,

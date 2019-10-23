@@ -153,13 +153,13 @@ namespace hg {
             // true if all nodes below a given node are deleted
             // a non leaf node i such that removed_branch(i) && !removed_branch(parent(i)) is thus new leaf
             array_1d<bool> removed_branch = xt::zeros<bool>({num_vertices(t)});
-            for (index_t i = 0; i < num_leaves(t); i++) {
+            for (index_t i = 0; i < (index_t)num_leaves(t); i++) {
                 removed_branch(i) = criterion(i);
             }
 
-            for (index_t i = num_leaves(t); i < num_vertices(t); i++) {
+            for (index_t i = num_leaves(t); i < (index_t)num_vertices(t); i++) {
                 bool flag = true;
-                for (index_t c = 0; flag && c < num_children(i, t); c++) {
+                for (index_t c = 0; flag && c < (index_t)num_children(i, t); c++) {
                     auto cc = child(c, i, t);
                     flag = flag && removed_branch(cc) && criterion(cc);
                 }

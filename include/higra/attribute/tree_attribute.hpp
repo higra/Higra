@@ -401,7 +401,7 @@ namespace hg {
      * Computes the contour length (perimeter) of each node of the input component tree.
      *
      * Warning: does not work for tree of shapes left in original space (the problem is that
-    # two children of a node may become adjacent when the interpolated pixels are removed).
+     * two children of a node may become adjacent when the interpolated pixels are removed).
      *
      * @tparam tree_t
      * @tparam graph_t
@@ -445,6 +445,31 @@ namespace hg {
                 }
             }
         }
+        return res;
+    }
+
+
+    /**
+     * Given a node :math:`n` whose parent is :math:`p`, the attribute value of :math:`n` is the rank of :math:`n`
+     * in the list of children of :math:`p`. In other :math:`attribute(n)=i` means that :math:`n` is the :math:`i`-th
+     * child of :math:`p`.
+     *
+     * The root of the tree, who has no parent, take the value -1.
+     *
+     * @tparam tree_t
+     * @param tree
+     * @return
+     */
+    template<typename tree_t>
+    auto attribute_child_number(const tree_t &tree) {
+        array_1d<index_t> res = xt::empty<index_t>({num_vertices(tree)});
+        for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
+            for (index_t c = 0; c < (index_t) num_children(i, tree); c++) {
+                auto cc = child(c, i, tree);
+                res(cc) = c;
+            }
+        }
+        res(root(tree)) = invalid_index;
         return res;
     }
 }

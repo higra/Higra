@@ -546,3 +546,21 @@ def attribute_dynamics(tree, altitudes, increasing_altitudes="auto"):
     height = hg.attribute_height(tree, altitudes, inc)
 
     return hg.attribute_extinction_value(tree, altitudes, height, inc)
+
+
+@hg.auto_cache
+def attribute_child_number(tree):
+    """
+    Given a node :math:`n` whose parent is :math:`p`, the attribute value of :math:`n` is the rank of :math:`n`
+    in the list of children of :math:`p`. In other :math:`attribute(n)=i` means that :math:`n` is the :math:`i`-th
+    child of :math:`p`.
+
+    The root of the tree, who has no parent, take the value -1.
+
+    :param tree: Input tree
+    :return: a 1d array
+    """
+
+    res = hg.cpp._attribute_child_number(tree)
+
+    return res
