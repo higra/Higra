@@ -214,7 +214,7 @@ class TestAttributes(unittest.TestCase):
                           4, 4, 4, 4,
                           4, 4, 4, 4,
                           4, 4, 4, 4,
-                          4, 6, 4, 6, 16), dtype=np.float64)
+                          4, 4, 6, 6, 16), dtype=np.float64)
 
         self.assertTrue(np.all(res == ref))
 

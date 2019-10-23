@@ -108,19 +108,51 @@ namespace hierarchy_core {
 
         tree t(xt::xarray<index_t>{8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12});
 
-        array_1d<bool> criterion{false, true, true, false, false, false, false, false, true, true, false, false};
+        array_1d<bool> criterion{false, true, true, false, false, false, false, false, true, true, false, false, false};
 
         auto res = hg::simplify_tree(t, criterion, true);
         auto nt = res.tree;
         auto nm = res.node_map;
 
-        REQUIRE(num_vertices(nt) == 9);
-
         array_1d<index_t> refp{6, 5, 5, 7, 7, 6, 8, 8, 8};
-        REQUIRE((refp == hg::parents(nt)));
+        tree ref_tree(refp);
+        REQUIRE(test_tree_isomorphism(nt, ref_tree));
 
-        array_1d<index_t> refnm{0, 3, 4, 5, 6, 7, 10, 11, 12};
-        REQUIRE((refnm == nm));
+        REQUIRE(xt::amax(xt::index_view(criterion, nm))() == false);
+    }
+
+    TEST_CASE("simplify tree remove leaves2", "[hierarchy_core]") {
+
+        tree t(xt::xarray<index_t>{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
+
+        array_1d<bool> criterion{false, false, false, true, true, true, true, false, true, false, true, false};
+
+        auto res = hg::simplify_tree(t, criterion, true);
+        auto nt = res.tree;
+        auto nm = res.node_map;
+
+        array_1d<index_t> refp{4, 4, 5, 5, 5, 5};
+        tree ref_tree(refp);
+        REQUIRE(test_tree_isomorphism(nt, ref_tree));
+
+        REQUIRE(xt::amax(xt::index_view(criterion, nm))() == false);
+    }
+
+    TEST_CASE("simplify tree remove leaves trivial", "[hierarchy_core]") {
+
+        tree t(xt::xarray<index_t>{2, 2, 2});
+
+        array_1d<bool> criterion{true, true, true};
+
+        auto res = hg::simplify_tree(t, criterion, true);
+        auto nt = res.tree;
+        auto nm = res.node_map;
+
+        array_1d<index_t> refp{0};
+        tree ref_tree(refp);
+        REQUIRE(test_tree_isomorphism(nt, ref_tree));
+
+        REQUIRE((nm.size() == 1 && nm(0) == 2));
     }
 
     TEST_CASE("quasi flat zone hierarchy", "[hierarchy_core]") {
