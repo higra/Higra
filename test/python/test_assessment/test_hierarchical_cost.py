@@ -43,7 +43,7 @@ def dendrogram_purity_naif(tree, leaf_labels):
     return total / count
 
 
-class TestDendrogramPurity(unittest.TestCase):
+class TestHierarchicalCost(unittest.TestCase):
 
     def test_dendrogram_purity(self):
         tree = hg.Tree((5, 5, 6, 7, 7, 6, 8, 8, 8))
@@ -66,3 +66,13 @@ class TestDendrogramPurity(unittest.TestCase):
             v1 = hg.dendrogram_purity(tree, labels)
             v2 = dendrogram_purity_naif(tree, labels)
             self.assertTrue(np.allclose(v1, v2))
+
+    def test_dasgupta_cost(self):
+        g = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((1, 7, 3, 7, 1, 1, 6, 5, 6, 4, 1, 2))
+        tree, _ = hg.bpt_canonical(g, edge_weights)
+
+        cost = hg.dasgupta_cost(tree, edge_weights)
+
+        ref_cost = 2 / 1 + 4 / 3 + 9 / 7 + 9 / 7 + 2 / 1 + 2 / 1 + 9 / 5 + 9 / 6 + 9 / 6 + 7 / 4 + 2 / 1 + 3 / 2
+        self.assertTrue(np.isclose(cost, ref_cost))

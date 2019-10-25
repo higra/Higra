@@ -9,6 +9,7 @@
 ############################################################################
 
 import higra as hg
+import numpy as np
 
 
 def dendrogram_purity(tree, leaf_labels):
@@ -49,3 +50,40 @@ def dendrogram_purity(tree, leaf_labels):
     :return:  a score between 0 and 1 (higher is better)
     """
     return hg.cpp._dendrogram_purity(tree, leaf_labels)
+
+
+@hg.argument_helper(hg.CptHierarchy)
+def dasgupta_cost(tree, edge_weights, leaf_graph):
+    """
+    Dasgupta's cost is an unsupervised measure of the quality of a hierarchical clustering of an edge weighted graph.
+
+    Let :math:`T` be a tree representing a hierarchical clustering of the graph :math:`G=(V, E)`.
+    Let :math:`w` be a dissimilarity function on the edges :math:`E` of the graph.
+
+    The Dasgupta's cost is define as:
+
+    .. math::
+
+        dasgupta(T, V, E, w) = \sum_{\{x,y\}\in E} \\frac{area(lca_T(x,y))}{w(\{x,y\})}
+
+    :See:
+
+        S. Dasgupta. "`A cost function for similarity-based hierarchical clustering <https://arxiv.org/pdf/1510.05043.pdf>`_ ."
+        In Proc. STOC, pages 118–127, Cambridge, MA, USA, 2016
+
+    :Complexity:
+
+    The runtime complexity is :math:`\mathcal{O}(n\log(n) + m)` with :math:`n` the number of nodes in :math:`T` and
+    :math:`m` the number of edges in :math:`E`.
+
+    :param tree: Input tree
+    :param edge_weights: dissimilarity on the edges of the leaf graph
+    :param leaf_graph: leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :return: a real number
+    """
+    area = hg.attribute_area(tree, leaf_graph=leaf_graph)
+
+    lcaf = hg.make_lca_fast(tree)
+    lca = lcaf.lca(leaf_graph)
+
+    return np.sum(area[lca] / edge_weights)
