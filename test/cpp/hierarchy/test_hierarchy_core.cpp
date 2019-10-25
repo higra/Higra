@@ -138,6 +138,42 @@ namespace hierarchy_core {
         REQUIRE(xt::amax(xt::index_view(criterion, nm))() == false);
     }
 
+    TEST_CASE("simplify tree remove leaves3", "[hierarchy_core]") {
+
+        tree t(xt::xarray<index_t>{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
+
+        array_1d<bool> criterion{true, true, true, true, true, true, true, true, false, false, false, false};
+
+        auto res = hg::simplify_tree(t, criterion, true);
+        auto nt = res.tree;
+        auto nm = res.node_map;
+
+        array_1d<index_t> refp{2, 2, 3, 3};
+        tree ref_tree(refp);
+        REQUIRE(test_tree_isomorphism(nt, ref_tree));
+
+
+        REQUIRE(xt::amax(xt::index_view(criterion, nm))() == false);
+    }
+
+    TEST_CASE("simplify tree remove leaves4", "[hierarchy_core]") {
+
+        tree t(xt::xarray<index_t>{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
+
+        array_1d<bool> criterion{true, true, true, true, true, true, true, true, true, false, false, false};
+
+        auto res = hg::simplify_tree(t, criterion, true);
+        auto nt = res.tree;
+        auto nm = res.node_map;
+
+        array_1d<index_t> refp{1, 2, 2};
+        tree ref_tree(refp);
+        REQUIRE(test_tree_isomorphism(nt, ref_tree));
+
+        criterion(root(t)) = false;
+        REQUIRE(xt::amax(xt::index_view(criterion, nm))() == false);
+    }
+
     TEST_CASE("simplify tree remove leaves trivial", "[hierarchy_core]") {
 
         tree t(xt::xarray<index_t>{2, 2, 2});

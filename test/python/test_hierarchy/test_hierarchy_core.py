@@ -109,6 +109,30 @@ class TestHierarchyCore(unittest.TestCase):
 
         self.assertFalse(np.max(criterion[node_map]))
 
+    def test_simplify_tree_with_leaves2(self):
+        t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
+
+        criterion = np.zeros(t.num_vertices(), dtype=np.bool)
+        criterion[:8] = True
+        new_tree, node_map = hg.simplify_tree(t, criterion, process_leaves=True)
+
+        ref_tree = hg.Tree((2, 2, 3, 3))
+        self.assertTrue(hg.test_tree_isomorphism(new_tree, ref_tree))
+
+        self.assertFalse(np.max(criterion[node_map]))
+
+    def test_simplify_tree_with_leaves3(self):
+        t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
+
+        criterion = np.zeros(t.num_vertices(), dtype=np.bool)
+        criterion[:9] = True
+        new_tree, node_map = hg.simplify_tree(t, criterion, process_leaves=True)
+
+        ref_tree = hg.Tree((1, 2, 2))
+        self.assertTrue(hg.test_tree_isomorphism(new_tree, ref_tree))
+
+        self.assertFalse(np.max(criterion[node_map]))
+
     def test_simplify_tree_propagate_category(self):
         g = hg.get_4_adjacency_implicit_graph((1, 6))
         vertex_values = np.asarray((1, 5, 4, 3, 3, 6), dtype=np.int32)
