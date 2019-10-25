@@ -10,7 +10,7 @@
 
 set(PY_FILES
         __init__.py
-        dendrogram_purity.py
+        hierarchical_cost.py
         fragmentation_curve.py)
 
 set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}

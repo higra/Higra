@@ -8,6 +8,6 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-from .dendrogram_purity import *
+from .hierarchical_cost import *
 from .fragmentation_curve import *
 
