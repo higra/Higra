@@ -70,23 +70,6 @@ struct def_quasi_flat_zone_hierarchy {
     }
 };
 
-template<typename graph_t>
-struct def_simplify_tree {
-    template<typename value_t, typename C>
-    static
-    void def(C &m, const char *doc) {
-        m.def("_simplify_tree",
-              [](const hg::tree &t, pyarray<value_t> &criterion, bool process_leaves) {
-                  return hg::simplify_tree(t, criterion, process_leaves);
-              },
-              doc,
-              py::arg("tree"),
-              py::arg("deleted_nodes"),
-              py::arg("process_leaves")
-        );
-    }
-};
-
 template<typename M>
 void add_simplified_tree(M &m) {
     using class_t = hg::remapped_tree<hg::tree, hg::array_1d<hg::index_t>>;
@@ -107,15 +90,17 @@ void py_init_hierarchy_core(pybind11::module &m) {
             (m,
              "Compute the canonical binary partition tree (binary tree by altitude ordering) of the given weighted graph."
             );
+
     add_simplified_tree(m);
-    add_type_overloads<def_simplify_tree<hg::ugraph>, HG_TEMPLATE_SNUMERIC_TYPES>
-            (m,
-             "Creates a copy of the current Tree and deletes the nodes such that the criterion function is true.\n"
-             "Also returns an array that maps any node index i of the new tree, to the index of this node in the original tree\n"
-             "\n"
-             "The criterion is an array that associates true (this node must be deleted) or\n"
-             "false (do not delete this node) to a node index."
-            );
+    m.def("_simplify_tree",
+          [](const hg::tree &t, pyarray<bool> &criterion, bool process_leaves) {
+              return hg::simplify_tree(t, criterion, process_leaves);
+          },
+          "",
+          py::arg("tree"),
+          py::arg("deleted_nodes"),
+          py::arg("process_leaves"));
+
     add_type_overloads<def_quasi_flat_zone_hierarchy<hg::ugraph>, HG_TEMPLATE_SNUMERIC_TYPES>
             (m,
              "Compute the quasi flat zones hierarchy of the given weighted graph."

@@ -150,16 +150,16 @@ namespace hg {
 
             // ********************************
             // identification of deleted sub-trees
-            // true if all nodes below a given node are deleted
-            // a non leaf node i such that removed_branch(i) && !removed_branch(parent(i)) is thus new leaf
+            // true if all nodes below a given  node are deleted
+            // a non deleted non leaf node i such that removed_branch(i) && !removed_branch(parent(i)) is thus a new leaf
             array_1d<bool> removed_branch = xt::zeros<bool>({num_vertices(t)});
-            for (index_t i = 0; i < (index_t)num_leaves(t); i++) {
+            for (index_t i = 0; i < (index_t) num_leaves(t); i++) {
                 removed_branch(i) = criterion(i);
             }
 
-            for (index_t i = num_leaves(t); i < (index_t)num_vertices(t); i++) {
+            for (index_t i = num_leaves(t); i < (index_t) num_vertices(t); i++) {
                 bool flag = true;
-                for (index_t c = 0; flag && c < (index_t)num_children(i, t); c++) {
+                for (index_t c = 0; flag && c < (index_t) num_children(i, t); c++) {
                     auto cc = child(c, i, t);
                     flag = flag && removed_branch(cc) && criterion(cc);
                 }
@@ -172,19 +172,20 @@ namespace hg {
             std::vector<index_t> new_leaves;
             index_t removed = 0;
 
-            for (index_t i : leaves_iterator(t)){
-                if(!criterion(i)){
+            for (index_t i : leaves_iterator(t)) {
+                if (!removed_branch(i)) {
                     new_leaves.push_back(i);
-                }else{
+                } else {
                     removed++;
                 }
             }
 
             for (index_t i : leaves_to_root_iterator(t, leaves_it::exclude, root_it::exclude)) {
-                if (removed_branch(i) && !removed_branch(parent(i, t))) {
-                    new_leaves.push_back(i);
-                }
-                if(criterion(i)){
+                if (!criterion(i)) {
+                    if (removed_branch(i) && !removed_branch(parent(i, t))) {
+                        new_leaves.push_back(i);
+                    }
+                } else {
                     removed++;
                 }
             }
@@ -206,7 +207,7 @@ namespace hg {
 
             // new index of each node
             array_1d<index_t> new_order({num_vertices(t)}, invalid_index);
-            for (index_t i = 0; i < (index_t)new_leaves.size(); i++) {
+            for (index_t i = 0; i < (index_t) new_leaves.size(); i++) {
                 new_order(new_leaves[i]) = i;
             }
 
@@ -215,12 +216,12 @@ namespace hg {
             while (!queue.empty()) {
                 auto e = queue.front();
                 queue.pop();
-                if(!criterion(e) || e == root(t)){
+                if (!criterion(e) || e == root(t)) {
                     new_order(e) = node_number;
                     new_parent(node_number) = new_order(parent(e, t));
                     node_map(node_number) = e;
                     node_number--;
-                }else{
+                } else {
                     new_order(e) = new_order(parent(e, t));
                 }
 
