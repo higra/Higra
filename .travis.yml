@@ -15,14 +15,15 @@ matrix:
         - g++-6
     env: COMPILER=gcc GCC=6
   - os: linux
+    dist: bionic
     addons:
       apt:
         sources:
         - ubuntu-toolchain-r-test
         packages:
-        - g++-6
+        - g++-7
         - lcov
-    env: COMPILER=gcc GCC=6 COVERAGE=1
+    env: COMPILER=gcc GCC=7 COVERAGE=1
   - os: linux
     addons:
       apt:
@@ -125,12 +126,8 @@ script:
     if [ -n "$COVERAGE" ]; then
       ctest -R Test_cpp &&
       cd ${TRAVIS_BUILD_DIR} &&
-      lcov --directory . --capture --output-file coverage.info && # capture coverage info
-      lcov --remove coverage.info '/usr/*' --output-file coverage.info && # filter out system
-      lcov --remove coverage.info '*xtl*' --output-file coverage.info && # filter out system
-      lcov --remove coverage.info '*xsimd*' --output-file coverage.info && # filter out system
-      lcov --remove coverage.info '*xtensor*' --output-file coverage.info && # filter out system
-      lcov --remove coverage.info '*catch*' --output-file coverage.info && # filter out system
+      lcov --directory . --no-external --capture --output-file coverage.info && # capture coverage info
+      lcov --remove coverage.info '*lib/include*' --output-file coverage.info && # filter out system
       lcov --list coverage.info && #debug info
       bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports";
     elif [ -z "$BUILD_WHEEL" ]; then
