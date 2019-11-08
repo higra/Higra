@@ -397,9 +397,9 @@ def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=Non
 @hg.auto_cache
 def attribute_extrema(tree, altitudes):
     """
-    Identify nodes in a hierarchy that represent extrema.
+    Identify nodes in a hierarchy that represent extrema (minima or maxima).
 
-    An extremum of the hierarchy :math:`T` with altitudes :math:`alt` is a node :math:`n` of :math:`T` such that the
+    An extremum (minimum or maximum) of the hierarchy :math:`T` with altitudes :math:`alt` is a node :math:`n` of :math:`T` such that the
     altitude of any non leaf node included in :math:`n` is equal to the altitude of :math:`n` and the altitude of
     the parent of :math:`n` is different from the altitude of :math:`n`.
 
