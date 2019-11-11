@@ -16,6 +16,7 @@ Illustrations of Pattern Recognition Letters 2019 article             |v11|_    
 Multiscale Hierarchy Alignment and Combination                        |v4|_        |dl4|_        |co4|_
 Region Adjacency Graph                                                |v5|_        |dl5|_        |co5|_
 Interactive object segmentation                                       |v6|_        |dl6|_        |co6|_
+Astronomical object detection with the Max-Tree                       |v12|_       |dl12|_       |co12|_
 Contour Simplification                                                |v7|_        |dl7|_        |co7|_
 ================================================================= ============= ============= ============
 
@@ -128,3 +129,13 @@ Contour Simplification                                                |v7|_     
 
 .. |co11| image:: /images/colab.png
 .. _co11: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Illustrations%20of%20Pattern%20Recognition%20Letters%202019%20article.ipynb
+
+
+.. |v12| unicode:: &#x1f441; .. view
+.. _v12: https://github.com/higra/Higra-Notebooks/blob/master/Astronomical%20object%20detection%20with%20the%20Max-Tree.ipynb
+
+.. |dl12| unicode:: &#x1f4be; .. download
+.. _dl12: https://cdn.jsdelivr.net/gh/higra/Higra-Notebooks/Astronomical%20object%20detection%20with%20the%20Max-Tree.ipynb
+
+.. |co12| image:: /images/colab.png
+.. _co12: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Astronomical%20object%20detection%20with%20the%20Max-Tree.ipynb
