@@ -9,6 +9,7 @@ Utility functions move and accumulates values along trees
 
     propagate_parallel
     propagate_sequential
+    propagate_sequential_and_accumulate
     accumulate_parallel
     accumulate_sequential
     accumulate_and_add_sequential
@@ -20,6 +21,8 @@ Utility functions move and accumulates values along trees
 .. autofunction:: higra.propagate_parallel
 
 .. autofunction:: higra.propagate_sequential
+
+.. autofunction:: higra.propagate_sequential_and_accumulate
 
 .. autofunction:: higra.accumulate_parallel
 
