@@ -1,6 +1,27 @@
 Changelog
 =========
 
+0.4.3
+-----
+
+- Fix *codecov* incorrectly including third party libs
+  `#152 <https://github.com/higra/Higra/pull/152>`_
+- Add hierarchical cost :func:`~higra.dasgupta_cost`
+  `#151 <https://github.com/higra/Higra/pull/151>`_
+- Add new attribute :func:`~higra.attribute_child_number`
+  `#149 <https://github.com/higra/Higra/pull/149>`_
+- Fix bug in :func:`~higra.simplify_tree`
+  `#148 <https://github.com/higra/Higra/pull/148>`_ and `#150 <https://github.com/higra/Higra/pull/150>`_
+- Add *argmin* and *argmax* accumulators
+  `#146 <https://github.com/higra/Higra/pull/146>`_
+- Add new notebooks: *PRL article illustrations* and *Astromical object detection with the Max-Tree*
+  `#145 <https://github.com/higra/Higra/pull/145>`_ and `#155 <https://github.com/higra/Higra/pull/155>`_
+- Documentation improvements
+  `#143 <https://github.com/higra/Higra/pull/143>`_, `#153 <https://github.com/higra/Higra/pull/153>`_,
+  `#154 <https://github.com/higra/Higra/pull/154>`_
+- Update third party libs
+  `#141 <https://github.com/higra/Higra/pull/141>`_
+
 
 0.4.2
 -----
