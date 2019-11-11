@@ -99,6 +99,7 @@ try:
         description='Hierarchical Graph Analysis',
         url='https://github.com/higra/Higra',
         long_description=open('README.md').read(),
+        long_description_content_type="text/markdown",
         packages=[
             'higra',
             'higra.accumulator',

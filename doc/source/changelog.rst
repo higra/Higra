@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.4.3
+0.4.4
 -----
 
 - Fix *codecov* incorrectly including third party libs
