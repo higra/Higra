@@ -214,4 +214,16 @@ namespace tree_attributes {
         REQUIRE((ref == res));
     }
 
+    TEST_CASE("tree attribute smallest enclosing shape ", "[tree_attributes]") {
+        array_1d<index_t> pt1{8, 8, 9, 9, 9, 10, 10, 11, 13, 12, 11, 12, 13, 13};
+        tree t1(pt1);
+
+        array_1d<index_t> pt2{11, 11, 8, 8, 10, 9, 9, 9, 10, 12, 11, 12, 12};
+        tree t2(pt2);
+
+        array_1d<index_t> ref{0, 1, 2, 3, 4, 5, 6, 7, 11, 10, 9, 9, 12, 12};
+        auto res = attribute_smallest_enclosing_shape(t1, t2);
+        REQUIRE((ref == res));
+    }
+
 }
