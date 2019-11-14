@@ -301,6 +301,96 @@ TEST_CASE("test tree of shapes padding mean original space", "[tree_of_shapes]")
     REQUIRE((altitudes == ref_altitudes));
 }
 
+TEST_CASE("test tree of shapes no immersion no padding original space", "[tree_of_shapes]") {
+    array_nd<float> image{{1, 1, 1, 1, 1},
+                          {1, 0, 1, 2, 1},
+                          {1, 1, 1, 1, 1}};
+
+    auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::none, /*original*/true, /*immersion*/false);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
+
+    array_1d <index_t>
+            ref_parents{17, 17, 17, 17, 17,
+                        17, 16, 17, 15, 17,
+                        17, 17, 17, 17, 17, 17, 17, 17};
+    array_1d<float> ref_altitudes{1, 1, 1, 1, 1,
+                                  1, 0, 1, 2, 1,
+                                  1, 1, 1, 1, 1, 2, 0, 1};
+
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
+}
+
+TEST_CASE("test tree of shapes no immersion padding zero original space", "[tree_of_shapes]") {
+    array_nd<float> image{{1, 1, 1, 1, 1},
+                          {1, 0, 1, 2, 1},
+                          {1, 1, 1, 1, 1}};
+
+    auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::zero, /*original*/true, /*immersion*/false);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
+
+    array_1d <index_t>
+            ref_parents{17, 17, 17, 17, 17,
+                        17, 15, 17, 16, 17,
+                        17, 17, 17, 17, 17, 17, 17, 18, 18};
+    array_1d<float> ref_altitudes{1, 1, 1, 1, 1,
+                                  1, 0, 1, 2, 1,
+                                  1, 1, 1, 1, 1, 0, 2, 1, 0};
+
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
+}
+
+TEST_CASE("test tree of shapes no immersion no padding no original space", "[tree_of_shapes]") {
+    array_nd<float> image{{1, 1, 1, 1, 1},
+                          {1, 0, 1, 2, 1},
+                          {1, 1, 1, 1, 1}};
+
+    auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::none, /*original*/false, /*immersion*/
+                                                        false);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
+
+    array_1d <index_t>
+            ref_parents{17, 17, 17, 17, 17,
+                        17, 16, 17, 15, 17,
+                        17, 17, 17, 17, 17, 17, 17, 17};
+    array_1d<float> ref_altitudes{1, 1, 1, 1, 1,
+                                  1, 0, 1, 2, 1,
+                                  1, 1, 1, 1, 1, 2, 0, 1};
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
+}
+
+TEST_CASE("test tree of shapes no immersion padding zero no original space", "[tree_of_shapes]") {
+    array_nd<float> image{{1, 1, 1, 1, 1},
+                          {1, 0, 1, 2, 1},
+                          {1, 1, 1, 1, 1}};
+
+    auto result = component_tree_tree_of_shapes_image2d(image, tos_padding::zero, /*original*/false, /*immersion*/
+                                                        false);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
+
+    array_1d <index_t>
+            ref_parents{38, 38, 38, 38, 38, 38, 38,
+                        38, 37, 37, 37, 37, 37, 38,
+                        38, 37, 36, 37, 35, 37, 38,
+                        38, 37, 37, 37, 37, 37, 38,
+                        38, 38, 38, 38, 38, 38, 38, 37, 37, 38, 38};
+    array_1d<float> ref_altitudes{0, 0, 0, 0, 0, 0, 0,
+                                  0, 1, 1, 1, 1, 1, 0,
+                                  0, 1, 0, 1, 2, 1, 0,
+                                  0, 1, 1, 1, 1, 1, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 0};
+
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
+}
+
+
 TEST_CASE("test tree of shapes self duality", "[tree_of_shapes]") {
     xt::random::seed(42);
     array_2d<double> image = xt::random::rand<double>({25, 38});

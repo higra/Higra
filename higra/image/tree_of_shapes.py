@@ -12,7 +12,7 @@ import higra as hg
 import numpy as np
 
 
-def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=True, exterior_vertex=0):
+def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=True, immersion=True, exterior_vertex=0):
     """
     Tree of shapes of a 2d image.
 
@@ -38,8 +38,18 @@ def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=T
     image of size:
 
       - :math:`(h, w)` if :attr:`original_size` is ``True``;
-      - :math:`(h * 2 - 1, w * 2 - 1)` is :attr:`original_size` is ``False`` and padding is ``"none"``; and
+      - :math:`(h * 2 - 1, w * 2 - 1)` is :attr:`original_size` is ``False`` and :attr:`padding` is ``"none"``; and
       - :math:`((h + 2) * 2 - 1, (w + 2) * 2 - 1)` otherwise.
+
+    :Advanced options:
+
+    :attr:`immersion` defines if the initial image should be first converted as an equivalent continuous representation
+    called a *plain map*. If :attr:`immersion` is set to ``False`` the level lines of the shapes of the image may intersect
+    (if the image is not well composed) and the result of the algorithm is undefined (the algorithm will arbitrarily
+    break level lines to get a set of shapes forming a tree). If :attr:`immersion` is ``False``, the result size will be:
+
+      - :math:`(h, w)` if :attr:`original_size` is ``True`` or if :attr:`padding` is ``"none"``;
+      - :math:`(h + 2, w + 2)` otherwise.
 
     :attr:`Exterior_vertex` defines the linear coordinates of the pixel corresponding to the exterior
     (interior and exterior of a shape is defined with respect to this point). The coordinate of this point must be
@@ -54,23 +64,28 @@ def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=T
     :param image: must be a 2d array
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
+    :param immersion: performs a plain map continuous immersion fo the original image (default = `True`)
     :param exterior_vertex: linear coordinate of the exterior point
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
     assert len(image.shape) == 2, "This tree of shapes implementation only supports 2d images."
+    immersion = bool(immersion)
 
-    res = hg.cpp._component_tree_tree_of_shapes_image2d(image, padding, original_size, exterior_vertex)
+    res = hg.cpp._component_tree_tree_of_shapes_image2d(image, padding, original_size, immersion, exterior_vertex)
     tree = res.tree()
     altitudes = res.altitudes()
 
-    if original_size:
+    if original_size or ((not immersion) and padding == "none"):
         size = image.shape
     else:
         if padding == "none":
             size = (image.shape[0] * 2 - 1, image.shape[1] * 2 - 1)
         else:
-            size = ((image.shape[0] + 2) * 2 - 1, (image.shape[1] + 2) * 2 - 1)
+            if immersion:
+                size = ((image.shape[0] + 2) * 2 - 1, (image.shape[1] + 2) * 2 - 1)
+            else:
+                size = (image.shape[0] + 2, image.shape[1] + 2)
 
     g = hg.get_4_adjacency_graph(size)
     hg.CptHierarchy.link(tree, g)

@@ -157,6 +157,90 @@ class TestTreeOfShapesImage(unittest.TestCase):
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 
+    def test_tree_of_shapes_no_immersion_no_padding_original_space(self):
+        image = np.asarray(((1, 1, 1, 1, 1),
+                            (1, 0, 1, 2, 1),
+                            (1, 1, 1, 1, 1)), dtype=np.float64)
+
+        tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'none', original_size=True, immersion=False)
+        ref_parents = np.asarray((17, 17, 17, 17, 17,
+                                  17, 16, 17, 15, 17,
+                                  17, 17, 17, 17, 17, 17, 17, 17), dtype=np.int64)
+
+        ref_altitudes = np.asarray((1, 1, 1, 1, 1,
+                                    1, 0, 1, 2, 1,
+                                    1, 1, 1, 1, 1, 2, 0, 1), dtype=np.float64)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
+        g = hg.CptHierarchy.get_leaf_graph(tree)
+        s = hg.CptGridGraph.get_shape(g)
+        self.assertTrue(s[0] * s[1] == tree.num_leaves())
+
+    def test_tree_of_shapes_no_immersion_padding_zero_original_space(self):
+        image = np.asarray(((1, 1, 1, 1, 1),
+                            (1, 0, 1, 2, 1),
+                            (1, 1, 1, 1, 1)), dtype=np.float64)
+
+        tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'zero', original_size=True, immersion=False)
+        ref_parents = np.asarray((17, 17, 17, 17, 17,
+                                  17, 15, 17, 16, 17,
+                                  17, 17, 17, 17, 17, 17, 17, 18, 18), dtype=np.int64)
+
+        ref_altitudes = np.asarray((1, 1, 1, 1, 1,
+                                    1, 0, 1, 2, 1,
+                                    1, 1, 1, 1, 1, 0, 2, 1, 0), dtype=np.float64)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
+        g = hg.CptHierarchy.get_leaf_graph(tree)
+        s = hg.CptGridGraph.get_shape(g)
+        self.assertTrue(s[0] * s[1] == tree.num_leaves())
+
+    def test_tree_of_shapes_no_immersion_no_padding_no_original_space(self):
+        image = np.asarray(((1, 1, 1, 1, 1),
+                            (1, 0, 1, 2, 1),
+                            (1, 1, 1, 1, 1)), dtype=np.float64)
+
+        tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'none', original_size=False, immersion=False)
+        ref_parents = np.asarray((17, 17, 17, 17, 17,
+                                  17, 16, 17, 15, 17,
+                                  17, 17, 17, 17, 17, 17, 17, 17), dtype=np.int64)
+
+        ref_altitudes = np.asarray((1, 1, 1, 1, 1,
+                                    1, 0, 1, 2, 1,
+                                    1, 1, 1, 1, 1, 2, 0, 1), dtype=np.float64)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
+        g = hg.CptHierarchy.get_leaf_graph(tree)
+        s = hg.CptGridGraph.get_shape(g)
+        self.assertTrue(s[0] * s[1] == tree.num_leaves())
+
+    def test_tree_of_shapes_no_immersion_padding_zero_no_original_space(self):
+        image = np.asarray(((1, 1, 1, 1, 1),
+                            (1, 0, 1, 2, 1),
+                            (1, 1, 1, 1, 1)), dtype=np.float64)
+
+        tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, 'zero', original_size=False, immersion=False)
+        ref_parents = np.asarray((38, 38, 38, 38, 38, 38, 38,
+                                  38, 37, 37, 37, 37, 37, 38,
+                                  38, 37, 36, 37, 35, 37, 38,
+                                  38, 37, 37, 37, 37, 37, 38,
+                                  38, 38, 38, 38, 38, 38, 38, 37, 37, 38, 38), dtype=np.int64)
+
+        ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0,
+                                    0, 1, 1, 1, 1, 1, 0,
+                                    0, 1, 0, 1, 2, 1, 0,
+                                    0, 1, 1, 1, 1, 1, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 0), dtype=np.float64)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
+        g = hg.CptHierarchy.get_leaf_graph(tree)
+        s = hg.CptGridGraph.get_shape(g)
+        self.assertTrue(s[0] * s[1] == tree.num_leaves())
+
     def test_tree_of_shapes_self_dual(self):
         np.random.seed(42)
         image = np.random.rand(25, 38)
