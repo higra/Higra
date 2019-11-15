@@ -85,14 +85,15 @@ void py_init_algo_tree(pybind11::module &m) {
     xt::import_numpy();
 
     m.def("test_tree_isomorphism", &hg::test_tree_isomorphism<hg::tree, hg::tree>,
-          "Test if 2 trees are isomorph assuming that they share the same leaves.\n"
+          "Test if 2 trees :math:`t_1` and :math:`t_2` are isomorph assuming that they share the same leaves.\n"
           "\n"
-          "By this definition t1 is isomorph to t2 if there exist a bijection f from vertices(t1) to vertices(t2) such that:\n"
-          "  1) for any leaf node n of t1, f(n) = n and n\n"
-          "  2) for any node n of t1, f(t1.parent(n)) = t2.parent(f(n))\n"
+          "By this definition :math:`t_1` is isomorph to :math:`t_2` if there exists a bijection :math:`f` from "
+          "the nodes of :math:`t_1` to the nodes of :math:`t_2` such that:\n\n"
+          "  1) for any leaf node :math:`n` of :math:`t_1`, :math:`f(n) = n`, and\n"
+          "  2) for any node :math:`n` of :math:`t_1`, :math:`f(t_1.parent(n)) = t_2.parent(f(n))`\n"
           "\n"
-          "Note that the root r node of a tree t is defined by t.parent(r) = r, thus 2) becomes\n"
-          "  for the root node r1 of t1, f(r1) = t2.parent(f(r1)), i.e. f(r1) is the root node of t2",
+          "Note that the root  node of :math:`r` a tree :math:`t` is defined by :math:`t.parent(r) = r`, thus 2) becomes \n"
+          "for the root node :math:`r_1` of :math:`t_1`, :math:`f(r_1) = t_2.parent(f(r_1))`, i.e. :math:`f(r_1)` is the root node of :math:`t_2`",
           py::arg("tree1"),
           py::arg("tree2"));
 

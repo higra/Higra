@@ -18,12 +18,8 @@ using namespace hg;
 namespace test_tree_fusion {
 
     TEST_CASE("tree_fusion_depth_map 1", "[tree_fusion]") {
-
         array_1d<int> p1{5, 5, 6, 6, 6, 7, 7, 7};
-
         array_1d<int> p2{7, 7, 6, 5, 5, 6, 7, 7};
-
-        auto g = get_4_adjacency_implicit_graph({1, 5});
 
         tree t1(p1);
         tree t2(p2);

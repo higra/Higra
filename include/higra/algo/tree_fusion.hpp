@@ -170,7 +170,7 @@ namespace hg {
     /**
      * Depth map associated to the fusion of the given list of trees.
      *
-     * The method is described in Edwin Carlinet.
+     * The method is described in:
      *
      * > E. Carlinet. A Tree of shapes for multivariate images. PhD Thesis, Université Paris-Est, 2015.
      *
