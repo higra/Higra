@@ -15,4 +15,5 @@ from .horizontal_cuts import *
 from .rag import *
 from .tree import *
 from .tree_energy_optimization import *
+from .tree_fusion import *
 from .watershed import *

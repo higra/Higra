@@ -472,4 +472,31 @@ namespace hg {
         res(root(tree)) = invalid_index;
         return res;
     }
+
+
+    /**
+     * Given two trees :math:`t_1` and :math:`t_2` defined over the same domain, ie sharing the same set of leaves.
+     * For each node :math:`n` of :math:`t1`, computes the index of the smallest node of :math:`t2` containing :math:`n`.
+     *
+     * @tparam tree_t
+     * @param t1
+     * @param t2
+     * @return
+     */
+    template<typename tree_t>
+    auto attribute_smallest_enclosing_shape(const tree_t &t1, const tree_t &t2) {
+        array_1d<index_t> attr({num_vertices(t1)}, invalid_index);
+        xt::noalias(xt::view(attr, xt::range(0, num_leaves(t1)))) = xt::arange(num_leaves(t1));
+
+        for (auto i: leaves_to_root_iterator(t1)) {
+            auto p = parent(i, t1);
+            if (attr(p) == -1) {
+                attr(p) = attr(i);
+            } else {
+                attr(p) = lowest_common_ancestor(attr(p), attr(i), t2);
+            }
+        }
+
+        return attr;
+    }
 }

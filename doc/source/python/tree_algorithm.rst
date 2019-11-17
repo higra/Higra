@@ -17,6 +17,7 @@ Algorithm for trees
     reconstruct_leaf_data
     sort_hierarchy_with_altitudes
     test_tree_isomorphism
+    tree_fusion_depth_map
 
 .. autofunction:: higra.binary_labelisation_from_markers
 
@@ -37,6 +38,8 @@ Algorithm for trees
 .. autofunction:: higra.sort_hierarchy_with_altitudes
 
 .. autofunction:: higra.test_tree_isomorphism
+
+.. autofunction:: higra.tree_fusion_depth_map
 
 
 

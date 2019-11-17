@@ -189,46 +189,43 @@ namespace hg {
             size_t h2 = h * 2 - 1;
             size_t w2 = w * 2 - 1;
 
-
             array_2d<value_type> plain_map = array_2d<value_type>::from_shape({h2 * w2, 2});
             const auto image2d = xt::reshape_view(image, {h, w});
             auto plain_map2d = xt::reshape_view(plain_map, {h2, w2, (size_t) 2});
 
-            // TODO add noalias again when xtensor is fixed
-
             // 2 faces
-            /*xt::noalias*/(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(0, w2, 2), 0)) = image2d;
-            /*xt::noalias*/(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(0, w2, 2), 1)) = image2d;
+            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(0, w2, 2), 0)) = image2d;
+            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(0, w2, 2), 1)) = image2d;
 
             // horizontal 1 face
-            /*xt::noalias*/(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(1, w2, 2), 0)) =
-                                   xt::minimum(xt::view(image2d, xt::all(), xt::range(0, w - 1)),
-                                               xt::view(image2d, xt::all(), xt::range(1, w)));
-            /*xt::noalias*/(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(1, w2, 2), 1)) =
-                                   xt::maximum(xt::view(image2d, xt::all(), xt::range(0, w - 1)),
-                                               xt::view(image2d, xt::all(), xt::range(1, w)));
+            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(1, w2, 2), 0)) =
+                    xt::minimum(xt::view(image2d, xt::all(), xt::range(0, w - 1)),
+                                xt::view(image2d, xt::all(), xt::range(1, w)));
+            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(1, w2, 2), 1)) =
+                    xt::maximum(xt::view(image2d, xt::all(), xt::range(0, w - 1)),
+                                xt::view(image2d, xt::all(), xt::range(1, w)));
 
             // vertical 1 face
-            /*xt::noalias*/(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(0, w2, 2), 0)) =
-                                   xt::minimum(xt::view(image2d, xt::range(0, h - 1), xt::all()),
-                                               xt::view(image2d, xt::range(1, h), xt::all()));
-            /*xt::noalias*/(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(0, w2, 2), 1)) =
-                                   xt::maximum(xt::view(image2d, xt::range(0, h - 1), xt::all()),
-                                               xt::view(image2d, xt::range(1, h), xt::all()));
+            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(0, w2, 2), 0)) =
+                    xt::minimum(xt::view(image2d, xt::range(0, h - 1), xt::all()),
+                                xt::view(image2d, xt::range(1, h), xt::all()));
+            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(0, w2, 2), 1)) =
+                    xt::maximum(xt::view(image2d, xt::range(0, h - 1), xt::all()),
+                                xt::view(image2d, xt::range(1, h), xt::all()));
 
             // 0 face
-            /*xt::noalias*/(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(1, w2, 2), 0)) =
-                                   xt::minimum(
-                                           xt::minimum(xt::view(image2d, xt::range(0, h - 1), xt::range(0, w - 1)),
-                                                       xt::view(image2d, xt::range(0, h - 1), xt::range(1, w))),
-                                           xt::minimum(xt::view(image2d, xt::range(1, h), xt::range(0, w - 1)),
-                                                       xt::view(image2d, xt::range(1, h), xt::range(1, w))));
-            /*xt::noalias*/(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(1, w2, 2), 1)) =
-                                   xt::maximum(
-                                           xt::maximum(xt::view(image2d, xt::range(0, h - 1), xt::range(0, w - 1)),
-                                                       xt::view(image2d, xt::range(0, h - 1), xt::range(1, w))),
-                                           xt::maximum(xt::view(image2d, xt::range(1, h), xt::range(0, w - 1)),
-                                                       xt::view(image2d, xt::range(1, h), xt::range(1, w))));
+            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(1, w2, 2), 0)) =
+                    xt::minimum(
+                            xt::minimum(xt::view(image2d, xt::range(0, h - 1), xt::range(0, w - 1)),
+                                        xt::view(image2d, xt::range(0, h - 1), xt::range(1, w))),
+                            xt::minimum(xt::view(image2d, xt::range(1, h), xt::range(0, w - 1)),
+                                        xt::view(image2d, xt::range(1, h), xt::range(1, w))));
+            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(1, w2, 2), 1)) =
+                    xt::maximum(
+                            xt::maximum(xt::view(image2d, xt::range(0, h - 1), xt::range(0, w - 1)),
+                                        xt::view(image2d, xt::range(0, h - 1), xt::range(1, w))),
+                            xt::maximum(xt::view(image2d, xt::range(1, h), xt::range(0, w - 1)),
+                                        xt::view(image2d, xt::range(1, h), xt::range(1, w))));
             return plain_map;
         }
 
@@ -301,8 +298,6 @@ namespace hg {
                 } else {
                     return prev;
                 }
-
-
             };
 
             value_type current_level = (value_type) ((plain_map(exterior_vertex, 0) + plain_map(exterior_vertex, 1)) /
@@ -368,6 +363,15 @@ namespace hg {
      *   - (h * 2 - 1, w * 2 - 1) is original_size is false and padding is tos_padding::none; and
      *   - ((h + 2) * 2 - 1, (w + 2) * 2 - 1) otherwise.
      *
+     * :Advanced options:
+     * 
+     * Use with care the following options may lead to unexpected results:
+     * 
+     * Immersion defines if the initial image should be first converted as an equivalent continuous representation called a
+     * plain map. If the immersion is deactivated the level lines of the shapes of the image may intersect (if the image is not
+     * well composed) and the result of the algorithm is undefined. If immersion is deactivated, the factor :math:`*2 - 1`
+     * has to be removed in the result sizes given above.
+     * 
      * Exterior_vertex defines the linear coordinates of the pixel corresponding to the exterior (interior and exterior
      * of a shape is defined with respect to this point). The coordinate of this point must be given in the
      * padded/interpolated space.
@@ -389,6 +393,7 @@ namespace hg {
     auto component_tree_tree_of_shapes_image2d(const xt::xexpression<T> &ximage,
                                                tos_padding padding = tos_padding::mean,
                                                bool original_size = true,
+                                               bool immersion = true,
                                                index_t exterior_vertex = 0) {
         HG_TRACE();
         auto &image = ximage.derived_cast();
@@ -405,7 +410,7 @@ namespace hg {
 
         array_2d<value_type> cooked_vertex_values;
 
-        if (padding != tos_padding::none) {
+        auto do_padding = [&padding, &h, &w](const auto &image) {
             value_type pad_value;
             switch (padding) {
                 case tos_padding::zero:
@@ -428,56 +433,102 @@ namespace hg {
             array_1d<value_type> padded_vertices = array_1d<value_type>::from_shape({(w + 2) * (h + 2)});
             auto padded_image = xt::reshape_view(padded_vertices, {h + 2, w + 2});
 
-            // TODO noalias when xtensor is fixed
-            /*xt::noalias*/(xt::view(padded_image, xt::range(1, h + 1), xt::range(1, w + 1))) = image;
+            xt::noalias(xt::view(padded_image, xt::range(1, h + 1), xt::range(1, w + 1))) = image;
             xt::view(padded_image, 0, xt::all()) = pad_value;
             xt::view(padded_image, h + 1, xt::all()) = pad_value;
             xt::view(padded_image, xt::all(), 0) = pad_value;
             xt::view(padded_image, xt::all(), w + 1) = pad_value;
+            return padded_vertices;
+        };
+
+        auto process_sorted_pixels = [&original_size, &padding, &rh, &rw, &immersion](auto &graph,
+                                                                                      auto &sorted_vertex_indices,
+                                                                                      auto &enqueued_levels) {
+            auto res_tree = component_tree_internal::tree_from_sorted_vertices(graph, enqueued_levels,
+                                                                               sorted_vertex_indices);
+            auto &tree = res_tree.tree;
+            auto &altitudes = res_tree.altitudes;
+
+            if (!original_size || (!immersion && padding == tos_padding::none)) {
+                return res_tree;
+            }
+
+            array_1d<bool> deleted_vertices({num_leaves(res_tree.tree)}, true);
+            auto deleted = xt::reshape_view(deleted_vertices, {rh, rw});
+            if (immersion) {
+                if (padding != tos_padding::none) {
+                    xt::view(deleted, xt::range(2, rh - 2, 2), xt::range(2, rw - 2, 2)) = false;
+                } else {
+                    xt::view(deleted, xt::range(0, rh, 2), xt::range(0, rw, 2)) = false;
+                }
+            } else {
+                if (padding != tos_padding::none) {
+                    xt::view(deleted, xt::range(1, rh - 1), xt::range(1, rw - 1)) = false;
+                } // else handled by bypass if on top
+            }
+
+            auto all_deleted = accumulate_sequential(tree, deleted_vertices, accumulator_min());
+
+            auto stree = simplify_tree(tree, all_deleted, true);
+            array_1d<value_type> saltitudes = xt::index_view(altitudes, stree.node_map);
+            return make_node_weighted_tree(std::move(stree.tree), std::move(saltitudes));
+        };
+
+        if (immersion) {
+            if (padding != tos_padding::none) {
 
 
-            cooked_vertex_values =
-                    tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
-                            padded_vertices,
-                            {(index_t) (h + 2), (index_t) (w + 2)});
-            rh = (h + 2) * 2 - 1;
-            rw = (w + 2) * 2 - 1;
+                auto cooked_vertex_values =
+                        tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
+                                do_padding(image),
+                                {(index_t) (h + 2), (index_t) (w + 2)});
+                rh = (h + 2) * 2 - 1;
+                rw = (w + 2) * 2 - 1;
+                auto graph = get_4_adjacency_implicit_graph({(index_t) rh, (index_t) rw});
+                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
+                                                                                      exterior_vertex);
+                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+            } else {
+                auto cooked_vertex_values =
+                        tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
+                                vertex_weights,
+                                embedding);
+                rh = h * 2 - 1;
+                rw = w * 2 - 1;
+                auto graph = get_4_adjacency_implicit_graph({(index_t) rh, (index_t) rw});
+                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
+                                                                                      exterior_vertex);
+                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+            }
         } else {
-            cooked_vertex_values =
-                    tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
-                            vertex_weights,
-                            embedding);
-            rh = h * 2 - 1;
-            rw = w * 2 - 1;
+            if (padding != tos_padding::none) {
+                auto padded_vertices = do_padding(image);
+
+                rh = h + 2;
+                rw = w + 2;
+                auto graph = get_4_adjacency_implicit_graph({(index_t) rh, (index_t) rw});
+
+                // clearly not optimal
+                array_2d<value_type> plain_map = array_2d<value_type>::from_shape({rh * rw, 2});
+                xt::noalias(xt::view(plain_map, xt::all(), 0)) = padded_vertices;
+                xt::noalias(xt::view(plain_map, xt::all(), 1)) = padded_vertices;
+                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
+                                                                                      exterior_vertex);
+                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+            } else {
+                rh = h;
+                rw = w;
+                auto graph = get_4_adjacency_implicit_graph({(index_t) rh, (index_t) rw});
+                array_2d<value_type> plain_map = array_2d<value_type>::from_shape({rh * rw, 2});
+                xt::noalias(xt::view(plain_map, xt::all(), 0)) = xt::ravel(image);
+                xt::noalias(xt::view(plain_map, xt::all(), 1)) = xt::ravel(image);
+                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
+                                                                                      exterior_vertex);
+                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+            }
+
         }
 
-        auto graph = get_4_adjacency_implicit_graph({(index_t) rh, (index_t) rw});
-        auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
-                                                                              exterior_vertex);
 
-        auto &sorted_vertex_indices = res_sort.first;
-        auto &enqueued_levels = res_sort.second;
-
-        auto res_tree = component_tree_internal::tree_from_sorted_vertices(graph, enqueued_levels,
-                                                                           sorted_vertex_indices);
-        auto &tree = res_tree.tree;
-        auto &altitudes = res_tree.altitudes;
-
-        if (!original_size) {
-            return res_tree;
-        }
-
-        array_1d<bool> deleted_vertices({num_leaves(res_tree.tree)}, true);
-        auto deleted = xt::reshape_view(deleted_vertices, {rh, rw});
-        if (padding != tos_padding::none) {
-            xt::view(deleted, xt::range(2, rh - 2, 2), xt::range(2, rw - 2, 2)) = false;
-        } else {
-            xt::view(deleted, xt::range(0, rh, 2), xt::range(0, rw, 2)) = false;
-        }
-        auto all_deleted = accumulate_sequential(tree, deleted_vertices, accumulator_min());
-
-        auto stree = simplify_tree(tree, all_deleted, true);
-        array_1d<value_type> saltitudes = xt::index_view(altitudes, stree.node_map);
-        return make_node_weighted_tree(std::move(stree.tree), std::move(saltitudes));
     }
 };

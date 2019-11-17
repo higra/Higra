@@ -26,9 +26,10 @@ struct def_tree_of_shapes {
     static
     void def(C &m, const char *doc) {
         m.def("_component_tree_tree_of_shapes_image2d", [](const pyarray<value_t> &image,
-                                            const std::string &padding,
-                                            bool original_size,
-                                            hg::index_t exterior_vertex) {
+                                                           const std::string &padding,
+                                                           bool original_size,
+                                                           bool immersion,
+                                                           hg::index_t exterior_vertex) {
                   hg::tos_padding tpadding;
                   if (padding == "none") {
                       tpadding = hg::tos_padding::none;
@@ -40,12 +41,14 @@ struct def_tree_of_shapes {
                       throw std::runtime_error("tree_of_shapes_image2d: Unknown padding option.");
                   }
 
-                  return hg::component_tree_tree_of_shapes_image2d(image, tpadding, original_size, exterior_vertex);
+                  return hg::component_tree_tree_of_shapes_image2d(image, tpadding, original_size, immersion,
+                                                                   exterior_vertex);
               },
               doc,
               py::arg("image"),
               py::arg("padding") = "mean",
               py::arg("original_size") = true,
+              py::arg("immersion") = true,
               py::arg("exterior_vertex") = 0
         );
     }

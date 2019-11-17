@@ -8,14 +8,26 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#pragma once
-
-#include "py_alignement.hpp"
-#include "py_graph_core.hpp"
-#include "py_graph_weights.hpp"
-#include "py_horizontal_cuts.hpp"
-#include "py_rag.hpp"
-#include "py_tree.hpp"
-#include "py_tree_energy_optimization.hpp"
 #include "py_tree_fusion.hpp"
-#include "py_watershed.hpp"
+#include "higra/algo/tree_fusion.hpp"
+#include "../py_common.hpp"
+#include "xtensor-python/pyarray.hpp"
+#include "xtensor-python/pytensor.hpp"
+
+template<typename T>
+using pyarray = xt::pyarray<T>;
+
+namespace py = pybind11;
+using namespace hg;
+
+void py_init_tree_fusion(pybind11::module &m) {
+    xt::import_numpy();
+
+    m.def("_tree_fusion_depth_map", [](const std::vector<tree *> &trees) {
+        return tree_fusion_depth_map(trees);
+    });
+
+}
+
+
+

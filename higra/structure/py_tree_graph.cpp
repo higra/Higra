@@ -107,7 +107,7 @@ struct def_child {
               [](const graph_t &tree, hg::index_t i, const pyarray<type> &vertices) {
                   hg_assert_vertex_indices(tree, vertices);
                   hg_assert(i >= 0, "Child index cannot be negative.");
-                  hg_assert(i < (index_t)(xt::amin)(num_children(vertices, tree))(),
+                  hg_assert(i < (index_t) (xt::amin)(num_children(vertices, tree))(),
                             "Child index is larger than the number of children.");
                   return hg::child(i, vertices, tree);
               },
@@ -177,7 +177,7 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("_child", [](const graph_t &t, index_t i, index_t vertex) {
               hg_assert_vertex_index(t, vertex);
               hg_assert(i >= 0, "Child index cannot be negative.");
-              hg_assert(i < (index_t)t.num_children(vertex),
+              hg_assert(i < (index_t) t.num_children(vertex),
                         "Child index is larger than the number of children.");
               return t.child(i, vertex);
           }, "Get the i-th (starting at 0) child of the given node of the tree.",
@@ -220,7 +220,10 @@ void py_init_tree_graph(pybind11::module &m) {
           "Get a copy of the list of children of the given node.",
           py::arg("node"));
 
-    c.def("parents", &graph_t::parents, "Get the parents array representing the tree.");
+    c.def("parents",
+          &graph_t::parents,
+          "Get the parents array representing the tree.",
+          pybind11::return_value_policy::reference_internal);
     c.def("parent", [](const graph_t &tree, vertex_t v) {
               hg_assert_vertex_index(tree, v);
               return tree.parent(v);

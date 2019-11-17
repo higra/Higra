@@ -63,6 +63,7 @@ PYBIND11_MODULE(higram, m) {
     py_init_tree_accumulator(m);
     py_init_tree_contour_accumulator(m);
     py_init_tree_energy_optimization(m);
+    py_init_tree_fusion(m);
     py_init_tree_graph(m);
     py_init_tree_io(m);
     py_init_tree_of_shapes_image(m);
