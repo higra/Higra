@@ -58,6 +58,9 @@ def labelisation_horizontal_cut_from_threshold(tree, altitudes, threshold, leaf_
     the altitude of their lowest common ancestor is strictly greater
     than the specified threshold.
 
+    Consider using the class :class:`~higra.HorizontalCutExplorer` if you plan to compute several horizontal cuts from a
+    same hierarchy.
+
     :param tree: input tree (deduced from :class:`~higra.CptHierarchy`)
     :param altitudes: node altitudes of the input tree
     :param threshold: a threshold level
@@ -82,6 +85,9 @@ def labelisation_horizontal_cut_from_num_regions(tree, altitudes, num_regions, m
     regions is considered.
     If :attr:`mode` is ``"at_most"``, the the largest horizontal cut having at most the given number of
     regions is considered.
+
+    Consider using the class :class:`~higra.HorizontalCutExplorer` if you plan to compute several horizontal cuts from a
+    same hierarchy.
 
     :param tree: input tree (deduced from :class:`~higra.CptHierarchy`)
     :param altitudes: node altitudes of the input tree
@@ -115,17 +121,21 @@ def labelisation_horizontal_cut_from_num_regions(tree, altitudes, num_regions, m
 def labelisation_hierarchy_supervertices(tree, altitudes, leaf_graph=None, handle_rag=True):
     """
     Labelize the tree leaves into supervertices.
+    The altitudes must be increasing, i.e. for any nodes :math:`i, j` such that :math:`j` is an ancestor of :math:`i`,
+    then :math:`altitudes[i] \leq altitudes[j]`.
+    Two leaves are in the same supervertex if they have a common ancestor at altitude 0.
 
-    Two leaves are in the same supervertex if they have a common ancestor of altitude 0.
+    If we consider that the pair :math:`(tree, altitudes)` represents a dendrogram, i.e. that it defines a
+    pseudo-ultrametric on the set of leaves, a supervertex is a maximal cluster such that the distance between
+    any pair of points in the cluster is equal to 0.
 
-    This functions guaranties that the labels are in the range [0, num_supervertices-1].
+    This functions guaranties that the labels are in the range :math:`[0, num\_supervertices-1]`.
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param altitudes: node altitudes of the input tree
     :param leaf_graph:  graph of the tree leaves (optional, deduced from :class:`~higra.CptHierarchy`)
     :param handle_rag: if True and the provided tree has been built on a region adjacency graph, then the labelisation corresponding to the rag regions is returned.
     :return: Leaf labels
-
     """
 
     if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and handle_rag:
