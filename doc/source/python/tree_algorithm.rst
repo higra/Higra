@@ -12,8 +12,6 @@ Algorithm for trees
     filter_small_nodes_from_tree
     filter_weak_frontier_nodes_from_tree
     labelisation_hierarchy_supervertices
-    labelisation_horizontal_cut_from_num_regions
-    labelisation_horizontal_cut_from_threshold
     reconstruct_leaf_data
     sort_hierarchy_with_altitudes
     test_tree_isomorphism
@@ -28,10 +26,6 @@ Algorithm for trees
 .. autofunction:: higra.filter_weak_frontier_nodes_from_tree
 
 .. autofunction:: higra.labelisation_hierarchy_supervertices
-
-.. autofunction:: higra.labelisation_horizontal_cut_from_num_regions
-
-.. autofunction:: higra.labelisation_horizontal_cut_from_threshold
 
 .. autofunction:: higra.reconstruct_leaf_data
 
