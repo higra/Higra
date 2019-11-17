@@ -9,4 +9,9 @@ Tree of shapes
 
     component_tree_tree_of_shapes_image2d
 
+    component_tree_multivariate_tree_of_shapes_image2d
+
+
 .. autofunction:: higra.component_tree_tree_of_shapes_image2d
+
+.. autofunction:: higra.component_tree_multivariate_tree_of_shapes_image2d

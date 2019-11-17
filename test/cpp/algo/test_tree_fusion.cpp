@@ -85,5 +85,18 @@ namespace test_tree_fusion {
         REQUIRE(xt::sum(diff - diff(0))() == 0);
     }
 
+    TEST_CASE("tree_fusion_depth_map 4", "[tree_fusion]") {
+        array_1d<int> p1{8, 6, 6, 6, 7, 7, 7, 8, 8};
+        array_1d<int> p2{9, 7, 8, 8, 8, 6, 8, 9, 9, 9};
+
+        tree t1(p1);
+        tree t2(p2);
+
+        auto res = tree_fusion_depth_map(std::vector<tree *>{&t1, &t2});
+        array_1d<int> expected{0, 3, 2, 2, 2, 3};
+
+        auto diff = xt::eval(expected - res);
+        REQUIRE(xt::sum(diff - diff(0))() == 0);
+    }
 
 }
