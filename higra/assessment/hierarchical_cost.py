@@ -49,7 +49,24 @@ def dendrogram_purity(tree, leaf_labels):
     :param leaf_labels: a 1d integral array of length `tree.num_leaves()`
     :return:  a score between 0 and 1 (higher is better)
     """
-    return hg.cpp._dendrogram_purity(tree, leaf_labels)
+    if leaf_labels.ndim != 1 or leaf_labels.size != tree.num_leaves() or leaf_labels.dtype.kind != 'i':
+        raise ValueError("leaf_labels must be a 1d integral array of length `tree.num_leaves()`")
+
+    num_l = tree.num_leaves()
+    area = hg.attribute_area(tree)
+
+    max_label = np.max(leaf_labels)
+    num_labels = max_label + 1
+    label_histo_leaves = np.zeros((num_l, num_labels), dtype=np.float64)
+    label_histo_leaves[np.arange(num_l), leaf_labels] = 1
+
+    label_histo = hg.accumulate_sequential(tree, label_histo_leaves, hg.Accumulators.sum)
+    class_purity = label_histo / area[:, np.newaxis]
+
+    weights = hg.attribute_children_pair_sum_product(tree, label_histo)
+    total = np.sum(class_purity[num_l:, :] * weights[num_l:, :])
+
+    return total / np.sum(weights[num_l:])
 
 
 @hg.argument_helper(hg.CptHierarchy)

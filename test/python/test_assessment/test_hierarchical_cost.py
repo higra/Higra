@@ -59,7 +59,7 @@ class TestHierarchicalCost(unittest.TestCase):
     def test_dendrogram_purity_random(self):
         g = hg.get_4_adjacency_graph((10, 10))
         np.random.seed(42)
-        for i in range(100):
+        for i in range(5):
             ew = np.random.randint(0, 20, g.num_edges())
             tree, _ = hg.quasi_flat_zone_hierarchy(g, ew)
             labels = np.random.randint(0, 10, (100,))
