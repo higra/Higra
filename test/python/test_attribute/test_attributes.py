@@ -581,6 +581,22 @@ class TestAttributes(unittest.TestCase):
         res = hg.attribute_child_number(tree)
         self.assertTrue(np.all(res == ref))
 
+    def test_attribute_children_pair_sum_product_scalar(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+
+        node_weights = np.asarray((2, 3, 4, 5, 6, 7, 8, 9))
+        res = hg.attribute_children_pair_sum_product(tree, node_weights)
+        ref = np.asarray((0, 0, 0, 0, 0, 6, 74, 56))
+        self.assertTrue(np.allclose(ref, res))
+
+    def test_attribute_children_pair_sum_product_scalar(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+
+        node_weights = np.asarray((2, 9, 3, 8, 4, 7, 5, 6, 6, 5, 7, 4, 8, 3, 9, 2)).reshape((8, 2))
+        res = hg.attribute_children_pair_sum_product(tree, node_weights)
+        ref = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 72, 74, 107, 56, 12)).reshape((8, 2))
+        self.assertTrue(np.allclose(ref, res))
+
 
 if __name__ == '__main__':
     unittest.main()

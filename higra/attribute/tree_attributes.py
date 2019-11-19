@@ -564,3 +564,28 @@ def attribute_child_number(tree):
     res = hg.cpp._attribute_child_number(tree)
 
     return res
+
+
+def attribute_children_pair_sum_product(tree, node_weights):
+    """
+    Given a tree :math:`T` with node weights :math:`w`: the children pair sum product for a node :math:`n` sums for
+    every pairs :math:`(c_i, c_j)` of children of :math:`n`, the product of the node weights of :math:`c_i` and
+    :math:`c_j`. Formally:
+
+    .. math::
+
+        res(n) = \sum_{i=0}^{i<numc(n)} \sum_{j=0}^{j<i} w(child(i, n)) * w(child(j, n))
+
+    where :math:`numc(n)` is the number of children of :math:`n` and :math:`child(i, n)` is the :math:`i`-th child
+    of the node :math:`n`.
+
+    The result is thus an array with the same shape as :attr:`node_weights`
+
+    :param tree: Input tree
+    :param node_weights: node weights of the input tree
+    :return: an array with the same shape as :attr:`node_weights`
+    """
+
+    res = hg.cpp._attribute_children_pair_sum_product(tree, node_weights)
+
+    return res
