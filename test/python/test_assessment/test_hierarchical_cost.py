@@ -76,3 +76,17 @@ class TestHierarchicalCost(unittest.TestCase):
 
         ref_cost = 2 / 1 + 4 / 3 + 9 / 7 + 9 / 7 + 2 / 1 + 2 / 1 + 9 / 5 + 9 / 6 + 9 / 6 + 7 / 4 + 2 / 1 + 3 / 2
         self.assertTrue(np.isclose(cost, ref_cost))
+
+    def test_tree_sampling_divergence(self):
+        g = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 2, 2))
+        tree, altitudes = hg.quasi_flat_zone_hierarchy(g, edge_weights)
+
+        cost = hg.tree_sampling_divergence(tree, edge_weights)
+
+        p = [0., 0., 0., 0.05714286, 0.11428571, 0.08571429, 0.74285714]
+        q = [0.03918367, 0.01142857, 0.13469388, 0.10285714, 0.11673469, 0.39428571, 0.93387755]
+
+        ref_cost = p[3] * np.log(p[3] / q[3]) + p[4] * np.log(p[4] / q[4]) + p[5] * np.log(p[5] / q[5]) + p[6] * np.log(
+            p[6] / q[6])
+        self.assertTrue(np.isclose(cost, ref_cost))

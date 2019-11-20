@@ -625,6 +625,18 @@ def attribute_tree_sampling_probability(tree, leaf_graph, leaf_graph_edge_weight
     .. [1] Charpentier, B. & Bonald, T. (2019).  `"Tree Sampling Divergence: An Information-Theoretic Metric for \
            Hierarchical Graph Clustering." <https://hal.telecom-paristech.fr/hal-02144394/document>`_ Proceedings of IJCAI.
 
+    :Complexity:
+
+    The tree sampling divergence runtime complexity depends of the sampling model:
+
+     - *edge*: :math:`\mathcal{O}(N\log(N) + M)` with :math:`N` the number of  nodes in the tree and :math:`M` the number of edges in the leaf graph.
+     - *null*: :math:`\mathcal{O}(N\\times C^2)` with :math:`N` the number of nodes in the tree  and :math:`C` the maximal number of children of a node in the tree.
+
+    :see:
+
+    The :func:`~higra.tree_sampling_divergence` is a non supervised hierarchical cost function defined as the
+    Kullback-Leibler divergence between the edge sampling model and the independent (null) sampling model.
+
     :param tree: Input tree
     :param leaf_graph: Graph defined on the leaves of the input tree
     :param leaf_graph_edge_weights: Edge weights of the leaf graphs (similarities)
