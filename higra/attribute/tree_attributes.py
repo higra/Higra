@@ -589,3 +589,57 @@ def attribute_children_pair_sum_product(tree, node_weights):
     res = hg.cpp._attribute_children_pair_sum_product(tree, node_weights)
 
     return res
+
+
+def attribute_tree_sampling_probability(tree, leaf_graph, leaf_graph_edge_weights, model='edge'):
+    """
+    Given a tree :math:`T`, estimate the probability that a node :math:`n` of the tree represents the smallest cluster
+    containing a pair of vertices :math:`\{a, b\}` of the graph :math:`G=(V, E)`
+    with edge weights :math:`w`.
+
+    This method is defined in [1]_.
+
+    We define the probability :math:`P(\{a,b\})` of a pair of vertices :math:`\{a,b\}` as :math:`w(\{a,b\}) / Z`
+    with :math:`Z=\sum_{e\in E}w(E)` if :math:`\{a,b\}` is an edge of :math:`G` and 0 otherwise.
+    Then the probability :math:`P(a)` of a vertex :math:`b` is defined as :math:`\sum_{b\in V}P(\{a, b\})`
+
+    Two sampling strategies are proposed for sampling pairs of vertices to compute the probability of a node of the tree:
+
+    - *edge*: the probability of sampling the pair :math:`\{a, b\}` is given by :math:`P(\{a, b\})`; and
+    - *null*: the probability of sampling the pair :math:`\{a, b\}` is given by the product of the probabilities
+      of :math:`a` and :math:`b`: :math:`P(a)*P(b)`.
+
+    Assuming that the edge weights on the leaf graph of a hierarchy represents similarities:
+
+    .. epigraph::
+
+        *We expect these distributions to differ significantly if the tree indeed represents the hierarchical structure of the graph.
+        Specifically, we expect [the edge distribution] to be mostly concentrated on deep nodes of the tree
+        (far from the root), as two nodes* :math:`u`, :math:`v` *connected with high weight* :math:`w(\{u, v\})` *in the graph
+        typically  belong to a small cluster, representative of the clustering structure of the graph; on the contrary,
+        we expect [the null distribution] to be concentrated over shallow nodes (close to the root) as two nodes*
+        :math:`w(\{u, v\})` *sampled independently at random typically belong to large clusters, less representative of the
+        clustering structure of the graph*. [1]_
+
+
+    .. [1] Charpentier, B. & Bonald, T. (2019).  `"Tree Sampling Divergence: An Information-Theoretic Metric for \
+           Hierarchical Graph Clustering." <https://hal.telecom-paristech.fr/hal-02144394/document>`_ Proceedings of IJCAI.
+
+    :param tree: Input tree
+    :param leaf_graph: Graph defined on the leaves of the input tree
+    :param leaf_graph_edge_weights: Edge weights of the leaf graphs (similarities)
+    :param model: defines the edge sampling strategy, either "edge" or "null"
+    :return: a 1d array
+    """
+    if model not in ("edge", "null"):
+        raise ValueError("Parameter 'model' must be either 'edge' or 'null'.")
+
+    if model == 'edge':
+        lca_map = hg.attribute_lca_map(tree, leaf_graph=leaf_graph)
+        leaf_graph_edge_weights = leaf_graph_edge_weights / np.sum(leaf_graph_edge_weights)
+        return hg.accumulate_at(lca_map, leaf_graph_edge_weights, hg.Accumulators.sum)
+    else:  # model = 'null'
+        leaf_graph_vertex_weights = hg.accumulate_graph_edges(leaf_graph, leaf_graph_edge_weights, hg.Accumulators.sum)
+        leaf_graph_vertex_weights = leaf_graph_vertex_weights / np.sum(leaf_graph_edge_weights)
+        tree_node_weights = hg.accumulate_sequential(tree, leaf_graph_vertex_weights, hg.Accumulators.sum)
+        return hg.attribute_children_pair_sum_product(tree, tree_node_weights)

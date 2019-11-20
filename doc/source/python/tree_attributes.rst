@@ -26,6 +26,7 @@ Tree attributes
     attribute_piecewise_constant_Mumford_Shah_energy
     attribute_regular_altitudes
     attribute_sibling
+    attribute_tree_sampling_probability
     attribute_volume
 
 .. autofunction:: higra.attribute_area
@@ -65,5 +66,7 @@ Tree attributes
 .. autofunction:: higra.attribute_regular_altitudes
 
 .. autofunction:: higra.attribute_sibling
+
+.. autofunction:: higra.attribute_tree_sampling_probability
 
 .. autofunction:: higra.attribute_volume
