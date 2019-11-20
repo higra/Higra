@@ -10,6 +10,5 @@
 
 #pragma once
 
-#include "py_dendrogram_purity.hpp"
 #include "py_fragmentation_curve.hpp"
 #include "py_partition.hpp"

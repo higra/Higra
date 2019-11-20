@@ -22,9 +22,11 @@ Tree attributes
     attribute_height
     attribute_lca_map
     attribute_mean_vertex_weights
+    attribute_children_pair_sum_product
     attribute_piecewise_constant_Mumford_Shah_energy
     attribute_regular_altitudes
     attribute_sibling
+    attribute_tree_sampling_probability
     attribute_volume
 
 .. autofunction:: higra.attribute_area
@@ -57,10 +59,14 @@ Tree attributes
 
 .. autofunction:: higra.attribute_mean_vertex_weights
 
+.. autofunction:: higra.attribute_children_pair_sum_product
+
 .. autofunction:: higra.attribute_piecewise_constant_Mumford_Shah_energy
 
 .. autofunction:: higra.attribute_regular_altitudes
 
 .. autofunction:: higra.attribute_sibling
+
+.. autofunction:: higra.attribute_tree_sampling_probability
 
 .. autofunction:: higra.attribute_volume

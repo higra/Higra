@@ -499,4 +499,61 @@ namespace hg {
 
         return attr;
     }
+
+    /**
+     * Given a tree :math:`T` with node weights :math:`w`: the children pair sum product for a node :math:`n` sums for
+     * every pairs :math:`(c_i, c_j)` of children of :math:`n`, the product of the node weights of :math:`c_i` and
+     * :math:`c_j`. Formally:
+     *
+     * .. math::
+     *
+     *      res(n) = \sum_{i=0}^{i<numc(n)} \sum_{j=0}^{j<i} w(child(i, n)) * w(child(j, n))
+     *
+     * where :math:`numc(n)` is the number of children of :math:`n` and :math:`child(i, n)` is the :math:`i`-th child
+     * of the node :math:`n`.
+     *
+     * The result is thus an array of the same shape of :attr:`node_weights`
+     *
+     * @tparam tree_t
+     * @tparam T
+     * @tparam value_type
+     * @param tree
+     * @param xnode_weights
+     * @return
+     */
+    template<typename tree_t, typename T, typename value_type=typename T::value_type>
+    auto attribute_children_pair_sum_product(const tree_t &tree, const xt::xexpression<T> &xnode_weights) {
+        auto &node_weights = xnode_weights.derived_cast();
+        hg_assert_node_weights(tree, node_weights);
+
+        array_nd<value_type> res = xt::zeros<value_type>(node_weights.shape());
+        const auto num_v = num_vertices(tree);
+        const auto num_l = num_leaves(tree);
+
+        if (res.dimension() == 1) {
+            for (index_t i = num_l; i < (index_t) num_v; i++) {
+                for (index_t c1 = 0; c1 < (index_t) num_children(i, tree); c1++) {
+                    for (index_t c2 = c1 + 1; c2 < (index_t) num_children(i, tree); c2++) {
+                        res(i) += node_weights(child(c1, i, tree)) * node_weights(child(c2, i, tree));
+                    }
+                }
+            }
+        } else {
+            const size_t num_d = node_weights.size() / num_v;
+            auto vnode_weights = xt::reshape_view(node_weights, {num_v, num_d});
+            auto vres = xt::reshape_view(res, {num_v, num_d});
+
+            for (index_t i = num_l; i < (index_t) num_v; i++) {
+                for (index_t c1 = 0; c1 < (index_t) num_children(i, tree); c1++) {
+                    for (index_t c2 = c1 + 1; c2 < (index_t) num_children(i, tree); c2++) {
+                        for (index_t k = 0; k < (index_t) num_d; k++) {
+                            vres(i, k) += vnode_weights(child(c1, i, tree), k) * vnode_weights(child(c2, i, tree), k);
+                        }
+                    }
+                }
+            }
+        }
+        return res;
+    }
+
 }

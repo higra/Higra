@@ -77,20 +77,8 @@ namespace hg {
         auto label_histo = accumulate_sequential(tree, label_histo_leaves, accumulator_sum());
         auto class_purity = label_histo / view(area, all(), newaxis());
 
-        array_2d<double> weights = zeros<double>({num_vertices(tree), num_labels});
-        double Z = 0;
-        for (index_t i = num_l; i < (index_t) num_vertices(tree); i++) {
-            for (index_t c1 = 0; c1 < (index_t)num_children(i, tree); c1++) {
-                for (index_t c2 = c1 + 1; c2 < (index_t)num_children(i, tree); c2++) {
-                    for (index_t l = 0; l < (index_t) num_labels; l++) {
-                        double v = label_histo(child(c1, i, tree), l) * label_histo(child(c2, i, tree), l);
-                        weights(i, l) += v;
-                        Z += v;
-                    }
-                }
-            }
-        }
-
+        auto weights = attribute_children_pair_sum_product(tree, label_histo);
+        double Z = sum(weights)();
         double total = sum(view(class_purity, range(num_l, _), all()) *
                            view(weights, range(num_l, _), all()))();
 

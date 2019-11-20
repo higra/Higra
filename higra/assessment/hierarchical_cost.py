@@ -49,7 +49,24 @@ def dendrogram_purity(tree, leaf_labels):
     :param leaf_labels: a 1d integral array of length `tree.num_leaves()`
     :return:  a score between 0 and 1 (higher is better)
     """
-    return hg.cpp._dendrogram_purity(tree, leaf_labels)
+    if leaf_labels.ndim != 1 or leaf_labels.size != tree.num_leaves() or leaf_labels.dtype.kind != 'i':
+        raise ValueError("leaf_labels must be a 1d integral array of length `tree.num_leaves()`")
+
+    num_l = tree.num_leaves()
+    area = hg.attribute_area(tree)
+
+    max_label = np.max(leaf_labels)
+    num_labels = max_label + 1
+    label_histo_leaves = np.zeros((num_l, num_labels), dtype=np.float64)
+    label_histo_leaves[np.arange(num_l), leaf_labels] = 1
+
+    label_histo = hg.accumulate_sequential(tree, label_histo_leaves, hg.Accumulators.sum)
+    class_purity = label_histo / area[:, np.newaxis]
+
+    weights = hg.attribute_children_pair_sum_product(tree, label_histo)
+    total = np.sum(class_purity[num_l:, :] * weights[num_l:, :])
+
+    return total / np.sum(weights[num_l:])
 
 
 @hg.argument_helper(hg.CptHierarchy)
@@ -77,8 +94,8 @@ def dasgupta_cost(tree, edge_weights, leaf_graph):
     :math:`m` the number of edges in :math:`E`.
 
     :param tree: Input tree
-    :param edge_weights: dissimilarity on the edges of the leaf graph
-    :param leaf_graph: leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :param edge_weights: Edge weights on the leaf graph (dissimilarities)
+    :param leaf_graph: Leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
     :return: a real number
     """
     area = hg.attribute_area(tree, leaf_graph=leaf_graph)
@@ -87,3 +104,44 @@ def dasgupta_cost(tree, edge_weights, leaf_graph):
     lca = lcaf.lca(leaf_graph)
 
     return np.sum(area[lca] / edge_weights)
+
+
+@hg.argument_helper(hg.CptHierarchy)
+def tree_sampling_divergence(tree, edge_weights, leaf_graph):
+    """
+    Tree sampling divergence is an unsupervised measure of the quality of a hierarchical clustering of an
+    edge weighted graph.
+    It measures how well the given edge weighted graph can be reconstructed from the tree alone.
+    It is equal to 0 if and only if the given graph can be fully recovered from the tree.
+
+    It is defined as the Kullback-Leibler divergence between the edge sampling model :math:`p` and the independent
+    (null) sampling model :math:`q` of the nodes of a tree (see :func:`~higra.attribute_tree_sampling_probability`).
+
+    The tree sampling divergence on a tree :math:`T` is then
+
+    .. math::
+
+        TSD(T) = \sum_{x \in T} p(x) \log\\frac{p(x)}{q(x)}
+
+    The definition of the tree sampling divergence was proposed in:
+
+        Charpentier, B. & Bonald, T. (2019).  `"Tree Sampling Divergence: An Information-Theoretic Metric for \
+        Hierarchical Graph Clustering." <https://hal.telecom-paristech.fr/hal-02144394/document>`_ Proceedings of IJCAI.
+
+    :Complexity:
+
+    The tree sampling divergence is computed in :math:`\mathcal{O}(N (\log(N) + C^2) + M)` with :math:`N` the number of
+    nodes in the tree, :math:`M` the number of edges in the leaf graph, and :math:`C` the maximal number of children of
+    a node in the tree.
+
+    :param tree: Input tree
+    :param edge_weights: Edge weights on the leaf graph (similarities)
+    :param leaf_graph: Leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :return: a real number
+    """
+
+    num_l = tree.num_leaves()
+    p = hg.attribute_tree_sampling_probability(tree, leaf_graph, edge_weights, 'edge')[num_l:]
+    q = hg.attribute_tree_sampling_probability(tree, leaf_graph, edge_weights, 'null')[num_l:]
+    index, = np.where(p)
+    return np.sum(p[index] * np.log(p[index] / q[index]))

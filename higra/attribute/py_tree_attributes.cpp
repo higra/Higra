@@ -106,6 +106,24 @@ struct def_attribute_extinction_value {
     }
 };
 
+struct def_attribute_children_pair_sum_product {
+    template<typename T>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_attribute_children_pair_sum_product",
+              [](const hg::tree &tree,
+                 const pyarray<T> &node_weights) {
+                  return hg::attribute_children_pair_sum_product(
+                          tree,
+                          node_weights
+                  );
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("node_weights"));
+    }
+};
+
 void py_init_attributes(pybind11::module &m) {
     xt::import_numpy();
     m.def("_attribute_sibling",
@@ -141,4 +159,7 @@ void py_init_attributes(pybind11::module &m) {
 
     add_type_overloads<def_attribute_height,
             HG_TEMPLATE_NUMERIC_TYPES>(m, "");
+
+    add_type_overloads<def_attribute_children_pair_sum_product,
+            int32_t, uint32_t, int64_t, uint64_t, float, double>(m, "");
 }

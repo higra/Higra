@@ -581,6 +581,49 @@ class TestAttributes(unittest.TestCase):
         res = hg.attribute_child_number(tree)
         self.assertTrue(np.all(res == ref))
 
+    def test_attribute_children_pair_sum_product_scalar(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+
+        node_weights = np.asarray((2, 3, 4, 5, 6, 7, 8, 9))
+        res = hg.attribute_children_pair_sum_product(tree, node_weights)
+        ref = np.asarray((0, 0, 0, 0, 0, 6, 74, 56))
+        self.assertTrue(np.allclose(ref, res))
+
+    def test_attribute_children_pair_sum_product_scalar(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+
+        node_weights = np.asarray((2, 9, 3, 8, 4, 7, 5, 6, 6, 5, 7, 4, 8, 3, 9, 2)).reshape((8, 2))
+        res = hg.attribute_children_pair_sum_product(tree, node_weights)
+        ref = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 72, 74, 107, 56, 12)).reshape((8, 2))
+        self.assertTrue(np.allclose(ref, res))
+
+    def test_attribute_tree_sampling_probability_edge_model(self):
+        g = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 2, 2))
+        tree, altitudes = hg.quasi_flat_zone_hierarchy(g, edge_weights)
+        res = hg.attribute_tree_sampling_probability(tree, g, edge_weights, model='edge')
+
+        ref = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 3, 26)) / np.sum(edge_weights)
+        self.assertTrue(np.allclose(ref, res))
+
+    def test_attribute_tree_sampling_probability_null_model(self):
+        g = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 2, 2))
+        tree, altitudes = hg.quasi_flat_zone_hierarchy(g, edge_weights)
+        res = hg.attribute_tree_sampling_probability(tree, g, edge_weights, model='null')
+
+        Z = np.sum(edge_weights)
+        ref = np.asarray(
+            (0, 0, 0, 0, 0, 0, 0, 0, 0,
+             6 * 8, 2 * 7,
+             11 * 15,
+             6 * 2 + 6 * 7 + 8 * 2 + 8 * 7,
+             7 * 9 + 7 * 5 + 9 * 5,
+             6 * 7 + 6 * 9 + 6 * 5 + 8 * 7 + 8 * 9 + 8 * 5 + 2 * 7 + 2 * 9 + 2 * 5 + 7 * 7 + 7 * 9 + 7 * 5,
+             6 * 11 + 6 * 15 + 8 * 11 + 8 * 15 + 2 * 11 + 2 * 15 + 11 * 7 + 11 * 7 + 11 * 9 + 11 * 5 + 15 * 7 + 15 * 7 + 15 * 9 + 15 * 5)) / \
+              (Z * Z)
+        self.assertTrue(np.allclose(ref, res))
+
 
 if __name__ == '__main__':
     unittest.main()

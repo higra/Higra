@@ -14,7 +14,6 @@ set(PY_FILES
         fragmentation_curve.py)
 
 set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
-        ${CMAKE_CURRENT_SOURCE_DIR}/py_dendrogram_purity.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_fragmentation_curve.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_partition.cpp
         PARENT_SCOPE)
