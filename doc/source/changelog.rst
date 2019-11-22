@@ -1,6 +1,28 @@
 Changelog
 =========
 
+0.4.5
+-----
+
+- Add new notebook: `*Visualizing hierarchical image segmentations* <https://github.com/higra/Higra-Notebooks/blob/master/Visualizing%20hierarchical%20image%20segmentations.ipynb>`_
+  `#159 <https://github.com/higra/Higra/pull/159>`_
+- Add hierarchical cost function :func:`~higra.tree_sampling_divergence`
+  `#158 <https://github.com/higra/Higra/pull/158>`_
+- Add attribute :func:`~higra.attribute_tree_sampling_probability`
+  `9faf740 <https://github.com/higra/Higra/commit/9faf7408b878962c5146df7f19533cd2c843702a>`_
+- Add attribute :func:`~higra.attribute_children_pair_sum_product`
+  `0c6c958 <https://github.com/higra/Higra/commit/0c6c95860293d65776058a9f449d819e725d0fee>`_
+- Improvements in documentation
+  `#157 <https://github.com/higra/Higra/pull/157>`_
+- Add hierarchy algorithm :func:`~higra.component_tree_multivariate_tree_of_shapes_image2d`
+  `#156 <https://github.com/higra/Higra/pull/156>`_
+- Fix return policy in :func:`~higra.Tree.parents()`, now returns a non writable reference
+  `e3eb5aa <https://github.com/higra/Higra/commit/e3eb5aa902e81e2d6ce38b54d2e41171256035d6>`_
+- Add option to deactivate immersion in tree of shapes
+  `9efb6b6 <https://github.com/higra/Higra/commit/9efb6b670beb7f42a28f05bdd3c9ead1062180b9>`_
+- Add algorithm :func:`~higra.tree_fusion_depth_map`
+  `11e4f53 <https://github.com/higra/Higra/commit/11e4f530f07778247f04833b0e90d607aef228ac>`_
+
 0.4.4
 -----
 
