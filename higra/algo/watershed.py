@@ -24,6 +24,11 @@ def labelisation_watershed(graph, edge_weights):
 
     The watershed cut is represented by a labelisation of the graph vertices.
 
+    :Complexity:
+
+    This algorithm has a linear runtime complexity :math:`\mathcal{O}(n)` with :math:`n` the number of edges in the graph.
+
+
     :param graph: input graph
     :param edge_weights: Weights on the edges of the graph
     :return: A labelisation of the graph vertices
@@ -38,29 +43,61 @@ def labelisation_watershed(graph, edge_weights):
 def labelisation_seeded_watershed(graph, edge_weights, vertex_seeds):
     """
     Seeded watershed cut on an edge weighted graph.
-    Seeds are defined as vertex weights: any flat zone of value strictly greater than 0 is considered as a seed.
+    Seeds are defined as integral vertex weights: vertices with non zero values are considered as seeds.
+    The label of a vertex of the graph is then defined equal to the label of the closest seed in the edge weighted graph for the min-max distance.
+    If several such seeds exist (eg. on a plateus between two seeds), an arbitrary and consistent choice is made.
 
-    Note that if two different seeds are places in a minima of the edge weighted graph, and if the altitude of this minima
-    is equal to the smallest representable value for the given `dtype` of the edge weights, then the algorithm won't be able
-    to produce two different regions for these two seeds.
+    The algorithm ensures that each seed vertex with value :math:`v\geq 1` is included in a region of value :math:`v` of the result.
+    This implies that if, for a given seed value :math:`v`, the set of seed vertices with value :math:`v` is not connected then the set of
+    of vertices labeled with the value :math:`v` is not necessarily connected.
+
+    :Complexity:
+
+    This algorithm has a runtime complexity in :math:`\mathcal{O}(n \log n)` with :math:`n` the number of edges in the graph.
 
     :param graph: input graph
     :param edge_weights: Weights on the edges of the graph
     :param vertex_seeds: Seeds on the vertices of the graph
     :return: A labelisation of the graph vertices
     """
-    # edges inside a seed take the value of the seed and 0 otherwise
-    edges_in_or_between_seeds = hg.weight_graph(graph, vertex_seeds, hg.WeightFunction.L0)
-    edges_outside_seeds = hg.weight_graph(graph, vertex_seeds, hg.WeightFunction.min)
-    edges_in_seed = np.logical_and(edges_outside_seeds > 0, 1 - edges_in_or_between_seeds)
+    if not issubclass(vertex_seeds.dtype.type, np.integer):
+        raise ValueError("vertex_seeds must be an array of integers")
+
+    # identify edges inside seeds to enforce existence of minima
+    edges_border_seeds = hg.weight_graph(graph, vertex_seeds, hg.WeightFunction.L0)
+    edges_not_border_seeds = np.logical_not(edges_border_seeds)
+    edges_inside_or_between_seeds = hg.weight_graph(graph, vertex_seeds, hg.WeightFunction.min) > 0
+    edges_inside_seeds = np.logical_and(edges_inside_or_between_seeds, edges_not_border_seeds)
 
     # set edges inside seeds at minimum level
     edge_weights = edge_weights.copy()
-    edge_weights[edges_in_seed > 0] = hg.dtype_info(edge_weights.dtype).min
+    edge_weights[edges_inside_seeds > 0] = hg.dtype_info(edge_weights.dtype).min
 
-    tree, altitudes = hg.watershed_hierarchy_by_attribute(
-        graph,
-        edge_weights,
-        lambda tree, _: hg.accumulate_sequential(tree, vertex_seeds, hg.Accumulators.max))
+    # compute mst and bpt
+    tree, altitudes = hg.bpt_canonical(graph, edge_weights)
 
-    return hg.labelisation_hierarchy_supervertices(tree, altitudes)
+    # identify watershed edges as nodes where different seed labels merge
+    label_tree = hg.accumulate_sequential(tree, vertex_seeds, hg.Accumulators.max)
+    label_left_children = label_tree[tree.child(0)]
+    label_right_children = label_tree[tree.child(1)]
+    watershed_edges = np.logical_and(label_left_children != 0,
+                                     np.logical_and(label_right_children != 0,
+                                                    label_left_children != label_right_children))
+
+    # the watershed edges form a cut in the mst, we take the corresponding labeliasation
+    mst = hg.CptBinaryHierarchy.get_mst(tree)
+    labels = hg.graph_cut_2_labelisation(mst, watershed_edges)
+    labels = hg.delinearize_vertex_weights(labels, graph)
+
+    # we ensure that final labels correspond to initial seed labels:
+    # each region takes the label of the seed it contains.
+    flat_labels = labels.flatten()
+    flat_seeds = vertex_seeds.flatten()
+    seed_positions, = np.nonzero(flat_seeds)
+    seed_values = flat_seeds[seed_positions]
+    label_values = flat_labels[seed_positions]
+    representative_label_values, representative_label_positions = np.unique(label_values, return_index=True)
+    representative_seed_values = seed_values[representative_label_positions]
+    labels = representative_seed_values[labels - 1]
+
+    return labels

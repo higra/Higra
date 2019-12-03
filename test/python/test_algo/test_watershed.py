@@ -36,11 +36,63 @@ class TestWatershed(unittest.TestCase):
                             (1, 1, 2, 2)))
 
         labels = hg.labelisation_seeded_watershed(g, edge_weights, seeds)
+
+        expected = np.asarray(((1, 1, 2, 2),
+                               (1, 1, 2, 2),
+                               (1, 1, 2, 2),
+                               (1, 1, 2, 2)))
+        self.assertTrue(np.all(labels == expected))
+
+        seeds = np.asarray(((1, 1, 0, 0),
+                            (1, 0, 0, 0),
+                            (0, 0, 0, 0),
+                            (2, 2, 3, 3)))
+
+        labels = hg.labelisation_seeded_watershed(g, edge_weights, seeds)
+
         expected = np.asarray(((1, 1, 3, 3),
                                (1, 1, 3, 3),
                                (2, 2, 3, 3),
                                (2, 2, 3, 3)))
-        self.assertTrue(hg.is_in_bijection(labels, expected))
+        self.assertTrue(np.all(labels == expected))
+
+    def test_seeded_watershed_split_minima(self):
+        g = hg.get_4_adjacency_graph((2, 4))
+        edge_weights = np.asarray((0, 1, 0, 2, 0, 2, 0, 1, 2, 1))
+        #   x0x0x0x
+        #   1 2 2 0
+        #   x1x2x1x
+
+        seeds = np.asarray(((1, 0, 0, 2),
+                            (0, 0, 0, 0)))
+
+        labels = hg.labelisation_seeded_watershed(g, edge_weights, seeds)
+
+        expected = np.asarray(((1, 1, 1, 2),
+                               (1, 1, 2, 2)))
+        # other possible results:
+        # ((1, 1, 2, 2),
+        # (1, 1, 2, 2))
+        # or
+        # ((1, 2, 2, 2),
+        # (1, 1, 2, 2))
+        self.assertTrue(np.all(labels == expected))
+
+    def test_seeded_watershed_disconnected_seeds(self):
+        g = hg.get_4_adjacency_graph((2, 3))
+        edge_weights = np.asarray((1, 0, 2, 0, 0, 1, 2))
+        #   x1x2x
+        #   0 0 0
+        #   x1x2x
+
+        seeds = np.asarray(((5, 7, 5),
+                            (0, 0, 0)))
+
+        labels = hg.labelisation_seeded_watershed(g, edge_weights, seeds)
+
+        expected = np.asarray(((5, 7, 5),
+                               (5, 7, 5)))
+        self.assertTrue(np.all(labels == expected))
 
 
 if __name__ == '__main__':
