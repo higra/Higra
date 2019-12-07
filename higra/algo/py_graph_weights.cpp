@@ -54,13 +54,13 @@ void py_init_graph_weights(pybind11::module &m) {
             .value("target", hg::weight_functions::target);
 
 
-    add_type_overloads<def_weight_graph<hg::ugraph>, HG_TEMPLATE_SNUMERIC_TYPES>
+    add_type_overloads<def_weight_graph<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
              "Compute the edge weights of a graph using source and target vertices values"
              " and specified weighting function (see WeightFunction enumeration)."
             );
 
-    add_type_overloads<def_weight_graph<hg::tree>, HG_TEMPLATE_SNUMERIC_TYPES>
+    add_type_overloads<def_weight_graph<hg::tree>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
              "Compute the edge weights of a graph using source and target vertices values"
              " and specified weighting function (see WeightFunction enumeration)."
