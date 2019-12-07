@@ -47,9 +47,8 @@ def labelisation_seeded_watershed(graph, edge_weights, vertex_seeds):
     The label of a vertex of the graph is then defined equal to the label of the closest seed in the edge weighted graph for the min-max distance.
     If several such seeds exist (eg. on a plateus between two seeds), an arbitrary and consistent choice is made.
 
-    The algorithm ensures that each seed vertex with value :math:`v\geq 1` is included in a region of value :math:`v` of the result.
-    This implies that if, for a given seed value :math:`v`, the set of seed vertices with value :math:`v` is not connected then the set of
-    of vertices labeled with the value :math:`v` is not necessarily connected.
+    The seeds must be connected: for any seed value :math:`v`, the set of vertices of the input graph having the seed value
+    :math:`v` must be connected in the input graph.
 
     :Complexity:
 
@@ -57,7 +56,7 @@ def labelisation_seeded_watershed(graph, edge_weights, vertex_seeds):
 
     :param graph: input graph
     :param edge_weights: Weights on the edges of the graph
-    :param vertex_seeds: Seeds on the vertices of the graph
+    :param vertex_seeds: Seeds on the vertices of the graph, seeds must be connected
     :return: A labelisation of the graph vertices
     """
     if not issubclass(vertex_seeds.dtype.type, np.integer):
