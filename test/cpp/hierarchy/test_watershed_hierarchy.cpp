@@ -21,6 +21,26 @@ namespace watershed_hierarchy {
 
     TEST_CASE("watershed hierarchy by area", "[watershed_hierarchy]") {
 
+        auto g = hg::get_4_adjacency_graph({2, 3});
+        array_1d<int> edge_weights{1, 0, 1, 0, 0, 0, 1};
+        // x1x1x
+        // 0 0 0
+        // x0x1x
+
+        auto res = watershed_hierarchy_by_area(g, edge_weights);
+        auto &t = res.tree;
+        auto &altitudes = res.altitudes;
+
+        array_1d<index_t> ref_parents{7, 7, 6, 7, 7, 6, 8, 8, 8};
+        tree ref_tree(ref_parents);
+        array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 2};
+
+        REQUIRE(test_tree_isomorphism(t, ref_tree));
+        REQUIRE((altitudes == ref_altitudes));
+    }
+
+    TEST_CASE("watershed hierarchy by area 2", "[watershed_hierarchy]") {
+
         auto g = hg::get_4_adjacency_graph({1, 19});
         array_1d<int> edge_weights{0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0};
 
