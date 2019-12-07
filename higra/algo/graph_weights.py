@@ -37,7 +37,7 @@ def weight_graph_function(graph, weight_function):
     Set the attribute "edge_weights" of graph with the computed values.
 
     :param graph: input graph
-    :param weight_function: eg. lambda i, j: abs(data[i]-[j])
+    :param weight_function: eg. lambda i, j: abs(data[i]-data[j])
     :return: edge weights of the graph
     """
 

@@ -48,6 +48,11 @@ class TestGraphWeights(unittest.TestCase):
         r = hg.weight_graph(g, data, hg.WeightFunction.L2_squared)
         self.assertTrue(np.allclose(ref, r))
 
+        data = np.asarray((0, 258, 1, 2), dtype=np.uint16)
+        ref = (258, 1, 258, 2)
+        r = hg.weight_graph(g, data, hg.WeightFunction.max)
+        self.assertTrue(np.allclose(ref, r))
+
     def test_weighting_graph_vectorial(self):
         g = hg.get_4_adjacency_graph((2, 2))
         data = np.asarray(((0, 1), (2, 3), (4, 5), (6, 7)))
