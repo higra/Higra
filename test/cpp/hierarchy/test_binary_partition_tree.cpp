@@ -48,6 +48,26 @@ namespace binary_partition_tree {
         REQUIRE(hg::test_tree_isomorphism(tree, tree2));
     }
 
+    TEST_CASE("complete linkage clustering multiple edges", "[binary_partition_tree]") {
+        auto graph = get_4_adjacency_graph({3, 3});
+        for (auto e : edge_iterator(graph)) {
+            add_edge(source(e, graph), target(e, graph), graph);
+        }
+        array_1d<double> edge_weights({1, 8, 2, 10, 15, 3, 11, 4, 12, 13, 5, 6,
+                                       1, 8, 2, 10, 15, 3, 11, 4, 12, 13, 5, 6});
+
+
+        auto res = binary_partition_tree_complete_linkage(graph, edge_weights);
+        auto &tree = res.tree;
+        auto &levels = res.altitudes;
+
+        array_1d<index_t> expected_parents({9, 9, 10, 11, 11, 12, 13, 13, 14, 10, 16, 12, 15, 14, 15, 16, 16});
+        array_1d<double> expected_levels({0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 13, 15});
+
+        REQUIRE((expected_parents == tree.parents()));
+        REQUIRE((expected_levels == levels));
+    }
+
     TEST_CASE("complete linkage clustering simple", "[binary_partition_tree]") {
         auto graph = get_4_adjacency_graph({3, 3});
         array_1d<double> edge_weights({1, 8, 2, 10, 15, 3, 11, 4, 12, 13, 5, 6});

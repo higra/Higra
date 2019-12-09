@@ -558,21 +558,25 @@ namespace hg {
 
                 // search for neighbours of region1 and region2 and store them in new_neighbours
                 new_neighbours.clear();
-                auto explore_region = [&g, &new_neighbours, &new_neighbour_indices](
-                        index_t region) {
+                auto explore_region = [&active, &g, &new_neighbours, &new_neighbour_indices](
+                        index_t region, index_t other_region) {
                     for (auto e: out_edge_iterator(region, g)) {
                         auto n = other_vertex(e, region, g);
-                        if (new_neighbour_indices[n] != invalid_index) {
-                            new_neighbours[new_neighbour_indices[n]].second_edge_index() = e;
+                        if (n != other_region) { // may happen with multiple edges
+                            if (new_neighbour_indices[n] != invalid_index) {
+                                new_neighbours[new_neighbour_indices[n]].second_edge_index() = e;
+                            } else {
+                                new_neighbour_indices[n] = new_neighbours.size();
+                                new_neighbours.emplace_back(n, e);
+                            }
                         } else {
-                            new_neighbour_indices[n] = new_neighbours.size();
-                            new_neighbours.emplace_back(n, e);
+                            active[index(e, g)] = false;
                         }
                     }
                 };
 
-                explore_region(region1);
-                explore_region(region2);
+                explore_region(region1, region2);
+                explore_region(region2, region1);
                 for (auto &n: new_neighbours) {
                     new_neighbour_indices[n.neighbour_vertex()] = invalid_index;
                 }
