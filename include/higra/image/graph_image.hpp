@@ -136,7 +136,7 @@ namespace hg {
                 auto v = res_embedding.grid2lin({y, x});
                 result_type max_v = std::numeric_limits<result_type>::lowest();
                 for (auto av: adjacent_vertex_iterator(v, adj4)) {
-                    max_v = std::max(max_v, flat_res(av));
+                    max_v = (std::max)(max_v, flat_res(av));
                 }
                 res(y, x) = max_v;
             }

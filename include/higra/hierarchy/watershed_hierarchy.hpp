@@ -34,7 +34,7 @@ namespace hg {
                 } else {
                     value_type maxc = std::numeric_limits<value_type>::lowest();
                     for (auto c: children_iterator(n, tree)) {
-                        maxc = std::max(maxc, (is_leaf(c, tree)) ? 0 : attribute(c));
+                        maxc = (std::max)(maxc, (is_leaf(c, tree)) ? 0 : attribute(c));
                     }
                     result(n) = maxc;
                 }

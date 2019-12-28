@@ -96,7 +96,7 @@ namespace hg {
                 hg_assert_1d_array(vertex_weights);
                 std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](
                         vertex_t i, vertex_t j) -> result_value_t {
-                    return static_cast<result_value_t>(std::min(vertex_weights(i), vertex_weights(j)));
+                    return static_cast<result_value_t>((std::min)(vertex_weights(i), vertex_weights(j)));
                 };
                 return weight_graph(graph, fun);
             }
@@ -104,7 +104,7 @@ namespace hg {
                 hg_assert_1d_array(vertex_weights);
                 std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
                                                                                           vertex_t j) -> result_value_t {
-                    return static_cast<result_value_t>(std::max(vertex_weights(i), vertex_weights(j)));
+                    return static_cast<result_value_t>((std::max)(vertex_weights(i), vertex_weights(j)));
                 };
                 return weight_graph(graph, fun);
             }

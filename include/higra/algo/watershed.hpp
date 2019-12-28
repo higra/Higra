@@ -44,15 +44,15 @@ namespace hg {
         auto fminus = array_1d<value_type>::from_shape({graph.num_vertices()});
 
         for (auto v: vertex_iterator(graph)) {
-            auto minValue = std::numeric_limits<value_type>::max();
+            auto minValue = (std::numeric_limits<value_type>::max)();
             for (auto e: out_edge_iterator(v, graph)) {
-                minValue = std::min(minValue, edge_weights(e));
+                minValue = (std::min)(minValue, edge_weights(e));
             }
             fminus[v] = minValue;
         }
 
 
-        auto no_label = std::numeric_limits<index_t>::max();
+        auto no_label = (std::numeric_limits<index_t>::max)();
         auto labels = array_1d<index_t>::from_shape({graph.num_vertices()});
         std::fill(labels.begin(), labels.end(), no_label);
 

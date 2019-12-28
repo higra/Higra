@@ -134,7 +134,7 @@ namespace hg {
             xt::noalias(xt::view(min_depth, xt::range(0, num_leaves(tree)))) =
                     xt::view(xt::index_view(altitudes, tree.parents()), xt::range(0, num_leaves(tree)));
             for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
-                min_depth(n) = std::numeric_limits<value_type>::max();
+                min_depth(n) = (std::numeric_limits<value_type>::max)();
                 bool flag = true;
                 for (auto c: children_iterator(n, tree)) {
                     if (!is_leaf(c, tree)) {
@@ -262,7 +262,7 @@ namespace hg {
         if (increasing_altitudes) {
             auto min_depth = xt::empty_like(altitudes);
             for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
-                min_depth(n) = std::numeric_limits<value_type>::max();
+                min_depth(n) = (std::numeric_limits<value_type>::max)();
                 bool flag = true;
                 for (auto c: children_iterator(n, tree)) {
                     if (!is_leaf(c, tree)) {

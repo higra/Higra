@@ -299,7 +299,7 @@ namespace hg {
             void initialize(Args &&...) {
                 *m_storage_begin = -1;
                 cur_index = 0;
-                std::fill(m_temp.begin(), m_temp.end(), std::numeric_limits<storage_value_type>::max());
+                std::fill(m_temp.begin(), m_temp.end(), (std::numeric_limits<storage_value_type>::max)());
             }
 
             template<typename T1 = self_type, typename T, typename ...Args>
@@ -584,8 +584,8 @@ namespace hg {
             return accumulator_detail::acc_marginal_impl<iterator_type, vectorial>(
                     storage.begin(),
                     storage.end(),
-                    [](value_type v1, value_type v2) { return std::min(v1, v2); },
-                    std::numeric_limits<value_type>::max());
+                    [](value_type v1, value_type v2) { return (std::min)(v1, v2); },
+                    (std::numeric_limits<value_type>::max)());
         }
 
         template<typename shape_t>
@@ -604,7 +604,7 @@ namespace hg {
             return accumulator_detail::acc_marginal_impl<iterator_type, vectorial>(
                     storage.begin(),
                     storage.end(),
-                    [](value_type v1, value_type v2) { return std::max(v1, v2); },
+                    [](value_type v1, value_type v2) { return (std::max)(v1, v2); },
                     std::numeric_limits<value_type>::lowest());
         }
 
