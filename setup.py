@@ -18,6 +18,30 @@ if force_debug_arg in sys.argv:
     force_debug = True
 
 
+def get_tbb_dirs():
+    link_dir = os.getenv("TBB_LINK")
+    include_dir = os.getenv("TBB_INCLUDE")
+
+    if bool(link_dir) != bool(include_dir):
+        print('You must either provide none or BOTH environment variables "TBB_INCLUDE" and "TBB_LINK"')
+        exit(1)
+
+    # if env not set, we assume that tbb is installed with python distro...
+    if not link_dir:
+        from sysconfig import get_paths
+        info = get_paths()
+        python_path = info['data']
+
+        include_dir = os.path.join(python_path, "include")
+        link_dir = os.path.join(python_path, "lib")
+
+    # if not (os.path.isfile(os.path.join(include_dir, "tbb/tbb.h"))):
+    #    print('Cannot find "tbb.h" please provide tbb location with environment variables "TBB_INCLUDE" and "TBB_LINK"')
+    #    exit(1)
+    print("TBB dirs: ", include_dir, link_dir)
+    return include_dir, link_dir
+
+
 def get_version():
     with open(os.path.join("include", "higra", "config.hpp")) as file:
         lines = file.readlines()
@@ -35,6 +59,7 @@ def get_version():
             patch = int(l.split(' ')[2])
 
     return ".".join([str(i) for i in (major, minor, patch)])
+
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
@@ -62,9 +87,11 @@ class CMakeBuild(build_ext):
         global force_debug
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         extdir = os.path.join(extdir, "higra")
+        tbb_include, tbb_link = get_tbb_dirs()
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPYTHON_EXECUTABLE=' + sys.executable]#,
-                      #'-DDO_CPP_TEST=OFF']
+                      '-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DTBB_INCLUDE_DIR=' + tbb_include,
+                      '-DTBB_LIBRARY=' + tbb_link]
 
         cfg = 'Debug' if force_debug or self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -117,6 +144,7 @@ try:
         include_package_data=True,
         install_requires=[
             'numpy>=1.15.4',
+            'tbb'
         ],
         zip_safe=False,
         license='CeCILL-B',

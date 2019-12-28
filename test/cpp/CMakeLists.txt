@@ -28,6 +28,12 @@ if (DO_CPP_TEST)
 
     add_executable(test_exe ${TEST_CPP_COMPONENTS})
 
+    if (HG_USE_TBB)
+        target_compile_definitions(test_exe PRIVATE HG_USE_TBB)
+        target_include_directories(test_exe PRIVATE ${TBB_INCLUDE_DIRS})
+        target_link_libraries(test_exe PRIVATE ${TBB_LIBRARIES})
+    endif ()
+
     #target_link_libraries(test_exe Catch2::Catch2)
     add_test(NAME Test_cpp COMMAND test_exe)
     set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} test_exe PARENT_SCOPE)

@@ -156,6 +156,15 @@ if(NOT ${U_CMAKE_BUILD_TYPE} MATCHES RELEASE)
     add_definitions("-DHG_ENABLE_TRACE")
 endif()
 
+option(HG_USE_TBB
+        "Enable Intel TBB support." ON)
+
+if (HG_USE_TBB)
+
+    find_package(TBB REQUIRED)
+    message(STATUS "Found intel TBB: ${TBB_INCLUDE_DIRS}")
+endif ()
+
 ##########################
 #  Build Python bindings
 ##########################
