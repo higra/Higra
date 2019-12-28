@@ -119,7 +119,7 @@ install:
     cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python  ..  &&
     make -j2 higram test_exe;
   else
-    pip install cibuildwheel==0.10.2;
+  pip install cibuildwheel==1.1.0;
   fi
 script:
   - |
