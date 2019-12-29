@@ -14,6 +14,7 @@
 #include "../algo/graph_weights.hpp"
 #include "higra/structure/unionfind.hpp"
 #include "xtensor/xview.hpp"
+#include "higra/sorting.hpp"
 
 namespace hg {
 
@@ -134,7 +135,7 @@ namespace hg {
         hg_assert_1d_array(edge_weights);
 
         array_1d<index_t> sorted_edges_indices = xt::arange(num_edges(graph));
-        std::stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
+        stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
                          [&edge_weights](index_t i, index_t j) { return edge_weights[i] < edge_weights[j]; });
 
         auto num_points = num_vertices(graph);

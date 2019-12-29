@@ -116,6 +116,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
     endif()
 
+    add_definitions("-DNOMINMAX")
     if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast /GL /EHsc /MP /bigobj /O2")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG /MANIFEST:NO")
@@ -154,6 +155,14 @@ endif ()
 if(NOT ${U_CMAKE_BUILD_TYPE} MATCHES RELEASE)
     add_definitions("-DHG_ENABLE_TRACE")
 endif()
+
+option(HG_USE_TBB
+        "Enable Intel TBB support." ON)
+
+if (HG_USE_TBB)
+    find_package(TBB REQUIRED)
+    message(STATUS "Found intel TBB: ${TBB_INCLUDE_DIRS}")
+endif ()
 
 ##########################
 #  Build Python bindings

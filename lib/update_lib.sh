@@ -25,7 +25,12 @@ install_prefix=`pwd`
 
 printf "Cleaning previous library versions..."
 rm -rf lib
-rm -rf include
+rm -rf include/catch2
+rm -rf include/pybind11
+rm -rf include/xsimd
+rm -rf include/xtensor
+rm -rf include/xtensor-python
+rm -rf include/xtl
 rm -rf share
 rm -rf license
 

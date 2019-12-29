@@ -586,7 +586,7 @@ namespace hg {
     std::pair<hg::tree::out_edge_iterator, hg::tree::out_edge_iterator>
     out_edges(hg::tree::vertex_descriptor v, const hg::tree &g) {
         auto fun = [v](const typename hg::tree::vertex_descriptor t) {
-            return hg::tree::edge_descriptor(v, t, std::min(v, t));
+            return hg::tree::edge_descriptor(v, t, (std::min)(v, t));
         };
         using it = typename hg::tree::out_edge_iterator;
         using ita = typename hg::tree::adjacency_iterator;
@@ -600,7 +600,7 @@ namespace hg {
     std::pair<hg::tree::out_edge_iterator, hg::tree::out_edge_iterator>
     in_edges(hg::tree::vertex_descriptor v, const hg::tree &g) {
         auto fun = [v](const typename hg::tree::vertex_descriptor t) {
-            return hg::tree::edge_descriptor(t, v, std::min(v, t));
+            return hg::tree::edge_descriptor(t, v, (std::min)(v, t));
         };
         using it = typename hg::tree::out_edge_iterator;
         using ita = typename hg::tree::adjacency_iterator;

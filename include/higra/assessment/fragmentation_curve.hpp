@@ -152,7 +152,7 @@ namespace hg {
             hg_assert_1d_array(ground_truth);
             hg_assert_integral_value_type(ground_truth);
 
-            max_regions = std::min(max_regions, num_leaves(tree));
+            max_regions = (std::min)(max_regions, num_leaves(tree));
 
             m_num_regions_ground_truth = xt::amax(ground_truth)() + 1;
 
@@ -225,14 +225,16 @@ namespace hg {
                 auto &backtrack_c2 = backtracking[c2];
 
                 size_t max_regions_combination = backtrack_c1.size() + backtrack_c2.size(); // unlimited combinations
-                max_regions_combination = std::min(max_regions, max_regions_combination);
+                max_regions_combination = (std::min)(max_regions, max_regions_combination);
 
                 backtrack_i.resize(max_regions_combination);
 
-                for (size_t k_c1 = 0; k_c1 < std::min(static_cast<size_t>(backtrack_c1.size()), max_regions); k_c1++) {
+                for (size_t k_c1 = 0;
+                     k_c1 < (std::min)(static_cast<size_t>(backtrack_c1.size()), max_regions); k_c1++) {
                     auto &match_k_c1 = backtrack_c1[k_c1];
                     for (size_t k_c2 = 0;
-                         k_c2 < std::min(static_cast<size_t>(backtrack_c2.size()), max_regions_combination - k_c1 - 1); k_c2++) {
+                         k_c2 < (std::min)(static_cast<size_t>(backtrack_c2.size()),
+                                           max_regions_combination - k_c1 - 1); k_c2++) {
                         auto &match_k_c2 = backtrack_c2[k_c2];
                         size_t fusion_num_regions = k_c1 + k_c2 + 2; // +2 for indexing
 
@@ -363,7 +365,7 @@ namespace hg {
                 double previous_score = backtrack_root[i - 1].score;
                 double score_gain = score - previous_score;
                 if (!gain_only || score_gain > 0) {
-                    score_max = std::max(score_max, score);
+                    score_max = (std::max)(score_max, score);
                     back_track_cut(i + 1, std::abs(score_gain) * 0.5); // *0.5 summation from two children
                 }
             }
@@ -396,7 +398,7 @@ namespace hg {
         hg_assert_node_weights(tree, altitudes);
         hg_assert_integral_value_type(ground_truth);
         hg_assert_1d_array(ground_truth);
-        max_regions = std::min(max_regions, num_leaves(tree));
+        max_regions = (std::min)(max_regions, num_leaves(tree));
 
         auto card_intersection = fragmentation_curve_internal::compute_card_intersection_tree_ground_truth<double>(
                 tree, ground_truth, vertex_map);

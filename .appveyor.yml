@@ -16,6 +16,7 @@ environment:
   CIBW_BUILD_VERBOSITY: "1"
   CIBW_BEFORE_BUILD: "pip install cmake numpy==1.15.4"
   CIBW_SKIP: "*win32"
+  CIBW_ENVIRONMENT: "TBB_INCLUDE=%MINICONDA%\\include TBB_LINK=%MINICONDA%\\lib"
   TWINE_USERNAME: "bperret"
   TWINE_PASSWORD:
     secure: gKT63gdRJqmmn+KGlXbzww==
@@ -33,7 +34,7 @@ environment:
       TAG_SCENARIO: true
       CIBW_BUILD: "cp36*"
     - CIBUILDWHEEL: 1
-      TAG_SCENARIO: true
+      TAG_SCENARIO: false
       CIBW_BUILD: "cp37*"
 
 for:
@@ -55,10 +56,11 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda info -a
   - if %CIBUILDWHEEL% == 0 (
-      conda install cmake numpy -c conda-forge &&
+    conda install cmake numpy tbb-devel -c conda-forge &&
       python setup.py bdist_wheel
       )  else (
-        pip install cibuildwheel==0.10.1 &&
+    conda install tbb-devel &&
+    pip install cibuildwheel==1.1.0 &&
         cibuildwheel --output-dir wheelhouse
       )
   #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
@@ -74,8 +76,10 @@ build_script:
       cd Release &&
       ctest -C Release -R Test_cpp -V
     ) else (
-      conda install twine &&
-      twine upload  wheelhouse/*.whl
+      if %APPVEYOR_REPO_TAG% == "true" (
+        conda install twine &&
+        twine upload  wheelhouse/*.whl
+      )
     )
     #python -m pip install --upgrade pip &&
     #python -m pip install twine &&
