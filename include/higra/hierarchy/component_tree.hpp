@@ -13,7 +13,7 @@
 #include "common.hpp"
 #include "higra/structure/unionfind.hpp"
 #include "higra/graph.hpp"
-#include <algorithm>
+#include "higra/sorting.hpp"
 #include "xtensor/xadapt.hpp"
 
 namespace hg {
@@ -161,15 +161,15 @@ namespace hg {
      * @return a node weighted tree
      */
     template<typename graph_t, typename T>
-    auto component_tree_max_tree(const graph_t & graph, const xt::xexpression<T>& xvertex_weights){
+    auto component_tree_max_tree(const graph_t &graph, const xt::xexpression<T> &xvertex_weights) {
         HG_TRACE();
-        auto & vertex_weights = xvertex_weights.derived_cast();
+        auto &vertex_weights = xvertex_weights.derived_cast();
         hg_assert_vertex_weights(graph, vertex_weights);
         hg_assert_1d_array(vertex_weights);
 
         array_1d<index_t> sorted_vertex_indices = xt::arange(num_vertices(graph));
-        std::stable_sort(sorted_vertex_indices.begin(), sorted_vertex_indices.end(),
-                         [&vertex_weights](index_t i, index_t j) { return vertex_weights[i] < vertex_weights[j]; });
+        stable_sort(sorted_vertex_indices.begin(), sorted_vertex_indices.end(),
+                    [&vertex_weights](index_t i, index_t j) { return vertex_weights[i] < vertex_weights[j]; });
         return component_tree_internal::tree_from_sorted_vertices(graph, vertex_weights, sorted_vertex_indices);
     }
 
@@ -196,15 +196,15 @@ namespace hg {
     * @return a node weighted tree
     */
     template<typename graph_t, typename T>
-    auto component_tree_min_tree(const graph_t & graph, const xt::xexpression<T>& xvertex_weights){
+    auto component_tree_min_tree(const graph_t &graph, const xt::xexpression<T> &xvertex_weights) {
         HG_TRACE();
-        auto & vertex_weights = xvertex_weights.derived_cast();
+        auto &vertex_weights = xvertex_weights.derived_cast();
         hg_assert_vertex_weights(graph, vertex_weights);
         hg_assert_1d_array(vertex_weights);
 
         array_1d<index_t> sorted_vertex_indices = xt::arange(num_vertices(graph));
-        std::stable_sort(sorted_vertex_indices.begin(), sorted_vertex_indices.end(),
-                         [&vertex_weights](index_t i, index_t j) { return vertex_weights[i] > vertex_weights[j]; });
+        stable_sort(sorted_vertex_indices.begin(), sorted_vertex_indices.end(),
+                    [&vertex_weights](index_t i, index_t j) { return vertex_weights[i] > vertex_weights[j]; });
         return component_tree_internal::tree_from_sorted_vertices(graph, vertex_weights, sorted_vertex_indices);
     }
 

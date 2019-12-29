@@ -17,6 +17,7 @@
 #include "../structure/tree_graph.hpp"
 #include "../accumulator/tree_accumulator.hpp"
 #include "../hierarchy/common.hpp"
+#include "higra/sorting.hpp"
 #include <queue>
 
 namespace hg {
@@ -257,7 +258,7 @@ namespace hg {
             return false;
 
         size_t num_v = num_vertices(t1);
-        index_t num_l = (index_t)num_leaves(t1);
+        index_t num_l = (index_t) num_leaves(t1);
 
         array_1d<index_t> f({num_v}, invalid_index);
 
@@ -369,25 +370,23 @@ namespace hg {
         hg_assert_1d_array(altitudes);
 
         array_1d<index_t> sorted = xt::arange(altitudes.size());
-        std::stable_sort(sorted.begin() + num_leaves(tree),
-                         sorted.end(),
-                         [&altitudes](index_t i, index_t j) { return altitudes(i) < altitudes(j); });
+        stable_sort(sorted.begin() + num_leaves(tree),
+                    sorted.end(),
+                    [&altitudes](index_t i, index_t j) { return altitudes(i) < altitudes(j); });
 
         array_1d<index_t> reverse_sorted = xt::empty_like(sorted);
-        for (index_t i = 0; i < (index_t)reverse_sorted.size(); i++) {
+        for (index_t i = 0; i < (index_t) reverse_sorted.size(); i++) {
             reverse_sorted(sorted(i)) = i;
         }
 
         auto &par = parents(tree);
         array_1d<index_t> new_par = xt::empty_like(sorted);
-        for (index_t i = 0; i < (index_t)reverse_sorted.size(); i++) {
+        for (index_t i = 0; i < (index_t) reverse_sorted.size(); i++) {
             new_par(i) = reverse_sorted(par(sorted(i)));
         }
 
         return make_remapped_tree(hg::tree(new_par, tree.category()), std::move(sorted));
     };
-
-
 
 
 }

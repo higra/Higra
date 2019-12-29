@@ -13,11 +13,11 @@
 #include "common.hpp"
 #include "higra/structure/unionfind.hpp"
 #include "higra/graph.hpp"
+#include "higra/sorting.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 #include "higra/structure/lca_fast.hpp"
 #include "xtensor/xindex_view.hpp"
 #include "xtensor/xnoalias.hpp"
-#include <algorithm>
 #include <utility>
 #include <tuple>
 #include <queue>
@@ -79,8 +79,8 @@ namespace hg {
         hg_assert_1d_array(edge_weights);
 
         array_1d<index_t> sorted_edges_indices = xt::arange(num_edges(graph));
-        std::stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
-                         [&edge_weights](index_t i, index_t j) { return edge_weights[i] < edge_weights[j]; });
+        stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
+                    [&edge_weights](index_t i, index_t j) { return edge_weights[i] < edge_weights[j]; });
 
         auto num_points = num_vertices(graph);
 
