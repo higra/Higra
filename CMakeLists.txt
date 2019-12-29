@@ -160,7 +160,6 @@ option(HG_USE_TBB
         "Enable Intel TBB support." ON)
 
 if (HG_USE_TBB)
-
     find_package(TBB REQUIRED)
     message(STATUS "Found intel TBB: ${TBB_INCLUDE_DIRS}")
 endif ()

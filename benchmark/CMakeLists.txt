@@ -63,20 +63,25 @@ endif ()
 find_package(benchmark REQUIRED)
 
 
-include_directories(${PROJECT_SOURCE_DIR}/lib/include ${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/lib/include ${PROJECT_SOURCE_DIR}/include ${TBB_INCLUDE_DIRS})
 
 include_directories(${GBENCHMARK_INCLUDE_DIRS})
 
 set(FILES_BENCHMARK
         main.cpp
+        benchmark_parallel_sort.cpp
         # benchmark_tree_iterator.cpp
         #benchmark_array_accessor.cpp
         #benchmark_views.cpp
-        benchmark_tree_attributes.cpp)
+        #benchmark_tree_attributes.cpp
+        )
 
 set(BENCHMARK_TARGET benchmark_higra)
 add_executable(${BENCHMARK_TARGET} ${FILES_BENCHMARK})
-target_link_libraries(${BENCHMARK_TARGET} benchmark -lpthread)
+target_compile_definitions(${BENCHMARK_TARGET} PRIVATE HG_USE_TBB)
+target_link_libraries(${BENCHMARK_TARGET} benchmark -lpthread ${TBB_LIBRARIES})
+
+
 
 add_custom_target(benchmark_exe
         COMMAND benchmarkx
