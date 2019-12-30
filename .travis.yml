@@ -13,7 +13,7 @@ matrix:
         - ubuntu-toolchain-r-test
         packages:
         - g++-6
-    env: COMPILER=gcc GCC=6
+    env: COMPILER=gcc GCC=6 HG_USE_TBB=On
   - os: linux
     dist: bionic
     addons:
@@ -23,7 +23,7 @@ matrix:
         packages:
         - g++-7
         - lcov
-    env: COMPILER=gcc GCC=7 COVERAGE=1
+    env: COMPILER=gcc GCC=7 COVERAGE=1 HG_USE_TBB=On
   - os: linux
     addons:
       apt:
@@ -33,10 +33,11 @@ matrix:
         packages:
         - g++-4.9
         - clang-4.0
-    env: COMPILER=clang CLANG=4.0
+    env: COMPILER=clang CLANG=4.0 HG_USE_TBB=Off
   - os: osx
     osx_image: xcode8
     compiler: clang
+    env: HG_USE_TBB=On
   - sudo: required
     if: tag IS present
     services:
@@ -116,7 +117,7 @@ install:
   conda install numpy tbb-devel -c conda-forge &&
     mkdir build &&
     cd build &&
-  cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python -DTBB_INCLUDE_DIR=$HOME/miniconda/include -DTBB_LIBRARY=$HOME/miniconda/lib ..  &&
+  cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python -DHG_USE_TBB=$HG_USE_TBB -DTBB_INCLUDE_DIR=$HOME/miniconda/include -DTBB_LIBRARY=$HOME/miniconda/lib ..  &&
     make -j2 higram test_exe;
   else
   pip install cibuildwheel==1.1.0;
