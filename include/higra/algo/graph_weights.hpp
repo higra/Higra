@@ -49,9 +49,10 @@ namespace hg {
             typename graph_t::vertex_descriptor)> &fun) {
         auto result = array_1d<result_value_t>::from_shape({num_edges(graph)});
 
-        for (const auto e: edge_iterator(graph)) {
+        parfor(0, num_edges(graph), [&graph, &fun, &result](index_t i) {
+            auto e = edge_from_index(i, graph);
             result(e) = fun(source(e, graph), target(e, graph));
-        }
+        });
         return result;
     };
 
@@ -152,7 +153,7 @@ namespace hg {
                     std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
                                                                                               vertex_t j) -> result_value_t {
                         return static_cast<result_value_t>(std::abs(static_cast<promoted_type>(vertex_weights(i)) -
-                                        static_cast<promoted_type>(vertex_weights(j))));
+                                                                    static_cast<promoted_type>(vertex_weights(j))));
                     };
                     return weight_graph(graph, fun);
                 }
@@ -206,7 +207,7 @@ namespace hg {
                     std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights](vertex_t i,
                                                                                               vertex_t j) -> result_value_t {
                         return static_cast<result_value_t>(std::abs(static_cast<promoted_type>(vertex_weights(i)) -
-                                        static_cast<promoted_type>(vertex_weights(j))));
+                                                                    static_cast<promoted_type>(vertex_weights(j))));
                     };
                     return weight_graph(graph, fun);
                 }
