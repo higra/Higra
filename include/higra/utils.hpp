@@ -226,11 +226,11 @@ namespace hg {
     template<typename lambda_t>
     void parfor(index_t start_index, index_t end_index, lambda_t fun, index_t step_size = 1) {
 #ifdef HG_USE_TBB
+        tbb::parallel_for(start_index, end_index, step_size, fun);
+#else
         for (index_t i = start_index; i < end_index; i += step_size) {
             fun(i);
         }
-#else
-        tbb::parallel_for(start_index, end_index, step_size, fun);
 #endif
     }
 
