@@ -110,31 +110,31 @@ namespace hg {
 
                 int logn = (int) (ceil(log((double) (nbRepresent)) / log(2.0)));
 
-                Minim.resize({(size_t)logn, (size_t)nbRepresent});
+                Minim.resize({(size_t) logn, (size_t) nbRepresent});
 
-                for (index_t i = 0; i < nbRepresent - 1; i++) {
-                    if (Depth[Euler[i]] < Depth[Euler[i + 1]]) {
-                        Minim(0, i) = i;
+                parfor(0, nbRepresent - 1, [this](index_t i){
+                    if (this->Depth[this->Euler[i]] < this->Depth[this->Euler[i + 1]]) {
+                        this->Minim(0, i) = i;
                     } else {
-                        Minim(0, i) = i + 1;
+                        this->Minim(0, i) = i + 1;
                     }
-                }
+                });
                 Minim(0, nbRepresent - 1) = nbRepresent - 1;
 
                 for (int j = 1; j < logn; j++) {
-                    index_t k1 = (index_t)(1 << (j - 1));
+                    index_t k1 = (index_t) (1 << (j - 1));
                     index_t k2 = k1 << 1;
-                    for (index_t i = 0; i < nbRepresent; i++) {
+                    parfor(0, nbRepresent, [this, k1, k2, j, nbRepresent](index_t i){
                         if ((i + k2) >= nbRepresent) {
                             Minim(j, i) = nbRepresent - 1;
                         } else {
-                            if (Depth[Euler[Minim(j - 1, i)]] <= Depth[Euler[Minim(j - 1, i + k1)]]) {
-                                Minim(j, i) = Minim(j - 1, i);
+                            if (this->Depth[this->Euler[this->Minim(j - 1, i)]] <= this->Depth[this->Euler[this->Minim(j - 1, i + k1)]]) {
+                                this->Minim(j, i) = this->Minim(j - 1, i);
                             } else {
-                                Minim(j, i) = Minim(j - 1, i + k1);
+                                this->Minim(j, i) = this->Minim(j - 1, i + k1);
                             }
                         }
-                    }
+                    });
                 }
             }
 
@@ -175,10 +175,10 @@ namespace hg {
 
                 k = (int) (log((double) (jj - ii)) / log(2.));
 
-                if (Depth[Euler[Minim(k, ii)]] < Depth[Euler[Minim(k, jj - (index_t)(1 << (k)))]]) {
+                if (Depth[Euler[Minim(k, ii)]] < Depth[Euler[Minim(k, jj - (index_t) (1 << (k)))]]) {
                     return Represent[Number[Euler[Minim(k, ii)]]];
                 } else {
-                    return Represent[Number[Euler[Minim(k, jj - (index_t)(1 << k))]]];
+                    return Represent[Number[Euler[Minim(k, jj - (index_t) (1 << k))]]];
                 }
             }
 
@@ -194,11 +194,11 @@ namespace hg {
                 size_t size = range.end() - range.begin();
                 auto result = array_1d<vertex_t>::from_shape({size});
 
-                auto it = result.begin();
-                for (const auto e: range) {
-                    *it = lca(e.first, e.second);
-                    it++;
-                }
+                auto it = range.begin();
+                parfor(0, size, [&result, &it, this](index_t i){
+                    auto e = it[i];
+                    result(i) = this->lca(e.first, e.second);
+                });
                 return result;
             }
 
@@ -213,7 +213,7 @@ namespace hg {
              * @return array of lowest common ancestors
              */
             template<typename T>
-            auto lca(const xt::xexpression<T> & xvertices1, const xt::xexpression<T> & xvertices2) const {
+            auto lca(const xt::xexpression<T> &xvertices1, const xt::xexpression<T> &xvertices2) const {
                 HG_TRACE();
                 auto &vertices1 = xvertices1.derived_cast();
                 auto &vertices2 = xvertices2.derived_cast();
@@ -224,13 +224,13 @@ namespace hg {
                 auto size = vertices1.size();
                 auto result = array_1d<vertex_t>::from_shape({size});
 
-                for(index_t i = 0; i < (index_t)size; i++){
-                    result(i) = lca(vertices1(i), vertices2(i));
-                }
+                parfor(0, size, [&vertices1, &vertices2, &result, this](index_t i) {
+                    result(i) = this->lca(vertices1(i), vertices2(i));
+                });
                 return result;
             }
 
-            auto num_vertices() const{
+            auto num_vertices() const {
                 return m_num_vertices;
             }
 

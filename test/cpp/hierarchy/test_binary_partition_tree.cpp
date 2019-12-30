@@ -50,7 +50,9 @@ namespace binary_partition_tree {
 
     TEST_CASE("complete linkage clustering multiple edges", "[binary_partition_tree]") {
         auto graph = get_4_adjacency_graph({3, 3});
-        for (auto e : edge_iterator(graph)) {
+        index_t ne = (index_t)num_edges(graph);
+        for (index_t i = 0; i < ne; i++) {
+            auto e = edge_from_index(i, graph);
             add_edge(source(e, graph), target(e, graph), graph);
         }
         array_1d<double> edge_weights({1, 8, 2, 10, 15, 3, 11, 4, 12, 13, 5, 6,
