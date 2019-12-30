@@ -16,6 +16,7 @@ set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/test_regular_graph.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_tree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_undirected_graph.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/details/test_iterator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/details/test_light_axis_view.cpp
         PARENT_SCOPE)
 
