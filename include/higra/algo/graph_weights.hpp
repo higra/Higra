@@ -80,6 +80,7 @@ namespace hg {
         const auto &vertex_weights = xvertex_weights.derived_cast();
         hg_assert_vertex_weights(graph, vertex_weights);
 
+        auto num_v = num_vertices(graph);
         switch (weight) {
             case weight_functions::mean: {
                 hg_assert_1d_array(vertex_weights);
@@ -111,15 +112,12 @@ namespace hg {
             }
             case weight_functions::L0: {
                 if (vertex_weights.dimension() > 1) {
-                    auto v1 = make_light_axis_view(vertex_weights);
-                    auto v2 = make_light_axis_view(vertex_weights);
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&v1, &v2](
+                    size_t stride = vertex_weights.size() / num_v;
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights, stride](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
-                        v1.set_position(i);
-                        v2.set_position(j);
-                        for (auto it1 = v1.begin(), it2 = v2.begin(); it1 != v1.end(); it1++, it2++) {
-                            if (*it1 != *it2)
+                        for (index_t k = 0; k < stride; k++) {
+                            if (vertex_weights[i * stride + k] != vertex_weights[j * stride + k])
                                 return 1;
                         }
                         return 0;
@@ -135,16 +133,13 @@ namespace hg {
             }
             case weight_functions::L1: {
                 if (vertex_weights.dimension() > 1) {
-                    auto v1 = make_light_axis_view(vertex_weights);
-                    auto v2 = make_light_axis_view(vertex_weights);
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&v1, &v2](
+                    size_t stride = vertex_weights.size() / num_v;
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights, stride](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
-                        v1.set_position(i);
-                        v2.set_position(j);
                         promoted_type res = 0;
-                        for (auto it1 = v1.begin(), it2 = v2.begin(); it1 != v1.end(); it1++, it2++) {
-                            res += std::abs(static_cast<promoted_type>(*it1) - static_cast<promoted_type>(*it2));
+                        for (index_t k = 0; k < stride; k++) {
+                            res += std::abs(static_cast<promoted_type>(vertex_weights[i * stride + k]) - static_cast<promoted_type>(j * stride + k));
                         }
                         return static_cast<result_value_t>(res);
                     };
@@ -160,16 +155,13 @@ namespace hg {
             }
             case weight_functions::L2: {
                 if (vertex_weights.dimension() > 1) {
-                    auto v1 = make_light_axis_view(vertex_weights);
-                    auto v2 = make_light_axis_view(vertex_weights);
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&v1, &v2](
+                    size_t stride = vertex_weights.size() / num_v;
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights, stride](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
-                        v1.set_position(i);
-                        v2.set_position(j);
                         promoted_type res = 0;
-                        for (auto it1 = v1.begin(), it2 = v2.begin(); it1 != v1.end(); it1++, it2++) {
-                            auto tmp = static_cast<promoted_type>(*it1) - static_cast<promoted_type>(*it2);
+                        for (index_t k = 0; k < stride; k++) {
+                            auto tmp = static_cast<promoted_type>(vertex_weights[i * stride + k]) - static_cast<promoted_type>(vertex_weights[j * stride + k]);
                             res += tmp * tmp;
                         }
                         return static_cast<result_value_t>(std::sqrt(res));
@@ -188,17 +180,14 @@ namespace hg {
             }
             case weight_functions::L_infinity: {
                 if (vertex_weights.dimension() > 1) {
-                    auto v1 = make_light_axis_view(vertex_weights);
-                    auto v2 = make_light_axis_view(vertex_weights);
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&v1, &v2](
+                    size_t stride = vertex_weights.size() / num_v;
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights, stride](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
-                        v1.set_position(i);
-                        v2.set_position(j);
                         promoted_type res = -1;
-                        for (auto it1 = v1.begin(), it2 = v2.begin(); it1 != v1.end(); it1++, it2++) {
-                            res = std::max(res, std::abs(
-                                    static_cast<promoted_type>(*it1) - static_cast<promoted_type>(*it2)));
+                        for (index_t k = 0; k < stride; k++) {
+                            res = (std::max)(res, std::abs(
+                                    static_cast<promoted_type>(vertex_weights[i * stride + k]) - static_cast<promoted_type>(vertex_weights[j * stride + k])));
                         }
                         return static_cast<result_value_t>(res);
                     };
@@ -214,16 +203,13 @@ namespace hg {
             }
             case weight_functions::L2_squared: {
                 if (vertex_weights.dimension() > 1) {
-                    auto v1 = make_light_axis_view(vertex_weights);
-                    auto v2 = make_light_axis_view(vertex_weights);
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&v1, &v2](
+                    size_t stride = vertex_weights.size() / num_v;
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights, stride](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
-                        v1.set_position(i);
-                        v2.set_position(j);
                         promoted_type res = 0;
-                        for (auto it1 = v1.begin(), it2 = v2.begin(); it1 != v1.end(); it1++, it2++) {
-                            auto tmp = static_cast<promoted_type>(*it1) - static_cast<promoted_type>(*it2);
+                        for (index_t k = 0; k < stride; k++) {
+                            auto tmp = static_cast<promoted_type>(vertex_weights[i * stride + k]) - static_cast<promoted_type>(vertex_weights[j * stride + k]);
                             res += tmp * tmp;
                         }
                         return static_cast<result_value_t>(res);
