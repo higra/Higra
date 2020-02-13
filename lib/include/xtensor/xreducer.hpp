@@ -31,7 +31,7 @@
 #include "xexpression.hpp"
 #include "xgenerator.hpp"
 #include "xiterable.hpp"
-#include "xreducer.hpp"
+#include "xtensor_config.hpp"
 #include "xutils.hpp"
 
 namespace xt
@@ -301,11 +301,13 @@ namespace xt
         // Therefore less_equal is required to detect duplicates.
         if (!std::is_sorted(axes.cbegin(), axes.cend(), std::less_equal<>()))
         {
-            throw std::runtime_error("Reducing axes should be sorted and should not contain duplicates");
+            XTENSOR_THROW(std::runtime_error, "Reducing axes should be sorted and should not contain duplicates");
         }
         if (axes.size() != 0 && axes[axes.size() - 1] > e.dimension() - 1)
         {
-            throw std::runtime_error("Axis " + std::to_string(axes[axes.size() - 1]) + " out of bounds for reduction.");
+            XTENSOR_THROW(std::runtime_error,
+                          "Axis " + std::to_string(axes[axes.size() - 1]) +
+                          " out of bounds for reduction.");
         }
 
         detail::shape_computation<options_t>(result_shape, result, e, axes);
@@ -388,7 +390,7 @@ namespace xt
         }
         else
         {
-            throw std::runtime_error("Layout not supported in immediate reduction.");
+            XTENSOR_THROW(std::runtime_error, "Layout not supported in immediate reduction.");
         }
 
         xindex temp_idx(iter_shape.size());
@@ -718,6 +720,7 @@ namespace xt
 
         const inner_shape_type& shape() const noexcept;
         layout_type layout() const noexcept;
+        bool is_contiguous() const noexcept;
 
         template <class... Args>
         const_reference operator()(Args... args) const;
@@ -1203,11 +1206,13 @@ namespace xt
         // Therefore less_equal is required to detect duplicates.
         if (!std::is_sorted(m_axes.cbegin(), m_axes.cend(), std::less_equal<>()))
         {
-            throw std::runtime_error("Reducing axes should be sorted and should not contain duplicates");
+            XTENSOR_THROW(std::runtime_error, "Reducing axes should be sorted and should not contain duplicates");
         }
         if (m_axes.size() != 0 && m_axes[m_axes.size() - 1] > m_e.dimension() - 1)
         {
-            throw std::runtime_error("Axis " + std::to_string(m_axes[m_axes.size() - 1]) + " out of bounds for reduction.");
+            XTENSOR_THROW(std::runtime_error,
+                          "Axis " + std::to_string(m_axes[m_axes.size() - 1]) +
+                          " out of bounds for reduction.");
         }
 
         if (!typename O::keep_dims())
@@ -1242,6 +1247,13 @@ namespace xt
     {
         return static_layout;
     }
+
+    template <class F, class CT, class X, class O>
+    inline bool xreducer<F, CT, X, O>::is_contiguous() const noexcept
+    {
+        return false;
+    }
+
     //@}
 
     /**

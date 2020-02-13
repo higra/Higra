@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) Wolf Vollprecht, Johan Mabille and Sylvain Corlay          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -10,7 +11,7 @@
 #define XTENSOR_PYTHON_CONFIG_HPP
 
 #define XTENSOR_PYTHON_VERSION_MAJOR 0
-#define XTENSOR_PYTHON_VERSION_MINOR 23
+#define XTENSOR_PYTHON_VERSION_MINOR 24
 #define XTENSOR_PYTHON_VERSION_PATCH 1
 
 #endif

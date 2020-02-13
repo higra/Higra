@@ -54,6 +54,7 @@ endif()
 add_library(xtensor INTERFACE IMPORTED)
 
 set_target_properties(xtensor PROPERTIES
+  INTERFACE_COMPILE_FEATURES "cxx_std_14"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
   INTERFACE_LINK_LIBRARIES "xtl"
 )

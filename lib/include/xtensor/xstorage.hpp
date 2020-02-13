@@ -19,6 +19,7 @@
 #include <type_traits>
 
 #include "xexception.hpp"
+#include "xtensor_config.hpp"
 #include "xtensor_simd.hpp"
 #include "xutils.hpp"
 
@@ -165,14 +166,15 @@ namespace xt
         inline typename std::allocator_traits<A>::pointer
         safe_init_allocate(A& alloc, typename std::allocator_traits<A>::size_type size)
         {
-            using pointer = typename std::allocator_traits<A>::pointer;
-            using value_type = typename std::allocator_traits<A>::value_type;
+            using traits = std::allocator_traits<A>;
+            using pointer = typename traits::pointer;
+            using value_type = typename traits::value_type;
             pointer res = alloc.allocate(size);
             if (!xtrivially_default_constructible<value_type>::value)
             {
                 for (pointer p = res; p != res + size; ++p)
                 {
-                    alloc.construct(p, value_type());
+                    traits::construct(alloc, p, value_type());
                 }
             }
             return res;
@@ -182,18 +184,19 @@ namespace xt
         inline void safe_destroy_deallocate(A& alloc, typename std::allocator_traits<A>::pointer ptr,
                                             typename std::allocator_traits<A>::size_type size)
         {
-            using pointer = typename std::allocator_traits<A>::pointer;
-            using value_type = typename std::allocator_traits<A>::value_type;
+            using traits = std::allocator_traits<A>;
+            using pointer = typename traits::pointer;
+            using value_type = typename traits::value_type;
             if (ptr != nullptr)
             {
                 if (!xtrivially_default_constructible<value_type>::value)
                 {
                     for (pointer p = ptr; p != ptr + size; ++p)
                     {
-                        alloc.destroy(p);
+                        traits::destroy(alloc, p);
                     }
                 }
-                alloc.deallocate(ptr, size);
+                traits::deallocate(alloc, ptr, size);
             }
         }
     }
@@ -411,7 +414,7 @@ namespace xt
     inline auto uvector<T, A>::at(size_type i) -> reference
     {
         if(i >= size())
-            throw std::out_of_range("Out of range in uvector access");
+            XTENSOR_THROW(std::out_of_range, "Out of range in uvector access");
         return this->operator[](i);
     }
 
@@ -419,7 +422,7 @@ namespace xt
     inline auto uvector<T, A>::at(size_type i) const -> const_reference
     {
         if(i >= size())
-            throw std::out_of_range("Out of range in uvector access");
+            XTENSOR_THROW(std::out_of_range, "Out of range in uvector access");
         return this->operator[](i);
     }
 
@@ -646,7 +649,7 @@ namespace xt
         explicit svector(const svector<T, N2, A, I2>& rhs);
 
         svector& operator=(const svector& rhs);
-        svector& operator=(svector&& rhs);
+        svector& operator=(svector&& rhs) noexcept(std::is_nothrow_move_assignable<value_type>::value);
         svector& operator=(const std::vector<T>& rhs);
         svector& operator=(std::initializer_list<T> il);
 
@@ -654,7 +657,7 @@ namespace xt
         svector& operator=(const svector<T, N2, A, I2>& rhs);
 
         svector(const svector& other);
-        svector(svector&& other);
+        svector(svector&& other) noexcept(std::is_nothrow_move_constructible<value_type>::value);
 
         void assign(size_type n, const value_type& v);
 
@@ -810,7 +813,8 @@ namespace xt
     }
 
     template <class T, std::size_t N, class A, bool Init>
-    inline svector<T, N, A, Init>& svector<T, N, A, Init>::operator=(svector&& rhs)
+    inline svector<T, N, A, Init>& svector<T, N, A, Init>::operator=(svector&& rhs) noexcept(std::is_nothrow_move_assignable<
+                                                                                             value_type>::value)
     {
         assign(rhs.begin(), rhs.end());
         return *this;
@@ -847,7 +851,7 @@ namespace xt
     }
 
     template <class T, std::size_t N, class A, bool Init>
-    inline svector<T, N, A, Init>::svector(svector&& rhs)
+    inline svector<T, N, A, Init>::svector(svector&& rhs) noexcept(std::is_nothrow_move_constructible<value_type>::value)
     {
         this->swap(rhs);
     }
@@ -899,7 +903,7 @@ namespace xt
     inline auto svector<T, N, A, Init>::at(size_type idx) -> reference
     {
         if(idx >= size())
-            throw std::out_of_range("Out of range in svector access");
+            XTENSOR_THROW(std::out_of_range, "Out of range in svector access");
         return this->operator[](idx);
     }
 
@@ -907,7 +911,7 @@ namespace xt
     inline auto svector<T, N, A, Init>::at(size_type idx) const -> const_reference
     {
         if(idx >= size())
-            throw std::out_of_range("Out of range in svector access");
+            XTENSOR_THROW(std::out_of_range, "Out of range in svector access");
         return this->operator[](idx);
     }
 
@@ -1581,10 +1585,18 @@ namespace xt
 #endif
         using value_type = std::size_t;
         using size_type = std::size_t;
+        using const_iterator = typename cast_type::const_iterator;
 
         constexpr static std::size_t size()
         {
             return sizeof...(X);
+        }
+
+        template <std::size_t idx>
+        constexpr static auto get()
+        {
+            using cast_type = std::array<std::size_t, sizeof...(X)>;
+            return std::get<idx>(cast_type{X...});
         }
 
         XTENSOR_FIXED_SHAPE_CONSTEXPR operator cast_type() const

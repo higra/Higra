@@ -1,5 +1,7 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) Johan Mabille, Sylvain Corlay, Wolf Vollprecht and         *
+* Martin Renou                                                             *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -101,7 +103,10 @@
     #define XSIMD_X86_INSTR_SET XSIMD_X86_MIC_VERSION
 #endif
 
-#if !defined(XSIMD_X86_INSTR_SET) && defined(__AVX512__) || defined(__KNCNI__) || defined(__AVX512F__)
+// AVX512 instructions are supported starting with gcc 6
+// see https://www.gnu.org/software/gcc/gcc-6/changes.html
+#if !defined(XSIMD_X86_INSTR_SET) && (defined(__AVX512__) || defined(__KNCNI__) || defined(__AVX512F__)\
+    && (!defined(__GNUC__) || __GNUC__ >= 6))
     #define XSIMD_X86_INSTR_SET XSIMD_X86_AVX512_VERSION
 #endif
 

@@ -1,5 +1,7 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) Johan Mabille, Sylvain Corlay, Wolf Vollprecht and         *
+* Martin Renou                                                             *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -281,7 +283,7 @@ namespace xsimd
         {
             void* res = 0;
             void* ptr = malloc(size + alignment);
-            if (ptr != 0)
+            if (ptr != 0 && alignment != 0)
             {
                 res = reinterpret_cast<void*>(
                     (reinterpret_cast<size_t>(ptr) & ~(size_t(alignment - 1))) +

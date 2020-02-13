@@ -54,6 +54,7 @@ endif()
 add_library(xsimd INTERFACE IMPORTED)
 
 set_target_properties(xsimd PROPERTIES
+  INTERFACE_COMPILE_FEATURES "cxx_std_11"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
 )
 

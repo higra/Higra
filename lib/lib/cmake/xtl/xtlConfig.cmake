@@ -40,6 +40,6 @@ endmacro()
 ####################################################################################
 
 if(NOT TARGET xtl)
-  include("${CMAKE_CURRENT_LIST_DIR}/xtlTargets.cmake")
-  get_target_property(xtl_INCLUDE_DIRS xtl INTERFACE_INCLUDE_DIRECTORIES)
+    include("${CMAKE_CURRENT_LIST_DIR}/xtlTargets.cmake")
+    get_target_property(xtl_INCLUDE_DIRS xtl INTERFACE_INCLUDE_DIRECTORIES)
 endif()

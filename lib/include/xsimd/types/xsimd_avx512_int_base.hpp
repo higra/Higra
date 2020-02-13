@@ -1,5 +1,7 @@
 /***************************************************************************
-* Copyright (c) 2016, Wolf Vollprecht, Johan Mabille and Sylvain Corlay    *
+* Copyright (c) Johan Mabille, Sylvain Corlay, Wolf Vollprecht and         *
+* Martin Renou                                                             *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -119,10 +121,10 @@ namespace xsimd
 #if defined(__clang__) || __GNUC__
             return __extension__ (__m512i)(__v64qi)
             {
-                std::get<Is>(std::forward<Tup>(t))...
+                static_cast<char>(std::get<Is>(std::forward<Tup>(t)))...
             };
 #else
-            return _mm512_set_epi8(std::get<Is>(std::forward<Tup>(t))...);
+            return _mm512_set_epi8(static_cast<char>(std::get<Is>(std::forward<Tup>(t)))...);
 #endif
         }
 
@@ -132,10 +134,10 @@ namespace xsimd
 #if defined(__clang__) || __GNUC__
             return __extension__ (__m512i)(__v32hi)
             {
-                std::get<Is>(std::forward<Tup>(t))...
+                static_cast<short>(std::get<Is>(std::forward<Tup>(t)))...
             };
 #else
-            return _mm512_set_epi16(std::get<Is>(std::forward<Tup>(t))...);
+            return _mm512_set_epi16(static_cast<short>(std::get<Is>(std::forward<Tup>(t)))...);
 #endif
         }
 
