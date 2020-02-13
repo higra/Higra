@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2017, Sylvain Corlay and Johan Mabille                     *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -11,7 +12,7 @@
 
 #define XTL_VERSION_MAJOR 0
 #define XTL_VERSION_MINOR 6
-#define XTL_VERSION_PATCH 7
+#define XTL_VERSION_PATCH 11
 
 #ifndef __has_feature
 #define __has_feature(x) 0

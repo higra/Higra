@@ -1,5 +1,7 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) Johan Mabille, Sylvain Corlay, Wolf Vollprecht and         *
+* Martin Renou                                                             *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -136,6 +138,12 @@ namespace xsimd
     {
         using type = uint16_t;
         static constexpr size_t size = simd_traits<type>::size;
+    };
+
+    template <>
+    struct simd_traits<char>
+        : std::conditional<std::is_signed<char>::value, simd_traits<int8_t>, simd_traits<uint8_t>>::type
+    {
     };
 
     template <>
@@ -351,6 +359,13 @@ namespace xsimd
         template <class T1, class T2, std::size_t N>
         struct simd_return_type_impl
             : std::enable_if<simd_condition<T1, T2>::value, batch<T2, N>>
+        {
+        };
+        template <std::size_t N>
+        struct simd_return_type_impl<char, char, N>
+            : std::conditional<std::is_signed<char>::value,
+                               simd_return_type_impl<int8_t, int8_t, N>,
+                               simd_return_type_impl<uint8_t, uint8_t, N>>::type
         {
         };
 

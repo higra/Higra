@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) Wolf Vollprecht, Johan Mabille and Sylvain Corlay          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -12,6 +13,7 @@
 #include <cmath>
 #include <functional>
 #include <numeric>
+#include <sstream>
 
 #include "pybind11/complex.h"
 #include "pybind11/pybind11.h"
@@ -90,9 +92,10 @@ namespace xt
         void resize(const S& shape, const strides_type& strides);
 
         template <class S = shape_type>
-        void reshape(S&& shape, layout_type layout = base_type::static_layout);
+        auto& reshape(S&& shape, layout_type layout = base_type::static_layout) &;
 
         layout_type layout() const;
+        bool is_contiguous() const noexcept;
 
         using base_type::operator();
         using base_type::operator[];
@@ -123,6 +126,23 @@ namespace xt
 
         PyArrayObject* python_array() const;
         size_type get_buffer_size() const;
+
+    private:
+
+#if PYBIND11_VERSION_MAJOR == 2 && PYBIND11_VERSION_MINOR >= 3
+        // Prevent ambiguous overload resolution for operators defined for
+        // both xt::xcontainer and pybind11::object.
+        using pybind11::object::operator~;
+        using pybind11::object::operator+;
+        using pybind11::object::operator-;
+        using pybind11::object::operator*;
+        using pybind11::object::operator/;
+        using pybind11::object::operator|;
+        using pybind11::object::operator&;
+        using pybind11::object::operator^;
+        using pybind11::object::operator<<;
+        using pybind11::object::operator>>;
+#endif
     };
 
     namespace detail
@@ -187,7 +207,7 @@ namespace xt
         }
 
         template <class T>
-        void default_initialize_impl(T& storage, std::false_type)
+        void default_initialize_impl(T& /*storage*/, std::false_type)
         {
         }
 
@@ -338,7 +358,10 @@ namespace xt
             {
                 if(new_dim != N)
                 {
-                    throw std::runtime_error("Dims not matching.");
+                    std::ostringstream err_msg;
+                    err_msg << "Invalid conversion to pycontainer, expecting a container of dimension "
+                            << N << ", got a container of dimension " << new_dim << ".";
+                    throw std::runtime_error(err_msg.str());
                 }
                 return new_dim == N;
             }
@@ -389,7 +412,7 @@ namespace xt
 
     template <class D>
     template <class S>
-    inline void pycontainer<D>::reshape(S&& shape, layout_type layout)
+    inline auto& pycontainer<D>::reshape(S&& shape, layout_type layout) &
     {
         if (compute_size(shape) != this->size())
         {
@@ -419,6 +442,7 @@ namespace xt
         this->ptr() = new_ptr;
         Py_XDECREF(old_ptr);
         this->derived_cast().init_from_python();
+        return *this;
     }
 
     /**
@@ -439,6 +463,27 @@ namespace xt
         else
         {
             return layout_type::dynamic;
+        }
+    }
+
+    /**
+     * Return whether or not the container uses contiguous buffer
+     * @return Boolean for contiguous buffer
+     */
+    template <class D>
+    inline bool pycontainer<D>::is_contiguous() const noexcept
+    {
+        if (PyArray_CHKFLAGS(python_array(), NPY_ARRAY_C_CONTIGUOUS))
+        {
+            return 1 == this->strides().back();
+        }
+        else if (PyArray_CHKFLAGS(python_array(), NPY_ARRAY_F_CONTIGUOUS))
+        {
+            return 1 == this->strides().front();
+        }
+        else
+        {
+            return false;
         }
     }
 

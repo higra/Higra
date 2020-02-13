@@ -130,12 +130,13 @@ namespace xt
         void resize(const S& shape, const strides_type& strides);
 
         template <class S = shape_type>
-        void reshape(const S& shape, layout_type layout = static_layout);
+        auto & reshape(const S& shape, layout_type layout = static_layout) &;
 
         template <class T>
-        void reshape(std::initializer_list<T> shape, layout_type layout = static_layout);
+        auto & reshape(std::initializer_list<T> shape, layout_type layout = static_layout) &;
 
         layout_type layout() const noexcept;
+        bool is_contiguous() const noexcept;
 
         template <class T>
         void fill(const T& value);
@@ -417,18 +418,20 @@ namespace xt
      */
     template <class D>
     template <class S>
-    inline void xoptional_assembly_base<D>::reshape(const S& shape, layout_type layout)
+    inline auto & xoptional_assembly_base<D>::reshape(const S& shape, layout_type layout) &
     {
         value().reshape(shape, layout);
         has_value().reshape(shape, layout);
+        return *this;
     }
 
     template <class D>
     template <class T>
-    inline void xoptional_assembly_base<D>::reshape(std::initializer_list<T> shape, layout_type layout)
+    inline auto & xoptional_assembly_base<D>::reshape(std::initializer_list<T> shape, layout_type layout) &
     {
         value().reshape(shape, layout);
         has_value().reshape(shape, layout);
+        return *this;
     }
 
     /**
@@ -439,6 +442,12 @@ namespace xt
     inline layout_type xoptional_assembly_base<D>::layout() const noexcept
     {
         return value().layout();
+    }
+
+    template <class D>
+    inline bool xoptional_assembly_base<D>::is_contiguous() const noexcept
+    {
+        return value().is_contiguous();
     }
 
     /**

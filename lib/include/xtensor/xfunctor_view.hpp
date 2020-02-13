@@ -155,6 +155,7 @@ namespace xt
         using accessible_base::shape;
 
         layout_type layout() const noexcept;
+        bool is_contiguous() const noexcept;
 
         template <class... Args>
         reference operator()(Args... args);
@@ -491,7 +492,7 @@ namespace xt
         auto resize(S&& shape, const strides_type& strides);
 
         template <class S = shape_type>
-        auto reshape(S&& shape, layout_type layout = base_type::static_layout);
+        auto & reshape(S&& shape, layout_type layout = base_type::static_layout) &;
 
     private:
 
@@ -694,6 +695,12 @@ namespace xt
     inline layout_type xfunctor_applier_base<D>::layout() const noexcept
     {
         return m_e.layout();
+    }
+
+    template <class D>
+    inline bool xfunctor_applier_base<D>::is_contiguous() const noexcept
+    {
+        return m_e.is_contiguous();
     }
     //@}
 
@@ -1406,9 +1413,10 @@ namespace xt
 
     template <class F, class CT>
     template <class S>
-    auto xfunctor_adaptor<F, CT>::reshape(S&& shape, layout_type layout)
+    auto & xfunctor_adaptor<F, CT>::reshape(S&& shape, layout_type layout) &
     {
         this->m_e.reshape(std::forward<S>(shape), layout);
+        return *this;
     }
 
     /************************************

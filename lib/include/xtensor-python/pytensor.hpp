@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) Wolf Vollprecht, Johan Mabille and Sylvain Corlay          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -58,7 +59,14 @@ namespace pybind11
                     }
                 }
 
-                value = type::ensure(src);
+                try
+                {
+                    value = type::ensure(src);
+                }
+                catch (const std::runtime_error&)
+                {
+                    return false;
+                }
                 return static_cast<bool>(value);
             }
 
@@ -192,6 +200,20 @@ namespace xt
 
         static self_type ensure(pybind11::handle h);
         static bool check_(pybind11::handle h);
+
+#if PYBIND11_VERSION_MAJOR == 2 && PYBIND11_VERSION_MINOR >= 3
+        // Prevent ambiguous overload resolution for operators defined for
+        // both xt::xcontainer_semantic and pybind11::object.
+        using semantic_base::operator+=;
+        using semantic_base::operator-=;
+        using semantic_base::operator*=;
+        using semantic_base::operator/=;
+        using semantic_base::operator|=;
+        using semantic_base::operator&=;
+        using semantic_base::operator^=;
+        // using semantic_base::operator<<=;
+        // using semantic_base::operator>>=;
+#endif
 
     private:
 

@@ -11,8 +11,8 @@
 #define XTENSOR_CONFIG_HPP
 
 #define XTENSOR_VERSION_MAJOR 0
-#define XTENSOR_VERSION_MINOR 20
-#define XTENSOR_VERSION_PATCH 10
+#define XTENSOR_VERSION_MINOR 21
+#define XTENSOR_VERSION_PATCH 3
 
 // DETECT 3.6 <= clang < 3.8 for compiler bug workaround.
 #ifdef __clang__
@@ -22,6 +22,25 @@
         #include <vector>
     #endif
 #endif
+
+// Define if the library is going to be using exceptions.
+#if (!defined(__cpp_exceptions) && !defined(__EXCEPTIONS) && !defined(_CPPUNWIND))
+#undef XTENSOR_DISABLE_EXCEPTIONS
+#define XTENSOR_DISABLE_EXCEPTIONS
+#endif
+
+// Exception support.
+#if defined(XTENSOR_DISABLE_EXCEPTIONS)
+#define XTENSOR_THROW(_, msg)            \
+    {                                    \
+      std::cerr << msg << std::endl;     \
+      std::abort();                      \
+    }
+#else
+#define XTENSOR_THROW(exception, msg) throw exception(msg)
+#endif
+
+
 
 // Workaround for some missing constexpr functionality in MSVC 2015 and MSVC 2017 x86
 #if defined(_MSC_VER)
@@ -86,6 +105,10 @@
 
 #ifndef XTENSOR_DEFAULT_TRAVERSAL
 #define XTENSOR_DEFAULT_TRAVERSAL ::xt::layout_type::row_major
+#endif
+
+#ifndef XTENSOR_OPENMP_TRESHOLD
+#define XTENSOR_OPENMP_TRESHOLD 0
 #endif
 
 #ifdef IN_DOXYGEN

@@ -18,6 +18,7 @@
 
 #include <xtl/xclosure.hpp>
 
+#include "xtensor_config.hpp"
 #include "xstorage.hpp"
 
 namespace xt
@@ -527,7 +528,7 @@ namespace xt
         {
             if (size != m_size)
             {
-                throw std::runtime_error("xbuffer_storage not resizable");
+                XTENSOR_THROW(std::runtime_error, "xbuffer_storage not resizable");
             }
         }
 
@@ -592,9 +593,9 @@ namespace xt
                     std::copy(rhs.m_data.get(), rhs.m_data.get() + rhs.m_size, tmp);
                 }
                 swap(m_data.get(), tmp);
-                m_size = rhs.m_size;
                 swap(m_allocator, al);
                 safe_destroy_deallocate(al, tmp, m_size);
+                m_size = rhs.m_size;
             }
             return *this;
         }
@@ -685,7 +686,7 @@ namespace xt
         {
             if (m_size != size)
             {
-                throw std::runtime_error("xbuffer_storage not resizable");
+                XTENSOR_THROW(std::runtime_error, "xbuffer_storage not resizable");
             }
         }
 
@@ -944,7 +945,7 @@ namespace xt
     {
         if (m_size != size)
         {
-            throw std::runtime_error("xiterator_adaptor not resizable");
+            XTENSOR_THROW(std::runtime_error, "xiterator_adaptor not resizable");
         }
     }
 

@@ -1,5 +1,7 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) Johan Mabille, Sylvain Corlay, Wolf Vollprecht and         *
+* Martin Renou                                                             *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -893,7 +895,7 @@ namespace xsimd
                 return z;
             }
 
-            static return_type imag(const B& z)
+            static return_type imag(const B&)
             {
                 return B(typename B::value_type(0));
             }

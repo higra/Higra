@@ -18,6 +18,7 @@
 #include "xtensor_forward.hpp"
 #include "xslice.hpp"
 #include "xstrides.hpp"
+#include "xtensor_config.hpp"
 #include "xutils.hpp"
 
 namespace xt
@@ -42,16 +43,15 @@ namespace xt
 
             using iterator = decltype(std::declval<std::remove_reference_t<CT>>().template begin<L>());
             using const_iterator = decltype(std::declval<std::decay_t<CT>>().template cbegin<L>());
+            using reverse_iterator = decltype(std::declval<std::remove_reference_t<CT>>().template rbegin<L>());
+            using const_reverse_iterator = decltype(std::declval<std::decay_t<CT>>().template crbegin<L>());
 
             explicit flat_expression_adaptor(CT* e);
 
             template <class FST>
             flat_expression_adaptor(CT* e, FST&& strides);
 
-            void update_pointer(CT* ptr) const
-            {
-                m_e = ptr;
-            }
+            void update_pointer(CT* ptr) const;
 
             size_type size() const;
             reference operator[](size_type idx);
@@ -66,9 +66,10 @@ namespace xt
 
         private:
 
+            static index_type& get_index();
+
             mutable CT* m_e;
             inner_strides_type m_strides;
-            mutable index_type m_index;
             size_type m_size;
         };
 
@@ -141,6 +142,7 @@ namespace xt
         const inner_strides_type& strides() const noexcept;
         const inner_backstrides_type& backstrides() const noexcept;
         layout_type layout() const noexcept;
+        bool is_contiguous() const noexcept;
         using base_type::shape;
 
         reference operator()();
@@ -196,6 +198,8 @@ namespace xt
 
         template <class It>
         offset_type compute_element_index(It first, It last) const;
+
+        void set_offset(size_type offset);
 
     private:
 
@@ -401,6 +405,13 @@ namespace xt
     {
         return m_layout;
     }
+
+    template <class D>
+    inline bool xstrided_view_base<D>::is_contiguous() const noexcept
+    {
+        return m_layout != layout_type::dynamic && m_e.is_contiguous();
+    }
+
     //@}
 
     /**
@@ -657,6 +668,12 @@ namespace xt
         return static_cast<offset_type>(m_offset) + xt::element_offset<offset_type>(strides(), first, last);
     }
 
+    template <class D>
+    void xstrided_view_base<D>::set_offset(size_type offset)
+    {
+        m_offset = offset;
+    }
+
     /******************************************
      * flat_expression_adaptor implementation *
      ******************************************/
@@ -667,7 +684,7 @@ namespace xt
         inline flat_expression_adaptor<CT, L>::flat_expression_adaptor(CT* e)
             : m_e(e)
         {
-            resize_container(m_index, m_e->dimension());
+            resize_container(get_index(), m_e->dimension());
             resize_container(m_strides, m_e->dimension());
             m_size = compute_size(m_e->shape());
             compute_strides(m_e->shape(), L, m_strides);
@@ -678,10 +695,16 @@ namespace xt
         inline flat_expression_adaptor<CT, L>::flat_expression_adaptor(CT* e, FST&& strides)
             : m_e(e), m_strides(xtl::forward_sequence<inner_strides_type, FST>(strides))
         {
-            resize_container(m_index, m_e->dimension());
+            resize_container(get_index(), m_e->dimension());
             m_size = m_e->size();
         }
 
+        template <class CT, layout_type L>
+        inline void flat_expression_adaptor<CT, L>::update_pointer(CT* ptr) const
+        {
+            m_e = ptr;
+        }
+        
         template <class CT, layout_type L>
         inline auto flat_expression_adaptor<CT, L>::size() const -> size_type
         {
@@ -693,16 +716,16 @@ namespace xt
         inline auto flat_expression_adaptor<CT, L>::operator[](size_type idx) -> reference
         {
             auto i = static_cast<typename index_type::value_type>(idx);
-            m_index = detail::unravel_noexcept(i, m_strides, L);
-            return m_e->element(m_index.cbegin(), m_index.cend());
+            get_index() = detail::unravel_noexcept(i, m_strides, L);
+            return m_e->element(get_index().cbegin(), get_index().cend());
         }
 
         template <class CT, layout_type L>
         inline auto flat_expression_adaptor<CT, L>::operator[](size_type idx) const -> const_reference
         {
             auto i = static_cast<typename index_type::value_type>(idx);
-            m_index = detail::unravel_noexcept(i, m_strides, L);
-            return m_e->element(m_index.cbegin(), m_index.cend());
+            get_index() = detail::unravel_noexcept(i, m_strides, L);
+            return m_e->element(get_index().cbegin(), get_index().cend());
         }
 
         template <class CT, layout_type L>
@@ -736,9 +759,16 @@ namespace xt
         }
 
         template <class CT, layout_type L>
-        inline auto flat_expression_adaptor<CT, L>::cend() const ->const_iterator
+        inline auto flat_expression_adaptor<CT, L>::cend() const -> const_iterator
         {
             return m_e->template cend<L>();
+        }
+
+        template <class CT, layout_type L>
+        inline auto flat_expression_adaptor<CT, L>::get_index() -> index_type&
+        {
+            thread_local static index_type index;
+            return index;
         }
     }
 
@@ -815,7 +845,7 @@ namespace xt
                     {
                         if (has_ellipsis == true)
                         {
-                            throw std::runtime_error("Ellipsis can only appear once.");
+                            XTENSOR_THROW(std::runtime_error, "Ellipsis can only appear once.");
                         }
                         has_ellipsis = true;
                     }
@@ -827,7 +857,7 @@ namespace xt
 
                 if (dimension_check < 0)
                 {
-                    throw std::runtime_error("Too many slices for view.");
+                    XTENSOR_THROW(std::runtime_error, "Too many slices for view.");
                 }
 
                 if (has_ellipsis)

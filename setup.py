@@ -113,7 +113,12 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
+
 try:
+    requires_list = ['numpy>=1.15.4']
+    if platform.system() == "Windows":
+        requires_list.append('tbb==2019.0')
+
     # hack because setuptools wont install files which are not inside a python package
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     os.symlink(os.path.join(cur_dir, 'include'), 'higra/include')
@@ -142,10 +147,7 @@ try:
         ext_modules=[CMakeExtension('higram')],
         cmdclass=dict(build_ext=CMakeBuild),
         include_package_data=True,
-        install_requires=[
-            'numpy>=1.15.4',
-            'tbb'
-        ],
+        install_requires=requires_list,
         zip_safe=False,
         license='CeCILL-B',
     )

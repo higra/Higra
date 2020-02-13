@@ -1,5 +1,7 @@
 ############################################################################
-# Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     #
+# Copyright (c) Johan Mabille, Sylvain Corlay, Wolf Vollprecht and         #
+# Martin Renou                                                             #
+# Copyright (c) QuantStack                                                 #
 #                                                                          #
 # Distributed under the terms of the BSD 3-Clause License.                 #
 #                                                                          #
@@ -40,6 +42,6 @@ endmacro()
 ####################################################################################
 
 if(NOT TARGET xsimd)
-  include("${CMAKE_CURRENT_LIST_DIR}/xsimdTargets.cmake")
-  get_target_property(xsimd_INCLUDE_DIRS xsimd INTERFACE_INCLUDE_DIRECTORIES)
+    include("${CMAKE_CURRENT_LIST_DIR}/xsimdTargets.cmake")
+    get_target_property(xsimd_INCLUDE_DIRS xsimd INTERFACE_INCLUDE_DIRECTORIES)
 endif()

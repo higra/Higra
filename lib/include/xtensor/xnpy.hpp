@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <regex>
 #include <sstream>
 #include <stdexcept>
@@ -32,6 +33,7 @@
 #include "xtensor/xarray.hpp"
 #include "xtensor/xeval.hpp"
 #include "xtensor/xstrides.hpp"
+#include "xtensor_config.hpp"
 
 namespace xt
 {
@@ -75,25 +77,24 @@ namespace xt
                                unsigned char* v_major,
                                unsigned char* v_minor)
         {
-            char* buf = new char[magic_string_length + 2];
-            istream.read(buf, magic_string_length + 2);
+            std::unique_ptr<char[]> buf(new char[magic_string_length + 2]);
+            istream.read(buf.get(), magic_string_length + 2);
 
             if (!istream)
             {
-                throw std::runtime_error("io error: failed reading file");
+                XTENSOR_THROW(std::runtime_error, "io error: failed reading file");
             }
 
             for (std::size_t i = 0; i < magic_string_length; i++)
             {
                 if (buf[i] != magic_string[i])
                 {
-                    throw std::runtime_error("this file do not have a valid npy format.");
+                    XTENSOR_THROW(std::runtime_error, "this file do not have a valid npy format.");
                 }
             }
 
             *v_major = static_cast<unsigned char>(buf[magic_string_length]);
             *v_minor = static_cast<unsigned char>(buf[magic_string_length + 1]);
-            delete[] buf;
         }
 
         template <class T>
@@ -122,7 +123,7 @@ namespace xt
             if (std::is_same<T, std::complex<double>>::value) return 'c';
             if (std::is_same<T, std::complex<long double>>::value) return 'c';
 
-            throw std::runtime_error("Type not known.");
+            XTENSOR_THROW(std::runtime_error, "Type not known.");
         }
 
         template <class T>
@@ -148,7 +149,7 @@ namespace xt
             std::regex_match(typestring, sm, re);
             if (sm.size() != 4)
             {
-                throw std::runtime_error("invalid typestring");
+                XTENSOR_THROW(std::runtime_error, "invalid typestring");
             }
         }
 
@@ -161,7 +162,7 @@ namespace xt
             }
             else
             {
-                throw std::runtime_error("unable to unwrap");
+                XTENSOR_THROW(std::runtime_error, "unable to unwrap");
             }
         }
 
@@ -223,7 +224,7 @@ namespace xt
             // remove trailing newline
             if (header.back() != '\n')
             {
-                throw std::runtime_error("invalid header");
+                XTENSOR_THROW(std::runtime_error, "invalid header");
             }
             header.pop_back();
 
@@ -241,15 +242,15 @@ namespace xt
             // make sure all the keys are present
             if (keypos_descr == std::string::npos)
             {
-                throw std::runtime_error("missing 'descr' key");
+                XTENSOR_THROW(std::runtime_error, "missing 'descr' key");
             }
             if (keypos_fortran == std::string::npos)
             {
-                throw std::runtime_error("missing 'fortran_order' key");
+                XTENSOR_THROW(std::runtime_error, "missing 'fortran_order' key");
             }
             if (keypos_shape == std::string::npos)
             {
-                throw std::runtime_error("missing 'shape' key");
+                XTENSOR_THROW(std::runtime_error, "missing 'shape' key");
             }
 
             // Make sure the keys are in order.
@@ -258,7 +259,7 @@ namespace xt
             // TODO: fix
             if (keypos_descr >= keypos_fortran || keypos_fortran >= keypos_shape)
             {
-                throw std::runtime_error("header keys in wrong order");
+                XTENSOR_THROW(std::runtime_error, "header keys in wrong order");
             }
 
             // get the 3 key-value pairs
@@ -293,7 +294,7 @@ namespace xt
             }
             else
             {
-                throw std::runtime_error("invalid fortran_order value");
+                XTENSOR_THROW(std::runtime_error, "invalid fortran_order value");
             }
 
             // parse the shape Python tuple ( x, y, z,)
@@ -322,7 +323,7 @@ namespace xt
                 {
                     if (pos_next != std::string::npos)
                     {
-                        throw std::runtime_error("invalid shape");
+                        XTENSOR_THROW(std::runtime_error, "invalid shape");
                     }
                 }
                 else
@@ -440,10 +441,9 @@ namespace xt
                 // TODO: display warning
             }
 
-            char* buf = new char[header_length];
-            istream.read(buf, header_length);
-            std::string header(buf, header_length);
-            delete[] buf;
+            std::unique_ptr<char[]> buf(new char[header_length]);
+            istream.read(buf.get(), header_length);
+            std::string header(buf.get(), header_length);
 
             return header;
         }
@@ -462,10 +462,9 @@ namespace xt
                 // TODO: display warning
             }
 
-            char* buf = new char[header_length];
-            istream.read(buf, header_length);
-            std::string header(buf, header_length);
-            delete[] buf;
+            std::unique_ptr<char[]> buf(new char[header_length]);
+            istream.read(buf.get(), header_length);
+            std::string header(buf.get(), header_length);
 
             return header;
         }
@@ -528,7 +527,7 @@ namespace xt
             {
                 if (m_buffer == nullptr)
                 {
-                    throw std::runtime_error("This npy_file has already been cast.");
+                    XTENSOR_THROW(std::runtime_error, "This npy_file has already been cast.");
                 }
                 T* ptr = reinterpret_cast<T*>(&m_buffer[0]);
                 std::vector<std::size_t> strides(m_shape.size());
@@ -537,14 +536,15 @@ namespace xt
                 // check if the typestring matches the given one
                 if (check_type && m_typestring != detail::build_typestring<T>())
                 {
-                    throw std::runtime_error("Cast error: formats not matching "s + m_typestring +
-                                             " vs "s + detail::build_typestring<T>());
+                    XTENSOR_THROW(std::runtime_error,
+                                  "Cast error: formats not matching "s + m_typestring +
+                                  " vs "s + detail::build_typestring<T>());
                 }
 
                 if ((L == layout_type::column_major && !m_fortran_order) ||
                     (L == layout_type::row_major && m_fortran_order))
                 {
-                    throw std::runtime_error("Cast error: layout mismatch between npy file and requested layout.");
+                    XTENSOR_THROW(std::runtime_error, "Cast error: layout mismatch between npy file and requested layout.");
                 }
 
                 compute_strides(m_shape,
@@ -616,7 +616,7 @@ namespace xt
             }
             else
             {
-                throw std::runtime_error("unsupported file format version");
+                XTENSOR_THROW(std::runtime_error, "unsupported file format version");
             }
 
             // parse header
@@ -668,7 +668,7 @@ namespace xt
         std::ofstream stream(filename, std::ofstream::binary);
         if (!stream)
         {
-            throw std::runtime_error("IO Error: failed to open file: "s + filename);
+            XTENSOR_THROW(std::runtime_error, "IO Error: failed to open file: "s + filename);
         }
 
         detail::dump_npy_stream(stream, e);
@@ -720,7 +720,7 @@ namespace xt
         std::ifstream stream(filename, std::ifstream::binary);
         if (!stream)
         {
-            throw std::runtime_error("io error: failed to open a file.");
+            XTENSOR_THROW(std::runtime_error, "io error: failed to open a file.");
         }
         return load_npy<T, L>(stream);
     }

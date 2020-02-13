@@ -1,6 +1,7 @@
-
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) Johan Mabille, Sylvain Corlay, Wolf Vollprecht and         *
+* Martin Renou                                                             *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -408,12 +409,16 @@ namespace xsimd
 
     inline batch<int64_t, 8> operator<<(const batch<int64_t, 8>& lhs, int32_t rhs)
     {
-        return _mm512_slli_epi64(lhs, rhs);
+        // _mm512_slli_epi64 expects its last argument to be known at compile time,
+        // which cannot be guaranteed here.
+        return _mm512_sllv_epi64(lhs, batch<int64_t, 8>(rhs));
     }
 
     inline batch<int64_t, 8> operator>>(const batch<int64_t, 8>& lhs, int32_t rhs)
     {
-        return _mm512_srli_epi64(lhs, rhs);
+        // _mm512_srli_epi64 expects its last argument to be known at compile time,
+        // which cannot be guaranteed here.
+        return _mm512_srlv_epi64(lhs, batch<int64_t, 8>(rhs));
     }
 
     inline batch<int64_t, 8> operator<<(const batch<int64_t, 8>& lhs, const batch<int64_t, 8>& rhs)
@@ -428,12 +433,16 @@ namespace xsimd
 
     inline batch<uint64_t, 8> operator<<(const batch<uint64_t, 8>& lhs, int32_t rhs)
     {
-        return _mm512_slli_epi64(lhs, rhs);
+        // _mm512_slli_epi64 expects its last argument to be known at compile time,
+        // which cannot be guaranteed here.
+        return _mm512_sllv_epi64(lhs, batch<uint64_t, 8>(rhs));
     }
 
     inline batch<uint64_t, 8> operator>>(const batch<uint64_t, 8>& lhs, int32_t rhs)
     {
-        return _mm512_srli_epi64(lhs, rhs);
+        // _mm512_srli_epi64 expects its last argument to be known at compile time,
+        // which cannot be guaranteed here.
+        return _mm512_srlv_epi64(lhs, batch<uint64_t, 8>(rhs));
     }
 
     inline batch<uint64_t, 8> operator<<(const batch<uint64_t, 8>& lhs, const batch<int64_t, 8>& rhs)

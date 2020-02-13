@@ -20,6 +20,7 @@
 #include "xstrides.hpp"
 #include "xstorage.hpp"
 #include "xsemantic.hpp"
+#include "xtensor_config.hpp"
 
 namespace xtl
 {
@@ -347,12 +348,13 @@ namespace xt
         void resize(ST&& shape, const strides_type& strides) const;
 
         template <class ST = std::array<std::size_t, N>>
-        void reshape(ST&& shape, layout_type layout = L) const;
+        auto const& reshape(ST&& shape, layout_type layout = L) const;
 
         template <class ST>
         bool broadcast_shape(ST& s, bool reuse_cache = false) const;
 
         constexpr layout_type layout() const noexcept;
+        bool is_contiguous() const noexcept;
 
     private:
 
@@ -479,12 +481,13 @@ namespace xt
         void resize(ST&& shape, const strides_type& strides) const;
 
         template <class ST = std::array<std::size_t, N>>
-        void reshape(ST&& shape, layout_type layout = L) const;
+        const auto& reshape(ST&& shape, layout_type layout = L) const;
 
         template <class ST>
         bool broadcast_shape(ST& s, bool reuse_cache = false) const;
 
         constexpr layout_type layout() const noexcept;
+        bool is_contiguous() const noexcept;
 
     private:
 
@@ -547,7 +550,8 @@ namespace xt
     {
         if (this->size() != 1)
         {
-            throw std::runtime_error("wrong shape for scalar assignment (has to be xshape<>).");
+            XTENSOR_THROW(std::runtime_error,
+                          "wrong shape for scalar assignment (has to be xshape<>).");
         }
         m_storage[0] = v;
     }
@@ -695,12 +699,13 @@ namespace xt
      */
     template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline void xfixed_container<ET, S, L, SH, Tag>::reshape(ST&& shape, layout_type layout) const
+    inline auto const& xfixed_container<ET, S, L, SH, Tag>::reshape(ST&& shape, layout_type layout) const
     {
         if (!(std::equal(shape.begin(), shape.end(), m_shape.begin()) && shape.size() == m_shape.size() && layout == L))
         {
-            throw std::runtime_error("Trying to reshape xtensor_fixed with different shape or layout.");
+            XTENSOR_THROW(std::runtime_error, "Trying to reshape xtensor_fixed with different shape or layout.");
         }
+        return *this;
     }
 
     template <class ET, class S, layout_type L, bool SH, class Tag>
@@ -714,6 +719,15 @@ namespace xt
     constexpr layout_type xfixed_container<ET, S, L, SH, Tag>::layout() const noexcept
     {
         return base_type::static_layout;
+    }
+
+    template <class ET, class S, layout_type L, bool SH, class Tag>
+    inline bool xfixed_container<ET, S, L, SH, Tag>::is_contiguous() const noexcept
+    {
+        using str_type = typename inner_strides_type::value_type;
+        return m_strides.empty()
+            || (layout() == layout_type::row_major && m_strides.back() == str_type(1))
+            || (layout() == layout_type::column_major && m_strides.front() == str_type(1));
     }
 
     template <class ET, class S, layout_type L, bool SH, class Tag>
@@ -870,12 +884,13 @@ namespace xt
      */
     template <class ET, class S, layout_type L, bool SH, class Tag>
     template <class ST>
-    inline void xfixed_adaptor<ET, S, L, SH, Tag>::reshape(ST&& shape, layout_type layout) const
+    inline auto const& xfixed_adaptor<ET, S, L, SH, Tag>::reshape(ST&& shape, layout_type layout) const
     {
         if (!(std::equal(shape.begin(), shape.end(), m_shape.begin()) && shape.size() == m_shape.size() && layout == L))
         {
-            throw std::runtime_error("Trying to reshape xtensor_fixed with different shape or layout.");
+            XTENSOR_THROW(std::runtime_error, "Trying to reshape xtensor_fixed with different shape or layout.");
         }
+        return *this;
     }
 
     template <class ET, class S, layout_type L, bool SH, class Tag>
@@ -901,6 +916,15 @@ namespace xt
     constexpr layout_type xfixed_adaptor<EC, S, L, SH, Tag>::layout() const noexcept
     {
         return base_type::static_layout;
+    }
+
+    template <class EC, class S, layout_type L, bool SH, class Tag>
+    inline bool xfixed_adaptor<EC, S, L, SH, Tag>::is_contiguous() const noexcept
+    {
+        using str_type = typename inner_strides_type::value_type;
+        return m_strides.empty()
+            || (layout() == layout_type::row_major && m_strides.back() == str_type(1))
+            || (layout() == layout_type::column_major && m_strides.front() == str_type(1));
     }
 
     template <class EC, class S, layout_type L, bool SH, class Tag>

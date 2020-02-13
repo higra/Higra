@@ -1,5 +1,6 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+* Copyright (c) QuantStack                                                 *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -321,7 +322,7 @@ namespace xtl
 #if !defined(__GNUC__) || (defined(__GNUC__) && (__GNUC__ >= 5))
 
     template <class... C>
-    constexpr bool requires = conjunction<C...>::value;
+    constexpr bool xtl_requires = conjunction<C...>::value;
 
     template <class... C>
     constexpr bool either = disjunction<C...>::value;
@@ -333,7 +334,7 @@ namespace xtl
     constexpr bool disallow_one = xtl::negation<xtl::disjunction<C...>>::value;
 
     template <class... C>
-    using check_requires = std::enable_if_t<requires<C...>, int>;
+    using check_requires = std::enable_if_t<xtl_requires<C...>, int>;
 
     template <class... C>
     using check_either = std::enable_if_t<either<C...>, int>;

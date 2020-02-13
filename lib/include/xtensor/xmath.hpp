@@ -24,11 +24,13 @@
 #include <xtl/xtype_traits.hpp>
 
 #include "xaccumulator.hpp"
+#include "xeval.hpp"
+#include "xmanipulation.hpp"
 #include "xoperation.hpp"
 #include "xreducer.hpp"
 #include "xslice.hpp"
 #include "xstrided_view.hpp"
-#include "xeval.hpp"
+#include "xtensor_config.hpp"
 
 namespace xt
 {
@@ -262,7 +264,7 @@ XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);     
         }
 
         // VS2015 STL defines isnan, isinf and isfinite as template
-        // functions, breaking ADL. 
+        // functions, breaking ADL.
 #if defined(_WIN32) && defined(XTENSOR_USE_XSIMD)
         template <class T, std::size_t N>
         inline xsimd::batch_bool<T, N> isinf(const xsimd::batch<T, N>& b)
@@ -1901,6 +1903,41 @@ namespace detail {
             value_type div = s.size() != ST(0) ? static_cast<value_type>(e_size / s.size()) : value_type(0);
             return std::move(s) / std::move(div);
         }
+
+        template <class T, class E, class X, class D, class EVS,
+                  XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, std::is_integral<D>)>
+        inline auto mean(E&& e, X&& axes, D const& ddof, EVS es)
+        {
+            // sum cannot always be a double. It could be a complex number which cannot operate on
+            // std::plus<double>.
+            auto s = sum<T>(std::forward<E>(e), std::forward<X>(axes), es);
+            return mean_division<T>(std::move(s), e.size() - ddof);
+        }
+
+#ifdef X_OLD_CLANG
+        template <class T, class E, class I, class D, class EVS>
+        inline auto mean(E&& e, std::initializer_list<I> axes, D const& ddof, EVS es)
+        {
+            auto s = sum<T>(std::forward<E>(e), axes, es);
+            return detail::mean_division<T>(std::move(s), e.size() - ddof);
+        }
+#else
+        template <class T, class E, class I, std::size_t N, class D, class EVS>
+        inline auto mean(E&& e, const I (&axes)[N], D const& ddof, EVS es)
+        {
+            auto s = sum<T>(std::forward<E>(e), axes, es);
+            return detail::mean_division<T>(std::move(s), e.size() - ddof);
+        }
+#endif
+
+        template <class T, class E, class D, class EVS,
+                  XTL_REQUIRES(is_reducer_options<EVS>, std::is_integral<D>)>
+        inline auto mean_noaxis(E&& e, D const& ddof, EVS es)
+        {
+            using value_type = typename std::conditional_t<std::is_same<T, void>::value, double, T>;
+            auto size = e.size();
+            return sum<T>(std::forward<E>(e), es) / static_cast<value_type>(size - ddof);
+        }
     }
 
     /**
@@ -1917,34 +1954,27 @@ namespace detail {
               XTL_REQUIRES(xtl::negation<is_reducer_options<X>>)>
     inline auto mean(E&& e, X&& axes, EVS es = EVS())
     {
-        // sum cannot always be a double. It could be a complex number which cannot operate on
-        // std::plus<double>.
-        auto s = sum<T>(std::forward<E>(e), std::forward<X>(axes), es);
-        return detail::mean_division<T>(std::move(s), e.size());
+        return detail::mean<T>(std::forward<E>(e), std::forward<X>(axes), 0u, es);
     }
 
     template <class T = void, class E, class EVS = DEFAULT_STRATEGY_REDUCERS,
               XTL_REQUIRES(is_reducer_options<EVS>)>
     inline auto mean(E&& e, EVS es = EVS())
     {
-        using value_type = typename std::conditional_t<std::is_same<T, void>::value, double, T>;
-        auto size = e.size();
-        return sum<T>(std::forward<E>(e), es) / static_cast<value_type>(size);
+        return detail::mean_noaxis<T>(std::forward<E>(e), 0u, es);
     }
 
 #ifdef X_OLD_CLANG
     template <class T = void, class E, class I, class EVS = DEFAULT_STRATEGY_REDUCERS>
     inline auto mean(E&& e, std::initializer_list<I> axes, EVS es = EVS())
     {
-        auto s = sum<T>(std::forward<E>(e), axes, es);
-        return detail::mean_division<T>(std::move(s), e.size());
+        return detail::mean<T>(std::move(s), e.size());
     }
 #else
     template <class T = void, class E, class I, std::size_t N, class EVS = DEFAULT_STRATEGY_REDUCERS>
     inline auto mean(E&& e, const I (&axes)[N], EVS es = EVS())
     {
-        auto s = sum<T>(std::forward<E>(e), axes, es);
-        return detail::mean_division<T>(std::move(s), e.size());
+        return detail::mean<T>(std::forward<E>(e), axes, 0, es);
     }
 #endif
 
@@ -1971,7 +2001,7 @@ namespace detail {
         {
             if (weights.size() != e.shape()[ax[0]])
             {
-                throw std::runtime_error("Weights need to have the same shape as expression at axes.");
+                XTENSOR_THROW(std::runtime_error, "Weights need to have the same shape as expression at axes.");
             }
 
             std::fill(broadcast_shape.begin(), broadcast_shape.end(), std::size_t(1));
@@ -1981,7 +2011,7 @@ namespace detail {
         {
             if (!same_shape(e.shape(), weights.shape()))
             {
-                throw std::runtime_error("Weights with dim > 1 need to have the same shape as expression.");
+                XTENSOR_THROW(std::runtime_error, "Weights with dim > 1 need to have the same shape as expression.");
             }
 
             std::copy(e.shape().begin(), e.shape().end(), broadcast_shape.begin());
@@ -2016,12 +2046,18 @@ namespace detail {
     {
         if (weights.dimension() != e.dimension() || !std::equal(weights.shape().begin(), weights.shape().end(), e.shape().begin()))
         {
-            throw std::runtime_error("Weights need to have the same shape as expression.");
+            XTENSOR_THROW(std::runtime_error, "Weights need to have the same shape as expression.");
         }
 
         auto div = sum(weights, evaluation_strategy::immediate)();
         auto s = sum(std::forward<E>(e) * std::forward<W>(weights), ev) / std::move(div);
         return s;
+    }
+
+    template <class E, class EVS = DEFAULT_STRATEGY_REDUCERS, XTL_REQUIRES(is_reducer_options<EVS>)>
+    inline auto average(E&& e, EVS ev = EVS())
+    {
+        return mean(e, ev);
     }
 
     namespace detail
@@ -2041,12 +2077,19 @@ namespace detail {
         }
     }
 
-    template <class E, class EVS = DEFAULT_STRATEGY_REDUCERS,
+    template <class E, class D, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              XTL_REQUIRES(is_reducer_options<EVS>, std::is_integral<D>)>
+    inline auto variance(E&& e, D const& ddof, EVS es = EVS())
+    {
+        decltype(auto) sc = detail::shared_forward<E>(e);
+        return detail::mean_noaxis<void>(square(abs(sc - mean(sc, es))), ddof, es);
+    }
+
+    template <class E, class D=int, class EVS = DEFAULT_STRATEGY_REDUCERS,
               XTL_REQUIRES(is_reducer_options<EVS>)>
     inline auto variance(E&& e, EVS es = EVS())
     {
-        decltype(auto) sc = detail::shared_forward<E>(e);
-        return mean(square(abs(sc - mean(sc, es))), es);
+        return variance(std::forward<E>(e), 0u, es);
     }
 
     template <class E, class EVS = DEFAULT_STRATEGY_REDUCERS,
@@ -2068,28 +2111,38 @@ namespace detail {
      *
      * @param e an \ref xexpression
      * @param axes the axes along which the variance is computed (optional)
+     * @param ddof delta degrees of freedom (optional)
      * @param es evaluation strategy to use (lazy (default), or immediate)
      * @return an \ref xexpression
      *
      * @sa stddev, mean
      */
-    template <class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>)>
-    inline auto variance(E&& e, X&& axes, EVS es = EVS())
+    template <class E, class X, class D, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, std::is_integral<D>)>
+    inline auto variance(E&& e, X&& axes, D const& ddof, EVS es = EVS())
     {
         decltype(auto) sc = detail::shared_forward<E>(e);
         // note: forcing copy of first axes argument -- is there a better solution?
         auto axes_copy = axes;
-        auto inner_mean = mean(sc, std::move(axes_copy));
+        // always eval to prevent repeated evaluations in the next calls
+        auto inner_mean = eval(mean(sc, std::move(axes_copy), evaluation_strategy::immediate));
 
         // fake keep_dims = 1
         auto keep_dim_shape = e.shape();
         for (const auto& el : axes)
         {
-            keep_dim_shape[el] = 1;
+            keep_dim_shape[el] = 1u;
         }
+
         auto mrv = reshape_view<XTENSOR_DEFAULT_LAYOUT>(std::move(inner_mean), std::move(keep_dim_shape));
-        return mean(square(abs(sc - std::move(mrv))), std::forward<X>(axes), es);
+        return detail::mean<void>(square(abs(sc - std::move(mrv))), std::forward<X>(axes), ddof, es);
+    }
+
+    template <class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
+              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::negation<std::is_integral<std::decay_t<X>>>, xtl::negation<std::is_integral<EVS>>)>
+    inline auto variance(E&& e, X&& axes, EVS es = EVS())
+    {
+      return variance(std::forward<E>(e), std::forward<X>(axes), 0u, es);
     }
 
     /**
@@ -2758,17 +2811,25 @@ namespace detail {
     auto diff(const xexpression<T>& a, std::size_t n = 1, std::ptrdiff_t axis = -1)
     {
         typename std::decay_t<T>::temporary_type ad = a.derived_cast();
-        XTENSOR_ASSERT(n <= ad.size());
         std::size_t saxis = normalize_axis(ad.dimension(), axis);
-
-        if (n != std::size_t(0))
+        if(n <= ad.size())
         {
-            xstrided_slice_vector slice1(ad.dimension(), all());
-            xstrided_slice_vector slice2(ad.dimension(), all());
-            slice1[saxis] = range(1, xnone());
 
-            detail::diff_impl<typename T::value_type> impl;
-            impl(ad, n, slice1, slice2, saxis);
+            if (n != std::size_t(0))
+            {
+                xstrided_slice_vector slice1(ad.dimension(), all());
+                xstrided_slice_vector slice2(ad.dimension(), all());
+                slice1[saxis] = range(1, xnone());
+
+                detail::diff_impl<typename T::value_type> impl;
+                impl(ad, n, slice1, slice2, saxis);
+            }
+        }
+        else
+        {
+            auto shape = ad.shape();
+            shape[saxis] = std::size_t(0);
+            ad.resize(shape);
         }
         return ad;
     }
@@ -2941,6 +3002,50 @@ namespace detail {
         return interp(x, xp, fp, fp[0], fp[fp.size() - 1]);
     }
 
+    /**
+     * @brief Returns the covariance matrix
+     * 
+     * @param x one or two dimensional array
+     * @param y optional one-dimensional array to build covariance to x
+     */
+    template <class E1>
+    inline auto cov(const E1 &x, const E1 &y = E1())
+    {
+        using value_type = typename E1::value_type;
+
+        if (y.dimension() == 0)
+        {
+            auto s = x.shape();
+            if (x.dimension() == 1)
+            {
+                auto covar = eval(zeros<value_type>({ 1, 1 }));
+                auto x_norm = x - eval(mean(x));
+                covar(0, 0) = std::inner_product(x_norm.begin(), x_norm.end(), x_norm.begin(), 0.0) / (s[0] - 1);
+                return covar;
+            }
+            
+            XTENSOR_ASSERT( x.dimension() == 2 );
+
+            auto covar = eval(zeros<value_type>({ s[0], s[0] }));
+            auto m = eval(mean(x, {1}));
+            m.reshape({m.shape()[0],1});
+            auto x_norm = x - m;
+            for (auto i = 0; i < s[0]; i++)
+            {
+                auto xi = strided_view(x_norm, { range(i, i + 1), all() });
+                for (auto j = i; j < s[0]; j++)
+                {
+                    auto xj = strided_view(x_norm, { range(j, j + 1), all() });            
+                    covar(j, i) = std::inner_product(xi.begin(), xi.end(), xj.begin(), 0.0) / (s[1] - 1);
+                }
+            }
+            return eval(covar + transpose(covar) - diag(diagonal(covar)));
+        } 
+        else
+        {
+            return cov(eval(stack(xtuple(x, y))));
+        }
+    }
 }
 
 #endif
