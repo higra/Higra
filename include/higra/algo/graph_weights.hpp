@@ -112,12 +112,13 @@ namespace hg {
             }
             case weight_functions::L0: {
                 if (vertex_weights.dimension() > 1) {
-                    size_t stride = vertex_weights.size() / num_v;
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights, stride](
+                    index_t dim = vertex_weights.size() / num_v;
+                    auto view = xt::reshape_view(vertex_weights, {num_v, (size_t)dim});
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&view, dim](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
-                        for (index_t k = 0; k < stride; k++) {
-                            if (vertex_weights[i * stride + k] != vertex_weights[j * stride + k])
+                        for (index_t k = 0; k < dim; k++) {
+                            if (view(i, k) != view(j, k))
                                 return 1;
                         }
                         return 0;
@@ -133,13 +134,14 @@ namespace hg {
             }
             case weight_functions::L1: {
                 if (vertex_weights.dimension() > 1) {
-                    size_t stride = vertex_weights.size() / num_v;
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights, stride](
+                    index_t dim = vertex_weights.size() / num_v;
+                    auto view = xt::reshape_view(vertex_weights, {num_v, (size_t)dim});
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&view, dim](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
                         promoted_type res = 0;
-                        for (index_t k = 0; k < stride; k++) {
-                            res += std::abs(static_cast<promoted_type>(vertex_weights[i * stride + k]) - static_cast<promoted_type>(j * stride + k));
+                        for (index_t k = 0; k < dim; k++) {
+                            res += std::abs(static_cast<promoted_type>(view(i, k)) - static_cast<promoted_type>(view(j,k)));
                         }
                         return static_cast<result_value_t>(res);
                     };
@@ -155,13 +157,14 @@ namespace hg {
             }
             case weight_functions::L2: {
                 if (vertex_weights.dimension() > 1) {
-                    size_t stride = vertex_weights.size() / num_v;
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights, stride](
+                    index_t dim = vertex_weights.size() / num_v;
+                    auto view = xt::reshape_view(vertex_weights, {num_v, (size_t)dim});
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&view, dim](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
                         promoted_type res = 0;
-                        for (index_t k = 0; k < stride; k++) {
-                            auto tmp = static_cast<promoted_type>(vertex_weights[i * stride + k]) - static_cast<promoted_type>(vertex_weights[j * stride + k]);
+                        for (index_t k = 0; k < dim; k++) {
+                            auto tmp = static_cast<promoted_type>(view(i, k)) - static_cast<promoted_type>(view(j, k));
                             res += tmp * tmp;
                         }
                         return static_cast<result_value_t>(std::sqrt(res));
@@ -180,14 +183,15 @@ namespace hg {
             }
             case weight_functions::L_infinity: {
                 if (vertex_weights.dimension() > 1) {
-                    size_t stride = vertex_weights.size() / num_v;
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights, stride](
+                    index_t dim = vertex_weights.size() / num_v;
+                    auto view = xt::reshape_view(vertex_weights, {num_v, (size_t)dim});
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&view, dim](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
                         promoted_type res = -1;
-                        for (index_t k = 0; k < stride; k++) {
+                        for (index_t k = 0; k < dim; k++) {
                             res = (std::max)(res, std::abs(
-                                    static_cast<promoted_type>(vertex_weights[i * stride + k]) - static_cast<promoted_type>(vertex_weights[j * stride + k])));
+                                    static_cast<promoted_type>(view(i, k)) - static_cast<promoted_type>(view(j, k))));
                         }
                         return static_cast<result_value_t>(res);
                     };
@@ -203,13 +207,14 @@ namespace hg {
             }
             case weight_functions::L2_squared: {
                 if (vertex_weights.dimension() > 1) {
-                    size_t stride = vertex_weights.size() / num_v;
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&vertex_weights, stride](
+                    index_t dim = vertex_weights.size() / num_v;
+                    auto view = xt::reshape_view(vertex_weights, {num_v, (size_t)dim});
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&view, dim](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
                         promoted_type res = 0;
-                        for (index_t k = 0; k < stride; k++) {
-                            auto tmp = static_cast<promoted_type>(vertex_weights[i * stride + k]) - static_cast<promoted_type>(vertex_weights[j * stride + k]);
+                        for (index_t k = 0; k < dim; k++) {
+                            auto tmp = static_cast<promoted_type>(view(i, k)) - static_cast<promoted_type>(view(j, k));
                             res += tmp * tmp;
                         }
                         return static_cast<result_value_t>(res);
