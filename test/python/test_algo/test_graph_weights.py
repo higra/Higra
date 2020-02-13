@@ -73,18 +73,6 @@ class TestGraphWeights(unittest.TestCase):
         r = hg.weight_graph(g, data, hg.WeightFunction.L2_squared)
         self.assertTrue(np.allclose(ref, r))
 
-    def test_weighting_graph_lambda(self):
-        g = hg.get_4_adjacency_graph((2, 2))
-        data = np.asarray((0, 1, 2, 3))
-
-        ref = (1, 2, 4, 5)
-        r = hg.weight_graph_function(g, lambda i, j: i + j)
-        self.assertTrue(np.allclose(ref, r))
-
-        ref = (1, 2, 4, 5)
-        r = hg.weight_graph_function(g, lambda i, j: data[i] + data[j])
-        self.assertTrue(np.allclose(ref, r))
-
 
 if __name__ == '__main__':
     unittest.main()

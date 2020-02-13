@@ -29,6 +29,7 @@ if (DO_CPP_TEST)
     add_executable(test_exe ${TEST_CPP_COMPONENTS})
 
     if (HG_USE_TBB)
+        add_definitions("-DXTENSOR_USE_TBB")
         target_compile_definitions(test_exe PRIVATE HG_USE_TBB)
         target_include_directories(test_exe PRIVATE ${TBB_INCLUDE_DIRS})
         target_link_libraries(test_exe PRIVATE ${TBB_LIBRARIES})

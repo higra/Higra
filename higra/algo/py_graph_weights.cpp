@@ -66,25 +66,5 @@ void py_init_graph_weights(pybind11::module &m) {
              " and specified weighting function (see WeightFunction enumeration)."
             );
 
-    m.def("_weight_graph", [](const hg::ugraph &graph,
-                              const std::function<double(hg::ugraph::vertex_descriptor,
-                                                         hg::ugraph::vertex_descriptor)> &fun) {
-              return hg::weight_graph(graph, fun);
-          },
-          "Compute the edge weights of a graph with the given weighting function. The weighting function takes the "
-          "vertex index of the extremities of an edge and returns the weight of the edge",
-          py::arg("explicit_graph"),
-          py::arg("weight_function"));
-
-    m.def("_weight_graph", [](const hg::tree &graph,
-                              const std::function<double(hg::tree::vertex_descriptor,
-                                                         hg::tree::vertex_descriptor)> &fun) {
-              return hg::weight_graph(graph, fun);
-          },
-          "Compute the edge weights of a graph with the given weighting function. The weighting function takes the "
-          "vertex index of the extremities of an edge and returns the weight of the edge",
-          py::arg("explicit_graph"),
-          py::arg("weight_function"));
-
 }
 

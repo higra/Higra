@@ -9,7 +9,6 @@ Utility functions to weight the edges of a graph
 
     WeightFunction
     weight_graph
-    weight_graph_function
 
 .. autoclass:: higra.WeightFunction
     :members:
@@ -17,5 +16,4 @@ Utility functions to weight the edges of a graph
 
 .. autofunction:: higra.weight_graph
 
-.. autofunction:: higra.weight_graph_function
 
