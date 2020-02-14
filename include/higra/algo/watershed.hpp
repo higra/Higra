@@ -13,6 +13,8 @@
 
 #include "../graph.hpp"
 #include "../structure/array.hpp"
+#include "higra/structure/unionfind.hpp"
+#include "higra/sorting.hpp"
 #include <vector>
 #include <stack>
 
@@ -37,7 +39,7 @@ namespace hg {
         auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
-        
+
         using value_type = typename T::value_type;
         using vertex_t = typename graph_traits<graph_t>::vertex_descriptor;
 
@@ -117,5 +119,58 @@ namespace hg {
         return labels;
     };
 
+
+    template<typename graph_t, typename T1, typename T2>
+    auto labelisation_seeded_watershed(
+            const graph_t &graph,
+            const xt::xexpression<T1> &xedge_weights,
+            const xt::xexpression<T2> &xvertex_seeds,
+            const typename T2::value_type background_label = 0) {
+        HG_TRACE();
+        auto &edge_weights = xedge_weights.derived_cast();
+        auto &vertex_seeds = xvertex_seeds.derived_cast();
+        hg_assert_edge_weights(graph, edge_weights);
+        hg_assert_node_weights(graph, vertex_seeds);
+        hg_assert_1d_array(edge_weights);
+        hg_assert_1d_array(vertex_seeds);
+
+        using label_type = typename T2::value_type;
+
+        array_1d<index_t> sorted_edges_indices = xt::arange(num_edges(graph));
+        stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
+                    [&edge_weights](index_t i, index_t j) { return edge_weights[i] < edge_weights[j]; });
+
+        index_t num_nodes = num_vertices(graph);
+        index_t num_edges = sorted_edges_indices.size();
+
+        union_find uf(num_nodes);
+
+        array_1d<label_type> labels = vertex_seeds;
+
+        for (index_t i = 0; i < num_edges; i++) {
+            auto ei = sorted_edges_indices[i];
+            auto e = edge_from_index(ei, graph);
+            auto c1 = uf.find(source(e, graph));
+            auto c2 = uf.find(target(e, graph));
+
+            if (c1 != c2 && (labels(c1) == background_label || labels(c2) == background_label)) {
+                if (labels(c1) == background_label) {
+                    labels(c1) = labels(c2);
+                } else {
+                    labels(c2) = labels(c1);
+                }
+                uf.link(c1, c2);
+            }
+
+        }
+
+        for (index_t i = 0; i < num_nodes; i++) {
+            if (labels(i) == background_label) {
+                labels(i) = labels(uf.find(i));
+            }
+        }
+
+        return labels;
+    };
 
 }

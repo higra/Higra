@@ -43,12 +43,12 @@ class TestWatershed(unittest.TestCase):
                                (1, 1, 2, 2)))
         self.assertTrue(np.all(labels == expected))
 
-        seeds = np.asarray(((1, 1, 0, 0),
-                            (1, 0, 0, 0),
-                            (0, 0, 0, 0),
+        seeds = np.asarray(((1, 1, 9, 9),
+                            (1, 9, 9, 9),
+                            (9, 9, 9, 9),
                             (2, 2, 3, 3)))
 
-        labels = hg.labelisation_seeded_watershed(g, edge_weights, seeds)
+        labels = hg.labelisation_seeded_watershed(g, edge_weights, seeds, background_label=9)
 
         expected = np.asarray(((1, 1, 3, 3),
                                (1, 1, 3, 3),
@@ -92,6 +92,22 @@ class TestWatershed(unittest.TestCase):
 
         expected = np.asarray(((5, 7, 5),
                                (5, 7, 5)))
+        self.assertTrue(np.all(labels == expected))
+
+    def test_seeded_watershed_seeds_not_in_minima(self):
+        g = hg.get_4_adjacency_graph((2, 4))
+        edge_weights = np.asarray((0, 2, 0, 2, 1, 2, 2, 1, 0, 0))
+        #   x0x0x1x
+        #   2 2 2 2
+        #   x1x0x0x
+
+        seeds = np.asarray(((0, 0, 0, 1),
+                            (2, 0, 0, 0)))
+
+        labels = hg.labelisation_seeded_watershed(g, edge_weights, seeds)
+
+        expected = np.asarray(((1, 1, 1, 1),
+                               (2, 2, 2, 2)))
         self.assertTrue(np.all(labels == expected))
 
 
