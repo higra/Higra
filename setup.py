@@ -27,7 +27,7 @@ def get_tbb_dirs():
         exit(1)
 
     # if env not set, we assume that tbb is installed with python distro...
-    if not link_dir:
+    if link_dir is None:
         from sysconfig import get_paths
         info = get_paths()
         python_path = info['data']
@@ -91,10 +91,13 @@ class CMakeBuild(build_ext):
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-DTBB_INCLUDE_DIR=' + tbb_include,
-                      '-DTBB_LIBRARY=' + tbb_link]
+                      '-DTBB_LIBRARY=' + tbb_link,
+                      '-DHG_BUILD_WHEEL=On',
+                      '-DDO_CPP_TEST=Off']
 
         cfg = 'Debug' if force_debug or self.debug else 'Release'
         build_args = ['--config', cfg]
+        env = os.environ.copy()
 
         if platform.system() == "Windows":
             cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]
@@ -115,9 +118,13 @@ class CMakeBuild(build_ext):
 
 
 try:
-    requires_list = ['numpy>=1.15.4']
+    requires_list = ['numpy>=1.17.3']
     if platform.system() == "Windows":
-        requires_list.append('tbb==2019.0')
+        # copy tbb dlls under unique names to mimic unix wheel delocate...
+        from shutil import copyfile
+        tbb_include, tbb_link = get_tbb_dirs()
+        copyfile(os.path.join(tbb_link, "..\\bin\\tbb.dll"), "higra\\tbb.dll")
+        #requires_list.append('tbb==2019.0')
 
     # hack because setuptools wont install files which are not inside a python package
     cur_dir = os.path.dirname(os.path.abspath(__file__))

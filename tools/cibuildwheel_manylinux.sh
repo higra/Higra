@@ -31,7 +31,7 @@ cd ${cur_dir}
 export MFLAG="-m64"
 export CXXFLAGS=" ${MFLAG} -static-libstdc++"
 
-pip install numpy==1.15.4 cmake==3.13.3
+pip install numpy==1.17.3 cmake==3.14.4
 
 
 

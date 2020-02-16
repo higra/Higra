@@ -1,3 +1,4 @@
 recursive-include higra/include *.hpp
 recursive-include higra/lib *.hpp *.h *.cmake
 recursive-include higra/lib/license *
+include higra/tbb.dll
