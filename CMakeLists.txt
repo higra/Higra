@@ -164,6 +164,9 @@ if (HG_USE_TBB)
     message(STATUS "Found intel TBB: ${TBB_INCLUDE_DIRS}")
 endif ()
 
+option(HG_BUILD_WHEEL
+        "Should be set to On when building a wheel." OFF)
+
 ##########################
 #  Build Python bindings
 ##########################

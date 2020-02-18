@@ -8,25 +8,20 @@ platform:
   - x64
 
 image:
-  - Visual Studio 2017
+  - Visual Studio 2019
 
 environment:
   MINICONDA: C:\Miniconda36-x64
   CIBW_TEST_COMMAND: "python -c \"import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
   CIBW_BUILD_VERBOSITY: "1"
-  CIBW_BEFORE_BUILD: "pip install cmake numpy==1.15.4"
+  CIBW_BEFORE_BUILD: "pip install cmake numpy==1.17.3"
   CIBW_SKIP: "*win32"
-  CIBW_ENVIRONMENT: "TBB_INCLUDE=%MINICONDA%\\include TBB_LINK=%MINICONDA%\\lib"
+  CIBW_ENVIRONMENT: "TBB_DLL=C:/Miniconda36-x64/Library/bin/tbb.dll TBB_INCLUDE_DIR=C:/Miniconda36-x64/Library/include TBB_LIBRARY=C:/Miniconda36-x64/Library/lib"
   TWINE_USERNAME: "bperret"
   TWINE_PASSWORD:
     secure: gKT63gdRJqmmn+KGlXbzww==
 
   matrix:
-    - CIBUILDWHEEL: 0
-      TAG_SCENARIO: false
-    - CIBUILDWHEEL: 1
-      TAG_SCENARIO: true
-      CIBW_BUILD: "cp34*"
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
       CIBW_BUILD: "cp35*"
@@ -34,8 +29,11 @@ environment:
       TAG_SCENARIO: true
       CIBW_BUILD: "cp36*"
     - CIBUILDWHEEL: 1
-      TAG_SCENARIO: false
+      TAG_SCENARIO: true
       CIBW_BUILD: "cp37*"
+    - CIBUILDWHEEL: 1
+      TAG_SCENARIO: false
+      CIBW_BUILD: "cp38*"
 
 for:
 -
@@ -50,20 +48,23 @@ for:
 
 init:
   - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2017" set VCVARPATH="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+  - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2019" set VCVARPATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+  - "%VCVARPATH%"
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%MINICONDA%\\Library\\bin;%PATH%"
 
 install:
   - conda config --set always_yes yes --set changeps1 no
   - conda info -a
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - if %CIBUILDWHEEL% == 0 (
-    conda install cmake numpy tbb-devel -c conda-forge &&
+    conda install cmake numpy==1.17.3 tbb-devel==2019.0 -c conda-forge &&
       python setup.py bdist_wheel
       )  else (
-    conda install tbb-devel &&
+    conda install tbb-devel==2019.0 &&
     pip install cibuildwheel==1.1.0 &&
         cibuildwheel --output-dir wheelhouse
       )
-  #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 
 build_script:
   #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
