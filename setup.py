@@ -120,8 +120,13 @@ class CMakeBuild(build_ext):
             build_args += ['--', '-j2']
 
         env = os.environ.copy()
-        env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
-                                                              self.distribution.get_version())
+        cxx_flags = env.get('CXXFLAGS', '')
+        if platform.system() == "Linux":
+            cxx_flags = cxx_flags + " -fabi-version=8 "
+        cxx_flags = cxx_flags + ' -DVERSION_INFO=\\"{}\\"'.format(self.distribution.get_version())
+
+        env['CXXFLAGS'] = cxx_flags
+
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
