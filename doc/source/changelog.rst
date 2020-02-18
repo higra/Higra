@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.5.1
+-----
+
+- Decrease ABI compatibility of linux wheels to 8 (G++ 4.9)
+  `#177 <https://github.com/higra/Higra/pull/177>`_
+
 0.5.0
 -----
 
