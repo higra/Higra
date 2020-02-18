@@ -1,4 +1,3 @@
-
 import os
 import re
 import sys
@@ -10,12 +9,19 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
-force_debug = False
-force_debug_arg = '--force_debug'
-if force_debug_arg in sys.argv:
-    index = sys.argv.index(force_debug_arg)
-    sys.argv.pop(index)  # Removes the argument
-    force_debug = True
+
+def get_option(argname, envname):
+    v = False
+    if argname in sys.argv:
+        index = sys.argv.index(argname)
+        sys.argv.pop(index)  # Removes the argument
+        v = True
+    v = v or (os.getenv(envname) is not None)
+    return v
+
+
+force_debug = get_option("--force_debug", "HG_DEBUG")
+use_tbb = get_option("--use_tbb", "HG_USE_TBB")
 
 
 def get_tbb_dirs():
@@ -35,9 +41,10 @@ def get_tbb_dirs():
         include_dir = os.path.join(python_path, "include")
         link_dir = os.path.join(python_path, "lib")
 
-    # if not (os.path.isfile(os.path.join(include_dir, "tbb/tbb.h"))):
-    #    print('Cannot find "tbb.h" please provide tbb location with environment variables "TBB_INCLUDE" and "TBB_LINK"')
-    #    exit(1)
+    if not (os.path.isfile(os.path.join(include_dir, "tbb", "tbb.h"))):
+        print('Cannot find "tbb.h" please provide tbb location with environment variables "TBB_INCLUDE" and "TBB_LINK"')
+        exit(1)
+
     print("TBB dirs: ", include_dir, link_dir)
     return include_dir, link_dir
 
@@ -87,23 +94,27 @@ class CMakeBuild(build_ext):
         global force_debug
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         extdir = os.path.join(extdir, "higra")
-        tbb_include, tbb_link = get_tbb_dirs()
+
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
-                      '-DTBB_INCLUDE_DIR=' + tbb_include,
-                      '-DTBB_LIBRARY=' + tbb_link,
                       '-DHG_BUILD_WHEEL=On',
                       '-DDO_CPP_TEST=Off']
 
+        if use_tbb:
+            tbb_include, tbb_link = get_tbb_dirs()
+            cmake_args = cmake_args + [
+                '-DHG_USE_TBB=On',
+                '-DTBB_INCLUDE_DIR=' + tbb_include,
+                '-DTBB_LIBRARY=' + tbb_link]
+
         cfg = 'Debug' if force_debug or self.debug else 'Release'
         build_args = ['--config', cfg]
-        env = os.environ.copy()
 
         if platform.system() == "Windows":
             cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]
-            if sys.maxsize > 2**32:
+            if sys.maxsize > 2 ** 32:
                 cmake_args += ['-A', 'x64']
-            build_args += ['--', '/m', '/v:q']#, '/v:q'
+            build_args += ['--', '/m', '/v:q']  # , '/v:q'
         else:
             cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
             build_args += ['--', '-j2']
@@ -139,7 +150,7 @@ def prepare_dll_windows():
 
 try:
     requires_list = ['numpy>=1.17.3']
-    if platform.system() == "Windows":
+    if use_tbb and platform.system() == "Windows":
         prepare_dll_windows()
 
     # hack because setuptools wont install files which are not inside a python package
@@ -177,4 +188,3 @@ try:
 finally:
     os.unlink('higra/include')
     os.unlink('higra/lib')
-

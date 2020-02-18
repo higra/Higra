@@ -157,7 +157,7 @@ if(NOT ${U_CMAKE_BUILD_TYPE} MATCHES RELEASE)
 endif()
 
 option(HG_USE_TBB
-        "Enable Intel TBB support." ON)
+        "Enable Intel TBB support." OFF)
 
 if (HG_USE_TBB)
     find_package(TBB REQUIRED)

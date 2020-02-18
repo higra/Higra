@@ -13,7 +13,7 @@ The Python package can be installed with Pypi:
 
 Supported systems:
 
- - Python 3.4, 3.5, 3.6, 3.7
+ - Python 3.5, 3.6, 3.7, 3.8
  - Linux 64 bits, macOS, Windows 64 bits
 
 Manual build
@@ -25,9 +25,9 @@ a wrapper `setuptools <https://setuptools.readthedocs.io/en/latest/>`_
 
 Building Higra from source requires:
 
-    * a c++ 14 compiler (tested with GCC, Clang, MSVC)
+    * a c++ 14 compiler (tested with GCC, Clang, Visual Studio 2019)
     * cmake (2.8+)
-    * Python (3.4+) with Numpy (1.15.4+)
+    * Python (3.5+) with Numpy (1.17.3+)
 
 With cmake
 **********
@@ -43,7 +43,7 @@ environment variable).
     git clone https://github.com/higra/Higra.git
     mkdir build
     cd build
-    cmake  -DDO_AUTO_TEST=ON ../Higra/
+    cmake  -DDO_AUTO_TEST=ON -DHG_USE_TBB=OFF ../Higra/
     make
 
 
@@ -52,7 +52,7 @@ You can specify which version to use with ``-DPYTHON_EXECUTABLE:FILEPATH=/PATH-T
 
 .. code-block:: bash
 
-    cmake -DDO_AUTO_TEST=ON -DPYTHON_EXECUTABLE:FILEPATH=/anaconda3/bin/python ../Higra/
+    cmake -DDO_AUTO_TEST=ON -DHG_USE_TBB=OFF -DPYTHON_EXECUTABLE:FILEPATH=/anaconda3/bin/python ../Higra/
 
 
 Cmake options:
@@ -61,6 +61,13 @@ Cmake options:
 - ``USE_SIMD`` (boolean, default ``ON``): Use SIMD instructions
 - ``DO_CPP_TEST`` (boolean, default ``ON``): Build the c++ test suit
 - ``DO_AUTO_TEST`` (boolean, default ``OFF``): Execute test suit automatically at the end of the build
+- ``HG_USE_TBB`` (boolean, default ``OFF``): Use Intel Threading Building Blocks (TBB)
+
+If ``HG_USE_TBB`` is equal to ``ON``, cmake will try to locate TBB automatically.
+TBB path can however be specified manually  with the following parameters:
+
+- ``TBB_INCLUDE_DIR`` (path): path to TBB include (path containing a folder called `tbb` that contains TBB header files)
+- ``TBB_LIBRARY`` (path): path to TBB library (path containing `tbb.so` on Unix or `tbb.lib` on Windows)
 
 With setuptools
 ***************
@@ -77,4 +84,10 @@ The following commands will download the library, create a binary wheel and inst
     cd dist
     pip install higra*.whl
 
+In order to activate TBB, one must define the following environment variable before calling ``setup.py``
+
+- ``HG_USE_TBB`` (any value):  will activate use of TBB
+- ``TBB_INCLUDE_DIR`` (optional, path): path to TBB include (path containing a folder called `tbb` that contains TBB header files)
+- ``TBB_LIBRARY`` (optional, path): path to TBB library (path containing `tbb.so` on Unix or `tbb.lib` on Windows)
+- ``TBB_DLL`` (mandatory on Windows, filepath): path to TBB DLL
 
