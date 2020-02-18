@@ -19,8 +19,8 @@ if force_debug_arg in sys.argv:
 
 
 def get_tbb_dirs():
-    link_dir = os.getenv("TBB_LINK")
-    include_dir = os.getenv("TBB_INCLUDE")
+    link_dir = os.getenv("TBB_LIBRARY")
+    include_dir = os.getenv("TBB_INCLUDE_DIR")
 
     if bool(link_dir) != bool(include_dir):
         print('You must either provide none or BOTH environment variables "TBB_INCLUDE" and "TBB_LINK"')
@@ -117,14 +117,30 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
 
+# copy tbb dlls under unique name to mimic unix wheel delocate...
+def prepare_dll_windows():
+    tbb_dll = os.getenv("TBB_DLL")
+    if tbb_dll is None:
+        print("On windows, you must set the environment variable providing the path to TBB DLL.")
+        exit(1)
+
+    from shutil import copyfile
+    copyfile(tbb_dll, "higra\\tbb.dll")
+
+    from tools import renameDLL
+    os.chdir("./higra")
+    renameDLL.rename_dll("tbb.dll", "tbb_higra.dll")
+    if os.path.exists("tbb.lib"):
+        os.remove("tbb.lib")
+    os.rename("tbb_higra.lib", "tbb.lib")
+    os.remove("tbb.dll")
+    os.chdir("..")
+
+
 try:
     requires_list = ['numpy>=1.17.3']
     if platform.system() == "Windows":
-        # copy tbb dlls under unique names to mimic unix wheel delocate...
-        from shutil import copyfile
-        tbb_include, tbb_link = get_tbb_dirs()
-        copyfile(os.path.join(tbb_link, "..\\bin\\tbb.dll"), "higra\\tbb.dll")
-        #requires_list.append('tbb==2019.0')
+        prepare_dll_windows()
 
     # hack because setuptools wont install files which are not inside a python package
     cur_dir = os.path.dirname(os.path.abspath(__file__))
