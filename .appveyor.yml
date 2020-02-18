@@ -77,7 +77,7 @@ build_script:
       cd Release &&
       ctest -C Release -R Test_cpp -V
     ) else (
-      if %APPVEYOR_REPO_TAG% == "true" (
+      if "%APPVEYOR_REPO_TAG%" == "true" (
         conda install twine &&
         twine upload  wheelhouse/*.whl
       )

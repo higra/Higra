@@ -123,6 +123,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     endif()
 endif()
 
+message("CMAKE_CXX_FLAGS" ${CMAKE_CXX_FLAGS})
+message("CMAKE_EXE_LINKER_FLAGS" ${CMAKE_EXE_LINKER_FLAGS})
 ##########################
 #  Options
 ##########################
