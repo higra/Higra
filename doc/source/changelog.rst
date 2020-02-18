@@ -1,6 +1,39 @@
 Changelog
 =========
 
+0.5.0
+-----
+
+Breaking change
+***************
+
+- Removed overload of function :func:`~higra.weight_graph` taking a custom weighting function.
+  An equivalent, and much efficient, behavior can be achieved be applying a vectorized
+  function on the edge list (see :func:`~higra.UndirectedGraph.edge_list`)
+  `5914574 <https://github.com/higra/Higra/commit/5914574e825258a3d0bb7fddd108ec59e6a65919>`_
+- Removed support for Python 3.4
+  `#174 <https://github.com/higra/Higra/pull/174>`_
+
+Other changes
+*************
+
+- Add support for Python 3.8
+  `#174 <https://github.com/higra/Higra/pull/174>`_
+- Fix and add more efficient implementation of seeded watershed labelisation :func:`~higra.labelisation_seeded_watershed`
+  `#173 <https://github.com/higra/Higra/pull/173>`_
+- Parallelize several algorithms with Intel TBB (parallel sort, hierarchy construction, fast LCA, graph weighting)
+  `#168 <https://github.com/higra/Higra/pull/168>`_ `#169 <https://github.com/higra/Higra/pull/169>`_
+- Add support for Intel Threading Building Blocks (TBB), see usage in :ref:`installation_instruction`
+  `#168 <https://github.com/higra/Higra/pull/168>`_ `#175 <https://github.com/higra/Higra/pull/175>`_
+- Update third party libs
+  `#170 <https://github.com/higra/Higra/pull/170>`_
+- Fix agglomerative clustering when the input graph has duplicated edges :ref:`binary_partition_tree`
+  `#167 <https://github.com/higra/Higra/pull/167>`_
+- Fix missing overloads for unsigned types in :func:`~higra.weight_graph`
+  `#166 <https://github.com/higra/Higra/pull/166>`_
+- Fix a bug in hierarchical watershed when leaves had non zero values :ref:`watershed_hierarchy`
+  `#165 <https://github.com/higra/Higra/pull/165>`_
+
 0.4.5
 -----
 
