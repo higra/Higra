@@ -146,7 +146,7 @@ namespace hg {
 
         hg_assert(num_vertices > 0, "Incorrect or missing key "
                 HG_TREE_IO_NBNODES_KEY);
-        hg_assert(num_attributes > 0, "Incorrect or missing key "
+        hg_assert(num_attributes >= 0, "Incorrect or missing key "
                 HG_TREE_IO_NBATTRIBUTES_KEY);
 
         in.read(&dummy, 1); // consumme the last \n left by cin...
