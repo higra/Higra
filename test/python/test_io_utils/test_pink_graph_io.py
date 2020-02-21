@@ -79,6 +79,11 @@ class TestPinkGraphIO(unittest.TestCase):
 
         self.assertTrue(data == data_ref)
 
+        # Test default attributes
+        hg.save_graph_pink(filename, graph)
+        self.assertTrue(os.path.exists(filename))
+        silent_remove(filename)
+
 
 if __name__ == '__main__':
     unittest.main()
