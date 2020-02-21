@@ -41,7 +41,7 @@ def save_graph_pink(filename, graph, vertex_weights=None, edge_weights=None, sha
     """
 
     if edge_weights is None:
-        edge_weights = np.ones((graph.num_edges(),), dtype=np.np.float64)
+        edge_weights = np.ones((graph.num_edges(),), dtype=np.float64)
 
     if vertex_weights is None:
         vertex_weights = np.ones((graph.num_vertices(),), dtype=np.float64)

@@ -48,6 +48,14 @@ class TestTreeIO(unittest.TestCase):
         self.assertTrue("attr2" in attributes)
         self.assertTrue(np.allclose(attr2, attributes["attr2"]))
 
+        # Test without attributes
+        hg.save_tree(filename, tree)
+
+        tree, attributes = hg.read_tree(filename)
+        silent_remove(filename)
+
+        self.assertTrue(np.allclose(tree.parents(), parents))
+
     def test_print_partition_tree(self):
         tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
         s = hg.print_partition_tree(tree, altitudes=np.asarray([0, 0, 0, 0, 0, 100, 1100, 20000]),
