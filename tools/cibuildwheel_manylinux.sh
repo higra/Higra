@@ -11,7 +11,7 @@ export TBB_URL="https://github.com/intel/tbb/archive/2019_U9.zip"
 
 curl -L "${TBB_URL}" -o archive.tgz
 unzip archive.tgz
-mv tbb* tbb
+mv oneTBB* tbb
 cd tbb
 tbb_dir=`pwd`
 

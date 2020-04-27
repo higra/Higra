@@ -200,7 +200,7 @@ def delinearize_vertex_weights(vertex_weights, graph=None, shape=None):
     v_shape = vertex_weights.shape
 
     if len(v_shape) >= len(shape):
-        if shape == v_shape[:len(shape)]:
+        if np.array_equal(shape, v_shape[:len(shape)]):
             return vertex_weights
 
     num_elements = 1
