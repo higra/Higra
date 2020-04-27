@@ -37,7 +37,7 @@ def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False):
 
     graph, embedding, edge_weights = hg.cpp._khalimsky_2_graph_4_adjacency(khalimsky, extra_border)
 
-    hg.CptGridGraph.link(graph, embedding.shape())
+    hg.CptGridGraph.link(graph, hg.normalize_shape(embedding.shape()))
     hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
 
     return graph, edge_weights
