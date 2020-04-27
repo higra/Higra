@@ -137,6 +137,10 @@ class TestHGUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             hg.delinearize_vertex_weights(np.ones((8,)), g)
 
+        # test with numpy array shape:
+        r = hg.delinearize_vertex_weights(np.ones((4, 5, 2)), shape=np.array((4, 5), dtype=np.int32))
+        self.assertTrue(r.shape == (4, 5, 2))
+
     def test_common_type(self):
         a_bool = np.zeros((1, 1), dtype=np.bool)
         a_uint16 = np.zeros((1, 1), dtype=np.uint16)
