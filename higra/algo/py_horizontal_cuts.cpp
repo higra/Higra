@@ -67,10 +67,10 @@ struct def_horizontal_cut_explorer_ctr {
     template<typename type, typename C>
     static
     void def(C &c, const char *doc) {
-        c.def(py::init(
+        c.def_static("_make_HorizontalCutExplorer",
                 [](const typename c_t::tree_type &tree, const xt::pyarray<type> &altitudes) {
                     return c_t(tree, altitudes);
-                }),
+                },
               doc,
               py::arg("tree"),
               py::arg("altitudes"));
@@ -92,15 +92,7 @@ Each cut of the hierarchy can be accessed through:
   - the altitude of the cut. This operations runs in :math:`\mathcal{O}(k*\log(n))`, with :math:`k` the number of regions in the retrieved cut.)"""
     );
     add_type_overloads<def_horizontal_cut_explorer_ctr<class_t>, HG_TEMPLATE_NUMERIC_TYPES>
-            (c,
-             R"(Create an horizontal cut explorer for the provided valued hierarchy.
-
-Altitudes must be increasing
-
-:param tree: input tree
-:param altitudes: tree nodes altitudes
-:return: an ``HorizontalCutExplorer``
-)");
+            (c,"");
     c.def("num_cuts", &class_t::num_cuts, "Number of horizontal cuts in the hierarchy.");
     c.def("num_regions_cut",
           &class_t::num_regions_cut,
