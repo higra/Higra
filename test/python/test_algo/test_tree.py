@@ -179,7 +179,6 @@ class TestAlgorithmTree(unittest.TestCase):
         sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
         self.assertTrue(np.all(sm == sm_ref))
 
-
     def test_filter_non_relevant_node_from_tree(self):
         g = hg.get_4_adjacency_graph((1, 8))
         edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
@@ -224,6 +223,27 @@ class TestAlgorithmTree(unittest.TestCase):
 
         ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7))
         self.assertTrue(np.all(ref_altitudes == naltitudes))
+
+    def test_test_altitudes_increasingness(self):
+        tree = hg.Tree(np.asarray((5, 5, 6, 6, 7, 7, 7, 7)))
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, 2, 1, 3))
+        self.assertTrue(hg.test_altitudes_increasingness(tree, altitudes))
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 2))
+        self.assertTrue(hg.test_altitudes_increasingness(tree, altitudes))
+
+        altitudes = np.asarray((2, 0, 0, 1, 2, 2, 1, 3))
+        self.assertTrue(hg.test_altitudes_increasingness(tree, altitudes))
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0))
+        self.assertTrue(hg.test_altitudes_increasingness(tree, altitudes))
+
+        altitudes = np.asarray((0, 0, 2, 0, 0, 2, 1, 3))
+        self.assertFalse(hg.test_altitudes_increasingness(tree, altitudes))
+
+        altitudes = np.asarray((0, 0, 1, 0, 0, 2, 1, 1))
+        self.assertFalse(hg.test_altitudes_increasingness(tree, altitudes))
 
 
 if __name__ == '__main__':

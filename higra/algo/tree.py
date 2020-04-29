@@ -287,7 +287,6 @@ def binary_labelisation_from_markers(tree, object_marker, background_marker, lea
     return labels
 
 
-@hg.argument_helper(hg.CptHierarchy)
 def sort_hierarchy_with_altitudes(tree, altitudes):
     """
     Sort the nodes of a tree according to their altitudes.
@@ -303,7 +302,7 @@ def sort_hierarchy_with_altitudes(tree, altitudes):
     The returned "node_map" is an array that maps any node index :math:`i` of the new tree,
     to the index of this node in the original tree.
 
-    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param tree: input tree
     :param altitudes: node altitudes of the input tree
     :return: the sorted tree (Concept :class:`~higra.CptHierarchy`), its node altitudes, and the node map
     """
@@ -311,3 +310,19 @@ def sort_hierarchy_with_altitudes(tree, altitudes):
     new_altitudes = altitudes[node_map]
 
     return new_tree, new_altitudes, node_map
+
+
+def test_altitudes_increasingness(tree, altitudes):
+    """
+    Test if the altitudes of the given tree are increasing; i.e. if for any nodes :math:`i, j` such that :math:`j`
+    is an ancestor of :math:`i`, then :math:`altitudes[i] \leq altitudes[j]`.
+
+
+    :param tree: input tree
+    :param altitudes: node altitudes of the input tree
+    :return: ``True`` if :attr:`altitudes` are increasing for :attr:`tree`, ``False`` otherwise.
+    """
+    if altitudes.ndim != 1 or altitudes.size != tree.num_vertices():
+        raise ValueError("'altitudes' must be a 1d array of size 'tree.num_vertices()'.")
+
+    return np.all(altitudes <= altitudes[tree.parents()])
