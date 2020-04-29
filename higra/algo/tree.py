@@ -306,6 +306,9 @@ def sort_hierarchy_with_altitudes(tree, altitudes):
     :param altitudes: node altitudes of the input tree
     :return: the sorted tree (Concept :class:`~higra.CptHierarchy`), its node altitudes, and the node map
     """
+    if not test_altitudes_increasingness(tree, altitudes):
+        raise ValueError("'altitudes' must be increasing for 'tree'.")
+
     new_tree, node_map = hg.cpp._sort_hierarchy_with_altitudes(tree, altitudes)
     new_altitudes = altitudes[node_map]
 

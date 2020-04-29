@@ -224,6 +224,11 @@ class TestAlgorithmTree(unittest.TestCase):
         ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7))
         self.assertTrue(np.all(ref_altitudes == naltitudes))
 
+        tree = hg.Tree(np.asarray((5, 5, 6, 6, 7, 7, 7, 7)))
+        altitudes = np.asarray((0, 0, 1, 0, 0, 2, 1, 1))
+        with self.assertRaises(ValueError):
+            hg.sort_hierarchy_with_altitudes(tree, altitudes)
+
     def test_test_altitudes_increasingness(self):
         tree = hg.Tree(np.asarray((5, 5, 6, 6, 7, 7, 7, 7)))
 
