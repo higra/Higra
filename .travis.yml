@@ -7,6 +7,36 @@ branches:
 matrix:
   include:
   - os: linux
+    if: tag IS present
+    services:
+      - docker
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*" CIBW_SKIP=*-manylinux1_i686
+  - os: linux
+    if: tag IS present
+    services:
+      - docker
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*" CIBW_SKIP=*-manylinux1_i686
+  - os: linux
+    if: tag IS present
+    services:
+      - docker
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*" CIBW_SKIP=*-manylinux1_i686
+  - os: linux
+    services:
+    - docker
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp38-*" CIBW_SKIP=*-manylinux1_i686
+  - os: osx
+    if: tag IS present
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*"
+  - os: osx
+    if: tag IS present
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*"
+  - os: osx
+    if: tag IS present
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*"
+  - os: osx
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp38-*"
+  - os: linux
     addons:
       apt:
         sources:
@@ -38,37 +68,6 @@ matrix:
     osx_image: xcode8
     compiler: clang
     env: HG_USE_TBB=On
-  - sudo: required
-    if: tag IS present
-    services:
-      - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*" CIBW_SKIP=*-manylinux1_i686
-  - sudo: required
-    if: tag IS present
-    services:
-      - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*" CIBW_SKIP=*-manylinux1_i686
-  - sudo: required
-    if: tag IS present
-    services:
-      - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*" CIBW_SKIP=*-manylinux1_i686
-  - sudo: required
-    services:
-    - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp38-*" CIBW_SKIP=*-manylinux1_i686
-  - os: osx
-    if: tag IS present
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*"
-  - os: osx
-    if: tag IS present
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*"
-  - os: osx
-    if: tag IS present
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*"
-  - os: osx
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp38-*"
-
 env:
   global:
   - MINCONDA_VERSION="latest"
