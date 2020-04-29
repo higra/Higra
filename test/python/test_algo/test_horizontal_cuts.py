@@ -35,6 +35,12 @@ class TestHorizontalCuts(unittest.TestCase):
             self.assertTrue(np.all(np.sort(c.nodes()) == np.sort(cut_nodes[i])))
             self.assertTrue(c.altitude() == alt_cuts[i])
 
+    def test_horizontal_cut_explorer_assert(self):
+        tree = hg.Tree(np.asarray((5, 5, 6, 6, 7, 7, 7, 7)))
+        altitudes = np.asarray((0, 0, 1, 0, 0, 2, 1, 1))
+        with self.assertRaises(ValueError):
+            hch = hg.HorizontalCutExplorer(tree, altitudes)
+
     def test_horizontal_cut_explorer_altitudes(self):
         tree = hg.Tree((11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18))
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3))
