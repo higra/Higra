@@ -624,6 +624,12 @@ class TestAttributes(unittest.TestCase):
               (Z * Z)
         self.assertTrue(np.allclose(ref, res))
 
+    def test_topological_height(self):
+        tree = hg.Tree((6, 6, 9, 9, 7, 8, 10, 8, 10, 10, 10))
+        res = hg.attribute_topological_height(tree)
+        ref = (0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 3)
+        self.assertTrue(np.array_equal(res, ref))
+
 
 if __name__ == '__main__':
     unittest.main()

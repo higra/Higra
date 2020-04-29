@@ -655,3 +655,23 @@ def attribute_tree_sampling_probability(tree, leaf_graph, leaf_graph_edge_weight
         leaf_graph_vertex_weights = leaf_graph_vertex_weights / np.sum(leaf_graph_edge_weights)
         tree_node_weights = hg.accumulate_sequential(tree, leaf_graph_vertex_weights, hg.Accumulators.sum)
         return hg.attribute_children_pair_sum_product(tree, tree_node_weights)
+
+
+@hg.auto_cache
+def attribute_topological_height(tree):
+    """
+    Given a node :math:`n` of :attr:`tree`, the topological height of :math:`n` is the number of edges on the longest
+    path from the node :math:`n` to a leaf of :attr:`tree`.
+
+    The topological height of the leaves is equal to 0.
+
+    :param tree: Input tree
+    :return: a 1d array
+    """
+
+    res = hg.accumulate_and_add_sequential(tree,
+                                           np.ones(tree.num_vertices(), dtype=np.int64),
+                                           np.zeros(tree.num_leaves(), dtype=np.int64),
+                                           hg.Accumulators.max)
+
+    return res
