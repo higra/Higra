@@ -243,7 +243,7 @@ Iterators
             for n in t.children(8):
                 ... # 2, 3, 4
 
-            for n in t.leaves_iterator():
+            for n in t.leaves():
                 ... # 0, 1, 2, ..., 6
 
             for n in t.ancestors(8):
@@ -427,7 +427,7 @@ The following example demonstrates the application of a parallel sum accumulator
             t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
             input = numpy.ones((t.num_vertices(),))
 
-            result = hg.accumulate_parallel(input, hg.Accumulators.sum, t)
+            result = hg.accumulate_parallel(t, input, hg.Accumulators.sum)
 
             # result = (0, 0, 0, 0, 0, 2, 3, 2)
 
@@ -485,7 +485,7 @@ The following example demonstrates the application of a sequential sum accumulat
             t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
             input = numpy.ones((t.num_leaves(),))
 
-            result = hg.accumulate_sequential(input, hg.Accumulators.sum, t)
+            result = hg.accumulate_sequential(t, input, hg.Accumulators.sum)
 
             # result = (1, 1, 1, 1, 1, 2, 3, 5)
 
