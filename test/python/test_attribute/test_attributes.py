@@ -629,7 +629,44 @@ class TestAttributes(unittest.TestCase):
         res = hg.attribute_topological_height(tree)
         ref = (0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 3)
         self.assertTrue(np.array_equal(res, ref))
+        
+    def test_moment_of_inertia(self):
+        """
+        The test image is a binary image of 5x15 pixels:
+        
+        0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+        0 0 1 0 0 1 0 0 0 0 0 1 1 1 0
+        0 1 1 1 0 1 0 1 1 1 0 1 1 1 0
+        0 0 1 0 0 1 0 0 0 0 0 1 1 1 0
+        0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+        
+        The max-tree of this image is composed of five non-leaf nodes: 
+        the root and the four maxima (a cross, a vertical line, a horizontal line and a square)
+        Using the formula given in https://en.wikipedia.org/wiki/Image_moment, the moment of inertia of each shape is:
+          - Cross: 0.16
+          - Square: 0.1481
+          - Vertical and horizontal lines: 0.2222
+          - Rectangle (root): 0.2756
+        The moment of inertia of the leaf nodes are set to 0.0
+        
+       
+        """
+        graph = hg.get_4_adjacency_implicit_graph((5, 15))
+        vertex_weights = np.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                     [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+                                     [0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0],
+                                     [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+                                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
 
+        tree, altitudes = hg.component_tree_max_tree(graph, vertex_weights)
+        res = hg.attribute_moment_of_inertia(tree,altitudes)        
+        ref = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+               0.1481, 0.2222, 0.16, 0.2222, 0.2756)
+        self.assertTrue(np.allclose(res,ref,atol=0.0001))
 
 if __name__ == '__main__':
     unittest.main()

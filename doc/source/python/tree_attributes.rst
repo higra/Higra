@@ -29,6 +29,7 @@ Tree attributes
     attribute_topological_height
     attribute_tree_sampling_probability
     attribute_volume
+	attribute_moment_of_inertia
 
 .. autofunction:: higra.attribute_area
 
@@ -73,3 +74,5 @@ Tree attributes
 .. autofunction:: higra.attribute_tree_sampling_probability
 
 .. autofunction:: higra.attribute_volume
+
+.. autofunction:: higra.attribute_moment_of_inertia
