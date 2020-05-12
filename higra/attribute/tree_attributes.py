@@ -680,16 +680,47 @@ def attribute_topological_height(tree):
 
 @hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
-def attribute_moment_of_inertia(tree, altitudes, leaf_graph):
+def attribute_moment_of_inertia(tree, leaf_graph):
     """
     
-    Moment of inertia (first Hu moment) of each node of the given tree.   
-
+    Moment of inertia (first Hu moment) of each node of the given tree.
+    Given a node :math:`X` of :attr:`tree`, the moment of inertia :math:`I_1` of :math:`X` 
+    is defined as:
+        
+        :math:`\{I_1\} = \eta_{20} + \eta_{02}`
+        
+    where
+    
+        :math:`\eta_{ij} = \frac{\mu_{ij}}{\mu_{00}^{1+\frac{i+j}{2}}}`
+    
+    with
+    
+        :math:`\mu_{20} = M_{20} - \overline{x} \times M_{10}`
+        
+        :math:`\mu_{02} = M_{02} - \overline{y} \times M_{01}`
+        
+        :math:`\mu_{00} = M_{00}`
+        
+    such that :math:`\{\overline{x},\overline{y}\}` is the centroid of :math:`X`, and 
+    :math:`M_{ij}` is defined as:
+        
+        :math:`M_{ij} = \sum_{x}\sum_{y} x^iy^j I(x,y)`
+        
+    where :math:`(x,y)` are the coordinates of every pixel in :math:`X`, and 
+    :math:`I(x,y)` is set to :math:`1` for every pixel.
+        
+        
+    This function works only if :attr:`leaf_graph` is a 2D grid graph.
+    
+    
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
-    :param altitudes: node altitudes of the input tree
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy` on `tree`)
     :return: a 1d array
     """
+    
+    if (not hg.CptGridGraph.validate(leaf_graph)) or (len(hg.CptGridGraph.get_shape(leaf_graph)) != 2):
+        raise ValueError("Parameter 'leaf_graph' must be a 2D grid graph.")
+    
     coordinates = hg.attribute_vertex_coordinates(leaf_graph)
     coordinates = np.reshape(coordinates, (coordinates.shape[0]*coordinates.shape[1], coordinates.shape[2]))
 
@@ -715,3 +746,5 @@ def attribute_moment_of_inertia(tree, altitudes, leaf_graph):
     I_1 = (miu_20 + miu_02)/(M_00**2)
     
     return I_1
+
+

@@ -659,7 +659,7 @@ class TestAttributes(unittest.TestCase):
                                      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
 
         tree, altitudes = hg.component_tree_max_tree(graph, vertex_weights)
-        res = hg.attribute_moment_of_inertia(tree,altitudes)        
+        res = hg.attribute_moment_of_inertia(tree)        
         ref = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
