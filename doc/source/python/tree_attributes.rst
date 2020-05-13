@@ -22,6 +22,7 @@ Tree attributes
     attribute_height
     attribute_lca_map
     attribute_mean_vertex_weights
+    attribute_moment_of_inertia
     attribute_children_pair_sum_product
     attribute_piecewise_constant_Mumford_Shah_energy
     attribute_regular_altitudes
@@ -59,6 +60,8 @@ Tree attributes
 .. autofunction:: higra.attribute_lca_map
 
 .. autofunction:: higra.attribute_mean_vertex_weights
+
+.. autofunction:: higra.attribute_moment_of_inertia
 
 .. autofunction:: higra.attribute_children_pair_sum_product
 

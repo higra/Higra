@@ -675,3 +675,76 @@ def attribute_topological_height(tree):
                                            hg.Accumulators.max)
 
     return res
+
+
+
+@hg.argument_helper(hg.CptHierarchy)
+@hg.auto_cache
+def attribute_moment_of_inertia(tree, leaf_graph):
+    """
+    
+    Moment of inertia (first Hu moment) of each node of the given tree.
+    Given a node :math:`X` of :attr:`tree`, the moment of inertia :math:`I_1` of :math:`X` 
+    is defined as:
+        
+        :math:`\{I_1\} = \eta_{20} + \eta_{02}`
+        
+    where
+    
+        :math:`\eta_{ij} = \frac{\mu_{ij}}{\mu_{00}^{1+\frac{i+j}{2}}}`
+    
+    with
+    
+        :math:`\mu_{20} = M_{20} - \overline{x} \times M_{10}`
+        
+        :math:`\mu_{02} = M_{02} - \overline{y} \times M_{01}`
+        
+        :math:`\mu_{00} = M_{00}`
+        
+    such that :math:`\{\overline{x},\overline{y}\}` is the centroid of :math:`X`, and 
+    :math:`M_{ij}` is defined as:
+        
+        :math:`M_{ij} = \sum_{x}\sum_{y} x^iy^j I(x,y)`
+        
+    where :math:`(x,y)` are the coordinates of every pixel in :math:`X`, and 
+    :math:`I(x,y)` is set to :math:`1` for every pixel.
+        
+        
+    This function works only if :attr:`leaf_graph` is a 2D grid graph.
+    
+    
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy` on `tree`)
+    :return: a 1d array
+    """
+    
+    if (not hg.CptGridGraph.validate(leaf_graph)) or (len(hg.CptGridGraph.get_shape(leaf_graph)) != 2):
+        raise ValueError("Parameter 'leaf_graph' must be a 2D grid graph.")
+    
+    coordinates = hg.attribute_vertex_coordinates(leaf_graph)
+    coordinates = np.reshape(coordinates, (coordinates.shape[0]*coordinates.shape[1], coordinates.shape[2]))
+
+    M_00_leaves = np.ones((tree.num_leaves())).astype(dtype=np.float64)
+    x_leaves = coordinates[:,0].astype(dtype=np.float64)
+    y_leaves = coordinates[:,1].astype(dtype=np.float64)
+
+    M_10_leaves = x_leaves * M_00_leaves
+    M_01_leaves = y_leaves * M_00_leaves
+    M_20_leaves = (x_leaves**2) * M_00_leaves
+    M_02_leaves = (y_leaves**2) * M_00_leaves
+    
+    M_00 = hg.accumulate_sequential(tree, M_00_leaves, hg.Accumulators.sum)
+    M_01 = hg.accumulate_sequential(tree, M_01_leaves, hg.Accumulators.sum)
+    M_10 = hg.accumulate_sequential(tree, M_10_leaves, hg.Accumulators.sum)
+    M_02 = hg.accumulate_sequential(tree, M_02_leaves, hg.Accumulators.sum)
+    M_20 = hg.accumulate_sequential(tree, M_20_leaves, hg.Accumulators.sum)
+    
+    _x = M_10/M_00
+    _y = M_01/M_00
+    miu_20 = M_20 - _x*M_10
+    miu_02 = M_02 - _y*M_01
+    I_1 = (miu_20 + miu_02)/(M_00**2)
+    
+    return I_1
+
+
