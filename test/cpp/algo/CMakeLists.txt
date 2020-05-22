@@ -17,5 +17,6 @@ set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/test_rag.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_tree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_tree_fusion.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_tree_monotonic_regression.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_watershed.cpp
         PARENT_SCOPE)
