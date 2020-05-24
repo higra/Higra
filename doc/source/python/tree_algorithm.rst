@@ -17,6 +17,7 @@ Algorithm for trees
     test_altitudes_increasingness
     test_tree_isomorphism
     tree_fusion_depth_map
+    tree_monotonic_regression
 
 .. autofunction:: higra.binary_labelisation_from_markers
 
@@ -37,6 +38,8 @@ Algorithm for trees
 .. autofunction:: higra.test_tree_isomorphism
 
 .. autofunction:: higra.tree_fusion_depth_map
+
+.. autofunction:: higra.tree_monotonic_regression
 
 
 

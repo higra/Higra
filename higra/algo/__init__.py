@@ -16,4 +16,5 @@ from .rag import *
 from .tree import *
 from .tree_energy_optimization import *
 from .tree_fusion import *
+from .tree_monotonic_regression import *
 from .watershed import *
