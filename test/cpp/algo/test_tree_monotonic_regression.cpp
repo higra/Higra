@@ -25,8 +25,15 @@ namespace test_tree_monotonic_regression {
         }SECTION("min") {
             auto res = tree_monotonic_regression(tree, altitudes, "min");
             REQUIRE((altitudes == res));
+        }SECTION("least_square") {
+            auto res = tree_monotonic_regression(tree, altitudes, "least_square");
+            REQUIRE((altitudes == res));
+        }SECTION("least_square_weighted") {
+            auto res = tree_monotonic_regression(tree, altitudes, xt::arange<double>(1, 13), "least_square");
+            REQUIRE((altitudes == res));
+        }SECTION("not_suppported") {
+            REQUIRE_THROWS(tree_monotonic_regression(tree, altitudes, "truc"));
         }
-
     }
 
     TEST_CASE("tree_monotonic_regression max", "[tree_monotonic_regression]") {
@@ -44,7 +51,25 @@ namespace test_tree_monotonic_regression {
 
         array_1d<double> ref{0, 2, 0, 2, 0, 0, 0, 2, 3, 0, 4, 4};
         auto res = tree_monotonic_regression(tree, altitudes, "min");
-        std::cout << res << std::endl;
         REQUIRE((ref == res));
+    }
+
+    TEST_CASE("tree_monotonic_regression least square no weights", "[tree_monotonic_regression]") {
+        hg::tree tree(xt::xarray<index_t>{5, 5, 6, 6, 7, 7, 7, 7});
+        array_1d<double> altitudes{13, 14, 6, 8, 7, 11, 5, 10};
+
+        array_1d<double> ref{12, 12, 6, 6.5, 7, 12, 6.5, 12};
+        auto res = tree_monotonic_regression(tree, altitudes, "least_square");
+        REQUIRE(xt::allclose(res, ref));
+    }
+
+    TEST_CASE("tree_monotonic_regression least square weighted", "[tree_monotonic_regression]") {
+        hg::tree tree(xt::xarray<index_t>{5, 5, 6, 6, 7, 7, 7, 7});
+        array_1d<double> altitudes{13, 14, 6, 8, 7, 11, 5, 10};
+        array_1d<double> weights{1, 1, 1, 1, 1, 1, 2, 1};
+
+        array_1d<double> ref{12, 12, 6, 6, 7, 12, 6, 12};
+        auto res = tree_monotonic_regression(tree, altitudes, weights, "least_square");
+        REQUIRE(xt::allclose(res, ref));
     }
 }
