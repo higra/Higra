@@ -66,6 +66,7 @@ PYBIND11_MODULE(higram, m) {
     py_init_tree_graph(m);
     py_init_tree_io(m);
     py_init_tree_of_shapes_image(m);
+    py_init_tree_monotonic_regression(m);
     py_init_undirected_graph(m);
     py_init_watershed(m);
     py_init_watershed_hierarchy(m);

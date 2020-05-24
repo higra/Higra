@@ -9,6 +9,7 @@
 ****************************************************************************/
 
 #include "../graph.hpp"
+#include "xtensor/xview.hpp"
 #include "../accumulator/tree_accumulator.hpp"
 #include "../structure/fibonacci_heap.hpp"
 #include "../structure/unionfind.hpp"

@@ -1,5 +1,5 @@
 ############################################################################
-# Copyright ESIEE Paris (2018)                                             #
+# Copyright ESIEE Paris (2020)                                             #
 #                                                                          #
 # Contributor(s) : Benjamin Perret                                         #
 #                                                                          #
@@ -8,13 +8,15 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-from .alignment import *
-from .graph_core import *
-from .graph_weights import *
-from .horizontal_cuts import *
-from .rag import *
-from .tree import *
-from .tree_energy_optimization import *
-from .tree_fusion import *
-from .tree_monotonic_regression import *
-from .watershed import *
+import higra as hg
+import numpy as np
+
+
+def tree_monotonic_regression(tree, altitudes, mode, weights=None):
+    if mode == "least_square":
+        altitudes = hg.cast_to_dtype(altitudes, np.float64)
+
+    if weights is None:
+        return hg.cpp._tree_monotonic_regression(tree, altitudes, mode)
+    else:
+        return hg.cpp._tree_monotonic_regression(tree, altitudes, mode, weights)

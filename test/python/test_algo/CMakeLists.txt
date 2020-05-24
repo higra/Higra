@@ -18,6 +18,7 @@ set(PY_FILES
         test_tree.py
         test_tree_energy_optimization.py
         test_tree_fusion.py
+        test_tree_monotonic_regression.py
         test_watershed.py)
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")

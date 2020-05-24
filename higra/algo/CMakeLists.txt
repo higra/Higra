@@ -18,6 +18,7 @@ set(PY_FILES
         tree.py
         tree_energy_optimization.py
         tree_fusion.py
+        tree_monotonic_regression.py
         watershed.py)
 
 set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
@@ -29,6 +30,7 @@ set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/py_tree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_tree_energy_optimization.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_tree_fusion.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_tree_monotonic_regression.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_watershed.cpp
         PARENT_SCOPE)
 
