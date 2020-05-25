@@ -10,7 +10,7 @@ Welcome to Higra's documentation!
     Installation <install.rst>
     Developing c++ extensions <extensions.rst>
     Examples <notebooks.rst>
-
+    Troubleshooting <troubleshooting.rst>
 
 .. toctree::
     :maxdepth: 2
