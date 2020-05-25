@@ -193,23 +193,30 @@ def binary_partition_tree(graph, weight_function, edge_weights):
 
     At each step:
 
-    1 - the algorithm finds the edge of smallest weight.
-    2 - the two vertices linked by this edge are merged: the new vertex is the parent of the two merged vertices
-    3 - the weight of the edges linking the new vertex to the remaining vertices of the graph are updated according to the user provided function (weight_function)
-    4 - repeat until a single edge remain
+    1. the algorithm finds the edge of smallest weight;
+    2. the two vertices linked by this edge are merged: the new vertex is the parent of the two merged vertices and its
+       altitude is equal to the weight of the fusion edge;
+    3. the weight of the edges linking the new vertex to the remaining vertices of the graph are updated according to
+       the user provided function (:attr:`weight_function`);
+    4. repeat until a single vertex remains
 
-    The initial weight of the edges (edge_weights) and the callback (weight_function) determine the shape of the
-    hierarchy.
+    The initial weight of the edges (:attr:`edge_weights`) and the callback (:attr:`weight_function`) determine the
+    shape of the hierarchy. Note that the altitudes of the constructed hierarchy are not necessarily increasing;
+    if needed this can be enforced as a post processing with the function :func:`~higra.tree_monotonic_regression`.
 
-    Classical single/complete/average linkage weighting function are already implemented: use functions
+    Classical linkage functions are already implemented:
 
-    - binary_partition_tree_single_linkage
-    - binary_partition_tree_complete_linkage
-    - binary_partition_tree_average_linkage.
+    - single/min linkage :func:`~higra.binary_partition_tree_single_linkage`
+    - complete/max linkage :func:`~binary_partition_tree_complete_linkage`
+    - average linkage :func:`~binary_partition_tree_average_linkage`
+    - Ward linkage :func:`~binary_partition_tree_ward_linkage`.
 
     Those functions are implemented in c++ and should be faster than a user defined weighting function written in Python.
 
-    The weight_function callback can be anything that defining the operator() and should follow the following pattern:
+    :Weight function:
+
+    The :attr:`weight_function` callback can be anything defining the operator ``()`` and should follow the
+    following pattern:
 
     .. code-block:: python
 
@@ -226,37 +233,63 @@ def binary_partition_tree(graph, weight_function, edge_weights):
 
         }
 
-    Each element in the parameter new_neighbours represent an edge between the new vertex and another vertex of
+    Each element in the parameter ``new_neighbours`` represent an edge between the new vertex and another vertex of
     the graph. For each element of the list, the following methods are available:
 
-    - neighbour_vertex(): the other vertex
-    - num_edges(): returns 2 if both the two merged vertices add an edge linking themselves with neighbour_vertex() and 1 otherwise
-    - first_edge_index(): the index of the edge linking one of the merged region to neighbour_vertex()
-    - second_edge_index(): the index of the edge linking the other merged region to neighbour_vertex() (only if num_edges()==2)
-    - set_new_edge_weight(value): weight of the new edge (THIS HAS TO BE DEFINED IN THE WEIGHTING FUNCTION)
-    - new_edge_index(): the index of the new edge: the weighting function will probably have to track new weight values
+    - ``neighbour_vertex()``: the other vertex
+    - ``num_edges()``: returns 2 if both the two merged vertices had an edge linking themselves with ``neighbour_vertex()`` and 1 otherwise
+    - ``first_edge_index()``: the index of the edge linking one of the merged region to ``neighbour_vertex()``
+    - ``second_edge_index()``: the index of the edge linking the other merged region to ``neighbour_vertex()`` (only if ``num_edges()==2``)
+    - ``set_new_edge_weight(value)``: weight of the new edge. **This has to be defined in the weighting function**.
+    - ``new_edge_index()``: the index of the new edge as the weighting function will probably have to track new weight values
 
-    Example of weighting function for average linkage assuming that
+    :Example:
 
-    - edge_weights is an array containing the weight of each edge, and
-    - edge_values is an array containing the value of each edge:
+    The following example shows how to define a weighting function for average linkage assuming that:
+
+    - ``edge_weights`` is an array containing the weight of each edge, and
+    - ``edge_counts`` is an array containing the number of edges present between two clusters: initially 1 for each edge but
+      this will increase when clusters are merged.
+
+    When a merge happens, there are two possibilities. Consider that we have three clusters :math:`A`, :math:`B`, and :math:`C` and
+    we are merging :math:`A` and :math:`B` to obtain the new cluster :math:`D`.
+
+    - If there is an edge of weight :math:`w_{AC}` and multiplicity :math:`c_{AC}` between :math:`A` and :math:`C` but
+      there is no edge between :math:`B` and :math:`C`. Then, the new graph will contain an edge between :math:`D` and :math:`C`
+      such that :math:`w_{DC}=w_{AC}` and :math:`c_{DC}=c_{AC}`. (The situation is similar if the edge were between
+      :math:`B` and :math:`C`).
+    - If there is an edge between :math:`A` and :math:`C` and between :math:`B` and :math:`C`. Then, the new graph will
+      contain an edge between :math:`D` and :math:`C` such that :math:`w_{DC} = \\frac{w_{AC}*c_{AC} + w_{BC}*c_{BC}}{c_{AC} + c_{BC}}`
+      and :math:`c_{DC}=c_{AC} + c_{BC}`.
+
 
     .. code-block:: python
 
         def weighting_function_average_linkage(graph, fusion_edge_index, new_region, merged_region1, merged_region2, new_neighbours):
             for n in new_neighbours:
                 if n.num_edges() > 1:
-                    new_weight = edge_weights[n.first_edge_index()] + edge_weights[n.second_edge_index()]
-                    new_value = (edge_values[n.first_edge_index()] * edge_weights[n.first_edge_index()] \
-                        + edge_values[n.second_edge_index()] * edge_weights[n.second_edge_index()]) \
+                    new_count = edge_counts[n.first_edge_index()] + edge_counts[n.second_edge_index()]
+                    new_weight = (edge_weights[n.first_edge_index()] * edge_counts[n.first_edge_index()] \\
+                        + edge_weights[n.second_edge_index()] * edge_counts[n.second_edge_index()]) \\
                         / new_weight
                 else:
+                    new_count = edge_counts[n.first_edge_index()]
                     new_weight = edge_weights[n.first_edge_index()]
-                    new_value = edge_values[n.first_edge_index()]
 
-                n.set_new_edge_weight(new_value)
-                edge_values[n.new_edge_index()] = new_value
+                n.set_new_edge_weight(new_weight)
                 edge_weights[n.new_edge_index()] = new_weight
+                edge_counts[n.new_edge_index()] = new_count
+
+    :Complexity:
+
+    The worst case time complexity is in :math:`\mathcal{O}(n^2\log(n))` with :math:`n` the number of vertices in the graph.
+    The runtime complexity on a sparse graph with well structured data (far different from noise) can be much better in practice.
+
+     .. warning::
+
+        This function uses a Python callback (the :attr:`weight_function`) that is called frequently by the algorithm:
+        performances will be far from optimal. Please consider a C++ implementation if it is too slow (see this
+        `helper project <https://github.com/higra/Higra-cppextension-cookiecutter>`_ ).
 
     :param graph: input graph
     :param weight_function: see detailed description above
