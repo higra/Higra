@@ -43,6 +43,32 @@ namespace assessment_fragmentation_curve {
             REQUIRE(res_k == ref_k);
     }
 
+    TEST_CASE("fragmentation curve BCE optimal cut non contiguous labels", "[fragmentation_curve]") {
+        tree t(array_1d<index_t>{ 8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14 });
+        array_1d<char> ground_truth{ 1, 1, 2, 2, 2, 5, 5, 5 };
+
+        assesser_fragmentation_optimal_cut assesser(t, ground_truth, optimal_cut_measure::BCE);
+
+        REQUIRE(assesser.optimal_number_of_regions() == 3);
+        REQUIRE(almost_equal(assesser.optimal_score(), (2 + 4.0 / 3 + 2.5) / num_leaves(t)));
+
+        auto res = assesser.fragmentation_curve();
+        auto &res_scores = res.scores();
+        auto &res_k = res.num_regions();
+        REQUIRE(3 == res.num_regions_ground_truth());
+        REQUIRE(almost_equal(res.optimal_score(), (2 + 4.0 / 3 + 2.5) / num_leaves(t)));
+        REQUIRE(res.optimal_number_of_regions() == 3);
+
+        array_1d<double> ref_scores{
+                2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3,
+                2 + 4.0 / 3 + 4.0 / 3, 4, 3
+        };
+        array_1d<size_t> ref_k{ 1, 2, 3, 4, 5, 6, 7, 8 };
+
+        REQUIRE(res_scores == (ref_scores / num_leaves(t)));
+        REQUIRE(res_k == ref_k);
+    }
+
     TEST_CASE("fragmentation curve BCE optimal cut on rag", "[fragmentation_curve]") {
          array_1d<index_t> vertex_map{ 0, 0, 1, 1, 2, 2, 3, 4 };
             tree t(array_1d<index_t>{ 6, 6, 5, 5, 7, 7, 8, 8, 8 });
@@ -172,7 +198,7 @@ namespace assessment_fragmentation_curve {
                 array_1d<index_t>{11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18}
             };
             array_1d<int> altitudes{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3 };
-            array_1d<int> ground_truth{ 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2 };
+            array_1d<int> ground_truth{ 3, 3, 3, 3, 1, 1, 1, 2, 2, 2, 2 };
 
 
             auto res = assess_fragmentation_horizontal_cut(tree,
@@ -185,6 +211,7 @@ namespace assessment_fragmentation_curve {
             array_1d<double> ref_scores{ 4.0, 8.0, 9.0, 10.0 };
             array_1d<double> ref_k{ 1, 3, 4, 9 };
 
+            REQUIRE(res.num_regions_ground_truth() == 3);
             REQUIRE(xt::allclose(res_scores, ref_scores / num_leaves(tree)));
             REQUIRE(res_k == (ref_k));
     }

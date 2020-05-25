@@ -154,12 +154,14 @@ namespace hg {
 
             max_regions = (std::min)(max_regions, num_leaves(tree));
 
-            m_num_regions_ground_truth = xt::amax(ground_truth)() + 1;
+            size_t num_regions_ground_truth = xt::amax(ground_truth)() + 1;
 
-            array_1d<index_t> region_gt_areas({m_num_regions_ground_truth}, 0);
+            array_1d<index_t> region_gt_areas({num_regions_ground_truth}, 0);
             for (auto v:ground_truth) {
                 region_gt_areas[v]++;
             }
+
+            m_num_regions_ground_truth = xt::count_nonzero(region_gt_areas)();
 
 // TODO remove when xtensor MSVC witht he bug with xt::view(region_tree_area, xt::all(), xt::newaxis()) on 1d tensor
 #ifndef _MSC_VER
@@ -418,9 +420,11 @@ namespace hg {
             scores(i) = partition_scorer.score(xt::view(card_intersection, xt::keep(hc.nodes), xt::all()));
         }
 
+        size_t num_regions_ground_truth = xt::count_nonzero(xt::view(card_intersection, root(tree), xt::all()))();;
+
         return hg::fragmentation_curve<>{std::move(num_regions),
                                          std::move(scores),
-                                         card_intersection.shape()[1]};
+                                         num_regions_ground_truth};
     };
 
 };

@@ -56,7 +56,6 @@ class TestTreeMonotonicRegression(unittest.TestCase):
 
         ref = np.asarray((12, 12, 6, 6.5, 7, 12, 6.5, 12))
         res = hg.tree_monotonic_regression(tree, altitudes, "least_square")
-        print(res)
         self.assertTrue(np.allclose(ref, res))
 
         weights = np.asarray((1, 1, 1, 1, 1, 1, 2, 1))
