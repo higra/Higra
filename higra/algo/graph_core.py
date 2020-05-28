@@ -102,7 +102,34 @@ def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
     :param non_edge_value: Value used to represent non existing edges in the adjacency matrix
     :return: a pair (UndirectedGraph, ndarray) representing the graph and its edge_weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
-    return hg.cpp._adjacency_matrix_2_undirected_graph(adjacency_matrix, float(non_edge_value))
+    if adjacency_matrix.ndim != 2 or adjacency_matrix.shape[0] != adjacency_matrix.shape[1]:
+        raise ValueError("'adjacency_matrix' must be a 2d square matrix.")
+
+    try:
+        import scipy.sparse as sp
+        scipy_available = True
+    except:
+        scipy_available = False
+
+    if scipy_available and sp.issparse(adjacency_matrix):
+        if non_edge_value != 0:
+            raise ValueError("'non_edge_value' must be equal to 0 is 'adjacency_matrix' is a Scipy sparse matrix.")
+        adjacency_matrix = sp.triu(adjacency_matrix)
+        sources, targets, edge_weights = sp.find(adjacency_matrix)
+    else:
+        adjacency_matrix = adjacency_matrix.copy()
+        adjacency_matrix[np.tri(*adjacency_matrix.shape, k=-1, dtype=np.bool)] = non_edge_value
+        if non_edge_value != 0:
+            mask = adjacency_matrix != non_edge_value
+        else:
+            mask = adjacency_matrix
+        sources, targets = np.nonzero(mask)
+        edge_weights = adjacency_matrix[sources, targets]
+
+    graph = hg.UndirectedGraph(adjacency_matrix.shape[0])
+    graph.add_edges(sources, targets)
+
+    return graph, edge_weights
 
 
 def ultrametric_open(graph, edge_weights):

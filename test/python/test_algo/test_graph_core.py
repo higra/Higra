@@ -107,7 +107,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         for (e1, e2) in zip(graph.edges(), ref_graph.edges()):
             self.assertTrue(e1 == e2)
 
-    def test_adjacency_matrix_2_undirected_graph_overload_resolution(self):
+    def test_adjacency_matrix_2_undirected_graph_non_edge_values(self):
         ref_adj_mat = np.asarray(((-1, 1, 2, 3, 4),
                                   (1, -1, 5, -1, -1),
                                   (2, 5, -1, 6, 7),
@@ -132,6 +132,34 @@ class TestAlgorithmGraphCore(unittest.TestCase):
 
         for (e1, e2) in zip(graph.edges(), ref_graph.edges()):
             self.assertTrue(e1 == e2)
+
+    def test_adjacency_matrix_2_undirected_graph_sparse(self):
+        import scipy.sparse as sp
+        ref_adj_mat = np.asarray(((0, 1, 2, 3, 4),
+                                  (1, 0, 5, 0, 0),
+                                  (2, 5, 0, 6, 7),
+                                  (3, 0, 6, 0, 0),
+                                  (4, 0, 7, 0, 0)))
+        ref_adj_mat = sp.csr_matrix(ref_adj_mat)
+        graph, edge_weights = hg.adjacency_matrix_2_undirected_graph(ref_adj_mat)
+
+        ref_graph = {}
+        ref_graph[(0, 1)] = 1
+        ref_graph[(0, 2)] = 2
+        ref_graph[(0, 3)] = 3
+        ref_graph[(0, 4)] = 4
+        ref_graph[(1, 2)] = 5
+        ref_graph[(2, 3)] = 6
+        ref_graph[(2, 4)] = 7
+
+        res_graph = {}
+        for s, t, w in zip(*graph.edge_list(), edge_weights):
+            res_graph[(s, t)] = w
+
+        self.assertTrue(res_graph == ref_graph)
+
+        with self.assertRaises(ValueError):
+            hg.adjacency_matrix_2_undirected_graph(ref_adj_mat, non_edge_value=-1)
 
     def ultrametric_open(self):
         graph = hg.get_4_adjacency_graph((3, 3))

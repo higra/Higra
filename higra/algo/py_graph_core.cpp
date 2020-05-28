@@ -65,21 +65,6 @@ struct def_minimum_spanning_tree {
     }
 };
 
-struct def_adjacency_matrix_2_ugraph {
-    template<typename value_t>
-    static
-    void def(pybind11::module &m, const char *doc) {
-        m.def("_adjacency_matrix_2_undirected_graph", [](const pyarray<value_t> &adjacency_matrix,
-                                                         const double non_edge_value) {
-                  auto res = hg::adjacency_matrix_2_undirected_graph(adjacency_matrix, static_cast<value_t>(non_edge_value));
-                  return pybind11::make_tuple(std::move(res.first), std::move(res.second));
-              },
-              doc,
-              py::arg("adjacency_matrix"),
-              py::arg("non_edge_value") = 0);
-    }
-};
-
 void py_init_algo_graph_core(pybind11::module &m) {
     xt::import_numpy();
 
@@ -98,12 +83,6 @@ void py_init_algo_graph_core(pybind11::module &m) {
                      "of the graph vertices. "
                      "The result is a weighting of the graph edges where edges with "
                      "a non zero weight are part of the cut."
-            );
-
-    add_type_overloads<def_adjacency_matrix_2_ugraph,
-            HG_TEMPLATE_NUMERIC_TYPES>
-            (m,
-             ""
             );
 
     add_type_overloads<def_minimum_spanning_tree<hg::ugraph>,
