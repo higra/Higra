@@ -169,29 +169,38 @@ def minimum_spanning_tree(graph, edge_weights):
     return mst
 
 
-def make_graph_from_points(X, graph_type="knn+mst", **kwargs):
+def make_graph_from_points(X, graph_type="knn+mst", symmetrization="max", **kwargs):
     """
     Creates a graph from vertex coordinates.
 
-    Possible graph creation methods are:
+    The argument :attr:`graph_type` selects the graph creation methods. Possible values are:
 
-        - 'complete': creates the complete graph
-        - 'knn': creates a :math:`k`-nearest neighbor graph, the parameter :math:`k` can be controlled
+        - ``"complete"``: creates the complete graph
+        - ``"knn"``: creates a :math:`k`-nearest neighbor graph, the parameter :math:`k` can be controlled
           with the extra parameter 'n_neighbors' (default value 5).
           The resulting graph may have several connected components.
-        - 'knn+mst' (default): creates a :math:`k`-nearest neighbor graph and add the edges of an mst of the complete graph.
+        - ``"knn+mst"`` (default): creates a :math:`k`-nearest neighbor graph and add the edges of an mst of the complete graph.
           This method ensures that the resulting graph is connected.
           The parameter :math:`k` can be controlled with the extra parameter 'n_neighbors' (default value 5).
-        - 'delaunay': creates a graph corresponding to the Delaunay triangulation of the points
+        - ``"delaunay"``: creates a graph corresponding to the Delaunay triangulation of the points
           (only works in low dimensions).
 
     The weight of an edge :math:`\{x,y\}` is equal to the Euclidean distance between
     :math:`x` and :math:`y`: :math:`w(\{x,y\})=\|X[x, :] - X[y, :]\|`.
 
+    :math:`K`-nearest neighbor based graphs are naturally directed, the argument :attr:`symmetrization` enables to chose a
+    symmetrization strategy. Possible values are:
+
+        - ``"min"``: an edge :math:`\{x,y\}` is created if there both arcs :math:`(x,y)` and :math:`(y,x)` exist.
+          Its weight is given by the minimum weight of the two arcs.
+        - ``"max"``: an edge :math:`\{x,y\}` is created if there is any of the two arcs :math:`(x,y)` and :math:`(y,x)` exists.
+          Its weight is given by the weight of the existing arcs (if both arcs exists they necessarily have the same weight).
+
     This method is not suited for large set of points.
 
     :param X: A 2d array of vertex coordinates
-    :param graph_type: 'complete', 'knn', 'knn+mst' (default), or 'delaunay'
+    :param graph_type: ``"complete"``, ``"knn"``, ``"knn+mst"`` (default), or ``"delaunay"``
+    :param symmetrization: `"min"`` or ``"max"``
     :param kwargs: extra args depends of chosen graph type
     :return: a graph and its edge weights
     """
@@ -206,19 +215,29 @@ def make_graph_from_points(X, graph_type="knn+mst", **kwargs):
     n_neighbors = kwargs.get('n_neighbors', 5)
     mode = kwargs.get('mode', 'distance')
 
+    def symmetrization_fun(A):
+        if symmetrization == "min":
+            return A.minimum(A.T)
+        elif symmetrization == "max":
+            return A.maximum(A.T)
+        else:
+            raise ValueError("Unknown symmetrization: " + str(symmetrization))
+
     if graph_type == "complete":
         d = pdist(X)
         A = squareform(d)
         g, edge_weights = hg.adjacency_matrix_2_undirected_graph(A)
     elif graph_type == "knn":
-        A = kneighbors_graph(X, n_neighbors, mode).toarray()
+        A = kneighbors_graph(X, n_neighbors=n_neighbors, mode=mode)
+        A = symmetrization_fun(A)
         g, edge_weights = hg.adjacency_matrix_2_undirected_graph(A)
     elif graph_type == "knn+mst":
-        A = kneighbors_graph(X, n_neighbors, mode).toarray()
+        A = kneighbors_graph(X, n_neighbors=n_neighbors, mode=mode)
+        A = symmetrization_fun(A)
         D = squareform(pdist(X))
-        MST = minimum_spanning_tree(D).toarray()
+        MST = minimum_spanning_tree(D)
         MST = MST + MST.T
-        A = np.maximum(A, MST)
+        A = A.maximum(MST)
         g, edge_weights = hg.adjacency_matrix_2_undirected_graph(A)
     elif graph_type == "delaunay":
         g = hg.UndirectedGraph(X.shape[0])
@@ -232,7 +251,7 @@ def make_graph_from_points(X, graph_type="knn+mst", **kwargs):
         indices, indptr = tmp.vertex_neighbor_vertices
 
         for k in range(nbp):
-            neighbours = indptr[indices[k]:indices[k + 1]]
+            neighbours = indptr[indices[k]:indices[k+1]]
             for n in neighbours:
                 if n > k:
                     d = euclidean(X[k, :], X[n, :])

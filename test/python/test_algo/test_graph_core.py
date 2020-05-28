@@ -15,6 +15,18 @@ import numpy as np
 
 class TestAlgorithmGraphCore(unittest.TestCase):
 
+    @staticmethod
+    def graph_equal(g1, w1, g2, w2):
+        dg1 = {}
+        for s, t, w in zip(*g1.edge_list(), w1):
+            dg1[(s, t)] = w
+
+        dg2 = {}
+        for s, t, w in zip(*g2.edge_list(), w2):
+            dg2[(s, t)] = w
+
+        return dg1 == dg2
+
     def test_graph_cut_2_labelisation(self):
         graph = hg.get_4_adjacency_graph((3, 3))
         edge_weights = np.asarray((1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0), dtype=np.int32)
@@ -211,6 +223,68 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         self.assertTrue(np.all(targets == ref_targets))
 
         self.assertTrue(np.all(mst_edge_map == (0, 1, 3, 4)))
+
+    def test_make_graph_from_points_complete(self):
+        X = np.asarray(((0, 0), (0, 1), (1, 0)))
+        sqrt2 = np.sqrt(2)
+        g, ew = hg.make_graph_from_points(X, graph_type="complete")
+
+        g_ref = hg.UndirectedGraph(3)
+        g_ref.add_edges((0, 0, 1), (1, 2, 2))
+        w_ref = (1, 1, sqrt2)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
+
+    def test_make_graph_from_points_knn(self):
+        X = np.asarray(((0, 0), (0, 1), (1, 0), (0, 3), (0, 4), (1, 3), (2, 3)))
+        sqrt2 = np.sqrt(2)
+        g, ew = hg.make_graph_from_points(X, graph_type="knn", symmetrization="max", n_neighbors=2)
+
+        g_ref = hg.UndirectedGraph(7)
+        g_ref.add_edges((0, 0, 1, 3, 3, 4, 5, 3), (1, 2, 2, 5, 4, 5, 6, 6))
+        w_ref = (1, 1, sqrt2, 1, 1, sqrt2, 1, 2)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
+
+        g, ew = hg.make_graph_from_points(X, graph_type="knn", symmetrization="min", n_neighbors=2)
+
+        g_ref = hg.UndirectedGraph(7)
+        g_ref.add_edges((0, 0, 1, 3, 3, 5), (1, 2, 2, 5, 4, 6))
+        w_ref = (1, 1, sqrt2, 1, 1, 1)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
+
+    def test_make_graph_from_points_knn_and_mst(self):
+        X = np.asarray(((0, 0), (0, 1), (1, 0), (0, 3), (0, 4), (1, 3), (2, 3)))
+        sqrt2 = np.sqrt(2)
+        g, ew = hg.make_graph_from_points(X, graph_type="knn+mst", symmetrization="max", n_neighbors=2)
+
+        g_ref = hg.UndirectedGraph(7)
+        g_ref.add_edges((0, 0, 1, 3, 3, 4, 5, 3, 1), (1, 2, 2, 5, 4, 5, 6, 6, 3))
+        w_ref = (1, 1, sqrt2, 1, 1, sqrt2, 1, 2, 2)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
+
+        g, ew = hg.make_graph_from_points(X, graph_type="knn+mst", symmetrization="min", n_neighbors=2)
+
+        g_ref = hg.UndirectedGraph(7)
+        g_ref.add_edges((0, 0, 1, 3, 3, 5, 1), (1, 2, 2, 5, 4, 6, 3))
+        w_ref = (1, 1, sqrt2, 1, 1, 1, 2)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
+
+    def test_make_graph_from_points_delaunay(self):
+        X = np.asarray(((0, 0), (0, 1), (1, 0), (0, 3), (0, 4), (1, 3), (2, 3)))
+        sqrt2 = np.sqrt(2)
+        g, ew = hg.make_graph_from_points(X, graph_type="delaunay", symmetrization="max", n_neighbors=2)
+        print(g.edge_list())
+        print(ew)
+
+        g_ref = hg.UndirectedGraph(7)
+        g_ref.add_edges((0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5), (2, 1, 2, 5, 3, 5, 6, 5, 4, 5, 6, 6))
+        w_ref = (1, 1, sqrt2, np.sqrt(5), 2, 3, np.sqrt(10), 1, 1, sqrt2, np.sqrt(5), 1)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
 
 
 if __name__ == '__main__':
