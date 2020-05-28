@@ -35,6 +35,8 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         self.assertTrue(hg.is_in_bijection(edge_weights, ref_edge_weights))
 
     def test_undirected_graph_2_adjacency_matrix(self):
+        import scipy.sparse as sp
+
         graph = hg.UndirectedGraph(5)
         graph.add_edge(0, 1)
         graph.add_edge(0, 2)
@@ -45,7 +47,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph.add_edge(2, 4)
 
         edge_weights = np.asarray((1, 2, 3, 4, 5, 6, 7))
-        adj_mat = hg.undirected_graph_2_adjacency_matrix(graph, edge_weights, -1)
+        adj_mat = hg.undirected_graph_2_adjacency_matrix(graph, edge_weights, non_edge_value=-1, sparse=False)
 
         ref_adj_mat = np.asarray(((-1, 1, 2, 3, 4),
                                   (1, -1, 5, -1, -1),
@@ -53,6 +55,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
                                   (3, -1, 6, -1, -1),
                                   (4, -1, 7, -1, -1)))
         self.assertTrue(np.all(ref_adj_mat == adj_mat))
+        self.assertTrue(isinstance(adj_mat, np.ndarray))
 
         t = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
         edge_weights = np.asarray((1, 2, 3, 4, 5, 6, 7))
@@ -67,6 +70,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
                                   (0, 0, 3, 4, 5, 0, 0, 7),
                                   (0, 0, 0, 0, 0, 6, 7, 0)))
         self.assertTrue(np.all(ref_adj_mat == adj_mat))
+        self.assertTrue(sp.issparse(adj_mat))
 
         t = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
         adj_mat = hg.undirected_graph_2_adjacency_matrix(t)
@@ -80,18 +84,10 @@ class TestAlgorithmGraphCore(unittest.TestCase):
                                   (0, 0, 1, 1, 1, 0, 0, 1),
                                   (0, 0, 0, 0, 0, 1, 1, 0)))
         self.assertTrue(np.all(ref_adj_mat == adj_mat))
+        self.assertTrue(sp.issparse(adj_mat))
 
-    def test_undirected_graph_2_adjacency_matrix_overload_resolution(self):
-        graph = hg.UndirectedGraph(2)
-        graph.add_edge(0, 1)
-
-        edge_weights = np.asarray((0.1,), dtype=np.float64)
-        adj_mat = hg.undirected_graph_2_adjacency_matrix(graph, edge_weights)
-
-        ref_adj_mat = np.asarray(((0, 0.1),
-                                  (0.1, 0)))
-        self.assertTrue(np.all(ref_adj_mat == adj_mat))
-        self.assertTrue(adj_mat.dtype == np.float64)
+        with self.assertRaises(Exception):
+            hg.undirected_graph_2_adjacency_matrix(t, non_edge_value=-1, sparse=True)
 
     def test_adjacency_matrix_2_undirected_graph(self):
         ref_adj_mat = np.asarray(((0, 0.1),

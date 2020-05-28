@@ -50,7 +50,7 @@ def graph_cut_2_labelisation(graph, edge_weights):
     return vertex_labels
 
 
-def undirected_graph_2_adjacency_matrix(graph, edge_weights=None, non_edge_value=0):
+def undirected_graph_2_adjacency_matrix(graph, edge_weights=None, non_edge_value=0, sparse=True):
     """
     Adjacency matrix corresponding to an undirected edge-weighted graph (the result is thus symmetric).
 
@@ -59,12 +59,37 @@ def undirected_graph_2_adjacency_matrix(graph, edge_weights=None, non_edge_value
 
     :param graph: Input graph
     :param edge_weights: Graph edge weights (default to ``np.ones(graph.num_edges())`` if ``None``)
-    :param non_edge_value: Value used to represent edges that are not in the input graph
+    :param non_edge_value: Value used to represent edges that are not in the input graph (must be 0 if :attr:`sparse`
+           is ``True``)
+    :param sparse: if ``True`` the result will be a sparse matrix in the csr format (requires Scipy to be installed)
     :return: A 2d symmetric square matrix
     """
     if edge_weights is None:
-        edge_weights = np.ones((graph.num_edges(),), np.float32)
-    return hg.cpp._undirected_graph_2_adjacency_matrix(graph, edge_weights, float(non_edge_value))
+        edge_weights = np.ones((graph.num_edges(),), np.float64)
+
+    num_v = graph.num_vertices()
+    sources, targets = graph.edge_list()
+
+    if sparse:
+        try:
+            from scipy.sparse import csr_matrix
+        except:
+            raise RuntimeError("scipy required to create a sparse matrix.")
+
+        if non_edge_value != 0:
+            raise ValueError("'non_edge_value' must be equal to 0 is 'sparse' is True: Scipy sparse matrix dor not "
+                             "support custom default value.")
+
+        A = csr_matrix((edge_weights, (sources, targets)), shape=(num_v, num_v), dtype=edge_weights.dtype)
+        A += A.T
+
+    else:
+        A = np.empty((num_v, num_v), dtype=edge_weights.dtype)
+        A.fill(non_edge_value)
+        A[sources, targets] = edge_weights
+        A[targets, sources] = edge_weights
+
+    return A
 
 
 def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
@@ -180,7 +205,7 @@ def make_graph_from_points(X, graph_type="knn+mst", **kwargs):
         indices, indptr = tmp.vertex_neighbor_vertices
 
         for k in range(nbp):
-            neighbours = indptr[indices[k]:indices[k+1]]
+            neighbours = indptr[indices[k]:indices[k + 1]]
             for n in neighbours:
                 if n > k:
                     d = euclidean(X[k, :], X[n, :])
