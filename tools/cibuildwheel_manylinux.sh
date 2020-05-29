@@ -28,9 +28,6 @@ ls /tbb/lib/*
 ls /tbb/include/*
 cd ${cur_dir}
 
-
-
-
 pip install numpy==1.17.3 cmake==3.14.4
 
 

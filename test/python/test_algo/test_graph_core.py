@@ -9,8 +9,9 @@
 ############################################################################
 
 import unittest
-import higra as hg
+import scipy.sparse as sp
 import numpy as np
+import higra as hg
 
 
 class TestAlgorithmGraphCore(unittest.TestCase):
@@ -47,8 +48,6 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         self.assertTrue(hg.is_in_bijection(edge_weights, ref_edge_weights))
 
     def test_undirected_graph_2_adjacency_matrix(self):
-        import scipy.sparse as sp
-
         graph = hg.UndirectedGraph(5)
         graph.add_edge(0, 1)
         graph.add_edge(0, 2)
@@ -146,7 +145,6 @@ class TestAlgorithmGraphCore(unittest.TestCase):
             self.assertTrue(e1 == e2)
 
     def test_adjacency_matrix_2_undirected_graph_sparse(self):
-        import scipy.sparse as sp
         ref_adj_mat = np.asarray(((0, 1, 2, 3, 4),
                                   (1, 0, 5, 0, 0),
                                   (2, 5, 0, 6, 7),
@@ -277,8 +275,6 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         X = np.asarray(((0, 0), (0, 1), (1, 0), (0, 3), (0, 4), (1, 3), (2, 3)))
         sqrt2 = np.sqrt(2)
         g, ew = hg.make_graph_from_points(X, graph_type="delaunay", symmetrization="max", n_neighbors=2)
-        print(g.edge_list())
-        print(ew)
 
         g_ref = hg.UndirectedGraph(7)
         g_ref.add_edges((0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5), (2, 1, 2, 5, 3, 5, 6, 5, 4, 5, 6, 6))

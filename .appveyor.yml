@@ -12,7 +12,7 @@ image:
 
 environment:
   MINICONDA: C:\Miniconda36-x64
-  CIBW_TEST_COMMAND: "python -c \"import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
+  CIBW_TEST_COMMAND: "pip install scipy scikit-learn && python -c \"import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
   CIBW_BUILD_VERBOSITY: "1"
   CIBW_BEFORE_BUILD: "pip install cmake numpy==1.17.3"
   CIBW_SKIP: "*win32"
@@ -57,7 +57,7 @@ install:
   - conda info -a
 #  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - if %CIBUILDWHEEL% == 0 (
-    conda install cmake numpy==1.17.3 tbb-devel==2019.0 -c conda-forge &&
+    conda install cmake numpy==1.17.3 tbb-devel==2019.0 scipy scikit-learn -c conda-forge &&
       python setup.py bdist_wheel
       )  else (
     conda install tbb-devel==2019.0 &&
