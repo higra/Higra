@@ -19,14 +19,46 @@
 
 namespace xt
 {
-    template <class CT, class R> class xrepeat;
-    template <class S, class R> class xrepeat_stepper;
+    template <class CT, class R>
+    class xrepeat;
+    
+    template <class S, class R>
+    class xrepeat_stepper;
+
+    /*********************
+     * xrepeat extension *
+     *********************/
+
+    namespace extension
+    {
+        template <class Tag, class CT, class X>
+        struct xrepeat_base_impl;
+
+        template <class CT, class X>
+        struct xrepeat_base_impl<xtensor_expression_tag, CT, X>
+        {
+            using type = xtensor_empty_base;
+        };
+
+        template <class CT, class X>
+        struct xrepeat_base
+            : xrepeat_base_impl<xexpression_tag_t<CT>, CT, X>
+        {
+        };
+
+        template <class CT, class X>
+        using xrepeat_base_t = typename xrepeat_base<CT, X>::type;
+    }
+
+    /***********
+     * xrepeat *
+     ***********/
 
     template <class CT, class R>
     struct xcontainer_inner_types<xrepeat<CT, R>>
     {
         using xexpression_type = std::decay_t<CT>;
-        using reference = inner_reference_t<CT>;
+        using reference = typename xexpression_type::const_reference;
         using const_reference = typename xexpression_type::const_reference;
         using size_type = typename xexpression_type::size_type;
         using temporary_type = typename xexpression_type::temporary_type;
@@ -45,14 +77,118 @@ namespace xt
         using xexpression_type = std::decay_t<CT>;
         using repeats_type = std::decay_t<R>;
         using inner_shape_type = typename xexpression_type::inner_shape_type;
-        using stepper = xrepeat_stepper<typename xexpression_type::stepper, repeats_type>;
-        using const_stepper = xrepeat_stepper<typename xexpression_type::stepper, repeats_type>;
+        using const_stepper = xrepeat_stepper<typename xexpression_type::const_stepper, repeats_type>;
+        using stepper = const_stepper;
     };
+
+    /**
+     * @class xrepeat
+     * @brief Expression with repeated values along an axis.
+     *
+     * The xrepeat class implements the repetition of the elements of
+     * an \ref xexpression along a given axis. xrepeat is not meant
+     * to be used directly, but only with the \ref repeat helper
+     * functions.
+     *
+     * @sa repeat
+     */
+    template <class CT, class R>
+    class xrepeat : public xconst_iterable<xrepeat<CT, R>>,
+                    public xconst_accessible<xrepeat<CT, R>>,
+                    public xsharable_expression<xrepeat<CT, R>>,
+                    public extension::xrepeat_base_t<CT, R>
+    {
+    public:
+
+        using self_type = xrepeat<CT, R>;
+        using xexpression_type = std::decay_t<CT>;
+        using accessible_base = xconst_accessible<self_type>;
+        using extension_base = extension::xrepeat_base_t<CT, R>;
+        using expression_tag = typename extension_base::expression_tag;
+
+        using value_type = typename xexpression_type::value_type;
+        using shape_type = typename xexpression_type::shape_type;
+        using repeats_type = xtl::const_closure_type_t<R>;
+
+        using container_type = xcontainer_inner_types<xrepeat<CT, R>>;
+        using reference = typename container_type::reference;
+        using const_reference = typename container_type::const_reference;
+        using size_type = typename container_type::size_type;
+        using temporary_type = typename container_type::temporary_type;
+
+        static constexpr layout_type static_layout = xexpression_type::static_layout;
+        static constexpr bool contiguous_layout = false;
+
+        using bool_load_type = typename xexpression_type::bool_load_type;
+        using pointer = typename xexpression_type::pointer;
+        using const_pointer = typename xexpression_type::const_pointer;
+        using difference_type = typename xexpression_type::difference_type;
+
+        using iterable_type = xiterable<xrepeat<CT, R>>;
+        using stepper = typename iterable_type::stepper;
+        using const_stepper = typename iterable_type::const_stepper;
+
+        template<class CTA>
+        explicit xrepeat(CTA&& e, R&& repeats, size_type axis);
+
+        using accessible_base::size;
+        const shape_type& shape() const noexcept;
+        layout_type layout() const noexcept;
+        bool is_contiguous() const noexcept;
+        using accessible_base::shape;
+
+        template <class... Args>
+        const_reference operator()(Args... args) const;
+
+        template <class... Args>
+        const_reference unchecked(Args... args) const;
+
+        template <class It>
+        const_reference element(It first, It last) const;
+
+        const xexpression_type& expression() const noexcept;
+
+        template <class S>
+        bool broadcast_shape(S& shape, bool reuse_cache = false) const;
+
+        template <class S>
+        bool has_linear_assign(const S& strides) const noexcept;
+        
+        const_stepper stepper_begin() const;
+        const_stepper stepper_begin(const shape_type& s) const;
+
+        const_stepper stepper_end(layout_type l) const;
+        const_stepper stepper_end(const shape_type& s, layout_type l) const;
+
+    private:
+
+        CT m_e;
+        size_type m_repeating_axis;
+        repeats_type m_repeats;
+        shape_type m_shape;
+
+        const_reference access() const;
+
+        template <class Arg, class... Args>
+        const_reference access(Arg arg, Args... args) const;
+
+        template<std::size_t I, class Arg, class... Args>
+        const_reference access_impl(stepper&& s, Arg arg, Args... args) const;
+
+        template<std::size_t I>
+        const_reference access_impl(stepper&& s) const;
+
+    };
+
+    /*******************
+     * xrepeat_stepper *
+     *******************/
 
     template <class S, class R>
     class xrepeat_stepper
     {
     public:
+
         using repeats_type = R;
         using storage_type = typename S::storage_type;
         using subiterator_type = typename S::subiterator_type;
@@ -68,7 +204,7 @@ namespace xt
         template <class requested_type>
         using simd_return_type = xt_simd::simd_return_type<value_type, requested_type>;
 
-        xrepeat_stepper(S&& s, const shape_type& shape, const repeats_type& repeats, const size_type& axis);
+        xrepeat_stepper(S&& s, const shape_type& shape, const repeats_type& repeats, size_type axis);
 
         reference operator*() const;
 
@@ -89,6 +225,7 @@ namespace xt
         void store_simd(const V& vec);
 
     private:
+
         S m_substepper;
         const shape_type& m_shape;
 
@@ -96,111 +233,28 @@ namespace xt
         std::vector<size_type> m_positions;
         size_type m_subposition;
 
-        const size_type& m_repeating_axis;
+        size_type m_repeating_axis;
         const repeats_type& m_repeats;
 
         void make_step(size_type dim, size_type n);
         void make_step_back(size_type dim, size_type n);
 
-        std::vector<size_type> get_next_positions(const size_type dim, const size_type steps_to_go) const;
-        std::vector<size_type> get_next_positions_back(const size_type dim, const size_type steps_to_go) const;
+        std::vector<size_type> get_next_positions(size_type dim, size_type steps_to_go) const;
+        std::vector<size_type> get_next_positions_back(size_type dim, size_type steps_to_go) const;
     };
 
-    template <class CT, class R>
-    class xrepeat :
-        public xiterable<xrepeat<CT, R>>,
-        public xaccessible<xrepeat<CT, R>>
-    {
-    public:
-        using xexpression_type = std::decay_t<CT>;
-        using value_type = typename xexpression_type::value_type;
-        using shape_type = typename xexpression_type::shape_type;
-        using repeats_type = xtl::const_closure_type_t<R>;
+    /**************************
+     * xrepeat implementation *
+     **************************/
 
-        using container_type = xcontainer_inner_types<xrepeat<CT, R>>;
-        using reference = typename container_type::reference;
-        using const_reference = typename container_type::const_reference;
-        using size_type = typename container_type::size_type;
-        using temporary_type = typename container_type::temporary_type;
-
-        static constexpr layout_type static_layout = xexpression_type::static_layout;
-        using bool_load_type = typename xexpression_type::bool_load_type;
-        using pointer = typename xexpression_type::pointer;
-        using const_pointer = typename xexpression_type::const_pointer;
-        using difference_type = typename xexpression_type::difference_type;
-
-        using iterable_type = xiterable<xrepeat<CT, R>>;
-        using stepper = typename iterable_type::stepper;
-        using const_stepper = typename iterable_type::stepper;
-
-        template<class CTA>
-        explicit xrepeat(CTA&& e, R&& repeats, size_type axis);
-
-        template <class... Args>
-        reference operator()(Args... args);
-
-        template <class... Args>
-        const_reference operator()(Args... args) const;
-
-        const shape_type& shape() const noexcept;
-
-        template <class It>
-        reference element(It first, It last);
-
-        template <class It>
-        const_reference element(It first, It last) const;
-
-        stepper stepper_begin() const;
-
-        stepper stepper_begin(const shape_type& s) const;
-
-        stepper stepper_end(const layout_type l) const;
-
-        stepper stepper_end(const shape_type& s, const layout_type l) const;
-
-    private:
-        CT m_e;
-        const size_type m_repeating_axis;
-        repeats_type m_repeats;
-        shape_type m_shape;
-
-        reference access();
-
-        template <class Arg, class... Args>
-        reference access(Arg arg, Args... args);
-
-        const_reference access() const;
-
-        template <class Arg, class... Args>
-        const_reference access(Arg arg, Args... args) const;
-
-        template<size_type I, class Arg, class... Args>
-        inline const_reference access_impl(stepper&& s, Arg arg, Args... args) const
-        {
-            s.step(I, static_cast<size_type>(arg));
-            return access_impl<I+1>(std::forward<stepper>(s), args...);
-        }
-
-        template<size_type I>
-        inline const_reference access_impl(stepper&& s) const
-        {
-            return *s;
-        }
-
-        template<size_type I, class Arg, class... Args>
-        inline reference access_impl(stepper&& s, Arg arg, Args... args)
-        {
-            s.step(I, static_cast<size_type>(arg));
-            return access_impl<I+1>(std::forward<stepper>(s), args...);
-        }
-
-        template<size_type I>
-        inline reference access_impl(stepper&& s)
-        {
-            return *s;
-        }
-    };
-
+    /**
+     * Constructs an xrepeat expression repeating the element of the specified
+     * \ref xexpression.
+     *
+     * @param e the input expression
+     * @param repeats The number of repetitions for each elements
+     * @param axis The axis along which to repeat the value
+     */
     template <class CT, class R>
     template <class CTA>
     xrepeat<CT, R>::xrepeat(CTA&& e, R&& repeats, size_type axis)
@@ -213,20 +267,13 @@ namespace xt
         m_shape[axis] = static_cast<value_type>(std::accumulate(m_repeats.begin(), m_repeats.end(), 0));
     }
 
-    template <class CT, class R>
-    template <class... Args>
-    inline auto xrepeat<CT, R>::operator()(Args... args) -> reference
-    {
-        return access(args...);
-    }
-
-    template <class CT, class R>
-    template <class... Args>
-    inline auto xrepeat<CT, R>::operator()(Args... args) const -> const_reference
-    {
-        return access(args...);
-    }
-
+    /**
+     * @name Size and shape
+     */
+    //@{
+    /**
+     * Returns the shape of the expression.
+     */
     template <class CT, class R>
     inline auto xrepeat<CT, R>::shape() const noexcept -> const shape_type&
     {
@@ -234,26 +281,62 @@ namespace xt
     }
 
     /**
-    * Returns a reference to the element at the specified position in the view.
-    * @param first iterator starting the sequence of indices
-    * @param last iterator ending the sequence of indices
-    * The number of indices in the sequence should be equal to or greater than the the number
-    * of dimensions of the view..
-    */
+     * Returns the layout_type of the expression.
+     */
     template <class CT, class R>
-    template <class It>
-    inline auto xrepeat<CT, R>::element(It first, It last) -> reference
+    inline auto xrepeat<CT, R>::layout() const noexcept -> layout_type
     {
-        auto stepper = stepper_begin();
-        auto dimension = 0;
-        auto iter = first;
-        while (iter != last)
-        {
-            stepper.step(dimension, *iter);
-            ++dimension;
-            ++first;
-        }
-        return access_impl<0>(stepper);
+        return m_e.layout();
+    }
+
+    template <class CT, class R>
+    inline bool xrepeat<CT, R>::is_contiguous() const noexcept
+    {
+        return false;
+    }
+    //@}
+
+    /**
+     * @name Data
+     */
+    //@{
+    /**
+     * Returns a constant reference to the element at the specified position in the expression.
+     * @param args a list of indices specifying the position in the function. Indices
+     * must be unsigned integers, the number of indices should be equal or greater than
+     * the number of dimensions of the expression.
+     */
+    template <class CT, class R>
+    template <class... Args>
+    inline auto xrepeat<CT, R>::operator()(Args... args) const -> const_reference
+    {
+        return access(args...);
+    }
+
+    /**
+     * Returns a constant reference to the element at the specified position in the expression.
+     * @param args a list of indices specifying the position in the expression. Indices
+     * must be unsigned integers, the number of indices must be equal to the number of
+     * dimensions of the expression, else the behavior is undefined.
+     *
+     * @warning This method is meant for performance, for expressions with a dynamic
+     * number of dimensions (i.e. not known at compile time). Since it may have
+     * undefined behavior (see parameters), operator() should be prefered whenever
+     * it is possible.
+     * @warning This method is NOT compatible with broadcasting, meaning the following
+     * code has undefined behavior:
+     * \code{.cpp}
+     * xt::xarray<double> a = {{0, 1}, {2, 3}};
+     * xt::xarray<double> b = {0, 1};
+     * auto fd = a + b;
+     * double res = fd.uncheked(0, 1);
+     * \endcode
+     */
+    template <class CT, class R>
+    template <class... Args>
+    inline auto xrepeat<CT, R>::unchecked(Args... args) const -> const_reference
+    {
+        return this->operator()(args...);
     }
 
     /**
@@ -279,23 +362,45 @@ namespace xt
         return access_impl<0>(std::forward<stepper>(s));
     }
 
+    /**
+     * Returns a constant reference to the underlying expression of the broadcast expression.
+     */
     template <class CT, class R>
-    inline auto xrepeat<CT, R>::access() -> reference
+    inline auto xrepeat<CT, R>::expression() const noexcept -> const xexpression_type&
     {
-        return access_impl<0>(stepper_begin(m_e.shape()));
+        return m_e;
+    }
+    //@}
+
+    /**
+     * @name Broadcasting
+     */
+    //@{
+    /**
+     * Broadcast the shape of the function to the specified parameter.
+     * @param shape the result shape
+     * @param reuse_cache parameter for internal optimization
+     * @return a boolean indicating whether the broadcasting is trivial
+     */
+    template <class CT, class R>
+    template <class S>
+    inline bool xrepeat<CT, R>::broadcast_shape(S& shape, bool reuse_cache) const
+    {
+        return xt::broadcast_shape(m_shape, shape);
     }
 
+    /**
+     * Checks whether the xbroadcast can be linearly assigned to an expression
+     * with the specified strides.
+     * @return a boolean indicating whether a linear assign is possible
+     */
     template <class CT, class R>
-    template <class Arg, class... Args>
-    inline auto xrepeat<CT, R>::access(Arg arg, Args... args) -> reference
+    template <class S>
+    inline bool xrepeat<CT, R>::has_linear_assign(const S&) const noexcept
     {
-        constexpr size_t number_of_arguments = 1 + sizeof...(Args);
-        if (number_of_arguments > this->dimension())
-        {
-            return access(args...);
-        }
-        return access_impl<0>(stepper_begin(m_e.shape()), arg, args...);
+        return false;
     }
+    //@}
 
     template <class CT, class R>
     inline auto xrepeat<CT, R>::access() const -> const_reference
@@ -316,33 +421,52 @@ namespace xt
     }
 
     template <class CT, class R>
-    inline auto xrepeat<CT, R>::stepper_begin() const -> stepper
+    inline auto xrepeat<CT, R>::stepper_begin() const -> const_stepper
     {
         return stepper_begin(m_e.shape());
     }
 
     template <class CT, class R>
-    inline auto xrepeat<CT, R>::stepper_begin(const shape_type& s) const -> stepper
+    inline auto xrepeat<CT, R>::stepper_begin(const shape_type& s) const -> const_stepper
     {
-        return stepper(m_e.stepper_begin(s), m_shape, m_repeats, m_repeating_axis);
+        return const_stepper(m_e.stepper_begin(s), m_shape, m_repeats, m_repeating_axis);
     }
 
     template <class CT, class R>
-    inline auto xrepeat<CT, R>::stepper_end(const layout_type l) const -> stepper
+    inline auto xrepeat<CT, R>::stepper_end(layout_type l) const -> const_stepper
     {
         return stepper_end(m_e.shape(), l);
     }
 
     template <class CT, class R>
-    inline auto xrepeat<CT, R>::stepper_end(const shape_type& s, const layout_type l) const -> stepper
+    inline auto xrepeat<CT, R>::stepper_end(const shape_type& s, layout_type l) const -> const_stepper
     {
-        auto st = stepper(m_e.stepper_begin(s), m_shape, m_repeats, m_repeating_axis);
+        auto st = const_stepper(m_e.stepper_begin(s), m_shape, m_repeats, m_repeating_axis);
         st.to_end(l);
         return st;
     }
 
+    template <class CT, class R>
+    template<std::size_t I, class Arg, class... Args>
+    inline auto xrepeat<CT, R>::access_impl(stepper&& s, Arg arg, Args... args) const -> const_reference
+    {
+        s.step(I, static_cast<size_type>(arg));
+        return access_impl<I+1>(std::forward<stepper>(s), args...);
+    }
+
+    template <class CT, class R>
+    template<std::size_t I>
+    inline auto xrepeat<CT, R>::access_impl(stepper&& s) const -> const_reference
+    {
+        return *s;
+    }
+
+    /**********************************
+     * xrepeat_stepper implementation *
+     **********************************/
+
     template<class S, class R>
-    xrepeat_stepper<S, R>::xrepeat_stepper(S&& s, const shape_type& shape, const repeats_type& repeats, const size_type& axis)
+    xrepeat_stepper<S, R>::xrepeat_stepper(S&& s, const shape_type& shape, const repeats_type& repeats, size_type axis)
         : m_substepper(std::forward<S>(s))
         , m_shape(shape)
         , m_repeating_steps(0)
@@ -517,7 +641,7 @@ namespace xt
     }
 
     template<class S, class R>
-    inline auto xrepeat_stepper<S, R>::get_next_positions(const size_type dim, const size_type steps_to_go) const -> std::vector<size_type>
+    inline auto xrepeat_stepper<S, R>::get_next_positions(size_type dim, size_type steps_to_go) const -> std::vector<size_type>
     {
         size_type next_position_for_dim = m_positions[dim] + steps_to_go;
         if (dim > 0)
@@ -541,7 +665,7 @@ namespace xt
     }
 
     template<class S, class R>
-    inline auto xrepeat_stepper<S, R>::get_next_positions_back(const size_type dim, const size_type steps_to_go) const -> std::vector<size_type>
+    inline auto xrepeat_stepper<S, R>::get_next_positions_back(size_type dim, size_type steps_to_go) const -> std::vector<size_type>
     {
         auto next_position_for_dim = static_cast<std::ptrdiff_t>(m_positions[dim] - steps_to_go);
         if (dim > 0)

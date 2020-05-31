@@ -830,7 +830,7 @@ namespace xt
      * @param f the reducing function to apply.
      * @param e the \ref xexpression to reduce.
      * @param axes the list of axes.
-     * @param evaluation_strategy evaluation strategy to use (lazy (default), or immediate)
+     * @param options evaluation strategy to use (lazy (default), or immediate)
      *
      * The returned expression either hold a const reference to \p e or a copy
      * depending on whether \p e is an lvalue or an rvalue.
@@ -1315,20 +1315,23 @@ namespace xt
     {
         XTENSOR_TRY(check_element_index(shape(), first, last));
         auto stepper = const_stepper(*this, 0);
-        size_type dim = 0;
-        // drop left most elements
-        auto size = std::ptrdiff_t(this->dimension()) - std::distance(first, last);
-        auto begin = first - size;
-        while (begin != last)
+        if (first != last)
         {
-            if (begin < first)
+            size_type dim = 0;
+            // drop left most elements
+            auto size = std::ptrdiff_t(this->dimension()) - std::distance(first, last);
+            auto begin = first - size;
+            while (begin != last)
             {
-                stepper.step(dim++, std::size_t(0));
-                begin++;
-            }
-            else
-            {
-                stepper.step(dim++, std::size_t(*begin++));
+                if (begin < first)
+                {
+                    stepper.step(dim++, std::size_t(0));
+                    begin++;
+                }
+                else
+                {
+                    stepper.step(dim++, std::size_t(*begin++));
+                }
             }
         }
         return *stepper;
