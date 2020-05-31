@@ -10,21 +10,21 @@ matrix:
     if: tag IS present
     services:
       - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*" CIBW_SKIP=*-manylinux1_i686
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*" CIBW_SKIP=*-manylinux_i686
   - os: linux
     if: tag IS present
     services:
       - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*" CIBW_SKIP=*-manylinux1_i686
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*" CIBW_SKIP=*-manylinux_i686
   - os: linux
     if: tag IS present
     services:
       - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*" CIBW_SKIP=*-manylinux1_i686
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*" CIBW_SKIP=*-manylinux_i686
   - os: linux
     services:
     - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp38-*" CIBW_SKIP=*-manylinux1_i686
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp38-*" CIBW_SKIP=*-manylinux_i686
   - os: osx
     if: tag IS present
     env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*"
