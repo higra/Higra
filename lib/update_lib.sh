@@ -11,12 +11,12 @@
 
 # To update various libs: bump their version number below and run the script
 
-xtl_target_version="0.6.11"
-xtensor_target_version="0.21.2"
-xsimd_target_version="7.4.5"
+xtl_target_version="0.6.13"
+xtensor_target_version="0.21.5"
+xsimd_target_version="7.4.7"
 xtensor_python_target_version="0.24.1"
-pybind11_target_version="2.4.3"
-catch_target_version="2.11.1"
+pybind11_target_version="2.5.0"
+catch_target_version="2.12.2"
 
 #exit on any failure !
 set -e
@@ -107,9 +107,9 @@ cd ../..
 
 
 printf "\n\nInstalling xtensor..."
-git clone https://github.com/xtensor-stack/xtensor.git
-cd xtensor
-#cd xtensor-${xtensor_target_version}
+#git clone https://github.com/xtensor-stack/xtensor.git
+#cd xtensor
+cd xtensor-${xtensor_target_version}
 cp LICENSE ../../license/LICENSE_xtensor
 rm -rf build
 mkdir build

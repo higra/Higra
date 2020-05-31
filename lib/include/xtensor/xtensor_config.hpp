@@ -12,7 +12,7 @@
 
 #define XTENSOR_VERSION_MAJOR 0
 #define XTENSOR_VERSION_MINOR 21
-#define XTENSOR_VERSION_PATCH 3
+#define XTENSOR_VERSION_PATCH 5
 
 // DETECT 3.6 <= clang < 3.8 for compiler bug workaround.
 #ifdef __clang__
@@ -39,8 +39,6 @@
 #else
 #define XTENSOR_THROW(exception, msg) throw exception(msg)
 #endif
-
-
 
 // Workaround for some missing constexpr functionality in MSVC 2015 and MSVC 2017 x86
 #if defined(_MSC_VER)

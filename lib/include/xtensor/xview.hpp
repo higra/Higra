@@ -158,7 +158,8 @@ namespace xt
         // If we have no discontiguous slices, we can calculate strides for this view.
         template <class E, class... S>
         struct is_strided_view
-            : std::integral_constant<bool, xtl::conjunction<has_data_interface<E>, is_strided_slice_impl<S>...>::value>
+            : std::integral_constant<bool, xtl::conjunction<has_data_interface<E>,
+                                                            is_strided_slice_impl<std::decay_t<S>>...>::value>
         {
         };
 
@@ -1658,7 +1659,8 @@ namespace xt
      * should not directly construct the slices but call helper functions
      * instead.
      * @param e the xexpression to adapt
-     * @param slices the slices list describing the view
+     * @param slices the slices list describing the view. \c view accepts negative
+     * indices, in that case indexing is done in reverse order.
      * @sa range, all, newaxis
      */
     template <class E, class... S>
@@ -1677,8 +1679,7 @@ namespace xt
             {
                 const auto shape = e.shape();
                 check_dimension(shape);
-                const auto non_negative_index = index < 0 ? index + static_cast<std::ptrdiff_t>(shape[0]) : index;
-                return view(e, non_negative_index, xt::all());
+                return view(e, index, xt::all());
             }
 
         private:
@@ -1706,8 +1707,7 @@ namespace xt
             {
                 const auto shape = e.shape();
                 check_dimension(shape);
-                const auto non_negative_index = index < 0 ? index + static_cast<std::ptrdiff_t>(shape[1]) : index;
-                return view(e, xt::all(), non_negative_index);
+                return view(e, xt::all(), index);
             }
 
         private:

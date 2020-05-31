@@ -50,7 +50,7 @@ namespace xt
             bool is_trivial;
             bool is_initialized;
 
-            xfunction_cache_impl() : shape(xtl::make_sequence<S>(0, std::size_t(0))), is_initialized(false) {}
+            xfunction_cache_impl() : shape(xtl::make_sequence<S>(0, std::size_t(0))), is_trivial(false), is_initialized(false) {}
         };
 
         template<std::size_t... N, class is_shape_trivial>
@@ -72,6 +72,21 @@ namespace xt
             template <std::size_t... N, class is_shape_trivial>
             constexpr bool xfunction_cache_impl<fixed_shape<N...>, is_shape_trivial>::is_initialized;
         #endif
+
+        template <class... CT>
+        struct xfunction_bool_load_type
+        {
+            using type = xtl::promote_type_t<typename std::decay_t<CT>::bool_load_type...>;
+        };
+
+        template <class CT>
+        struct xfunction_bool_load_type<CT>
+        {
+            using type = typename std::decay_t<CT>::bool_load_type;
+        };
+
+        template <class... CT>
+        using xfunction_bool_load_type_t = typename xfunction_bool_load_type<CT...>::type;
     }
 
     /************************
@@ -179,7 +194,7 @@ namespace xt
         using difference_type = common_difference_type_t<std::decay_t<CT>...>;
 
         using simd_value_type = xt_simd::simd_type<value_type>;
-        using bool_load_type = xtl::promote_type_t<typename std::decay_t<CT>::bool_load_type...>;
+        using bool_load_type = detail::xfunction_bool_load_type_t<CT...>;// xtl::promote_type_t<typename std::decay_t<CT>::bool_load_type...>;
 
         template <class requested_type>
         using simd_return_type = xt_simd::simd_return_type<value_type, requested_type>;
@@ -224,6 +239,9 @@ namespace xt
 
         template <class Func, class... CTA, class U = std::enable_if_t<!std::is_base_of<std::decay_t<Func>, self_type>::value>>
         xfunction(Func&& f, CTA&&... e) noexcept;
+
+        template <class FA, class ... CTA>
+        xfunction(xfunction<FA, CTA...> xf) noexcept;
 
         ~xfunction() = default;
 
@@ -294,6 +312,8 @@ namespace xt
         simd_return_type<requested_type> load_simd(size_type i) const;
 
         const tuple_type& arguments() const noexcept;
+
+        const functor_type& functor() const noexcept;
 
     private:
 
@@ -472,6 +492,16 @@ namespace xt
     template <class Func, class... CTA, class U>
     inline xfunction<F, CT...>::xfunction(Func&& f, CTA&&... e) noexcept
         : m_e(std::forward<CTA>(e)...), m_f(std::forward<Func>(f)) {}
+
+    /**
+     * Constructs an xfunction applying the specified function given by another
+     * xfunction with its arguments.
+     * @param xf the xfunction to apply
+     */
+    template <class F, class... CT>
+    template <class FA, class... CTA>
+    inline xfunction<F, CT...>::xfunction(xfunction<FA, CTA...> xf) noexcept
+        : m_e(xf.arguments()), m_f(xf.functor()) {}
     //@}
 
     /**
@@ -725,6 +755,12 @@ namespace xt
     inline auto xfunction<F, CT...>::arguments() const noexcept -> const tuple_type&
     {
         return m_e;
+    }
+
+    template <class F, class... CT>
+    inline auto xfunction<F, CT...>::functor() const noexcept -> const functor_type&
+    {
+        return m_f;
     }
 
     template <class F, class... CT>
