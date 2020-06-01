@@ -67,6 +67,8 @@ def labelisation_seeded_watershed(graph, edge_weights, vertex_seeds, background_
 
     vertex_seeds = hg.linearize_vertex_weights(vertex_seeds, graph)
 
+    vertex_seeds = hg.cast_to_dtype(vertex_seeds, np.int64)
+
     labels = hg.cpp._labelisation_seeded_watershed(graph, edge_weights, vertex_seeds, background_label)
 
     labels = hg.delinearize_vertex_weights(labels, graph)
