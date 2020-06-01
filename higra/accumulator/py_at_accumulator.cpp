@@ -47,6 +47,7 @@ struct def_at_accumulate {
 
 
 void py_init_at_accumulator(pybind11::module &m) {
+    xt::import_numpy();
     add_type_overloads<def_at_accumulate, HG_TEMPLATE_NUMERIC_TYPES>
             (m, "");
 }

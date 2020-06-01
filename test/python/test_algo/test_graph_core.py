@@ -9,11 +9,24 @@
 ############################################################################
 
 import unittest
-import higra as hg
+import scipy.sparse as sp
 import numpy as np
+import higra as hg
 
 
 class TestAlgorithmGraphCore(unittest.TestCase):
+
+    @staticmethod
+    def graph_equal(g1, w1, g2, w2):
+        dg1 = {}
+        for s, t, w in zip(*g1.edge_list(), w1):
+            dg1[(s, t)] = w
+
+        dg2 = {}
+        for s, t, w in zip(*g2.edge_list(), w2):
+            dg2[(s, t)] = w
+
+        return dg1 == dg2
 
     def test_graph_cut_2_labelisation(self):
         graph = hg.get_4_adjacency_graph((3, 3))
@@ -45,7 +58,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph.add_edge(2, 4)
 
         edge_weights = np.asarray((1, 2, 3, 4, 5, 6, 7))
-        adj_mat = hg.undirected_graph_2_adjacency_matrix(graph, edge_weights, -1)
+        adj_mat = hg.undirected_graph_2_adjacency_matrix(graph, edge_weights, non_edge_value=-1, sparse=False)
 
         ref_adj_mat = np.asarray(((-1, 1, 2, 3, 4),
                                   (1, -1, 5, -1, -1),
@@ -53,6 +66,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
                                   (3, -1, 6, -1, -1),
                                   (4, -1, 7, -1, -1)))
         self.assertTrue(np.all(ref_adj_mat == adj_mat))
+        self.assertTrue(isinstance(adj_mat, np.ndarray))
 
         t = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
         edge_weights = np.asarray((1, 2, 3, 4, 5, 6, 7))
@@ -67,6 +81,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
                                   (0, 0, 3, 4, 5, 0, 0, 7),
                                   (0, 0, 0, 0, 0, 6, 7, 0)))
         self.assertTrue(np.all(ref_adj_mat == adj_mat))
+        self.assertTrue(sp.issparse(adj_mat))
 
         t = hg.Tree(np.asarray((5, 5, 6, 6, 6, 7, 7, 7)))
         adj_mat = hg.undirected_graph_2_adjacency_matrix(t)
@@ -80,18 +95,10 @@ class TestAlgorithmGraphCore(unittest.TestCase):
                                   (0, 0, 1, 1, 1, 0, 0, 1),
                                   (0, 0, 0, 0, 0, 1, 1, 0)))
         self.assertTrue(np.all(ref_adj_mat == adj_mat))
+        self.assertTrue(sp.issparse(adj_mat))
 
-    def test_undirected_graph_2_adjacency_matrix_overload_resolution(self):
-        graph = hg.UndirectedGraph(2)
-        graph.add_edge(0, 1)
-
-        edge_weights = np.asarray((0.1,), dtype=np.float64)
-        adj_mat = hg.undirected_graph_2_adjacency_matrix(graph, edge_weights)
-
-        ref_adj_mat = np.asarray(((0, 0.1),
-                                  (0.1, 0)))
-        self.assertTrue(np.all(ref_adj_mat == adj_mat))
-        self.assertTrue(adj_mat.dtype == np.float64)
+        with self.assertRaises(Exception):
+            hg.undirected_graph_2_adjacency_matrix(t, non_edge_value=-1, sparse=True)
 
     def test_adjacency_matrix_2_undirected_graph(self):
         ref_adj_mat = np.asarray(((0, 0.1),
@@ -111,7 +118,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         for (e1, e2) in zip(graph.edges(), ref_graph.edges()):
             self.assertTrue(e1 == e2)
 
-    def test_adjacency_matrix_2_undirected_graph_overload_resolution(self):
+    def test_adjacency_matrix_2_undirected_graph_non_edge_values(self):
         ref_adj_mat = np.asarray(((-1, 1, 2, 3, 4),
                                   (1, -1, 5, -1, -1),
                                   (2, 5, -1, 6, 7),
@@ -136,6 +143,33 @@ class TestAlgorithmGraphCore(unittest.TestCase):
 
         for (e1, e2) in zip(graph.edges(), ref_graph.edges()):
             self.assertTrue(e1 == e2)
+
+    def test_adjacency_matrix_2_undirected_graph_sparse(self):
+        ref_adj_mat = np.asarray(((0, 1, 2, 3, 4),
+                                  (1, 0, 5, 0, 0),
+                                  (2, 5, 0, 6, 7),
+                                  (3, 0, 6, 0, 0),
+                                  (4, 0, 7, 0, 0)))
+        ref_adj_mat = sp.csr_matrix(ref_adj_mat)
+        graph, edge_weights = hg.adjacency_matrix_2_undirected_graph(ref_adj_mat)
+
+        ref_graph = {}
+        ref_graph[(0, 1)] = 1
+        ref_graph[(0, 2)] = 2
+        ref_graph[(0, 3)] = 3
+        ref_graph[(0, 4)] = 4
+        ref_graph[(1, 2)] = 5
+        ref_graph[(2, 3)] = 6
+        ref_graph[(2, 4)] = 7
+
+        res_graph = {}
+        for s, t, w in zip(*graph.edge_list(), edge_weights):
+            res_graph[(s, t)] = w
+
+        self.assertTrue(res_graph == ref_graph)
+
+        with self.assertRaises(ValueError):
+            hg.adjacency_matrix_2_undirected_graph(ref_adj_mat, non_edge_value=-1)
 
     def ultrametric_open(self):
         graph = hg.get_4_adjacency_graph((3, 3))
@@ -187,6 +221,66 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         self.assertTrue(np.all(targets == ref_targets))
 
         self.assertTrue(np.all(mst_edge_map == (0, 1, 3, 4)))
+
+    def test_make_graph_from_points_complete(self):
+        X = np.asarray(((0, 0), (0, 1), (1, 0)))
+        sqrt2 = np.sqrt(2)
+        g, ew = hg.make_graph_from_points(X, graph_type="complete")
+
+        g_ref = hg.UndirectedGraph(3)
+        g_ref.add_edges((0, 0, 1), (1, 2, 2))
+        w_ref = (1, 1, sqrt2)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
+
+    def test_make_graph_from_points_knn(self):
+        X = np.asarray(((0, 0), (0, 1), (1, 0), (0, 3), (0, 4), (1, 3), (2, 3)))
+        sqrt2 = np.sqrt(2)
+        g, ew = hg.make_graph_from_points(X, graph_type="knn", symmetrization="max", n_neighbors=2)
+
+        g_ref = hg.UndirectedGraph(7)
+        g_ref.add_edges((0, 0, 1, 3, 3, 4, 5, 3), (1, 2, 2, 5, 4, 5, 6, 6))
+        w_ref = (1, 1, sqrt2, 1, 1, sqrt2, 1, 2)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
+
+        g, ew = hg.make_graph_from_points(X, graph_type="knn", symmetrization="min", n_neighbors=2)
+
+        g_ref = hg.UndirectedGraph(7)
+        g_ref.add_edges((0, 0, 1, 3, 3, 5), (1, 2, 2, 5, 4, 6))
+        w_ref = (1, 1, sqrt2, 1, 1, 1)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
+
+    def test_make_graph_from_points_knn_and_mst(self):
+        X = np.asarray(((0, 0), (0, 1), (1, 0), (0, 3), (0, 4), (1, 3), (2, 3)))
+        sqrt2 = np.sqrt(2)
+        g, ew = hg.make_graph_from_points(X, graph_type="knn+mst", symmetrization="max", n_neighbors=2)
+
+        g_ref = hg.UndirectedGraph(7)
+        g_ref.add_edges((0, 0, 1, 3, 3, 4, 5, 3, 1), (1, 2, 2, 5, 4, 5, 6, 6, 3))
+        w_ref = (1, 1, sqrt2, 1, 1, sqrt2, 1, 2, 2)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
+
+        g, ew = hg.make_graph_from_points(X, graph_type="knn+mst", symmetrization="min", n_neighbors=2)
+
+        g_ref = hg.UndirectedGraph(7)
+        g_ref.add_edges((0, 0, 1, 3, 3, 5, 1), (1, 2, 2, 5, 4, 6, 3))
+        w_ref = (1, 1, sqrt2, 1, 1, 1, 2)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
+
+    def test_make_graph_from_points_delaunay(self):
+        X = np.asarray(((0, 0), (0, 1), (1, 0), (0, 3), (0, 4), (1, 3), (2, 3)))
+        sqrt2 = np.sqrt(2)
+        g, ew = hg.make_graph_from_points(X, graph_type="delaunay", symmetrization="max", n_neighbors=2)
+
+        g_ref = hg.UndirectedGraph(7)
+        g_ref.add_edges((0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5), (2, 1, 2, 5, 3, 5, 6, 5, 4, 5, 6, 6))
+        w_ref = (1, 1, sqrt2, np.sqrt(5), 2, 3, np.sqrt(10), 1, 1, sqrt2, np.sqrt(5), 1)
+
+        self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
 
 
 if __name__ == '__main__':

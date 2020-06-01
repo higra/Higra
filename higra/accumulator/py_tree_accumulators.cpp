@@ -179,6 +179,7 @@ struct def_propagate_sequential_and_accumulate {
 };
 
 void py_init_tree_accumulator(pybind11::module &m) {
+    xt::import_numpy();
     add_type_overloads<def_accumulate_parallel<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
              "");

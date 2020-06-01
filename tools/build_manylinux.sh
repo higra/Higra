@@ -22,7 +22,7 @@ PATH_SAV=${PATH}
 for PYBIN in /opt/python/cp3[3456789]*/bin; do #[3456789]
 	cd ${PYBIN}
 	PIP=${PYBIN}/pip
-	"$PIP" install -U numpy cmake
+	"$PIP" install -U numpy cmake scipy scikit-learn
 	export PATH=${PYBIN}:${PATH_SAV}
 	echo ${PATH}
 	#ln -s /usr/bin/cmake ${PYBIN}/cmake

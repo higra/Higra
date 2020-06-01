@@ -69,6 +69,7 @@ struct def_accumulate_graph_vertices {
 
 
 void py_init_graph_accumulator(pybind11::module &m) {
+    xt::import_numpy();
     add_type_overloads<def_accumulate_graph_edges<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
              "");

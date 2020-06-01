@@ -65,39 +65,6 @@ struct def_minimum_spanning_tree {
     }
 };
 
-template<typename graph_t>
-struct def_ugraph_2_adjacency_matrix {
-    template<typename value_t>
-    static
-    void def(pybind11::module &m, const char *doc) {
-        m.def("_undirected_graph_2_adjacency_matrix", [](const graph_t &graph,
-                                                         const pyarray<value_t> &edge_weights,
-                                                         const double non_edge_value) {
-                  return hg::undirected_graph_2_adjacency_matrix(graph, edge_weights, static_cast<value_t>(non_edge_value));
-              },
-              doc,
-              py::arg("graph"),
-              py::arg("edge_weights"),
-              py::arg("non_edge_value") = 0);
-    }
-};
-
-
-struct def_adjacency_matrix_2_ugraph {
-    template<typename value_t>
-    static
-    void def(pybind11::module &m, const char *doc) {
-        m.def("_adjacency_matrix_2_undirected_graph", [](const pyarray<value_t> &adjacency_matrix,
-                                                         const double non_edge_value) {
-                  auto res = hg::adjacency_matrix_2_undirected_graph(adjacency_matrix, static_cast<value_t>(non_edge_value));
-                  return pybind11::make_tuple(std::move(res.first), std::move(res.second));
-              },
-              doc,
-              py::arg("adjacency_matrix"),
-              py::arg("non_edge_value") = 0);
-    }
-};
-
 void py_init_algo_graph_core(pybind11::module &m) {
     xt::import_numpy();
 
@@ -116,24 +83,6 @@ void py_init_algo_graph_core(pybind11::module &m) {
                      "of the graph vertices. "
                      "The result is a weighting of the graph edges where edges with "
                      "a non zero weight are part of the cut."
-            );
-
-    add_type_overloads<def_ugraph_2_adjacency_matrix<hg::ugraph>,
-            HG_TEMPLATE_NUMERIC_TYPES>
-            (m,
-             ""
-            );
-
-    add_type_overloads<def_ugraph_2_adjacency_matrix<hg::tree>,
-            HG_TEMPLATE_NUMERIC_TYPES>
-            (m,
-             ""
-            );
-
-    add_type_overloads<def_adjacency_matrix_2_ugraph,
-            HG_TEMPLATE_NUMERIC_TYPES>
-            (m,
-             ""
             );
 
     add_type_overloads<def_minimum_spanning_tree<hg::ugraph>,

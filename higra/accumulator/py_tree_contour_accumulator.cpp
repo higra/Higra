@@ -48,6 +48,7 @@ struct def_accumulate_on_contours {
 };
 
 void py_init_tree_contour_accumulator(pybind11::module &m) {
+    xt::import_numpy();
     add_type_overloads<def_accumulate_on_contours<hg::ugraph, hg::tree>, HG_TEMPLATE_NUMERIC_TYPES>
             (m,
              "");

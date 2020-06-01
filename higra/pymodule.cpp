@@ -7,13 +7,13 @@
 *                                                                          *
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
-
+#define FORCE_IMPORT_ARRAY
 #include "pybind11/pybind11.h"
 
 #include "all.hpp"
 
 #include "xtl/xmeta_utils.hpp"
-#define FORCE_IMPORT_ARRAY
+
 
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"

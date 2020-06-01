@@ -50,7 +50,7 @@ def graph_cut_2_labelisation(graph, edge_weights):
     return vertex_labels
 
 
-def undirected_graph_2_adjacency_matrix(graph, edge_weights=None, non_edge_value=0):
+def undirected_graph_2_adjacency_matrix(graph, edge_weights=None, non_edge_value=0, sparse=True):
     """
     Adjacency matrix corresponding to an undirected edge-weighted graph (the result is thus symmetric).
 
@@ -59,12 +59,37 @@ def undirected_graph_2_adjacency_matrix(graph, edge_weights=None, non_edge_value
 
     :param graph: Input graph
     :param edge_weights: Graph edge weights (default to ``np.ones(graph.num_edges())`` if ``None``)
-    :param non_edge_value: Value used to represent edges that are not in the input graph
+    :param non_edge_value: Value used to represent edges that are not in the input graph (must be 0 if :attr:`sparse`
+           is ``True``)
+    :param sparse: if ``True`` the result will be a sparse matrix in the csr format (requires Scipy to be installed)
     :return: A 2d symmetric square matrix
     """
     if edge_weights is None:
-        edge_weights = np.ones((graph.num_edges(),), np.float32)
-    return hg.cpp._undirected_graph_2_adjacency_matrix(graph, edge_weights, float(non_edge_value))
+        edge_weights = np.ones((graph.num_edges(),), np.float64)
+
+    num_v = graph.num_vertices()
+    sources, targets = graph.edge_list()
+
+    if sparse:
+        try:
+            from scipy.sparse import csr_matrix
+        except:
+            raise RuntimeError("scipy required to create a sparse matrix.")
+
+        if non_edge_value != 0:
+            raise ValueError("'non_edge_value' must be equal to 0 is 'sparse' is True: Scipy sparse matrix dor not "
+                             "support custom default value.")
+
+        A = csr_matrix((edge_weights, (sources, targets)), shape=(num_v, num_v), dtype=edge_weights.dtype)
+        A += A.T
+
+    else:
+        A = np.empty((num_v, num_v), dtype=edge_weights.dtype)
+        A.fill(non_edge_value)
+        A[sources, targets] = edge_weights
+        A[targets, sources] = edge_weights
+
+    return A
 
 
 def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
@@ -77,7 +102,34 @@ def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
     :param non_edge_value: Value used to represent non existing edges in the adjacency matrix
     :return: a pair (UndirectedGraph, ndarray) representing the graph and its edge_weights (Concept :class:`~higra.CptEdgeWeightedGraph`)
     """
-    return hg.cpp._adjacency_matrix_2_undirected_graph(adjacency_matrix, float(non_edge_value))
+    if adjacency_matrix.ndim != 2 or adjacency_matrix.shape[0] != adjacency_matrix.shape[1]:
+        raise ValueError("'adjacency_matrix' must be a 2d square matrix.")
+
+    try:
+        import scipy.sparse as sp
+        scipy_available = True
+    except:
+        scipy_available = False
+
+    if scipy_available and sp.issparse(adjacency_matrix):
+        if non_edge_value != 0:
+            raise ValueError("'non_edge_value' must be equal to 0 is 'adjacency_matrix' is a Scipy sparse matrix.")
+        adjacency_matrix = sp.triu(adjacency_matrix)
+        sources, targets, edge_weights = sp.find(adjacency_matrix)
+    else:
+        adjacency_matrix = adjacency_matrix.copy()
+        adjacency_matrix[np.tri(*adjacency_matrix.shape, k=-1, dtype=np.bool)] = non_edge_value
+        if non_edge_value != 0:
+            mask = adjacency_matrix != non_edge_value
+        else:
+            mask = adjacency_matrix
+        sources, targets = np.nonzero(mask)
+        edge_weights = adjacency_matrix[sources, targets]
+
+    graph = hg.UndirectedGraph(adjacency_matrix.shape[0])
+    graph.add_edges(sources, targets)
+
+    return graph, edge_weights
 
 
 def ultrametric_open(graph, edge_weights):
@@ -117,29 +169,38 @@ def minimum_spanning_tree(graph, edge_weights):
     return mst
 
 
-def make_graph_from_points(X, graph_type="knn+mst", **kwargs):
+def make_graph_from_points(X, graph_type="knn+mst", symmetrization="max", **kwargs):
     """
     Creates a graph from vertex coordinates.
 
-    Possible graph creation methods are:
+    The argument :attr:`graph_type` selects the graph creation methods. Possible values are:
 
-        - 'complete': creates the complete graph
-        - 'knn': creates a :math:`k`-nearest neighbor graph, the parameter :math:`k` can be controlled
+        - ``"complete"``: creates the complete graph
+        - ``"knn"``: creates a :math:`k`-nearest neighbor graph, the parameter :math:`k` can be controlled
           with the extra parameter 'n_neighbors' (default value 5).
           The resulting graph may have several connected components.
-        - 'knn+mst' (default): creates a :math:`k`-nearest neighbor graph and add the edges of an mst of the complete graph.
+        - ``"knn+mst"`` (default): creates a :math:`k`-nearest neighbor graph and add the edges of an mst of the complete graph.
           This method ensures that the resulting graph is connected.
           The parameter :math:`k` can be controlled with the extra parameter 'n_neighbors' (default value 5).
-        - 'delaunay': creates a graph corresponding to the Delaunay triangulation of the points
+        - ``"delaunay"``: creates a graph corresponding to the Delaunay triangulation of the points
           (only works in low dimensions).
 
     The weight of an edge :math:`\{x,y\}` is equal to the Euclidean distance between
     :math:`x` and :math:`y`: :math:`w(\{x,y\})=\|X[x, :] - X[y, :]\|`.
 
+    :math:`K`-nearest neighbor based graphs are naturally directed, the argument :attr:`symmetrization` enables to chose a
+    symmetrization strategy. Possible values are:
+
+        - ``"min"``: an edge :math:`\{x,y\}` is created if there both arcs :math:`(x,y)` and :math:`(y,x)` exist.
+          Its weight is given by the minimum weight of the two arcs.
+        - ``"max"``: an edge :math:`\{x,y\}` is created if there is any of the two arcs :math:`(x,y)` and :math:`(y,x)` exists.
+          Its weight is given by the weight of the existing arcs (if both arcs exists they necessarily have the same weight).
+
     This method is not suited for large set of points.
 
     :param X: A 2d array of vertex coordinates
-    :param graph_type: 'complete', 'knn', 'knn+mst' (default), or 'delaunay'
+    :param graph_type: ``"complete"``, ``"knn"``, ``"knn+mst"`` (default), or ``"delaunay"``
+    :param symmetrization: `"min"`` or ``"max"``
     :param kwargs: extra args depends of chosen graph type
     :return: a graph and its edge weights
     """
@@ -154,19 +215,29 @@ def make_graph_from_points(X, graph_type="knn+mst", **kwargs):
     n_neighbors = kwargs.get('n_neighbors', 5)
     mode = kwargs.get('mode', 'distance')
 
+    def symmetrization_fun(A):
+        if symmetrization == "min":
+            return A.minimum(A.T)
+        elif symmetrization == "max":
+            return A.maximum(A.T)
+        else:
+            raise ValueError("Unknown symmetrization: " + str(symmetrization))
+
     if graph_type == "complete":
         d = pdist(X)
         A = squareform(d)
         g, edge_weights = hg.adjacency_matrix_2_undirected_graph(A)
     elif graph_type == "knn":
-        A = kneighbors_graph(X, n_neighbors, mode).toarray()
+        A = kneighbors_graph(X, n_neighbors=n_neighbors, mode=mode)
+        A = symmetrization_fun(A)
         g, edge_weights = hg.adjacency_matrix_2_undirected_graph(A)
     elif graph_type == "knn+mst":
-        A = kneighbors_graph(X, n_neighbors, mode).toarray()
+        A = kneighbors_graph(X, n_neighbors=n_neighbors, mode=mode)
+        A = symmetrization_fun(A)
         D = squareform(pdist(X))
-        MST = minimum_spanning_tree(D).toarray()
+        MST = minimum_spanning_tree(D)
         MST = MST + MST.T
-        A = np.maximum(A, MST)
+        A = A.maximum(MST)
         g, edge_weights = hg.adjacency_matrix_2_undirected_graph(A)
     elif graph_type == "delaunay":
         g = hg.UndirectedGraph(X.shape[0])

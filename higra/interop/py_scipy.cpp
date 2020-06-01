@@ -106,6 +106,7 @@ struct def_binary_hierarchy_to_scipy_linkage_matrix {
 };
 
 void py_init_scipy(pybind11::module &m) {
+    xt::import_numpy();
     add_type_overloads<def_binary_hierarchy_to_scipy_linkage_matrix<hg::tree>, HG_TEMPLATE_FLOAT_TYPES>
             (m,
              "Converts an Higra binary hierarchy to a SciPy linkage matrix."
