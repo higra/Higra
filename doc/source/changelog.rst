@@ -1,6 +1,41 @@
 Changelog
 =========
 
+0.5.2
+-----
+
+- Add function :func:`~higra.tree_monotonic_regression`: perform regression on a tree with an increasingness constraint
+  `#198 <https://github.com/higra/Higra/pull/198>`_
+- Add attribute :func:`~higra.attribute_moment_of_inertia`: first Hu moment on hierarchies constructed on 2d pixel graphs.
+  `#197 <https://github.com/higra/Higra/pull/197>`_
+- Add attribute :func:`~higra.attribute_topological_height`: number of edges on the longest path from a node to the leaf.
+  `#194 <https://github.com/higra/Higra/pull/194>`_
+- Improve support for regular graphs: add functions :func:`~higra.RegularGraph2d.as_explicit_graph`
+  (convert an implicit graph to an explicit graph), :func:`~higra.mask_2_neighbours` (create an neighbour list from
+  an adjacency mask), :func:`~higra.get_nd_regular_graph` and :func:`~higra.get_nd_regular_implicit_graph` (create
+  a regular implicit or explicit regular graph)
+  `#204 <https://github.com/higra/Higra/pull/204>`_
+- Improve conversions functions between adjacency matrices and undirected graphs: improve functions
+  :func:`~higra.adjacency_matrix_2_undirected_graph` and :func:`~higra.undirected_graph_2_adjacency_matrix`
+  (support for *Scipy* sparse matrix), and :func:`~higra.make_graph_from_points` (add symmetrization strategies).
+  `#201 <https://github.com/higra/Higra/pull/201>`_
+- Improve documentation of :func:`~higra.binary_partition_tree`, fix typos in :ref:`tree`, add section :ref:`troubleshooting`.
+  `#199 <https://github.com/higra/Higra/pull/199>`_ `#196 <https://github.com/higra/Higra/pull/196>`_
+- Add altitudes increasingness assertions in several functions
+  `#193 <https://github.com/higra/Higra/pull/193>`_
+- Fix incorrect overload resolution in :func:`~higra.RegularGraph2d.as_explicit_graph` when seeds are not of
+  type ``np.int64``
+  `#203 <https://github.com/higra/Higra/pull/203>`_
+- Fix incorrect number of regions computation in fragmentation curves when ground-truth labels are not contiguous
+  :ref:`fragmentation_curve`
+  `#200 <https://github.com/higra/Higra/pull/200>`_
+- Fix :func:`~higra.delinearize_vertex_weights` not supporting `Numpy` arrays as shapes.
+  `#188 <https://github.com/higra/Higra/pull/188>`_
+- Fix :func:`~higra.save_tree` incorrectly failing with no tree attributes.
+  `#181 <https://github.com/higra/Higra/pull/181>`_
+
+
+
 0.5.1
 -----
 
