@@ -95,8 +95,8 @@ def get_4_adjacency_graph(shape):
     :param shape: a pair (height, width)
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
-    shape = hg.normalize_shape(shape)
-    graph = hg.cpp._get_4_adjacency_graph(shape)
+    graph = get_4_adjacency_implicit_graph(shape).as_explicit_graph()
+
     hg.CptGridGraph.link(graph, shape)
     hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
 
@@ -110,8 +110,9 @@ def get_8_adjacency_graph(shape):
     :param shape: a pair (height, width)
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
-    shape = hg.normalize_shape(shape)
-    graph = hg.cpp._get_8_adjacency_graph(shape)
+
+    graph = get_8_adjacency_implicit_graph(shape).as_explicit_graph()
+
     hg.CptGridGraph.link(graph, shape)
     hg.set_attribute(graph, "no_border_vertex_out_degree", 8)
 
@@ -126,7 +127,12 @@ def get_4_adjacency_implicit_graph(shape):
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
     shape = hg.normalize_shape(shape)
-    graph = hg.cpp._get_4_adjacency_implicit_graph(shape)
+    if len(shape) != 2:
+        raise ValueError("Shape must be a 1d array of size 2.")
+
+    neighbours = np.array(((-1, 0), (0, -1), (0, 1), (1, 0)), dtype=np.int64)
+    graph = hg.RegularGraph2d(shape, neighbours)
+
     hg.CptGridGraph.link(graph, shape)
     hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
 
@@ -141,7 +147,12 @@ def get_8_adjacency_implicit_graph(shape):
     :return: a graph (Concept :class:`~higra.CptGridGraph`)
     """
     shape = hg.normalize_shape(shape)
-    graph = hg.cpp._get_8_adjacency_implicit_graph(shape)
+    if len(shape) != 2:
+        raise ValueError("Shape must be a 1d array of size 2.")
+
+    neighbours = np.array(((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)), dtype=np.int64)
+    graph = hg.RegularGraph2d(shape, neighbours)
+
     hg.CptGridGraph.link(graph, shape)
     hg.set_attribute(graph, "no_border_vertex_out_degree", 8)
 

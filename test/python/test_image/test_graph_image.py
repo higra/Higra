@@ -36,6 +36,28 @@ class TestGraphImage(unittest.TestCase):
         self.assertTrue(np.allclose(shape, (2, 3)))
         self.assertTrue(np.allclose(data, weights))
 
+    def test_get_4_adjacency_graph(self):
+        shape = (2, 3)
+        graph = hg.get_4_adjacency_graph(shape)
+
+        self.assertTrue(graph.num_vertices() == 6)
+
+        res_edges = set(zip(*graph.edge_list()))
+        ref_edges = set(((0, 1), (0, 3), (1, 2), (1, 4), (2, 5), (3, 4), (4, 5)))
+
+        self.assertTrue(ref_edges == res_edges)
+
+    def test_get_8_adjacency_graph(self):
+        shape = (2, 3)
+        graph = hg.get_8_adjacency_graph(shape)
+
+        self.assertTrue(graph.num_vertices() == 6)
+
+        res_edges = set(zip(*graph.edge_list()))
+        ref_edges = set(((0, 1), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (1, 5), (2, 4), (2, 5), (3, 4), (4, 5)))
+
+        self.assertTrue(ref_edges == res_edges)
+
     def test_mask_2_neighbours(self):
         mask = [[0, 1, 0], [1, 0, 1], [0, 1, 0]]
 
