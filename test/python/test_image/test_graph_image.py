@@ -36,6 +36,68 @@ class TestGraphImage(unittest.TestCase):
         self.assertTrue(np.allclose(shape, (2, 3)))
         self.assertTrue(np.allclose(data, weights))
 
+    def test_get_4_adjacency_graph(self):
+        shape = (2, 3)
+        graph = hg.get_4_adjacency_graph(shape)
+
+        self.assertTrue(graph.num_vertices() == 6)
+
+        res_edges = set(zip(*graph.edge_list()))
+        ref_edges = set(((0, 1), (0, 3), (1, 2), (1, 4), (2, 5), (3, 4), (4, 5)))
+
+        self.assertTrue(ref_edges == res_edges)
+
+    def test_get_8_adjacency_graph(self):
+        shape = (2, 3)
+        graph = hg.get_8_adjacency_graph(shape)
+
+        self.assertTrue(graph.num_vertices() == 6)
+
+        res_edges = set(zip(*graph.edge_list()))
+        ref_edges = set(((0, 1), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (1, 5), (2, 4), (2, 5), (3, 4), (4, 5)))
+
+        self.assertTrue(ref_edges == res_edges)
+
+    def test_mask_2_neighbours(self):
+        mask = [[0, 1, 0], [1, 0, 1], [0, 1, 0]]
+
+        res = hg.mask_2_neighbours(mask)
+        ref = ((-1, 0), (0, -1), (0, 1), (1, 0))
+        self.assertTrue(set(ref) == set(tuple(map(tuple, res))))
+
+        center = [1, 1]
+        res = hg.mask_2_neighbours(mask, center)
+        ref = ((-1, 0), (0, -1), (0, 1), (1, 0))
+        self.assertTrue(set(ref) == set(tuple(map(tuple, res))))
+
+        center = [2, 1]
+        res = hg.mask_2_neighbours(mask, center)
+        ref = ((-2, 0), (-1, -1), (-1, 1), (0, 0))
+        self.assertTrue(set(ref) == set(tuple(map(tuple, res))))
+
+        mask = [[[0, 0, 0], [0, 1, 0], [0, 0, 0]],
+                [[0, 1, 0], [1, 0, 1], [0, 1, 0]],
+                [[0, 0, 0], [0, 1, 0], [0, 0, 0]]]
+        res = hg.mask_2_neighbours(mask)
+        ref = ((-1, 0, 0), (1, 0, 0), (0, -1, 0), (0, 1, 0), (0, 0, -1), (0, 0, 1))
+        self.assertTrue(set(ref) == set(tuple(map(tuple, res))))
+
+    def test_get_nd_regular_graph(self):
+        mask = [[[0, 0, 0], [0, 1, 0], [0, 0, 0]],
+                [[0, 1, 0], [1, 0, 1], [0, 1, 0]],
+                [[0, 0, 0], [0, 1, 0], [0, 0, 0]]]
+        neighbours = hg.mask_2_neighbours(mask)
+        shape = (2, 3, 2)
+        graph = hg.get_nd_regular_graph(shape, neighbours)
+
+        self.assertTrue(graph.num_vertices() == 12)
+
+        ref_edges = set(((0, 1), (0, 2), (0, 6), (1, 3), (1, 7), (2, 3), (2, 4), (2, 8), (3, 5), (3, 9), (4, 5),
+                         (4, 10), (5, 11), (6, 7), (6, 8), (7, 9), (8, 9), (8, 10), (9, 11), (10, 11)))
+        res_edges = set(zip(*graph.edge_list()))
+
+        self.assertTrue(ref_edges == res_edges)
+
 
 if __name__ == '__main__':
     unittest.main()
