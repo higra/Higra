@@ -13,6 +13,8 @@ Utility functions for graph and images
     get_8_adjacency_graph
     get_4_adjacency_implicit_graph
     get_8_adjacency_implicit_graph
+    get_nd_regular_graph
+    get_nd_regular_implicit_graph
     mask_2_neighbours
 
 .. autofunction:: higra.graph_4_adjacency_2_khalimsky
@@ -26,6 +28,10 @@ Utility functions for graph and images
 .. autofunction:: higra.get_4_adjacency_implicit_graph
 
 .. autofunction:: higra.get_8_adjacency_implicit_graph
+
+.. autofunction:: higra.get_nd_regular_graph
+
+.. autofunction:: higra.get_nd_regular_implicit_graph
 
 .. autofunction:: higra.mask_2_neighbours
 
