@@ -25,7 +25,7 @@ void py_init_regular_graph_impl(pybind11::module &m) {
     auto c = py::class_<graph_t>(m, ("RegularGraph" + std::to_string(dim) + "d").c_str());
 
     c.def(py::init([](const embedding_t &e, const std::vector<std::vector<hg::index_t>> &pl) {
-              std::vector<point_t> points;
+                       std::vector<point_t> points;
 
                        for (const auto &v : pl) {
                            hg_assert(v.size() == dim, "Invalid dimension in point list.");
@@ -57,6 +57,12 @@ void py_init_regular_graph_impl(pybind11::module &m) {
           "Create a regular implicit graph from given shape and neighbouring.",
           py::arg("shape"),
           py::arg("neighbour_list"));
+
+    c.def("as_explicit_graph",
+          [](const graph_t &graph) {
+              return hg::copy_graph<hg::ugraph>(graph);
+          },
+          "Converts the current regular graph instance to an equivalent explicit undirected graph.");
 
     add_edge_accessor_graph_concept<graph_t, decltype(c)>(c);
     add_incidence_graph_concept<graph_t, decltype(c)>(c);
