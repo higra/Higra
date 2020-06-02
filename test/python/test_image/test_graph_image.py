@@ -36,6 +36,30 @@ class TestGraphImage(unittest.TestCase):
         self.assertTrue(np.allclose(shape, (2, 3)))
         self.assertTrue(np.allclose(data, weights))
 
+    def test_mask_2_neighbours(self):
+        mask = [[0, 1, 0], [1, 0, 1], [0, 1, 0]]
+
+        res = hg.mask_2_neighbours(mask)
+        ref = ((-1, 0), (0, -1), (0, 1), (1, 0))
+        self.assertTrue(set(ref) == set(tuple(map(tuple, res))))
+
+        center = [1, 1]
+        res = hg.mask_2_neighbours(mask, center)
+        ref = ((-1, 0), (0, -1), (0, 1), (1, 0))
+        self.assertTrue(set(ref) == set(tuple(map(tuple, res))))
+
+        center = [2, 1]
+        res = hg.mask_2_neighbours(mask, center)
+        ref = ((-2, 0), (-1, -1), (-1, 1), (0, 0))
+        self.assertTrue(set(ref) == set(tuple(map(tuple, res))))
+
+        mask = [[[0, 0, 0], [0, 1, 0], [0, 0, 0]],
+                [[0, 1, 0], [1, 0, 1], [0, 1, 0]],
+                [[0, 0, 0], [0, 1, 0], [0, 0, 0]]]
+        res = hg.mask_2_neighbours(mask)
+        ref = ((-1, 0, 0), (1, 0, 0), (0, -1, 0), (0, 1, 0), (0, 0, -1), (0, 0, 1))
+        self.assertTrue(set(ref) == set(tuple(map(tuple, res))))
+
 
 if __name__ == '__main__':
     unittest.main()

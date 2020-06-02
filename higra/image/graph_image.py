@@ -11,6 +11,7 @@
 import higra as hg
 import numpy as np
 
+
 @hg.argument_helper(hg.CptGridGraph)
 def graph_4_adjacency_2_khalimsky(graph, edge_weights, shape, add_extra_border=False):
     """
@@ -41,6 +42,50 @@ def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False):
     hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
 
     return graph, edge_weights
+
+
+def mask_2_neighbours(mask, center=None):
+    """
+    Converts as a neighbouring mask as a neighbour list. A neighbouring :attr:`mask` is a :math:`n`-d matrix where
+    each strictly positive value represent a neighbour of the :attr:`center` point. The neighbour list is obtained by
+    offsetting the coordinates of those positive values by the coordinates of the center.
+
+    The default center is the center of the :attr:`mask` matrix: i.e. ``mask.shape // 2``.
+
+    :Example:
+
+    >>> mask = [[0, 1, 0], [1, 0, 1], [0, 1, 0]]
+    >>> hg.mask_2_neighbours(mask)
+    array([[-1, 0], [0, -1], [0, 1], [1, 0]])
+    
+    >>> mask = [[0, 1, 0], [1, 0, 1], [0, 1, 0]]
+    >>> center = [2, 1]
+    >>> hg.mask_2_neighbours(mask)
+    array([[-2, 0], [-1, -1], [-1, 1], [0, 0]])
+    
+    >>> mask = [[[0, 0, 0], [0, 1, 0], [0, 0, 0]],
+    >>>         [[0, 1, 0], [1, 0, 1], [0, 1, 0]],
+    >>>         [[0, 0, 0], [0, 1, 0], [0, 0, 0]]]
+    >>> hg.mask_2_neighbours(mask)
+    array([[-1, 0, 0], [1, 0, 0], [0, -1, 0], [0, 1, 0], [0, 0, -1], [0, 0, 1]])
+       
+    :param mask:  a :math:`n`-d matrix
+    :param center: a 1d array of size :math:`n` (optional)
+    :return: a list of point coordinates
+    """
+    mask = np.asarray(mask)
+
+    if center is None:
+        center = np.floor_divide(np.asarray(mask.shape, dtype=np.int64), 2)
+    else:
+        center = np.asarray(center)
+        if len(center) != mask.ndim:
+            raise ValueError("'center' size does not match 'mask' dimension.")
+
+    neighbours = np.argwhere(mask > 0)
+    neighbours -= center
+
+    return neighbours
 
 
 def get_4_adjacency_graph(shape):
