@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.5.3
+-----
+
+- Fix bug in :func:`~higra.watershed_hierarchy_by_attribute`: on some conditions a large minima could be split in two
+  ore more regions.
+  `#205 <https://github.com/higra/Higra/pull/205>`_
+
 0.5.2
 -----
 
