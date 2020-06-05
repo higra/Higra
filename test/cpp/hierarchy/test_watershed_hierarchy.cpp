@@ -59,6 +59,16 @@ namespace watershed_hierarchy {
         REQUIRE((altitudes == ref_altitudes));
     }
 
+    TEST_CASE("watershed hierarchy by area 3", "[watershed_hierarchy]") {
+
+        auto g = hg::get_4_adjacency_graph({3, 3});
+        array_1d<double> edge_weights{0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0};
+
+        auto res = watershed_hierarchy_by_area(g, edge_weights);
+
+        REQUIRE((xt::sum(res.altitudes)() == 0));
+    }
+
     TEST_CASE("watershed hierarchy by dynamics", "[watershed_hierarchy]") {
 
         auto g = hg::get_4_adjacency_graph({1, 7});
