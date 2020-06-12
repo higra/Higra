@@ -551,7 +551,7 @@ The following example demonstrates the application of sequential max accumulator
             leaf_attribute = numpy.ones((t.num_leaves(),))
             tree_attribute = numpy.ones((t.num_vertices(),))
 
-            result = hg.accumulate_and_add_sequential(tree_attribute, leaf_attribute, hg.Accumulators.max, tree)
+            result = hg.accumulate_and_add_sequential( tree, tree_attribute, leaf_attribute, hg.Accumulators.max)
 
             # result = (1, 1, 1, 1, 1, 2, 2, 3)
 
