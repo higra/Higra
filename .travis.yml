@@ -65,7 +65,7 @@ matrix:
         - clang-4.0
     env: COMPILER=clang CLANG=4.0 HG_USE_TBB=Off
   - os: osx
-    osx_image: xcode8
+    osx_image: xcode11.6
     compiler: clang
     env: HG_USE_TBB=On
 env:
