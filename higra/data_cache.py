@@ -120,26 +120,91 @@ class DataCache:
         return iter(self.__data)
 
 
+def __support_dynamic_attributes(obj):
+    return hasattr(obj, '__dict__') and isinstance(obj.__dict__, dict)
+
+
+def __get_attributes(key):
+    """
+    Get a dictionary associated to the object :attr:`key` to store Higra related attributes.
+
+    If the object support dynamic attributes, this dictionary is stored as a (new) object attribute called
+    "__higra_attributes__". Otherwise, the dictionary is stored in a global data store with weak references.
+    This last case means that such attributes are not part of the given object and won't be pickled by Python if the
+    object is stored.
+
+    :param key: an object
+    :return: a dictionary of attributes associated to the given key
+    """
+    if __support_dynamic_attributes(key):
+        data = getattr(key, "__higra_attributes__", None)
+        if data is None:
+            data = {}
+            key.__higra_attributes__ = data
+        return data
+    else:
+        return hg.__higra_global_cache.get_data(key)
+
+
 def list_attributes(key):
+    """
+    List all Higra attributes of the object :attr:`key`.
+
+    See functions :func:`~higra.get_attribute` and :func:`~higra.set_attribute`.
+
+    :param key: an object
+    :return: a list of strings
+    """
     try:
-        return list(hg.__higra_global_cache.get_data(key).keys())
+        data = __get_attributes(key)
+        return list(data.keys())
     except TypeError:
         return ()
 
 
 def get_attribute(key, attribute_name):
+    """
+    Get the Higra attributes named :attr:`attribute_name` of the object :attr:`key`.
+
+    See functions :func:`~higra.list_attributes` and :func:`~higra.set_attribute`.
+
+    :param key: an object
+    :param attribute_name: a string
+    :return: the attribute value associated to the given name (``None`` if no such attribute exists)
+    """
     try:
-        return hg.__higra_global_cache.get_data(key).get(attribute_name, None)
+        return __get_attributes(key).get(attribute_name, None)
     except TypeError:
         return None
 
 
-def set_attribute(key, attribute_name, attribute):
-    hg.__higra_global_cache.get_data(key)[attribute_name] = attribute
+def set_attribute(key, attribute_name, attribute, insert_dynamic=True):
+    """
+    Set the Higra attributes named :attr:`attribute_name` of the object :attr:`key` to the value :attr:`attribute`.
+
+    See functions :func:`~higra.list_attributes` and :func:`~higra.get_attribute`.
+
+    :param key: an object
+    :param attribute_name: a string
+    :param attribute: a value
+    :param insert_dynamic: if ``True`` and if :attr:`key` supports dynamic attributes, a new object attribute with the
+           given name and values will be added to the given object
+    :return: None
+    """
+    __get_attributes(key)[attribute_name] = attribute
+    if insert_dynamic and __support_dynamic_attributes(key):
+        setattr(key, attribute_name, attribute)
 
 
 def get_tags(key):
-    return hg.__higra_global_cache.get_data(key).setdefault("__tags__", set())
+    if __support_dynamic_attributes(key):
+        data = getattr(key, "__higra_tags__", None)
+        if data is None:
+            data = set()
+            key.__higra_tags__ = data
+        return data
+    else:
+        return hg.__higra_global_cache.get_data(key).setdefault("__tags__", set())
 
 
 def add_tag(key, tag):
