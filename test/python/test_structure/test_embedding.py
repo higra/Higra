@@ -34,6 +34,11 @@ class TestEmbedding(unittest.TestCase):
             self.assertTrue(e.size() == 30)
             self.assertTrue(compare(e.shape(), (3, 5, 2)))
 
+    def test_dynamic_attributes(self):
+        e = hg.EmbeddingGrid3d((3, 5, 2))
+        e.new_attribute = 42
+        self.assertTrue(e.new_attribute == 42)
+
     def test_contains(self):
         e1 = hg.EmbeddingGrid3d((3, 5, 2))
         self.assertTrue(e1.contains((1, 3, 1)))

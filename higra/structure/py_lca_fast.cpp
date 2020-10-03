@@ -46,7 +46,8 @@ void py_init_lca_fast(pybind11::module &m) {
     xt::import_numpy();
     auto c = py::class_<lca_fast>(m, "LCAFast",
                                   "Provides fast :math:`\\mathcal{O}(1)` lowest common ancestor computation in a tree thanks "
-                                  "to a linearithmic preprocessing of the tree.");
+                                  "to a linearithmic preprocessing of the tree.",
+                                  py::dynamic_attr());
 
     c.def(py::init<tree>(),
           "Preprocess the given tree in order for fast lowest common ancestor (LCA) computation.\n\n"

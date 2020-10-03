@@ -40,6 +40,11 @@ class TestTree(unittest.TestCase):
         self.assertTrue(t.parent(4) == 6)
         self.assertTrue(np.all(t.parent((0, 5, 2, 3, 7)) == (5, 7, 6, 6, 7)))
 
+    def test_dynamic_attributes(self):
+        t = TestTree.get_tree()
+        t.new_attribute = 42
+        self.assertTrue(t.new_attribute == 42)
+
     def test_vertex_iterator(self):
         t = TestTree.get_tree()
 

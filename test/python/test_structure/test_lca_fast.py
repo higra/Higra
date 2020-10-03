@@ -53,6 +53,12 @@ class TestLCAFast(unittest.TestCase):
         res = lca.lca((0, 0, 1, 3), (0, 3, 0, 0))
         self.assertTrue(np.all(res == (0, 6, 4, 6)))
 
+    def test_dynamic_attributes(self):
+        t = hg.Tree((4, 4, 5, 5, 6, 6, 6))
+        lca = hg.LCAFast(t)
+        lca.new_attribute = 42
+        self.assertTrue(lca.new_attribute == 42)
+
 
 if __name__ == '__main__':
     unittest.main()
