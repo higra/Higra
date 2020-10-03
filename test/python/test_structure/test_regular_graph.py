@@ -41,6 +41,12 @@ class TestRegularGraph(unittest.TestCase):
         for g in (g1, g2, g3):
             self.assertTrue(g.num_vertices() == 6)
 
+    def test_dynamic_attributes(self):
+        shape = (2, 3)
+        g = hg.get_4_adjacency_implicit_graph(shape)
+        g.new_attribute = 42
+        self.assertTrue(g.new_attribute == 42)
+
     def test_vertices_iterator(self):
         shape = (2, 3)
         g1 = hg.get_4_adjacency_implicit_graph(shape)

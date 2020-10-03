@@ -22,7 +22,9 @@ void py_init_regular_graph_impl(pybind11::module &m) {
     using point_t = typename embedding_t::point_type;
 
 
-    auto c = py::class_<graph_t>(m, ("RegularGraph" + std::to_string(dim) + "d").c_str());
+    auto c = py::class_<graph_t>(m,
+                                 ("RegularGraph" + std::to_string(dim) + "d").c_str(),
+                                 py::dynamic_attr());
 
     c.def(py::init([](const embedding_t &e, const std::vector<std::vector<hg::index_t>> &pl) {
                        std::vector<point_t> points;

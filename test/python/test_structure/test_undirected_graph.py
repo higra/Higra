@@ -72,6 +72,11 @@ class TestUndirectedGraph(unittest.TestCase):
         for i in range(g2.num_edges()):
             self.assertTrue(g.edge_from_index(i) == g2.edge_from_index(i))
 
+    def test_dynamic_attributes(self):
+        g = TestUndirectedGraph.test_graph()
+        g.new_attribute = 42
+        self.assertTrue(g.new_attribute == 42)
+
     def test_vertex_iterator(self):
         g = TestUndirectedGraph.test_graph()
         vref = [0, 1, 2, 3];
