@@ -75,14 +75,19 @@ namespace hg {
             using point_type = typename embedding_t::point_type;
 
             vertices_size_type num_vertices() const {
-                return embedding.size();
+                return m_embedding.size();
             }
 
-            embedding_t embedding;
-            point_list_t<index_t, embedding_t::_dim> neighbours;
+            const auto & embedding() const{
+                return m_embedding;
+            }
+
+            const auto& neighbours() const{
+                return m_neighbours;
+            }
 
             regular_graph(embedding_t _embedding = {}, point_list_t<index_t, embedding_t::_dim> _neighbours = {})
-                    : embedding(_embedding), neighbours(_neighbours) {
+                    : m_embedding(_embedding), m_neighbours(_neighbours) {
             }
 
             ~regular_graph() = default;
@@ -94,6 +99,10 @@ namespace hg {
             self_type &operator=(const self_type &) = default;
 
             self_type &operator=(self_type &&) = default;
+
+        private:
+            embedding_t m_embedding;
+            point_list_t<index_t, embedding_t::_dim> m_neighbours;
 
         };
 
@@ -220,18 +229,18 @@ namespace hg {
                 hg::regular_graph_out_edge_iterator<embedding_t>(
                         hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
                                 u,
-                                g.embedding,
-                                g.neighbours.cbegin(),
-                                g.neighbours.cend()),
+                                g.embedding(),
+                                g.neighbours().cbegin(),
+                                g.neighbours().cend()),
                         [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
                             return std::make_pair(u, v);
                         }),
                 hg::regular_graph_out_edge_iterator<embedding_t>(
                         hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
                                 u,
-                                g.embedding,
-                                g.neighbours.cend(),
-                                g.neighbours.cend()),
+                                g.embedding(),
+                                g.neighbours().cend(),
+                                g.neighbours().cend()),
                         [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
                             return std::make_pair(u, v);
                         })
@@ -245,18 +254,18 @@ namespace hg {
                 hg::regular_graph_out_edge_iterator<embedding_t>(
                         hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
                                 u,
-                                g.embedding,
-                                g.neighbours.cbegin(),
-                                g.neighbours.cend()),
+                                g.embedding(),
+                                g.neighbours().cbegin(),
+                                g.neighbours().cend()),
                         [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
                             return std::make_pair(v, u);
                         }),
                 hg::regular_graph_out_edge_iterator<embedding_t>(
                         hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
                                 u,
-                                g.embedding,
-                                g.neighbours.cend(),
-                                g.neighbours.cend()),
+                                g.embedding(),
+                                g.neighbours().cend(),
+                                g.neighbours().cend()),
                         [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
                             return std::make_pair(v, u);
                         })
@@ -314,10 +323,10 @@ namespace hg {
     adjacent_vertices(typename hg::regular_graph<embedding_t>::vertex_descriptor u,
                       const hg::regular_graph<embedding_t> &g) {
         return std::make_pair<typename hg::regular_graph<embedding_t>::adjacency_iterator, typename hg::regular_graph<embedding_t>::adjacency_iterator>(
-                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g.embedding, g.neighbours.begin(),
-                                                                        g.neighbours.end()),
-                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g.embedding, g.neighbours.end(),
-                                                                        g.neighbours.end()));
+                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g.embedding(), g.neighbours().begin(),
+                                                                        g.neighbours().end()),
+                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g.embedding(), g.neighbours().end(),
+                                                                        g.neighbours().end()));
     };
 
 }
