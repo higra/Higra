@@ -277,6 +277,24 @@ class TestTree(unittest.TestCase):
         ref = np.asarray((0, 7, 5, 7), dtype=np.int64)
         self.assertTrue(np.all(res == ref))
 
+    def test_pickle(self):
+        import pickle
+        t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        hg.set_attribute(t, "test", (1, 2, 3))
+        hg.add_tag(t, "foo")
+
+        data = pickle.dumps(t)
+        t2 = pickle.loads(data)
+
+        self.assertTrue(np.all(t.parents() == t2.parents()))
+
+        for v in t.vertices():
+            self.assertTrue(np.all(t.children(v) == t2.children(v)))
+
+        self.assertTrue(hg.get_attribute(t, "test") == hg.get_attribute(t2, "test"))
+        self.assertTrue(t.test == t2.test)
+        self.assertTrue(hg.has_tag(t, "foo"))
+
 
 if __name__ == '__main__':
     unittest.main()
