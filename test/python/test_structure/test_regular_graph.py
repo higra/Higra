@@ -121,6 +121,30 @@ class TestRegularGraph(unittest.TestCase):
 
         self.assertTrue(TestRegularGraph.graph_implicit_explicit_equal(g_imp, g_exp))
 
+    def test_pickle(self):
+        import pickle
+
+        tests = ((hg.RegularGraph1d, (3,), ((-1,), (1,))),
+                 (hg.RegularGraph2d, (3, 2), ((-1, 0), (1, 0))),
+                 (hg.RegularGraph3d, (3, 2, 1), ((-1, 0, -1), (1, 0, 1))),
+                 (hg.RegularGraph4d, (3, 2, 1, 2), ((-1, 0, -1, 0), (1, 0, 1, 0))),
+                 (hg.RegularGraph5d, (3, 2, 1, 2, 1), ((-1, 0, -1, 0, 1), (1, 0, 1, 0, -1))))
+
+        for c, s, n in tests:
+            e = c(s, n)
+            hg.set_attribute(e, "test", (1, 2, 3))
+            hg.add_tag(e, "foo")
+
+            data = pickle.dumps(e)
+            e2 = pickle.loads(data)
+
+            self.assertTrue(np.all(e.shape() == e2.shape()))
+            self.assertTrue(np.all(e.neighbour_list() == e2.neighbour_list()))
+
+            self.assertTrue(hg.get_attribute(e, "test") == hg.get_attribute(e2, "test"))
+            self.assertTrue(e.test == e2.test)
+            self.assertTrue(hg.has_tag(e, "foo"))
+
 
 if __name__ == '__main__':
     unittest.main()

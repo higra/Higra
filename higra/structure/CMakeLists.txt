@@ -13,6 +13,7 @@ set(PY_FILES
         __init__.py
         embedding.py
         lca_fast.py
+        regular_graph.py
         tree_graph.py
         undirected_graph.py)
 

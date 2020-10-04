@@ -10,5 +10,6 @@
 
 from .embedding import *
 from .lca_fast import *
+from .regular_graph import *
 from .tree_graph import *
 from .undirected_graph import *
