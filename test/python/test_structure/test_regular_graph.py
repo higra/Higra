@@ -10,6 +10,7 @@
 
 import unittest
 import higra as hg
+import numpy as np
 
 
 class TestRegularGraph(unittest.TestCase):
@@ -40,6 +41,13 @@ class TestRegularGraph(unittest.TestCase):
 
         for g in (g1, g2, g3):
             self.assertTrue(g.num_vertices() == 6)
+
+        self.assertTrue(np.all(g1.shape() == shape))
+        self.assertTrue(np.all(g1.neighbour_list() == nl))
+
+        g4 = hg.RegularGraph2d(g1.shape(), g1.neighbour_list())
+        self.assertTrue(np.all(g4.shape() == shape))
+        self.assertTrue(np.all(g4.neighbour_list() == nl))
 
     def test_dynamic_attributes(self):
         shape = (2, 3)
