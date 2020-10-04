@@ -1,5 +1,5 @@
 ############################################################################
-# Copyright ESIEE Paris (2018)                                             #
+# Copyright ESIEE Paris (2020)                                             #
 #                                                                          #
 # Contributor(s) : Benjamin Perret                                         #
 #                                                                          #
@@ -8,19 +8,15 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
+import higra as hg
 
-set(PY_FILES
-        __init__.py
-        lca_fast.py
-        tree_graph.py
-        undirected_graph.py)
 
-set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
-        ${CMAKE_CURRENT_SOURCE_DIR}/py_embedding.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/py_lca_fast.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/py_regular_graph.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/py_tree_graph.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/py_undirected_graph.cpp
-        PARENT_SCOPE)
+def __reduce_ctr(num_vertices, sources, targets):
+    graph = hg.UndirectedGraph(num_vertices)
+    graph.add_edges(sources, targets)
+    return graph
 
-REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")
+
+@hg.extend_class(hg.UndirectedGraph, method_name="__reduce__")
+def ____reduce__(self):
+    return __reduce_ctr, (self.num_vertices(), *self.edge_list()), self.__dict__
