@@ -91,6 +91,29 @@ class TestEmbedding(unittest.TestCase):
         res = e1.grid2lin(coord)
         self.assertTrue(np.array_equal(ref, res))
 
+    def test_pickle(self):
+        import pickle
+
+        tests = ((hg.EmbeddingGrid1d, (3,)),
+                 (hg.EmbeddingGrid2d, (3, 2)),
+                 (hg.EmbeddingGrid3d, (3, 2, 1)),
+                 (hg.EmbeddingGrid4d, (3, 2, 1, 2)),
+                 (hg.EmbeddingGrid5d, (3, 2, 1, 2, 1)))
+
+        for c, s in tests:
+            e = c(s)
+            hg.set_attribute(e, "test", (1, 2, 3))
+            hg.add_tag(e, "foo")
+
+            data = pickle.dumps(e)
+            e2 = pickle.loads(data)
+
+            self.assertTrue(np.all(e.shape() == e2.shape()))
+
+            self.assertTrue(hg.get_attribute(e, "test") == hg.get_attribute(e2, "test"))
+            self.assertTrue(e.test == e2.test)
+            self.assertTrue(hg.has_tag(e2, "foo"))
+
 
 if __name__ == '__main__':
     unittest.main()

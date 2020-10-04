@@ -81,3 +81,8 @@ def __num_children(self, vertex=None):
         vertex = np.arange(self.num_leaves(), self.num_vertices())
 
     return self._num_children(vertex)
+
+
+@hg.extend_class(hg.Tree, method_name="__reduce__")
+def ____reduce__(self):
+    return self.__class__, (self.parents(),), self.__dict__

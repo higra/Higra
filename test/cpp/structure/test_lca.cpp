@@ -65,4 +65,27 @@ namespace lca {
         array_1d<index_t> ref{0, 6, 4, 6};
         REQUIRE((l == ref));
     }
+
+    TEST_CASE("lca serialization", "[lca]") {
+        tree t(array_1d<index_t>{4, 4, 5, 5, 6, 6, 6});
+        lca_fast lca(t);
+        array_1d<index_t> v1{0, 0, 1, 3};
+        array_1d<index_t> v2{0, 3, 0, 0};
+
+
+        auto state = lca.get_state();
+
+        lca_fast lca2;
+        lca2.set_state(state);
+
+        array_1d<index_t> ref{0, 6, 4, 6};
+        auto l = lca2.lca(v1, v2);
+        REQUIRE((l == ref));
+
+        lca_fast lca3;
+        lca3.set_state(std::move(state));
+
+        auto l2 = lca3.lca(v1, v2);
+        REQUIRE((l2 == ref));
+    }
 }

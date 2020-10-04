@@ -38,8 +38,6 @@ namespace hg {
 
             size_t rep = 0;
 
-            size_t nbR;
-
             void computeDepth(const tree_t &tree) {
                 Depth[root(tree)] = 0;
                 for (auto i: root_to_leaves_iterator(tree, leaves_it::include, root_it::exclude)) {
@@ -112,7 +110,7 @@ namespace hg {
 
                 Minim.resize({(size_t) logn, (size_t) nbRepresent});
 
-                parfor(0, nbRepresent - 1, [this](index_t i){
+                parfor(0, nbRepresent - 1, [this](index_t i) {
                     if (this->Depth[this->Euler[i]] < this->Depth[this->Euler[i + 1]]) {
                         this->Minim(0, i) = i;
                     } else {
@@ -124,11 +122,12 @@ namespace hg {
                 for (int j = 1; j < logn; j++) {
                     index_t k1 = (index_t) (1 << (j - 1));
                     index_t k2 = k1 << 1;
-                    parfor(0, nbRepresent, [this, k1, k2, j, nbRepresent](index_t i){
+                    parfor(0, nbRepresent, [this, k1, k2, j, nbRepresent](index_t i) {
                         if ((i + k2) >= nbRepresent) {
                             Minim(j, i) = nbRepresent - 1;
                         } else {
-                            if (this->Depth[this->Euler[this->Minim(j - 1, i)]] <= this->Depth[this->Euler[this->Minim(j - 1, i + k1)]]) {
+                            if (this->Depth[this->Euler[this->Minim(j - 1, i)]] <=
+                                this->Depth[this->Euler[this->Minim(j - 1, i + k1)]]) {
                                 this->Minim(j, i) = this->Minim(j - 1, i);
                             } else {
                                 this->Minim(j, i) = this->Minim(j - 1, i + k1);
@@ -140,6 +139,12 @@ namespace hg {
 
 
         public:
+
+            lca_fast() {
+                HG_TRACE();
+                m_num_vertices = 0;
+            }
+
             lca_fast(const tree_t &tree) {
                 HG_TRACE();
                 auto nbNodes = hg::num_vertices(tree);
@@ -195,7 +200,7 @@ namespace hg {
                 auto result = array_1d<vertex_t>::from_shape({size});
 
                 auto it = range.begin();
-                parfor(0, size, [&result, &it, this](index_t i){
+                parfor(0, size, [&result, &it, this](index_t i) {
                     auto e = it[i];
                     result(i) = this->lca(e.first, e.second);
                 });
@@ -234,6 +239,96 @@ namespace hg {
                 return m_num_vertices;
             }
 
+            template<typename T1, typename T2>
+            struct internal_state {
+
+                size_t m_num_vertices;
+                T1 m_Euler;
+                T1 m_Depth;
+                T1 m_Represent;
+                T1 m_Number;
+                T2 m_Minim;
+                size_t m_rep;
+                
+                internal_state(size_t num_vertices,
+                               const T1 &Euler,
+                               const T1 &Depth,
+                               const T1 &Represent,
+                               const T1 &Number,
+                               const T2 &Minim,
+                               size_t rep) :
+                        m_num_vertices(num_vertices),
+                        m_Euler(Euler),
+                        m_Depth(Depth),
+                        m_Represent(Represent),
+                        m_Number(Number),
+                        m_Minim(Minim),
+                        m_rep(rep) {}
+
+                internal_state(size_t num_vertices,
+                               T1 &&Euler,
+                               T1 &&Depth,
+                               T1 &&Represent,
+                               T1 &&Number,
+                               T2 &&Minim,
+                               size_t rep) :
+                        m_num_vertices(num_vertices),
+                        m_Euler(std::forward<T1>(Euler)),
+                        m_Depth(std::forward<T1>(Depth)),
+                        m_Represent(std::forward<T1>(Represent)),
+                        m_Number(std::forward<T1>(Number)),
+                        m_Minim(std::forward<T2>(Minim)),
+                        m_rep(rep) {}
+            };
+
+
+            /**
+             * Returns a copy of the internal state of the object (can be saved/loaded/transmitted...)
+             * @return
+             */
+            auto get_state() const {
+                return internal_state<array, array2d>(m_num_vertices,
+                                                      Euler,
+                                                      Depth,
+                                                      Represent,
+                                                      Number,
+                                                      Minim,
+                                                      rep);
+            }
+
+            /**
+             * Load the saved internal state into the current object
+             * @tparam T1
+             * @tparam T2
+             * @param state
+             */
+            template<typename T1, typename T2>
+            void set_state(const internal_state<T1, T2> &state) {
+                m_num_vertices = state.m_num_vertices;
+                Euler = state.m_Euler;
+                Depth = state.m_Depth;
+                Represent = state.m_Represent;
+                Number = state.m_Number;
+                Minim = state.m_Minim;
+                rep = state.m_rep;
+            }
+
+            /**
+             * Load the saved internal state into the current object (internal objects will be moved)
+             * @tparam T1
+             * @tparam T2
+             * @param state
+             */
+            template<typename T1, typename T2>
+            void _set_state(internal_state<T1, T2> &&state) {
+                m_num_vertices = state.m_num_vertices;
+                Euler = std::move(state.m_Euler);
+                Depth = std::move(state.m_Depth);
+                Represent = std::move(state.m_Represent);
+                Number = std::move(state.m_Number);
+                Minim = std::move(state.m_Minim);
+                rep = state.m_rep;
+            }
 
         };
     }

@@ -211,6 +211,25 @@ class TestUndirectedGraph(unittest.TestCase):
 
         self.assertTrue(test == ref)
 
+    def test_pickle(self):
+        import pickle
+        g = TestUndirectedGraph.test_graph()
+        hg.set_attribute(g, "test", (1, 2, 3))
+        hg.add_tag(g, "foo")
+
+        data = pickle.dumps(g)
+        g2 = pickle.loads(data)
+
+        self.assertTrue(g.num_vertices() == g2.num_vertices())
+        gs, gt = g.edge_list()
+        g2s, g2t = g2.edge_list()
+        self.assertTrue(np.all(gs == g2s))
+        self.assertTrue(np.all(gt == g2t))
+
+        self.assertTrue(hg.get_attribute(g, "test") == hg.get_attribute(g2, "test"))
+        self.assertTrue(g.test == g2.test)
+        self.assertTrue(hg.has_tag(g2, "foo"))
+
 
 if __name__ == '__main__':
     unittest.main()

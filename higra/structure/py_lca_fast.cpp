@@ -29,10 +29,10 @@ struct def_lca_vertices {
                         const pyarray<value_t> &vertices1,
                         const pyarray<value_t> &vertices2) {
                   hg_assert((xt::amin)(vertices1)() >= 0, "Vertex indices cannot be negative.");
-                  hg_assert((index_t)(index_t)(xt::amax)(vertices1)() < (index_t)l.num_vertices(),
+                  hg_assert((index_t) (index_t) (xt::amax)(vertices1)() < (index_t) l.num_vertices(),
                             "Vertex indices must be smaller than the number of vertices in the tree.");
                   hg_assert((xt::amin)(vertices2)() >= 0, "Vertex indices cannot be negative.");
-                  hg_assert((index_t)(xt::amax)(vertices2)() < (index_t)l.num_vertices(),
+                  hg_assert((index_t) (xt::amax)(vertices2)() < (index_t) l.num_vertices(),
                             "Vertex indices must be smaller than the number of vertices in the tree.");
                   return l.lca(vertices1, vertices2);
               },
@@ -58,7 +58,7 @@ void py_init_lca_fast(pybind11::module &m) {
     c.def("lca",
           [](const lca_fast &l, index_t v1, index_t v2) {
               hg_assert(v1 >= 0 && v2 >= 0, "Vertex indices cannot be negative.");
-              hg_assert(v1 < (index_t)l.num_vertices() && v2 < (index_t)l.num_vertices(),
+              hg_assert(v1 < (index_t) l.num_vertices() && v2 < (index_t) l.num_vertices(),
                         "Vertex indices must be smaller than the number of vertices in the tree.");
               return l.lca(v1, v2);
           },
@@ -75,5 +75,37 @@ void py_init_lca_fast(pybind11::module &m) {
             (c, "Given two 1d array of graph vertex indices v1 and v2, both containing n elements, "
                 "this function returns a 1d array or tree vertex indices of size n such that: \n"
                 "for all i in 0..n-1, res(i) = lca(v1(i); v2(i)).");
+
+    c.def("_get_state",
+          [](const lca_fast &l) {
+              auto state = l.get_state();
+              return py::make_tuple(
+                      state.m_num_vertices,
+                      std::move(state.m_Euler),
+                      std::move(state.m_Depth),
+                      std::move(state.m_Represent),
+                      std::move(state.m_Number),
+                      std::move(state.m_Minim),
+                      state.m_rep);
+          },
+          "Return an opaque structure representing the internal state of the object");
+
+
+    c.def_static("_make_from_state",
+                 [](size_t &a0,
+                    const pyarray<index_t> &a1,
+                    const pyarray<index_t> &a2,
+                    const pyarray<index_t> &a3,
+                    const pyarray<index_t> &a4,
+                    const pyarray<index_t> &a5,
+                    size_t &a6) {
+
+                     lca_fast l;
+                     l.set_state(lca_fast::internal_state<pyarray<index_t>, pyarray<index_t>>(
+                             a0, a1, a2, a3, a4, a5, a6));
+                     return l;
+                 },
+                 "Create a new lca_fast object from the saved state (see function get_state)");
+
 
 }

@@ -20,3 +20,12 @@ def make_lca_fast(tree):
     :return: a LCAFast object
     """
     return hg.LCAFast(tree)
+
+
+def __reduce_ctr(*args):
+    return hg.LCAFast._make_from_state(*args)
+
+
+@hg.extend_class(hg.LCAFast, method_name="__reduce__")
+def ____reduce__(self):
+    return __reduce_ctr, self._get_state(), self.__dict__
