@@ -228,7 +228,7 @@ class TestUndirectedGraph(unittest.TestCase):
 
         self.assertTrue(hg.get_attribute(g, "test") == hg.get_attribute(g2, "test"))
         self.assertTrue(g.test == g2.test)
-        self.assertTrue(hg.has_tag(g, "foo"))
+        self.assertTrue(hg.has_tag(g2, "foo"))
 
 
 if __name__ == '__main__':

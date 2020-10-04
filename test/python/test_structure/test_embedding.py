@@ -112,7 +112,7 @@ class TestEmbedding(unittest.TestCase):
 
             self.assertTrue(hg.get_attribute(e, "test") == hg.get_attribute(e2, "test"))
             self.assertTrue(e.test == e2.test)
-            self.assertTrue(hg.has_tag(e, "foo"))
+            self.assertTrue(hg.has_tag(e2, "foo"))
 
 
 if __name__ == '__main__':

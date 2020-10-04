@@ -293,7 +293,7 @@ class TestTree(unittest.TestCase):
 
         self.assertTrue(hg.get_attribute(t, "test") == hg.get_attribute(t2, "test"))
         self.assertTrue(t.test == t2.test)
-        self.assertTrue(hg.has_tag(t, "foo"))
+        self.assertTrue(hg.has_tag(t2, "foo"))
 
 
 if __name__ == '__main__':

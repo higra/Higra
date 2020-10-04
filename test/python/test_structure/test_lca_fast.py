@@ -59,6 +59,23 @@ class TestLCAFast(unittest.TestCase):
         lca.new_attribute = 42
         self.assertTrue(lca.new_attribute == 42)
 
+    def test_pickle(self):
+        import pickle
+        tree = hg.Tree((4, 4, 5, 5, 6, 6, 6))
+        lca = hg.LCAFast(tree)
+        hg.set_attribute(lca, "test", (1, 2, 3))
+        hg.add_tag(lca, "foo")
+
+        data = pickle.dumps(lca)
+        lca2 = pickle.loads(data)
+
+        res = lca2.lca((0, 0, 1, 3), (0, 3, 0, 0))
+        self.assertTrue(np.all(res == (0, 6, 4, 6)))
+
+        self.assertTrue(hg.get_attribute(lca, "test") == hg.get_attribute(lca2, "test"))
+        self.assertTrue(lca.test == lca2.test)
+        self.assertTrue(hg.has_tag(lca2, "foo"))
+
 
 if __name__ == '__main__':
     unittest.main()
