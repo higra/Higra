@@ -100,10 +100,10 @@ void py_init_lca_fast(pybind11::module &m) {
                     const pyarray<index_t> &a5,
                     size_t &a6) {
 
-                     lca_fast l;
-                     l.set_state(lca_fast::internal_state<pyarray<index_t>, pyarray<index_t>>(
-                             a0, a1, a2, a3, a4, a5, a6));
-                     return l;
+                     return hg::lca_fast::make_lca_fast(
+                             lca_fast::internal_state<pyarray<index_t>, pyarray<index_t>>(
+                                     a0, a1, a2, a3, a4, a5, a6));
+
                  },
                  "Create a new lca_fast object from the saved state (see function get_state)");
 
