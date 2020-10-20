@@ -179,7 +179,7 @@ class TestAlgorithmTree(unittest.TestCase):
         sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
         self.assertTrue(np.all(sm == sm_ref))
 
-    def test_filter_non_relevant_node_from_tree(self):
+    def test_filter_small_node_from_tree(self):
         g = hg.get_4_adjacency_graph((1, 8))
         edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
         tree, altitudes = hg.quasi_flat_zone_hierarchy(g, edge_weights)
@@ -188,6 +188,26 @@ class TestAlgorithmTree(unittest.TestCase):
 
         sm = hg.saliency(res_tree, res_altitudes)
         sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
+        self.assertTrue(np.all(sm == sm_ref))
+
+    def test_filter_small_node_from_tree_on_rag(self):
+        g = hg.get_4_adjacency_graph((2, 8))
+        labels = np.asarray(((0, 1, 2, 3, 4, 5, 6, 7),
+                             (0, 1, 2, 3, 4, 5, 6, 7)))
+
+        rag = hg.make_region_adjacency_graph_from_labelisation(g, labels)
+        edge_weights = np.asarray((0, 2, 0, 0, 1, 0, 0))
+
+        tree, altitudes = hg.quasi_flat_zone_hierarchy(rag, edge_weights)
+
+        res_tree, res_altitudes = hg.filter_small_nodes_from_tree(tree, altitudes, 5)
+
+        sm = hg.saliency(res_tree, res_altitudes, handle_rag=False)
+        sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
+        self.assertTrue(np.all(sm == sm_ref))
+
+        sm = hg.saliency(res_tree, res_altitudes, handle_rag=True)
+        sm_ref = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0))
         self.assertTrue(np.all(sm == sm_ref))
 
     def test_filter_weak_frontier_nodes_from_tree(self):
