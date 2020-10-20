@@ -22,6 +22,49 @@ namespace hg {
          */
         template<typename tree_t>
         struct lca_fast {
+        public:
+            template<typename T1, typename T2>
+            struct internal_state {
+
+                size_t m_num_vertices;
+                T1 m_Euler;
+                T1 m_Depth;
+                T1 m_Represent;
+                T1 m_Number;
+                T2 m_Minim;
+                size_t m_rep;
+
+                internal_state(size_t num_vertices,
+                               const T1 &Euler,
+                               const T1 &Depth,
+                               const T1 &Represent,
+                               const T1 &Number,
+                               const T2 &Minim,
+                               size_t rep) :
+                        m_num_vertices(num_vertices),
+                        m_Euler(Euler),
+                        m_Depth(Depth),
+                        m_Represent(Represent),
+                        m_Number(Number),
+                        m_Minim(Minim),
+                        m_rep(rep) {}
+
+                internal_state(size_t num_vertices,
+                               T1 &&Euler,
+                               T1 &&Depth,
+                               T1 &&Represent,
+                               T1 &&Number,
+                               T2 &&Minim,
+                               size_t rep) :
+                        m_num_vertices(num_vertices),
+                        m_Euler(std::forward<T1>(Euler)),
+                        m_Depth(std::forward<T1>(Depth)),
+                        m_Represent(std::forward<T1>(Represent)),
+                        m_Number(std::forward<T1>(Number)),
+                        m_Minim(std::forward<T2>(Minim)),
+                        m_rep(rep) {}
+            };
+
         private:
 
             using array = xt::xtensor<std::size_t, 1>;
@@ -71,36 +114,10 @@ namespace hg {
                 }
             }
 
-            /* Recursive version
-            index_t LCApreprocessDepthFirst(const tree_t &tree, std::size_t node, std::size_t depth, index_t *nbr,
-                                         std::size_t *rep) {
-                (*nbr)++;
-                Euler[*nbr] = node;
-                Number[node] = *nbr;
-                Depth[node] = depth;
-                Represent[*nbr] = node;
-                (*rep)++;
-                for (auto son: children_iterator(node, tree)) {
-                    LCApreprocessDepthFirst(tree, son, depth + 1, nbr, rep);
-                    Euler[++(*nbr)] = node;
-                }
-                return *nbr;
-            }
-            */
 
             void LCApreprocess(const tree_t &tree) {
                 //O(n.log(n)) preprocessing
-                /* Recursive version
-                index_t nbr = -1;
-                std::size_t rep = 0;
 
-                nbr = LCApreprocessDepthFirst(tree, tree.root(), 0, &nbr, &rep);
-
-                // Check that the number of nodes in the tree was correct
-                std::size_t nbNodes = rep;
-                std::size_t nbRepresent = 2 * nbNodes - 1;
-                hg_assert((std::size_t) (nbr + 1) == nbRepresent, "oops incorrect number of nodes!");
-                */
                 computeDepth(tree);
                 LCApreprocessEuler(tree);
                 index_t nbNodes = m_num_vertices;
@@ -137,13 +154,34 @@ namespace hg {
                 }
             }
 
-
-        public:
-
             lca_fast() {
                 HG_TRACE();
                 m_num_vertices = 0;
             }
+
+            template<typename T1, typename T2>
+            void set_state(const internal_state<T1, T2> &state) {
+                m_num_vertices = state.m_num_vertices;
+                Euler = state.m_Euler;
+                Depth = state.m_Depth;
+                Represent = state.m_Represent;
+                Number = state.m_Number;
+                Minim = state.m_Minim;
+                rep = state.m_rep;
+            }
+
+            template<typename T1, typename T2>
+            void set_state(internal_state<T1, T2> &&state) {
+                m_num_vertices = state.m_num_vertices;
+                Euler = std::move(state.m_Euler);
+                Depth = std::move(state.m_Depth);
+                Represent = std::move(state.m_Represent);
+                Number = std::move(state.m_Number);
+                Minim = std::move(state.m_Minim);
+                rep = state.m_rep;
+            }
+
+        public:
 
             lca_fast(const tree_t &tree) {
                 HG_TRACE();
@@ -239,48 +277,6 @@ namespace hg {
                 return m_num_vertices;
             }
 
-            template<typename T1, typename T2>
-            struct internal_state {
-
-                size_t m_num_vertices;
-                T1 m_Euler;
-                T1 m_Depth;
-                T1 m_Represent;
-                T1 m_Number;
-                T2 m_Minim;
-                size_t m_rep;
-                
-                internal_state(size_t num_vertices,
-                               const T1 &Euler,
-                               const T1 &Depth,
-                               const T1 &Represent,
-                               const T1 &Number,
-                               const T2 &Minim,
-                               size_t rep) :
-                        m_num_vertices(num_vertices),
-                        m_Euler(Euler),
-                        m_Depth(Depth),
-                        m_Represent(Represent),
-                        m_Number(Number),
-                        m_Minim(Minim),
-                        m_rep(rep) {}
-
-                internal_state(size_t num_vertices,
-                               T1 &&Euler,
-                               T1 &&Depth,
-                               T1 &&Represent,
-                               T1 &&Number,
-                               T2 &&Minim,
-                               size_t rep) :
-                        m_num_vertices(num_vertices),
-                        m_Euler(std::forward<T1>(Euler)),
-                        m_Depth(std::forward<T1>(Depth)),
-                        m_Represent(std::forward<T1>(Represent)),
-                        m_Number(std::forward<T1>(Number)),
-                        m_Minim(std::forward<T2>(Minim)),
-                        m_rep(rep) {}
-            };
-
 
             /**
              * Returns a copy of the internal state of the object (can be saved/loaded/transmitted...)
@@ -296,38 +292,18 @@ namespace hg {
                                                       rep);
             }
 
-            /**
-             * Load the saved internal state into the current object
-             * @tparam T1
-             * @tparam T2
-             * @param state
-             */
             template<typename T1, typename T2>
-            void set_state(const internal_state<T1, T2> &state) {
-                m_num_vertices = state.m_num_vertices;
-                Euler = state.m_Euler;
-                Depth = state.m_Depth;
-                Represent = state.m_Represent;
-                Number = state.m_Number;
-                Minim = state.m_Minim;
-                rep = state.m_rep;
+            static lca_fast make_lca_fast(const internal_state<T1, T2> &state) {
+                auto lcaf = lca_fast();
+                lcaf.set_state(state);
+                return lcaf;
             }
 
-            /**
-             * Load the saved internal state into the current object (internal objects will be moved)
-             * @tparam T1
-             * @tparam T2
-             * @param state
-             */
             template<typename T1, typename T2>
-            void _set_state(internal_state<T1, T2> &&state) {
-                m_num_vertices = state.m_num_vertices;
-                Euler = std::move(state.m_Euler);
-                Depth = std::move(state.m_Depth);
-                Represent = std::move(state.m_Represent);
-                Number = std::move(state.m_Number);
-                Minim = std::move(state.m_Minim);
-                rep = state.m_rep;
+            static lca_fast make_lca_fast(internal_state<T1, T2> &&state) {
+                auto lcaf = lca_fast();
+                lcaf.set_state(std::forward<internal_state<T1, T2>>(state));
+                return lcaf;
             }
 
         };
