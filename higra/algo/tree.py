@@ -183,7 +183,7 @@ def filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, le
     """
 
     if not hg.CptBinaryHierarchy.validate(tree):
-        saliency = hg.saliency(tree, altitudes, leaf_graph)
+        saliency = hg.saliency(tree, altitudes, leaf_graph, handle_rag=False)
         tree, altitudes = hg.bpt_canonical(leaf_graph, saliency)
 
     mst = hg.CptBinaryHierarchy.get_mst(tree)
