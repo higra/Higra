@@ -100,7 +100,7 @@ def dasgupta_cost(tree, edge_weights, leaf_graph):
     """
     area = hg.attribute_area(tree, leaf_graph=leaf_graph)
 
-    lcaf = hg.make_lca_fast(tree)
+    lcaf = tree.lowest_common_ancestor_preprocess()
     lca = lcaf.lca(leaf_graph)
 
     return np.sum(area[lca] / edge_weights)
