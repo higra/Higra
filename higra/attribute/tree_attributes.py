@@ -73,7 +73,7 @@ def attribute_lca_map(tree, leaf_graph):
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy` on `tree`)
     :return: a 1d array
     """
-    lca = hg.make_lca_fast(tree)
+    lca = tree.lowest_common_ancestor_preprocess()
     res = lca.lca(leaf_graph)
     return res
 

@@ -86,3 +86,54 @@ def __num_children(self, vertex=None):
 @hg.extend_class(hg.Tree, method_name="__reduce__")
 def ____reduce__(self):
     return self.__class__, (self.parents(),), self.__dict__
+
+
+@hg.extend_class(hg.Tree, method_name="lowest_common_ancestor_preprocess")
+def __lowest_common_ancestor_preprocess(self):
+    """
+    Preprocess the tree to obtain a fast constant time :math:`\\mathcal{O}(1)` lowest common ancestor query.
+    Once this function has been called on a given tree instance, every following calls to the function
+    :func:`~higra.Tree.lowest_common_ancestor` will use this preprocessing.
+
+    :Complexity:
+
+    The preprocessing runs in linearithmic time  :math:`\\mathcal{O}(n\log(n))` with :math:`n` the number of vertices in the tree.
+
+    :return: An object of type :class:`~higra.LCAFast`
+    """
+    lca_fast = hg.get_attribute(self, "lca_fast")
+    if lca_fast is None:
+        lca_fast = hg.LCAFast(self)
+        hg.set_attribute(self, "lca_fast", lca_fast)
+    return lca_fast
+
+
+@hg.extend_class(hg.Tree, method_name="lowest_common_ancestor")
+def __lowest_common_ancestor(self, vertices1, vertices2):
+    """
+    Compute the lowest common ancestor between pairs of vertices defined by :attr:`vertices1` and :attr:`vertices2`.
+
+    :attr:`vertices1` and :attr:`vertices2` must be either:
+
+    - two positive integers strictly smaller than the number of vertices in the tree;
+    - two 1d arrays of positive integers strictly smaller than the number of vertices in the tree and of the same size.
+
+    :Complexity:
+
+    The worst case time complexity is :math:`\mathcal{O}(qn)` with :math:`q` the number of lowest ancestors to compute and :math:`n`
+    the number of vertices in the tree.
+
+    If many lowest ancestors are needed, this time complexity can be reduced to :math:`\mathcal{O}(q)` at the cost of a linearithmic
+    time :math:`\\mathcal{O}(n\log(n))` preprocessing by calling the function :func:`~higra.Tree.lowest_common_ancestor_preprocess`.
+
+    :param vertices1: a vertex index or an array of vertex indices
+    :param vertices2: a vertex index or an array of vertex indices
+    :return: the lowest common ancestor(s) of every pair of input vertices (a single index or an array of indices)
+    """
+
+    lca_fast = hg.get_attribute(self, "lca_fast")
+    if lca_fast is None:
+        return self._lowest_common_ancestor(vertices1, vertices2)
+    else:
+        return lca_fast.lca(vertices1, vertices2)
+

@@ -191,7 +191,7 @@ void py_init_tree_graph(pybind11::module &m) {
             (c,
              "Get largest vertex which contains the given vertex and whose altitude is stricly less than the given altitude lambda.");
 
-    c.def("lowest_common_ancestor", [](const graph_t &tree, hg::index_t vertex1, hg::index_t vertex2) {
+    c.def("_lowest_common_ancestor", [](const graph_t &tree, hg::index_t vertex1, hg::index_t vertex2) {
               hg_assert_vertex_index(tree, vertex1);
               hg_assert_vertex_index(tree, vertex2);
               return hg::lowest_common_ancestor(vertex1, vertex2, tree);
@@ -200,7 +200,7 @@ void py_init_tree_graph(pybind11::module &m) {
           py::arg("vertex1"),
           py::arg("vertex2"));
 
-    c.def("lowest_common_ancestor",
+    c.def("_lowest_common_ancestor",
           [](const graph_t &tree, const pyarray<hg::index_t> &vertices1, const pyarray<hg::index_t> &vertices2) {
               hg_assert_vertex_indices(tree, vertices1);
               hg_assert_vertex_indices(tree, vertices2);

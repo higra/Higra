@@ -51,7 +51,7 @@ void py_init_lca_fast(pybind11::module &m) {
 
     c.def(py::init<tree>(),
           "Preprocess the given tree in order for fast lowest common ancestor (LCA) computation.\n\n"
-          "Consider using the function :func:`~higra.make_lca_fast` instead of calling this constructor to"
+          "Consider using the function :func:`~higra.Tree.lowest_ancestor_preprocess` instead of calling this constructor to"
           "avoid preprocessing the same tree several times.",
           py::arg("tree"));
 

@@ -11,15 +11,16 @@
 import higra as hg
 
 
-@hg.auto_cache
 def make_lca_fast(tree):
     """
+    Deprecated: please use :func:`~higra.Tree.lowest_common_ancestor_preprocess`
+
     Create an object of type :class:`~higra.LCAFast` for the given tree
 
     :param tree: input tree
     :return: a LCAFast object
     """
-    return hg.LCAFast(tree)
+    return tree.lowest_common_ancestor_preprocess()
 
 
 def __reduce_ctr(*args):

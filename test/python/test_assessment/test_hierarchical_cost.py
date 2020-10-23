@@ -16,7 +16,7 @@ import higra as hg
 def dendrogram_purity_naif(tree, leaf_labels):
     from itertools import combinations
 
-    lcaf = hg.make_lca_fast(tree)
+    tree.lowest_common_ancestor_preprocess()
     area = hg.attribute_area(tree)
     max_label = np.max(leaf_labels)
     label_histo = np.zeros((tree.num_leaves(), max_label + 1), dtype=np.int64)
@@ -37,7 +37,7 @@ def dendrogram_purity_naif(tree, leaf_labels):
         count += len(pairs)
 
         pairs = np.asarray(pairs, dtype=np.int64)
-        lcas = lcaf.lca(pairs[:, 0], pairs[:, 1])
+        lcas = tree.lowest_common_ancestor(pairs[:, 0], pairs[:, 1])
         total += np.sum(class_purity[lcas, label])
 
     return total / count
