@@ -369,10 +369,7 @@ namespace hg {
         hg_assert_node_weights(tree, altitudes);
         hg_assert_1d_array(altitudes);
 
-        array_1d<index_t> sorted = xt::arange(altitudes.size());
-        stable_sort(sorted.begin() + num_leaves(tree),
-                    sorted.end(),
-                    [&altitudes](index_t i, index_t j) { return altitudes(i) < altitudes(j); });
+        array_1d<index_t> sorted = stable_arg_sort(altitudes);
 
         array_1d<index_t> reverse_sorted = xt::empty_like(sorted);
         for (index_t i = 0; i < (index_t) reverse_sorted.size(); i++) {
