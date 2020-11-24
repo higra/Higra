@@ -134,9 +134,7 @@ namespace hg {
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
 
-        array_1d<index_t> sorted_edges_indices = xt::arange(num_edges(graph));
-        stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
-                         [&edge_weights](index_t i, index_t j) { return edge_weights[i] < edge_weights[j]; });
+        array_1d<index_t> sorted_edges_indices = stable_arg_sort(edge_weights);
 
         auto num_points = num_vertices(graph);
 

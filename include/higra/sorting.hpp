@@ -10,9 +10,10 @@
 
 #pragma once
 
+#include "structure/array.hpp"
+
 #ifdef HG_USE_TBB
 
-#include "structure/array.hpp"
 #include "tbb/parallel_sort.h"
 #include "tbb-ssort/parallel_stable_sort.h"
 
@@ -52,14 +53,14 @@ namespace hg {
     }
 
     template<typename T, typename Compare>
-    void stable_sort(xt::xexpression<T> & arrayx, Compare comp) {
-        auto & array = arrayx.derived_cast();
+    void stable_sort(xt::xexpression<T> &arrayx, Compare comp) {
+        auto &array = arrayx.derived_cast();
         hg_assert_1d_array(array);
         hg::stable_sort(array.begin(), array.end(), comp);
     }
 
     template<typename T>
-    void stable_sort(xt::xexpression<T> & arrayx) {
+    void stable_sort(xt::xexpression<T> &arrayx) {
         hg::stable_sort(arrayx, std::less<typename T::value_type>());
     }
 
@@ -70,14 +71,14 @@ namespace hg {
     }
 
     template<typename T, typename Compare>
-    void sort(xt::xexpression<T> & arrayx, Compare comp) {
-        auto & array = arrayx.derived_cast();
+    void sort(xt::xexpression<T> &arrayx, Compare comp) {
+        auto &array = arrayx.derived_cast();
         hg_assert_1d_array(array);
         hg::sort(array.begin(), array.end(), comp);
     }
 
     template<typename T>
-    void sort(xt::xexpression<T> & arrayx) {
+    void sort(xt::xexpression<T> &arrayx) {
         hg::sort(arrayx, std::less<typename T::value_type>());
     }
 

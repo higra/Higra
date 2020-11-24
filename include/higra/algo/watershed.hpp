@@ -136,9 +136,7 @@ namespace hg {
 
         using label_type = typename T2::value_type;
 
-        array_1d<index_t> sorted_edges_indices = xt::arange(num_edges(graph));
-        stable_sort(sorted_edges_indices.begin(), sorted_edges_indices.end(),
-                    [&edge_weights](index_t i, index_t j) { return edge_weights[i] < edge_weights[j]; });
+        array_1d<index_t> sorted_edges_indices = stable_arg_sort(edge_weights);
 
         index_t num_nodes = num_vertices(graph);
         index_t num_edges = sorted_edges_indices.size();

@@ -167,9 +167,7 @@ namespace hg {
         hg_assert_vertex_weights(graph, vertex_weights);
         hg_assert_1d_array(vertex_weights);
 
-        array_1d<index_t> sorted_vertex_indices = xt::arange(num_vertices(graph));
-        stable_sort(sorted_vertex_indices.begin(), sorted_vertex_indices.end(),
-                    [&vertex_weights](index_t i, index_t j) { return vertex_weights[i] < vertex_weights[j]; });
+        array_1d<index_t> sorted_vertex_indices = stable_arg_sort(vertex_weights);
         return component_tree_internal::tree_from_sorted_vertices(graph, vertex_weights, sorted_vertex_indices);
     }
 
@@ -202,9 +200,8 @@ namespace hg {
         hg_assert_vertex_weights(graph, vertex_weights);
         hg_assert_1d_array(vertex_weights);
 
-        array_1d<index_t> sorted_vertex_indices = xt::arange(num_vertices(graph));
-        stable_sort(sorted_vertex_indices.begin(), sorted_vertex_indices.end(),
-                    [&vertex_weights](index_t i, index_t j) { return vertex_weights[i] > vertex_weights[j]; });
+        array_1d<index_t> sorted_vertex_indices = stable_arg_sort(vertex_weights,
+                                                                  std::greater<typename T::value_type>());
         return component_tree_internal::tree_from_sorted_vertices(graph, vertex_weights, sorted_vertex_indices);
     }
 
