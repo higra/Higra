@@ -167,13 +167,16 @@ class TestHierarchyCore(unittest.TestCase):
         t = TestHierarchyCore.getTree()
         altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 2))
 
-        new_tree, new_altitudes = hg.canonize_hierarchy(t, altitudes)
+        new_tree, new_altitudes, node_map = hg.canonize_hierarchy(t, altitudes, return_node_map=True)
 
         refp = np.asarray((5, 5, 6, 6, 6, 6, 6))
         self.assertTrue(np.all(refp == new_tree.parents()))
 
         refa = np.asarray((0, 0, 0, 0, 0, 1, 2))
         self.assertTrue(np.all(refa == new_altitudes))
+
+        refm = np.asarray((0, 1, 2, 3, 4, 5, 7))
+        self.assertTrue(np.all(refm == node_map))
 
     def test_tree_2_binary_tree(self):
         t = hg.Tree((9, 9, 10, 10, 10, 10, 11, 11, 11, 12, 12, 12, 12))

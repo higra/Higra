@@ -115,7 +115,7 @@ def saliency(tree, altitudes, leaf_graph, handle_rag=True):
     return sm
 
 
-def canonize_hierarchy(tree, altitudes):
+def canonize_hierarchy(tree, altitudes, return_node_map=False):
     """
     Removes consecutive tree nodes with equal altitudes.
 
@@ -125,13 +125,21 @@ def canonize_hierarchy(tree, altitudes):
     For example, applying this function to the result of :func:`~higra.bpt_canonical` on an edge weighted graph
     is the same as computing the :func:`~higra.quasi_flat_zone_hierarchy` of the same edge weighted graph.
 
+    If :attr:`return_node_map` is ``True``, an extra array that maps any vertex index :math:`i` of the new tree,
+    to the index of the corresponding vertex in the original tree is returned.
+
     :param tree: input tree
     :param altitudes: altitudes of the vertices of the tree
+    :param return_node_map: if ``True``, also return the node map.
     :return: a tree (Concept :class:`~higra.CptHierarchy` if input tree already satisfied this concept)
-            and its node altitudes
+             its node altitudes, and, if requested, its node map.
     """
-    ctree, node_map = hg.simplify_tree(tree, altitudes == altitudes[tree.parents()])
-    return ctree, altitudes[node_map]
+    tree, node_map = hg.simplify_tree(tree, altitudes == altitudes[tree.parents()])
+    new_altitudes = altitudes[node_map]
+    if return_node_map:
+        return tree, new_altitudes, node_map
+    else:
+        return tree, new_altitudes
 
 
 def tree_2_binary_tree(tree):
