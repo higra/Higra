@@ -173,11 +173,30 @@ class TestAlgorithmTree(unittest.TestCase):
             area_min_children = hg.accumulate_parallel(tree, area, hg.Accumulators.min)
             return area_min_children < 3
 
-        res_tree, res_altitudes = hg.filter_non_relevant_node_from_tree(tree, altitudes, functor)
+        res_tree, res_altitudes = hg.filter_non_relevant_node_from_tree(tree, altitudes, functor, canonize_tree=False)
 
         sm = hg.saliency(res_tree, res_altitudes)
         sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
         self.assertTrue(np.all(sm == sm_ref))
+
+        ref_parents = (8, 8, 9, 9, 10, 11, 11, 12, 13, 10, 13, 12, 14, 14, 14)
+        ref_altitudes = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+        self.assertTrue(hg.CptBinaryHierarchy.validate(res_tree))
+        self.assertTrue(np.all(ref_parents == res_tree.parents()))
+        self.assertTrue(np.all(res_altitudes == ref_altitudes))
+
+        res_tree, res_altitudes = hg.filter_non_relevant_node_from_tree(tree, altitudes, functor, canonize_tree=True)
+
+        sm = hg.saliency(res_tree, res_altitudes)
+        sm_ref = np.asarray((0, 0, 0, 0, 1, 0, 0))
+        self.assertTrue(np.all(sm == sm_ref))
+
+        ref_parents = (8, 8, 8, 8, 8, 9, 9, 9, 10, 10, 10)
+        ref_tree = hg.Tree(ref_parents)
+        ref_altitudes = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+        self.assertFalse(hg.CptBinaryHierarchy.validate(res_tree))
+        self.assertTrue(hg.test_tree_isomorphism(res_tree, ref_tree))
+        self.assertTrue(np.all(res_altitudes == ref_altitudes))
 
     def test_filter_small_node_from_tree(self):
         g = hg.get_4_adjacency_graph((1, 8))

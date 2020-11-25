@@ -150,11 +150,10 @@ def labelisation_hierarchy_supervertices(tree, altitudes, leaf_graph=None, handl
 
 
 @hg.argument_helper(hg.CptHierarchy)
-def filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, leaf_graph):
+def filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, leaf_graph, canonize_tree=True):
     """
     Filter the given tree according to a functor telling if nodes are relevant or not.
 
-    The given tree is first transformed into a binary tree (arbitrary choices are made).
     In a binary a tree, each inner node (non leaf node) is associated to the frontier separating its two children.
     If a the frontier associated to a node is considered as non relevant (for example because on of the two children
     of the node is too small) then the corresponding frontier is removed effectively merging its two children.
@@ -164,6 +163,9 @@ def filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, le
         - the frontiers associated to nodes marked *non-relevant* do not exist anymore;
         - the regions of the new tree are either regions of the initial tree or regions obtained by merging adjacent
           regions of the initial tree.
+
+    If :attr:`tree` does not satisfy the concept :class:`~higra.CptBinaryHierarchy`, the given tree is first transformed
+    into a binary tree (arbitrary choices are made).
 
     :attr:`non_relevant_functor` must be a function that accepts two arguments, a binary tree and its node altitudes,
     and must return a boolean node attribute for the given tree (ie a 1d array of boolean-ish values of size
@@ -179,7 +181,10 @@ def filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, le
     :param altitudes: node altitudes of the input tree
     :param non_relevant_functor: a function that computes an attribute on a binary tree
     :param leaf_graph: graph of the tree leaves (deduced from :class:`~higra.CptHierarchy`)
-    :return: a binary tree (Concept :class:`~higra.CptBinaryHierarchy`) and its node altitudes
+    :param canonize_tree: if ``True`` (default), the resulting hierarchy is canonized (see function :func:`~higra.canonize_hierarchy`),
+           otherwise the returned hierarchy is a binary tree
+    :return: a tree (Concept :class:`~higra.CptHierarchy` is ``True`` and :class:`~higra.CptBinaryHierarchy` otherwise)
+             and its node altitudes
     """
 
     if not hg.CptBinaryHierarchy.validate(tree):
@@ -191,11 +196,16 @@ def filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, le
 
     mst_edge_weights = altitudes[tree.num_leaves():]
     mst_edge_weights[deleted_frontier_nodes[tree.num_leaves():]] = 0
-    return hg.bpt_canonical(mst, mst_edge_weights)
+    tree, altitudes = hg.bpt_canonical(mst, mst_edge_weights)
+
+    if canonize_tree:
+        tree, altitudes = hg.canonize_hierarchy(tree, altitudes)
+
+    return tree, altitudes
 
 
 @hg.argument_helper(hg.CptHierarchy)
-def filter_small_nodes_from_tree(tree, altitudes, size_threshold, leaf_graph):
+def filter_small_nodes_from_tree(tree, altitudes, size_threshold, leaf_graph, canonize_tree=True):
     """
     Filter the given tree according to node size:
 
@@ -213,18 +223,21 @@ def filter_small_nodes_from_tree(tree, altitudes, size_threshold, leaf_graph):
     :param altitudes: node altitudes of the input tree
     :param size_threshold: regions whose size is smaller than this threshold will be removed (see :func:`~higra.attribute_area`)
     :param leaf_graph: graph of the tree leaves (deduced from :class:`~higra.CptHierarchy`)
-    :return: a binary tree (Concept :class:`~higra.CptBinaryHierarchy`) and its node altitudes
+    :param canonize_tree: if ``True`` (default), the resulting hierarchy is canonized (see function :func:`~higra.canonize_hierarchy`),
+           otherwise the returned hierarchy is a binary tree
+    :return: a tree (Concept :class:`~higra.CptHierarchy` is ``True`` and :class:`~higra.CptBinaryHierarchy` otherwise)
+             and its node altitudes
     """
 
     def non_relevant_functor(tree, _):
         area = hg.attribute_area(tree)
         return hg.accumulate_parallel(tree, area, hg.Accumulators.min) < size_threshold
 
-    return filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, leaf_graph)
+    return filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, leaf_graph, canonize_tree)
 
 
 @hg.argument_helper(hg.CptHierarchy)
-def filter_weak_frontier_nodes_from_tree(tree, altitudes, edge_weights, strength_threshold, leaf_graph):
+def filter_weak_frontier_nodes_from_tree(tree, altitudes, edge_weights, strength_threshold, leaf_graph, canonize_tree=True):
     """
     Filter the given tree according to the frontier strength.
 
@@ -247,13 +260,16 @@ def filter_weak_frontier_nodes_from_tree(tree, altitudes, edge_weights, strength
     :param edge_weights: edge weights of the leaf graph
     :param strength_threshold: regions whose associated frontier strength is smaller than the given threshold are
         removed (see :func:`~higra.attribute_frontier_strength`)
-    :return: a binary tree (Concept :class:`~higra.CptBinaryHierarchy`) and its node altitudes
+    :param canonize_tree: if ``True`` (default), the resulting hierarchy is canonized (see function :func:`~higra.canonize_hierarchy`),
+           otherwise the returned hierarchy is a binary tree
+    :return: a tree (Concept :class:`~higra.CptHierarchy` is ``True`` and :class:`~higra.CptBinaryHierarchy` otherwise)
+             and its node altitudes
     """
 
     def non_relevant_functor(tree, _):
         return hg.attribute_frontier_strength(tree, edge_weights, leaf_graph) < strength_threshold
 
-    return filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, leaf_graph)
+    return filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, leaf_graph, canonize_tree)
 
 
 @hg.argument_helper(hg.CptHierarchy)
