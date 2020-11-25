@@ -87,16 +87,7 @@ namespace hg {
 
         auto mst_edge_weights = xt::view(persistence, xt::range(num_leaves(bpt), num_vertices(bpt)));
 
-        auto bptc2 = bpt_canonical(mst, mst_edge_weights);
-        auto &bpt2 = bptc2.tree;
-        auto &altitude2 = bptc2.altitudes;
-
-        auto canonical_tree = simplify_tree(bpt2, [&altitude2, &bpt2](index_t i) {
-            return altitude2(i) == altitude2(parent(i, bpt2));
-        });
-        auto canonical_altitude = xt::eval(xt::index_view(altitude2, canonical_tree.node_map));
-
-        return make_node_weighted_tree(std::move(canonical_tree.tree), std::move(canonical_altitude));
+        return bpt_canonical(mst, mst_edge_weights);
     };
 
     /**
@@ -122,19 +113,16 @@ namespace hg {
      * @tparam graph_t
      * @tparam T1
      * @tparam T2
-     * @tparam T3
      * @param graph: input graph
      * @param xedge_weights: input graph edge weights
      * @param xminima_ranks: input graph vertex weights containing the rank of each minima of the input edge weighted graph
-     * @param xminima_altitudes: array mapping each minima rank to its altitude
      * @return a node_weighted_tree
      */
-    template<typename graph_t, typename T1, typename T2, typename T3>
+    template<typename graph_t, typename T1, typename T2>
     auto watershed_hierarchy_by_minima_ordering(
             const graph_t &graph,
             const xt::xexpression<T1> &xedge_weights,
-            const xt::xexpression<T2> &xminima_ranks,
-            const xt::xexpression<T3> &xminima_altitudes) {
+            const xt::xexpression<T2> &xminima_ranks) {
         auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
@@ -142,8 +130,6 @@ namespace hg {
         hg_assert_vertex_weights(graph, minima_ranks);
         hg_assert_1d_array(minima_ranks);
         hg_assert_integral_value_type(minima_ranks);
-        auto &minima_altitudes = xminima_altitudes.derived_cast();
-        hg_assert_1d_array(minima_altitudes);
 
         auto bptc = bpt_canonical(graph, edge_weights);
         auto &bpt = bptc.tree;
@@ -156,18 +142,7 @@ namespace hg {
 
         auto mst_edge_weights = xt::view(persistence, xt::range(num_leaves(bpt), num_vertices(bpt)));
 
-        auto bptc2 = bpt_canonical(mst, mst_edge_weights);
-        auto &bpt2 = bptc2.tree;
-        auto &altitude2 = bptc2.altitudes;
-
-        auto canonical_tree = simplify_tree(bpt2, [&altitude2, &bpt2](index_t i) {
-            return altitude2(i) == altitude2(parent(i, bpt2));
-        });
-        auto canonical_altitude = xt::eval(
-                xt::index_view(minima_altitudes,
-                               xt::index_view(altitude2, canonical_tree.node_map)));
-
-        return make_node_weighted_tree(std::move(canonical_tree.tree), std::move(canonical_altitude));
+        return bpt_canonical(mst, mst_edge_weights);
     };
 
     template<typename graph_t, typename T1, typename T2>
@@ -183,7 +158,7 @@ namespace hg {
                     return attribute_area(t, vertex_area);
                 });
     };
-
+ 
     template<typename graph_t, typename T1>
     auto watershed_hierarchy_by_area(
             const graph_t &graph,

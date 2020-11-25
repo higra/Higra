@@ -31,11 +31,11 @@ namespace watershed_hierarchy {
         auto &t = res.tree;
         auto &altitudes = res.altitudes;
 
-        array_1d<index_t> ref_parents{7, 7, 6, 7, 7, 6, 8, 8, 8};
-        tree ref_tree(ref_parents);
-        array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 2};
+        array_1d<index_t> ref_parents{6, 7, 8, 6, 7, 8, 9, 9, 10, 10, 10 };
 
-        REQUIRE(test_tree_isomorphism(t, ref_tree));
+        array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2};
+
+        REQUIRE((ref_parents == t.parents()));
         REQUIRE((altitudes == ref_altitudes));
     }
 
@@ -48,14 +48,12 @@ namespace watershed_hierarchy {
         auto &t = res.tree;
         auto &altitudes = res.altitudes;
 
-        array_1d<index_t> ref_parents{19, 19, 20, 20, 20, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23,
-                                      24,
-                                      24, 25, 26, 26, 25, 27, 27, 27};
-        tree ref_tree(ref_parents);
-        array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 3,
-                                    5};
+        array_1d<index_t> ref_parents{19, 19, 20, 20, 21, 22, 22, 23, 24, 25, 26, 27, 27, 28, 29, 30, 31, 31, 32,
+                                      33, 21, 33, 23, 24, 25, 26, 34, 28, 29, 30, 35, 32, 35, 34, 36, 36, 36};
+        array_1d<int> ref_altitudes  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 3, 5};
 
-        REQUIRE(test_tree_isomorphism(t, ref_tree));
+        REQUIRE((ref_parents == t.parents()));
         REQUIRE((altitudes == ref_altitudes));
     }
 
@@ -78,11 +76,12 @@ namespace watershed_hierarchy {
         auto &t = res.tree;
         auto &altitudes = res.altitudes;
 
-        array_1d<index_t> ref_parents{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11};
-        tree ref_tree(ref_parents);
-        array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3};
+        array_1d<index_t> ref_parents{8, 8, 9, 7, 7, 10, 10,
+                                      9, 12, 11, 11, 12, 12};
+        array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 2, 3};
 
-        REQUIRE(test_tree_isomorphism(t, ref_tree));
+        REQUIRE((ref_parents == t.parents()));
         REQUIRE((altitudes == ref_altitudes));
     }
 
@@ -96,11 +95,12 @@ namespace watershed_hierarchy {
         auto &t = res.tree;
         auto &altitudes = res.altitudes;
 
-        array_1d<index_t> ref_parents{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11};
-        tree ref_tree(ref_parents);
-        array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6};
+        array_1d<index_t> ref_parents{8, 8, 9, 7, 7, 10, 10,
+                                      9, 12, 11, 11, 12, 12};
+        array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 4, 6};
 
-        REQUIRE(test_tree_isomorphism(t, ref_tree));
+        REQUIRE((ref_parents == t.parents()));
         REQUIRE((altitudes == ref_altitudes));
     }
 
@@ -110,17 +110,17 @@ namespace watershed_hierarchy {
         array_1d<int> edge_weights{1, 4, 1, 0, 10, 8};
         //same as dynamics
         array_1d<int> minima_ranking{2, 2, 0, 3, 3, 1, 1};
-        array_1d<int> minima_altitudes{0, 2, 3, 10};
 
-        auto res = watershed_hierarchy_by_minima_ordering(g, edge_weights, minima_ranking, minima_altitudes);
+        auto res = watershed_hierarchy_by_minima_ordering(g, edge_weights, minima_ranking);
         auto &t = res.tree;
         auto &altitudes = res.altitudes;
 
-        array_1d<index_t> ref_parents{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11};
-        tree ref_tree(ref_parents);
-        array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3};
+        array_1d<index_t> ref_parents{8, 8, 9, 7, 7, 10, 10,
+                                      9, 12, 11, 11, 12, 12};
+        array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 1, 2};
 
-        REQUIRE(test_tree_isomorphism(t, ref_tree));
+        REQUIRE((ref_parents == t.parents()));
         REQUIRE((altitudes == ref_altitudes));
     }
 

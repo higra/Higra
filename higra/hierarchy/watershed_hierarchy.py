@@ -12,7 +12,7 @@ import higra as hg
 import numpy as np
 
 
-def watershed_hierarchy_by_area(graph, edge_weights, vertex_area=None):
+def watershed_hierarchy_by_area(graph, edge_weights, vertex_area=None, canonize_tree=True):
     """
     Watershed hierarchy by area.
 
@@ -31,7 +31,10 @@ def watershed_hierarchy_by_area(graph, edge_weights, vertex_area=None):
     :param graph: input graph
     :param edge_weights: input graph edge weights
     :param vertex_area: area of the input graph vertices (provided by :func:`~higra.attribute_vertex_area`)
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    :param canonize_tree: if ``True`` (default), the resulting hierarchy is canonized (see function :func:`~higra.canonize_hierarchy`),
+           otherwise the returned hierarchy is a binary tree
+    :return: a tree (Concept :class:`~higra.CptHierarchy` is ``True`` and :class:`~higra.CptBinaryHierarchy` otherwise)
+             and its node altitudes
     """
     if vertex_area is None:
         vertex_area = hg.attribute_vertex_area(graph)
@@ -39,10 +42,11 @@ def watershed_hierarchy_by_area(graph, edge_weights, vertex_area=None):
     vertex_area = hg.linearize_vertex_weights(vertex_area, graph)
 
     return watershed_hierarchy_by_attribute(graph, edge_weights,
-                                            lambda tree, _: hg.attribute_area(tree, vertex_area, graph))
+                                            lambda tree, _: hg.attribute_area(tree, vertex_area, graph),
+                                            canonize_tree)
 
 
-def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area=None):
+def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area=None, canonize_tree=True):
     """
     Watershed hierarchy by volume.
 
@@ -61,7 +65,10 @@ def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area=None):
     :param graph: input graph
     :param edge_weights: input graph edge weights
     :param vertex_area: area of the input graph vertices (provided by :func:`~higra.attribute_vertex_area`)
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    :param canonize_tree: if ``True`` (default), the resulting hierarchy is canonized (see function :func:`~higra.canonize_hierarchy`),
+           otherwise the returned hierarchy is a binary tree
+    :return: a tree (Concept :class:`~higra.CptHierarchy` is ``True`` and :class:`~higra.CptBinaryHierarchy` otherwise)
+             and its node altitudes
     """
     if vertex_area is None:
         vertex_area = hg.attribute_vertex_area(graph)
@@ -72,10 +79,11 @@ def watershed_hierarchy_by_volume(graph, edge_weights, vertex_area=None):
                                             lambda tree, altitudes:
                                             hg.attribute_volume(tree,
                                                                 altitudes,
-                                                                hg.attribute_area(tree, vertex_area)))
+                                                                hg.attribute_area(tree, vertex_area)),
+                                            canonize_tree)
 
 
-def watershed_hierarchy_by_dynamics(graph, edge_weights):
+def watershed_hierarchy_by_dynamics(graph, edge_weights, canonize_tree=True):
     """
     Watershed hierarchy by dynamics.
 
@@ -93,16 +101,20 @@ def watershed_hierarchy_by_dynamics(graph, edge_weights):
 
     :param graph: input graph
     :param edge_weights: input graph edge weights
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    :param canonize_tree: if ``True`` (default), the resulting hierarchy is canonized (see function :func:`~higra.canonize_hierarchy`),
+           otherwise the returned hierarchy is a binary tree
+    :return: a tree (Concept :class:`~higra.CptHierarchy` is ``True`` and :class:`~higra.CptBinaryHierarchy` otherwise)
+             and its node altitudes
     """
     return watershed_hierarchy_by_attribute(graph, edge_weights,
                                             lambda tree, altitudes:
                                             hg.attribute_dynamics(tree,
                                                                   altitudes,
-                                                                  "increasing"))
+                                                                  "increasing"),
+                                            canonize_tree)
 
 
-def watershed_hierarchy_by_number_of_parents(graph, edge_weights):
+def watershed_hierarchy_by_number_of_parents(graph, edge_weights, canonize_tree=True):
     """
     Watershed hierarchy by number of parents.
 
@@ -129,7 +141,10 @@ def watershed_hierarchy_by_number_of_parents(graph, edge_weights):
 
     :param graph: input graph
     :param edge_weights: edge weights of the input graph
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    :param canonize_tree: if ``True`` (default), the resulting hierarchy is canonized (see function :func:`~higra.canonize_hierarchy`),
+           otherwise the returned hierarchy is a binary tree
+    :return: a tree (Concept :class:`~higra.CptHierarchy` is ``True`` and :class:`~higra.CptBinaryHierarchy` otherwise)
+             and its node altitudes
     """
 
     def num_parents(bpt_tree, altitudes):
@@ -158,10 +173,10 @@ def watershed_hierarchy_by_number_of_parents(graph, edge_weights):
 
         return res
 
-    return hg.watershed_hierarchy_by_attribute(graph, edge_weights, num_parents)
+    return hg.watershed_hierarchy_by_attribute(graph, edge_weights, num_parents, canonize_tree)
 
 
-def watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor):
+def watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor, canonize_tree=True):
     """
     Watershed hierarchy by a user defined attributes.
 
@@ -191,7 +206,10 @@ def watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor):
     :param graph: input graph
     :param edge_weights: edge weights of the input graph
     :param attribute_functor: function computing the regional attribute
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    :param canonize_tree: if ``True`` (default), the resulting hierarchy is canonized (see function :func:`~higra.canonize_hierarchy`),
+           otherwise the returned hierarchy is a binary tree
+    :return: a tree (Concept :class:`~higra.CptHierarchy` is ``True`` and :class:`~higra.CptBinaryHierarchy` otherwise)
+             and its node altitudes
     """
 
     def helper_functor(tree, altitudes):
@@ -205,10 +223,18 @@ def watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor):
 
     hg.CptHierarchy.link(tree, graph)
 
+    if canonize_tree:
+        tree, altitudes = hg.canonize_hierarchy(tree, altitudes)
+    else:
+        mst = res.mst()
+        mst_edge_map = res.mst_edge_map()
+        hg.CptMinimumSpanningTree.link(mst, graph, mst_edge_map)
+        hg.CptBinaryHierarchy.link(tree, mst)
+
     return tree, altitudes
 
 
-def watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, minima_altitudes):
+def watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, minima_altitudes=None, canonize_tree=True):
     """
     Watershed hierarchy for the given minima ordering.
 
@@ -239,23 +265,36 @@ def watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, mi
         - there is no non zero value vertex outside minima, and
         - no two minima contain non zero vertices with the same weight.
      
-    The altitude associated to each minimum is a non decreasing 1d array of size :math:`n + 1` with non negative values.
+    :attr:`minima_altitudes` is an optional non decreasing 1d array of size :math:`n + 1` with non negative values such that
+    :math:`minima\_altitudes[i]` indicates the altitude of the minima of rank :math:`i`.
     Note that the first entry of the minima altitudes array, ie. the value at index 0, does not represent a minimum and
     its value should be 0.
+
+    The altitude of a node of the computed watershed corresponds to the altitude (respectively the rank) of the minima it
+    is associated to if :attr:`minima_altitudes` is provided (respectively not provided).
 
     :param graph: input graph
     :param edge_weights: edge weights of the input graph
     :param minima_ranks: input graph vertex weights containing the rank of each minima of the input edge weighted graph
-    :param minima_altitudes: array mapping each minima rank to its altitude
-    :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
+    :param minima_altitudes: array mapping each minima rank to its altitude (optional)
+    :param canonize_tree: if ``True`` (default), the resulting hierarchy is canonized (see function :func:`~higra.canonize_hierarchy`),
+           otherwise the returned hierarchy is a binary tree
+    :return: a tree (Concept :class:`~higra.CptHierarchy` is ``True`` and :class:`~higra.CptBinaryHierarchy` otherwise)
+             and its node altitudes
     """
 
     minima_ranks = hg.cast_to_dtype(minima_ranks, np.uint64)
-    minima_altitudes = hg.cast_to_dtype(minima_altitudes, np.float64)
-    res = hg.cpp._watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, minima_altitudes)
-    tree = res.tree()
-    altitudes = res.altitudes()
+    tree, altitudes, mst, mst_edge_map = hg.cpp._watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks)
 
     hg.CptHierarchy.link(tree, graph)
+
+    if canonize_tree:
+        tree, altitudes = hg.canonize_hierarchy(tree, altitudes)
+    else:
+        hg.CptMinimumSpanningTree.link(mst, graph, mst_edge_map)
+        hg.CptBinaryHierarchy.link(tree, mst)
+
+    if minima_altitudes is not None:
+        altitudes = minima_altitudes[altitudes]
 
     return tree, altitudes

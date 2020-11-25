@@ -47,16 +47,19 @@ struct def_watershed_hierarchy_by_minima_ordering {
         c.def("_watershed_hierarchy_by_minima_ordering",
               [](const graph_t &graph,
                  const pyarray<value_t> &edge_weights,
-                 const pyarray<size_t> &minima_ranks,
-                 const pyarray<double> &minima_altitudes) {
-                  return hg::watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks,
-                                                                    minima_altitudes);
+                 const pyarray<size_t> &minima_ranks) {
+                  auto res = hg::watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks);
+                  return py::make_tuple(
+                          std::move(res.tree),
+                          std::move(res.altitudes),
+                          std::move(res.mst),
+                          std::move(res.mst_edge_map)
+                          );
               },
               doc,
               py::arg("graph"),
               py::arg("edge_weights"),
-              py::arg("minima_ranks"),
-              py::arg("minima_ordering"));
+              py::arg("minima_ranks"));
     }
 };
 
