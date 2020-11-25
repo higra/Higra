@@ -43,6 +43,19 @@ class TestWatershedHierarchy(unittest.TestCase):
         ref_tree = hg.Tree(ref_parents)
         ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3))
 
+        self.assertTrue(hg.CptHierarchy.validate(t))
+        self.assertTrue(hg.test_tree_isomorphism(t, ref_tree))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
+        # binary watershed hierarchy
+        t, altitudes = hg.watershed_hierarchy_by_minima_ordering(g, edge_weights, minima_ranking, minima_altitudes=None, canonize_tree=False)
+
+        ref_parents = np.asarray((8, 8, 9, 7, 7, 10, 10,
+                                  9, 12, 11, 11, 12, 12))
+        ref_tree = hg.Tree(ref_parents)
+        ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 1, 2))
+        self.assertTrue(hg.CptBinaryHierarchy.validate(t))
         self.assertTrue(hg.test_tree_isomorphism(t, ref_tree))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 
@@ -57,6 +70,20 @@ class TestWatershedHierarchy(unittest.TestCase):
         ref_tree = hg.Tree(ref_parents)
         ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 3, 5))
 
+        self.assertTrue(hg.CptHierarchy.validate(tree))
+        self.assertTrue(hg.test_tree_isomorphism(tree, ref_tree))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
+        # binary watershed hierarchy
+        tree, altitudes = hg.watershed_hierarchy_by_area(g, edge_weights, canonize_tree=False)
+
+        ref_parents = np.asarray((19, 19, 20, 20, 21, 22, 22, 23, 24, 25, 26, 27, 27, 28, 29, 30, 31, 31, 32,
+                                  33, 21, 33, 23, 24, 25, 26, 34, 28, 29, 30, 35, 32, 35, 34, 36, 36, 36), dtype=np.int64)
+        ref_tree = hg.Tree(ref_parents)
+        ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 3, 5))
+
+        self.assertTrue(hg.CptBinaryHierarchy.validate(tree))
         self.assertTrue(hg.test_tree_isomorphism(tree, ref_tree))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 

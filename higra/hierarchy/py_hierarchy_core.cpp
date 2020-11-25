@@ -30,13 +30,17 @@ struct def_node_weighted_tree_and_mst {
                                      (std::string("NodeWeightedTreeAndMST_") + typeid(class_t).name()).c_str(),
                                      "A simple structure to hold the result of canonical bpt construction algorithms, "
                                      "namely a tree, its associated node altitude array, and its associated MST.");
-        c.def("tree", [](class_t &self) -> tree_t & { return self.tree; }, "The binary partition tree!");
+        c.def("tree", [](class_t &self) -> tree_t & { return self.tree; }, "The binary partition tree!",
+                py::return_value_policy::reference_internal);
         c.def("altitudes", [](class_t &self) -> hg::array_1d<value_t> & { return self.altitudes; },
-              "An array of tree node altitude.");
+              "An array of tree node altitude.",
+              py::return_value_policy::reference_internal);
         c.def("mst", [](class_t &self) -> hg::ugraph & { return self.mst; },
-              "A minimum spanning tree associated to the binary partition tree.");
+              "A minimum spanning tree associated to the binary partition tree.",
+              py::return_value_policy::reference_internal);
         c.def("mst_edge_map", [](class_t &self) -> hg::array_1d<hg::index_t> & { return self.mst_edge_map; },
-              "For each edge index i of the mst, gives the corresponding edge index in the original graph.");
+              "For each edge index i of the mst, gives the corresponding edge index in the original graph.",
+              py::return_value_policy::reference_internal);
     }
 };
 
