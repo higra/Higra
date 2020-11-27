@@ -268,3 +268,71 @@ def make_graph_from_points(X, graph_type="knn+mst", symmetrization="max", **kwar
         raise ValueError("Unknown graph_type: " + str(graph_type))
 
     return g, edge_weights
+
+
+def subgraph(graph, edge_indices, spanning=True, return_vertex_map=False):
+    """
+    Extract a subgraph of the input graph. Let :math:`G=(V,E)` be the graph :attr:`graph` and let :math:`E^*`
+    be a subset of :math:`E`. The subgraph of :math:`G` induced by :math:`E^*` is equal to:
+
+    - :math:`(V, E^*)` is :attr:`spanning` is ``True``; and
+    - :math:`(\\bigcup E^*, E^*)` otherwise (the set of vertices of the subgraph is equal to the set of vertices present at
+      an extremity of an edge in :math:`E^*`).
+
+    The array :attr:`edge_indices` contains the indices of the edges in the set :math:`E^*`. The edges in the subgraph
+    are in the same order as the edges in the array :attr:`edge_indices`.
+
+    If :attr:`spanning` is ``False``, the subgraph may contain less vertices than the input graph. In such case, the
+    optional array result :math:`vertex\_map` (returned if :attr:`return_vertex_map` is ``True``) indicates for each
+    vertex :math:`i` of the subgraph, its corresponding index in the input graph.
+
+    :Example:
+
+        >>> # linear graph with 6 vertices
+        >>> graph = hg.UndirectedGraph(6)
+        >>> graph.add_edges(np.arange(5), np.arange(1, 6))
+        >>>
+        >>> # select edges (4, 5), (0, 1), and (3, 4), note that vertex 2 is not in any edge
+        >>> edge_indices = np.asarray((4, 0, 3))
+        >>> subgraph, vertex_map = hg.subgraph(graph, edge_indices, spanning=False, return_vertex_map=True)
+        >>>
+        >>> subgraph.num_vertices()
+        5
+        >>> vertex_map
+        [0 1 3 4 5]
+        >>> subgraph.edge_list()
+        ([3 0 2], [4 1 3])
+        >>> vertex_map
+        [0 1 3 4 5]
+
+    :param graph: input graph.
+    :param edge_indices: an array of edge indices of the input graph.
+    :param spanning: if ``True``, the subgraph has the same vertex set as the input graph.
+    :param return_vertex_map: if ``True``, also returns an array mapping each vertex of the current to its corresponding
+           vertex in the input graph.
+    :return: a subgraph and, if :attr:`return_vertex_map` is ``True``, a vertex map
+    """
+    if spanning:
+        subgraph = hg.UndirectedGraph(graph.num_vertices())
+        sources, targets = graph.edge_list()
+        subgraph.add_edges(sources[edge_indices], targets[edge_indices])
+
+        if return_vertex_map:
+            vertex_map = np.arange(graph.num_vertices())
+    else:
+        sources, targets = graph.edge_list()
+        sources = sources[edge_indices]
+        targets = targets[edge_indices]
+        all_vertices = np.concatenate((sources, targets))
+        vertex_map, inverse = np.unique(all_vertices, return_inverse=True)
+
+        sources = inverse[:edge_indices.size]
+        targets = inverse[edge_indices.size:]
+
+        subgraph = hg.UndirectedGraph(vertex_map.size)
+        subgraph.add_edges(sources, targets)
+
+    if return_vertex_map:
+        return subgraph, vertex_map
+    else:
+        return subgraph

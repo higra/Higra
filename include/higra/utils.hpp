@@ -110,25 +110,25 @@ namespace hg {
 #define hg_assert_vertex_indices(graph, vertex_indices) do { \
     hg_assert((xt::amin)(vertex_indices)() >= 0, \
               "Vertex indices cannot be negative.");\
-    hg_assert((index_t)(xt::amax)(vertex_indices)() < (index_t)num_vertices(graph), "Vertex indices must be smaller than the number of vertices in the graph/tree.");\
+    hg_assert((hg::index_t)(xt::amax)(vertex_indices)() < (hg::index_t)hg::num_vertices(graph), "Vertex indices must be smaller than the number of vertices in the graph/tree.");\
     } while (0)
 
 #define hg_assert_vertex_index(graph, vertex_index) do { \
     hg_assert(vertex_index >= 0, \
               "Vertex index cannot be negative.");\
-    hg_assert((index_t)vertex_index < (index_t)num_vertices(graph), "Vertex index must be smaller than the number of vertices in the graph/tree.");\
+    hg_assert((hg::index_t)vertex_index < (hg::index_t)hg::num_vertices(graph), "Vertex index must be smaller than the number of vertices in the graph/tree.");\
     } while (0)
 
 #define hg_assert_edge_indices(graph, edge_indices) do { \
-    hg_assert((xt::amin)(vertex_indices)() >= 0, \
+    hg_assert((xt::amin)(edge_indices)() >= 0, \
               "Edge indices cannot be negative.");\
-    hg_assert((index_t)(xt::amax)(vertex_indices)() < (index_t)num_edges(graph), "Edge indices must be smaller than the number of edges in the graph/tree.");\
+    hg_assert((hg::index_t)(xt::amax)(edge_indices)() < (hg::index_t)hg::num_edges(graph), "Edge indices must be smaller than the number of edges in the graph/tree.");\
     } while (0)
 
 #define hg_assert_edge_index(graph, edge_index) do { \
     hg_assert(edge_index >= 0, \
               "Edge index cannot be negative.");\
-    hg_assert((index_t)edge_index < (index_t)num_edges(graph), "Edge index must be smaller than the number of edges in the graph/tree.");\
+    hg_assert((hg::index_t)edge_index < (hg::index_t)hg::num_edges(graph), "Edge index must be smaller than the number of edges in the graph/tree.");\
     } while (0)
 #else
 #define hg_assert(test, msg) ((void)0)

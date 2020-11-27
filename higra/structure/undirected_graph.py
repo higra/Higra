@@ -20,3 +20,6 @@ def __reduce_ctr(num_vertices, sources, targets):
 @hg.extend_class(hg.UndirectedGraph, method_name="__reduce__")
 def ____reduce__(self):
     return __reduce_ctr, (self.num_vertices(), *self.edge_list()), self.__dict__
+
+
+

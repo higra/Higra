@@ -282,6 +282,30 @@ class TestAlgorithmGraphCore(unittest.TestCase):
 
         self.assertTrue(TestAlgorithmGraphCore.graph_equal(g, ew, g_ref, w_ref))
 
+    def test_subgraph_spanning(self):
+        graph = hg.get_4_adjacency_graph((2, 2))
+        edge_indices = np.asarray((3, 0))
+        subgraph = hg.subgraph(graph, edge_indices, spanning=True)
+
+        self.assertTrue(subgraph.num_vertices() == graph.num_vertices())
+        self.assertTrue(subgraph.num_edges() == len(edge_indices))
+        sources, targets = subgraph.edge_list()
+        self.assertTrue(np.all(sources == (2, 0)))
+        self.assertTrue(np.all(targets == (3, 1)))
+
+    def test_subgraph_spanning(self):
+        graph = hg.UndirectedGraph(6)
+        graph.add_edges(np.arange(5), np.arange(1, 6))
+        edge_indices = np.asarray((4, 0, 3))
+        subgraph, vertex_map = hg.subgraph(graph, edge_indices, spanning=False, return_vertex_map=True)
+
+        self.assertTrue(subgraph.num_vertices() == 5)
+        self.assertTrue(subgraph.num_edges() == len(edge_indices))
+        sources, targets = subgraph.edge_list()
+        self.assertTrue(np.all(vertex_map == (0, 1, 3, 4, 5)))
+        self.assertTrue(np.all(vertex_map[sources] == (4, 0, 3)))
+        self.assertTrue(np.all(vertex_map[targets] == (5, 1, 4)))
+
 
 if __name__ == '__main__':
     unittest.main()
