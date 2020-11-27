@@ -17,6 +17,7 @@
 #include "higra/accumulator/tree_accumulator.hpp"
 #include "higra/structure/lca_fast.hpp"
 #include "xtensor/xindex_view.hpp"
+#include "xtensor/xview.hpp"
 #include "xtensor/xnoalias.hpp"
 #include <utility>
 #include <tuple>
@@ -33,24 +34,69 @@ namespace hg {
      * @tparam altitude_t
      * @tparam mst_t
      */
-    template<typename tree_t, typename altitude_t, typename mst_t>
+    template<typename tree_t, typename altitude_t>
     struct node_weighted_tree_and_mst {
         tree_t tree;
         altitude_t altitudes;
-        mst_t mst;
         array_1d<index_t> mst_edge_map;
     };
 
-    template<typename tree_t, typename altitude_t, typename mst_t>
+    template<typename tree_t, typename altitude_t>
     decltype(auto) make_node_weighted_tree_and_mst(
             tree_t &&tree,
             altitude_t &&node_altitude,
-            mst_t &&mst,
             array_1d<index_t> &&mst_edge_map) {
-        return node_weighted_tree_and_mst<tree_t, altitude_t, mst_t>{std::forward<tree_t>(tree),
+        return node_weighted_tree_and_mst<tree_t, altitude_t>{std::forward<tree_t>(tree),
                                                                      std::forward<altitude_t>(node_altitude),
-                                                                     std::forward<mst_t>(mst),
                                                                      std::forward<array_1d<index_t> >(mst_edge_map)};
+    }
+
+    namespace hierarchy_core_internal {
+        template<typename graph_t, typename T>
+        auto bpt_canonical_from_sorted_edges(const graph_t &graph, const xt::xexpression<T> &xsorted_edge_indices) {
+            HG_TRACE();
+            auto &sorted_edge_indices = xsorted_edge_indices.derived_cast();
+            hg_assert_edge_weights(graph, sorted_edge_indices);
+            hg_assert_1d_array(sorted_edge_indices);
+            hg_assert_integral_value_type(sorted_edge_indices);
+
+            auto num_points = num_vertices(graph);
+
+            auto num_edge_mst = num_points - 1;
+
+            array_1d<index_t> mst_edge_map = xt::empty<index_t>({num_edge_mst});
+
+            union_find uf(num_points);
+
+            array_1d<index_t> roots = xt::arange(num_points);
+            array_1d<index_t> parents = xt::arange(num_points * 2 - 1);
+
+            size_t num_nodes = num_points;
+            size_t num_edge_found = 0;
+            index_t i = 0;
+
+            while (num_edge_found < num_edge_mst && i < (index_t) sorted_edge_indices.size()) {
+                auto ei = sorted_edge_indices[i];
+                auto e = edge_from_index(ei, graph);
+                auto c1 = uf.find(source(e, graph));
+                auto c2 = uf.find(target(e, graph));
+                if (c1 != c2) {
+                    parents[roots[c1]] = num_nodes;
+                    parents[roots[c2]] = num_nodes;
+                    auto newRoot = uf.link(c1, c2);
+                    roots[newRoot] = num_nodes;
+                    mst_edge_map(num_edge_found) = ei;
+                    num_nodes++;
+                    num_edge_found++;
+                }
+                i++;
+            }
+            hg_assert(num_edge_found == num_edge_mst, "Input graph must be connected.");
+
+            return std::make_pair(
+                    parents,
+                    std::move(mst_edge_map));
+        };
     }
 
     /**
@@ -80,47 +126,18 @@ namespace hg {
 
         array_1d<index_t> sorted_edges_indices = stable_arg_sort(edge_weights);
 
+        auto res = hierarchy_core_internal::bpt_canonical_from_sorted_edges(graph, sorted_edges_indices);
+        auto & parents = res.first;
+        auto & mst_edge_map = res.second;
+
         auto num_points = num_vertices(graph);
 
-        auto num_edge_mst = num_points - 1;
-        ugraph mst(num_points);
-        array_1d<index_t> mst_edge_map = xt::empty<index_t>({num_edge_mst});
-
-        union_find uf(num_points);
-
-        array_1d<index_t> roots = xt::arange(num_points);
-        array_1d<index_t> parents = xt::arange(num_points * 2 - 1);
-
-        array_1d<typename T::value_type> levels = xt::zeros<typename T::value_type>({num_points * 2 - 1});
-
-        size_t num_nodes = num_points;
-        size_t num_edge_found = 0;
-        index_t i = 0;
-
-        while (num_edge_found < num_edge_mst && i < (index_t) sorted_edges_indices.size()) {
-            auto ei = sorted_edges_indices[i];
-            auto e = edge_from_index(ei, graph);
-            auto c1 = uf.find(source(e, graph));
-            auto c2 = uf.find(target(e, graph));
-            if (c1 != c2) {
-                levels[num_nodes] = edge_weights[ei];
-                parents[roots[c1]] = num_nodes;
-                parents[roots[c2]] = num_nodes;
-                auto newRoot = uf.link(c1, c2);
-                roots[newRoot] = num_nodes;
-                mst.add_edge(e);
-                mst_edge_map(num_edge_found) = ei;
-                num_nodes++;
-                num_edge_found++;
-            }
-            i++;
-        }
-        hg_assert(num_edge_found == num_edge_mst, "Input graph must be connected.");
+        array_1d<typename T::value_type> levels = xt::zeros<typename T::value_type>({parents.size()});
+        xt::noalias(xt::view(levels, xt::range(num_points, levels.size()))) = xt::index_view(edge_weights, mst_edge_map);
 
         return make_node_weighted_tree_and_mst(
-                tree(parents),
+                tree(std::move(parents)),
                 std::move(levels),
-                std::move(mst),
                 std::move(mst_edge_map));
     };
 

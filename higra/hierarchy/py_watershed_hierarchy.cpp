@@ -30,7 +30,12 @@ struct def_watershed_hierarchy_by_attribute {
                       // FIXME can we do better for return type ?
                  const std::function<pyarray<double>(const hg::tree &,
                                                      const hg::array_1d<value_t> &)> &attribute_functor) {
-                  return hg::watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor);
+                  auto res = hg::watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor);
+                  return py::make_tuple(
+                          std::move(res.tree),
+                          std::move(res.altitudes),
+                          std::move(res.mst_edge_map)
+                  );
               },
               doc,
               py::arg("graph"),
@@ -52,7 +57,6 @@ struct def_watershed_hierarchy_by_minima_ordering {
                   return py::make_tuple(
                           std::move(res.tree),
                           std::move(res.altitudes),
-                          std::move(res.mst),
                           std::move(res.mst_edge_map)
                           );
               },

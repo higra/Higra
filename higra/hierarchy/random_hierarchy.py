@@ -104,7 +104,10 @@ def random_binary_partition_tree(num_leaves, asymmetry_probability):
         return g, edge_weights
 
     mst, edge_weights = _get_associated_mst(tree, altitudes)
+    mst_edge_map = np.arange(mst.num_edges())
 
-    hg.CptBinaryHierarchy.link(tree, mst)
+    hg.CptHierarchy.link(tree, mst)
+    hg.CptMinimumSpanningTree.link(mst, mst, mst_edge_map)
+    hg.CptBinaryHierarchy.link(tree, mst_edge_map, mst)
 
     return tree, altitudes

@@ -30,3 +30,19 @@ class TestRandomHierarchy(unittest.TestCase):
         for i in range(32):
             num_nodes = 1 if i == 0 else 2
             self.assertTrue(np.sum(depth == i) == num_nodes)
+
+    def test_random_binary_partition_tree_concepts(self):
+        size = 32
+        tree, altitudes = hg.random_binary_partition_tree(size, 0)
+        leaf_graph = hg.CptHierarchy.get_leaf_graph(tree)
+
+        self.assertTrue(leaf_graph.num_vertices() == size)
+        self.assertTrue(leaf_graph.num_edges() == size - 1)
+
+        sm = hg.saliency(tree, altitudes)
+        self.assertTrue(np.all(sm == altitudes[size:]))
+
+        mst = hg.CptBinaryHierarchy.get_mst(tree)
+        self.assertTrue(np.all(hg.CptMinimumSpanningTree.get_edge_map(mst) == hg.CptBinaryHierarchy.get_mst_edge_map(tree)))
+        self.assertTrue(mst == leaf_graph)
+        self.assertTrue(leaf_graph == hg.CptMinimumSpanningTree.get_base_graph(mst))
