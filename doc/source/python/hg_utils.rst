@@ -7,6 +7,8 @@ Utility functions
 
 .. autosummary::
 
+    arg_sort
+    sort
     is_iterable
     extend_class
     normalize_shape
@@ -21,6 +23,10 @@ Utility functions
     get_include
     get_lib_include
     get_lib_cmake
+
+.. autofunction:: higra.arg_sort
+
+.. autofunction:: higra.sort
 
 .. autofunction:: higra.is_iterable
 

@@ -14,11 +14,13 @@ set(PY_FILES
         __init__.py
         concept.py
         data_cache.py
-        hg_utils.py)
+        hg_utils.py
+        sorting.py)
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")
 
 set(PYMODULE_COMPONENTS
+        py_sorting.cpp
         pymodule.cpp)
 
 add_subdirectory(accumulator)

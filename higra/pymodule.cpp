@@ -59,6 +59,7 @@ PYBIND11_MODULE(higram, m) {
     py_init_rag(m);
     py_init_regular_graph(m);
     py_init_scipy(m);
+    py_init_sorting(m);
     py_init_tree_accumulator(m);
     py_init_tree_contour_accumulator(m);
     py_init_tree_energy_optimization(m);
