@@ -38,15 +38,12 @@ namespace hierarchy_core {
         auto res = bpt_canonical(graph, edge_weights);
         auto &tree = res.tree;
         auto &altitudes = res.altitudes;
-        auto &mst = res.mst;
         auto &mst_edge_map = res.mst_edge_map;
 
         REQUIRE(num_vertices(tree) == 3);
         REQUIRE(num_edges(tree) == 2);
         REQUIRE(tree.parents() == array_1d<int>({2, 2, 2}));
         REQUIRE((altitudes == array_1d<double>({0, 0, 2})));
-        REQUIRE(num_vertices(mst) == 2);
-        REQUIRE(num_edges(mst) == 1);
         REQUIRE((mst_edge_map == array_1d<int>({0})));
 
     }
@@ -59,26 +56,12 @@ namespace hierarchy_core {
         auto res = bpt_canonical(graph, edge_weights);
         auto &tree = res.tree;
         auto &altitudes = res.altitudes;
-        auto &mst = res.mst;
         auto &mst_edge_map = res.mst_edge_map;
 
         REQUIRE(num_vertices(tree) == 11);
         REQUIRE(num_edges(tree) == 10);
         REQUIRE(xt::allclose(hg::parents(tree), xt::xarray<unsigned int>({6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10})));
         REQUIRE(xt::allclose(altitudes, xt::xarray<double>({0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2})));
-        REQUIRE(num_vertices(mst) == 6);
-        REQUIRE(num_edges(mst) == 5);
-        std::vector<ugraph::edge_descriptor> ref = {
-                {0, 3, 0},
-                {0, 1, 1},
-                {1, 4, 2},
-                {2, 5, 3},
-                {1, 2, 4}
-        };
-        for (index_t i = 0; i < (index_t) ref.size(); i++) {
-            auto e = edge_from_index(i, mst);
-            REQUIRE(e == ref[i]);
-        }
         REQUIRE((mst_edge_map == array_1d<int>({1, 0, 3, 4, 2})));
     }
 

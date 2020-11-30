@@ -64,6 +64,69 @@ class TestHierarchyCore(unittest.TestCase):
 
         self.assertTrue(np.all(mst_edge_map == (1, 0, 3, 4, 2)))
 
+    def test_bpt_canonical_options(self):
+        graph = hg.get_4_adjacency_graph((2, 3))
+        edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
+        sorted_edge_indices = np.asarray((1, 0, 3, 4, 5, 2, 6))
+        ref_parents = np.asarray((6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10))
+        ref_mst_edge_map = np.asarray((1, 0, 3, 4, 2))
+        ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2))
+        ref_altitudes_no_weights = np.asarray((0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 5))
+
+        tree = hg.bpt_canonical(graph, edge_weights, return_altitudes=False, compute_mst=False)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(hg.get_attribute(tree, "mst") is None)
+        self.assertTrue(np.all(tree.mst_edge_map == ref_mst_edge_map))
+        mst = hg.CptBinaryHierarchy.get_mst(tree)
+        self.assertTrue(mst.num_vertices() == 6)
+        self.assertTrue(mst.num_edges() == 5)
+        self.assertTrue(np.all(mst.mst_edge_map == ref_mst_edge_map))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights, return_altitudes=True, compute_mst=True)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(tree.mst is not None)
+        self.assertTrue(tree.mst.num_vertices() == 6)
+        self.assertTrue(tree.mst.num_edges() == 5)
+        self.assertTrue(np.all(tree.mst.mst_edge_map == ref_mst_edge_map))
+        self.assertTrue(np.all(tree.mst_edge_map == ref_mst_edge_map))
+        self.assertTrue(np.all(altitudes == ref_altitudes))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights, sorted_edge_indices)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.all(altitudes == ref_altitudes))
+
+        tree, altitudes = hg.bpt_canonical(graph, sorted_edge_indices=sorted_edge_indices)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.all(altitudes == ref_altitudes_no_weights))
+
+    def test_bpt_canonical_vectorial(self):
+        graph = hg.get_4_adjacency_graph((2, 3))
+        edge_weights = np.asarray(((1, 0, 2, 1, 1, 1, 2),
+                                   (0, 2, 0, 0, 1, 1, 0),
+                                   (0, 5, 5, 1, 0, 1, 1))).T
+        sorted_edge_indices = np.asarray((1, 0, 3, 4, 5, 6, 2))
+        ref_parents = np.asarray((6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10))
+        ref_mst_edge_map = np.asarray((1, 0, 3, 4, 6))
+        ref_altitudes = np.asarray(((0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2),
+                                    (0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 0),
+                                    (0, 0, 0, 0, 0, 0, 5, 0, 1, 0, 1))).T
+        ref_altitudes_no_weights = np.asarray((0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 5))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.all(altitudes == ref_altitudes))
+        self.assertTrue(np.all(tree.mst_edge_map == ref_mst_edge_map))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights, sorted_edge_indices)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.all(altitudes == ref_altitudes))
+        self.assertTrue(np.all(tree.mst_edge_map == ref_mst_edge_map))
+
+        tree, altitudes = hg.bpt_canonical(graph, sorted_edge_indices=sorted_edge_indices)
+        self.assertTrue(np.all(tree.parents() == ref_parents))
+        self.assertTrue(np.all(altitudes == ref_altitudes_no_weights))
+        self.assertTrue(np.all(tree.mst_edge_map == ref_mst_edge_map))
+
     def test_QFZ(self):
         graph = hg.get_4_adjacency_graph((2, 3))
 
@@ -159,7 +222,7 @@ class TestHierarchyCore(unittest.TestCase):
         labels = np.asarray(((1, 2, 3),
                              (1, 4, 5)))
         rag = hg.make_region_adjacency_graph_from_labelisation(graph, labels)
-        rag_edge_weights = (1, 2, 1, 1, 1, 2)
+        rag_edge_weights = np.asarray((1, 2, 1, 1, 1, 2))
         sm = hg.saliency(*hg.bpt_canonical(rag, rag_edge_weights))
         self.assertTrue(np.all(sm == edge_weights))
 

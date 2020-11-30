@@ -217,19 +217,16 @@ def watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor, can
 
         return attribute_functor(tree, altitudes)
 
-    res = hg.cpp._watershed_hierarchy_by_attribute(graph, edge_weights, helper_functor)
-    tree = res.tree()
-    altitudes = res.altitudes()
+    tree, altitudes, mst_edge_map = hg.cpp._watershed_hierarchy_by_attribute(graph, edge_weights, helper_functor)
 
     hg.CptHierarchy.link(tree, graph)
 
     if canonize_tree:
         tree, altitudes = hg.canonize_hierarchy(tree, altitudes)
     else:
-        mst = res.mst()
-        mst_edge_map = res.mst_edge_map()
+        mst = hg.subgraph(graph, mst_edge_map)
         hg.CptMinimumSpanningTree.link(mst, graph, mst_edge_map)
-        hg.CptBinaryHierarchy.link(tree, mst)
+        hg.CptBinaryHierarchy.link(tree, mst_edge_map, mst)
 
     return tree, altitudes
 
@@ -284,15 +281,16 @@ def watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks, mi
     """
 
     minima_ranks = hg.cast_to_dtype(minima_ranks, np.uint64)
-    tree, altitudes, mst, mst_edge_map = hg.cpp._watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks)
+    tree, altitudes, mst_edge_map = hg.cpp._watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks)
 
     hg.CptHierarchy.link(tree, graph)
 
     if canonize_tree:
         tree, altitudes = hg.canonize_hierarchy(tree, altitudes)
     else:
+        mst = hg.subgraph(graph, mst_edge_map)
         hg.CptMinimumSpanningTree.link(mst, graph, mst_edge_map)
-        hg.CptBinaryHierarchy.link(tree, mst)
+        hg.CptBinaryHierarchy.link(tree, mst_edge_map, mst)
 
     if minima_altitudes is not None:
         altitudes = minima_altitudes[altitudes]

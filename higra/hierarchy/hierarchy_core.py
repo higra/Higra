@@ -12,31 +12,159 @@ import higra as hg
 import numpy as np
 
 
-def bpt_canonical(graph, edge_weights):
+def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_altitudes=True, compute_mst=True):
     """
-    Computes the canonical binary partition tree (binary tree by altitude ordering) of the given weighted graph.
-    This is also known as single/min linkage clustering.
+    Computes the *canonical binary partition tree*, also called *binary partition tree by altitude ordering* or
+    *connectivity constrained single min/linkage clustering* of the given graph.
 
-    :param graph: input graph
-    :param edge_weights: edge weights of the input graph
-    :return: a tree (Concept :class:`~higra.CptBinaryHierarchy`) and its node altitudes
+    :Definition:
+
+    The following definition is adapted from:
+
+        Cousty, Jean, Laurent Najman, Yukiko Kenmochi, and Silvio Guimarães.
+        `"Hierarchical segmentations with graphs: quasi-flat zones, minimum spanning trees, and saliency maps."
+        <https://hal.archives-ouvertes.fr/hal-01344727/document>`_
+        Journal of Mathematical Imaging and Vision 60, no. 4 (2018): 479-502.
+
+    Let :math:`G=(V,E)` be an undirected graph, let :math:`\\prec` be a total order on :math:`E`, and let :math:`e_k` be
+    the edge in :math:`E` that has exactly :math:`k` smaller edges according to :math:`\\prec`: we then say that :math:`k`
+    is the rank of :math:`e_k` (for :math:`\\prec`).
+    The *canonical binary partition hierarchy* of :math:`G` for :math:`\\prec` is defined as the sequence of nested partitions:
+
+    - :math:`P_0 = \{\{v\}, v\in V\}`, the finest partion is composed of every singleton of :math:`V`; and
+    - :math:`P_n = (P_{n-1} \\backslash \{P_{n-1}^x, P_{n-1}^y\}) \cup (P_{n-1}^x \cup P_{n-1}^y)` where :math:`e_n=\{x,y\}`
+      and :math:`P_{n-1}^x` and :math:`P_{n-1}^y` are the regions of  :math:`P_{n-1}` that contain :math:`x` and :math:`y`
+      respectively.
+
+    At the step :math:`n`, we remove the regions at the two extremities of the :math:`n`-th smallest edge
+    and we add their union. Note that we may have :math:`P_n = P_{n-1}` if both extremities of the edge :math:`e_n`
+    were in a same region of :math:`P_{n-1}`. Otherwise, :math:`P_n` is obtained by merging two regions of :math:`P_{n-1}`.
+
+    The *canonical binary partition tree* is then the tree representing the merging steps in this sequence,
+    it is thus binary. Each merging step, and thus each non leaf node of the tree, is furthermore associated to a
+    specific edge of the graph, called *a building edge* that led to this merge. It can be shown that the set of all
+    building edges associated to a canonical binary partition tree is a minimum spanning tree of the graph for the given
+    edge ordering :math:`\\prec`.
+
+    The map that associates every non leaf node of the canonical binary partition tree to its building edge is called
+    the *mst_edge_map*. In practice this map is represented by an array of size :math:`tree.num\_vertices() - tree.num\_leaves()`
+    and, for any internal node :math:`i` of the tree, :math:`mst\_edge\_map[i - tree.num\_leaves()]` is equal to the index
+    of the building edge in :math:`G` associated to :math:`i`.
+
+    The ordering :math:`\\prec` can be specified explicitly by providing the array of indices :attr:`sorted_edge_indices`
+    that sort the edges, or implicitly by providing the array of edge weights :attr:`edge_weights`. In this case,
+    :attr:`sorted_edge_indices` is set equal to ``hg.arg_sort(edge_weights, stable=True)``. If :attr:`edge_weights`
+    is an array with more than 1 dimension, a lexicographic ordering is used.
+
+    If requested, altitudes associated to the nodes of the canonical binary partition tree are computed as follows:
+
+      - if :attr:`edge_weights` are provided, the altitude of a non-leaf node is equal to the edge weight of its
+        building edge; and
+      - otherwise, the altitude of a non-leaf node is equal to the rank of its building edge.
+
+    The altitude of a leaf node is always equal to 0.
+
+    :Example:
+
+    .. figure:: /fig/canonical_binary_partition_tree_example.svg
+        :alt: Example of a binary partition tree by altitude ordering
+        :align: center
+
+        Given an edge weighted graph :math:`G`, the binary partition tree by altitude ordering :math:`T` (in blue) is
+        associated to a minimum spanning tree :math:`S` of :math:`G` (whose edges are thick and gray). Each leaf node of
+        the tree corresponds to a vertex of :math:`G` while each non-leaf node :math:`n_i` of :math:`T` corresponds to a
+        building edge of :math:`T` which belongs to the minimum spanning tree :math:`S`. The association between the non-leaf
+        nodes and the minimum spanning tree edges, called *mst_edge_map*, is depicted by green arrows .
+
+
+    The above figure corresponds to the following code (note that vertex indices start at 0 in the code):
+
+        >>> g = hg.UndirectedGraph(5)
+        >>> g.add_edges((0, 0, 1, 1, 1, 2, 3),
+        >>>             (1, 2, 2, 3, 4, 4, 4))
+        >>> edge_weights = np.asarray((4, 6, 3, 7, 11, 8, 5))
+        >>> tree, altitudes = hg.bpt_canonical(g, edge_weights)
+        >>> tree.parents()
+        array([6, 5, 5, 7, 7, 6, 8, 8, 8])
+        >>> altitudes
+        array([0, 0, 0, 0, 0, 3, 4, 5, 7])
+        >>> tree.mst_edge_map
+        array([2, 0, 6, 3])
+        >>> tree.mst.edge_list()
+        (array([1, 0, 3, 1]), array([2, 1, 4, 3]))
+
+    :Complexity:
+
+    The algorithm used is based on Kruskal's minimum spanning tree algorithm and is described in:
+
+        Laurent Najman, Jean Cousty, Benjamin Perret.
+        `Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs
+        <https://hal.archives-ouvertes.fr/file/index/docid/798621/filename/ismm2013-algo.pdf>`_.
+        ISMM 2013: 135-146.
+
+    If :attr:`sorted_edge_indices` is provided the algorithm runs in quasi linear :math:`\mathcal{O}(n \\alpha(n))`,
+    with :math:`n` the number of elements in the graph and with :math`\\alpha` the inverse of the Ackermann function.
+    Otherwise, the computation time is dominated by the sorting of the edge weights which is performed in linearithmic
+    :math:`\mathcal{O}(n \log(n))` time.
+
+    :param graph: input graph.
+    :param edge_weights: edge weights of the input graph (may be omitted if :attr:`sorted_edge_indices` is given).
+    :param sorted_edge_indices: array of indices that sort the edges of the input graph by increasing weight (may be
+           omitted if :attr:`edge_weights` is given).
+    :param return_altitudes: if ``True`` an array representing the altitudes of the tree vertices is returned.
+           (default: ``True``).
+    :param compute_mst: if ``True`` computes an explicit undirected graph representing the minimum spanning tree
+           associated to the hierarchy, accessible through the :class:`~higra.CptBinaryHierarchy` Concept
+           (e.g. with ``tree.mst``). (default: ``True``).
+    :return: a tree (Concept :class:`~higra.CptBinaryHierarchy`), and, if :attr:`return_altitudes` is ``True``, its node
+             altitudes
     """
-    res = hg.cpp._bpt_canonical(graph, edge_weights)
-    tree = res.tree()
-    altitudes = res.altitudes()
-    mst = res.mst()
-    mst_edge_map = res.mst_edge_map()
 
+    if edge_weights is None and sorted_edge_indices is None:
+        raise ValueError("edge_weights and sorted_edge_indices cannot be both equal to None.")
+
+    if sorted_edge_indices is None:
+        if edge_weights.ndim > 2:
+            tmp_edge_weights = edge_weights.reshape((edge_weights.shape[0], -1))
+        else:
+            tmp_edge_weights = edge_weights
+        sorted_edge_indices = hg.arg_sort(tmp_edge_weights, stable=True)
+
+    parents, mst_edge_map = hg.cpp._bpt_canonical(graph, sorted_edge_indices)
+    tree = hg.Tree(parents)
+
+    if return_altitudes:
+        if edge_weights is None:
+            edge_weights = np.empty_like(sorted_edge_indices)
+            edge_weights[sorted_edge_indices] = np.arange(sorted_edge_indices.size)
+
+        if edge_weights.ndim == 1:
+            altitudes = np.zeros((tree.num_vertices(),), dtype=edge_weights.dtype)
+            altitudes[graph.num_vertices():] = edge_weights[mst_edge_map]
+        else:
+            shape = [tree.num_vertices()] + list(edge_weights.shape[1:])
+            altitudes = np.zeros(shape, dtype=edge_weights.dtype)
+            altitudes[graph.num_vertices():, ...] = edge_weights[mst_edge_map, ...]
+
+    # if the base graph is itself a mst, we take the base graph of this mst as the new base graph
     if hg.CptMinimumSpanningTree.validate(graph):
         leaf_graph = hg.CptMinimumSpanningTree.construct(graph)["base_graph"]
     else:
         leaf_graph = graph
 
-    hg.CptMinimumSpanningTree.link(mst, leaf_graph, mst_edge_map)
-    hg.CptHierarchy.link(tree, leaf_graph)
-    hg.CptBinaryHierarchy.link(tree, mst)
+    if compute_mst:
+        mst = hg.subgraph(graph, mst_edge_map)
+        hg.CptMinimumSpanningTree.link(mst, leaf_graph, mst_edge_map)
+    else:
+        mst = None
 
-    return tree, altitudes
+    hg.CptHierarchy.link(tree, leaf_graph)
+    hg.CptBinaryHierarchy.link(tree, mst_edge_map, mst)
+
+    if not return_altitudes:
+        return tree
+    else:
+        return (tree, altitudes)
 
 
 def quasi_flat_zone_hierarchy(graph, edge_weights):

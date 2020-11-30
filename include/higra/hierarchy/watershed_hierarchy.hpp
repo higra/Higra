@@ -13,7 +13,8 @@
 #include "common.hpp"
 #include "higra/graph.hpp"
 #include "hierarchy_core.hpp"
-#include "../attribute/tree_attribute.hpp"
+#include "higra/attribute/tree_attribute.hpp"
+#include "higra/algo/graph_core.hpp"
 
 namespace hg {
 
@@ -78,7 +79,8 @@ namespace hg {
         auto bptc = bpt_canonical(graph, edge_weights);
         auto &bpt = bptc.tree;
         auto &altitude = bptc.altitudes;
-        auto &mst = bptc.mst;
+        auto &mst_edge_map = bptc.mst_edge_map;
+        auto mst = subgraph_spanning(graph, mst_edge_map);
 
         auto bpt_attribute = attribute_functor(bpt, altitude);
         auto corrected_attribute = watershed_hierarchy_internal::correct_attribute_BPT(bpt, altitude, bpt_attribute);
@@ -133,7 +135,8 @@ namespace hg {
 
         auto bptc = bpt_canonical(graph, edge_weights);
         auto &bpt = bptc.tree;
-        auto &mst = bptc.mst;
+        auto &mst_edge_map = bptc.mst_edge_map;
+        auto mst = subgraph_spanning(graph, mst_edge_map);
 
         auto extinction = accumulate_sequential(bpt, minima_ranks, accumulator_max());
         xt::view(extinction, xt::range(0, num_leaves(bpt))) = 0;

@@ -173,4 +173,29 @@ namespace hg {
 
     };
 
+    /**
+     * Compute a spanning subgraph of the given graph composed of the edges of the input graph indicated in the edge_indices array
+     *
+     * The edges of the subgraph will be in the order given in edge_indices array.
+     *
+     * @tparam graph_t
+     * @tparam T
+     * @param graph input graph
+     * @param xedges_indices list of edges of the input graph to include in the subgraph
+     * @return a spanning subgraph
+     */
+    template<typename graph_t, typename T>
+    auto subgraph_spanning(const graph_t & graph, const xt::xexpression<T> & xedge_indices){
+        auto & edge_indices = xedge_indices.derived_cast();
+        hg_assert_1d_array(edge_indices);
+        hg_assert_integral_value_type(edge_indices);
+
+        graph_t subgraph(num_vertices(graph));
+        for(index_t ei: edge_indices){
+            auto e = edge_from_index(ei, graph);
+            add_edge(source(e, graph), target(e, graph), subgraph);
+        }
+
+        return subgraph;
+    }
 }

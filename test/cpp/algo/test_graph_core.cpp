@@ -91,4 +91,18 @@ namespace test_graph_core {
         REQUIRE((mst_edge_map == array_1d<int>({0, 1, 3, 4})));
     }
 
+    TEST_CASE("subgraph_spanning", "[graph_algorithm]") {
+        auto graph = get_4_adjacency_graph({2, 2});
+        array_1d<index_t> edge_indices = {3, 0};
+
+        auto subgraph = subgraph_spanning(graph, edge_indices);
+        REQUIRE(num_vertices(subgraph) == num_vertices(graph));
+        REQUIRE(num_edges(subgraph) == edge_indices.size());
+        std::vector<ugraph::edge_descriptor> ref = {{2, 3, 0},
+                                                    {0, 1, 1}};
+        for (index_t i = 0; i < (index_t) ref.size(); i++) {
+            auto e = edge_from_index(i, subgraph);
+            REQUIRE(e == ref[i]);
+        }
+    }
 }

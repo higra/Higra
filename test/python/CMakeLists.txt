@@ -14,7 +14,8 @@ set(PYTHON_MODULE_PATH ${CMAKE_BINARY_DIR}/python/)
 set(PY_FILES
         test_concept.py
         test_data_cache.py
-        test_hg_utils.py)
+        test_hg_utils.py
+        test_sorting.py)
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")
 

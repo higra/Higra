@@ -33,8 +33,8 @@ struct def_node_weighted_tree {
                                      (std::string("NodeWeightedTree_") + typeid(class_t).name()).c_str(),
                                      "A simple structure to hold the result of hierarchy construction algorithms, "
                                      "namely a tree and its associated node altitude array.");
-        c.def("tree", [](class_t &self) -> tree_t& {return self.tree;}, "The tree!");
-        c.def("altitudes", [](class_t &self) -> array_1d<value_t>& {return self.altitudes;}, "An array of tree node altitude.");
+        c.def("tree", [](class_t &self) -> tree_t& {return self.tree;}, "The tree!", py::return_value_policy::reference_internal);
+        c.def("altitudes", [](class_t &self) -> array_1d<value_t>& {return self.altitudes;}, "An array of tree node altitude.", py::return_value_policy::reference_internal);
     }
 };
 

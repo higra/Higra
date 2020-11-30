@@ -27,6 +27,7 @@ from .hg_utils import *
 data_cache._data_cache__init()
 
 # normal modules
+from .sorting import *
 from .accumulator import *
 from .algo import *
 from .assessment import *

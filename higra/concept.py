@@ -249,16 +249,33 @@ class CptBinaryHierarchy(CptHierarchy):
     _description = "A binary tree representing a hierarchy with an associated " \
                    "minimum spanning tree on the hierarchy leaf graph."
     _data_elements = {"tree": ("a hierarchy h", None),
-                      "mst": ("a minimum spanning tree of the leaf graph of the hierarchy", "mst")}
+                      "mst": ("a minimum spanning tree of the leaf graph of the hierarchy", "mst"),
+                      "mst_edge_map": (
+                          "Map each internal vertex i of the tree to the edge 'mst_edge_map[i - tree.num_leaves()]' of the"
+                          "leaf graph of the hierarchy corresponding to a minimum spanning tree edge.",
+                          "mst_edge_map")}
     _canonical_data_element = "tree"
 
     def __init__(self, **kwargs):
         super(CptBinaryHierarchy, self).__init__(**kwargs)
 
     @staticmethod
-    def link(hierarchy, mst):
+    def link(hierarchy, mst_edge_map, mst):
         hg.add_tag(hierarchy, CptBinaryHierarchy)
+        hg.set_attribute(hierarchy, "mst_edge_map", mst_edge_map)
         hg.set_attribute(hierarchy, "mst", mst)
+
+    @staticmethod
+    def get_mst_edge_map(tree):
+        """
+        The :math:`mst\_edge\_map` of the :attr:`tree` is an array that maps each internal vertex :math:`i` of the tree
+        to the edge :math:`mst\_edge\_map[i - tree.num_leaves()]` of the leaf graph of the hierarchy corresponding
+        to a minimum spanning tree edge.
+
+        :param tree:
+        :return:
+        """
+        return hg.get_attribute(tree, "mst_edge_map")
 
     @staticmethod
     def get_mst(tree):
@@ -268,7 +285,14 @@ class CptBinaryHierarchy(CptHierarchy):
         :param tree:
         :return:
         """
-        return hg.get_attribute(tree, "mst")
+        mst = hg.get_attribute(tree, "mst")
+        if mst is None:
+            mst_edge_map = hg.CptBinaryHierarchy.get_mst_edge_map(tree)
+            leaf_graph = hg.CptHierarchy.get_leaf_graph(tree)
+            mst = hg.subgraph(leaf_graph, mst_edge_map, spanning=True)
+            hg.CptMinimumSpanningTree.link(mst, leaf_graph, mst_edge_map)
+            hg.set_attribute(tree, "mst", mst)
+        return mst
 
 
 @auto_concept_docstring
