@@ -1,11 +1,50 @@
 Changelog
 =========
 
+0.6.0
+-----
+
+Breaking changes
+****************
+
+- The functions :func:`~higra.filter_non_relevant_node_from_tree`, :func:`~higra.filter_small_nodes_from_tree`, and
+  :func:`~higra.filter_weak_frontier_nodes_from_tree` now return canonized tree by default (old behaviour is obtained with
+  the argument ``canonize_tree=False``) `#221 <https://github.com/higra/Higra/pull/221>`_
+- C++ only: the function ``bpt_canonical`` does not compute an explicit representation of the minimum spanning tree.
+  The mst can still be reconstructed with the field ``mst_edge_map`` in the result using the new function ``subgraph_spanning``
+  `f50ebc8 <https://github.com/higra/Higra/commit/f50ebc86b516ef00d23472cafb201f9bba72f58b>`_
+- C++ only: fields of the class ``regular_graph`` are now private with public const accessors
+  `#211 <https://github.com/higra/Higra/pull/211>`_
+
+Other changes
+*************
+
+- Major Python classes (Trees, graphs, ...) are now pickable `#212 <https://github.com/higra/Higra/pull/212>`_ and
+  `#214 <https://github.com/higra/Higra/pull/214>`_
+- Python classes now support dynamic attributes and higra attributes are now stored directly in the objects dictionaries
+  with a direct access as class members. `#209 <https://github.com/higra/Higra/pull/209>`_ and `#210 <https://github.com/higra/Higra/pull/210>`_
+- Function :func:`~higra.bpt_canonical` now supports: construction of the tree based on an arbitrary given ordering,
+  avoid the explicit computation of the minimum spanning tree, multidimentional edge weights (with lexicographic sorting).
+  The documentation has also been improved. `#222 <https://github.com/higra/Higra/pull/222>`_
+- Fast lowest ancestor computation is now better integrated to the :class:`~higra.Tree` class.
+  Calling :func:`~higra.Tree.lowest_common_ancestor_preprocess()` will now make any call to :func:`~higra.Tree.lowest_common_ancestor`
+  to use the pre-processing `#216 <https://github.com/higra/Higra/pull/216>`_
+- Add parallel sorting functions :func:`~higra.sort` and :func:`~higra.arg_sort` (also support lexicographic ordering).
+  `#219 <https://github.com/higra/Higra/pull/219>`_
+- Add function :func:`~higra.subgraph` to extract the subgraph induced by a set of edges from an undirected graph
+  `4cfa9ac <https://github.com/higra/Higra/commit/4cfa9ac5f04859f8f0322d881addf07292179720>`_
+- Functions for watershed hierarchies in Python can now return the non canonized tree (option ``canonize_tree=False``)
+  `#220 <https://github.com/higra/Higra/pull/220>`_
+- Function :func:`~higra.canonize_hierarchy` can now return the ``node_map`` which associates any node of the canonized tree to
+  a node of the original tree.   `5701d29 <https://github.com/higra/Higra/commit/5701d29e60934aef72a2cf15532b2b6d72c4b52e>`_
+- Fix bug in :func:`~higra.filter_small_nodes_from_tree` when the base graph is a region adjacency graph
+  `#215 <https://github.com/higra/Higra/pull/215>`_
+
 0.5.3
 -----
 
 - Fix bug in :func:`~higra.watershed_hierarchy_by_attribute`: on some conditions a large minima could be split in two
-  ore more regions.
+  or more regions.
   `#205 <https://github.com/higra/Higra/pull/205>`_
 
 0.5.2
