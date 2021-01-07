@@ -89,6 +89,7 @@ namespace hg {
             }
 
             void LCApreprocessEuler(const tree_t &tree) {
+                tree.compute_children();
                 struct se {
                     index_t node;
                     bool first_visit;

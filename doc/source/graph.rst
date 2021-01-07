@@ -20,15 +20,11 @@ All functions acting on graphs have the same name in C++ and in Python, except f
 In c++, graph related methods are free functions (as in BGL), while in Python they are member functions.
 For example, the function ``num_vertices`` that returns the number of vertices in a graph, will be called:
 
+.. important::
+
+    In c++, one must call the function ``compute_children`` on a tree before using it as a graph.
 
 .. tabs::
-
-    .. tab:: c++
-
-        .. code-block:: cpp
-            :linenos:
-
-            auto n = num_vertices(graph);
 
     .. tab:: python
 
@@ -36,6 +32,13 @@ For example, the function ``num_vertices`` that returns the number of vertices i
             :linenos:
 
             n = graph.num_vertices()
+
+    .. tab:: c++
+
+        .. code-block:: cpp
+            :linenos:
+
+            auto n = num_vertices(graph);
 
 
 Vertices
@@ -69,6 +72,21 @@ Example:
 
 .. tabs::
 
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            import higra as hg
+
+            g = hg.UndirectedGraph()
+            g.add_vertex()
+            g.add_vertex()
+
+            g.add_vertices(3)
+
+            nv = g.num_vertices() # 5
+
     .. tab:: c++
 
         .. code-block:: cpp
@@ -84,22 +102,6 @@ Example:
             add_vertices(3, g);
 
             auto nv = num_vertices(g); // 5
-
-
-    .. tab:: python
-
-        .. code-block:: python
-            :linenos:
-
-            import higra as hg
-
-            g = hg.UndirectedGraph()
-            g.add_vertex()
-            g.add_vertex()
-
-            g.add_vertices(3)
-
-            nv = g.num_vertices() # 5
 
 
 Iterating on vertices
@@ -124,6 +126,20 @@ Iterating on vertices
 
 .. tabs::
 
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            g = hg.UndirectedGraph()
+            ...
+
+            for v in g.vertices():
+                ... # all vertices of g
+
+            for v in g.adjacent_vertices(1):
+                ... # all vertices adjacent to vertex 1 in g
+
     .. tab:: c++
 
         .. code-block:: cpp
@@ -140,20 +156,6 @@ Iterating on vertices
                 ... // all vertices adjacent to vertex 1 in g
             }
 
-
-    .. tab:: python
-
-        .. code-block:: python
-            :linenos:
-
-            g = hg.UndirectedGraph()
-            ...
-
-            for v in g.vertices():
-                ... # all vertices of g
-
-            for v in g.adjacent_vertices(1):
-                ... # all vertices adjacent to vertex 1 in g
 
 Edges
 -----
@@ -216,33 +218,6 @@ Example:
 
 .. tabs::
 
-    .. tab:: c++
-
-        .. code-block:: cpp
-            :linenos:
-
-            #include "higra/graph.hpp"
-            using namespace hg;
-
-            // create a graph with 4 vertices and no edge
-            ugraph g(4);
-
-            // add an edge, between vertex 0 and 1
-            add_edge(0, 1, g);
-            // add an edge, between vertex 0 and 1
-            auto e = add_edge(1, 2, g);
-
-            auto s = source(e, g); // 1
-            auto t = target(e, g); // 2
-            auto ei = index(e, g); // 1
-
-            // add the two edges (3, 0) and (3, 1)
-            add_edges({3, 3}, {0, 1}, g);
-
-            auto ne = num_edges(g); // 4
-
-            auto edges = edge_list(g); // edges.first = {0, 1, 0, 1}, edges.second = {1, 2, 3, 3}
-
     .. tab:: python
 
         .. code-block:: python
@@ -269,6 +244,32 @@ Example:
 
             sources, targets = g.edge_list() # sources = [0, 1, 0, 1], targets = [1, 2, 3, 3]
 
+    .. tab:: c++
+
+        .. code-block:: cpp
+            :linenos:
+
+            #include "higra/graph.hpp"
+            using namespace hg;
+
+            // create a graph with 4 vertices and no edge
+            ugraph g(4);
+
+            // add an edge, between vertex 0 and 1
+            add_edge(0, 1, g);
+            // add an edge, between vertex 0 and 1
+            auto e = add_edge(1, 2, g);
+
+            auto s = source(e, g); // 1
+            auto t = target(e, g); // 2
+            auto ei = index(e, g); // 1
+
+            // add the two edges (3, 0) and (3, 1)
+            add_edges({3, 3}, {0, 1}, g);
+
+            auto ne = num_edges(g); // 4
+
+            auto edges = edge_list(g); // edges.first = {0, 1, 0, 1}, edges.second = {1, 2, 3, 3}
 
 Iterating on edges
 ******************
@@ -297,6 +298,23 @@ Iterating on edges
 
 .. tabs::
 
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            g = hg.UndirectedGraph()
+            ...
+
+            for e in g.edges():
+                print(g.source(e), g.target(e))
+
+            for e in g.in_edges(1):
+                ... # all edges e such that g.target(e) == 1
+
+            for e in g.out_edges(1):
+                ... # all edges e such that g.source(e) == 1
+
     .. tab:: c++
 
         .. code-block:: cpp
@@ -316,25 +334,6 @@ Iterating on edges
             for(auto e: out_edge_iterator(1, g)){
                 ... // all edges e such that source(e, g) == 1
             }
-
-
-    .. tab:: python
-
-        .. code-block:: python
-            :linenos:
-
-            g = hg.UndirectedGraph()
-            ...
-
-            for e in g.edges():
-                print(g.source(e), g.target(e))
-
-            for e in g.in_edges(1):
-                ... # all edges e such that g.target(e) == 1
-
-            for e in g.out_edges(1):
-                ... # all edges e such that g.source(e) == 1
-
 
 Degrees
 -------
@@ -366,6 +365,23 @@ Operations are done in constant time in ``ugraph``, ``tree``. Operations are don
 
 .. tabs::
 
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            g = hg.UndirectedGraph()
+            ...
+
+            # degree of vertex 1
+            d1 = g.degree(1)
+
+            # in degree of vertex 2
+            d2 = g.in_degree(2)
+
+            # out degree of vertex 3
+            d3 = g.out_degree(3)
+
     .. tab:: c++
 
         .. code-block:: cpp
@@ -384,24 +400,6 @@ Operations are done in constant time in ``ugraph``, ``tree``. Operations are don
             auto d3 = out_degree(3, g);
 
 
-    .. tab:: python
-
-        .. code-block:: python
-            :linenos:
-
-            g = hg.UndirectedGraph()
-            ...
-
-            # degree of vertex 1
-            d1 = g.degree(1)
-
-            # in degree of vertex 2
-            d2 = g.in_degree(2)
-
-            # out degree of vertex 3
-            d3 = g.out_degree(3)
-
-
 Weighted graph
 --------------
 
@@ -411,6 +409,17 @@ or edges and values stored in an array. The preferred storage for weights are ``
 arrays in python.
 
 .. tabs::
+
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            def sum_adjacent_vertices_weights(graph, vertex_weights, vertex):
+                result = 0
+                for v in g.adjacent_vertices(vertex);
+                    result += vertex_weights[v]
+                return result
 
     .. tab:: c++
 
@@ -427,15 +436,3 @@ arrays in python.
                 }
                 return result
             }
-
-
-    .. tab:: python
-
-        .. code-block:: python
-            :linenos:
-
-            def sum_adjacent_vertices_weights(graph, vertex_weights, vertex):
-                result = 0
-                for v in g.adjacent_vertices(vertex);
-                    result += vertex_weights[v]
-                return result

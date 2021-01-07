@@ -23,6 +23,7 @@ namespace tree {
         hg::tree t;
 
         _data() : t(array_1d<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
+            t.compute_children();
         }
 
     } data;
@@ -40,6 +41,15 @@ namespace tree {
         hg::tree t3(std::move(p3));
         REQUIRE(hg::num_vertices(t2) == 8);
         REQUIRE(p3.size() == 0);
+    }
+
+    TEST_CASE("tree children", "[tree]") {
+        hg::tree t(array_1d<index_t>{5, 5, 6, 6, 6, 7, 7, 7});
+        REQUIRE(t.children_computed() == false);
+        t.compute_children();
+        REQUIRE(t.children_computed() == true);
+        t.clear_children();
+        REQUIRE(t.children_computed() == false);
     }
 
     TEST_CASE("tree sizes", "[tree]") {

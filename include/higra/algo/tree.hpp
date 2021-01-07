@@ -168,6 +168,7 @@ namespace hg {
         // number of nodes smaller than a supervertex
         index_t removed = 0;
 
+        tree.compute_children();
         stackv<index_t> stack;
         for (auto n: leaves_iterator(tree)) {
             auto e = n;
@@ -306,6 +307,7 @@ namespace hg {
 
         array_1d<char> attr({num_vertices(tree)}, 0);
 
+        tree.compute_children();
         for (auto i: leaves_iterator(tree)) {
             if (static_cast<bool>(background_marker(i))) {
                 attr(i) = 1;

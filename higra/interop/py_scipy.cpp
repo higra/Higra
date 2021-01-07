@@ -30,7 +30,7 @@ auto binary_hierarchy_to_scipy_linkage_matrix(const tree_t &tree,
     auto &area = xarea.derived_cast();
     hg_assert_node_weights(tree, altitudes);
     hg_assert_node_weights(tree, area);
-
+    tree.compute_children();
     hg::index_t n_leaves = num_leaves(tree);
     hg::array_2d<value_t> M = xt::empty<value_t>({(size_t) n_leaves - 1, (size_t) 4});
     for (auto i: hg::leaves_to_root_iterator(tree, hg::leaves_it::exclude)) {

@@ -25,6 +25,7 @@ namespace hg {
                                    const T1 &altitude,
                                    const T2 &attribute) {
             using value_type = typename T2::value_type;
+            tree.compute_children();
             array_1d<value_type> result = xt::empty_like(attribute);
             for (auto n: leaves_iterator(tree)) {
                 result(n) = 0;

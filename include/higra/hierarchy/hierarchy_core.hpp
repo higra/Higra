@@ -159,6 +159,7 @@ namespace hg {
     auto simplify_tree(const tree &t, const criterion_t &criterion, bool process_leaves = false) {
         HG_TRACE();
 
+        t.compute_children();
         // this case is significantly harder because a reordering of the nodes
         // may append if an internal node becomes a leaf
         if (process_leaves) {
@@ -389,6 +390,8 @@ namespace hg {
         auto num_v = num_vertices(tree);
         auto num_l = num_leaves(tree);
         auto num_v_res = num_l * 2 - 1;
+
+        tree.compute_children();
         array_1d<index_t> node_map = array_1d<index_t>::from_shape({num_v});
         array_1d<index_t> reverse_node_map = array_1d<index_t>::from_shape({num_v_res});
         for (index_t i = 0; i < (index_t) num_l; i++) {

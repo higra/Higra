@@ -41,6 +41,8 @@ namespace hg {
             auto output_view = make_light_axis_view<vectorial>(output);
             auto acc = accumulator.template make_accumulator<vectorial>(output_view);
 
+            tree.compute_children();
+
             for (auto i: leaves_iterator(tree)) {
                 output_view.set_position(i);
                 acc.set_storage(output_view);
@@ -84,6 +86,8 @@ namespace hg {
             auto input_view = make_light_axis_view<vectorial>(output);
             auto output_view = make_light_axis_view<vectorial>(output);
             auto acc = accumulator.template make_accumulator<vectorial>(output_view);
+
+            tree.compute_children();
 
             for (auto i: leaves_iterator(tree)) {
                 output_view.set_position(i);
@@ -143,6 +147,8 @@ namespace hg {
             auto acc = accumulator.template make_accumulator<vectorial>(output_view);
 
             auto vertex_data_view = make_light_axis_view<vectorial>(vertex_data);
+
+            tree.compute_children();
 
             for (auto i: leaves_iterator(tree)) {
                 output_view.set_position(i);

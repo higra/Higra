@@ -42,19 +42,6 @@ Example:
 
 .. tabs::
 
-    .. tab:: c++
-
-        .. code-block:: cpp
-            :linenos:
-
-            #include "higra/graph.hpp"
-            using namespace hg;
-
-            // creates the tree shown in the figure above
-            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
-
-
-
     .. tab:: python
 
         .. code-block:: python
@@ -65,7 +52,16 @@ Example:
             # creates the tree shown in the figure above
             g = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
+    .. tab:: c++
 
+        .. code-block:: cpp
+            :linenos:
+
+            #include "higra/graph.hpp"
+            using namespace hg;
+
+            // creates the tree shown in the figure above
+            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
 
 Basic functions
 ---------------
@@ -88,19 +84,34 @@ Basic functions
     *   - ``parents``
         - array of vertices
         - The parent array
-    *   - ``num_children``
-        - positive integer
-        - Number(s) of children of the given node(s)
-    *   - ``child``
-        - vertex
-        - i-th child of the given node(s)
     *   - ``is_leaf``
         - boolean
         - True if given node(s) is a leaf, False otherwise
 
+
+
 Example:
 
 .. tabs::
+
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            # creates the tree shown in the figure above
+            t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
+
+            t.num_leaves()              # 7
+            t.root()                    # 11
+
+            t.parent(2)                 # 8
+            t.parent((0, 11, 8))       # array {7, 11, 10}
+            t.parents()                 # array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11}
+
+            t.is_leaf(4)                # True
+            t.is_leaf(5)                # False
+            t.is_leaf((0, 11, 8))       # array {True, False, False}
 
     .. tab:: c++
 
@@ -121,41 +132,9 @@ Example:
             parent(vertices, t);        // array {7, 11, 10}
             parents(t);                 // array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11}
 
-            num_children(8, t);         // 3
-            num_children(vertices, t);  // array {0, 2, 3}
-
             is_leaf(4, t);              // true
             is_leaf(5, t);              // false
             is_leaf(vertices, t);       // array {true, false, false}
-
-            child(1, 11, t);            // 10
-            child(0, vertices2, t);     // array {2, 7, 0}
-
-    .. tab:: python
-
-        .. code-block:: python
-            :linenos:
-
-            # creates the tree shown in the figure above
-            t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
-
-            t.num_leaves()              # 7
-            t.root()                    # 11
-
-            t.parent(2)                 # 8
-            t.parent((0, 11, 8))       # array {7, 11, 10}
-            t.parents()                 # array {7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11}
-
-            t.num_children(8)           # 3
-            t.num_children((0, 11, 8))  # array {0, 2, 3}
-
-
-            t.is_leaf(4)                # True
-            t.is_leaf(5)                # False
-            t.is_leaf((0, 11, 8))       # array {True, False, False}
-
-            t.child(1, 11)              # 10
-            t.child(0, (8, 11, 7))      # array {2, 7, 0}
 
 
 Iterators
@@ -167,9 +146,6 @@ Iterators
     *   - Function
         - Returns
         - Description
-    *   - ``children_iterator`` (cpp) ``children`` (python)
-        - a range of iterators (cpp), a list (python)
-        - iterator on the children of the given node
     *   - ``leaves_iterator`` (cpp) ``leaves`` (python)
         - a range of iterators
         - iterator on the leaves of the tree
@@ -187,6 +163,40 @@ Iterators
 
 .. tabs::
 
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            # creates the tree shown in the figure above
+            t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
+
+            for n in t.leaves():
+                ... # 0, 1, 2, ..., 6
+
+            for n in t.ancestors(8):
+                ... # 8, 10, 11
+
+            for n in t.leaves_to_root_iterator(
+                    include_leaves = True, # optional: include (default) or exclude leaves from the iterator
+                    include_root = True): # optional: include (default) or exclude root from the iterator
+                ... // 0, 1, 2, ..., 11
+
+            for n in t.leaves_to_root_iterator(
+                    include_leaves = False,
+                    include_root = False):
+                ... // 7, 8, 9, 10
+
+            for n in t.root_to_leaves_iterator(
+                    include_leaves = True, # optional: include (default) or exclude leaves from the iterator
+                    include_root = True): # optional: include (default) or exclude root from the iterator
+                ... // 11, 10, 9, ..., 0
+
+            for n in t.root_to_leaves_iterator(
+                    include_leaves = False,
+                    include_root = False):
+                ... // 10, 9, 8, 7
+
     .. tab:: c++
 
         .. code-block:: cpp
@@ -194,10 +204,6 @@ Iterators
 
             // creates the tree shown in the figure above
             tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
-
-            for(auto n: children_iterator(t, 8)){
-                ... // 2, 3, 4
-            }
 
             for(auto n: leaves_iterator(t)){
                 ... // 0, 1, 2, ..., 6
@@ -232,6 +238,51 @@ Iterators
             }
 
 
+
+
+Children relation
+-----------------
+
+.. important::
+
+    In C++ the children relation is only available on request: one must call the function ``compute_children`` prior
+    to calling any of the following functions (otherwise the behaviour is undefined). Computing the children relation
+    is a linear time operation that will require in the order of :math:`n + 3m` words of memory where :math:`n` is the number
+    of nodes in the tree and :math:`m` is the number of non-leaf nodes (1 word is equal to 64bits on a x64 platform).
+
+    The children relation can be cleared to save space with the function ``clear_children`` and the status of the relation
+    can be checked with the function ``children_computed``.
+
+    In Python the relation is automatically computed when needed, the relation can be cleared with the function ``clear_children``.
+
+.. list-table::
+    :header-rows: 1
+
+    *   - Function
+        - Returns
+        - Description
+    *   - ``num_children``
+        - positive integer
+        - Number(s) of children of the given node(s)
+    *   - ``child``
+        - vertex
+        - i-th child of the given node(s)
+    *   - ``children_iterator`` (cpp) ``children`` (python)
+        - a range of iterators (cpp), a list (python)
+        - iterator on the children of the given node
+    *   - ``compute_children`` (cpp only)
+        -
+        - initialize the children relation (can be called several time safely)
+    *   - ``children_computed`` (cpp only)
+        -
+        - ``true`` if the children relation has already been computed
+    *   - ``clear_children``
+        -
+        - free up the space used to store the children relation
+
+
+.. tabs::
+
     .. tab:: python
 
         .. code-block:: python
@@ -240,34 +291,46 @@ Iterators
             # creates the tree shown in the figure above
             t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
+            t.num_children(8)           # 3
+            t.num_children((0, 11, 8))  # array {0, 2, 3}
+
+            t.child(1, 11)              # 10
+            t.child(0, (8, 11, 7))      # array {2, 7, 0}
+
             for n in t.children(8):
                 ... # 2, 3, 4
 
-            for n in t.leaves():
-                ... # 0, 1, 2, ..., 6
 
-            for n in t.ancestors(8):
-                ... # 8, 10, 11
+    .. tab:: c++
 
-            for n in t.leaves_to_root_iterator(
-                    include_leaves = True, # optional: include (default) or exclude leaves from the iterator
-                    include_root = True): # optional: include (default) or exclude root from the iterator
-                ... // 0, 1, 2, ..., 11
+        .. code-block:: cpp
+            :linenos:
 
-            for n in t.leaves_to_root_iterator(
-                    include_leaves = False,
-                    include_root = False):
-                ... // 7, 8, 9, 10
+            // creates the tree shown in the figure above
+            tree t({7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
 
-            for n in t.root_to_leaves_iterator(
-                    include_leaves = True, # optional: include (default) or exclude leaves from the iterator
-                    include_root = True): # optional: include (default) or exclude root from the iterator
-                ... // 11, 10, 9, ..., 0
+            // IMPORTANT: compute the children relation first
+            t.compute_children();
 
-            for n in t.root_to_leaves_iterator(
-                    include_leaves = False,
-                    include_root = False):
-                ... // 10, 9, 8, 7
+            t.children_computed();      // true
+
+            // two set of vertices
+            array_1d<index_t> vertices{0, 11, 8};
+            array_1d<index_t> vertices2{8, 11, 7};
+
+            num_children(8, t);         // 3
+            num_children(vertices, t);  // array {0, 2, 3}
+
+            child(1, 11, t);            // 10
+            child(0, vertices2, t);     // array {2, 7, 0}
+
+            for(auto n: children_iterator(t, 8)){
+                ... // 2, 3, 4
+            }
+
+            // only if you lack memory and if you are sure that the children relation is not needed anymore
+            t.clear_children();
+
 
 Finding nodes
 -------------
@@ -302,6 +365,20 @@ linearithmic time pre-processing.
 
 .. tabs::
 
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+                # tree node altitudes
+                altitudes = numpy.asarray((0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 4, 5))
+
+                lca = t.lowest_common_ancestor(2, 5)                    # 10
+                lcas = t.lowest_common_ancestor((2, 8, 0), (5, 6, 11))  # (10, 10, 11)
+
+                // vertices and altitudes
+                auto r = t.find_region((2, 8, 0), (1, 6, 2), altitudes) # (2, 11, 7)
+
     .. tab:: c++
 
         .. code-block:: cpp
@@ -323,19 +400,7 @@ linearithmic time pre-processing.
                 auto r = find_region(vertices, alts, altitudes, t);             // {2, 11, 7}
 
 
-    .. tab:: python
 
-        .. code-block:: python
-            :linenos:
-
-                # tree node altitudes
-                altitudes = numpy.asarray((0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 4, 5))
-
-                lca = t.lowest_common_ancestor(2, 5)                    # 10
-                lcas = t.lowest_common_ancestor((2, 8, 0), (5, 6, 11))  # (10, 10, 11)
-
-                // vertices and altitudes
-                auto r = t.find_region((2, 8, 0), (1, 6, 2), altitudes) # (2, 11, 7)
 
 Accumulators
 ------------
@@ -360,13 +425,6 @@ Accumulators are wrapped into *factories* in C++ while the Python interface only
 
 .. tabs::
 
-    .. tab:: c++
-
-        .. code-block:: cpp
-            :linenos:
-
-            auto acc = accumulator_sum();
-
     .. tab:: python
 
         .. code-block:: python
@@ -374,9 +432,16 @@ Accumulators are wrapped into *factories* in C++ while the Python interface only
 
             acc = hg.Accumulators.sum
 
+    .. tab:: c++
+
+        .. code-block:: cpp
+            :linenos:
+
+            auto acc = accumulator_sum();
+
 
 Parallel accumulator
-********************
+~~~~~~~~~~~~~~~~~~~~
 
 The parallel accumulator defines the new value of a node as the accumulation of the values of its children.
 This process is done in parallel on the whole tree.
@@ -405,19 +470,6 @@ The following example demonstrates the application of a parallel sum accumulator
 
 .. tabs::
 
-    .. tab:: c++
-
-        .. code-block:: cpp
-            :linenos:
-
-            // tree in the above example
-            tree t({5, 5, 6, 6, 6, 7, 7, 7});
-            array_1d<index_t> input = xt::ones({num_vertices(t)});
-
-            auto result = accumulate_parallel(t, input, hg::accumulator_sum());
-
-            // result = {0, 0, 0, 0, 0, 2, 3, 2};
-
     .. tab:: python
 
         .. code-block:: python
@@ -431,9 +483,22 @@ The following example demonstrates the application of a parallel sum accumulator
 
             # result = (0, 0, 0, 0, 0, 2, 3, 2)
 
+    .. tab:: c++
+
+        .. code-block:: cpp
+            :linenos:
+
+            // tree in the above example
+            tree t({5, 5, 6, 6, 6, 7, 7, 7});
+            array_1d<index_t> input = xt::ones({num_vertices(t)});
+
+            auto result = accumulate_parallel(t, input, hg::accumulator_sum());
+
+            // result = {0, 0, 0, 0, 0, 2, 3, 2};
+
 
 Sequential accumulator
-**********************
+~~~~~~~~~~~~~~~~~~~~~~
 
 The sequential accumulator defines the new value of a node as the accumulation of the accumulated values of its children.
 This process is thus done sequentially from the leaves to the root of the tree.
@@ -463,19 +528,6 @@ The following example demonstrates the application of a sequential sum accumulat
 
 .. tabs::
 
-    .. tab:: c++
-
-        .. code-block:: cpp
-            :linenos:
-
-            // tree in the above example
-            tree t({5, 5, 6, 6, 6, 7, 7, 7});
-            array_1d<index_t> input = xt::ones({num_leaves(t)});
-
-            auto result = accumulate_sequential(t, input, hg::accumulator_sum());
-
-            // result = {1, 1, 1, 1, 1, 2, 3, 5};
-
     .. tab:: python
 
         .. code-block:: python
@@ -489,9 +541,22 @@ The following example demonstrates the application of a sequential sum accumulat
 
             # result = (1, 1, 1, 1, 1, 2, 3, 5)
 
+    .. tab:: c++
+
+        .. code-block:: cpp
+            :linenos:
+
+            // tree in the above example
+            tree t({5, 5, 6, 6, 6, 7, 7, 7});
+            array_1d<index_t> input = xt::ones({num_leaves(t)});
+
+            auto result = accumulate_sequential(t, input, hg::accumulator_sum());
+
+            // result = {1, 1, 1, 1, 1, 2, 3, 5};
+
 
 Sequential and combine accumulator
-**********************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The sequential and combine accumulator defines the new value of a node as the accumulation of the accumulated values of its children combined with another node dependent value.
 This process is thus done sequentially from the leaves to the root of the tree.
@@ -523,24 +588,6 @@ The following example demonstrates the application of sequential max accumulator
 
 .. tabs::
 
-    .. tab:: c++
-
-        .. code-block:: cpp
-            :linenos:
-
-            // tree in the above example
-            tree t({5, 5, 6, 6, 6, 7, 7, 7});
-            array_1d<index_t> leaf_attribute = xt::ones({num_leaves(t)});
-            array_1d<index_t> tree_attribute = xt::ones({num_vertices(t)});
-
-            auto result = accumulate_and_combine_sequential(tree,
-                                                            tree_attribute,
-                                                            leaf_attribute,
-                                                            hg::accumulator_max(),
-                                                            std::plus<index_t>());
-
-            // result = {1, 1, 1, 1, 1, 2, 2, 3};
-
     .. tab:: python
 
         .. code-block:: python
@@ -551,9 +598,27 @@ The following example demonstrates the application of sequential max accumulator
             leaf_attribute = numpy.ones((t.num_leaves(),))
             tree_attribute = numpy.ones((t.num_vertices(),))
 
-            result = hg.accumulate_and_add_sequential( tree, tree_attribute, leaf_attribute, hg.Accumulators.max)
+            result = hg.accumulate_and_add_sequential(t, tree_attribute, leaf_attribute, hg.Accumulators.max)
 
             # result = (1, 1, 1, 1, 1, 2, 2, 3)
+
+    .. tab:: c++
+
+        .. code-block:: cpp
+            :linenos:
+
+            // tree in the above example
+            tree t({5, 5, 6, 6, 6, 7, 7, 7});
+            array_1d<index_t> leaf_attribute = xt::ones({num_leaves(t)});
+            array_1d<index_t> tree_attribute = xt::ones({num_vertices(t)});
+
+            auto result = accumulate_and_combine_sequential(t,
+                                                            tree_attribute,
+                                                            leaf_attribute,
+                                                            hg::accumulator_max(),
+                                                            std::plus<index_t>());
+
+            // result = {1, 1, 1, 1, 1, 2, 2, 3};
 
 
 Note that currently, to ease the binding of this accumulator to Python, the combining function cannot be specified at runtime
@@ -573,7 +638,7 @@ They are especially important for writing efficient algorithms in Python by avoi
 Using them in C++ can also be beneficial as they are written to natively and efficiently handle n-dimensional data.
 
 Conditional parallel propagator
-*******************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The conditional parallel propagator defines the new value of a node as its parent value if the condition is true and keeps its value otherwise.
 This process is done in parallel on the whole tree. The default condition (if the user does not provide one) is true for all nodes: each node takes
@@ -604,6 +669,20 @@ The following example demonstrates the application of a conditional parallel pro
 
 .. tabs::
 
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            # tree in the above example
+            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+            input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
+            condition = numpy.asarray((True, False, True, False, True, True, False, False))
+
+            result = hg.propagate_parallel(t, input, condition)
+
+            # result = (6, 2, 7, 4, 7, 8, 7, 8)
+
     .. tab:: c++
 
         .. code-block:: cpp
@@ -618,22 +697,9 @@ The following example demonstrates the application of a conditional parallel pro
 
             // result = {6, 2, 7, 4, 7, 8, 7, 8};
 
-    .. tab:: python
-
-        .. code-block:: python
-            :linenos:
-
-            # tree in the above example
-            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
-            input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
-            condition = numpy.asarray((True, False, True, False, True, True, False, False))
-
-            result = hg.propagate_parallel(input, condition, t)
-
-            # result = (6, 2, 7, 4, 7, 8, 7, 8)
 
 Conditional sequential propagator
-*********************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The conditional sequential propagator defines the new value of a node as its parent propagated value if the condition is true and keeps its value otherwise.
 This process is thus done from the root to the leaves of the tree.
@@ -663,6 +729,20 @@ The following example demonstrates the application of a conditional sequential p
 
 .. tabs::
 
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            # tree in the above example
+            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+            input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
+            condition = numpy.asarray((True, False, True, False, True, True, False, False))
+
+            result = hg.propagate_sequential(t, input, condition)
+
+            # result = (8, 2, 7, 4, 7, 8, 7, 8)
+
     .. tab:: c++
 
         .. code-block:: cpp
@@ -677,22 +757,9 @@ The following example demonstrates the application of a conditional sequential p
 
             // result = {8, 2, 7, 4, 7, 8, 7, 8};
 
-    .. tab:: python
-
-        .. code-block:: python
-            :linenos:
-
-            # tree in the above example
-            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
-            input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
-            condition = numpy.asarray((True, False, True, False, True, True, False, False))
-
-            result = hg.propagate_sequential(input, condition, t)
-
-            # result = (8, 2, 7, 4, 7, 8, 7, 8)
 
 Sequential propagate and accumulate
-***********************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The sequential propagate and accumulate defines the new value of a node as its parent value accumulated with its current value.
 This process is done from the root to the leaves of the tree.
@@ -721,6 +788,19 @@ The following example demonstrates the application of a propagate and accumulate
 
 .. tabs::
 
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            # tree in the above example
+            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+            input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
+
+            result = hg.propagate_sequential_and_accumulate(t, input, condition)
+
+            # result = (15, 16, 18, 19, 20, 14, 15, 8)
+
     .. tab:: c++
 
         .. code-block:: cpp
@@ -733,16 +813,3 @@ The following example demonstrates the application of a propagate and accumulate
             auto result = propagate_sequential_and_accumulate(t, input, hg.Accumulators.sum);
 
             // result = {15, 16, 18, 19, 20, 14, 15, 8};
-
-    .. tab:: python
-
-        .. code-block:: python
-            :linenos:
-
-            # tree in the above example
-            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
-            input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
-
-            result = hg.propagate_sequential_and_accumulate(input, condition, t)
-
-            # result = (15, 16, 18, 19, 20, 14, 15, 8)
