@@ -52,7 +52,9 @@ namespace tree_accumulator {
     TEST_CASE("accumulator tree vectorial", "[tree_accumulator]") {
 
         auto tree = data.t;
+        tree.compute_children();
 
+        REQUIRE(tree.children_computed());
         array_2d<index_t> input{{1, 0},
                                 {1, 1},
                                 {1, 2},
@@ -106,7 +108,7 @@ namespace tree_accumulator {
 
     TEST_CASE("accumulator tree vectorial no children", "[tree_accumulator]") {
 
-        auto tree = hg::tree(data.t.parents());
+        auto tree = data.t;
 
         REQUIRE(!tree.children_computed());
 
