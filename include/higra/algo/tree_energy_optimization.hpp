@@ -538,6 +538,7 @@ namespace hg {
         hg_assert_node_weights(tree, energy_attribute);
         hg_assert_1d_array(energy_attribute);
 
+        tree.compute_children();
         array_1d<bool> optimal_nodes = array_1d<bool>::from_shape({num_vertices(tree)});
         array_1d<value_type> optimal_energy = array_1d<value_type>::from_shape({num_vertices(tree)});
 
@@ -630,6 +631,7 @@ namespace hg {
         using lep_t = hg::tree_energy_optimization_internal::piecewise_linear_energy_function_piece<double>;
         using lef_t = hg::tree_energy_optimization_internal::piecewise_linear_energy_function<double>;
 
+        tree.compute_children();
         std::vector<lef_t> optimal_energies{};
         array_1d<double> apparition_scales = array_1d<double>::from_shape({num_vertices(tree)});
 

@@ -52,6 +52,65 @@ namespace tree_accumulator {
     TEST_CASE("accumulator tree vectorial", "[tree_accumulator]") {
 
         auto tree = data.t;
+        tree.compute_children();
+
+        REQUIRE(tree.children_computed());
+        array_2d<index_t> input{{1, 0},
+                                {1, 1},
+                                {1, 2},
+                                {1, 3},
+                                {1, 4},
+                                {1, 5},
+                                {1, 6},
+                                {1, 7}};
+
+        auto res1 = accumulate_parallel(tree, input, hg::accumulator_min());
+        auto longmax = std::numeric_limits<index_t>::max();
+        array_2d<index_t> ref1{{longmax, longmax},
+                               {longmax, longmax},
+                               {longmax, longmax},
+                               {longmax, longmax},
+                               {longmax, longmax},
+                               {1,       0},
+                               {1,       2},
+                               {1,       5}};
+        REQUIRE(xt::allclose(ref1, res1));
+
+        array_2d<index_t> vertex_data{{1, 0},
+                                      {1, 1},
+                                      {1, 2},
+                                      {1, 3},
+                                      {1, 4}};
+        auto res2 = accumulate_sequential(tree, vertex_data, hg::accumulator_sum());
+        array_2d<index_t> ref2{{1, 0},
+                               {1, 1},
+                               {1, 2},
+                               {1, 3},
+                               {1, 4},
+                               {2, 1},
+                               {3, 9},
+                               {5, 10}};
+        REQUIRE(xt::allclose(ref2, res2));
+
+        auto res3 = accumulate_and_combine_sequential(tree, input, vertex_data, hg::accumulator_sum(),
+                                                      std::plus<index_t>());
+        array_2d<index_t> ref3{{1, 0},
+                               {1, 1},
+                               {1, 2},
+                               {1, 3},
+                               {1, 4},
+                               {3, 6},
+                               {4, 15},
+                               {8, 28}};
+        REQUIRE(xt::allclose(ref3, res3));
+
+    }
+
+    TEST_CASE("accumulator tree vectorial no children", "[tree_accumulator]") {
+
+        auto tree = data.t;
+
+        REQUIRE(!tree.children_computed());
 
         array_2d<index_t> input{{1, 0},
                                 {1, 1},

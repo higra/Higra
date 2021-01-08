@@ -17,6 +17,55 @@ using graph_t = hg::tree;
 using edge_t = graph_t::edge_descriptor;
 using vertex_t = graph_t::vertex_descriptor;
 
+
+template<typename graph_t>
+struct def_out_degree_tree {
+    template<typename value_t, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("out_degree", [](graph_t &g,
+                               pyarray<value_t> vertices) {
+                  g.compute_children();
+                  hg_assert_vertex_indices(g, vertices);
+                  return hg::out_degree(vertices, g);
+              },
+              doc,
+              pybind11::arg("vertices_array"));
+    }
+};
+
+template<typename graph_t>
+struct def_degree_tree {
+    template<typename value_t, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("degree", [](graph_t &g,
+                           pyarray<value_t> vertices) {
+                  g.compute_children();
+                  hg_assert_vertex_indices(g, vertices);
+                  return hg::degree(vertices, g);
+              },
+              doc,
+              pybind11::arg("vertices_array"));
+    }
+};
+
+template<typename graph_t>
+struct def_in_degree_tree {
+    template<typename value_t, typename C>
+    static
+    void def(C &c, const char *doc) {
+        c.def("in_degree", [](graph_t &g,
+                              pyarray<value_t> vertices) {
+                  g.compute_children();
+                  hg_assert_vertex_indices(g, vertices);
+                  return hg::in_degree(vertices, g);
+              },
+              doc,
+              pybind11::arg("vertices_array"));
+    }
+};
+
 template<typename graph_t>
 struct def_tree_ctr {
     template<typename type, typename C>
@@ -90,6 +139,7 @@ struct def_num_children {
         c.def("_num_children",
               [](const graph_t &tree, const pyarray<type> &vertices) {
                   hg_assert_vertex_indices(tree, vertices);
+                  tree.compute_children();
                   return hg::num_children(vertices, tree);
               },
               doc,
@@ -105,6 +155,7 @@ struct def_child {
     void def(C &c, const char *doc) {
         c.def("_child",
               [](const graph_t &tree, hg::index_t i, const pyarray<type> &vertices) {
+                  tree.compute_children();
                   hg_assert_vertex_indices(tree, vertices);
                   hg_assert(i >= 0, "Child index cannot be negative.");
                   hg_assert(i < (index_t) (xt::amin)(num_children(vertices, tree))(),
@@ -150,9 +201,97 @@ void py_init_tree_graph(pybind11::module &m) {
     add_type_overloads<def_tree_ctr<graph_t>, HG_TEMPLATE_INTEGRAL_TYPES>
             (c, "Create a tree from the given parent relation.");
     add_edge_accessor_graph_concept<graph_t, decltype(c)>(c);
-    add_incidence_graph_concept<graph_t, decltype(c)>(c);
-    add_bidirectionnal_graph_concept<graph_t, decltype(c)>(c);
-    add_adjacency_graph_concept<graph_t, decltype(c)>(c);
+
+    ///////////////////////////////////
+    // incidence graph concepts
+
+    using iterator_transform_function = std::function<pybind11::tuple(edge_t)>;
+    using out_edge_iterator = hg::transform_forward_iterator<iterator_transform_function,
+            typename hg::graph_traits<graph_t>::out_edge_iterator,
+            pybind11::tuple
+    >;
+
+    c.def("out_edges", [](const graph_t &g,
+                          const vertex_t v) {
+              hg_assert_vertex_index(g, v);
+              g.compute_children();
+              auto it = hg::out_edges(v, g);
+              // wrapping out edge iterator to python friendly type
+              auto it1 = out_edge_iterator(it.first, cpp_edge_2_python<edge_t>);
+              auto it2 = out_edge_iterator(it.second, cpp_edge_2_python<edge_t>);
+              return pybind11::make_iterator(it1, it2);
+
+          },
+          "Iterator over all out edges from 'vertex'. An out edge is a tuple '(vertex, adjacent_vertex)'.",
+          pybind11::arg("vertex"));
+
+    c.def("out_degree", [](graph_t &g, vertex_t vertex) {
+              hg_assert_vertex_index(g, vertex);
+              g.compute_children();
+              return hg::out_degree(vertex, g);
+          },
+          "Return the out degree of the given vertex.",
+          pybind11::arg("vertex"));
+
+    add_type_overloads<def_out_degree_tree<graph_t>, int, unsigned int, long long, unsigned long long>
+            (c, "Return the out degree of the given vertices.");
+
+    ///////////////////////////////////
+    // bidirectionnal graph concepts
+    using in_edge_iterator = hg::transform_forward_iterator<
+            iterator_transform_function,
+            typename hg::graph_traits<graph_t>::in_edge_iterator,
+            pybind11::tuple>;
+
+    c.def("in_edges", [](graph_t &g,
+                         const vertex_t v) {
+              hg_assert_vertex_index(g, v);
+              g.compute_children();
+              auto it = hg::in_edges(v, g);
+              // wrapping in edge iterator to python friendly type
+              auto it1 = in_edge_iterator(it.first, cpp_edge_2_python<edge_t>);
+              auto it2 = in_edge_iterator(it.second, cpp_edge_2_python<edge_t>);
+              return pybind11::make_iterator(it1, it2);
+
+          },
+          "Iterator over all in edges from 'vertex'. An in edge is a tuple '(adjacent_vertex, vertex)'.",
+          pybind11::arg("vertex"));
+
+    c.def("degree", [](graph_t &g, vertex_t vertex) {
+              hg_assert_vertex_index(g, vertex);
+              g.compute_children();
+              return hg::degree(vertex, g);
+          },
+          "Return the degree of the given vertex.",
+          pybind11::arg("vertex"));
+
+    add_type_overloads<def_degree_tree<graph_t>, int, unsigned int, long long, unsigned long long>
+            (c, "Return the degree of the given vertices.");
+
+    c.def("in_degree", [](graph_t &g, vertex_t vertex) {
+              hg_assert_vertex_index(g, vertex);
+              g.compute_children();
+              return hg::in_degree(vertex, g);
+          },
+          "Return the in degree of the given vertex.",
+          pybind11::arg("vertex"));
+
+    add_type_overloads<def_in_degree_tree<graph_t>, int, unsigned int, long long, unsigned long long>
+            (c, "Return the in degree of the given vertices.");
+
+    ///////////////////////////////////
+    // adjacency graph concepts
+
+    c.def("adjacent_vertices", [](const graph_t &g,
+                                  const vertex_t v) {
+              g.compute_children();
+              hg_assert_vertex_index(g, v);
+              auto it = hg::adjacent_vertices(v, g);
+              return pybind11::make_iterator(it.first, it.second);
+          },
+          "Iterator over all vertices adjacent to the given vertex.",
+          pybind11::arg("vertex"));
+
     add_vertex_list_graph_concept<graph_t, decltype(c)>(c);
     add_edge_list_graph_concept<graph_t, decltype(c)>(c);
     add_edge_index_graph_concept<graph_t, decltype(c)>(c);
@@ -172,11 +311,13 @@ void py_init_tree_graph(pybind11::module &m) {
 
     c.def("_num_children", [](const graph_t &t, index_t i) {
         hg_assert_vertex_index(t, i);
+        t.compute_children();
         return t.num_children(i);
     }, "", py::arg("vertex"));
     add_type_overloads<def_num_children<graph_t>, int, unsigned int, long long, unsigned long long>(c, "");
 
     c.def("_child", [](const graph_t &t, index_t i, index_t vertex) {
+              t.compute_children();
               hg_assert_vertex_index(t, vertex);
               hg_assert(i >= 0, "Child index cannot be negative.");
               hg_assert(i < (index_t) t.num_children(vertex),
@@ -214,6 +355,7 @@ void py_init_tree_graph(pybind11::module &m) {
     c.def("children",
           [](const graph_t &g, vertex_t v) {
               hg_assert_vertex_index(g, v);
+              g.compute_children();
               hg::array_1d<hg::index_t> a = hg::array_1d<hg::index_t>::from_shape({hg::num_children(v, g)});
               auto it = hg::children(v, g);
               std::copy(it.first, it.second, a.begin());
@@ -275,5 +417,10 @@ void py_init_tree_graph(pybind11::module &m) {
           py::arg("include_leaves") = true,
           py::arg("include_root") = true);
 
+    c.def("_compute_children", &graph_t::compute_children, "Compute the children relation.");
+    c.def("_children_computed", &graph_t::children_computed,
+          "True if the children relation has already been computed.");
+    c.def("clear_children", &graph_t::clear_children, "Remove the children relation if it has already been computed. "
+                                                      "May free memory but only useful if you are sure that this relation won't be required by further processing).");
 }
 

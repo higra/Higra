@@ -112,31 +112,22 @@ namespace hg {
             tree(const xt::xexpression<T> &parents = xt::xarray<vertex_descriptor>({0}),
                  tree_category category = tree_category::partition_tree) :
                     _parents(parents),
-                    _children(_parents.size()),
+                    _children_computed(false),
+                    _children(0),
                     _category(category) {
                 HG_TRACE();
+                _init();
+            };
 
-                hg_assert(_parents.shape().size() == 1, "parents must be a linear (1d) array");
-                _num_vertices = _parents.size();
-                _root = _num_vertices - 1;
-                hg_assert(_parents(_root) == _root, "nodes are not in a topological order (last node is not a root)");
-
-                for (vertex_descriptor v = 0; v < _root; ++v) {
-                    vertex_descriptor parent_v = _parents(v);
-                    hg_assert(parent_v != v, "several root nodes detected");
-                    hg_assert(parent_v > v, "nodes are not in a topological order");
-                    _children[parent_v].push_back(v);
-                }
-
-                index_t num_leaves = 0;
-
-                for (vertex_descriptor v = 0; v <= _root; ++v) {
-                    if (_children[v].size() == 0) {
-                        hg_assert(num_leaves == v, "leaves nodes are not before internal nodes");
-                        num_leaves++;
-                    }
-                }
-                _num_leaves = (size_t) num_leaves;
+            template<typename T>
+            tree(xt::xexpression<T> &&parents = xt::xarray<vertex_descriptor>({0}),
+                 tree_category category = tree_category::partition_tree) :
+                    _parents(std::move(parents.derived_cast())),
+                    _children_computed(false),
+                    _children(0),
+                    _category(category) {
+                HG_TRACE();
+                _init();
             };
 
             const auto &category() const {
@@ -155,8 +146,18 @@ namespace hg {
                 return (_num_vertices == 0) ? 0 : _num_vertices - 1;
             }
 
+            const auto &children(vertex_descriptor v) const {
+                if (v < _num_leaves) {
+                    return _empty_children;
+                }
+                return _children[v - _num_leaves];
+            }
+
             size_t num_children(const vertex_descriptor v) const {
-                return _children[v].size();
+                if (v < _num_leaves) {
+                    return 0;
+                }
+                return _children[v - _num_leaves].size();
             }
 
             vertex_descriptor root() const {
@@ -164,23 +165,19 @@ namespace hg {
             }
 
             degree_size_type degree(vertex_descriptor v) const {
-                return _children[v].size() + ((v != _root) ? 1 : 0);
+                return num_children(v) + ((v != _root) ? 1 : 0);
             }
 
             auto children_cbegin(vertex_descriptor v) const {
-                return _children[v].cbegin();
+                return children(v).cbegin();
             }
 
             auto children_cend(vertex_descriptor v) const {
-                return _children[v].cend();
-            }
-
-            auto children(vertex_descriptor v) const {
-                return _children[v];
+                return children(v).cend();
             }
 
             auto child(index_t i, vertex_descriptor v) const {
-                return _children[v][i];
+                return _children[v - _num_leaves][i];
             }
 
             template<typename... Args>
@@ -215,7 +212,7 @@ namespace hg {
             }
 
             auto is_leaf(vertex_descriptor v) const {
-                return (size_t) v < _num_leaves;
+                return v < _num_leaves;
             }
 
             template<typename T>
@@ -226,14 +223,65 @@ namespace hg {
                 return v;
             }
 
+            void compute_children() const {
+                if (!_children_computed) {
+                    _children.resize(_num_vertices - _num_leaves);
+                    for (vertex_descriptor v = 0; v < _root; ++v) {
+                        vertex_descriptor parent_v = _parents(v);
+                        _children[parent_v - _num_leaves].push_back(v);
+                    }
+                    _children_computed = true;
+                }
+            }
+
+            void clear_children() const {
+                _children.clear();
+                _children_computed = false;
+            }
+
+            bool children_computed() const {
+                return _children_computed;
+            }
+
+
         private:
+
+            void _init() {
+                hg_assert(_parents.shape().size() == 1, "parents must be a linear (1d) array");
+                _num_vertices = _parents.size();
+                _root = _num_vertices - 1;
+                hg_assert(_parents(_root) == _root, "nodes are not in a topological order (last node is not a root)");
+
+                array_1d<index_t> num_children = xt::zeros_like(_parents);
+                for (vertex_descriptor v = 0; v < _root; ++v) {
+                    vertex_descriptor parent_v = _parents(v);
+                    hg_assert(parent_v != v, "several root nodes detected");
+                    hg_assert(parent_v > v, "nodes are not in a topological order");
+                    num_children(parent_v)++;
+                }
+
+                index_t num_leaves = 0;
+
+                for (vertex_descriptor v = 0; v <= _root; ++v) {
+                    if (num_children(v) == 0) {
+                        hg_assert(num_leaves == v, "leaves nodes are not before internal nodes");
+                        num_leaves++;
+                    }
+                }
+                _num_leaves = (size_t) num_leaves;
+            }
+
 
             vertex_descriptor _root;
             size_t _num_vertices;
-            size_t _num_leaves;
+            index_t _num_leaves;
             array_1d <vertex_descriptor> _parents;
-            std::vector<children_list_t> _children;
+            mutable bool _children_computed;
+            mutable std::vector<children_list_t> _children;
             tree_category _category;
+
+            // for leaf nodes
+            children_list_t _empty_children;
         };
 
 
@@ -492,7 +540,8 @@ namespace hg {
     inline
     std::pair<tree::children_iterator, tree::children_iterator>
     children(const tree::vertex_descriptor v, const tree &g) {
-        return std::make_pair(g.children_cbegin(v), g.children_cend(v));
+        auto &c = g.children(v);
+        return std::make_pair(c.cbegin(), c.cend());
     }
 
     inline
@@ -575,10 +624,11 @@ namespace hg {
     std::pair<typename hg::tree::adjacency_iterator, typename hg::tree::adjacency_iterator>
     adjacent_vertices(typename hg::tree::vertex_descriptor v, const hg::tree &g) {
         using it = typename hg::tree::adjacency_iterator;
+        auto &c = g.children(v);
         auto par = g.parent(v);
         return std::make_pair(
-                it(v, par, g.children_cbegin(v)),
-                it(par, par, g.children_cend(v)));
+                it(v, par, c.cbegin()),
+                it(par, par, c.cend()));
     }
 
 
@@ -588,12 +638,13 @@ namespace hg {
         auto fun = [v](const typename hg::tree::vertex_descriptor t) {
             return hg::tree::edge_descriptor(v, t, (std::min)(v, t));
         };
+        auto &c = g.children(v);
         using it = typename hg::tree::out_edge_iterator;
         using ita = typename hg::tree::adjacency_iterator;
         auto par = g.parent(v);
         return std::make_pair(
-                it(ita(v, par, g.children_cbegin(v)), fun),
-                it(ita(par, par, g.children_cend(v)), fun));
+                it(ita(v, par, c.cbegin()), fun),
+                it(ita(par, par, c.cend()), fun));
     }
 
     inline
@@ -602,12 +653,13 @@ namespace hg {
         auto fun = [v](const typename hg::tree::vertex_descriptor t) {
             return hg::tree::edge_descriptor(t, v, (std::min)(v, t));
         };
+        auto &c = g.children(v);
         using it = typename hg::tree::out_edge_iterator;
         using ita = typename hg::tree::adjacency_iterator;
         auto par = g.parent(v);
         return std::make_pair(
-                it(ita(v, par, g.children_cbegin(v)), fun),
-                it(ita(par, par, g.children_cend(v)), fun));
+                it(ita(v, par, c.cbegin()), fun),
+                it(ita(par, par, c.cend()), fun));
     }
 
     template<typename T>

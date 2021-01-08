@@ -152,7 +152,9 @@ namespace hg {
             hg_assert_1d_array(ground_truth);
             hg_assert_integral_value_type(ground_truth);
 
-            max_regions = (std::min)(max_regions, num_leaves(tree));
+            m_tree.compute_children();
+
+            max_regions = (std::min)(max_regions, num_leaves(m_tree));
 
             size_t num_regions_ground_truth = xt::amax(ground_truth)() + 1;
 
@@ -171,24 +173,24 @@ namespace hg {
 #endif
 
             // for a tree node i, a gt region j: card_intersection(i, j) is the number of pixels in R_i cap R_j
-            array_2d<index_t> card_intersection_leaves{{num_leaves(tree), region_gt_areas.size()}, 0};
+            array_2d<index_t> card_intersection_leaves{{num_leaves(m_tree), region_gt_areas.size()}, 0};
             if (vertex_map.size() <= 1) { // no rag
-                hg_assert_leaf_weights(tree, ground_truth);
-                for (auto i: leaves_iterator(tree)) {
+                hg_assert_leaf_weights(m_tree, ground_truth);
+                for (auto i: leaves_iterator(m_tree)) {
                     card_intersection_leaves(i, ground_truth(i))++;
                 }
-                region_tree_area = attribute_area(tree);
+                region_tree_area = attribute_area(m_tree);
             } else { // tree on rag
                 hg_assert(vertex_map.size() == ground_truth.size(), "Vertex map and ground truth sizes do not match.");
                 for (index_t i = 0; i < (index_t) vertex_map.size(); i++) {
                     card_intersection_leaves(vertex_map(i), ground_truth(i))++;
                 }
-                region_tree_area = attribute_area(tree,
+                region_tree_area = attribute_area(m_tree,
                                                   rag_accumulate(vertex_map, xt::ones<index_t>(vertex_map.shape()),
                                                                  accumulator_counter()));
             }
 
-            array_2d<double> card_intersection = accumulate_sequential(tree, card_intersection_leaves,
+            array_2d<double> card_intersection = accumulate_sequential(m_tree, card_intersection_leaves,
                                                                        accumulator_sum());
 
             array_1d<double> scores;
@@ -212,17 +214,17 @@ namespace hg {
             }
 
             // initialize scoring for single region partitions (the node itself)
-            for (auto i: leaves_to_root_iterator(tree)) {
+            for (auto i: leaves_to_root_iterator(m_tree)) {
                 backtracking.push_back({{1, scores(i), 0, 0}});
             }
 
-            for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
-                hg_assert(num_children(i, tree) == 2, "Only binary trees are supported.");
+            for (auto i: leaves_to_root_iterator(m_tree, leaves_it::exclude)) {
+                hg_assert(num_children(i, m_tree) == 2, "Only binary trees are supported.");
 
                 auto &backtrack_i = backtracking[i];
 
-                auto c1 = child(0, i, tree);
-                auto c2 = child(1, i, tree);
+                auto c1 = child(0, i, m_tree);
+                auto c2 = child(1, i, m_tree);
                 auto &backtrack_c1 = backtracking[c1];
                 auto &backtrack_c2 = backtracking[c2];
 

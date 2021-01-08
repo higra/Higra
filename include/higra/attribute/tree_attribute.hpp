@@ -72,13 +72,13 @@ namespace hg {
         hg_assert_1d_array(node_area);
         hg_assert_node_weights(tree, node_altitude);
         hg_assert_1d_array(node_altitude);
-
+        tree.compute_children();
         auto &parent = tree.parents();
         array_1d<double> volume = xt::empty<double>({tree.num_vertices()});
         xt::view(volume, xt::range(0, num_leaves(tree))) = 0;
         for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             volume(i) = std::fabs(node_altitude(i) - node_altitude(parent(i))) * node_area(i);
-            for (auto c: tree.children(i)) {
+            for (auto c: children_iterator(i, tree)) {
                 volume(i) += volume(c);
             }
         }
@@ -129,6 +129,7 @@ namespace hg {
         hg_assert_1d_array(altitudes);
         using value_type = typename T::value_type;
 
+        tree.compute_children();
         if (increasing_altitudes) {
             auto min_depth = xt::empty_like(altitudes);
             xt::noalias(xt::view(min_depth, xt::range(0, num_leaves(tree)))) =
@@ -195,6 +196,7 @@ namespace hg {
         hg_assert_node_weights(tree, altitudes);
         hg_assert_1d_array(altitudes);
 
+        tree.compute_children();
         array_1d<bool> extrema = xt::zeros<bool>({num_vertices(tree)});
         for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             bool flag = true;
@@ -256,6 +258,8 @@ namespace hg {
         hg_assert_1d_array(altitudes);
         hg_assert_node_weights(tree, attribute);
         hg_assert_1d_array(attribute);
+
+        tree.compute_children();
 
         // identify path to the deepest extrema
         array_1d<index_t> ref_son({num_vertices(tree)}, invalid_index);
@@ -380,6 +384,7 @@ namespace hg {
     template<typename tree_t>
     auto attribute_sibling(const tree_t &tree, index_t skip = 1) {
 
+        tree.compute_children();
         array_1d<index_t> attribute = xt::empty<index_t>({num_vertices(tree)});
         for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude, root_it::include)) {
             index_t nchs = num_children(n, tree);
@@ -430,6 +435,7 @@ namespace hg {
         array_1d<double> res = array_1d<double>::from_shape({num_vertices(tree)});
         xt::noalias(xt::view(res, xt::range(0, num_leaves(tree)))) = vertex_perimeter;
         array_1d<bool> visited({num_leaves(tree)}, false);
+        tree.compute_children();
 
         for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             res(i) = 0;
@@ -462,6 +468,7 @@ namespace hg {
      */
     template<typename tree_t>
     auto attribute_child_number(const tree_t &tree) {
+        tree.compute_children();
         array_1d<index_t> res = xt::empty<index_t>({num_vertices(tree)});
         for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             for (index_t c = 0; c < (index_t) num_children(i, tree); c++) {
@@ -526,6 +533,7 @@ namespace hg {
         auto &node_weights = xnode_weights.derived_cast();
         hg_assert_node_weights(tree, node_weights);
 
+        tree.compute_children();
         array_nd<value_type> res = xt::zeros<value_type>(node_weights.shape());
         const auto num_v = num_vertices(tree);
         const auto num_l = num_leaves(tree);

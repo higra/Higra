@@ -119,7 +119,7 @@ namespace hg {
             auto num_regions = m_num_regions_cuts[cut_index];
             array_1d<index_t> nodes = array_1d<index_t>::from_shape({(size_t) num_regions});
             const tree &ct = (m_use_node_map) ? m_sorted_tree : m_original_tree;
-
+            ct.compute_children();
             if (cut_index == 0) { // special case for single region partition
                 nodes(0) = root(ct);
             } else {
@@ -176,6 +176,7 @@ namespace hg {
         template<typename T, typename E>
         void init(const T &t, const E &a) {
             auto min_alt_children = accumulate_parallel(t, a, accumulator_min());
+            t.compute_children();
 
             // single region partition... edge case
             m_num_regions_cuts.push_back(1);

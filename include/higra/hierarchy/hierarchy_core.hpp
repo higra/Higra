@@ -159,9 +159,12 @@ namespace hg {
     auto simplify_tree(const tree &t, const criterion_t &criterion, bool process_leaves = false) {
         HG_TRACE();
 
+
         // this case is significantly harder because a reordering of the nodes
         // may append if an internal node becomes a leaf
         if (process_leaves) {
+
+            t.compute_children();
 
             // ********************************
             // identification of deleted sub-trees
@@ -256,48 +259,43 @@ namespace hg {
             return make_remapped_tree(tree(new_parent, t.category()), std::move(node_map));
         } else {
             auto n_nodes = num_vertices(t);
-            auto copy_parent = parents(t);
+            auto n_leaves = num_leaves(t);
 
-            std::size_t count = 0;
-            array_1d<tree::vertex_descriptor> deleted_map = xt::zeros<tree::vertex_descriptor>(copy_parent.shape());
-            array_1d<bool> deleted = xt::zeros<bool>(copy_parent.shape());
+            array_1d<index_t> new_ranks = xt::empty<index_t>({n_nodes});
 
-            // from root to leaves, compute the new parent relation,
-            // don't care of the  holes in the parent tab
-            for (auto i: root_to_leaves_iterator(t, leaves_it::exclude, root_it::exclude)) {
-                auto parent = copy_parent(i);
-                if (criterion(i)) {
-                    for (auto c: children_iterator(i, t)) {
-                        copy_parent(c) = parent;
-                    }
-                    count++;
+            xt::view(new_ranks, xt::range(0, n_leaves)) = xt::arange<index_t>(n_leaves);
+            index_t count = n_leaves;
+
+            for (auto i: leaves_to_root_iterator(t, leaves_it::exclude, root_it::exclude)){
+                if (!criterion(i)) {
+                    new_ranks(i) = count;
+                    ++count;
                 }
-                // number of deleted nodes after node i
-                deleted_map(i) = count;
             }
 
-            //correct the mapping
-            deleted_map = count - deleted_map;
+            new_ranks(root(t)) = count;
+            ++count;
 
-            array_1d<tree::vertex_descriptor> new_parent = xt::arange<tree::vertex_descriptor>(0, n_nodes - count);
-            array_1d<tree::vertex_descriptor> node_map = xt::zeros<tree::vertex_descriptor>({n_nodes - count});
+            array_1d<index_t> new_parent = xt::empty<index_t>({count});
+            array_1d<index_t> node_map = xt::empty<index_t>({count});
 
-            count = 0;
+            count = new_parent.size() - 1;
 
-            for (auto i: leaves_to_root_iterator(t, leaves_it::include, root_it::exclude)) {
+            new_parent(count) = count;
+            node_map(count) = root(t);
+            --count;
+
+            for (auto i: root_to_leaves_iterator(t, leaves_it::include, root_it::exclude)) {
                 if (!criterion(i) || is_leaf(i, t)) {
-                    auto par = copy_parent(i);
-                    auto new_par = par - deleted_map(par);
+                    new_parent(count) = new_ranks(parent(i, t));
                     node_map(count) = i;
-                    new_parent(count) = new_par;
-                    count++;
+                    --count;
+                } else {
+                    new_ranks(i) = new_ranks(parent(i, t));
                 }
             }
 
-            node_map(node_map.size() - 1) = root(t);
-
-
-            return make_remapped_tree(tree(new_parent, t.category()), std::move(node_map));
+            return make_remapped_tree(tree(std::move(new_parent), t.category()), std::move(node_map));
         }
 
     };
@@ -389,6 +387,8 @@ namespace hg {
         auto num_v = num_vertices(tree);
         auto num_l = num_leaves(tree);
         auto num_v_res = num_l * 2 - 1;
+
+        tree.compute_children();
         array_1d<index_t> node_map = array_1d<index_t>::from_shape({num_v});
         array_1d<index_t> reverse_node_map = array_1d<index_t>::from_shape({num_v_res});
         for (index_t i = 0; i < (index_t) num_l; i++) {

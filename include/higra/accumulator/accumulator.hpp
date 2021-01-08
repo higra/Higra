@@ -39,24 +39,19 @@ namespace hg {
         * @tparam S the storage type
         * @tparam vectorial bool: is dimension of storage > 0 (different from scalar)
         */
-        template<typename S, bool vectorial>
+        template<typename S, typename initializer, typename operation, bool vectorial>
         struct acc_marginal_impl {
         };
 
-        template<typename S>
-        struct acc_marginal_impl<S, true> {
+        template<typename S, typename initializer, typename operation>
+        struct acc_marginal_impl<S, initializer, operation, true> {
 
             static const bool is_vectorial = true;
 
-            using self_type = acc_marginal_impl<S, is_vectorial>;
+            using self_type = acc_marginal_impl<S, initializer, operation, is_vectorial>;
             using value_type = typename std::iterator_traits<S>::value_type;
-            using reducer_type = std::function<value_type(value_type, value_type)>;
 
-
-            acc_marginal_impl(const S &storage_begin, const S &storage_end, const reducer_type &reducer,
-                              const value_type &init_value) :
-                    m_init_value(init_value),
-                    m_reducer(reducer),
+            acc_marginal_impl(const S &storage_begin, const S &storage_end) :
                     m_storage_begin(storage_begin),
                     m_storage_end(storage_end) {
             }
@@ -64,7 +59,7 @@ namespace hg {
             template<typename ...Args>
             void
             initialize(Args &&...) {
-                std::fill(m_storage_begin, m_storage_end, m_init_value);
+                std::fill(m_storage_begin, m_storage_end, initializer::template init_value<value_type>());
             }
 
             template<typename T, typename ...Args>
@@ -72,7 +67,7 @@ namespace hg {
             accumulate(T value_begin, Args &&...) {
                 auto s = m_storage_begin;
                 for (; s != m_storage_end; s++, value_begin++) {
-                    *s = m_reducer(*value_begin, *s);
+                    *s = operation::template reduce<value_type>(*value_begin, *s);
                 }
             };
 
@@ -93,38 +88,32 @@ namespace hg {
             }
 
         private:
-            value_type m_init_value;
-            reducer_type m_reducer;
             S m_storage_begin;
             S m_storage_end;
         };
 
-        template<typename S>
-        struct acc_marginal_impl<S, false> {
+        template<typename S, typename initializer, typename operation>
+        struct acc_marginal_impl<S, initializer, operation, false> {
 
             static const bool is_vectorial = false;
 
-            using self_type = acc_marginal_impl<S, is_vectorial>;
+            using self_type = acc_marginal_impl<S, initializer, operation, is_vectorial>;
             using value_type = typename std::iterator_traits<S>::value_type;
-            using reducer_type = std::function<value_type(value_type, value_type)>;
 
-            acc_marginal_impl(const S &storage_begin, const S &, const reducer_type &reducer,
-                              const value_type &init_value) :
-                    m_init_value(init_value),
-                    m_reducer(reducer),
+            acc_marginal_impl(const S &storage_begin, const S &) :
                     m_storage_begin(storage_begin) {
             }
 
             template<typename ...Args>
             void
             initialize(Args &&...) {
-                *m_storage_begin = m_init_value;
+                *m_storage_begin = initializer::template init_value<value_type>();
             }
 
             template<typename T, typename ...Args>
             void
             accumulate(const T value_begin, Args &&...) {
-                *m_storage_begin = m_reducer(*value_begin, *m_storage_begin);
+                *m_storage_begin = operation::template reduce<value_type>(*value_begin, *m_storage_begin);
             };
 
             template<typename ...Args>
@@ -142,8 +131,6 @@ namespace hg {
             }
 
         private:
-            value_type m_init_value;
-            reducer_type m_reducer;
             S m_storage_begin;
         };
 
@@ -561,17 +548,25 @@ namespace hg {
         auto make_accumulator(S &storage) const {
             using value_type = typename S::value_type;
             using iterator_type = decltype(storage.begin());
-            return accumulator_detail::acc_marginal_impl<iterator_type, vectorial>(
+            return accumulator_detail::acc_marginal_impl<iterator_type, accumulator_sum, accumulator_sum, vectorial>(
                     storage.begin(),
-                    storage.end(),
-                    std::plus<value_type>(),
-                    0);
+                    storage.end());
         }
 
         template<typename shape_t>
         static
         auto get_output_shape(const shape_t &input_shape) {
             return input_shape;
+        }
+
+        template <typename value_type>
+        constexpr static value_type init_value(){
+            return 0;
+        }
+
+        template <typename value_type>
+        static value_type reduce(const value_type & v1, const value_type & v2){
+            return v1 + v2;
         }
     };
 
@@ -581,17 +576,25 @@ namespace hg {
         auto make_accumulator(S &storage) const {
             using value_type = typename S::value_type;
             using iterator_type = decltype(storage.begin());
-            return accumulator_detail::acc_marginal_impl<iterator_type, vectorial>(
+            return accumulator_detail::acc_marginal_impl<iterator_type, accumulator_min, accumulator_min, vectorial>(
                     storage.begin(),
-                    storage.end(),
-                    [](value_type v1, value_type v2) { return (std::min)(v1, v2); },
-                    (std::numeric_limits<value_type>::max)());
+                    storage.end());
         }
 
         template<typename shape_t>
         static
         auto get_output_shape(const shape_t &input_shape) {
             return input_shape;
+        }
+
+        template <typename value_type>
+        static value_type init_value(){
+            return (std::numeric_limits<value_type>::max)();
+        }
+
+        template <typename value_type>
+        static value_type reduce(const value_type & v1, const value_type & v2){
+            return (std::min)(v1, v2);
         }
     };
 
@@ -601,17 +604,25 @@ namespace hg {
         auto make_accumulator(S &storage) const {
             using value_type = typename S::value_type;
             using iterator_type = decltype(storage.begin());
-            return accumulator_detail::acc_marginal_impl<iterator_type, vectorial>(
+            return accumulator_detail::acc_marginal_impl<iterator_type, accumulator_max, accumulator_max, vectorial>(
                     storage.begin(),
-                    storage.end(),
-                    [](value_type v1, value_type v2) { return (std::max)(v1, v2); },
-                    std::numeric_limits<value_type>::lowest());
+                    storage.end());
         }
 
         template<typename shape_t>
         static
         auto get_output_shape(const shape_t &input_shape) {
             return input_shape;
+        }
+
+        template <typename value_type>
+        static value_type init_value(){
+            return std::numeric_limits<value_type>::lowest();
+        }
+
+        template <typename value_type>
+        static value_type reduce(const value_type & v1, const value_type & v2){
+            return (std::max)(v1, v2);
         }
     };
 
@@ -621,17 +632,25 @@ namespace hg {
         auto make_accumulator(S &storage) const {
             using value_type = typename S::value_type;
             using iterator_type = decltype(storage.begin());
-            return accumulator_detail::acc_marginal_impl<iterator_type, vectorial>(
+            return accumulator_detail::acc_marginal_impl<iterator_type, accumulator_prod, accumulator_prod, vectorial>(
                     storage.begin(),
-                    storage.end(),
-                    std::multiplies<value_type>(),
-                    1);
+                    storage.end());
         }
 
         template<typename shape_t>
         static
         auto get_output_shape(const shape_t &input_shape) {
             return input_shape;
+        }
+
+        template <typename value_type>
+        static value_type init_value(){
+            return 1;
+        }
+
+        template <typename value_type>
+        static value_type reduce(const value_type & v1, const value_type & v2){
+            return v1 * v2;
         }
     };
 

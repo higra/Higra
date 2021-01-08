@@ -39,6 +39,7 @@ namespace hg {
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
+
             auto acc = accumulator.template make_accumulator<vectorial>(output_view);
 
             for (auto i: leaves_iterator(tree)) {
@@ -48,15 +49,40 @@ namespace hg {
                 acc.finalize();
             }
 
-            for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
-                output_view.set_position(i);
-                acc.set_storage(output_view);
-                acc.initialize();
-                for (auto c : children_iterator(i, tree)) {
-                    input_view.set_position(c);
-                    acc.accumulate(input_view.begin());
+            if (tree.children_computed()) {
+
+                for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
+                    output_view.set_position(i);
+                    acc.set_storage(output_view);
+                    acc.initialize();
+                    for (auto c : children_iterator(i, tree)) {
+                        input_view.set_position(c);
+                        acc.accumulate(input_view.begin());
+                    }
+                    acc.finalize();
                 }
-                acc.finalize();
+
+            } else {
+                index_t numl = num_leaves(tree);
+                std::vector<decltype(accumulator.template make_accumulator<vectorial>(output_view))> accs;
+                accs.reserve(num_vertices(tree) - numl);
+
+                for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
+                    output_view.set_position(i);
+                    accs.push_back(accumulator.template make_accumulator<vectorial>(output_view));
+                    accs.back().initialize();
+                }
+
+                for (auto i : leaves_to_root_iterator(tree, leaves_it::include, root_it::exclude)) {
+                    if (i >= numl) {
+                        accs[i - numl].finalize();
+                    }
+
+                    auto p = parent(i, tree);
+                    input_view.set_position(i);
+                    accs[p - numl].accumulate(input_view.begin());
+                }
+                accs.back().finalize();
             }
 
             return output;
@@ -83,7 +109,6 @@ namespace hg {
             auto vertex_data_view = make_light_axis_view<vectorial>(vertex_data);
             auto input_view = make_light_axis_view<vectorial>(output);
             auto output_view = make_light_axis_view<vectorial>(output);
-            auto acc = accumulator.template make_accumulator<vectorial>(output_view);
 
             for (auto i: leaves_iterator(tree)) {
                 output_view.set_position(i);
@@ -91,16 +116,42 @@ namespace hg {
                 output_view = vertex_data_view;
             }
 
-            for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
-                output_view.set_position(i);
-                acc.set_storage(output_view);
-                acc.initialize();
-                for (auto c : children_iterator(i, tree)) {
-                    input_view.set_position(c);
-                    acc.accumulate(input_view.begin());
+            if (tree.children_computed()) {
+                auto acc = accumulator.template make_accumulator<vectorial>(output_view);
+
+                for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
+                    output_view.set_position(i);
+                    acc.set_storage(output_view);
+                    acc.initialize();
+                    for (auto c : children_iterator(i, tree)) {
+                        input_view.set_position(c);
+                        acc.accumulate(input_view.begin());
+                    }
+                    acc.finalize();
                 }
-                acc.finalize();
+            } else {
+                index_t numl = num_leaves(tree);
+                std::vector<decltype(accumulator.template make_accumulator<vectorial>(output_view))> accs;
+                accs.reserve(num_vertices(tree) - numl);
+
+                for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
+                    output_view.set_position(i);
+                    accs.push_back(accumulator.template make_accumulator<vectorial>(output_view));
+                    accs.back().initialize();
+                }
+
+                for (auto i : leaves_to_root_iterator(tree, leaves_it::include, root_it::exclude)) {
+                    if (i >= numl) {
+                        accs[i - numl].finalize();
+                    }
+
+                    auto p = parent(i, tree);
+                    input_view.set_position(i);
+                    accs[p - numl].accumulate(input_view.begin());
+                }
+                accs.back().finalize();
             }
+
             return output;
         };
 
@@ -140,7 +191,6 @@ namespace hg {
             auto input_view = make_light_axis_view<vectorial>(input);
             auto inout_view = make_light_axis_view<vectorial>(output);
             auto output_view = make_light_axis_view<vectorial>(output);
-            auto acc = accumulator.template make_accumulator<vectorial>(output_view);
 
             auto vertex_data_view = make_light_axis_view<vectorial>(vertex_data);
 
@@ -150,17 +200,48 @@ namespace hg {
                 output_view = vertex_data_view;
             }
 
-            for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
-                output_view.set_position(i);
-                acc.set_storage(output_view);
-                acc.initialize();
-                for (auto c : children_iterator(i, tree)) {
+            if (tree.children_computed()) {
+                auto acc = accumulator.template make_accumulator<vectorial>(output_view);
 
-                    inout_view.set_position(c);
-                    acc.accumulate(inout_view.begin());
+                for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
+                    output_view.set_position(i);
+                    acc.set_storage(output_view);
+                    acc.initialize();
+                    for (auto c : children_iterator(i, tree)) {
+                        inout_view.set_position(c);
+                        acc.accumulate(inout_view.begin());
+                    }
+                    acc.finalize();
+                    input_view.set_position(i);
+                    output_view.combine(input_view, combine);
                 }
-                acc.finalize();
-                input_view.set_position(i);
+            } else {
+                index_t numl = num_leaves(tree);
+                std::vector<decltype(accumulator.template make_accumulator<vectorial>(output_view))> accs;
+                accs.reserve(num_vertices(tree) - numl);
+
+                for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
+                    output_view.set_position(i);
+                    accs.push_back(accumulator.template make_accumulator<vectorial>(output_view));
+                    accs.back().initialize();
+                }
+
+                for (auto i : leaves_to_root_iterator(tree, leaves_it::include, root_it::exclude)) {
+                    if (i >= numl) {
+                        accs[i - numl].finalize();
+                        input_view.set_position(i);
+                        output_view.set_position(i);
+                        output_view.combine(input_view, combine);
+                    }
+
+                    auto p = parent(i, tree);
+                    inout_view.set_position(i);
+                    accs[p - numl].accumulate(inout_view.begin());
+                }
+
+                accs.back().finalize();
+                input_view.set_position(root(tree));
+                output_view.set_position(root(tree));
                 output_view.combine(input_view, combine);
             }
 
@@ -404,8 +485,8 @@ namespace hg {
 
     template<typename tree_t, typename T, typename accumulator_t>
     auto propagate_sequential_and_accumulate(const tree_t &tree,
-                              const xt::xexpression<T> &xinput,
-                              const accumulator_t &accumulator) {
+                                             const xt::xexpression<T> &xinput,
+                                             const accumulator_t &accumulator) {
         auto &input = xinput.derived_cast();
 
         if (input.dimension() == 1) {
