@@ -170,6 +170,7 @@ option(HG_USE_TBB
 if (HG_USE_TBB)
     find_package(TBB REQUIRED)
     message(STATUS "Found intel TBB: ${TBB_INCLUDE_DIRS}")
+    add_definitions("-DTBB_SUPPRESS_DEPRECATED_MESSAGES")
 endif ()
 
 option(HG_BUILD_WHEEL
