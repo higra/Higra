@@ -77,6 +77,12 @@ message("Current compiler is: ${CMAKE_CXX_COMPILER_ID}")
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
 
+find_program(CCACHE_FOUND "ccache")
+if(CCACHE_FOUND)
+    message("Using ccache")
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+endif(CCACHE_FOUND)
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-local-typedefs")# -Wno-unused-but-set-variable -Wno-missing-braces -Wno-mismatched-tags -Wno-unneeded-internal-declaration")
 
