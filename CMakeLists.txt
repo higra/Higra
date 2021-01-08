@@ -99,7 +99,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU"
 
     # Not debug => optim flag
     if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -ffast-math -Wno-strict-overflow")#-march=native
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -ffast-math -fno-finite-math-only -Wno-strict-overflow")#-march=native
 
         # check link time optimization -faligned-new
         CHECK_CXX_COMPILER_FLAG("-flto" HAS_LTO_FLAG)

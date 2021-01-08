@@ -69,7 +69,9 @@ include_directories(${GBENCHMARK_INCLUDE_DIRS})
 
 set(FILES_BENCHMARK
         main.cpp
-        benchmark_parallel_sort.cpp
+        utils.cpp
+        benchmark_accumulator.cpp
+        #benchmark_parallel_sort.cpp
         # benchmark_tree_iterator.cpp
         #benchmark_array_accessor.cpp
         #benchmark_views.cpp

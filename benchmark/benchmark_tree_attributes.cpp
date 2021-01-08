@@ -27,21 +27,6 @@ using namespace hg;
 std::size_t min_tree_size = 10;
 std::size_t max_tree_size = 16;
 
-bool is_power_of_two(std::size_t x) {
-    return (x != 0) && ((x & (x - 1)) == 0);
-}
-
-auto get_complete_binary_tree(std::size_t num_leaves) {
-    assert(is_power_of_two(num_leaves));
-    array_1d<std::size_t> parent = array_1d<std::size_t>::from_shape({num_leaves * 2 - 1});
-    for (std::size_t i = 0, j = num_leaves; i < parent.size() - 1; j++) {
-        parent(i++) = j;
-        parent(i++) = j;
-    }
-    parent(parent.size() - 1) = parent.size() - 1;
-    return tree(parent);
-}
-
 static void BM_tree_volume_cstyle(benchmark::State &state) {
     for (auto _ : state) {
         state.PauseTiming();
