@@ -385,5 +385,19 @@ namespace test_undirected_graph {
                 REQUIRE(*i1 == *i2);
             }
         }
+
+        SECTION("edge lists") {
+            auto g = data<TestType>::g();
+
+            array_1d<index_t> sources_ref{0, 1, 0};
+            array_1d<index_t> targets_ref{1, 2, 2};
+
+            auto src = g.sources();
+            REQUIRE((sources_ref == src));
+
+            auto tgt = g.targets();
+            REQUIRE((targets_ref == tgt));
+
+        }
     }
 }

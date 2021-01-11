@@ -16,7 +16,8 @@
 #include <iostream>
 #include <stack>
 #include "xtensor/xstrided_view.hpp"
-#include "xtensor/xio.hpp"
+#include "xtensor/xadapt.hpp"
+//#include "xtensor/xio.hpp"
 #include "detail/log.hpp"
 
 #ifdef  HG_USE_TBB
@@ -174,50 +175,24 @@ namespace xt {
         return x;
     }
 
-    /**
-     * Provides a view semantic over any xtensor container
-     * @tparam E
-     * @param e
-     * @return
-     */
-    template<typename E,
-            typename = std::enable_if_t<!std::is_base_of<xt::xexpression<E>, E>::value> >
-    E &&view_all(E &&e) {
-        return std::forward<E>(e);
+    template<typename value_type, typename T>
+    auto adapt_struct_array(T *data, size_t offset, size_t size) {
+        constexpr size_t struct_size = sizeof(T);
+        constexpr size_t value_size = sizeof(value_type);
+
+        static_assert(struct_size % value_size == 0, "Incorrect alignment (is this a packed struct?)");
+        using shape_type = std::array<size_t, 1>;
+        using cv_value_type = typename std::conditional<std::is_const<T>::value, typename std::add_const<value_type>::type, value_type>::type;
+        shape_type shape = {size};
+        shape_type stride = {struct_size / value_size};
+        return xt::adapt((cv_value_type*)((char*)data + offset), size, xt::no_ownership(), shape, stride);
     }
 
-    /**
-     * Provides a view semantic over any xtensor container
-     * @tparam E
-     * @param e
-     * @return
-     */
-    template<typename E>
-    auto view_all(xt::xcontainer_semantic<E> &&e) {
-        return xt::strided_view(e, {});
-    }
-
-    /**
-     * Provides a view semantic over any xtensor container
-     * @tparam E
-     * @param e
-     * @return
-     */
-    template<typename E>
-    auto &&view_all(xt::xview_semantic<E> &&e) {
-        return std::forward<xt::xview_semantic<E>>(e);
-    }
-
-    /**
-     * Provides a view semantic over any xtensor container
-     * @tparam E
-     * @param e
-     * @return
-     */
-    template<typename E>
-    auto view_all(xt::xscalar<E> &&e) {
-        return xt::strided_view(e, {});
-    }
+#define HG_ADAPT_STRUCT_ARRAY(pointer, member, size) \
+    (xt::adapt_struct_array<decltype(std::decay<decltype(*(pointer))>::type::member)>( \
+        pointer, \
+        offsetof(typename std::decay<decltype(*(pointer))>::type, member), \
+        size))
 
 }
 
