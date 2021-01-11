@@ -26,41 +26,40 @@ void py_init_regular_graph_impl(pybind11::module &m) {
                                  ("RegularGraph" + std::to_string(dim) + "d").c_str(),
                                  py::dynamic_attr());
 
-    c.def(py::init([](const embedding_t &e, const std::vector<std::vector<hg::index_t>> &pl) {
-                       std::vector<point_t> points;
+    c.def_static("_make_instance", [](const embedding_t &e, const std::vector<std::vector<hg::index_t>> &pl) {
+                     std::vector<point_t> points;
 
-                       for (const auto &v : pl) {
-                           hg_assert(v.size() == dim, "Invalid dimension in point list.");
-                           point_t p;
-                           for (hg::index_t i = 0; i < dim; ++i)
-                               p(i) = v[i];
-                           points.push_back(p);
-                       }
-                       return graph_t(e, points);
-                   }
-          ),
-          "Create a regular implicit graph from given embedding and neighbouring.",
-          py::arg("embedding"),
-          py::arg("neighbour_list"));
+                     for (const auto &v : pl) {
+                         hg_assert(v.size() == dim, "Invalid dimension in point list.");
+                         point_t p;
+                         for (hg::index_t i = 0; i < dim; ++i)
+                             p(i) = v[i];
+                         points.push_back(p);
+                     }
+                     return graph_t(e, points);
+                 },
+                 "Create a regular implicit graph from given embedding and neighbouring.",
+                 py::arg("embedding"),
+                 py::arg("neighbour_list"));
 
-    c.def(py::init([](const std::vector<hg::size_t> &shape, const std::vector<std::vector<hg::index_t>> &pl) {
-                       std::vector<point_t> points;
+    c.def_static("_make_instance",
+                 [](const std::vector<hg::size_t> &shape, const std::vector<std::vector<hg::index_t>> &pl) {
+                     std::vector<point_t> points;
 
-                       for (const auto &v : pl) {
-                           hg_assert(v.size() == dim, "Invalid dimension in point list.");
-                           point_t p;
-                           for (hg::index_t i = 0; i < dim; ++i)
-                               p(i) = v[i];
-                           points.push_back(p);
-                       }
-                       return graph_t(embedding_t(shape), points);
-                   }
-          ),
-          "Create a regular implicit graph from given shape and neighbouring.",
-          py::arg("shape"),
-          py::arg("neighbour_list"));
+                     for (const auto &v : pl) {
+                         hg_assert(v.size() == dim, "Invalid dimension in point list.");
+                         point_t p;
+                         for (hg::index_t i = 0; i < dim; ++i)
+                             p(i) = v[i];
+                         points.push_back(p);
+                     }
+                     return graph_t(embedding_t(shape), points);
+                 },
+                 "Create a regular implicit graph from given shape and neighbouring.",
+                 py::arg("shape"),
+                 py::arg("neighbour_list"));
 
-    c.def("as_explicit_graph",
+    c.def("_as_explicit_graph",
           [](const graph_t &graph) {
               return hg::copy_graph<hg::ugraph>(graph);
           },
@@ -75,9 +74,9 @@ void py_init_regular_graph_impl(pybind11::module &m) {
     c.def("neighbour_list",
           [](const graph_t &graph) {
               pyarray<hg::index_t> res = pyarray<hg::index_t>::from_shape({graph.neighbours().size(), dim});
-              for (index_t i = 0; i < (index_t)res.shape()[0]; i++) {
+              for (index_t i = 0; i < (index_t) res.shape()[0]; i++) {
                   auto &p = graph.neighbours()[i];
-                  for (index_t j = 0; j < (index_t)res.shape()[1]; j++) {
+                  for (index_t j = 0; j < (index_t) res.shape()[1]; j++) {
                       res(i, j) = p(j);
                   }
               }

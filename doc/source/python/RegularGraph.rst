@@ -10,4 +10,5 @@ For a given dimension :math:`N\in\{1,2,3,4,5\}`, there is a specific regular gra
 All the specific regular graph classes implement the same interface.
 
 .. autoclass:: higra.RegularGraph2d
+    :special-members:
     :members:
