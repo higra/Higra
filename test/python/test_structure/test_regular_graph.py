@@ -35,6 +35,7 @@ class TestRegularGraph(unittest.TestCase):
         shape = (2, 3)
         nl = ((-1, 0), (0, -1), (0, 1), (1, 0))
         g1 = hg.RegularGraph2d(hg.EmbeddingGrid2d(shape), nl)
+        self.assertTrue(hg.CptGridGraph.validate(g1))
 
         g2 = hg.get_4_adjacency_implicit_graph(shape)
         g3 = hg.get_8_adjacency_implicit_graph(shape)
@@ -42,11 +43,11 @@ class TestRegularGraph(unittest.TestCase):
         for g in (g1, g2, g3):
             self.assertTrue(g.num_vertices() == 6)
 
-        self.assertTrue(np.all(g1.shape() == shape))
+        self.assertTrue(np.all(g1.shape == shape))
         self.assertTrue(np.all(g1.neighbour_list() == nl))
 
-        g4 = hg.RegularGraph2d(g1.shape(), g1.neighbour_list())
-        self.assertTrue(np.all(g4.shape() == shape))
+        g4 = hg.RegularGraph2d(g1.shape, g1.neighbour_list())
+        self.assertTrue(np.all(g4.shape == shape))
         self.assertTrue(np.all(g4.neighbour_list() == nl))
 
     def test_dynamic_attributes(self):
@@ -114,6 +115,8 @@ class TestRegularGraph(unittest.TestCase):
         g_exp = g_imp.as_explicit_graph()
 
         self.assertTrue(TestRegularGraph.graph_implicit_explicit_equal(g_imp, g_exp))
+        self.assertTrue(hg.CptGridGraph.validate(g_exp))
+        self.assertTrue(g_exp.shape == shape)
 
         g_imp = hg.get_8_adjacency_implicit_graph(shape)
 
@@ -138,7 +141,8 @@ class TestRegularGraph(unittest.TestCase):
             data = pickle.dumps(e)
             e2 = pickle.loads(data)
 
-            self.assertTrue(np.all(e.shape() == e2.shape()))
+            self.assertTrue(hg.CptGridGraph.validate(e2))
+            self.assertTrue(np.all(e.shape == e2.shape))
             self.assertTrue(np.all(e.neighbour_list() == e2.neighbour_list()))
 
             self.assertTrue(hg.get_attribute(e, "test") == hg.get_attribute(e2, "test"))
