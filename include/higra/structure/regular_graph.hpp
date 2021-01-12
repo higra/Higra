@@ -78,16 +78,17 @@ namespace hg {
                 return m_embedding.size();
             }
 
-            const auto & embedding() const{
+            const auto &embedding() const {
                 return m_embedding;
             }
 
-            const auto& neighbours() const{
+            const auto &neighbours() const {
                 return m_neighbours;
             }
 
             regular_graph(embedding_t _embedding = {}, point_list_t<index_t, embedding_t::_dim> _neighbours = {})
                     : m_embedding(_embedding), m_neighbours(_neighbours) {
+                init_safe_are();
             }
 
             ~regular_graph() = default;
@@ -100,10 +101,57 @@ namespace hg {
 
             self_type &operator=(self_type &&) = default;
 
+            degree_size_type out_degree(const vertex_descriptor v) const;
+
         private:
+
+            void init_safe_are() {
+                // determine the largest sub domain such that every neighbours of a vertex is present in the graph domain
+                // for a vertex in this domain, we can just use the relative linear index to find its neighbours
+                m_safe_lower_bound.fill(std::numeric_limits<index_t>::max());
+                m_safe_upper_bound.fill(std::numeric_limits<index_t>::lowest());
+                for (const auto &n: m_neighbours) {
+                    m_safe_lower_bound = xt::minimum(m_safe_lower_bound, n);
+                    m_safe_upper_bound = xt::maximum(m_safe_upper_bound, n);
+
+                }
+                bool safe_area_non_empty = true;
+                for (index_t i = 0; i < embedding_t::_dim; ++i) {
+                    m_safe_lower_bound(i) = (std::max)(-m_safe_lower_bound(i), (index_t) 0);
+                    m_safe_upper_bound(i) = (std::min)(m_embedding.shape()(i) - 1 - m_safe_upper_bound(i),
+                                                       m_embedding.shape()(i) - 1);
+                    if (m_safe_lower_bound(i) > m_safe_upper_bound(i)) {
+                        safe_area_non_empty = false;
+                    }
+                }
+
+                if (safe_area_non_empty) {
+                    m_relative_neighbours.reserve(m_neighbours.size());
+                    point<index_t, embedding_t::_dim> ref = m_safe_lower_bound;
+                    index_t ref_index = m_embedding.grid2lin(ref);
+                    for (const auto &n: m_neighbours) {
+                        index_t n_index = m_embedding.grid2lin(xt::eval(ref + n));
+                        m_relative_neighbours.push_back(n_index - ref_index);
+                    }
+                }
+            }
+
+            bool is_in_safe_area(const point<index_t, embedding_t::_dim> &point) const {
+                for (index_t i = 0; i < embedding_t::_dim; ++i) {
+                    if (point(i) < m_safe_lower_bound(i) || point(i) > m_safe_upper_bound(i)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
             embedding_t m_embedding;
             point_list_t<index_t, embedding_t::_dim> m_neighbours;
+            point<index_t, embedding_t::_dim> m_safe_lower_bound;
+            point<index_t, embedding_t::_dim> m_safe_upper_bound;
+            std::vector<index_t> m_relative_neighbours;
 
+            friend class regular_graph_adjacent_vertex_iterator<embedding_t>;
         };
 
         // Iterator
@@ -118,55 +166,60 @@ namespace hg {
             using graph_vertex_t = typename graph_t::vertex_descriptor;
 
 
-
-
             regular_graph_adjacent_vertex_iterator() {}
 
             regular_graph_adjacent_vertex_iterator(graph_vertex_t _source,
-                                                   embedding_t _embedding,
-                                                   point_list_iterator_t<index_t, embedding_t::_dim> _point_iterator,
-                                                   point_list_iterator_t<index_t, embedding_t::_dim> _point_iterator_end
-            )
-                    : source(_source), embedding(_embedding), point_iterator(_point_iterator),
-                      point_iterator_end(_point_iterator_end) {
+                                                   const regular_graph<embedding_t> &_graph,
+                                                   bool end = false
+            ) : source(_source), graph(_graph) {
 
-                source_coordinates = embedding.lin2grid(source);
-                if (point_iterator != point_iterator_end) {
-                    point_type neighbourc = *point_iterator + source_coordinates;
-
-                    if (!embedding.contains(neighbourc)) {
-                        increment();
+                source_coordinates = graph.m_embedding.lin2grid(source);
+                safe_area = graph.is_in_safe_area(source_coordinates);
+                num_elem = graph.m_neighbours.size();
+                current_element = (end) ? graph.m_neighbours.size() : 0;
+                if (current_element != num_elem) {
+                    if (safe_area) {
+                        neighbour = source + graph.m_relative_neighbours[current_element];
                     } else {
-                        neighbour = embedding.grid2lin(neighbourc);
-                    }
+                        point_type neighbourc = graph.m_neighbours[current_element] + source_coordinates;
 
+                        if (!graph.m_embedding.contains(neighbourc)) {
+                            increment();
+                        } else {
+                            neighbour = graph.m_embedding.grid2lin(neighbourc);
+                        }
+                    }
                 }
             }
 
 
             using point_type = typename embedding_t::point_type;
 
-
             void increment() {
-                bool flag;
-                point_type neighbourc;
-                do {
-                    point_iterator++;
-                    if (point_iterator != point_iterator_end) {
-
-                        neighbourc = *point_iterator + source_coordinates;
-                        flag = embedding.contains(neighbourc);
-                    } else {
-                        flag = true;
+                if (safe_area) {
+                    ++current_element;
+                    neighbour = source + graph.m_relative_neighbours[current_element];
+                } else {
+                    bool flag;
+                    point_type neighbourc;
+                    do {
+                        ++current_element;
+                        if (current_element != num_elem) {
+                            neighbourc = graph.m_neighbours[current_element] + source_coordinates;
+                            flag = graph.m_embedding.contains(neighbourc);
+                        } else {
+                            flag = true;
+                        }
+                    } while (!flag);
+                    if (current_element != num_elem) {
+                        neighbour = graph.m_embedding.grid2lin(neighbourc);
                     }
-                } while (!flag);
-                if (point_iterator != point_iterator_end) {
-                    neighbour = embedding.grid2lin(neighbourc);
                 }
+
             }
 
             bool equal(regular_graph_adjacent_vertex_iterator const &other) const {
-                return this->point_iterator == other.point_iterator;
+                return current_element == other.current_element;
             }
 
 
@@ -178,10 +231,10 @@ namespace hg {
             graph_vertex_t source;
             graph_vertex_t neighbour;
             point_type source_coordinates;
-            embedding_t embedding;
-            point_list_iterator_t<index_t, embedding_t::_dim> point_iterator;
-            point_list_iterator_t<index_t, embedding_t::_dim> point_iterator_end;
-
+            const regular_graph<embedding_t> &graph;
+            int current_element;
+            int num_elem;
+            bool safe_area;
         };
 
     }
@@ -227,20 +280,12 @@ namespace hg {
     out_edges(typename hg::regular_graph<embedding_t>::vertex_descriptor u, const hg::regular_graph<embedding_t> &g) {
         return std::make_pair(
                 hg::regular_graph_out_edge_iterator<embedding_t>(
-                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
-                                u,
-                                g.embedding(),
-                                g.neighbours().cbegin(),
-                                g.neighbours().cend()),
+                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g),
                         [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
                             return std::make_pair(u, v);
                         }),
                 hg::regular_graph_out_edge_iterator<embedding_t>(
-                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
-                                u,
-                                g.embedding(),
-                                g.neighbours().cend(),
-                                g.neighbours().cend()),
+                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g, true),
                         [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
                             return std::make_pair(u, v);
                         })
@@ -252,56 +297,18 @@ namespace hg {
     in_edges(typename hg::regular_graph<embedding_t>::vertex_descriptor u, const hg::regular_graph<embedding_t> &g) {
         return std::make_pair(
                 hg::regular_graph_out_edge_iterator<embedding_t>(
-                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
-                                u,
-                                g.embedding(),
-                                g.neighbours().cbegin(),
-                                g.neighbours().cend()),
+                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g),
                         [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
                             return std::make_pair(v, u);
                         }),
                 hg::regular_graph_out_edge_iterator<embedding_t>(
-                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(
-                                u,
-                                g.embedding(),
-                                g.neighbours().cend(),
-                                g.neighbours().cend()),
+                        hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g, true),
                         [u](typename hg::regular_graph<embedding_t>::vertex_descriptor v) {
                             return std::make_pair(v, u);
                         })
         );
     }
 
-    template<typename embedding_t>
-    typename hg::regular_graph<embedding_t>::degree_size_type
-    out_degree(
-            const typename hg::regular_graph<embedding_t>::vertex_descriptor v,
-            const hg::regular_graph<embedding_t> &g) {
-        typename hg::regular_graph<embedding_t>::degree_size_type count = 0;
-        typename hg::regular_graph<embedding_t>::out_edge_iterator out_i, out_end;
-        //typename hg::regular_graph<embedding_t>::edge_descriptor e;
-        auto it = out_edges(v, g);
-        for (out_i = it.first, out_end = it.second; out_i != out_end; ++out_i) {
-            count++;
-        }
-        return count;
-    }
-
-    template<typename embedding_t>
-    typename hg::regular_graph<embedding_t>::degree_size_type
-    in_degree(
-            const typename hg::regular_graph<embedding_t>::vertex_descriptor v,
-            const hg::regular_graph<embedding_t> &g) {
-        return out_degree(v, g);
-    }
-
-    template<typename embedding_t>
-    typename hg::regular_graph<embedding_t>::degree_size_type
-    degree(
-            const typename hg::regular_graph<embedding_t>::vertex_descriptor v,
-            const hg::regular_graph<embedding_t> &g) {
-        return out_degree(v, g);
-    }
 
     template<typename embedding_t>
     typename hg::regular_graph<embedding_t>::vertices_size_type
@@ -323,11 +330,50 @@ namespace hg {
     adjacent_vertices(typename hg::regular_graph<embedding_t>::vertex_descriptor u,
                       const hg::regular_graph<embedding_t> &g) {
         return std::make_pair<typename hg::regular_graph<embedding_t>::adjacency_iterator, typename hg::regular_graph<embedding_t>::adjacency_iterator>(
-                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g.embedding(), g.neighbours().begin(),
-                                                                        g.neighbours().end()),
-                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g.embedding(), g.neighbours().end(),
-                                                                        g.neighbours().end()));
+                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g),
+                hg::regular_graph_adjacent_vertex_iterator<embedding_t>(u, g, true));
     };
+
+    template<typename embedding_t>
+    typename hg::regular_graph_internal::regular_graph<embedding_t>::degree_size_type
+    hg::regular_graph_internal::regular_graph<embedding_t>::out_degree(const vertex_descriptor v) const {
+        if (is_in_safe_area(m_embedding.lin2grid(v))) {
+            return m_neighbours.size();
+        } else {
+            degree_size_type count = 0;
+            auto its = adjacent_vertices(v, *this);
+            auto & it1 = its.first;
+            auto & it2 = its.second;
+            for (;it1 != it2; ++it1) {
+                count++;
+            }
+            return count;
+        }
+    }
+
+    template<typename embedding_t>
+    typename hg::regular_graph<embedding_t>::degree_size_type
+    out_degree(
+            const typename hg::regular_graph<embedding_t>::vertex_descriptor v,
+            const hg::regular_graph<embedding_t> &g) {
+        return g.out_degree(v);
+    }
+
+    template<typename embedding_t>
+    typename hg::regular_graph<embedding_t>::degree_size_type
+    in_degree(
+            const typename hg::regular_graph<embedding_t>::vertex_descriptor v,
+            const hg::regular_graph<embedding_t> &g) {
+        return out_degree(v, g);
+    }
+
+    template<typename embedding_t>
+    typename hg::regular_graph<embedding_t>::degree_size_type
+    degree(
+            const typename hg::regular_graph<embedding_t>::vertex_descriptor v,
+            const hg::regular_graph<embedding_t> &g) {
+        return out_degree(v, g);
+    }
 
 }
 
