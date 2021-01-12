@@ -39,7 +39,7 @@ namespace pybind11
             std::vector<std::size_t> python_shape(src.shape().size());
             std::copy(src.shape().begin(), src.shape().end(), python_shape.begin());
 
-            array a(python_shape, python_strides, src.begin(), base);
+            array a(python_shape, python_strides, &*(src.begin()), base);
 
             if (!writeable)
             {

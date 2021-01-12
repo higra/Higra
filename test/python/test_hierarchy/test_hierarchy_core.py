@@ -64,6 +64,21 @@ class TestHierarchyCore(unittest.TestCase):
 
         self.assertTrue(np.all(mst_edge_map == (1, 0, 3, 4, 2)))
 
+    def test_BPT_from_edge_list(self):
+        graph = hg.get_4_adjacency_graph((2, 3))
+        sources, targets = graph.edge_list()
+        edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))
+
+        tree, altitudes = hg.bpt_canonical((sources, targets, graph.num_vertices()), edge_weights)
+        mst_edge_map = tree.mst_edge_map
+
+        self.assertTrue(tree.num_vertices() == 11)
+        self.assertTrue(tree.num_edges() == 10)
+        self.assertTrue(np.allclose(tree.parents(), (6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10)))
+        self.assertTrue(np.allclose(altitudes, (0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2)))
+
+        self.assertTrue(np.all(mst_edge_map == (1, 0, 3, 4, 2)))
+
     def test_bpt_canonical_options(self):
         graph = hg.get_4_adjacency_graph((2, 3))
         edge_weights = np.asarray((1, 0, 2, 1, 1, 1, 2))

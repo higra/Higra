@@ -212,6 +212,14 @@ namespace hg {
                 return add_edge(e.first, e.second);
             }
 
+            auto sources() const{
+                return HG_ADAPT_STRUCT_ARRAY(edges.data(), source, num_edges());
+            }
+
+            auto targets() const{
+                return HG_ADAPT_STRUCT_ARRAY(edges.data(), target, num_edges());
+            }
+
         private:
 
             size_t _num_vertices;

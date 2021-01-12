@@ -243,6 +243,14 @@ namespace hg {
                 return _children_computed;
             }
 
+            auto sources() const{
+                return xt::arange<index_t>(0, _num_vertices - 1);
+            }
+
+            auto targets() const{
+                return xt::strided_view(_parents, {xt::range(0, _num_vertices - 1)});
+            }
+
 
         private:
 

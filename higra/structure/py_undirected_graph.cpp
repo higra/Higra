@@ -10,6 +10,7 @@
 
 #include "py_undirected_graph.hpp"
 #include "py_common_graph.hpp"
+#include "extra_xtensor_pybin_casters.hpp"
 
 namespace py = pybind11;
 
@@ -49,6 +50,9 @@ void init_graph(class_t &c) {
     add_vertex_list_graph_concept<graph_t, decltype(c)>(c);
     add_edge_list_graph_concept<graph_t, decltype(c)>(c);
     add_edge_index_graph_concept<graph_t, decltype(c)>(c);
+
+    c.def("_sources", [](const graph_t&g){return hg::sources(g);}, py::keep_alive<0, 1>());
+    c.def("_targets", [](const graph_t&g){return hg::targets(g);}, py::keep_alive<0, 1>());
 
     c.def("add_edge", [](graph_t &g,
                          const vertex_t source,

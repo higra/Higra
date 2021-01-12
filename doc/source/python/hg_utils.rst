@@ -14,6 +14,7 @@ Utility functions
     normalize_shape
     linearize_vertex_weights
     delinearize_vertex_weights
+    has_method
     is_in_bijection
     mean_angle_mod_pi
     dtype_info
@@ -37,6 +38,8 @@ Utility functions
 .. autofunction:: higra.linearize_vertex_weights
 
 .. autofunction:: higra.delinearize_vertex_weights
+
+.. autofunction:: higra.has_method
 
 .. autofunction:: higra.is_in_bijection
 

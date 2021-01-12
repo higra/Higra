@@ -176,3 +176,16 @@ class TestHGUtils(unittest.TestCase):
             res = hg.reconstruct_leaf_data(tree, a)
             self.assertTrue(a.dtype == res.dtype)
 
+    def test_has_method(self):
+
+        class Op:
+            pass
+
+        a = Op()
+        self.assertFalse(hg.has_method(a, "foo"))
+
+        a.foo = 1
+        self.assertFalse(hg.has_method(a, "foo"))
+
+        a.foo = lambda x: x
+        self.assertTrue(hg.has_method(a, "foo"))

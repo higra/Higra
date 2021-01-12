@@ -137,3 +137,51 @@ def __lowest_common_ancestor(self, vertices1, vertices2):
     else:
         return lca_fast.lca(vertices1, vertices2)
 
+
+@hg.extend_class(hg.Tree, method_name="sources")
+def __sources(self):
+    """
+    Source vertex of every edge of the graph.
+
+    :Example:
+
+    >>> t = Tree((5, 5, 6, 6, 6, 7, 7, 7))
+    >>> t.sources()
+    array([0, 1, 2, 3, 4, 5, 6])
+
+    :return: a 1d array of size ``self.num_edges()``
+    """
+    return np.arange(self.num_vertices() - 1)
+
+
+@hg.extend_class(hg.Tree, method_name="targets")
+def __targets(self):
+    """
+    Target vertex of every edge of the graph.
+
+    :Example:
+
+    >>> t = Tree((5, 5, 6, 6, 6, 7, 7, 7))
+    >>> t.targets()
+    array([5, 5, 6, 6, 6, 7, 7])
+
+    :return: a 1d array of size ``self.num_edges()``
+    """
+    return self.parents()[:-1]
+
+
+@hg.extend_class(hg.Tree, method_name="edge_list")
+def __edge_list(self):
+    """
+    Returns a tuple of two arrays (sources, targets) defining all the edges of the graph.
+
+    :Example:
+
+    >>> t = Tree((5, 5, 6, 6, 6, 7, 7, 7))
+    >>> t.edge_list()
+    (array([0, 1, 2, 3, 4, 5, 6]), array([5, 5, 6, 6, 6, 7, 7]))
+
+
+    :return: pair of two 1d arrays
+    """
+    return self.sources(), self.targets()

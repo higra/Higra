@@ -31,6 +31,17 @@ namespace hg {
     }
 
     /**
+     * Source vertex of all edges oin the given graph
+     * @tparam graph_t
+     * @param t
+     * @return 1d expression with num_edges(t) element
+     */
+    template<typename graph_t>
+    auto sources(const graph_t & t) {
+        return t.sources();
+    }
+
+    /**
      * Target vertex of an edge
      * @tparam graph_t
      * @param e
@@ -42,6 +53,17 @@ namespace hg {
                     typename graph::graph_traits<graph_t>::vertex_descriptor> &e,
             const graph_t &) {
         return e.second;
+    }
+
+    /**
+     * Target vertex of all edges oin the given graph
+     * @tparam graph_t
+     * @param t
+     * @return 1d expression with num_edges(t) element
+     */
+    template<typename graph_t>
+    auto targets(const graph_t & t) {
+        return t.targets();
     }
 
     /**

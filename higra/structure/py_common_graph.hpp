@@ -204,20 +204,6 @@ void add_edge_list_graph_concept(pyc &c) {
           },
           "Iterator over all edges of the graph.");
 
-    c.def("edge_list", [](const graph_t &g) {
-        hg::array_1d<hg::index_t> sources = hg::array_1d<hg::index_t>::from_shape({hg::num_edges(g)});
-        hg::array_1d<hg::index_t> targets = hg::array_1d<hg::index_t>::from_shape({hg::num_edges(g)});
-        auto s = sources.begin();
-        auto t = targets.begin();
-        for (auto e: hg::edge_iterator(g)) {
-            *s = hg::source(e, g);
-            *t = hg::target(e, g);
-            s++;
-            t++;
-        }
-        return pybind11::make_tuple(std::move(sources), std::move(targets));
-    }, "Returns a tuple of two arrays (sources, targets) defining all the edges of the graph.");
-
     c.def("num_edges", [](graph_t &g) { return hg::num_edges(g); },
           "Return the number of edges in the graph");
 }

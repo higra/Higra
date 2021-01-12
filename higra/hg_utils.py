@@ -166,7 +166,8 @@ def delinearize_vertex_weights(vertex_weights, graph=None, shape=None):
 
     Note that this function tries its best to guess what should be done but some ambiguity might always exist.
 
-    Examples:
+    :Examples:
+
         >>> r = hg.delinearize_vertex_weights(np.ones((20,)), shape=(4, 5))
         >>> r.shape
         (4, 5)
@@ -290,6 +291,7 @@ def dtype_info(dtype):
     and a ``numpy.finfo`` if given ``dtype`` is a float type.
 
     Raises:
+
         ValueError: if ``dtype`` is a more complex type.
 
     :param dtype: a numpy dtype
@@ -598,3 +600,14 @@ def get_lib_cmake():
                       "is installed with pip.")
 
     return d
+
+
+def has_method(obj, method_name):
+    """
+    Test if the given object has method member called :attr:`method_name`.
+
+    :param obj: an object
+    :param method_name: a string
+    :return: ``True`` if ``object.method_name`` is a valid callable expression, ``False`` otherwise
+    """
+    return callable(getattr(obj, method_name, None))

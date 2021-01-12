@@ -102,8 +102,13 @@ class TestUndirectedGraph(unittest.TestCase):
         ref_sources = (0, 1, 0)
         ref_targets = (1, 2, 2)
 
-        sources, targets = g.edge_list()
+        sources = g.sources()
+        self.assertTrue(np.all(ref_sources == sources))
 
+        targets = g.targets()
+        self.assertTrue(np.all(ref_targets == targets))
+
+        sources, targets = g.edge_list()
         self.assertTrue(np.all(ref_sources == sources))
         self.assertTrue(np.all(ref_targets == targets))
 
