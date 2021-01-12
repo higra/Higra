@@ -118,4 +118,40 @@ namespace regular_graph {
             REQUIRE(vectorEqual(adjListsRef[v], adjListsTest[v]));
         }
     }
+
+    TEST_CASE("regular graph adjacent vertex iterator with safe area", "[regular_graph]") {
+        hg::regular_grid_graph_2d g;
+        hg::embedding_grid_2d embedding{3, 4}; // 3 rows, 4 columns
+        std::vector<point_2d_i> neighbours{{{-1, 0}},
+                                           {{0,  -1}},
+                                           {{0,  1}},
+                                           {{1,  0}}}; // 4 adjacency
+
+        g = hg::regular_grid_graph_2d(embedding, neighbours);
+
+
+        vector<vector<index_t>> adjListsRef{
+                {1, 4},
+                {0, 2, 5},
+                {1, 3, 6},
+                {2, 7},
+                {0, 5, 8},
+                {1, 4, 6, 9},
+                {2, 5, 7, 10},
+                {3, 6, 11},
+                {4, 9},
+                {5, 8, 10},
+                {6, 9, 11},
+                {7, 10}
+        };
+        vector<vector<index_t>> adjListsTest;
+
+        for (auto v: hg::vertex_iterator(g)) {
+            adjListsTest.push_back(vector<index_t>());
+            for (auto av: hg::adjacent_vertex_iterator(v, g)) {
+                adjListsTest[v].push_back(av);
+            }
+            REQUIRE(vectorEqual(adjListsRef[v], adjListsTest[v]));
+        }
+    }
 }

@@ -199,7 +199,7 @@ namespace hg {
                 static_assert(std::is_integral<typename T::value_type>::value,
                               "Coordinates must have integral value type.");
                 const auto &coordinates = xcoordinates.derived_cast();
-                hg_assert(coordinates.shape().back() == dim, "Coordinates size does not match embedding dimension.");
+                //hg_assert(coordinates.shape().back() == dim, "Coordinates size does not match embedding dimension.");
 
                 auto last = coordinates.dimension() - 1;
                 return xt::sum(coordinates * sum_prod, {last});
