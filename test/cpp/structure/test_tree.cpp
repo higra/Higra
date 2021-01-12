@@ -455,4 +455,17 @@ namespace tree {
         array_1d<index_t> ref{0, 7, 5, 7};
         REQUIRE((l == ref));
     }
+
+    TEST_CASE("edge lists") {
+        auto g = data.t;
+
+        array_1d<index_t> sources_ref{0, 1, 2, 3, 4, 5, 6};
+        array_1d<index_t> targets_ref{5, 5, 6, 6, 6, 7, 7};
+
+        auto src = sources(g);
+        REQUIRE((sources_ref == src));
+
+        auto tgt = targets(g);
+        REQUIRE((targets_ref == tgt));
+    }
 }

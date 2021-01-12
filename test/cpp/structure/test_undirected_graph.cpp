@@ -392,10 +392,10 @@ namespace test_undirected_graph {
             array_1d<index_t> sources_ref{0, 1, 0};
             array_1d<index_t> targets_ref{1, 2, 2};
 
-            auto src = g.sources();
+            auto src = sources(g);
             REQUIRE((sources_ref == src));
 
-            auto tgt = g.targets();
+            auto tgt = targets(g);
             REQUIRE((targets_ref == tgt));
 
         }
