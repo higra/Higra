@@ -191,6 +191,21 @@ class TestTree(unittest.TestCase):
                 res.append(e[2])
             self.assertTrue(res == ref[v])
 
+    def test_edge_list(self):
+        g = TestTree.get_tree()
+        ref_sources = (0, 1, 2, 3, 4, 5, 6)
+        ref_targets = (5, 5, 6, 6, 6, 7, 7)
+
+        sources = g.sources()
+        self.assertTrue(np.all(ref_sources == sources))
+
+        targets = g.targets()
+        self.assertTrue(np.all(ref_targets == targets))
+
+        sources, targets = g.edge_list()
+        self.assertTrue(np.all(ref_sources == sources))
+        self.assertTrue(np.all(ref_targets == targets))
+
     def test_num_children(self):
         t = TestTree.get_tree()
 
