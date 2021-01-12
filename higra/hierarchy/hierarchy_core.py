@@ -93,6 +93,20 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
         >>> tree.mst.edge_list()
         (array([1, 0, 3, 1]), array([2, 1, 4, 3]))
 
+    An object of type UnidrectedGraph is not necessary:
+
+        >>> edge_weights = np.asarray((4, 6, 3, 7, 11, 8, 5))
+        >>> sources = (0, 0, 1, 1, 1, 2, 3)
+        >>> targets = (1, 2, 2, 3, 4, 4, 4)
+        >>> tree, altitudes = hg.bpt_canonical((sources, targets, 5), edge_weights)
+        >>> tree.parents()
+        array([6, 5, 5, 7, 7, 6, 8, 8, 8])
+        >>> altitudes
+        array([0, 0, 0, 0, 0, 3, 4, 5, 7])
+        >>> tree.mst_edge_map
+        array([2, 0, 6, 3])
+
+
     :Complexity:
 
     The algorithm used is based on Kruskal's minimum spanning tree algorithm and is described in:
@@ -107,17 +121,18 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
     Otherwise, the computation time is dominated by the sorting of the edge weights which is performed in linearithmic
     :math:`\mathcal{O}(n \log(n))` time.
 
-    :param graph: input graph.
+    :param graph: input graph or triplet of two arrays and an integer (sources, targets, num_vertices)
+           defining all the edges of the graph and its number of vertices.
     :param edge_weights: edge weights of the input graph (may be omitted if :attr:`sorted_edge_indices` is given).
     :param sorted_edge_indices: array of indices that sort the edges of the input graph by increasing weight (may be
            omitted if :attr:`edge_weights` is given).
     :param return_altitudes: if ``True`` an array representing the altitudes of the tree vertices is returned.
            (default: ``True``).
-    :param compute_mst: if ``True`` computes an explicit undirected graph representing the minimum spanning tree
-           associated to the hierarchy, accessible through the :class:`~higra.CptBinaryHierarchy` Concept
-           (e.g. with ``tree.mst``). (default: ``True``).
-    :return: a tree (Concept :class:`~higra.CptBinaryHierarchy`), and, if :attr:`return_altitudes` is ``True``, its node
-             altitudes
+    :param compute_mst: if ``True`` and if the input is a graph object computes an explicit undirected graph
+           representing the minimum spanning tree associated to the hierarchy, accessible through the
+           :class:`~higra.CptBinaryHierarchy` Concept (e.g. with ``tree.mst``). (default: ``True``).
+    :return: a tree (Concept :class:`~higra.CptBinaryHierarchy` if the input is a graph object),
+             and, if :attr:`return_altitudes` is ``True``, its node altitudes
     """
 
     if edge_weights is None and sorted_edge_indices is None:
@@ -130,7 +145,19 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
             tmp_edge_weights = edge_weights
         sorted_edge_indices = hg.arg_sort(tmp_edge_weights, stable=True)
 
-    parents, mst_edge_map = hg.cpp._bpt_canonical(graph, sorted_edge_indices)
+    input_is_graph_object = False
+
+    if hg.has_method(graph, "edge_list") and hg.has_method(graph, "num_vertices"):
+        input_is_graph_object = True
+        sources, targets = graph.edge_list()
+        num_vertices = graph.num_vertices()
+    else:
+        try:
+            sources, targets, num_vertices = graph
+        except Exception as e:
+            raise ValueError("Invalid graph input.") from e
+
+    parents, mst_edge_map = hg.cpp._bpt_canonical(sources, targets, sorted_edge_indices, num_vertices)
     tree = hg.Tree(parents)
 
     if return_altitudes:
@@ -140,31 +167,33 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
 
         if edge_weights.ndim == 1:
             altitudes = np.zeros((tree.num_vertices(),), dtype=edge_weights.dtype)
-            altitudes[graph.num_vertices():] = edge_weights[mst_edge_map]
+            altitudes[num_vertices:] = edge_weights[mst_edge_map]
         else:
             shape = [tree.num_vertices()] + list(edge_weights.shape[1:])
             altitudes = np.zeros(shape, dtype=edge_weights.dtype)
-            altitudes[graph.num_vertices():, ...] = edge_weights[mst_edge_map, ...]
+            altitudes[num_vertices:, ...] = edge_weights[mst_edge_map, ...]
 
-    # if the base graph is itself a mst, we take the base graph of this mst as the new base graph
-    if hg.CptMinimumSpanningTree.validate(graph):
-        leaf_graph = hg.CptMinimumSpanningTree.construct(graph)["base_graph"]
-    else:
-        leaf_graph = graph
+    if input_is_graph_object:
+        # if the base graph is itself a mst, we take the base graph of this mst as the new base graph
+        if hg.CptMinimumSpanningTree.validate(graph):
+            leaf_graph = hg.CptMinimumSpanningTree.construct(graph)["base_graph"]
+        else:
+            leaf_graph = graph
 
-    if compute_mst:
+        hg.CptHierarchy.link(tree, leaf_graph)
+
+    if compute_mst and input_is_graph_object:
         mst = hg.subgraph(graph, mst_edge_map)
         hg.CptMinimumSpanningTree.link(mst, leaf_graph, mst_edge_map)
     else:
         mst = None
 
-    hg.CptHierarchy.link(tree, leaf_graph)
     hg.CptBinaryHierarchy.link(tree, mst_edge_map, mst)
 
     if not return_altitudes:
         return tree
     else:
-        return (tree, altitudes)
+        return tree, altitudes
 
 
 def quasi_flat_zone_hierarchy(graph, edge_weights):
