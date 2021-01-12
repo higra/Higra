@@ -600,3 +600,14 @@ def get_lib_cmake():
                       "is installed with pip.")
 
     return d
+
+
+def has_method(obj, method_name):
+    """
+    Test if the given object has method member called :attr:`method_name`.
+
+    :param obj: an object
+    :param method_name: a string
+    :return: ``True`` if ``object.method_name`` is a valid callable expression, ``False`` otherwise
+    """
+    return callable(getattr(obj, method_name, None))
