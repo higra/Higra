@@ -83,6 +83,7 @@ if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
 endif(CCACHE_FOUND)
 
+set(CMAKE_CXX_STANDARD 14)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-local-typedefs")# -Wno-unused-but-set-variable -Wno-missing-braces -Wno-mismatched-tags -Wno-unneeded-internal-declaration")
 
@@ -127,10 +128,11 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast /GL /EHsc /MP /bigobj /O2")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG /MANIFEST:NO")
     endif()
+else()
+    message(FATAL_ERROR "Unknown compiler, please use GCC, Clang or MSVC.")
 endif()
 
-message("CMAKE_CXX_FLAGS" ${CMAKE_CXX_FLAGS})
-message("CMAKE_EXE_LINKER_FLAGS" ${CMAKE_EXE_LINKER_FLAGS})
+
 ##########################
 #  Options
 ##########################
@@ -181,7 +183,7 @@ option(HG_BUILD_WHEEL
 ##########################
 
 find_package(PythonInterp 3 REQUIRED)
-find_package(pybind11 REQUIRED)
+find_package(pybind11 CONFIG REQUIRED)
 find_package(NumPy REQUIRED)
 add_subdirectory(higra)
 configure_file(setup.py ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
@@ -201,3 +203,6 @@ add_subdirectory(test)
 if (DO_BENCHMARK)
     add_subdirectory(benchmark)
 endif ()
+
+message("CMAKE_CXX_FLAGS" ${CMAKE_CXX_FLAGS})
+message("CMAKE_EXE_LINKER_FLAGS" ${CMAKE_EXE_LINKER_FLAGS})

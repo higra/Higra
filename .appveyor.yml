@@ -24,16 +24,16 @@ environment:
   matrix:
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
-      CIBW_BUILD: "cp35*"
-    - CIBUILDWHEEL: 1
-      TAG_SCENARIO: true
       CIBW_BUILD: "cp36*"
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
       CIBW_BUILD: "cp37*"
     - CIBUILDWHEEL: 1
-      TAG_SCENARIO: false
+      TAG_SCENARIO: true
       CIBW_BUILD: "cp38*"
+    - CIBUILDWHEEL: 1
+      TAG_SCENARIO: false
+      CIBW_BUILD: "cp39*"
 
 for:
 -
@@ -61,7 +61,7 @@ install:
       python setup.py bdist_wheel
       )  else (
     conda install tbb-devel==2019.0 &&
-    pip install cibuildwheel==1.1.0 &&
+    pip install cibuildwheel==1.7.4 &&
         cibuildwheel --output-dir wheelhouse
       )
 

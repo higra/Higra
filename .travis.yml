@@ -1,16 +1,11 @@
 language: cpp
-dist: trusty
+dist: bionic
 branches:
   only:
   - master
   - /^\d+\.\d+\.\d+(-\S*)?$/
 matrix:
   include:
-  - os: linux
-    if: tag IS present
-    services:
-      - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*" CIBW_SKIP=*-manylinux_i686
   - os: linux
     if: tag IS present
     services:
@@ -22,12 +17,14 @@ matrix:
       - docker
     env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*" CIBW_SKIP=*-manylinux_i686
   - os: linux
+    if: tag IS present
+    services:
+      - docker
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp38-*" CIBW_SKIP=*-manylinux_i686
+  - os: linux
     services:
     - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp38-*" CIBW_SKIP=*-manylinux_i686
-  - os: osx
-    if: tag IS present
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp35-*"
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp39-*" CIBW_SKIP=*-manylinux_i686
   - os: osx
     if: tag IS present
     env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*"
@@ -35,15 +32,18 @@ matrix:
     if: tag IS present
     env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*"
   - os: osx
+    if: tag IS present
     env: BUILD_WHEEL=1 CIBW_BUILD="cp38-*"
+  - os: osx
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp39-*"
   - os: linux
     addons:
       apt:
         sources:
         - ubuntu-toolchain-r-test
         packages:
-        - g++-6
-    env: COMPILER=gcc GCC=6 HG_USE_TBB=On
+        - g++-7
+    env: COMPILER=gcc GCC=7 HG_USE_TBB=On
   - os: linux
     dist: bionic
     addons:
@@ -59,11 +59,10 @@ matrix:
       apt:
         sources:
         - ubuntu-toolchain-r-test
-        - llvm-toolchain-trusty-4.0
         packages:
-        - g++-4.9
-        - clang-4.0
-    env: COMPILER=clang CLANG=4.0 HG_USE_TBB=Off
+        - g++-7
+        - clang-7
+    env: COMPILER=clang CLANG=7 HG_USE_TBB=Off
   - os: osx
     osx_image: xcode11.6
     compiler: clang
@@ -119,7 +118,7 @@ install:
   cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python -DHG_USE_TBB=$HG_USE_TBB -DTBB_INCLUDE_DIR=$HOME/miniconda/include -DTBB_LIBRARY=$HOME/miniconda/lib ..  &&
     make -j2 higram test_exe;
   else
-  pip install cibuildwheel==1.1.0;
+  pip install cibuildwheel==1.7.4;
   fi
 script:
   - |

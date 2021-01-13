@@ -55,3 +55,5 @@ endif ()
 get_target_property(_higram_file_name higram OUTPUT_NAME)
 set(HIGRA_CPP_MODULE_NAME $<TARGET_FILE:${higram}> PARENT_SCOPE)
 set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} higram CACHE INTERNAL "" FORCE)
+
+message("Python CMAKE_CXX_FLAGS" ${CMAKE_CXX_FLAGS})
