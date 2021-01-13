@@ -70,7 +70,8 @@ include_directories(${GBENCHMARK_INCLUDE_DIRS})
 set(FILES_BENCHMARK
         main.cpp
         utils.cpp
-        benchmark_regular_graph.cpp
+        benchmark_undirected_graph.cpp
+        #benchmark_regular_graph.cpp
         #benchmark_accumulator.cpp
         #benchmark_parallel_sort.cpp
         #benchmark_tree_iterator.cpp

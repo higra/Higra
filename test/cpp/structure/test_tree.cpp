@@ -456,7 +456,7 @@ namespace tree {
         REQUIRE((l == ref));
     }
 
-    TEST_CASE("edge lists") {
+    TEST_CASE("edge lists", "[tree]") {
         auto g = data.t;
 
         array_1d<index_t> sources_ref{0, 1, 2, 3, 4, 5, 6};
@@ -467,5 +467,12 @@ namespace tree {
 
         auto tgt = targets(g);
         REQUIRE((targets_ref == tgt));
+    }
+
+    TEST_CASE("tree to ugraph", "[tree]") {
+        auto t = data.t;
+        auto g = copy_graph(t);
+        REQUIRE(num_vertices(t) == 8);
+        REQUIRE(num_edges(t) == 7);
     }
 }

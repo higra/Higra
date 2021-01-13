@@ -119,8 +119,19 @@ namespace hg {
                     vertex_descriptor>;
 
 
-            undirected_graph(const size_t num_vertices = 0) : _num_vertices(num_vertices),
-                                                              out_edges(num_vertices) {};
+            undirected_graph(const size_t num_vertices = 0,
+                             const size_t reserved_edges = 0,
+                             const size_t reserved_edge_per_vertex = 0) :
+                    _num_vertices(num_vertices), out_edges(num_vertices) {
+                if (reserved_edges > 0) {
+                    edges.reserve(reserved_edges);
+                }
+                if (reserved_edge_per_vertex > 0) {
+                    for (index_t i = 0; i < (index_t) num_vertices; ++i) {
+                        out_edges[i].reserve(reserved_edge_per_vertex);
+                    }
+                }
+            };
 
             vertices_size_type num_vertices() const {
                 return _num_vertices;
@@ -142,7 +153,7 @@ namespace hg {
             }
 
             void add_vertices(size_t num) {
-                if(num > 0) {
+                if (num > 0) {
                     _num_vertices += num;
                     out_edges.resize(_num_vertices);
                 }
@@ -212,11 +223,11 @@ namespace hg {
                 return add_edge(e.first, e.second);
             }
 
-            auto sources() const{
+            auto sources() const {
                 return HG_ADAPT_STRUCT_ARRAY(edges.data(), source, num_edges());
             }
 
-            auto targets() const{
+            auto targets() const {
                 return HG_ADAPT_STRUCT_ARRAY(edges.data(), target, num_edges());
             }
 
@@ -378,7 +389,7 @@ namespace hg {
     adjacent_vertices(typename hg::undirected_graph<T>::vertex_descriptor v, const hg::undirected_graph<T> &g) {
         auto fun = [v, &g](const typename hg::undirected_graph<T>::edge_index_t &oei) {
             const auto &oe = g.edge_from_index(oei);
-            return  (v == oe.source) ? oe.target : oe.source;
+            return (v == oe.source) ? oe.target : oe.source;
         };
         using it = typename hg::undirected_graph<T>::adjacency_iterator;
         return std::make_pair(

@@ -46,19 +46,3 @@ static void BM_graph_implicit_adjacency_iterator(benchmark::State &state) {
 BENCHMARK(BM_graph_implicit_adjacency_iterator)->Range(1 << min_size, 1 << max_size);
 
 
-static void BM_graph_implicit_to_explicit(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        hg::index_t size = state.range(0);
-        xt::random::seed(42);
-
-        state.ResumeTiming();
-        auto res = hg::get_4_adjacency_graph(hg::embedding_grid_2d({size, size}));
-
-        benchmark::DoNotOptimize(res.num_vertices());
-    }
-}
-
-BENCHMARK(BM_graph_implicit_to_explicit)->Range(1 << min_size, 1 << max_size);
-
