@@ -1,6 +1,33 @@
 Changelog
 =========
 
+0.6.1
+-----
+
+Breaking changes
+****************
+
+- C++ only: the children relation of trees is not computed automatically anymore, a call to the member function
+  ``compute_children`` is required before accessing to any children information of a tree,
+  see documentation :ref:`tree children`  `#228 <https://github.com/higra/Higra/pull/228>`_
+
+
+Other changes
+*************
+- Function :func:`~higra.bpt_canonical` can now process a graph given as a edge list (arrays of source and target vertices)
+  `#230 <https://github.com/higra/Higra/pull/230>`_
+- Add functions :func:`~higra.UndirectedGraph.sources` and :func:`~higra.UndirectedGraph.targets` to
+  the classes :class:`~higra.UndirectedGraph` and :class:`~higra.Tree` which will returns views whenever possible
+  `#230 <https://github.com/higra/Higra/pull/230>`_
+- Add options for memory pre-allocation in :class:`~higra.UndirectedGraph` constructor
+  `#232 <https://github.com/higra/Higra/pull/232>`_
+- Improve performance of regular grid graphs `#231 <https://github.com/higra/Higra/pull/231>`_
+- Improve memory usage of marginal accumulators `#228 <https://github.com/higra/Higra/pull/228>`_
+- Remove the need of the  children relation anymore of trees in several functions
+  `#228 <https://github.com/higra/Higra/pull/228>`_
+- Bugfix: Regular grid graph will now always fulfils the :class:`~higra.CptGridGraph` concept
+  `#229 <https://github.com/higra/Higra/pull/229>`_
+
 0.6.0
 -----
 
