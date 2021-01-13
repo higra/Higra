@@ -71,11 +71,12 @@ struct def_hierarchy_to_optimal_energy_cut_hierarchy {
                                                                const pyarray<value_t> &data_fidelity_attribute,
                                                                const pyarray<value_t> &regularization_attribute,
                                                                const int approximation_piecewise_linear_function) {
-                  return hg::hierarchy_to_optimal_energy_cut_hierarchy(
+                  auto res = hg::hierarchy_to_optimal_energy_cut_hierarchy(
                           tree,
                           data_fidelity_attribute,
                           regularization_attribute,
                           approximation_piecewise_linear_function);
+                  return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
               },
               doc,
               py::arg("tree"),
@@ -99,13 +100,14 @@ void py_init_tree_energy_optimization(pybind11::module &m) {
                                                           const pyarray<double> &vertex_values,
                                                           const pyarray<double> &squared_vertex_values,
                                                           const pyarray<double> &edge_length) {
-              return hg::binary_partition_tree_MumfordShah_energy(
+              auto res = hg::binary_partition_tree_MumfordShah_energy(
                       graph,
                       vertex_perimeter,
                       vertex_area,
                       vertex_values,
                       squared_vertex_values,
                       edge_length);
+              return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
           },
           "",
           py::arg("graph"),

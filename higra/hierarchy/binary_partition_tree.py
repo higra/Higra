@@ -30,9 +30,7 @@ def binary_partition_tree_complete_linkage(graph, edge_weights):
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
-    res = hg.cpp._binary_partition_tree_complete_linkage(graph, edge_weights)
-    tree = res.tree()
-    altitudes = res.altitudes()
+    tree, altitudes = hg.cpp._binary_partition_tree_complete_linkage(graph, edge_weights)
 
     hg.CptHierarchy.link(tree, graph)
 
@@ -63,9 +61,7 @@ def binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weigh
     else:
         edge_weights, edge_weight_weights = hg.cast_to_common_type(edge_weights, edge_weight_weights)
 
-    res = hg.cpp._binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weights)
-    tree = res.tree()
-    altitudes = res.altitudes()
+    tree, altitudes = hg.cpp._binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weights)
 
     hg.CptHierarchy.link(tree, graph)
 
@@ -113,9 +109,7 @@ def binary_partition_tree_exponential_linkage(graph, edge_weights, alpha, edge_w
     elif alpha == float('inf'):
         tree, altitudes = hg.binary_partition_tree_complete_linkage(graph, edge_weights)
     else:
-        res = hg.cpp._binary_partition_tree_exponential_linkage(graph, edge_weights, alpha, edge_weight_weights)
-        tree = res.tree()
-        altitudes = res.altitudes()
+        tree, altitudes = hg.cpp._binary_partition_tree_exponential_linkage(graph, edge_weights, alpha, edge_weight_weights)
 
     hg.CptHierarchy.link(tree, graph)
 
@@ -178,9 +172,7 @@ def binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes=Non
     else:
         vertex_centroids, vertex_sizes = hg.cast_to_common_type(vertex_centroids, vertex_sizes)
 
-    res = hg.cpp._binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes, altitude_correction)
-    tree = res.tree()
-    altitudes = res.altitudes()
+    tree, altitudes = hg.cpp._binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes, altitude_correction)
 
     hg.CptHierarchy.link(tree, graph)
 
@@ -296,9 +288,7 @@ def binary_partition_tree(graph, weight_function, edge_weights):
     :param edge_weights: edge weights of the input graph
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
-    res = hg.cpp._binary_partition_tree(graph, edge_weights, weight_function)
-    tree = res.tree()
-    altitudes = res.altitudes()
+    tree, altitudes = hg.cpp._binary_partition_tree(graph, edge_weights, weight_function)
 
     hg.CptHierarchy.link(tree, graph)
 

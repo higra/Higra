@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <memory>
 #include <numeric>
 #include <stdexcept>
 
@@ -707,7 +708,7 @@ namespace xt
     inline void xcontainer<D>::store_simd(size_type i, const simd& e)
     {
         using align_mode = driven_align_mode_t<alignment, data_alignment>;
-        xt_simd::store_simd<value_type, typename simd::value_type>(&(storage()[i]), e, align_mode());
+        xt_simd::store_simd<value_type, typename simd::value_type>(std::addressof(storage()[i]), e, align_mode());
     }
 
     template <class D>
@@ -717,7 +718,7 @@ namespace xt
         //-> simd_return_type<requested_type>
     {
         using align_mode = driven_align_mode_t<alignment, data_alignment>;
-        return xt_simd::load_simd<value_type, requested_type>(&(storage()[i]), align_mode());
+        return xt_simd::load_simd<value_type, requested_type>(std::addressof(storage()[i]), align_mode());
     }
 
     template <class D>
@@ -983,7 +984,7 @@ namespace xt
     template <class S>
     inline auto& xstrided_container<D>::reshape(S&& shape, layout_type layout) &
     {
-        reshape_impl(std::forward<S>(shape), std::is_signed<std::decay_t<typename std::decay_t<S>::value_type>>(), std::forward<layout_type>(layout));
+        reshape_impl(std::forward<S>(shape), xtl::is_signed<std::decay_t<typename std::decay_t<S>::value_type>>(), std::forward<layout_type>(layout));
         return this->derived_cast();
     }
 
@@ -994,7 +995,7 @@ namespace xt
         using sh_type = rebind_container_t<T, shape_type>;
         sh_type sh = xtl::make_sequence<sh_type>(shape.size());
         std::copy(shape.begin(), shape.end(), sh.begin());
-        reshape_impl(std::move(sh), std::is_signed<T>(), std::forward<layout_type>(layout));
+        reshape_impl(std::move(sh), xtl::is_signed<T>(), std::forward<layout_type>(layout));
         return this->derived_cast();
     }
 
@@ -1025,14 +1026,14 @@ namespace xt
     template <class S>
     inline void xstrided_container<D>::reshape_impl(S&& _shape, std::true_type /* is signed */, layout_type layout)
     {
-        using value_type = typename std::decay_t<S>::value_type;
+        using tmp_value_type = typename std::decay_t<S>::value_type;
         auto new_size = compute_size(_shape);
         if (this->size() % new_size)
         {
             XTENSOR_THROW(std::runtime_error, "Negative axis size cannot be inferred. Shape mismatch.");
         }
         std::decay_t<S> shape = _shape;
-        value_type accumulator = 1;
+        tmp_value_type accumulator = 1;
         std::size_t neg_idx = 0;
         std::size_t i = 0;
         for(auto it = shape.begin(); it != shape.end(); ++it, i++)
@@ -1047,7 +1048,7 @@ namespace xt
         }
         if(accumulator < 0)
         {
-            shape[neg_idx] = static_cast<value_type>(this->size()) / std::abs(accumulator);
+            shape[neg_idx] = static_cast<tmp_value_type>(this->size()) / std::abs(accumulator);
         }
         else if(this->size() != new_size)
         {
@@ -1059,7 +1060,7 @@ namespace xt
         resize_container(m_backstrides, m_shape.size());
         compute_strides<D::static_layout>(m_shape, m_layout, m_strides, m_backstrides);
     }
-    
+
     template <class D>
     inline auto xstrided_container<D>::mutable_layout() noexcept -> layout_type&
     {

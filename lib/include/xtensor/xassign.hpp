@@ -295,16 +295,16 @@ namespace xt
 
         /**
          * Considering the assigment LHS = RHS, if the requested value type used for
-         * loading simd form RHS is not complex while LHS value_type is complex,
+         * loading simd from RHS is not complex while LHS value_type is complex,
          * the assignment fails. The reason is that SIMD batches of complex values cannot
          * be implicitly instanciated from batches of scalar values.
          * Making the constructor implicit does not fix the issue since in the end,
          * the assignment is done with vec.store(buffer) where vec is a batch of scalars
          * and buffer an array of complex. SIMD batches of scalars do not provide overloads
-         * of store that accept buffer of commplex values and that SHOULD NOT CHANGE.
+         * of store that accept buffer of complex values and that SHOULD NOT CHANGE.
          * Load and store overloads must accept SCALAR BUFFERS ONLY.
          * Therefore, the solution is to explicitly force the instantiation of complex
-         * batches in the assignment mechanism. A common situation tthat triggers this
+         * batches in the assignment mechanism. A common situation that triggers this
          * issue is:
          * xt::xarray<double> rhs = { 1, 2, 3 };
          * xt::xarray<std::complex<double>> lhs = rhs;
@@ -334,7 +334,7 @@ namespace xt
 
         static constexpr bool is_bool_conversion() { return is_bool<e2_value_type>::value && !is_bool<e1_value_type>::value; }
         static constexpr bool contiguous_layout() { return E1::contiguous_layout && E2::contiguous_layout; }
-        static constexpr bool convertible_types() { return std::is_convertible<e2_value_type, e1_value_type>::value 
+        static constexpr bool convertible_types() { return std::is_convertible<e2_value_type, e1_value_type>::value
                                                         && !is_bool_conversion(); }
 
         static constexpr bool use_xsimd() { return xt_simd::simd_traits<int8_t>::size > 1; }
@@ -345,7 +345,7 @@ namespace xt
         static constexpr bool simd_interface() { return has_simd_interface<E2, requested_value_type>(); }
 
     public:
-        
+
         // constexpr methods instead of constexpr data members avoid the need of definitions at namespace
         // scope of these data members (since they are odr-used).
 
@@ -530,9 +530,9 @@ namespace xt
         using argument_type = std::decay_t<FROM>;
         using result_type = std::decay_t<TO>;
 
-        static const bool value = std::is_arithmetic<result_type>::value &&
+        static const bool value = xtl::is_arithmetic<result_type>::value &&
             (sizeof(result_type) < sizeof(argument_type) ||
-             (std::is_integral<result_type>::value && std::is_floating_point<argument_type>::value));
+             (xtl::is_integral<result_type>::value && std::is_floating_point<argument_type>::value));
     };
 
     template <class FROM, class TO>
@@ -541,7 +541,7 @@ namespace xt
         using argument_type = std::decay_t<FROM>;
         using result_type = std::decay_t<TO>;
 
-        static const bool value = std::is_signed<argument_type>::value != std::is_signed<result_type>::value;
+        static const bool value = xtl::is_signed<argument_type>::value != xtl::is_signed<result_type>::value;
     };
 
     template <class FROM, class TO>
@@ -565,13 +565,13 @@ namespace xt
     template <class E1, class E2, layout_type L>
     inline void stepper_assigner<E1, E2, L>::run()
     {
-        using size_type = typename E1::size_type;
+        using tmp_size_type = typename E1::size_type;
         using argument_type = std::decay_t<decltype(*m_rhs)>;
         using result_type = std::decay_t<decltype(*m_lhs)>;
         constexpr bool needs_cast = has_assign_conversion<argument_type, result_type>::value;
 
-        size_type s = m_e1.size();
-        for (size_type i = 0; i < s; ++i)
+        tmp_size_type s = m_e1.size();
+        for (tmp_size_type i = 0; i < s; ++i)
         {
             *m_lhs = conditional_cast<needs_cast, result_type>(*m_rhs);
             stepper_tools<L>::increment_stepper(*this, m_index, m_e1.shape());
@@ -906,7 +906,7 @@ namespace xt
         std::size_t inner_loop_size, outer_loop_size, cut;
         std::tie(inner_loop_size, outer_loop_size, cut) = strided_assign_detail::get_loop_sizes(e1, e2, is_row_major);
 
-        if ((is_row_major && cut == e1.dimension()) || (!is_row_major && cut == 0)) 
+        if ((is_row_major && cut == e1.dimension()) || (!is_row_major && cut == 0))
         {
             return fallback_assigner(e1, e2).run();
         }
@@ -953,7 +953,7 @@ namespace xt
         {
             for (std::size_t i = 0; i < simd_size; ++i)
             {
-                res_stepper.template store_simd<simd_type>(fct_stepper.template step_simd<value_type>());
+                res_stepper.store_simd(fct_stepper.template step_simd<value_type>());
             }
             for (std::size_t i = 0; i < simd_rest; ++i)
             {

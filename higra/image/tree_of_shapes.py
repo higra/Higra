@@ -72,9 +72,7 @@ def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=T
     assert len(image.shape) == 2, "This tree of shapes implementation only supports 2d images."
     immersion = bool(immersion)
 
-    res = hg.cpp._component_tree_tree_of_shapes_image2d(image, padding, original_size, immersion, exterior_vertex)
-    tree = res.tree()
-    altitudes = res.altitudes()
+    tree, altitudes = hg.cpp._component_tree_tree_of_shapes_image2d(image, padding, original_size, immersion, exterior_vertex)
 
     if original_size or ((not immersion) and padding == "none"):
         size = image.shape

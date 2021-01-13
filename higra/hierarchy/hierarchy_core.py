@@ -207,9 +207,7 @@ def quasi_flat_zone_hierarchy(graph, edge_weights):
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
-    res = hg.cpp._quasi_flat_zone_hierarchy(graph, edge_weights)
-    tree = res.tree()
-    altitudes = res.altitudes()
+    tree, altitudes = hg.cpp._quasi_flat_zone_hierarchy(graph, edge_weights)
 
     hg.CptHierarchy.link(tree, graph)
 

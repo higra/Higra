@@ -19,6 +19,40 @@
 namespace xtl
 {
     /************************************
+     * std proxy traits                 *
+     ************************************/
+
+    template <class T>
+    struct is_scalar : std::is_scalar<T>
+    {
+    };
+
+    template <class T>
+    struct is_arithmetic : std::is_arithmetic<T>
+    {
+    };
+
+    template <class T>
+    struct is_fundamental : std::is_fundamental<T>
+    {
+    };
+    
+    template <class T>
+    struct is_signed : std::is_signed<T>
+    {
+    };
+    
+    template <class T>
+    struct is_floating_point : std::is_floating_point<T>
+    {
+    };
+    
+    template <class T>
+    struct is_integral : std::is_integral<T>
+    {
+    };
+
+    /************************************
      * arithmetic type promotion traits *
      ************************************/
 
@@ -96,6 +130,12 @@ namespace xtl
         using type = std::complex<T>;
     };
 
+    template <class T1, class T2>
+    struct promote_type<std::complex<T1>, std::complex<T2>>
+    {
+        using type = std::complex<typename promote_type<T1, T2>::type>;
+    };
+
     template <class... REST>
     struct promote_type<bool, REST...>
     {
@@ -121,9 +161,9 @@ namespace xtl
     private:
 
         using V = std::decay_t<T>;
-        static constexpr bool is_arithmetic = std::is_arithmetic<V>::value;
-        static constexpr bool is_signed = std::is_signed<V>::value;
-        static constexpr bool is_integral = std::is_integral<V>::value;
+        static constexpr bool is_arithmetic = xtl::is_arithmetic<V>::value;
+        static constexpr bool is_signed = xtl::is_signed<V>::value;
+        static constexpr bool is_integral = xtl::is_integral<V>::value;
         static constexpr bool is_long_double = std::is_same<V, long double>::value;
 
     public:
@@ -382,7 +422,7 @@ namespace xtl
      **************/
 
     template <class... Args>
-    struct all_scalar : conjunction<std::is_scalar<Args>...>
+    struct all_scalar : conjunction<xtl::is_scalar<Args>...>
     {
     };
 

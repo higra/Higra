@@ -50,7 +50,10 @@ namespace xt
             bool is_trivial;
             bool is_initialized;
 
-            xfunction_cache_impl() : shape(xtl::make_sequence<S>(0, std::size_t(0))), is_trivial(false), is_initialized(false) {}
+            xfunction_cache_impl() :
+                shape(xtl::make_sequence<S>(0, std::size_t(0))),
+                is_trivial(false),
+                is_initialized(false) {}
         };
 
         template<std::size_t... N, class is_shape_trivial>
@@ -152,7 +155,7 @@ namespace xt
                            has_simd_interface<std::decay_t<CT>, T>...>
     {
     };
-                            
+
     /*************
      * xfunction *
      *************/

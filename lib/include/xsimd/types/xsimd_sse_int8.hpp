@@ -12,6 +12,7 @@
 #define XSIMD_SSE_INT8_HPP
 
 #include <cstdint>
+#include <limits>
 
 #include "xsimd_base.hpp"
 #include "xsimd_sse_int_base.hpp"
@@ -308,12 +309,12 @@ namespace xsimd
 
     inline batch<int8_t, 16> operator<<(const batch<int8_t, 16>& lhs, const batch<int8_t, 16>& rhs)
     {
-        return sse_detail::shift_impl([](int8_t lhs, int8_t s) { return lhs << s; }, lhs, rhs);
+        return sse_detail::shift_impl([](int8_t alhs, int8_t s) { return alhs << s; }, lhs, rhs);
     }
 
     inline batch<int8_t, 16> operator>>(const batch<int8_t, 16>& lhs, const batch<int8_t, 16>& rhs)
     {
-        return sse_detail::shift_impl([](int8_t lhs, int8_t s) { return lhs >> s; }, lhs, rhs);
+        return sse_detail::shift_impl([](int8_t alhs, int8_t s) { return alhs >> s; }, lhs, rhs);
     }
 
     XSIMD_DEFINE_LOAD_STORE_INT8(uint8_t, 16, 16)
@@ -331,12 +332,12 @@ namespace xsimd
 
     inline batch<uint8_t, 16> operator<<(const batch<uint8_t, 16>& lhs, const batch<int8_t, 16>& rhs)
     {
-        return sse_detail::shift_impl([](uint8_t lhs, int8_t s) { return lhs << s; }, lhs, rhs);
+        return sse_detail::shift_impl([](uint8_t alhs, int8_t s) { return alhs << s; }, lhs, rhs);
     }
 
     inline batch<uint8_t, 16> operator>>(const batch<uint8_t, 16>& lhs, const batch<int8_t, 16>& rhs)
     {
-        return sse_detail::shift_impl([](uint8_t lhs, int8_t s) { return lhs >> s; }, lhs, rhs);
+        return sse_detail::shift_impl([](uint8_t alhs, int8_t s) { return alhs >> s; }, lhs, rhs);
     }
 }
 

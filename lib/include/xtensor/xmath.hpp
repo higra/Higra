@@ -223,21 +223,21 @@ XTENSOR_INT_SPECIALIZATION_IMPL(FUNC_NAME, RETURN_VAL, unsigned long long);     
         // might return int instead of bool and the SIMD detection requires
         // bool return type.
         template <class T>
-        inline std::enable_if_t<std::is_arithmetic<T>::value, bool>
+        inline std::enable_if_t<xtl::is_arithmetic<T>::value, bool>
         isinf(const T& t)
         {
             return bool(std::isinf(t));
         }
 
         template <class T>
-        inline std::enable_if_t<std::is_arithmetic<T>::value, bool>
+        inline std::enable_if_t<xtl::is_arithmetic<T>::value, bool>
         isnan(const T& t)
         {
             return bool(std::isnan(t));
         }
 
         template <class T>
-        inline std::enable_if_t<std::is_arithmetic<T>::value, bool>
+        inline std::enable_if_t<xtl::is_arithmetic<T>::value, bool>
         isfinite(const T& t)
         {
             return bool(std::isfinite(t));
@@ -367,7 +367,7 @@ namespace detail {
 
 #define XTENSOR_REDUCER_FUNCTION(NAME, FUNCTOR, RESULT_TYPE, INIT)                                                \
     template <class T = void, class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,                            \
-              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::negation<std::is_integral<X>>)>             \
+              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::negation<xtl::is_integral<X>>)>             \
     inline auto NAME(E&& e, X&& axes, EVS es = EVS())                                                             \
     {                                                                                                             \
         using result_type = std::conditional_t<std::is_same<T, void>::value, RESULT_TYPE, T>;                     \
@@ -380,7 +380,7 @@ namespace detail {
     }                                                                                                             \
                                                                                                                   \
     template <class T = void, class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,                            \
-              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, std::is_integral<X>)>                            \
+              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::is_integral<X>)>                            \
     inline auto NAME(E&& e, X axis, EVS es = EVS())                                                               \
     {                                                                                                             \
         return NAME(std::forward<E>(e), {axis}, es);                                                              \
@@ -621,7 +621,7 @@ namespace detail {
 
         struct deg2rad
         {
-            template <class A, std::enable_if_t<std::is_integral<A>::value, int> = 0>
+            template <class A, std::enable_if_t<xtl::is_integral<A>::value, int> = 0>
             constexpr double operator()(const A& a) const noexcept
             {
               return a * xt::numeric_constants<double>::PI / 180.0;
@@ -633,7 +633,7 @@ namespace detail {
               return a * xt::numeric_constants<A>::PI / A(180.0);
             }
 
-            template <class A, std::enable_if_t<std::is_integral<A>::value, int> = 0>
+            template <class A, std::enable_if_t<xtl::is_integral<A>::value, int> = 0>
             constexpr double simd_apply(const A& a) const noexcept
             {
               return a * xt::numeric_constants<double>::PI / 180.0;
@@ -648,7 +648,7 @@ namespace detail {
 
         struct rad2deg
         {
-            template <class A, std::enable_if_t<std::is_integral<A>::value, int> = 0>
+            template <class A, std::enable_if_t<xtl::is_integral<A>::value, int> = 0>
             constexpr double operator()(const A& a) const noexcept
             {
               return a * 180.0 / xt::numeric_constants<double>::PI;
@@ -660,7 +660,7 @@ namespace detail {
               return a * A(180.0) / xt::numeric_constants<A>::PI;
             }
 
-            template <class A, std::enable_if_t<std::is_integral<A>::value, int> = 0>
+            template <class A, std::enable_if_t<xtl::is_integral<A>::value, int> = 0>
             constexpr double simd_apply(const A& a) const noexcept
             {
               return a * 180.0 / xt::numeric_constants<double>::PI;
@@ -835,7 +835,7 @@ namespace detail {
         struct sign_impl
         {
             template <class XT = T>
-            static constexpr std::enable_if_t<std::is_signed<XT>::value, T> run(T x)
+            static constexpr std::enable_if_t<xtl::is_signed<XT>::value, T> run(T x)
             {
                 return std::isnan(x) ? std::numeric_limits<T>::quiet_NaN() : x == 0 ? T(copysign(T(0), x)) : T(copysign(T(1), x));
             }
@@ -1882,6 +1882,9 @@ namespace detail {
      * \em axes.
      * @param e an \ref xexpression
      * @param axes the axes along which the product is computed (optional)
+     * @param ddof delta degrees of freedom (optional).
+     *             The divisor used in calculations is N - ddof, where N represents the number of
+                   elements. By default ddof is zero.
      * @param es evaluation strategy of the reducer
      * @return an \ref xreducer
      */
@@ -1904,39 +1907,46 @@ namespace detail {
         }
 
         template <class T, class E, class X, class D, class EVS,
-                  XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, std::is_integral<D>)>
+                  XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::is_integral<D>)>
         inline auto mean(E&& e, X&& axes, D const& ddof, EVS es)
         {
             // sum cannot always be a double. It could be a complex number which cannot operate on
             // std::plus<double>.
+            using size_type = typename std::decay_t<E>::size_type;
+            const size_type size = e.size();
+            XTENSOR_ASSERT(static_cast<size_type>(ddof) <= size);
             auto s = sum<T>(std::forward<E>(e), std::forward<X>(axes), es);
-            return mean_division<T>(std::move(s), e.size() - ddof);
+            return mean_division<T>(std::move(s), size - static_cast<size_type>(ddof));
         }
 
 #ifdef X_OLD_CLANG
         template <class T, class E, class I, class D, class EVS>
         inline auto mean(E&& e, std::initializer_list<I> axes, const D& ddof, EVS es)
         {
+            using size_type = typename std::decay_t<E>::size_type;
+            const size_type size = e.size();
+            XTENSOR_ASSERT(static_cast<size_type>(ddof) <= size);
             auto s = sum<T>(std::forward<E>(e), axes, es);
-            return detail::mean_division<T>(std::move(s), e.size() - ddof);
+            return detail::mean_division<T>(std::move(s), size - static_cast<size_type>(ddof));
         }
 #else
         template <class T, class E, class I, std::size_t N, class D, class EVS>
         inline auto mean(E&& e, const I (&axes)[N], const D& ddof, EVS es)
         {
-            auto s = sum<T>(std::forward<E>(e), axes, es);
             using size_type = typename std::decay_t<E>::size_type;
-            return detail::mean_division<T>(std::move(s), e.size() - ddof);
+            const size_type size = e.size();
+            XTENSOR_ASSERT(static_cast<size_type>(ddof) <= size);
+            auto s = sum<T>(std::forward<E>(e), axes, es);
+            return detail::mean_division<T>(std::move(s), size - static_cast<size_type>(ddof));
         }
 #endif
 
         template <class T, class E, class D, class EVS,
-                  XTL_REQUIRES(is_reducer_options<EVS>, std::is_integral<D>)>
+                  XTL_REQUIRES(is_reducer_options<EVS>, xtl::is_integral<D>)>
         inline auto mean_noaxis(E&& e, const D& ddof, EVS es)
         {
             using value_type = typename std::conditional_t<std::is_same<T, void>::value, double, T>;
-            auto size = e.size();
-            using size_type = decltype(size);
+            const auto size = e.size();
             return sum<T>(std::forward<E>(e), es) / static_cast<value_type>(size - ddof);
         }
     }
@@ -1994,7 +2004,7 @@ namespace detail {
      * @sa mean
      */
     template <class E, class W, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              XTL_REQUIRES(is_reducer_options<EVS>, xtl::negation<std::is_integral<X>>)>
+              XTL_REQUIRES(is_reducer_options<EVS>, xtl::negation<xtl::is_integral<X>>)>
     inline auto average(E&& e, W&& weights, X&& axes, EVS ev = EVS())
     {
         xindex_type_t<typename std::decay_t<E>::shape_type> broadcast_shape;
@@ -2081,11 +2091,11 @@ namespace detail {
     }
 
     template <class T = void, class E, class D, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              XTL_REQUIRES(is_reducer_options<EVS>, std::is_integral<D>)>
+              XTL_REQUIRES(is_reducer_options<EVS>, xtl::is_integral<D>)>
     inline auto variance(E&& e, D const& ddof, EVS es = EVS())
     {
-        decltype(auto) sc = detail::shared_forward<E>(e);
-        return detail::mean_noaxis<T>(square(sc - mean<T>(sc, es)), ddof, es);
+        auto cached_mean = mean<T>(e, es)();
+        return detail::mean_noaxis<T>(square(std::forward<E>(e) - std::move(cached_mean)), ddof, es);
     }
 
     template <class T = void, class E, class EVS = DEFAULT_STRATEGY_REDUCERS,
@@ -2115,14 +2125,16 @@ namespace detail {
      *
      * @param e an \ref xexpression
      * @param axes the axes along which the variance is computed (optional)
-     * @param ddof delta degrees of freedom (optional)
+     * @param ddof delta degrees of freedom (optional).
+     *             The divisor used in calculations is N - ddof, where N represents the number of
+                   elements. By default ddof is zero.
      * @param es evaluation strategy to use (lazy (default), or immediate)
      * @return an \ref xexpression
      *
      * @sa stddev, mean
      */
     template <class T = void, class E, class X, class D, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, std::is_integral<D>)>
+              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::is_integral<D>)>
     inline auto variance(E&& e, X&& axes, const D& ddof, EVS es = EVS())
     {
         decltype(auto) sc = detail::shared_forward<E>(e);
@@ -2143,7 +2155,7 @@ namespace detail {
     }
 
     template <class T = void, class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::negation<std::is_integral<std::decay_t<X>>>, is_reducer_options<EVS>)>
+              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::negation<xtl::is_integral<std::decay_t<X>>>, is_reducer_options<EVS>)>
     inline auto variance(E&& e, X&& axes, EVS es = EVS())
     {
       return variance<T>(std::forward<E>(e), std::forward<X>(axes), 0u, es);
@@ -2510,7 +2522,7 @@ namespace detail {
     }
 
     template <class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::negation<std::is_integral<X>>)>
+              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::negation<xtl::is_integral<X>>)>
     inline auto count_nonzero(E&& e, X&& axes, EVS es = EVS())
     {
         COUNT_NON_ZEROS_CONTENT;
@@ -2519,7 +2531,7 @@ namespace detail {
     }
 
     template <class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
-              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, std::is_integral<X>)>
+              XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::is_integral<X>)>
     inline auto count_nonzero(E&& e, X axis, EVS es = EVS())
     {
         return count_nonzero(std::forward<E>(e), {axis}, es);
@@ -2553,14 +2565,14 @@ namespace detail {
     }
 
     template <class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
-             XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::negation<std::is_integral<X>>)>
+             XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::negation<xtl::is_integral<X>>)>
     inline auto count_nonnan(E&& e, X&& axes, EVS es = EVS())
     {
         return xt::count_nonzero(!xt::isnan(std::forward<E>(e)), std::forward<X>(axes), es);
     }
 
     template <class E, class X, class EVS = DEFAULT_STRATEGY_REDUCERS,
-             XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, std::is_integral<X>)>
+             XTL_REQUIRES(xtl::negation<is_reducer_options<X>>, xtl::is_integral<X>)>
     inline auto count_nonnan(E&& e, X&& axes, EVS es = EVS())
     {
         return xt::count_nonzero(!xt::isnan(std::forward<E>(e)), {axes}, es);
@@ -2682,9 +2694,10 @@ namespace detail {
         // note: forcing copy of first axes argument -- is there a better solution?
         auto axes_copy = axes;
         using value_type = typename std::conditional_t<std::is_same<T, void>::value, double, T>;
+        using sum_type = typename std::conditional_t<std::is_same<T, void>::value, typename std::common_type_t<typename std::decay_t<E>::value_type, value_type>, T>;
         // sum cannot always be a double. It could be a complex number which cannot operate on
         // std::plus<double>.
-        return nansum<T>(sc, std::forward<X>(axes), es) / xt::cast<value_type>(count_nonnan(sc, std::move(axes_copy), es));
+        return nansum<sum_type>(sc, std::forward<X>(axes), es) / xt::cast<value_type>(count_nonnan(sc, std::move(axes_copy), es));
     }
 
     template <class T = void, class E, class EVS = DEFAULT_STRATEGY_REDUCERS,
@@ -2693,7 +2706,8 @@ namespace detail {
     {
         decltype(auto) sc = detail::shared_forward<E>(e);
         using value_type = typename std::conditional_t<std::is_same<T, void>::value, double, T>;
-        return nansum<T>(sc, es) / xt::cast<value_type>(count_nonnan(sc, es));
+        using sum_type = typename std::conditional_t<std::is_same<T, void>::value, typename std::common_type_t<typename std::decay_t<E>::value_type, value_type>, T>;
+        return nansum<sum_type>(sc, es) / xt::cast<value_type>(count_nonnan(sc, es));
     }
 
 #ifdef X_OLD_CLANG
@@ -2764,7 +2778,7 @@ namespace detail {
             keep_dim_shape[el] = 1;
         }
         auto mrv = reshape_view<XTENSOR_DEFAULT_LAYOUT>(std::move(inner_mean), std::move(keep_dim_shape));
-        return nanmean<result_type>(square(sc - std::move(mrv)), std::forward<X>(axes), es);
+        return nanmean<result_type>(square(cast<result_type>(sc) - std::move(mrv)), std::forward<X>(axes), es);
     }
 
     /**
@@ -2946,13 +2960,13 @@ namespace detail {
     template<class E1, class E2, class E3, typename T>
     inline auto interp(const E1 &x, const E2 &xp, const E3 &fp, T left, T right)
     {
-        using size_type = common_size_type_t<E1,E2,E3>;
+        using size_type = common_size_type_t<E1, E2, E3>;
         using value_type = typename E3::value_type;
 
         // basic checks
-        XTENSOR_ASSERT( xp.dimension() == 1 );
-        XTENSOR_ASSERT( std::is_sorted(x.cbegin(), x.cend()) );
-        XTENSOR_ASSERT( std::is_sorted(xp.cbegin(), xp.cend()) );
+        XTENSOR_ASSERT(xp.dimension() == 1);
+        XTENSOR_ASSERT(std::is_sorted(x.cbegin(), x.cend()));
+        XTENSOR_ASSERT(std::is_sorted(xp.cbegin(), xp.cend()));
 
         // allocate output
         auto f = xtensor<value_type, 1>::from_shape(x.shape());
@@ -3033,7 +3047,7 @@ namespace detail {
 
     /**
      * @brief Returns the covariance matrix
-     * 
+     *
      * @param x one or two dimensional array
      * @param y optional one-dimensional array to build covariance to x
      */
@@ -3053,8 +3067,8 @@ namespace detail {
                 covar(0, 0) = std::inner_product(x_norm.begin(), x_norm.end(), x_norm.begin(), 0.0) / value_type(s[0] - 1);
                 return covar;
             }
-            
-            XTENSOR_ASSERT( x.dimension() == 2 );
+
+            XTENSOR_ASSERT(x.dimension() == 2);
 
             auto covar = eval(zeros<value_type>({ s[0], s[0] }));
             auto m = eval(mean(x, {1}));
@@ -3065,12 +3079,12 @@ namespace detail {
                 auto xi = strided_view(x_norm, { range(i, i + 1), all() });
                 for (size_type j = i; j < s[0]; j++)
                 {
-                    auto xj = strided_view(x_norm, { range(j, j + 1), all() });            
+                    auto xj = strided_view(x_norm, { range(j, j + 1), all() });
                     covar(j, i) = std::inner_product(xi.begin(), xi.end(), xj.begin(), 0.0) / value_type(s[1] - 1);
                 }
             }
             return eval(covar + transpose(covar) - diag(diagonal(covar)));
-        } 
+        }
         else
         {
             return cov(eval(stack(xtuple(x, y))));

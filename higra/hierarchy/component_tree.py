@@ -34,9 +34,7 @@ def component_tree_min_tree(graph, vertex_weights):
     """
     vertex_weights = hg.linearize_vertex_weights(vertex_weights, graph)
 
-    res = hg.cpp._component_tree_min_tree(graph, vertex_weights)
-    tree = res.tree()
-    altitudes = res.altitudes()
+    tree, altitudes = hg.cpp._component_tree_min_tree(graph, vertex_weights)
 
     hg.CptHierarchy.link(tree, graph)
 
@@ -57,9 +55,7 @@ def component_tree_max_tree(graph, vertex_weights):
     """
     vertex_weights = hg.linearize_vertex_weights(vertex_weights, graph)
 
-    res = hg.cpp._component_tree_max_tree(graph, vertex_weights)
-    tree = res.tree()
-    altitudes = res.altitudes()
+    tree, altitudes = hg.cpp._component_tree_max_tree(graph, vertex_weights)
 
     hg.CptHierarchy.link(tree, graph)
 

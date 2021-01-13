@@ -83,11 +83,13 @@ def hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute,
     :param approximation_piecewise_linear_function: Maximum number of pieces used in the approximated piecewise linear model for the energy function (default 10).
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
-    data_fidelity_attribute, regularization_attribute = hg.cast_to_common_type(data_fidelity_attribute, regularization_attribute)
-    res = hg.cpp._hierarchy_to_optimal_energy_cut_hierarchy(tree, data_fidelity_attribute, regularization_attribute,
-                                                            int(approximation_piecewise_linear_function))
-    new_tree = res.tree()
-    altitudes = res.altitudes()
+    data_fidelity_attribute, regularization_attribute = hg.cast_to_common_type(data_fidelity_attribute,
+                                                                               regularization_attribute)
+    new_tree, altitudes = hg.cpp._hierarchy_to_optimal_energy_cut_hierarchy(tree,
+                                                                            data_fidelity_attribute,
+                                                                            regularization_attribute,
+                                                                            int(
+                                                                                approximation_piecewise_linear_function))
 
     hg.CptHierarchy.link(new_tree, hg.CptHierarchy.get_leaf_graph(tree))
 
@@ -199,16 +201,13 @@ def binary_partition_tree_MumfordShah_energy(graph,
     if squared_vertex_values is None:
         squared_vertex_values = vertex_values * vertex_values
 
-    res = hg.cpp._binary_partition_tree_MumfordShah_energy(
+    tree, altitudes = hg.cpp._binary_partition_tree_MumfordShah_energy(
         graph,
         vertex_perimeter,
         vertex_area,
         vertex_values,
         squared_vertex_values,
         edge_length)
-
-    tree = res.tree()
-    altitudes = res.altitudes()
 
     hg.CptHierarchy.link(tree, graph)
 

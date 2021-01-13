@@ -74,7 +74,7 @@ namespace xt
     inline xarray_adaptor<xtl::closure_type_t<C>, L, std::decay_t<SC>>
     adapt(C&& container, const SC& shape, layout_type l = L)
     {
-        static_assert(!std::is_integral<SC>::value, "shape cannot be a integer");
+        static_assert(!xtl::is_integral<SC>::value, "shape cannot be a integer");
         using return_type = xarray_adaptor<xtl::closure_type_t<C>, L, std::decay_t<SC>>;
         return return_type(std::forward<C>(container), shape, l);
     }
@@ -90,7 +90,7 @@ namespace xt
                            std::is_pointer<C>)>
     inline auto adapt(C&& pointer, const SC& shape, layout_type l = L)
     {
-        static_assert(!std::is_integral<SC>::value, "shape cannot be a integer");
+        static_assert(!xtl::is_integral<SC>::value, "shape cannot be a integer");
         using buffer_type = xbuffer_adaptor<C, xt::no_ownership, detail::default_allocator_for_ptr_t<C>>;
         using return_type = xarray_adaptor<buffer_type, L, std::decay_t<SC>>;
         std::size_t size = compute_size(shape);
@@ -110,7 +110,7 @@ namespace xt
     inline xarray_adaptor<xtl::closure_type_t<C>, layout_type::dynamic, std::decay_t<SC>>
     adapt(C&& container, SC&& shape, SS&& strides)
     {
-        static_assert(!std::is_integral<std::decay_t<SC>>::value, "shape cannot be a integer");
+        static_assert(!xtl::is_integral<std::decay_t<SC>>::value, "shape cannot be a integer");
         using return_type = xarray_adaptor<xtl::closure_type_t<C>, layout_type::dynamic, std::decay_t<SC>>;
         return return_type(std::forward<C>(container),
                            xtl::forward_sequence<typename return_type::inner_shape_type, SC>(shape),
@@ -133,7 +133,7 @@ namespace xt
     inline xarray_adaptor<xbuffer_adaptor<xtl::closure_type_t<P>, O, A>, L, SC>
     adapt(P&& pointer, typename A::size_type size, O ownership, const SC& shape, layout_type l = L, const A& alloc = A())
     {
-        static_assert(!std::is_integral<SC>::value, "shape cannot be a integer");
+        static_assert(!xtl::is_integral<SC>::value, "shape cannot be a integer");
         (void)ownership;
         using buffer_type = xbuffer_adaptor<xtl::closure_type_t<P>, O, A>;
         using return_type = xarray_adaptor<buffer_type, L, SC>;
@@ -158,7 +158,7 @@ namespace xt
     inline xarray_adaptor<xbuffer_adaptor<xtl::closure_type_t<P>, O, A>, layout_type::dynamic, std::decay_t<SC>>
     adapt(P&& pointer, typename A::size_type size, O ownership, SC&& shape, SS&& strides, const A& alloc = A())
     {
-        static_assert(!std::is_integral<std::decay_t<SC>>::value, "shape cannot be a integer");
+        static_assert(!xtl::is_integral<std::decay_t<SC>>::value, "shape cannot be a integer");
         (void)ownership;
         using buffer_type = xbuffer_adaptor<xtl::closure_type_t<P>, O, A>;
         using return_type = xarray_adaptor<buffer_type, layout_type::dynamic, std::decay_t<SC>>;
@@ -231,7 +231,7 @@ namespace xt
     inline xtensor_adaptor<C, detail::array_size<SC>::value, L>
     adapt(C&& container, const SC& shape, layout_type l = L)
     {
-        static_assert(!std::is_integral<SC>::value, "shape cannot be a integer");
+        static_assert(!xtl::is_integral<SC>::value, "shape cannot be a integer");
         constexpr std::size_t N = detail::array_size<SC>::value;
         using return_type = xtensor_adaptor<xtl::closure_type_t<C>, N, L>;
         return return_type(std::forward<C>(container), shape, l);
@@ -248,7 +248,7 @@ namespace xt
                            std::is_pointer<C>)>
     inline auto adapt(C&& pointer, const SC& shape, layout_type l = L)
     {
-        static_assert(!std::is_integral<SC>::value, "shape cannot be a integer");
+        static_assert(!xtl::is_integral<SC>::value, "shape cannot be a integer");
         using buffer_type = xbuffer_adaptor<C, xt::no_ownership, detail::default_allocator_for_ptr_t<C>>;
         constexpr std::size_t N = detail::array_size<SC>::value;
         using return_type = xtensor_adaptor<buffer_type, N, L>;
@@ -268,7 +268,7 @@ namespace xt
     inline xtensor_adaptor<C, detail::array_size<SC>::value, layout_type::dynamic>
     adapt(C&& container, SC&& shape, SS&& strides)
     {
-        static_assert(!std::is_integral<std::decay_t<SC>>::value, "shape cannot be a integer");
+        static_assert(!xtl::is_integral<std::decay_t<SC>>::value, "shape cannot be a integer");
         constexpr std::size_t N = detail::array_size<SC>::value;
         using return_type = xtensor_adaptor<xtl::closure_type_t<C>, N, layout_type::dynamic>;
         return return_type(std::forward<C>(container),
@@ -314,7 +314,7 @@ namespace xt
     inline xtensor_adaptor<xbuffer_adaptor<xtl::closure_type_t<P>, O, A>, detail::array_size<SC>::value, L>
     adapt(P&& pointer, typename A::size_type size, O ownership, const SC& shape, layout_type l = L, const A& alloc = A())
     {
-        static_assert(!std::is_integral<SC>::value, "shape cannot be a integer");
+        static_assert(!xtl::is_integral<SC>::value, "shape cannot be a integer");
         (void)ownership;
         using buffer_type = xbuffer_adaptor<xtl::closure_type_t<P>, O, A>;
         constexpr std::size_t N = detail::array_size<SC>::value;
@@ -340,7 +340,7 @@ namespace xt
     inline xtensor_adaptor<xbuffer_adaptor<xtl::closure_type_t<P>, O, A>, detail::array_size<SC>::value, layout_type::dynamic>
     adapt(P&& pointer, typename A::size_type size, O ownership, SC&& shape, SS&& strides, const A& alloc = A())
     {
-        static_assert(!std::is_integral<std::decay_t<SC>>::value, "shape cannot be a integer");
+        static_assert(!xtl::is_integral<std::decay_t<SC>>::value, "shape cannot be a integer");
         (void)ownership;
         using buffer_type = xbuffer_adaptor<xtl::closure_type_t<P>, O, A>;
         constexpr std::size_t N = detail::array_size<SC>::value;
@@ -412,6 +412,108 @@ namespace xt
     }
 #endif
 
+    /*****************************
+     * smart_ptr adapter builder *
+     *****************************/
+
+    /**
+     * Adapt a smart pointer to a typed memory block (unique_ptr or shared_ptr)
+     *
+     * \code{.cpp}
+     * #include <xtensor/xadapt.hpp>
+     * #include <xtensor/xio.hpp>
+     *
+     * std::shared_ptr<double> sptr(new double[8], std::default_delete<double[]>());
+     * sptr.get()[2] = 321.;
+     * std::vector<size_t> shape = {4, 2};
+     * auto xptr = adapt_smart_ptr(sptr, shape);
+     * xptr(1, 3) = 123.;
+     * std::cout << xptr;
+     * \endcode
+     *
+     * @param smart_ptr a smart pointer to a memory block of T[]
+     * @param shape The desired shape
+     * @param l The desired memory layout
+     *
+     * @return xarray_adaptor for memory
+     */
+    template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class P, class SC,
+              XTL_REQUIRES(detail::not_an_array<std::decay_t<SC>>)>
+    auto adapt_smart_ptr(P&& smart_ptr, const SC& shape, layout_type l = L)
+    {
+        using buffer_adaptor = xbuffer_adaptor<decltype(smart_ptr.get()), smart_ownership,
+                                               std::decay_t<P>>;
+        return xarray_adaptor<buffer_adaptor, L, std::decay_t<SC>>(
+            buffer_adaptor(smart_ptr.get(), compute_size(shape), std::forward<P>(smart_ptr)),
+            shape,
+            l
+        );
+
+    }
+
+    /**
+     * Adapt a smart pointer (shared_ptr or unique_ptr)
+     *
+     * This function allows to automatically adapt a shared or unique pointer to
+     * a given shape and operate naturally on it. Memory will be automatically
+     * handled by the smart pointer implementation.
+     *
+     * \code{.cpp}
+     * #include <xtensor/xadapt.hpp>
+     * #include <xtensor/xio.hpp>
+     *
+     * struct Buffer {
+     *     Buffer(std::vector<double>& buf) : m_buf(buf) {}
+     *     ~Buffer() { std::cout << "deleted" << std::endl; }
+     *     std::vector<double> m_buf;
+     * };
+     *
+     * auto data = std::vector<double>{1,2,3,4,5,6,7,8};
+     * auto shared_buf = std::make_shared<Buffer>(data);
+     * auto unique_buf = std::make_unique<Buffer>(data);
+     *
+     * std::cout << shared_buf.use_count() << std::endl;
+     * {
+     *     std::vector<size_t> shape = {2, 4};
+     *     auto obj = adapt_smart_ptr(shared_buf.get()->m_buf.data(),
+     *                                shape, shared_buf);
+     *     // Use count increased to 2
+     *     std::cout << shared_buf.use_count() << std::endl;
+     *     std::cout << obj << std::endl;
+     * }
+     * // Use count reset to 1
+     * std::cout << shared_buf.use_count() << std::endl;
+     *
+     * {
+     *     std::vector<size_t> shape = {2, 4};
+     *     auto obj = adapt_smart_ptr(unique_buf.get()->m_buf.data(),
+     *                                shape, std::move(unique_buf));
+     *     std::cout << obj << std::endl;
+     * }
+     * \endcode
+     *
+     * @param data_ptr A pointer to a typed data block (e.g. double*)
+     * @param shape The desired shape
+     * @param smart_ptr A smart pointer to move or copy, in order to manage memory
+     * @param l The desired memory layout
+     *
+     * @return xarray_adaptor on the memory
+     */
+    template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class P, class SC, class D,
+              XTL_REQUIRES(detail::not_an_array<std::decay_t<SC>>,
+                           detail::not_a_layout<std::decay_t<D>>)>
+    auto adapt_smart_ptr(P&& data_ptr, const SC& shape, D&& smart_ptr, layout_type l = L)
+    {
+        using buffer_adaptor = xbuffer_adaptor<P, smart_ownership,
+                                               std::decay_t<D>>;
+
+        return xarray_adaptor<buffer_adaptor, L, std::decay_t<SC>>(
+            buffer_adaptor(data_ptr, compute_size(shape), std::forward<D>(smart_ptr)),
+            shape,
+            l
+        );
+    }
+
 #ifndef X_OLD_CLANG
     /**
      * Adapt a smart pointer to a typed memory block (unique_ptr or shared_ptr)
@@ -429,19 +531,20 @@ namespace xt
      *
      * @param smart_ptr a smart pointer to a memory block of T[]
      * @param shape The desired shape
+     * @param l The desired memory layout
      *
      * @return xtensor_adaptor for memory
      */
-    template <class P, class I, std::size_t N>
-    auto adapt_smart_ptr(P&& smart_ptr, const I(&shape)[N])
+    template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class P, class I, std::size_t N>
+    auto adapt_smart_ptr(P&& smart_ptr, const I(&shape)[N], layout_type l = L)
     {
         using buffer_adaptor = xbuffer_adaptor<decltype(smart_ptr.get()), smart_ownership,
                                                std::decay_t<P>>;
         std::array<std::size_t, N> fshape = xtl::forward_sequence<std::array<std::size_t, N>, decltype(shape)>(shape);
-        return xtensor_adaptor<buffer_adaptor, N>(
-            buffer_adaptor(smart_ptr.get(), compute_size(fshape),
-            std::forward<P>(smart_ptr)),
-            std::move(fshape)
+        return xtensor_adaptor<buffer_adaptor, N, L>(
+            buffer_adaptor(smart_ptr.get(), compute_size(fshape), std::forward<P>(smart_ptr)),
+            std::move(fshape),
+            l
         );
     }
 
@@ -487,19 +590,22 @@ namespace xt
      * @param data_ptr A pointer to a typed data block (e.g. double*)
      * @param shape The desired shape
      * @param smart_ptr A smart pointer to move or copy, in order to manage memory
+     * @param l The desired memory layout
      *
      * @return xtensor_adaptor on the memory
      */
-    template <class P, class I, std::size_t N, class D>
-    auto adapt_smart_ptr(P&& data_ptr, const I(&shape)[N], D&& smart_ptr)
+    template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class P, class I, std::size_t N, class D,
+              XTL_REQUIRES(detail::not_a_layout<std::decay_t<D>>)>
+    auto adapt_smart_ptr(P&& data_ptr, const I(&shape)[N], D&& smart_ptr, layout_type l = L)
     {
         using buffer_adaptor = xbuffer_adaptor<P, smart_ownership,
                                                std::decay_t<D>>;
         std::array<std::size_t, N> fshape = xtl::forward_sequence<std::array<std::size_t, N>, decltype(shape)>(shape);
 
-        return xtensor_adaptor<buffer_adaptor, N>(
+        return xtensor_adaptor<buffer_adaptor, N, L>(
             buffer_adaptor(data_ptr, compute_size(fshape), std::forward<D>(smart_ptr)),
-            std::move(fshape)
+            std::move(fshape),
+            l
         );
     }
 #endif

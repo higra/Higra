@@ -12,7 +12,7 @@
 
 #define XTENSOR_VERSION_MAJOR 0
 #define XTENSOR_VERSION_MINOR 21
-#define XTENSOR_VERSION_PATCH 5
+#define XTENSOR_VERSION_PATCH 10
 
 // DETECT 3.6 <= clang < 3.8 for compiler bug workaround.
 #ifdef __clang__
@@ -31,6 +31,7 @@
 
 // Exception support.
 #if defined(XTENSOR_DISABLE_EXCEPTIONS)
+#include <iostream>
 #define XTENSOR_THROW(_, msg)            \
     {                                    \
       std::cerr << msg << std::endl;     \
@@ -107,6 +108,10 @@
 
 #ifndef XTENSOR_OPENMP_TRESHOLD
 #define XTENSOR_OPENMP_TRESHOLD 0
+#endif
+
+#ifndef XTENSOR_SELECT_ALIGN
+#define XTENSOR_SELECT_ALIGN(T) (XTENSOR_DEFAULT_ALIGNMENT != 0 ? XTENSOR_DEFAULT_ALIGNMENT : alignof(T))
 #endif
 
 #ifdef IN_DOXYGEN
