@@ -12,7 +12,7 @@
 
 #define XTL_VERSION_MAJOR 0
 #define XTL_VERSION_MINOR 6
-#define XTL_VERSION_PATCH 13
+#define XTL_VERSION_PATCH 23
 
 #ifndef __has_feature
 #define __has_feature(x) 0
@@ -24,6 +24,16 @@
 #else
 // Exceptions are disabled.
 #define XTL_NO_EXCEPTIONS
+#endif
+
+#if defined(XTL_NO_EXCEPTIONS)
+#define XTL_THROW(_, msg)              \
+    {                                  \
+        std::cerr << msg << std::endl; \
+        std::abort();                  \
+    }
+#else
+#define XTL_THROW(exception, msg) throw exception(msg)
 #endif
 
 #endif

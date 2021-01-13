@@ -147,7 +147,7 @@ namespace xt
     template <class E>
     inline auto empty_like(const xexpression<E>& e)
     {
-        using xtype = temporary_type_t<typename E::value_type, typename E::shape_type, E::static_layout>;
+        using xtype = temporary_type_t<E>;
         auto res = xtype::from_shape(e.derived_cast().shape());
         return res;
     }
@@ -162,7 +162,7 @@ namespace xt
     template <class E>
     inline auto full_like(const xexpression<E>& e, typename E::value_type fill_value)
     {
-        using xtype = temporary_type_t<typename E::value_type, typename E::shape_type, E::static_layout>;
+        using xtype = temporary_type_t<E>;
         auto res = xtype::from_shape(e.derived_cast().shape());
         res.fill(fill_value);
         return res;
@@ -217,7 +217,7 @@ namespace xt
 
         // These methods should be private methods of arange_generator, however thi leads
         // to ICE on VS2015
-        template <class R, class E, class U, class X, XTL_REQUIRES(std::is_integral<X>)>
+        template <class R, class E, class U, class X, XTL_REQUIRES(xtl::is_integral<X>)>
         inline void arange_assign_to(xexpression<E>& e, U start, X step) noexcept
         {
             auto& de = e.derived_cast();
@@ -230,7 +230,7 @@ namespace xt
             }
         }
 
-        template <class R, class E, class U, class X, XTL_REQUIRES(xtl::negation<std::is_integral<X>>)>
+        template <class R, class E, class U, class X, XTL_REQUIRES(xtl::negation<xtl::is_integral<X>>)>
         inline void arange_assign_to(xexpression<E>& e, U start, X step) noexcept
         {
             auto& buf = e.derived_cast().storage();
@@ -295,7 +295,13 @@ namespace xt
         };
 
         template <class T, class S>
-        using both_integer = xtl::conjunction<std::is_integral<T>, std::is_integral<S>>;
+        using both_integer = xtl::conjunction<xtl::is_integral<T>, xtl::is_integral<S>>;
+
+        template <class T, class S>
+        using integer_with_signed_integer = xtl::conjunction<both_integer<T, S>, xtl::is_signed<S>>;
+
+        template <class T, class S>
+        using integer_with_unsigned_integer = xtl::conjunction<both_integer<T, S>, std::is_unsigned<S>>;
 
         template <class T, class S = T, XTL_REQUIRES(xtl::negation<both_integer<T, S>>)>
         inline auto arange_impl(T start, T stop, S step = 1) noexcept
@@ -304,7 +310,7 @@ namespace xt
             return detail::make_xgenerator(detail::arange_generator<T, T, S>(start, stop, step), {shape});
         }
 
-        template <class T, class S = T, XTL_REQUIRES(both_integer<T, S>)>
+        template <class T, class S = T, XTL_REQUIRES(integer_with_signed_integer<T, S>)>
         inline auto arange_impl(T start, T stop, S step = 1) noexcept
         {
             bool empty_cond = (stop - start) / step <= 0;
@@ -315,6 +321,18 @@ namespace xt
                                      : static_cast<std::size_t>((start - stop - step - S(1)) / -step);
             }
             return detail::make_xgenerator(detail::arange_generator<T, T, S>(start, stop, step), {shape});
+        }
+
+        template <class T, class S = T, XTL_REQUIRES(integer_with_unsigned_integer<T, S>)>
+        inline auto arange_impl(T start, T stop, S step = 1) noexcept
+        {
+            bool empty_cond = stop <= start;
+            std::size_t shape = 0;
+            if (!empty_cond)
+            {
+                shape = static_cast<std::size_t>((stop - start + step - S(1)) / step);
+            }
+            return detail::make_xgenerator(detail::arange_generator<T, T, S>(start, stop, step), { shape });
         }
 
         template <class F>
@@ -656,11 +674,11 @@ namespace xt
         template <bool... values>
         using all_true = xtl::conjunction<std::integral_constant<bool, values>...>;
 
-        template <class X, class Y, std::size_t axis, class AxesSequence> 
+        template <class X, class Y, std::size_t axis, class AxesSequence>
         struct concat_fixed_shape_impl;
 
         template <class X, class Y, std::size_t axis, std::size_t... Is>
-        struct concat_fixed_shape_impl<X, Y, axis, std::index_sequence<Is...>> 
+        struct concat_fixed_shape_impl<X, Y, axis, std::index_sequence<Is...>>
         {
             static_assert(X::size() == Y::size(), "Concatenation requires equisized shapes");
             static_assert(axis < X::size(), "Concatenation requires a valid axis");
@@ -671,17 +689,17 @@ namespace xt
                                                  : X::template get<Is>())...>;
         };
 
-        template <std::size_t axis, class X, class Y, class... Rest> 
+        template <std::size_t axis, class X, class Y, class... Rest>
         struct concat_fixed_shape;
 
-        template <std::size_t axis, class X, class Y> 
-        struct concat_fixed_shape<axis, X, Y> 
+        template <std::size_t axis, class X, class Y>
+        struct concat_fixed_shape<axis, X, Y>
         {
             using type = typename concat_fixed_shape_impl<X, Y, axis, std::make_index_sequence<X::size()>>::type;
         };
 
-        template <std::size_t axis, class X, class Y, class... Rest> 
-        struct concat_fixed_shape 
+        template <std::size_t axis, class X, class Y, class... Rest>
+        struct concat_fixed_shape
         {
             using type = typename concat_fixed_shape<axis, X, typename concat_fixed_shape<axis, Y, Rest...>::type>::type;
         };
@@ -757,7 +775,7 @@ namespace xt
      * xt::xarray<double> a = {{1, 2, 3}};
      * xt::xarray<double> b = {{2, 3, 4}};
      * xt::xarray<double> c = xt::concatenate(xt::xtuple(a, b)); // => {{1, 2, 3},
-     *                                                                  {2, 3, 4}}
+     *                                                           //     {2, 3, 4}}
      * xt::xarray<double> d = xt::concatenate(xt::xtuple(a, b), 1); // => {{1, 2, 3, 2, 3, 4}}
      * \endcode
      */
@@ -769,7 +787,7 @@ namespace xt
     }
 
     template <std::size_t axis, class... CT, typename = std::enable_if_t<detail::all_fixed_shapes<CT...>::value>>
-    inline auto concatenate(std::tuple<CT...> &&t) 
+    inline auto concatenate(std::tuple<CT...> &&t)
     {
         using shape_type = detail::concat_fixed_shape_t<axis, typename std::decay_t<CT>::shape_type...>;
         return detail::make_xgenerator(detail::concatenate_impl<CT...>(std::move(t), axis), shape_type{});
@@ -808,10 +826,10 @@ namespace xt
      * xt::xarray<double> a = {1, 2, 3};
      * xt::xarray<double> b = {5, 6, 7};
      * xt::xarray<double> s = xt::stack(xt::xtuple(a, b)); // => {{1, 2, 3},
-     *                                                            {5, 6, 7}}
+     *                                                     //     {5, 6, 7}}
      * xt::xarray<double> t = xt::stack(xt::xtuple(a, b), 1); // => {{1, 5},
-     *                                                               {2, 6},
-     *                                                               {3, 7}}
+     *                                                        //     {2, 6},
+     *                                                        //     {3, 7}}
      * \endcode
      */
     template <class... CT>

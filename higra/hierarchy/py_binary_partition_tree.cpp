@@ -48,7 +48,8 @@ struct def_binary_partition_tree_average_linkage {
     void def(pybind11::module &m, const char *doc) {
         m.def("_binary_partition_tree_average_linkage",
               [](const hg::ugraph &graph, pyarray<T> &edge_weights, pyarray<T> &edge_weight_weights) {
-                  return binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weights);
+                  auto res = binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weights);
+                  return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
               },
               doc,
               py::arg("graph"),
@@ -63,7 +64,8 @@ struct def_binary_partition_tree_exponential_linkage {
     void def(pybind11::module &m, const char *doc) {
         m.def("_binary_partition_tree_exponential_linkage",
               [](const hg::ugraph &graph, pyarray<T> &edge_weights, T alpha, pyarray<T> &edge_weight_weights) {
-                  return binary_partition_tree_exponential_linkage(graph, edge_weights, alpha, edge_weight_weights);
+                  auto res = binary_partition_tree_exponential_linkage(graph, edge_weights, alpha, edge_weight_weights);
+                  return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
               },
               doc,
               py::arg("graph"),
@@ -78,17 +80,19 @@ struct def_binary_partition_tree_ward_linkage {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_binary_partition_tree_ward_linkage",
-              [](const hg::ugraph &graph, 
-                      const pyarray<T> &vertex_centroids, 
-                      const pyarray<T> &vertex_sizes,
-                      const std::string & altitude_correction) {
-                  return binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes, altitude_correction);
+              [](const hg::ugraph &graph,
+                 const pyarray<T> &vertex_centroids,
+                 const pyarray<T> &vertex_sizes,
+                 const std::string &altitude_correction) {
+                  auto res = binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes,
+                                                                altitude_correction);
+                  return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
               },
               doc,
               py::arg("graph"),
               py::arg("vertex_centroids"),
               py::arg("vertex_sizes"),
-              py::arg("altitude_correction")=std::string("max"));
+              py::arg("altitude_correction") = std::string("max"));
     }
 };
 
@@ -111,9 +115,10 @@ struct def_binary_partition_tree_custom_linkage {
                       weighting_function(g, fusion_edge_index, new_region, merged_region1, merged_region2,
                                          pybind11::make_iterator(new_neighbours.begin(), new_neighbours.end()));
                   };
-                  return hg::binary_partition_tree(graph,
-                                                   edge_weights,
-                                                   weighter);
+                  auto res = hg::binary_partition_tree(graph,
+                                                       edge_weights,
+                                                       weighter);
+                  return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
               },
               doc,
               py::arg("graph"),
@@ -128,7 +133,8 @@ struct def_binary_partition_tree_complete_linkage {
     void def(pybind11::module &m, const char *doc) {
         m.def("_binary_partition_tree_complete_linkage",
               [](const hg::ugraph &graph, pyarray<T> &edge_weights) {
-                  return hg::binary_partition_tree_complete_linkage(graph, edge_weights);
+                  auto res = hg::binary_partition_tree_complete_linkage(graph, edge_weights);
+                  return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
               },
               doc,
               py::arg("graph"),

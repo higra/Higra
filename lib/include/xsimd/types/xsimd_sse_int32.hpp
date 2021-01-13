@@ -243,6 +243,7 @@ namespace xsimd
         store_aligned(dst);                                                    \
     }
 
+    XSIMD_DEFINE_LOAD_STORE(int32_t, 4, bool, 16)
     SSE_DEFINE_LOAD_STORE_INT32(int32_t, int8_t)
     SSE_DEFINE_LOAD_STORE_INT32(int32_t, uint8_t)
     SSE_DEFINE_LOAD_STORE_INT32(int32_t, int16_t)
@@ -305,6 +306,7 @@ namespace xsimd
         _mm_storeu_pd(dst + 2, tmp2);
     }
 
+    XSIMD_DEFINE_LOAD_STORE(uint32_t, 4, bool, 16)
     SSE_DEFINE_LOAD_STORE_INT32(uint32_t, int8_t)
     SSE_DEFINE_LOAD_STORE_INT32(uint32_t, uint8_t)
     SSE_DEFINE_LOAD_STORE_INT32(uint32_t, int16_t)
@@ -314,7 +316,7 @@ namespace xsimd
     XSIMD_DEFINE_LOAD_STORE(uint32_t, 4, uint64_t, 16)
     XSIMD_DEFINE_LOAD_STORE(uint32_t, 4, float, 16)
     XSIMD_DEFINE_LOAD_STORE(uint32_t, 4, double, 16)
-    
+
 #undef SSE_DEFINE_LOAD_STORE_INT32
 
     namespace detail
@@ -490,7 +492,7 @@ namespace xsimd
 #if XSIMD_X86_INSTR_SET >= XSIMD_X86_AVX2_VERSION
         return _mm_sllv_epi32(lhs, rhs);
 #else
-        return sse_detail::shift_impl([](int32_t lhs, int32_t s) { return lhs << s; }, lhs, rhs);
+        return sse_detail::shift_impl([](int32_t alhs, int32_t s) { return alhs << s; }, lhs, rhs);
 #endif
     }
 
@@ -499,7 +501,7 @@ namespace xsimd
 #if XSIMD_X86_INSTR_SET >= XSIMD_X86_AVX2_VERSION
         return _mm_srav_epi32(lhs, rhs);
 #else
-        return sse_detail::shift_impl([](int32_t lhs, int32_t s) { return lhs >> s; }, lhs, rhs);
+        return sse_detail::shift_impl([](int32_t alhs, int32_t s) { return alhs >> s; }, lhs, rhs);
 #endif
     }
 
@@ -518,7 +520,7 @@ namespace xsimd
 #if XSIMD_X86_INSTR_SET >= XSIMD_X86_AVX2_VERSION
         return _mm_sllv_epi32(lhs, rhs);
 #else
-        return sse_detail::shift_impl([](uint32_t lhs, int32_t s) { return lhs << s; }, lhs, rhs);
+        return sse_detail::shift_impl([](uint32_t alhs, int32_t s) { return alhs << s; }, lhs, rhs);
 #endif
     }
 
@@ -527,7 +529,7 @@ namespace xsimd
 #if XSIMD_X86_INSTR_SET >= XSIMD_X86_AVX2_VERSION
         return _mm_srlv_epi32(lhs, rhs);
 #else
-        return sse_detail::shift_impl([](uint32_t lhs, int32_t s) { return lhs >> s; }, lhs, rhs);
+        return sse_detail::shift_impl([](uint32_t alhs, int32_t s) { return alhs >> s; }, lhs, rhs);
 #endif
     }
 }

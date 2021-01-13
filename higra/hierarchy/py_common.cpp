@@ -23,23 +23,6 @@ using pyarray = xt::pyarray<T>;
 using namespace hg;
 namespace py = pybind11;
 
-template<typename tree_t>
-struct def_node_weighted_tree {
-    template<typename value_t, typename M>
-    static
-    void def(M &m, const char *doc) {
-        using class_t = node_weighted_tree<tree_t, array_1d < value_t> >;
-        auto c = py::class_<class_t>(m,
-                                     (std::string("NodeWeightedTree_") + typeid(class_t).name()).c_str(),
-                                     "A simple structure to hold the result of hierarchy construction algorithms, "
-                                     "namely a tree and its associated node altitude array.");
-        c.def("tree", [](class_t &self) -> tree_t& {return self.tree;}, "The tree!", py::return_value_policy::reference_internal);
-        c.def("altitudes", [](class_t &self) -> array_1d<value_t>& {return self.altitudes;}, "An array of tree node altitude.", py::return_value_policy::reference_internal);
-    }
-};
-
-
 void py_init_common_hierarchy(pybind11::module &m) {
     xt::import_numpy();
-    add_type_overloads<def_node_weighted_tree<tree>, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
 }

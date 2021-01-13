@@ -41,7 +41,7 @@ endmacro()
 ####################################################################################
 
 include(CMakeFindDependencyMacro)
-find_dependency(xtl 0.6.9)
+find_dependency(xtl 0.6.16)
 
 if(NOT TARGET xtensor)
     include("${CMAKE_CURRENT_LIST_DIR}/xtensorTargets.cmake")
@@ -67,7 +67,11 @@ if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_GREATER_EQUAL 3.11)
             target_compile_options(xtensor::optimize INTERFACE /EHsc /MP /bigobj)
         # gcc, clang, ...
         else()
-            target_compile_options(xtensor::optimize INTERFACE -march=native)
+            include(CheckCXXCompilerFlag)
+            CHECK_CXX_COMPILER_FLAG(-march=native arch_native_supported)
+            if(arch_native_supported)
+              target_compile_options(xtensor::optimize INTERFACE -march=native)
+          endif()
         endif()
     endif()
 

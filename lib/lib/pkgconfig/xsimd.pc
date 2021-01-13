@@ -4,5 +4,5 @@ includedir=${prefix}/include
 
 Name: xsimd
 Description: xsimd provides a unified means for using SIMD features for library authors..
-Version: 7.4.7
+Version: 7.4.9
 Cflags: -I${includedir}

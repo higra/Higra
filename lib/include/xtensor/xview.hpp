@@ -178,7 +178,7 @@ namespace xt
         {
             using slice = xtl::mpl::front_t<V>;
             static constexpr bool is_range_slice = is_xrange<slice>::value;
-            static constexpr bool is_int_slice = std::is_integral<slice>::value;
+            static constexpr bool is_int_slice = xtl::is_integral<slice>::value;
             static constexpr bool is_all_slice = is_xall_slice<slice>::value;
             static constexpr bool have_all_seen = all_seen || is_all_slice;
             static constexpr bool have_range_seen = is_range_slice;
@@ -206,7 +206,7 @@ namespace xt
         {
             using slice = xtl::mpl::front_t<V>;
             static constexpr bool is_range_slice = is_xrange<slice>::value;
-            static constexpr bool is_int_slice = std::is_integral<slice>::value;
+            static constexpr bool is_int_slice = xtl::is_integral<slice>::value;
             static constexpr bool is_all_slice = is_xall_slice<slice>::value;
 
             static constexpr bool have_int_seen = int_seen || is_int_slice;
@@ -230,7 +230,7 @@ namespace xt
         struct is_contiguous_view
             : std::integral_constant<bool,
                 has_data_interface<E>::value &&
-                !(E::static_layout == layout_type::column_major && static_dimension<typename E::shape_type>::value != sizeof...(S)) &&
+                !(E::static_layout == layout_type::column_major && static_cast<std::size_t>(static_dimension<typename E::shape_type>::value) != sizeof...(S)) &&
                 is_contiguous_view_impl<E::static_layout, true, false, false, xtl::mpl::vector<S...>>::value
               >
         {
@@ -432,6 +432,7 @@ namespace xt
 
         using container_iterator = pointer;
         using const_container_iterator = const_pointer;
+        constexpr static std::size_t rank = SIZE_MAX;
 
         // The FSL argument prevents the compiler from calling this constructor
         // instead of the copy constructor when sizeof...(SL) == 0.

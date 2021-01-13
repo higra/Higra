@@ -16,7 +16,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_targetsDefined)
 set(_targetsNotDefined)
 set(_expectedTargets)
-foreach(_expectedTarget pybind11::pybind11 pybind11::module pybind11::embed)
+foreach(_expectedTarget pybind11::pybind11_headers)
   list(APPEND _expectedTargets ${_expectedTarget})
   if(NOT TARGET ${_expectedTarget})
     list(APPEND _targetsNotDefined ${_expectedTarget})
@@ -50,26 +50,12 @@ if(_IMPORT_PREFIX STREQUAL "/")
   set(_IMPORT_PREFIX "")
 endif()
 
-# Create imported target pybind11::pybind11
-add_library(pybind11::pybind11 INTERFACE IMPORTED)
+# Create imported target pybind11::pybind11_headers
+add_library(pybind11::pybind11_headers INTERFACE IMPORTED)
 
-set_target_properties(pybind11::pybind11 PROPERTIES
+set_target_properties(pybind11::pybind11_headers PROPERTIES
+  INTERFACE_COMPILE_FEATURES "cxx_inheriting_constructors;cxx_user_literals;cxx_right_angle_brackets"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-)
-
-# Create imported target pybind11::module
-add_library(pybind11::module INTERFACE IMPORTED)
-
-set_target_properties(pybind11::module PROPERTIES
-  INTERFACE_COMPILE_OPTIONS "-fvisibility=hidden"
-  INTERFACE_LINK_LIBRARIES "pybind11::pybind11"
-)
-
-# Create imported target pybind11::embed
-add_library(pybind11::embed INTERFACE IMPORTED)
-
-set_target_properties(pybind11::embed PROPERTIES
-  INTERFACE_LINK_LIBRARIES "pybind11::pybind11"
 )
 
 if(CMAKE_VERSION VERSION_LESS 3.0.0)

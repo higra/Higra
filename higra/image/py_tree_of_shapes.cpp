@@ -41,8 +41,9 @@ struct def_tree_of_shapes {
                       throw std::runtime_error("tree_of_shapes_image2d: Unknown padding option.");
                   }
 
-                  return hg::component_tree_tree_of_shapes_image2d(image, tpadding, original_size, immersion,
+                  auto res = hg::component_tree_tree_of_shapes_image2d(image, tpadding, original_size, immersion,
                                                                    exterior_vertex);
+                  return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
               },
               doc,
               py::arg("image"),
