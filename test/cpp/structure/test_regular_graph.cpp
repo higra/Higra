@@ -154,4 +154,50 @@ namespace regular_graph {
             REQUIRE(vectorEqual(adjListsRef[v], adjListsTest[v]));
         }
     }
+
+    TEST_CASE("regular graph to ugraph", "[regular_graph]") {
+        hg::embedding_grid_1d embedding1{2};
+        std::vector<point_1d_i> neighbours1{{-1},
+                                            {1}};
+        hg::regular_grid_graph_1d g1(embedding1, neighbours1);
+        auto ug1 = copy_graph(g1);
+        REQUIRE(num_vertices(ug1) == 2);
+        REQUIRE(num_edges(ug1) == 1);
+
+        hg::embedding_grid_2d embedding2{2, 2};
+        std::vector<point_2d_i> neighbours2{{0,  -1},
+                                            {0,  1},
+                                            {-1, 0},
+                                            {1,  0}};
+        hg::regular_grid_graph_2d g2(embedding2, neighbours2);
+        auto ug2 = copy_graph(g2);
+        REQUIRE(num_vertices(ug2) == 4);
+        REQUIRE(num_edges(ug2) == 4);
+
+        hg::embedding_grid_3d embedding3{2, 2, 2};
+        std::vector<point_3d_i> neighbours3{{0,  -1, 0},
+                                            {0,  1,  0},
+                                            {-1, 0,  0},
+                                            {1,  0,  0},
+                                            {0,  0,  -1},
+                                            {0,  0,  1}};
+        hg::regular_grid_graph_3d g3(embedding3, neighbours3);
+        auto ug3 = copy_graph(g3);
+        REQUIRE(num_vertices(ug3) == 8);
+        REQUIRE(num_edges(ug3) == 12);
+
+        hg::embedding_grid_4d embedding4{2, 2, 2, 2};
+        std::vector<point_4d_i> neighbours4{{0,  -1, 0,  0},
+                                            {0,  1,  0,  0},
+                                            {-1, 0,  0,  0},
+                                            {1,  0,  0,  0},
+                                            {0,  0,  -1, 0},
+                                            {0,  0,  1,  0},
+                                            {0,  0,  0,  -1},
+                                            {0,  0,  0,  1}};
+        hg::regular_grid_graph_4d g4(embedding4, neighbours4);
+        auto ug4 = copy_graph(g4);
+        REQUIRE(num_vertices(ug4) == 16);
+        REQUIRE(num_edges(ug4) == 32);
+    }
 }

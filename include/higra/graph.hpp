@@ -37,7 +37,7 @@ namespace hg {
      * @return 1d expression with num_edges(t) element
      */
     template<typename graph_t>
-    auto sources(const graph_t & t) {
+    auto sources(const graph_t &t) {
         return t.sources();
     }
 
@@ -62,7 +62,7 @@ namespace hg {
      * @return 1d expression with num_edges(t) element
      */
     template<typename graph_t>
-    auto targets(const graph_t & t) {
+    auto targets(const graph_t &t) {
         return t.targets();
     }
 
@@ -271,8 +271,70 @@ namespace hg {
         hg_assert_integral_value_type(sources);
         hg_assert_same_shape(sources, targets);
 
-        for (index_t i = 0; i < (index_t)sources.size(); i++)
+        for (index_t i = 0; i < (index_t) sources.size(); i++)
             g.add_edge(sources(i), targets(i));
+    }
+
+    namespace graph_internal {
+        /**
+         * SFINAE type to provides size estimates of graph for preallocations
+         * @tparam T
+         */
+        template<typename T>
+        struct graph_size_estimator {
+
+            size_t estimate_edge_number(const T &) { return 0; }
+
+            size_t estimate_number_of_edge_per_vertex(const T &) { return 0; }
+        };
+
+        template<>
+        struct graph_size_estimator<ugraph> {
+
+            size_t estimate_edge_number(const ugraph &g) { return num_edges(g); }
+
+            size_t estimate_number_of_edge_per_vertex(const ugraph &) { return 0; }
+        };
+
+        template<>
+        struct graph_size_estimator<regular_grid_graph_1d> {
+
+            size_t estimate_edge_number(const regular_grid_graph_1d &) { return 0; }
+
+            size_t estimate_number_of_edge_per_vertex(const regular_grid_graph_1d &g) { return g.neighbours().size(); }
+        };
+
+        template<>
+        struct graph_size_estimator<regular_grid_graph_2d> {
+
+            size_t estimate_edge_number(const regular_grid_graph_2d &) { return 0; }
+
+            size_t estimate_number_of_edge_per_vertex(const regular_grid_graph_2d &g) { return g.neighbours().size(); }
+        };
+
+        template<>
+        struct graph_size_estimator<regular_grid_graph_3d> {
+
+            size_t estimate_edge_number(const regular_grid_graph_3d &) { return 0; }
+
+            size_t estimate_number_of_edge_per_vertex(const regular_grid_graph_3d &g) { return g.neighbours().size(); }
+        };
+
+        template<>
+        struct graph_size_estimator<regular_grid_graph_4d> {
+
+            size_t estimate_edge_number(const regular_grid_graph_4d &) { return 0; }
+
+            size_t estimate_number_of_edge_per_vertex(const regular_grid_graph_4d &g) { return g.neighbours().size(); }
+        };
+
+        template<>
+        struct graph_size_estimator<tree> {
+
+            size_t estimate_edge_number(const tree &t) { return num_edges(t); }
+
+            size_t estimate_number_of_edge_per_vertex(const tree &) { return 1; }
+        };
     }
 
     /**
@@ -293,7 +355,8 @@ namespace hg {
                 std::is_base_of<graph::vertex_list_graph_tag, typename graph::graph_traits<T>::traversal_category>::value,
                 "Graph must implement vertex list graph concept.");
 
-        output_graph_type g(num_vertices(graph));
+        graph_internal::graph_size_estimator<T> gse;
+        output_graph_type g(num_vertices(graph), gse.estimate_edge_number(graph), gse.estimate_number_of_edge_per_vertex(graph));
         auto vertex_it = vertices(graph);
         for (auto vb = vertex_it.first, ve = vertex_it.second; vb != ve; vb++) {
             auto adj_vertex_it = adjacent_vertices(*vb, graph);
@@ -305,23 +368,25 @@ namespace hg {
         return g;
     };
 
-    /**
-     * Create a new graph as a copy of the given graph
-     * @tparam output_graph_type return type
-     * @param graph
-     * @return
-     */
-    template<typename output_graph_type = ugraph>
-    inline
+
+    template<typename output_graph_type>
     output_graph_type
     copy_graph(const ugraph &graph) {
         HG_TRACE();
-        output_graph_type g(num_vertices(graph));
+        graph_internal::graph_size_estimator<ugraph> gse;
+        output_graph_type g(num_vertices(graph), gse.estimate_edge_number(graph), gse.estimate_number_of_edge_per_vertex(graph));
         auto edge_it = edges(graph);
         for (auto eb = edge_it.first; eb != edge_it.second; eb++) {
             g.add_edge(source(*eb, graph), target(*eb, graph));
         }
         return g;
+    };
+
+    template<>
+    inline
+    ugraph copy_graph(const ugraph &graph) {
+        HG_TRACE();
+        return ugraph(graph);
     };
 
     /**

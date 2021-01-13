@@ -26,6 +26,11 @@ def ____reduce__(self):
 @hg.extend_class(hg.RegularGraph4d, method_name="as_explicit_graph")
 @hg.extend_class(hg.RegularGraph5d, method_name="as_explicit_graph")
 def __as_explicit_graph(self):
+    """
+    Converts the current regular graph instance to an equivalent explicit undirected graph.
+
+    :return: An :class:`~higra.UndirectedGraph` equivalent to the current graph
+    """
     g = self._as_explicit_graph()
     if hg.CptGridGraph.validate(self):
         hg.CptGridGraph.link(g, hg.CptGridGraph.get_shape(self))

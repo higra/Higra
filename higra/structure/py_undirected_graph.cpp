@@ -40,8 +40,16 @@ void init_graph(class_t &c) {
     using vertex_t = typename hg::graph_traits<graph_t>::vertex_descriptor;
     using edge_index_t = typename hg::graph_traits<graph_t>::edge_index;
 
-    c.def(py::init<const hg::size_t>(), "Create a new graph with no edge.",
-          py::arg("number_of_vertices") = 0);
+    c.def(py::init<const hg::size_t, const hg::size_t, const hg::size_t>(), R"doc(
+    Create a new graph with no edge.
+
+    :param number_of_vertices: initial number of vertices in the graph
+    :param reserved_edges: pre-allocate space for the given number of edges
+    :param reserved_edge_per_vertex: pre-allocate space for the given number of edge per vertex
+    )doc",
+          py::arg("number_of_vertices") = 0,
+          py::arg("reserved_edges") = 0,
+          py::arg("reserved_edge_per_vertex") = 0);
 
     add_edge_accessor_graph_concept<graph_t, decltype(c)>(c);
     add_incidence_graph_concept<graph_t, decltype(c)>(c);
