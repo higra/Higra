@@ -9,6 +9,7 @@ Utility functions
 
     arg_sort
     sort
+    set_num_threads
     is_iterable
     extend_class
     normalize_shape
@@ -28,6 +29,8 @@ Utility functions
 .. autofunction:: higra.arg_sort
 
 .. autofunction:: higra.sort
+
+.. autofunction:: set_num_threads
 
 .. autofunction:: higra.is_iterable
 
