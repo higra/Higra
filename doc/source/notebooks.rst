@@ -17,6 +17,7 @@ Illustrations of Pattern Recognition Letters 2019 article             |v11|_    
 Multiscale Hierarchy Alignment and Combination                        |v4|_        |dl4|_        |co4|_
 Region Adjacency Graph                                                |v5|_        |dl5|_        |co5|_
 Interactive object segmentation                                       |v6|_        |dl6|_        |co6|_
+Fuzzy-marker-based interactive object segmentation - DGMM 2021        |v14|_       |dl14|_       |co14|_
 Astronomical object detection with the Max-Tree                       |v12|_       |dl12|_       |co12|_
 Contour Simplification                                                |v7|_        |dl7|_        |co7|_
 ================================================================= ============= ============= ============
@@ -142,7 +143,6 @@ Contour Simplification                                                |v7|_     
 .. _co12: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Astronomical%20object%20detection%20with%20the%20Max-Tree.ipynb
 
 
-
 .. |v13| unicode:: &#x1f441; .. view
 .. _v13: https://github.com/higra/Higra-Notebooks/blob/master/Visualizing%20hierarchical%20image%20segmentations.ipynb
 
@@ -151,3 +151,13 @@ Contour Simplification                                                |v7|_     
 
 .. |co13| image:: /images/colab.png
 .. _co13: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Visualizing%20hierarchical%20image%20segmentations.ipynb
+
+
+.. |v14| unicode:: &#x1f441; .. view
+.. _v14: https://github.com/higra/Higra-Notebooks/blob/master/Fuzzy-marker-based%20segmentation%20using%20%20hierarchies.ipynb
+
+.. |dl14| unicode:: &#x1f4be; .. download
+.. _dl14: https://cdn.jsdelivr.net/gh/higra/Higra-Notebooks/Fuzzy-marker-based%20segmentation%20using%20%20hierarchies.ipynb
+
+.. |co14| image:: /images/colab.png
+.. _co14: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Fuzzy-marker-based%20segmentation%20using%20%20hierarchies.ipynb
