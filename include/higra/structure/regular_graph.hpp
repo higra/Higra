@@ -88,7 +88,7 @@ namespace hg {
 
             regular_graph(embedding_t _embedding = {}, point_list_t<index_t, embedding_t::_dim> _neighbours = {})
                     : m_embedding(_embedding), m_neighbours(_neighbours) {
-                init_safe_are();
+                init_safe_area();
             }
 
             ~regular_graph() = default;
@@ -105,11 +105,19 @@ namespace hg {
 
         private:
 
-            void init_safe_are() {
+            void init_safe_area() {
                 // determine the largest sub domain such that every neighbours of a vertex is present in the graph domain
                 // for a vertex in this domain, we can just use the relative linear index to find its neighbours
+                if (m_neighbours.size() == 0){
+                    m_safe_lower_bound.fill(std::numeric_limits<index_t>::lowest());
+                    m_safe_upper_bound.fill(std::numeric_limits<index_t>::max());
+                    return;
+                }
+
                 m_safe_lower_bound.fill(std::numeric_limits<index_t>::max());
                 m_safe_upper_bound.fill(std::numeric_limits<index_t>::lowest());
+
+
                 for (const auto &n: m_neighbours) {
                     m_safe_lower_bound = xt::minimum(m_safe_lower_bound, n);
                     m_safe_upper_bound = xt::maximum(m_safe_upper_bound, n);
@@ -198,7 +206,9 @@ namespace hg {
             void increment() {
                 if (safe_area) {
                     ++current_element;
-                    neighbour = source + graph.m_relative_neighbours[current_element];
+                    if (current_element != num_elem) {
+                        neighbour = source + graph.m_relative_neighbours[current_element];
+                    }
                 } else {
                     bool flag;
                     point_type neighbourc;
@@ -342,9 +352,9 @@ namespace hg {
         } else {
             degree_size_type count = 0;
             auto its = adjacent_vertices(v, *this);
-            auto & it1 = its.first;
-            auto & it2 = its.second;
-            for (;it1 != it2; ++it1) {
+            auto &it1 = its.first;
+            auto &it2 = its.second;
+            for (; it1 != it2; ++it1) {
                 count++;
             }
             return count;

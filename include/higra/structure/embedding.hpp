@@ -81,11 +81,12 @@ namespace hg {
              * @param shape list of dim positive integers
              */
             embedding_grid(const std::initializer_list<index_t> &shape) {
-                hg_assert(dim == _shape.size(), "Shape dimension does not match embedding dimension !");
+                hg_assert(dim == shape.size(), "Shape dimension does not match embedding dimension !");
                 _shape = xt::zeros<index_t>({shape.size()});
                 index_t i = 0;
-                for (const auto c:shape)
+                for (const auto c:shape){
                     _shape(i++) = c;
+                }
                 assert_positive_shape();
                 computeSumProd();
                 computeSize();
