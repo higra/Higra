@@ -25,9 +25,17 @@ namespace hg {
         template<typename tree_t, typename rmq_t>
         struct lca_rmq {
 
+            using rmq_type = rmq_t;
+
         public:
             using self_type = lca_rmq<tree_t, rmq_t>;
 
+            /**
+             * Extra arguments are forwarded to the range minimum query solver constructor
+             * @tparam Args
+             * @param tree
+             * @param args
+             */
             template<typename ...Args>
             lca_rmq(const tree_t &tree, Args &&... args) {
                 HG_TRACE();
@@ -194,10 +202,6 @@ namespace hg {
 
             // rmq solver
             rmq_t m_rmq_solver;
-
-            static inline index_t fast_log2(size_t length) {
-                return sizeof(size_t) * 8 - 1 - __builtin_clzll(length);
-            }
 
             void compute_Euler_tour(const tree_t &tree) {
                 tree.compute_children();

@@ -13,6 +13,10 @@
 #include "higra/structure/array.hpp"
 #include <vector>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#pragma intrinsic(_BitScanReverse64)
+#endif
 
 namespace hg {
 
@@ -132,19 +136,40 @@ namespace hg {
 
             template<template<typename> typename container_t, typename T>
             void set_state(internal_state<container_t> &&state, const T &data) {
-                m_sparse_table = std::move(state.sparse_table);
+                m_sparse_table.clear();
+                for(auto & e: state.sparse_table){
+                    m_sparse_table.push_back(std::move(e));
+                }
                 m_data = data.begin();
             }
 
             template<template<typename> typename container_t, typename T>
             void set_state(const internal_state<container_t> &state, const T &data) {
-                m_sparse_table = state.sparse_table;
+                m_sparse_table.clear();
+                for(auto & e: state.sparse_table){
+                    m_sparse_table.push_back(e);
+                }
                 m_data = data.begin();
             }
 
+
+
+            /**
+             * Precondition: length > 0
+             * @param length
+             * @return
+             */
             static inline size_t fast_log2(size_t length) {
+#ifdef _MSC_VER
+                unsigned long most_significant_bit_index = 0;
+                _BitScanReverse64(&most_significant_bit_index, length);
+                return most_significant_bit_index;
+#else
                 return sizeof(size_t) * 8 - 1 - __builtin_clzll(length);
+#endif
             }
+
+
 
             void reserve_sparse_table(size_t size) {
                 m_sparse_table.reserve((size_t) ceil(log((double) (size)) / log(2.0)));
@@ -184,8 +209,9 @@ namespace hg {
             }
 
             template<typename T>
-            rmq_sparse_table_block(const T &values, size_t block_size = 512) : m_data(values.data()),
+            rmq_sparse_table_block(const T &values, size_t block_size = 1024) : m_data(values.data()),
                                                                                m_block_size(block_size) {
+                hg_assert(block_size > 0, "Block size must be strictly positive");
                 m_data_size = values.size();
                 m_num_blocks = (m_data_size + m_block_size - 1) / m_block_size;
                 m_block_minimum_prefix.resize({(size_t) (m_num_blocks * m_block_size)});
