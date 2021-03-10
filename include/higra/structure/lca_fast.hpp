@@ -11,190 +11,35 @@
 #pragma once
 
 #include "../graph.hpp"
+#include "details/range_minimum_query.hpp"
 #include <stack>
 
 namespace hg {
     namespace lca_internal {
 
         /**
-         * n x log(n) pre-processing of a tree to obtain a constant query time for lowest common ancestors of two nodes
+         * Lowest common ancestor solver based on the range minimum query
          * @tparam tree_t
+         * @tparam rmq_t range minimum query solver type
          */
-        template<typename tree_t>
-        struct lca_fast {
-        public:
-            template<typename T1, typename T2>
-            struct internal_state {
-
-                size_t m_num_vertices;
-                T1 m_Euler;
-                T1 m_Depth;
-                T1 m_Represent;
-                T1 m_Number;
-                T2 m_Minim;
-                size_t m_rep;
-
-                internal_state(size_t num_vertices,
-                               const T1 &Euler,
-                               const T1 &Depth,
-                               const T1 &Represent,
-                               const T1 &Number,
-                               const T2 &Minim,
-                               size_t rep) :
-                        m_num_vertices(num_vertices),
-                        m_Euler(Euler),
-                        m_Depth(Depth),
-                        m_Represent(Represent),
-                        m_Number(Number),
-                        m_Minim(Minim),
-                        m_rep(rep) {}
-
-                internal_state(size_t num_vertices,
-                               T1 &&Euler,
-                               T1 &&Depth,
-                               T1 &&Represent,
-                               T1 &&Number,
-                               T2 &&Minim,
-                               size_t rep) :
-                        m_num_vertices(num_vertices),
-                        m_Euler(std::forward<T1>(Euler)),
-                        m_Depth(std::forward<T1>(Depth)),
-                        m_Represent(std::forward<T1>(Represent)),
-                        m_Number(std::forward<T1>(Number)),
-                        m_Minim(std::forward<T2>(Minim)),
-                        m_rep(rep) {}
-            };
-
-        private:
-
-            using array = xt::xtensor<std::size_t, 1>;
-            using array2d = xt::xtensor<std::size_t, 2>;
-            using vertex_t = typename tree_t::vertex_descriptor;
-
-            size_t m_num_vertices;
-
-            array Euler;
-            array Depth;
-            array Represent;
-            array Number;
-            array2d Minim;
-
-            size_t rep = 0;
-
-            void computeDepth(const tree_t &tree) {
-                Depth[root(tree)] = 0;
-                for (auto i: root_to_leaves_iterator(tree, leaves_it::include, root_it::exclude)) {
-                    Depth[i] = Depth[parent(i, tree)] + 1;
-                }
-            }
-
-            void LCApreprocessEuler(const tree_t &tree) {
-                tree.compute_children();
-                struct se {
-                    index_t node;
-                    bool first_visit;
-                };
-
-                index_t nbr = -1;
-
-                std::stack<se> stack;
-                stack.push({tree.root(), true});
-                while (!stack.empty()) {
-                    auto e = stack.top();
-                    stack.pop();
-                    nbr++;
-                    Euler[nbr] = e.node;
-                    if (e.first_visit) {
-                        Number[e.node] = nbr;
-                        Represent[nbr] = e.node;
-                        for (auto son: children_iterator(e.node, tree)) {
-                            stack.push({e.node, false});
-                            stack.push({son, true});
-                        }
-                    }
-                }
-            }
-
-
-            void LCApreprocess(const tree_t &tree) {
-                //O(n.log(n)) preprocessing
-
-                computeDepth(tree);
-                LCApreprocessEuler(tree);
-                index_t nbNodes = m_num_vertices;
-                index_t nbRepresent = 2 * nbNodes - 1;
-
-                int logn = (int) (ceil(log((double) (nbRepresent)) / log(2.0)));
-
-                Minim.resize({(size_t) logn, (size_t) nbRepresent});
-
-                parfor(0, nbRepresent - 1, [this](index_t i) {
-                    if (this->Depth[this->Euler[i]] < this->Depth[this->Euler[i + 1]]) {
-                        this->Minim(0, i) = i;
-                    } else {
-                        this->Minim(0, i) = i + 1;
-                    }
-                });
-                Minim(0, nbRepresent - 1) = nbRepresent - 1;
-
-                for (int j = 1; j < logn; j++) {
-                    index_t k1 = (index_t) (1 << (j - 1));
-                    index_t k2 = k1 << 1;
-                    parfor(0, nbRepresent, [this, k1, k2, j, nbRepresent](index_t i) {
-                        if ((i + k2) >= nbRepresent) {
-                            Minim(j, i) = nbRepresent - 1;
-                        } else {
-                            if (this->Depth[this->Euler[this->Minim(j - 1, i)]] <=
-                                this->Depth[this->Euler[this->Minim(j - 1, i + k1)]]) {
-                                this->Minim(j, i) = this->Minim(j - 1, i);
-                            } else {
-                                this->Minim(j, i) = this->Minim(j - 1, i + k1);
-                            }
-                        }
-                    });
-                }
-            }
-
-            lca_fast() {
-                HG_TRACE();
-                m_num_vertices = 0;
-            }
-
-            template<typename T1, typename T2>
-            void set_state(const internal_state<T1, T2> &state) {
-                m_num_vertices = state.m_num_vertices;
-                Euler = state.m_Euler;
-                Depth = state.m_Depth;
-                Represent = state.m_Represent;
-                Number = state.m_Number;
-                Minim = state.m_Minim;
-                rep = state.m_rep;
-            }
-
-            template<typename T1, typename T2>
-            void set_state(internal_state<T1, T2> &&state) {
-                m_num_vertices = state.m_num_vertices;
-                Euler = std::move(state.m_Euler);
-                Depth = std::move(state.m_Depth);
-                Represent = std::move(state.m_Represent);
-                Number = std::move(state.m_Number);
-                Minim = std::move(state.m_Minim);
-                rep = state.m_rep;
-            }
+        template<typename tree_t, typename rmq_t>
+        struct lca_rmq {
 
         public:
+            using self_type = lca_rmq<tree_t, rmq_t>;
 
-            lca_fast(const tree_t &tree) {
+            template<typename ...Args>
+            lca_rmq(const tree_t &tree, Args &&... args) {
                 HG_TRACE();
-                auto nbNodes = hg::num_vertices(tree);
-                m_num_vertices = nbNodes;
-                Depth.resize({nbNodes});
-                Number.resize({nbNodes});
+                auto num_nodes = hg::num_vertices(tree);
+                auto num_elements_Euler_tour = 2 * num_nodes - 1;
 
-                Euler.resize({2 * nbNodes - 1});
-                Represent.resize({2 * nbNodes - 1});
+                m_first_visit_in_Euler_tour.resize({num_nodes});
+                m_tree_Euler_tour_map.resize({num_elements_Euler_tour});
+                m_tree_Euler_tour_depth.resize({num_elements_Euler_tour});
 
-                LCApreprocess(tree);
+                compute_Euler_tour(tree);
+                m_rmq_solver = rmq_t(m_tree_Euler_tour_depth, std::forward<Args>(args)...);
             }
 
             /**
@@ -203,27 +48,18 @@ namespace hg {
              * @param n2
              * @return
              */
-            vertex_t lca(vertex_t n1, vertex_t n2) const {
-                index_t ii, jj, kk;
-                int k;
-                ii = Number[n1];
-                jj = Number[n2];
-                if (ii == jj)
-                    return Represent[ii];
+            index_t lca(index_t n1, index_t n2) const {
+                if (n1 == n2)
+                    return n1;
+
+                index_t ii = m_first_visit_in_Euler_tour(n1);
+                index_t jj = m_first_visit_in_Euler_tour(n2);
 
                 if (ii > jj) {
-                    kk = jj;
-                    jj = ii;
-                    ii = kk;
+                    std::swap(ii, jj);
                 }
 
-                k = (int) (log((double) (jj - ii)) / log(2.));
-
-                if (Depth[Euler[Minim(k, ii)]] < Depth[Euler[Minim(k, jj - (index_t) (1 << (k)))]]) {
-                    return Represent[Number[Euler[Minim(k, ii)]]];
-                } else {
-                    return Represent[Number[Euler[Minim(k, jj - (index_t) (1 << k))]]];
-                }
+                return m_tree_Euler_tour_map(m_rmq_solver.query(ii, jj));
             }
 
             /**
@@ -236,7 +72,7 @@ namespace hg {
             auto lca(const T &range) const {
                 HG_TRACE();
                 size_t size = range.end() - range.begin();
-                auto result = array_1d<vertex_t>::from_shape({size});
+                auto result = array_1d<index_t>::from_shape({size});
 
                 auto it = range.begin();
                 parfor(0, size, [&result, &it, this](index_t i) {
@@ -266,7 +102,7 @@ namespace hg {
                 hg_assert_same_shape(vertices1, vertices2);
 
                 auto size = vertices1.size();
-                auto result = array_1d<vertex_t>::from_shape({size});
+                auto result = array_1d<index_t>::from_shape({size});
 
                 parfor(0, size, [&vertices1, &vertices2, &result, this](index_t i) {
                     result(i) = this->lca(vertices1(i), vertices2(i));
@@ -274,41 +110,135 @@ namespace hg {
                 return result;
             }
 
-            auto num_vertices() const {
-                return m_num_vertices;
-            }
+            template<template<typename> typename container_t>
+            struct internal_state {
+                using type = self_type;
+                using rmq_state_type = typename rmq_t::template internal_state<container_t>;
+                container_t<index_t> tree_Euler_tour_map;
+                container_t<index_t> tree_Euler_tour_depth;
+                container_t<index_t> first_visit_in_Euler_tour;
+                rmq_state_type rmq_state;
 
+                internal_state(const container_t<index_t> &_tree_Euler_tour_map,
+                               const container_t<index_t> &_tree_Euler_tour_depth,
+                               const container_t<index_t> &_first_visit_in_Euler_tour,
+                               const rmq_state_type &_rmq_state) :
+                        tree_Euler_tour_map(_tree_Euler_tour_map),
+                        tree_Euler_tour_depth(_tree_Euler_tour_depth),
+                        first_visit_in_Euler_tour(_first_visit_in_Euler_tour),
+                        rmq_state(_rmq_state) {}
 
-            /**
-             * Returns a copy of the internal state of the object (can be saved/loaded/transmitted...)
-             * @return
-             */
+                internal_state(container_t<index_t> &&_tree_Euler_tour_map,
+                               container_t<index_t> &&_tree_Euler_tour_depth,
+                               container_t<index_t> &&_first_visit_in_Euler_tour,
+                               rmq_state_type &&_rmq_state) :
+                        tree_Euler_tour_map(std::move(_tree_Euler_tour_map)),
+                        tree_Euler_tour_depth(std::move(_tree_Euler_tour_depth)),
+                        first_visit_in_Euler_tour(std::move(_first_visit_in_Euler_tour)),
+                        rmq_state(std::move(_rmq_state)) {}
+            };
+
             auto get_state() const {
-                return internal_state<array, array2d>(m_num_vertices,
-                                                      Euler,
-                                                      Depth,
-                                                      Represent,
-                                                      Number,
-                                                      Minim,
-                                                      rep);
+                return internal_state<array_1d>(m_tree_Euler_tour_map,
+                                                m_tree_Euler_tour_depth,
+                                                m_first_visit_in_Euler_tour,
+                                                m_rmq_solver.get_state());
             }
 
-            template<typename T1, typename T2>
-            static lca_fast make_lca_fast(const internal_state<T1, T2> &state) {
-                auto lcaf = lca_fast();
-                lcaf.set_state(state);
-                return lcaf;
+            template<template<typename> typename container_t>
+            static auto make_from_state(internal_state<container_t> &&state) {
+                using lca_t = typename internal_state<container_t>::type;
+                lca_t lca;
+                lca.template set_state(std::move(state));
+                return lca;
             }
 
-            template<typename T1, typename T2>
-            static lca_fast make_lca_fast(internal_state<T1, T2> &&state) {
-                auto lcaf = lca_fast();
-                lcaf.set_state(std::forward<internal_state<T1, T2>>(state));
-                return lcaf;
+            template<template<typename> typename container_t>
+            static auto make_from_state(const internal_state<container_t> &state) {
+                using lca_t = typename internal_state<container_t>::type;
+                lca_t lca;
+                lca.template set_state(state);
+                return lca;
+            }
+
+            index_t num_elements() const{
+                return m_first_visit_in_Euler_tour.size();
+            }
+
+        private:
+
+            lca_rmq(){};
+
+            template<template<typename> typename container_t>
+            void set_state(internal_state<container_t> &&state) {
+                m_tree_Euler_tour_map = std::move(state.tree_Euler_tour_map);
+                m_tree_Euler_tour_depth = std::move(state.tree_Euler_tour_depth);
+                m_first_visit_in_Euler_tour = std::move(state.first_visit_in_Euler_tour);
+                m_rmq_solver = rmq_t::make_from_state(std::move(state.rmq_state), m_tree_Euler_tour_depth);
+            }
+
+            template<template<typename> typename container_t>
+            void set_state(const internal_state<container_t> &state) {
+                m_tree_Euler_tour_map = state.tree_Euler_tour_map;
+                m_tree_Euler_tour_depth = state.tree_Euler_tour_depth;
+                m_first_visit_in_Euler_tour = state.first_visit_in_Euler_tour;
+                m_rmq_solver = rmq_t::make_from_state(state.rmq_state, m_tree_Euler_tour_depth);
+            }
+
+            // tree node index visited at each step of the Euler tour
+            array_1d<index_t> m_tree_Euler_tour_map;
+            // depth of the tree node visited at each step of the Euler tour
+            array_1d<index_t> m_tree_Euler_tour_depth;
+            // index of the first time a node of the tree is visited in the Euler tour
+            array_1d<index_t> m_first_visit_in_Euler_tour;
+
+            // rmq solver
+            rmq_t m_rmq_solver;
+
+            static inline index_t fast_log2(size_t length) {
+                return sizeof(size_t) * 8 - 1 - __builtin_clzll(length);
+            }
+
+            void compute_Euler_tour(const tree_t &tree) {
+                tree.compute_children();
+
+                struct se {
+                    index_t node;
+                    bool first_visit;
+                };
+
+                index_t nbr = -1;
+
+                std::stack<se> stack;
+                stack.push({tree.root(), true});
+
+                while (!stack.empty()) {
+                    auto e = stack.top();
+                    stack.pop();
+                    nbr++;
+                    m_tree_Euler_tour_map[nbr] = e.node;
+                    if (e.first_visit) {
+                        m_first_visit_in_Euler_tour[e.node] = nbr;
+                        for (auto son: children_iterator(e.node, tree)) {
+                            stack.push({e.node, false});
+                            stack.push({son, true});
+                        }
+                    }
+                    if (e.node == tree.root()) {
+                        m_tree_Euler_tour_depth[nbr] = 0;
+                    } else {
+                        m_tree_Euler_tour_depth[nbr] =
+                                m_tree_Euler_tour_depth[m_first_visit_in_Euler_tour[parent(e.node, tree)]] + 1;
+                    }
+                }
             }
 
         };
+
     }
 
-    using lca_fast = lca_internal::lca_fast<tree>;
+    using lca_sparse_table_block = lca_internal::lca_rmq<tree, range_minimum_query_internal::rmq_sparse_table_block<index_t>>;
+    using lca_sparse_table = lca_internal::lca_rmq<tree, range_minimum_query_internal::rmq_sparse_table<index_t>>;
+
+    using lca_fast = lca_sparse_table_block;
 }
