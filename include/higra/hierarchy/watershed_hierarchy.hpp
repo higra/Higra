@@ -158,7 +158,7 @@ namespace hg {
         return watershed_hierarchy_by_attribute(
                 graph,
                 edge_weights,
-                [&vertex_area](const tree &t, const auto &altitude) {
+                [&vertex_area](const tree &t, const auto &) {
                     return attribute_area(t, vertex_area);
                 });
     };

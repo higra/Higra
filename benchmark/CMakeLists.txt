@@ -70,7 +70,8 @@ include_directories(${GBENCHMARK_INCLUDE_DIRS})
 set(FILES_BENCHMARK
         main.cpp
         utils.cpp
-        benchmark_undirected_graph.cpp
+        benchmark_lca.cpp
+        #benchmark_undirected_graph.cpp
         #benchmark_regular_graph.cpp
         #benchmark_accumulator.cpp
         #benchmark_parallel_sort.cpp
@@ -88,5 +89,5 @@ target_link_libraries(${BENCHMARK_TARGET} benchmark -lpthread ${TBB_LIBRARIES})
 
 
 add_custom_target(benchmark_exe
-        COMMAND benchmarkx
+        COMMAND benchmark_higra
         DEPENDS ${BENCHMARK_TARGET})

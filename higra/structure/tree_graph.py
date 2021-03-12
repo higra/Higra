@@ -89,21 +89,40 @@ def ____reduce__(self):
 
 
 @hg.extend_class(hg.Tree, method_name="lowest_common_ancestor_preprocess")
-def __lowest_common_ancestor_preprocess(self):
+def __lowest_common_ancestor_preprocess(self, algorithm="sparse_table_block", block_size=1024, force_recompute=False):
     """
     Preprocess the tree to obtain a fast constant time :math:`\\mathcal{O}(1)` lowest common ancestor query.
     Once this function has been called on a given tree instance, every following calls to the function
-    :func:`~higra.Tree.lowest_common_ancestor` will use this preprocessing.
+    :func:`~higra.Tree.lowest_common_ancestor` will use this preprocessing. Calling twice this function does nothing
+    except if :attr:`force_recompute` is ``True``.
 
-    :Complexity:
+    Two algorithms are available:
 
-    The preprocessing runs in linearithmic time  :math:`\\mathcal{O}(n\log(n))` with :math:`n` the number of vertices in the tree.
+    - ``sparse_table`` has a preprocessing time and space complexity in :math:`\\mathcal{O}(n\log(n))` with :math:`n`
+      the number of vertices in the tree and performs every query in constant time :math:`\\mathcal{O}(1)`.
+    - ``sparse_table_block`` (default) has a linear preprocessing time and space complexity in :math:`\\mathcal{O}(n)`
+     and performs queries in average-case constant time :math:`\\mathcal{O}(1)`. With this algorithm the user can specify
+     the block size to be used, the general rule of thumb being that larger block size will decrease the pre-processing
+     time but increase the query time.
 
-    :return: An object of type :class:`~higra.LCAFast`
+    :param algorithm: specify the algorithm to be used, can be either ``sparse_table`` or ``sparse_table_block``.
+    :param block_size: if :attr:`algorithm` is ``sparse_table_block``, specify the block size to be used (default 1024)
+    :param force_recompute: if ``False`` (default) calling this function twice won't re-preprocess the tree, even if the
+           specified algorithm or algorithm parameter have changed.
+    :return: An object of type :class:`~higra.hg.LCA_rmq_sparse_table_block` or :class:`~higra.hg.LCA_rmq_sparse_table`
     """
     lca_fast = hg.get_attribute(self, "lca_fast")
-    if lca_fast is None:
-        lca_fast = hg.LCAFast(self)
+    if lca_fast is None or force_recompute:
+        if algorithm == "sparse_table":
+            lca_fast = hg.LCA_rmq_sparse_table(self)
+        elif algorithm == "sparse_table_block":
+            block_size = int(block_size)
+            if block_size <= 0:
+                raise ValueError("Invalid block size: " + str(block_size))
+
+            lca_fast = hg.LCA_rmq_sparse_table_block(self, block_size)
+        else:
+            raise ValueError("Unknown LCA algorithm: " + str(algorithm))
         hg.set_attribute(self, "lca_fast", lca_fast)
     return lca_fast
 

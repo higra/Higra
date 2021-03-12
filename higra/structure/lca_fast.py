@@ -15,18 +15,28 @@ def make_lca_fast(tree):
     """
     Deprecated: please use :func:`~higra.Tree.lowest_common_ancestor_preprocess`
 
-    Create an object of type :class:`~higra.LCAFast` for the given tree
-
     :param tree: input tree
-    :return: a LCAFast object
+    :return:
     """
     return tree.lowest_common_ancestor_preprocess()
 
 
-def __reduce_ctr(*args):
-    return hg.LCAFast._make_from_state(*args)
+def __reduce_ctr_lca_st(*args):
+    return hg.LCA_rmq_sparse_table._make_from_state(args)
 
 
-@hg.extend_class(hg.LCAFast, method_name="__reduce__")
+def __reduce_ctr_lca_stb(*args):
+    return hg.LCA_rmq_sparse_table_block._make_from_state(args)
+
+
+@hg.extend_class(hg.LCA_rmq_sparse_table, method_name="__reduce__")
 def ____reduce__(self):
-    return __reduce_ctr, self._get_state(), self.__dict__
+    return __reduce_ctr_lca_st, self._get_state(), self.__dict__
+
+
+@hg.extend_class(hg.LCA_rmq_sparse_table_block, method_name="__reduce__")
+def ____reduce__(self):
+    return __reduce_ctr_lca_stb, self._get_state(), self.__dict__
+
+
+#LCAFast = hg.LCA_rmq_sparse_table_block
