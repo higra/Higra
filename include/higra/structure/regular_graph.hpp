@@ -159,7 +159,7 @@ namespace hg {
             point<index_t, embedding_t::_dim> m_safe_upper_bound;
             std::vector<index_t> m_relative_neighbours;
 
-            friend class regular_graph_adjacent_vertex_iterator<embedding_t>;
+            friend struct regular_graph_adjacent_vertex_iterator<embedding_t>;
         };
 
         // Iterator

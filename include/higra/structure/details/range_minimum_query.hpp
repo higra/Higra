@@ -121,14 +121,14 @@ namespace hg {
             template<template<typename> typename container_t, typename T>
             static auto make_from_state(internal_state<container_t> &&state, const T &data) {
                 rmq_sparse_table<typename T::value_type> rmq;
-                rmq.template set_state(std::move(state), data);
+                rmq.set_state(std::move(state), data);
                 return rmq;
             }
 
             template<template<typename> typename container_t, typename T>
             static auto make_from_state(const internal_state<container_t> &state, const T &data) {
                 rmq_sparse_table<typename T::value_type> rmq;
-                rmq.template set_state(state, data);
+                rmq.set_state(state, data);
                 return rmq;
             }
 
@@ -232,7 +232,7 @@ namespace hg {
                 index_t rb = r / m_block_size;
                 if (lb != rb) { // speculative policy
                     index_t ret = m_sparse_table.query(lb, std::min(m_num_blocks, rb + 1));
-                    if (ret >= l and ret < r) return ret;
+                    if (ret >= l && ret < r) return ret;
                 } else {
                     if (m_block_minimum_prefix(r) >= l)
                         return m_block_minimum_prefix(r);
@@ -302,14 +302,14 @@ namespace hg {
             template<template<typename> typename container_t, typename T>
             static auto make_from_state(internal_state<container_t> &&state, const T &data) {
                 rmq_sparse_table_block<typename T::value_type> rmq;
-                rmq.template set_state(std::move(state), data);
+                rmq.set_state(std::move(state), data);
                 return rmq;
             }
 
             template<template<typename> typename container_t, typename T>
             static auto make_from_state(const internal_state<container_t> &state, const T &data) {
                 rmq_sparse_table_block<typename T::value_type> rmq;
-                rmq.template set_state(state, data);
+                rmq.set_state(state, data);
                 return rmq;
             }
 

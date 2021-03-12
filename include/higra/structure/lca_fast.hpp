@@ -157,7 +157,7 @@ namespace hg {
             static auto make_from_state(internal_state<container_t> &&state) {
                 using lca_t = typename internal_state<container_t>::type;
                 lca_t lca;
-                lca.template set_state(std::move(state));
+                lca.set_state(std::move(state));
                 return lca;
             }
 
@@ -165,7 +165,7 @@ namespace hg {
             static auto make_from_state(const internal_state<container_t> &state) {
                 using lca_t = typename internal_state<container_t>::type;
                 lca_t lca;
-                lca.template set_state(state);
+                lca.set_state(state);
                 return lca;
             }
 
