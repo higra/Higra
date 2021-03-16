@@ -232,7 +232,7 @@ namespace hg {
         auto supervertex_labels = xt::eval(xt::view(new_order, xt::range(0, num_leaves(tree))));
 
         return supervertex_hierarchy<array_1d<index_t>, hg::tree, array_1d<index_t>>{
-                std::move(supervertex_labels), hg::tree(parents, tree.category()), std::move(node_map)
+                std::move(supervertex_labels), hg::tree(std::move(parents), tree.category()), std::move(node_map)
         };
     };
 
@@ -384,8 +384,81 @@ namespace hg {
             new_par(i) = reverse_sorted(par(sorted(i)));
         }
 
-        return make_remapped_tree(hg::tree(new_par, tree.category()), std::move(sorted));
+        return make_remapped_tree(hg::tree(std::move(new_par), tree.category()), std::move(sorted));
     };
 
+    /**
+     * Extract the sub tree rooted in the given node from the given tree
+     *
+     * The result is a new tree :math:`st` and a node map :math:`nm` such that
+     *
+     * - the node map associates each node of the sub tree :math:`st` to its corresponding node in the original tree
+     * - the order of the nodes of the original tree is preserved in the sub tree:
+     *   for any vertices :math:`x` and :math:`y` of :math:`st` such that  :math:`x < y` then :math:`nm[x] < nm[y]`
+     *
+     * :Complexity:
+     *
+     * The tree is constructed in linearithmic time :math:`\mathcal{O}(n\log(n))` with :math:`n` the number of vertices
+     * in the sub tree.
+     *
+     * @tparam tree_t
+     * @param tree
+     * @param root
+     * @return
+     */
+    template<typename tree_t>
+    auto sub_tree(const tree_t &tree, index_t root) {
+        HG_TRACE();
+        hg_assert_vertex_index(tree, root);
+        tree.compute_children();
 
+        /*
+         * Count nodes in subtree
+         */
+        index_t num_nodes = 0;
+        std::stack<index_t> stack;
+        stack.push(root);
+        while (!stack.empty()) {
+            auto node = stack.top();
+            stack.pop();
+            num_nodes++;
+            for (auto &c: children_iterator(node, tree)) {
+                stack.push(c);
+            }
+        }
+
+        /*
+         * Construct sub_tree
+         */
+        array_1d<index_t> new_parents = array_1d<index_t>::from_shape({(size_t) num_nodes});
+        array_1d<index_t> node_map = array_1d<index_t>::from_shape({(size_t) num_nodes});
+
+        struct qe {
+            index_t node;
+            index_t parent_rank;
+
+            bool operator<(const qe &rhs) const {
+                return node < rhs.node;
+            }
+        };
+
+        index_t rank = num_nodes - 1;
+        std::priority_queue<qe> priority_queue;
+        priority_queue.push({root, rank});
+
+        while (!priority_queue.empty()) {
+            auto &cur_element = priority_queue.top();
+            auto node = cur_element.node;
+            new_parents(rank) = cur_element.parent_rank;
+            node_map(rank) = node;
+            priority_queue.pop();
+            for (auto &c: children_iterator(node, tree)) {
+                priority_queue.push({c, rank});
+            }
+            rank--;
+        }
+
+        return make_remapped_tree(hg::tree(std::move(new_parents), tree.category()), std::move(node_map));
+
+    }
 }

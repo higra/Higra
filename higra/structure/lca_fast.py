@@ -39,4 +39,4 @@ def ____reduce__(self):
     return __reduce_ctr_lca_stb, self._get_state(), self.__dict__
 
 
-#LCAFast = hg.LCA_rmq_sparse_table_block
+LCAFast = hg.LCA_rmq_sparse_table_block

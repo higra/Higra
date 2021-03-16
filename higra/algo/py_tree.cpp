@@ -25,8 +25,8 @@ struct labelisation_horizontal_cut {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_labelisation_horizontal_cut_from_threshold", [](const hg::tree &tree,
-                                                 double threshold,
-                                                 const pyarray<value_t> &altitudes) {
+                                                                double threshold,
+                                                                const pyarray<value_t> &altitudes) {
                   return hg::labelisation_horizontal_cut_from_threshold(tree, altitudes, threshold);
               },
               doc,
@@ -71,7 +71,7 @@ struct sort_hierarchy_with_altitudes {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_sort_hierarchy_with_altitudes", [](const hg::tree &tree,
-                                                      const pyarray<value_t> &altitudes) {
+                                                   const pyarray<value_t> &altitudes) {
                   auto res = hg::sort_hierarchy_with_altitudes(tree, altitudes);
                   return pybind11::make_tuple(std::move(res.tree), std::move(res.node_map));
               },
@@ -119,4 +119,9 @@ void py_init_algo_tree(pybind11::module &m) {
             );
 
     add_type_overloads<sort_hierarchy_with_altitudes, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
+
+    m.def("_sub_tree", [](const hg::tree &t, hg::index_t root) {
+        auto res = hg::sub_tree(t, root);
+        return pybind11::make_tuple(std::move(res.tree), std::move(res.node_map));
+    });
 }
