@@ -151,4 +151,27 @@ namespace test_tree_algorithm {
         REQUIRE((ref_altitudes == xt::index_view(altitudes, res.node_map)));
     }
 
+   TEST_CASE("sub tree", "[tree_sub_tree]") {
+        tree t(array_1d<index_t>{8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14});
+
+        // full tree
+        auto res1 = sub_tree(t, 14);
+        REQUIRE((t.parents() == res1.tree.parents()));
+        REQUIRE((xt::arange<index_t>(num_vertices(t)) == res1.node_map));
+
+        // normal
+        auto res2 = sub_tree(t, 13);
+        array_1d<index_t> ref2_par{4, 4, 5, 6, 5, 6, 6};
+        array_1d<index_t> ref2_node_map{4, 5, 6, 7, 10, 11, 13};
+        REQUIRE((ref2_par == res2.tree.parents()));
+        REQUIRE((ref2_node_map == res2.node_map));
+
+        // leaf
+        auto res3 = sub_tree(t, 3);
+        array_1d<index_t> ref3_par{0};
+        array_1d<index_t> ref3_node_map{3};
+        REQUIRE((ref3_par == res3.tree.parents()));
+        REQUIRE((ref3_node_map == res3.node_map));
+    }
+
 }

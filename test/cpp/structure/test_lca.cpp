@@ -71,7 +71,7 @@ namespace lca {
     TEMPLATE_TEST_CASE("lca sanity", "[lca]", hg::lca_sparse_table, hg::lca_sparse_table_block) {
         xt::random::seed(42);
         auto g = hg::get_4_adjacency_graph({20, 20});
-        auto w = xt::random::rand<double>({num_edges(g)});
+        auto w = xt::eval(xt::random::rand<double>({num_edges(g)}));
         auto h = hg::bpt_canonical(g, w);
         auto &tree = h.tree;
 
@@ -90,7 +90,7 @@ namespace lca {
     TEST_CASE("lca sparse table block", "[lca]") {
         xt::random::seed(42);
         auto g = hg::get_4_adjacency_graph({10, 10});
-        auto w = xt::random::rand<double>({num_edges(g)});
+        auto w = xt::eval(xt::random::rand<double>({num_edges(g)}));
         auto h = hg::bpt_canonical(g, w);
         auto &tree = h.tree;
 
