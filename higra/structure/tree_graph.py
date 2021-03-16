@@ -101,9 +101,9 @@ def __lowest_common_ancestor_preprocess(self, algorithm="sparse_table_block", bl
     - ``sparse_table`` has a preprocessing time and space complexity in :math:`\\mathcal{O}(n\log(n))` with :math:`n`
       the number of vertices in the tree and performs every query in constant time :math:`\\mathcal{O}(1)`.
     - ``sparse_table_block`` (default) has a linear preprocessing time and space complexity in :math:`\\mathcal{O}(n)`
-     and performs queries in average-case constant time :math:`\\mathcal{O}(1)`. With this algorithm the user can specify
-     the block size to be used, the general rule of thumb being that larger block size will decrease the pre-processing
-     time but increase the query time.
+      and performs queries in average-case constant time :math:`\\mathcal{O}(1)`. With this algorithm the user can specify
+      the block size to be used, the general rule of thumb being that larger block size will decrease the pre-processing
+      time but increase the query time.
 
     :param algorithm: specify the algorithm to be used, can be either ``sparse_table`` or ``sparse_table_block``.
     :param block_size: if :attr:`algorithm` is ``sparse_table_block``, specify the block size to be used (default 1024)
@@ -204,3 +204,34 @@ def __edge_list(self):
     :return: pair of two 1d arrays
     """
     return self.sources(), self.targets()
+
+
+@hg.extend_class(hg.Tree, method_name="sub_tree")
+def __sub_tree(self, root_node):
+    """
+    Extract the sub tree rooted in the given node of the current tree.
+
+    The result is a new tree :math:`st` and a node map :math:`nm` such that:
+
+    - the node map associates each node of the sub tree :math:`st` to its corresponding node in the original tree
+    - the order of the nodes of the original tree is preserved in the sub tree:
+      for any vertices :math:`x` and :math:`y` of :math:`st` such that  :math:`x < y` then :math:`nm[x] < nm[y]`
+
+    :Complexity:
+
+    The tree is constructed in linearithmic time :math:`\mathcal{O}(n\log(n))` with :math:`n` the number of vertices
+    in the sub tree.
+
+    :Example:
+
+    >>> t = Tree((5, 5, 6, 6, 6, 7, 7, 7))
+    >>> sub_tree, node_map = t.sub_tree(6)
+    >>> sub_tree.parents()
+    array([3, 3, 3, 3])
+    >>> node_map
+    array([2, 3, 4, 6])
+
+    :param root_node: a vertex of the current tree
+    :return: the sub tree rooted in :attr:`root` and the node map
+    """
+    return hg.cpp._sub_tree(self, root_node)

@@ -310,6 +310,24 @@ class TestTree(unittest.TestCase):
         self.assertTrue(t.test == t2.test)
         self.assertTrue(hg.has_tag(t2, "foo"))
 
+    def test_sub_tree(self):
+        tree = hg.Tree(np.asarray((8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14)))
+
+        # full tree
+        sub_tree, node_map = tree.sub_tree(14)
+        self.assertTrue(np.all(tree.parents() == sub_tree.parents()))
+        self.assertTrue(np.all(np.arange(tree.num_vertices()) == node_map))
+
+        # normal
+        sub_tree, node_map = tree.sub_tree(13)
+        self.assertTrue(np.all(sub_tree.parents() == (4, 4, 5, 6, 5, 6, 6)))
+        self.assertTrue(np.all(node_map == (4, 5, 6, 7, 10, 11, 13)))
+
+        # leaf
+        sub_tree, node_map = tree.sub_tree(3)
+        self.assertTrue(np.all(sub_tree.parents() == (0,)))
+        self.assertTrue(np.all(node_map == (3,)))
+
 
 if __name__ == '__main__':
     unittest.main()
