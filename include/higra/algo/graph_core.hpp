@@ -165,7 +165,7 @@ namespace hg {
             return minimum_spanning_tree_result<ugraph>{
                     std::move(mst),
                     xt::view(mst_edge_map, xt::range(0, num_edge_found))};
-        } else{
+        } else {
             return minimum_spanning_tree_result<ugraph>{
                     std::move(mst),
                     std::move(mst_edge_map)};
@@ -185,17 +185,83 @@ namespace hg {
      * @return a spanning subgraph
      */
     template<typename graph_t, typename T>
-    auto subgraph_spanning(const graph_t & graph, const xt::xexpression<T> & xedge_indices){
-        auto & edge_indices = xedge_indices.derived_cast();
+    auto subgraph_spanning(const graph_t &graph, const xt::xexpression<T> &xedge_indices) {
+        auto &edge_indices = xedge_indices.derived_cast();
         hg_assert_1d_array(edge_indices);
         hg_assert_integral_value_type(edge_indices);
 
         graph_t subgraph(num_vertices(graph));
-        for(index_t ei: edge_indices){
+        for (index_t ei: edge_indices) {
             auto e = edge_from_index(ei, graph);
             add_edge(source(e, graph), target(e, graph), subgraph);
         }
 
         return subgraph;
+    }
+
+    /**
+     * Compute the line graph of an undirected graph.
+     *
+     * The line graph :math:`LG` of an undirected graph :math:`G` is a graph such that:
+     *
+     * - each vertex of :math:`LG` represents an edge of :math:`G`: the :math:`i`-th vertex of :math:`LG` corresponds to
+     *   the :math:`i`-th edge of :math:`G`; and
+     * - two vertices :math:`x` and :math:`y` of :math:`LG` are adjacent if their corresponding edges in :math:`G` share
+     *   a common extremity. Formally, if  :math:`x` represents the edge :math:`\{i, j \}` and if :math:`y` represents
+     *   the edge :math:`\{k, j \}`, then the edge :math:`\{x, y\}` belongs to :math:`LG` if
+     *   :math:`\{i, j \} \\cap \{k, j \} \\neq \emptyset`.
+     *
+     * The line graph is also known as: the covering graph, the derivative, the edge-to-vertex dual,
+     * the conjugate, the representative graph, the edge graph, the interchange graph, the adjoint graph, or the
+     * derived graph.
+     *
+     * @param graph
+     * @return
+     */
+    inline
+    ugraph line_graph(const ugraph &graph) {
+        ugraph lg(num_edges(graph));
+        for (auto v: vertex_iterator(graph)) {
+            auto it = graph.out_edges_cbegin(v);
+            index_t n_out = out_degree(v, graph);
+            for (index_t i = 0; i < n_out; ++i) {
+                auto &e1 = edge_from_index(it[i], graph);
+                for (index_t j = i + 1; j < n_out; ++j) {
+                    auto &e2 = edge_from_index(it[j], graph);
+                    // the following test prevents multiple edges from being linked several times
+                    if (!(e1.source == e2.source && e1.source < v)) {
+                        add_edge(e1.index, e2.index, lg);
+                    }
+                }
+            }
+        }
+        return lg;
+    }
+
+
+    /**
+     * See description of the function above
+     *
+     * @tparam graph_t
+     * @param graph
+     * @return
+     */
+    template<typename graph_t>
+    ugraph line_graph(const graph_t &graph) {
+        ugraph lg(num_edges(graph));
+        for (auto v: vertex_iterator(graph)) {
+            for (const auto &e1 : out_edge_iterator(v, graph)) {
+                for (const auto &e2 : out_edge_iterator(v, graph)) {
+                    // do not proceed the same edge twice
+                    if (e1.index < e2.index) {
+                        // the following test prevents multiple edges from being linked several times
+                        if (!(e1.target == e2.target && e1.target < v)) {
+                            add_edge(e1.index, e2.index, lg);
+                        }
+                    }
+                }
+            }
+        }
+        return lg;
     }
 }

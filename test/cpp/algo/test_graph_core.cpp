@@ -12,6 +12,7 @@
 #include "higra/algo/graph_core.hpp"
 #include "higra/utils.hpp"
 #include "higra/image/graph_image.hpp"
+#include <set>
 
 using namespace hg;
 
@@ -103,6 +104,123 @@ namespace test_graph_core {
         for (index_t i = 0; i < (index_t) ref.size(); i++) {
             auto e = edge_from_index(i, subgraph);
             REQUIRE(e == ref[i]);
+        }
+    }
+
+    TEST_CASE("line_graph trivial", "[graph_algorithm]") {
+        ugraph graph(3);
+
+        auto linegraph = line_graph(graph);
+        REQUIRE(num_vertices(linegraph) == 0);
+        REQUIRE(num_edges(linegraph) == 0);
+    }
+
+    TEST_CASE("line_graph trivial 2", "[graph_algorithm]") {
+        ugraph graph(4);
+        add_edge(0, 1, graph);
+        add_edge(2, 3, graph);
+
+        auto linegraph = line_graph(graph);
+        REQUIRE(num_vertices(linegraph) == 2);
+        REQUIRE(num_edges(linegraph) == 0);
+    }
+
+    TEST_CASE("line_graph trivial loop", "[graph_algorithm]") {
+        using edge_t = ugraph::edge_descriptor;
+        ugraph graph(3);
+        add_edge(0, 0, graph);
+        add_edge(0, 1, graph);
+        add_edge(0, 2, graph);
+
+        auto linegraph = line_graph(graph);
+        REQUIRE(num_vertices(linegraph) == 3);
+        REQUIRE(num_edges(linegraph) == 3);
+        REQUIRE(edge_from_index(0, linegraph) == edge_t(0, 1, 0));
+        REQUIRE(edge_from_index(1, linegraph) == edge_t(0, 2, 1));
+        REQUIRE(edge_from_index(2, linegraph) == edge_t(1, 2, 2));
+    }
+
+    TEST_CASE("line_graph multiple edges", "[graph_algorithm]") {
+        using edge_t = ugraph::edge_descriptor;
+        ugraph graph(3);
+        add_edge(0, 1, graph);
+        add_edge(0, 1, graph);
+        add_edge(1, 2, graph);
+
+        auto linegraph = line_graph(graph);
+        REQUIRE(num_vertices(linegraph) == 3);
+        REQUIRE(num_edges(linegraph) == 3);
+        REQUIRE(edge_from_index(0, linegraph) == edge_t(0, 1, 0));
+        REQUIRE(edge_from_index(1, linegraph) == edge_t(0, 2, 1));
+        REQUIRE(edge_from_index(2, linegraph) == edge_t(1, 2, 2));
+    }
+
+    TEST_CASE("line_graph multiple trivial loops", "[graph_algorithm]") {
+        using edge_t = ugraph::edge_descriptor;
+        ugraph graph(2);
+        add_edge(0, 0, graph);
+        add_edge(0, 0, graph);
+        add_edge(0, 1, graph);
+
+        auto linegraph = line_graph(graph);
+        REQUIRE(num_vertices(linegraph) == 3);
+        REQUIRE(num_edges(linegraph) == 3);
+        REQUIRE(edge_from_index(0, linegraph) == edge_t(0, 1, 0));
+        REQUIRE(edge_from_index(1, linegraph) == edge_t(0, 2, 1));
+        REQUIRE(edge_from_index(2, linegraph) == edge_t(1, 2, 2));
+    }
+
+    TEST_CASE("line_graph 8 adj graph", "[graph_algorithm]") {
+        using edge_t = ugraph::edge_descriptor;
+        auto graph = get_8_adjacency_graph({2, 2});
+
+        auto linegraph = line_graph(graph);
+        REQUIRE(num_vertices(linegraph) == 6);
+        REQUIRE(num_edges(linegraph) == 12);
+
+        std::vector<std::set<index_t>> ref = {
+                {1, 2, 3, 4},
+                {0, 2, 3, 5},
+                {0, 1, 4, 5},
+                {0, 1, 4, 5},
+                {0, 2, 3, 5},
+                {1, 2, 3, 4}
+        };
+        for (auto v: vertex_iterator(linegraph)) {
+            std::set<index_t> res;
+            for (const auto &e : out_edge_iterator(v, linegraph)) {
+                res.insert(e.target);
+            }
+            REQUIRE(res == ref[v]);
+        }
+    }
+
+    TEST_CASE("line_graph tree", "[graph_algorithm]") {
+        using edge_t = tree::edge_descriptor;
+        auto t = tree(array_1d<index_t>{5, 5, 6, 6, 6, 7, 8, 8, 8});
+
+        t.compute_children(); // required to process t as a graph
+
+        auto linegraph = line_graph(t);
+        REQUIRE(num_vertices(linegraph) == 8);
+        REQUIRE(num_edges(linegraph) == 11);
+
+        std::vector<std::set<index_t>> ref = {
+                {1, 5},
+                {0, 5},
+                {3, 4, 6},
+                {2, 4, 6},
+                {2, 3, 6},
+                {0, 1, 7},
+                {2, 3, 4, 7},
+                {5, 6},
+        };
+        for (auto v: vertex_iterator(linegraph)) {
+            std::set<index_t> res;
+            for (const auto &e : out_edge_iterator(v, linegraph)) {
+                res.insert(e.target);
+            }
+            REQUIRE(res == ref[v]);
         }
     }
 }
