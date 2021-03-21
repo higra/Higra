@@ -336,3 +336,27 @@ def subgraph(graph, edge_indices, spanning=True, return_vertex_map=False):
         return subgraph, vertex_map
     else:
         return subgraph
+
+
+def line_graph(graph):
+    """
+    Compute the line graph of an undirected graph.
+
+    The line graph :math:`LG` of an undirected graph :math:`G` is a graph such that:
+
+    - each vertex of :math:`LG` represents an edge of :math:`G`: the :math:`i`-th vertex of :math:`LG` corresponds to
+      the :math:`i`-th edge of :math:`G`; and
+    - two vertices :math:`x` and :math:`y` of :math:`LG` are adjacent if their corresponding edges in :math:`G` share
+      a common extremity. Formally, if  :math:`x` represents the edge :math:`\{i, j \}` and if :math:`y` represents
+      the edge :math:`\{k, j \}`, then the edge :math:`\{x, y\}` belongs to :math:`LG` if
+      :math:`\{i, j \} \\cap \{k, j \} \\neq \emptyset`.
+
+    The line graph is also known as: the covering graph, the derivative, the edge-to-vertex dual,
+    the conjugate, the representative graph, the edge graph, the interchange graph, the adjoint graph, or the
+    derived graph.
+
+    :param graph: input graph
+    :return: the line graph of the input graph
+    """
+
+    return hg.cpp._line_graph(graph)

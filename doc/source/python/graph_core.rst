@@ -10,6 +10,7 @@ Algorithms for graphs
     adjacency_matrix_2_undirected_graph
     graph_cut_2_labelisation
     labelisation_2_graph_cut
+    line_graph
     make_graph_from_points
     minimum_spanning_tree
     subgraph
@@ -22,6 +23,8 @@ Algorithms for graphs
 .. autofunction:: higra.graph_cut_2_labelisation
 
 .. autofunction:: higra.labelisation_2_graph_cut
+
+.. autofunction:: higra.line_graph
 
 .. autofunction:: higra.make_graph_from_points
 

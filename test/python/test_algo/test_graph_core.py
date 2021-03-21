@@ -306,6 +306,50 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         self.assertTrue(np.all(vertex_map[sources] == (4, 0, 3)))
         self.assertTrue(np.all(vertex_map[targets] == (5, 1, 4)))
 
+    def test_line_graph_ugraph(self):
+        graph = hg.get_8_adjacency_graph((2, 2))
+
+        linegraph = hg.line_graph(graph)
+        self.assertTrue(linegraph.num_vertices() == 6)
+        self.assertTrue(linegraph.num_edges() == 12)
+
+        ref = [
+            {1, 2, 3, 4},
+            {0, 2, 3, 5},
+            {0, 1, 4, 5},
+            {0, 1, 4, 5},
+            {0, 2, 3, 5},
+            {1, 2, 3, 4}
+        ]
+        for v in linegraph.vertices():
+            res = set()
+            for e in linegraph.out_edges(v):
+                res.add(e[1])
+            self.assertTrue(res == ref[v])
+
+    def test_line_graph_tree(self):
+        graph = hg.Tree((5, 5, 6, 6, 6, 7, 8, 8, 8))
+
+        linegraph = hg.line_graph(graph)
+        self.assertTrue(linegraph.num_vertices() == 8)
+        self.assertTrue(linegraph.num_edges() == 11)
+
+        ref = [
+            {1, 5},
+            {0, 5},
+            {3, 4, 6},
+            {2, 4, 6},
+            {2, 3, 6},
+            {0, 1, 7},
+            {2, 3, 4, 7},
+            {5, 6},
+        ]
+        for v in linegraph.vertices():
+            res = set()
+            for e in linegraph.out_edges(v):
+                res.add(e[1])
+            self.assertTrue(res == ref[v])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -72,17 +72,17 @@ void py_init_algo_graph_core(pybind11::module &m) {
             HG_TEMPLATE_NUMERIC_TYPES>
             (m,
              "Labelize graph vertices according to the given graph cut. "
-                     "Each edge having a non zero value in the given edge_weights "
-                     "are assumed to be part of the cut."
+             "Each edge having a non zero value in the given edge_weights "
+             "are assumed to be part of the cut."
             );
 
     add_type_overloads<def_labelisation_2_graph_cut<hg::ugraph>,
             HG_TEMPLATE_INTEGRAL_TYPES>
             (m,
              "Determine the graph cut that corresponds to a given labeling "
-                     "of the graph vertices. "
-                     "The result is a weighting of the graph edges where edges with "
-                     "a non zero weight are part of the cut."
+             "of the graph vertices. "
+             "The result is a weighting of the graph edges where edges with "
+             "a non zero weight are part of the cut."
             );
 
     add_type_overloads<def_minimum_spanning_tree<hg::ugraph>,
@@ -90,4 +90,17 @@ void py_init_algo_graph_core(pybind11::module &m) {
             (m,
              ""
             );
+
+    m.def("_line_graph", [](const hg::ugraph &graph) {
+              return hg::line_graph(graph);
+          },
+          "",
+          py::arg("graph"));
+
+    m.def("_line_graph", [](const hg::tree &tree) {
+              tree.compute_children();
+              return hg::line_graph(tree);
+          },
+          "",
+          py::arg("tree"));
 }
