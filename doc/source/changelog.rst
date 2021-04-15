@@ -1,6 +1,20 @@
 Changelog
 =========
 
+0.6.3
+-----
+
+- Add function to compute the line graph of a graph :func:`~higra.line_graph`
+  `#239 <https://github.com/higra/Higra/pull/239>`_
+- Add function to extract a subtree from a tree :func:`~higra.Tree.sub_tree`
+  `#238 <https://github.com/higra/Higra/pull/238>`_
+- Add new fast lowest common ancestor algorithm  :func:`~higra.Tree.lowest_common_ancestor_preprocess` with :math:`O(n)`
+  time preprocessing and average :math:`O(1)` time query (based on sparse table with blocks). The expected speedup
+  is comprised between 1.2 and 1.8 compared to the previous method  (parse table without block wich is still available).
+  `#237 <https://github.com/higra/Higra/pull/237>`_
+- Add options to set a global thread number limit :func:`~higra.set_num_threads`
+  `#234 <https://github.com/higra/Higra/pull/234>`_
+
 0.6.2
 -----
 

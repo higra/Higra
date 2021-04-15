@@ -1,4 +1,4 @@
 sphinx==3.0.3
 sphinx-tabs
 breathe
-higra==0.6.2
+higra==0.6.3
