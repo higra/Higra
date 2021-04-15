@@ -17,9 +17,10 @@ environment:
   CIBW_BEFORE_BUILD: "pip install cmake numpy==1.17.3"
   CIBW_SKIP: "*win32"
   CIBW_ENVIRONMENT: "HG_USE_TBB=1 TBB_DLL=C:/Miniconda36-x64/Library/bin/tbb.dll TBB_INCLUDE_DIR=C:/Miniconda36-x64/Library/include TBB_LIBRARY=C:/Miniconda36-x64/Library/lib"
-  TWINE_USERNAME: "bperret"
+  TWINE_USERNAME: "__token__"
   TWINE_PASSWORD:
-    secure: gKT63gdRJqmmn+KGlXbzww==
+    secure: vtNHhi7Iu10A6uvWUQ/kpRSnlfjyg3BAF/hvlXZAKZrRbQHgj8HNHNfhnNbhUv4hZhUXZxgrCs9s4+vtzXeIdykPk5xqIXCx1mgl56u5mVszyMpI73JTI4Ianfmu9YvXftOFLyjCs1h7c01GTVlbMeIQ6dJApNg2/XYlnmB5IKrN2xxK4M8uvydIAfrMlf4SVLnhFTzu3/1ooHSYYyjV8vzmlnNeXlgdWHkaspWJGSlhqvWQrv6iF8ZBbhZsYQKQEYf0mstKR/pEtUwvj2Q3gw==
+
 
   matrix:
     - CIBUILDWHEEL: 1
