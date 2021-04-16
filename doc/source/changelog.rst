@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.6.3
+0.6.4
 -----
 
 - Add function to compute the line graph of a graph :func:`~higra.line_graph`
