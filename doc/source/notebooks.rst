@@ -15,6 +15,7 @@ Visualizing hierarchical image segmentation                           |v13|_    
 Illustrations of SoftwareX 2019 article                               |v10|_       |dl10|_       |co10|_
 Illustrations of Pattern Recognition Letters 2019 article             |v11|_       |dl11|_       |co11|_
 Multiscale Hierarchy Alignment and Combination                        |v4|_        |dl4|_        |co4|_
+Pattern spectra - granulometry based on connected filters             |v15|_       |dl15|_       |co15|_
 Region Adjacency Graph                                                |v5|_        |dl5|_        |co5|_
 Interactive object segmentation                                       |v6|_        |dl6|_        |co6|_
 Fuzzy-marker-based interactive object segmentation - DGMM 2021        |v14|_       |dl14|_       |co14|_
@@ -161,3 +162,14 @@ Contour Simplification                                                |v7|_     
 
 .. |co14| image:: /images/colab.png
 .. _co14: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Fuzzy-marker-based%20segmentation%20using%20%20hierarchies.ipynb
+
+
+.. |v15| unicode:: &#x1f441; .. view
+.. _v15: https://github.com/higra/Higra-Notebooks/blob/master/Pattern%20spectra%20-%20granulometry%20based%20on%20connected%20filters.ipynb
+
+.. |dl15| unicode:: &#x1f4be; .. download
+.. _dl15: https://cdn.jsdelivr.net/gh/higra/Higra-Notebooks/Pattern%20spectra%20-%20granulometry%20based%20on%20connected%20filters.ipynb
+
+.. |co15| image:: /images/colab.png
+.. _co15: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Pattern%20spectra%20-%20granulometry%20based%20on%20connected%20filters.ipynb
+
