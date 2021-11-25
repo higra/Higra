@@ -23,5 +23,5 @@ mv ${tbb_dir}/include /Users/travis/tbb/
 
 cd ${cur_dir}
 
-pip install numpy==1.17.3
+pip install numpy==1.21.4
 
