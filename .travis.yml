@@ -10,11 +10,6 @@ matrix:
     if: tag IS present
     services:
       - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*" CIBW_SKIP=*-manylinux_i686
-  - os: linux
-    if: tag IS present
-    services:
-      - docker
     env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*" CIBW_SKIP=*-manylinux_i686
   - os: linux
     if: tag IS present
@@ -22,12 +17,14 @@ matrix:
       - docker
     env: BUILD_WHEEL=1 CIBW_BUILD="cp38-*" CIBW_SKIP=*-manylinux_i686
   - os: linux
+    if: tag IS present
+    services:
+      - docker
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp39-*" CIBW_SKIP=*-manylinux_i686
+  - os: linux
     services:
     - docker
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp39-*" CIBW_SKIP=*-manylinux_i686
-  - os: osx
-    if: tag IS present
-    env: BUILD_WHEEL=1 CIBW_BUILD="cp36-*"
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp310-*" CIBW_SKIP=*-manylinux_i686
   - os: osx
     if: tag IS present
     env: BUILD_WHEEL=1 CIBW_BUILD="cp37-*"
@@ -35,7 +32,10 @@ matrix:
     if: tag IS present
     env: BUILD_WHEEL=1 CIBW_BUILD="cp38-*"
   - os: osx
+    if: tag IS present
     env: BUILD_WHEEL=1 CIBW_BUILD="cp39-*"
+  - os: osx
+    env: BUILD_WHEEL=1 CIBW_BUILD="cp310-*"
   - os: linux
     addons:
       apt:
@@ -77,7 +77,7 @@ env:
   - CIBW_BEFORE_BUILD_MACOS="source tools/cibuildwheel_osx.sh"
   - CIBW_ENVIRONMENT_LINUX='HG_USE_TBB=1 MFLAG="-m64"  CXXFLAGS="${MFLAG}" TBB_INCLUDE_DIR="/tbb/include/" TBB_LIBRARY="/tbb/lib/"'
   - CIBW_ENVIRONMENT_MACOS='HG_USE_TBB=1 TBB_INCLUDE_DIR="/Users/travis/tbb/include/" TBB_LIBRARY="/Users/travis/tbb/lib/"'
-  - CIBW_TEST_COMMAND="pip install scikit-learn==0.24.2 && python -c \"import unittest;result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
+  - CIBW_TEST_COMMAND="pip install scikit-learn==1.0.1 && python -c \"import unittest;result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
 before_install:
 - |
   # Configure build variables
@@ -110,13 +110,13 @@ install:
   cmake -DCMAKE_BUILD_TYPE=Coverage -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python -DTBB_INCLUDE_DIR=$HOME/miniconda/include -DTBB_LIBRARY=$HOME/miniconda/lib ..  &&
     make -j2 test_exe;
   elif [ -z "$BUILD_WHEEL" ]; then
-  conda install numpy==1.17.3 tbb-devel==2019.9 scipy==1.6.3 scikit-learn==0.24.2 -c conda-forge &&
+  conda install tbb-devel==2019.9 scikit-learn==1.0.1 -c conda-forge &&
     mkdir build &&
     cd build &&
   cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE:FILEPATH=$HOME/miniconda/bin/python -DHG_USE_TBB=$HG_USE_TBB -DTBB_INCLUDE_DIR=$HOME/miniconda/include -DTBB_LIBRARY=$HOME/miniconda/lib ..  &&
     make -j2 higram test_exe;
   else
-  pip install cibuildwheel==1.7.4;
+  pip install cibuildwheel==2.2.2;
   fi
 script:
   - |
