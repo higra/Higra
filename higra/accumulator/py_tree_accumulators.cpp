@@ -175,6 +175,20 @@ struct def_propagate_sequential_and_accumulate {
               py::arg("tree"),
               py::arg("vertex_data"),
               py::arg("accumulator"));
+
+        c.def("_propagate_sequential_and_accumulate",
+              [](const graph_t &tree, const pyarray<value_t> &vertex_data, hg::accumulators accumulator, const pyarray<bool> &condition) {
+                  return dispatch_accumulator(
+                          [&tree, &vertex_data, &condition](const auto &acc) {
+                              return hg::propagate_sequential_and_accumulate(tree, vertex_data, acc, condition);
+                          },
+                          accumulator);
+              },
+              doc,
+              py::arg("tree"),
+              py::arg("vertex_data"),
+              py::arg("condition"),
+              py::arg("accumulator"));
     }
 };
 

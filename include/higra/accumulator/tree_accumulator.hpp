@@ -437,10 +437,15 @@ namespace hg {
             // root cannot be deleted
             output_view.set_position(root(tree));
             input_view.set_position(root(tree));
-            acc.set_storage(output_view);
-            acc.initialize();
-            acc.accumulate(input_view.begin());
-            acc.finalize();
+
+            if (condition(root(tree))){
+                acc.set_storage(output_view);
+                acc.initialize();
+                acc.accumulate(input_view.begin());
+                acc.finalize();
+            } else {
+                output_view = input_view;
+            }
 
             for (auto i: root_to_leaves_iterator(tree, leaves_it::include, root_it::exclude)) {
                 output_view.set_position(i);
@@ -564,8 +569,8 @@ namespace hg {
     template<typename tree_t, typename T1, typename T2, typename accumulator_t>
     auto propagate_sequential_and_accumulate(const tree_t &tree,
                                              const xt::xexpression<T1> &xinput,
-                                             const xt::xexpression<T2> &xcondition,
-                                             const accumulator_t &accumulator) {
+                                             const accumulator_t &accumulator,
+                                             const xt::xexpression<T2> &xcondition) {
         auto &input = xinput.derived_cast();
 
         if (input.dimension() == 1) {

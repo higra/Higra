@@ -184,7 +184,7 @@ namespace tree_accumulator {
         array_1d<int> ref4{15, 16, 18, 19, 20, 14, 15, 8};
         REQUIRE(xt::allclose(ref4, output4));
 
-        auto output5 = propagate_sequential_and_accumulate(tree, input, condition, hg::accumulator_prod());
+        auto output5 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_prod(), condition);
         array_1d<int> ref5{48, 2, 21, 4, 35, 48, 7, 8};
         REQUIRE(xt::allclose(ref5, output5));
     }
@@ -246,7 +246,7 @@ namespace tree_accumulator {
                            {8,  1}};
         REQUIRE(xt::allclose(ref4, output4));
 
-        auto output5 = propagate_sequential_and_accumulate(tree, input, condition, hg::accumulator_prod());
+        auto output5 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_prod(), condition);
         array_2d<int> ref5{{48, 24},
                            {2, 7},
                            {21, 12},
