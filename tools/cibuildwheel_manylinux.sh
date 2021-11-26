@@ -28,7 +28,7 @@ ls /tbb/lib/*
 ls /tbb/include/*
 cd ${cur_dir}
 
-pip install numpy==1.21.4 cmake==3.14.4
+pip install numpy==$NUMPY_VERSION cmake==3.14.4
 
 
 
