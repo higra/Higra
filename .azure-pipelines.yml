@@ -3,3 +3,4 @@ trigger:
 
 jobs:
   - template: ./tools/azure-pipelines-linux-gcc.yml
+  - template: ./tools/azure-pipelines-mac.yml
