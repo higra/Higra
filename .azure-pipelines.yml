@@ -1,0 +1,5 @@
+trigger:
+  - master
+
+jobs:
+  - template: ./tools/azure-pipelines-linux-gcc.yml
