@@ -80,5 +80,5 @@ jobs:
           lcov --list coverage.info && #debug info
           bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
         displayName: Sending coverage results
-        workingDirectory: $(Build.BinariesDirectory)/build
+        workingDirectory: $(Build.BinariesDirectory)
         condition: eq(variables.COVERAGE, 1)

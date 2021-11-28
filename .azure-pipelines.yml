@@ -1,6 +1,8 @@
 trigger:
   - master
+  - refs/tags/*
 
 jobs:
   - template: ./tools/azure-pipelines-linux-gcc.yml
   - template: ./tools/azure-pipelines-mac.yml
+  - template: ./tools/azure-pipelines-linux-buildwheel.yml
