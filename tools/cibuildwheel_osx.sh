@@ -17,9 +17,12 @@ cd build
 cd *release
 tbb_link=`pwd`
 
-mkdir -p /Users/travis//tbb/lib/
-mv ${tbb_link}/* /Users/travis//tbb/lib/
-mv ${tbb_dir}/include /Users/travis/tbb/
+cd
+home=`pwd`
+
+mkdir -p ${home}/tbb/lib/
+mv ${tbb_link}/* ${home}//tbb/lib/
+mv ${tbb_dir}/include ${home}/tbb/
 
 cd ${cur_dir}
 

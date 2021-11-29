@@ -5,7 +5,7 @@ parameters:
   force: false
 
 jobs:
-  - job: 'Linux_Wheel_${{ parameters.name }}'
+  - job: 'Wheel_${{ parameters.name }}'
     condition: or( eq( '${{ parameters.force }}', 'true'), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
     pool:
       vmImage: ${{ parameters.vmImage }}
@@ -20,7 +20,7 @@ jobs:
       CIBW_BEFORE_BUILD_LINUX: 'source tools/cibuildwheel_manylinux.sh'
       CIBW_BEFORE_BUILD_MACOS: 'source tools/cibuildwheel_osx.sh'
       CIBW_ENVIRONMENT_LINUX: 'HG_USE_TBB=1 MFLAG="-m64"  CXXFLAGS="${MFLAG}" TBB_INCLUDE_DIR="/tbb/include/" TBB_LIBRARY="/tbb/lib/" NUMPY_VERSION="${{ parameters.NUMPY_VERSION }}"'
-      CIBW_ENVIRONMENT_MACOS: 'HG_USE_TBB=1 TBB_INCLUDE_DIR="/Users/travis/tbb/include/" TBB_LIBRARY="/Users/travis/tbb/lib/"  NUMPY_VERSION="${{ parameters.NUMPY_VERSION }}"'
+      CIBW_ENVIRONMENT_MACOS: 'HG_USE_TBB=1 TBB_INCLUDE_DIR="${HOME}/tbb/include/" TBB_LIBRARY="${HOME}/tbb/lib/"  NUMPY_VERSION="${{ parameters.NUMPY_VERSION }}"'
       CIBW_TEST_COMMAND: "pip install scikit-learn && python -c \"import unittest;result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
 
     timeoutInMinutes: 360
@@ -28,6 +28,10 @@ jobs:
 
       - bash: echo "##vso[task.prependpath]$CONDA/bin"
         displayName: Add conda to PATH
+
+      - bash: echo "##vso[task.prependpath]/Users/runner/.local/bin"
+        displayName: Add user conda to PATH for mac
+        condition: startsWith('${{ parameters.name }}', 'mac')
 
       - script: |
           pip install cibuildwheel==2.2.2 twine
