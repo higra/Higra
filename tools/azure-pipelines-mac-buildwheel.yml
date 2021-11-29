@@ -5,7 +5,6 @@ jobs:
       vmImage: 'macOS-10.15'
       CIBW_BUILD: 'cp37-*'
       NUMPY_VERSION: '1.17.5'
-      force: true
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
@@ -13,7 +12,6 @@ jobs:
       vmImage: 'macOS-10.15'
       CIBW_BUILD: 'cp38-*'
       NUMPY_VERSION: '1.17.5'
-      force: true
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
@@ -29,4 +27,3 @@ jobs:
       vmImage: 'macOS-10.15'
       CIBW_BUILD: 'cp310-*'
       NUMPY_VERSION: '1.21.4'
-      force: true

@@ -2,7 +2,7 @@ build: false
 
 branches:
   only:
-  - master
+    - master
 
 platform:
   - x64
@@ -11,12 +11,11 @@ image:
   - Visual Studio 2019
 
 environment:
-  MINICONDA: C:\Miniconda36-x64
+  MINICONDA: C:\Miniconda38-x64
   CIBW_TEST_COMMAND: "pip install scipy scikit-learn && python -c \"import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
   CIBW_BUILD_VERBOSITY: "1"
-  CIBW_BEFORE_BUILD: "pip install cmake numpy==1.17.3"
   CIBW_SKIP: "*win32"
-  CIBW_ENVIRONMENT: "HG_USE_TBB=1 TBB_DLL=C:/Miniconda36-x64/Library/bin/tbb.dll TBB_INCLUDE_DIR=C:/Miniconda36-x64/Library/include TBB_LIBRARY=C:/Miniconda36-x64/Library/lib"
+  CIBW_ENVIRONMENT: "HG_USE_TBB=1 TBB_DLL=C:/Miniconda38-x64/Library/bin/tbb.dll TBB_INCLUDE_DIR=C:/Miniconda38-x64/Library/include TBB_LIBRARY=C:/Miniconda38-x64/Library/lib"
   TWINE_USERNAME: "__token__"
   TWINE_PASSWORD:
     secure: vtNHhi7Iu10A6uvWUQ/kpRSnlfjyg3BAF/hvlXZAKZrRbQHgj8HNHNfhnNbhUv4hZhUXZxgrCs9s4+vtzXeIdykPk5xqIXCx1mgl56u5mVszyMpI73JTI4Ianfmu9YvXftOFLyjCs1h7c01GTVlbMeIQ6dJApNg2/XYlnmB5IKrN2xxK4M8uvydIAfrMlf4SVLnhFTzu3/1ooHSYYyjV8vzmlnNeXlgdWHkaspWJGSlhqvWQrv6iF8ZBbhZsYQKQEYf0mstKR/pEtUwvj2Q3gw==
@@ -25,25 +24,29 @@ environment:
   matrix:
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
-      CIBW_BUILD: "cp36*"
-    - CIBUILDWHEEL: 1
-      TAG_SCENARIO: true
       CIBW_BUILD: "cp37*"
+      CIBW_BEFORE_BUILD: "pip install cmake numpy==1.17.5"
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
       CIBW_BUILD: "cp38*"
+      CIBW_BEFORE_BUILD: "pip install cmake numpy==1.17.5"
+    - CIBUILDWHEEL: 1
+      TAG_SCENARIO: true
+      CIBW_BUILD: "cp39*"
+      CIBW_BEFORE_BUILD: "pip install cmake numpy==1.19.5"
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: false
-      CIBW_BUILD: "cp39*"
+      CIBW_BUILD: "cp310*"
+      CIBW_BEFORE_BUILD: "pip install cmake numpy==1.21.4"
 
 for:
--
-  # non-tagged scenario
-  matrix:
-    except:
-      - TAG_SCENARIO: false
+  -
+    # non-tagged scenario
+    matrix:
+      except:
+        - TAG_SCENARIO: false
 
-  skip_non_tags: true
+    skip_non_tags: true
 
 
 
@@ -56,36 +59,36 @@ init:
 install:
   - conda config --set always_yes yes --set changeps1 no
   - conda info -a
-#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+  #  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - if %CIBUILDWHEEL% == 0 (
-    conda install cmake numpy==1.17.3 tbb-devel==2019.0 scipy scikit-learn -c conda-forge &&
-      python setup.py bdist_wheel
-      )  else (
+    conda install cmake numpy tbb-devel==2019.0 scipy scikit-learn -c conda-forge &&
+    python setup.py bdist_wheel
+    )  else (
     conda install tbb-devel==2019.0 &&
-    pip install cibuildwheel==1.7.4 &&
-        cibuildwheel --output-dir wheelhouse
-      )
+    pip install cibuildwheel==2.2.2 &&
+    cibuildwheel --output-dir wheelhouse
+    )
 
 
 build_script:
   #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - if %CIBUILDWHEEL% == 0 (
-      cd dist &&
-      for  %%s in (higra*whl) do ( pip install %%s ) &&
-      python -c "import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('c:\\projects\\higra-21ed3\\test\\python\\'));exit(0 if result.wasSuccessful() else 1)" &&
-      cd ..\build &&
-      cd temp* &&
-      cd Release &&
-      ctest -C Release -R Test_cpp -V
+    cd dist &&
+    for  %%s in (higra*whl) do ( pip install %%s ) &&
+    python -c "import unittest;result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('c:\\projects\\higra-21ed3\\test\\python\\'));exit(0 if result.wasSuccessful() else 1)" &&
+    cd ..\build &&
+    cd temp* &&
+    cd Release &&
+    ctest -C Release -R Test_cpp -V
     ) else (
-      if "%APPVEYOR_REPO_TAG%" == "true" (
-        conda install twine &&
-        twine upload  wheelhouse/*.whl
-      )
+    if "%APPVEYOR_REPO_TAG%" == "true" (
+    conda install twine &&
+    twine upload  wheelhouse/*.whl
+    )
     )
     #python -m pip install --upgrade pip &&
     #python -m pip install twine &&
-    # --repository-url https://test.pypi.org/legacy/
+  # --repository-url https://test.pypi.org/legacy/
 
 artifacts:
   - path: "wheelhouse\\*.whl"
