@@ -63,10 +63,10 @@ jobs:
           set -e
           if [ -n "$COVERAGE" ]; then
             ctest -R Test_cpp
-            lcov --directory . --no-external --capture --output-file coverage.info && # capture coverage info
+            lcov --directory . --capture --output-file coverage.info && # capture coverage info
             lcov --remove coverage.info '*lib/include*' --output-file coverage.info && # filter out system
-            lcov --list coverage.info && #debug info
-            bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
+            lcov --remove coverage.info '/usr*' --output-file coverage.info && # filter out system
+            lcov --list coverage.info #debug info
           else
             ctest -V
           fi
@@ -75,10 +75,11 @@ jobs:
 
       - script: |
           set -e
-          lcov --directory . --no-external --capture --output-file coverage.info && # capture coverage info
-          lcov --remove coverage.info '*lib/include*' --output-file coverage.info && # filter out system
-          lcov --list coverage.info && #debug info
-          bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
-        displayName: Sending coverage results
-        workingDirectory: $(Build.BinariesDirectory)
-        condition: eq(variables.COVERAGE, 1)
+
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov -v -s $(Build.BinariesDirectory)/build -t $(CODECOV_TOKEN)
+
+        displayName: Upload coverage
+        workingDirectory: $(Build.SourcesDirectory)
+        condition: eq( variables['COVERAGE'], '1' )
