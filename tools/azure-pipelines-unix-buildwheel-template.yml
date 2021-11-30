@@ -1,0 +1,56 @@
+parameters:
+  CIBW_BUILD: ''
+  NUMPY_VERSION: ''
+  vmImage: ''
+  force: false
+  pypitest: false
+
+jobs:
+  - job: 'Wheel_${{ parameters.name }}'
+    condition: or( eq( '${{ parameters.force }}', 'true'), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    pool:
+      vmImage: ${{ parameters.vmImage }}
+    variables:
+      TWINE_TOKEN: $(PIPY_TOKEN)
+      TWINE_TOKEN_TEST: $(PIPY_TEST_TOKEN)
+      CIBW_BUILD: ${{ parameters.CIBW_BUILD }}
+      NUMPY_VERSION: ${{ parameters.NUMPY_VERSION }}
+      CIBW_SKIP: '*-manylinux_i686 *-musllinux_*'
+      CIBW_BUILD_VERBOSITY: '1'
+      CIBW_MANYLINUX_X86_64_IMAGE: "manylinux2014"
+      CIBW_BEFORE_BUILD_LINUX: 'source tools/cibuildwheel_manylinux.sh'
+      CIBW_BEFORE_BUILD_MACOS: 'source tools/cibuildwheel_osx.sh'
+      CIBW_ENVIRONMENT_LINUX: 'HG_USE_TBB=1 MFLAG="-m64"  CXXFLAGS="${MFLAG}" TBB_INCLUDE_DIR="/tbb/include/" TBB_LIBRARY="/tbb/lib/" NUMPY_VERSION="${{ parameters.NUMPY_VERSION }}"'
+      CIBW_ENVIRONMENT_MACOS: 'HG_USE_TBB=1 TBB_INCLUDE_DIR="${HOME}/tbb/include/" TBB_LIBRARY="${HOME}/tbb/lib/"  NUMPY_VERSION="${{ parameters.NUMPY_VERSION }}"'
+      CIBW_TEST_COMMAND: "pip install scikit-learn && python -c \"import unittest;result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
+
+    timeoutInMinutes: 60
+    steps:
+
+      - bash: echo "##vso[task.prependpath]$CONDA/bin"
+        displayName: Add conda to PATH
+
+      - bash: echo "##vso[task.prependpath]/Users/runner/.local/bin"
+        displayName: Add user conda to PATH for mac
+        condition: startsWith('${{ parameters.name }}', 'mac')
+
+      - script: |
+          pip install cibuildwheel==2.2.2 twine
+        displayName: Install python packages
+
+      - script: |
+          cibuildwheel --output-dir wheelhouse;
+        displayName: Build
+        workingDirectory: $(Build.SourcesDirectory)
+
+      - script: |
+          python -m twine upload -u __token__ -p $(TWINE_TOKEN) wheelhouse/*.whl
+        displayName: Upload wheel
+        workingDirectory: $(Build.SourcesDirectory)
+        condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/')
+
+      - script: |
+          python -m twine upload -r testpypi -u __token__ -p $(TWINE_TOKEN_TEST) wheelhouse/*.whl
+        displayName: Test upload wheel
+        workingDirectory: $(Build.SourcesDirectory)
+        condition: eq('${{ parameters.pypitest }}', 'true')

@@ -1,0 +1,85 @@
+jobs:
+  - job: 'Linux_gcc'
+    strategy:
+      matrix:
+        gcc_7:
+          gcc_version: '7'
+          HG_USE_TBB: 'Off'
+        gcc_9_tbb:
+          gcc_version: '7'
+          HG_USE_TBB: 'On'
+        gcc_7_coverage:
+          gcc_version: '7'
+          HG_USE_TBB: 'On'
+          COVERAGE: 1
+    pool:
+      vmImage: ubuntu-18.04
+    variables:
+      CODECOV_TOKEN: $(CODECOV_TOKEN_scr)
+      CC: gcc-$(gcc_version)
+      CXX: g++-$(gcc_version)
+    timeoutInMinutes: 360
+    steps:
+
+      - script: |
+          if [[ $(gcc_version) == '6' || $(gcc_version) == '7' || $(gcc_version) == '8' ]]; then
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            sudo apt-get update
+            sudo apt-get --no-install-suggests --no-install-recommends install g++-$(gcc_version)
+          fi
+          if [[ $(COVERAGE) -eq 1 ]]; then
+            sudo apt-get update
+            sudo apt-get --no-install-suggests --no-install-recommends install lcov
+          fi
+        displayName: Install build toolchain
+
+      - bash: echo "##vso[task.prependpath]$CONDA/bin"
+        displayName: Add conda to PATH
+
+      - script: |
+          conda config --set always_yes yes --set changeps1 no
+          conda update -q conda
+          conda install tbb-devel==2019.9 scikit-learn==1.0.1 -c conda-forge
+        displayName: Install python packages
+
+      - script: |
+          set -e
+          mkdir build
+          cd build
+          CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DPYTHON_EXECUTABLE:FILEPATH=$CONDA/bin/python -DTBB_INCLUDE_DIR=$CONDA/include -DTBB_LIBRARY=$CONDA/lib -DHG_USE_TBB=$HG_USE_TBB";
+          MAKE_TARGETS="test_exe"
+          if [[ -n "$COVERAGE" ]]; then
+            CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_BUILD_TYPE=Coverage"
+          else
+            MAKE_TARGETS="$MAKE_TARGETS higram"
+            CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_BUILD_TYPE=Debug"
+          fi
+          cmake $CMAKE_EXTRA_ARGS $(Build.SourcesDirectory)
+          make -j2 $MAKE_TARGETS
+        displayName: Build
+        workingDirectory: $(Build.BinariesDirectory)
+
+      - script: |
+          set -e
+          if [ -n "$COVERAGE" ]; then
+            ctest -R Test_cpp
+            lcov --directory . --capture --output-file coverage.info && # capture coverage info
+            lcov --remove coverage.info '*lib/include*' --output-file coverage.info && # filter out system
+            lcov --remove coverage.info '/usr*' --output-file coverage.info && # filter out system
+            lcov --list coverage.info #debug info
+          else
+            ctest -V
+          fi
+        displayName: Test
+        workingDirectory: $(Build.BinariesDirectory)/build
+
+      - script: |
+          set -e
+
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov -v -s $(Build.BinariesDirectory)/build
+
+        displayName: Upload coverage
+        workingDirectory: $(Build.SourcesDirectory)
+        condition: eq( variables['COVERAGE'], '1' )

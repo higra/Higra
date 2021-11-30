@@ -154,7 +154,13 @@ def prepare_dll_windows():
 
 
 try:
-    requires_list = ['numpy>=1.17.3']
+    python_version = sys.version_info[1] # TODO: python 3 assumed...
+    requires_list = {
+        7:['numpy>=1.17.5'],
+        8:['numpy>=1.17.5'],
+        9:['numpy>=1.19.5'],
+        10:['numpy>=1.21.4'],
+    }
     if use_tbb and platform.system() == "Windows":
         prepare_dll_windows()
 
@@ -186,7 +192,7 @@ try:
         ext_modules=[CMakeExtension('higram')],
         cmdclass=dict(build_ext=CMakeBuild),
         include_package_data=True,
-        install_requires=requires_list,
+        install_requires=requires_list[python_version],
         zip_safe=False,
         license='CeCILL-B',
     )
