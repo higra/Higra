@@ -78,7 +78,7 @@ jobs:
 
           curl -Os https://uploader.codecov.io/latest/linux/codecov
           chmod +x codecov
-          ./codecov -v -s $(Build.BinariesDirectory)/build -t $(CODECOV_TOKEN)
+          ./codecov -v -s $(Build.BinariesDirectory)/build
 
         displayName: Upload coverage
         workingDirectory: $(Build.SourcesDirectory)
