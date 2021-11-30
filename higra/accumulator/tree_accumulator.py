@@ -62,11 +62,11 @@ def propagate_sequential(tree, node_weights, condition):
 
 def propagate_sequential_and_accumulate(tree, node_weights, accumulator, condition=None):
     """
-    Sequentially propagates parent values to children and accumulates with its current value.
+    Sequentially propagates parent values to children and accumulates with the children value.
 
     The root value is defined as:
 
-        - :math:`output(root) = accumulator(node\_weights(root))` if :math:`condition(i)`; and
+        - :math:`output(root) = accumulator(node\_weights(root))` if :math:`condition(root)`; and
         - :math:`output(root) = node\_weights(root)` otherwise.
 
     Then for each node :math:`i` from the root (excluded) to the leaves:
@@ -74,7 +74,7 @@ def propagate_sequential_and_accumulate(tree, node_weights, accumulator, conditi
         - :math:`output(i) = accumulator(node\_weights(i), output(parent(i)))` if :math:`condition(i)`; and
         - :math:`output(i) = node\_weights(i)` otherwise .
 
-    If the condition array is not a provided, then :math:`condition(i)=true` for every node :math:`i`.
+    If the condition array is not provided, then :math:`condition(i)=true` for every node :math:`i`.
 
     :param tree: input tree
     :param node_weights: Weights on the nodes of the tree

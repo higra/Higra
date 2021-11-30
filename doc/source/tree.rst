@@ -704,6 +704,7 @@ Conditional sequential propagator
 
 The conditional sequential propagator defines the new value of a node as its parent propagated value if the condition is true and keeps its value otherwise.
 This process is thus done from the root to the leaves of the tree.
+The new root value is always equal to its current value: the condition on the root is ignored.
 
 The conditional sequential propagator pseudo-code could be:
 
@@ -716,8 +717,8 @@ The conditional sequential propagator pseudo-code could be:
 
     output = copy(input)
 
-    for each node n of t:
-        if(cond(n)):
+    for each node n of t from the root (excluded) to the leaves:
+        if(cond[n]):
             output[n] = output[t.parent(n)]
 
     return output
@@ -798,7 +799,7 @@ The following example demonstrates the application of a propagate and accumulate
             t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
             input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
 
-            result = hg.propagate_sequential_and_accumulate(t, input, condition)
+            result = hg.propagate_sequential_and_accumulate(t, input, hg.Accumulators.sum)
 
             # result = (15, 16, 18, 19, 20, 14, 15, 8)
 
@@ -811,6 +812,75 @@ The following example demonstrates the application of a propagate and accumulate
             tree t({5, 5, 6, 6, 6, 7, 7, 7});
             array_1d<index_t> input{1, 2, 3, 4, 5, 6, 7, 8};
 
-            auto result = propagate_sequential_and_accumulate(t, input, hg.Accumulators.sum);
+            auto result = propagate_sequential_and_accumulate(t, input, hg::accumulator_sum());
 
             // result = {15, 16, 18, 19, 20, 14, 15, 8};
+
+
+Conditional sequential propagate and accumulate
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The conditional sequential propagate and accumulate defines the new value of a node :math:`n` as
+
+ - if the condition is true on :math:`n`, the accumulation of the node current value and, if the node has a parent, of
+   its parent value; and
+ - its current value otherwise
+
+This process is done from the root to the leaves of the tree.
+
+
+The conditional propagate and accumulate pseudo-code could be:
+
+.. code-block:: python
+    :linenos:
+
+    # input: a tree t
+    # input: an attribute att on the nodes of t
+    # input: a condition cond on the nodes of t
+    # input: an accumulator acc
+
+    output[t.root] = acc(input[t.root]) if cond[t.root()] else input[t.root]
+
+    for each node n of t from the root (excluded) to the leaves:
+        if(cond[n]):
+            output[n] = acc(output[t.parent(n)], input[n])
+        else:
+            output[n] = input[n]
+
+    return output
+
+The following example demonstrates the application of a conditional propagate and accumulate with a sum accumulator:
+
+.. image:: fig/tree_demo_conditional_propagate_sequential_and_accumulate.svg
+    :align: center
+
+
+.. tabs::
+
+    .. tab:: python
+
+        .. code-block:: python
+            :linenos:
+
+            # tree in the above example
+            t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+            input = numpy.asarray((1, 2, 3, 4, 5, 6, 7, 8))
+            condition = numpy.asarray((True, False, True, False, True, True, False, False))
+
+            result = hg.propagate_sequential_and_accumulate(t, input, hg.Accumulators.sum, condition)
+
+            # result = (15, 2, 10, 4, 12, 14, 7, 8)
+
+    .. tab:: c++
+
+        .. code-block:: cpp
+            :linenos:
+
+            // tree in the above example
+            tree t({5, 5, 6, 6, 6, 7, 7, 7});
+            array_1d<index_t> input{1, 2, 3, 4, 5, 6, 7, 8};
+            array_1d<bool> condition{true, false, true, false, true, true, false, false};
+
+            auto result = propagate_sequential_and_accumulate(t, input, hg::accumulator_sum(), condition);
+
+            // result = {15, 2, 10, 4, 12, 14, 7, 8};
