@@ -183,6 +183,15 @@ namespace tree_accumulator {
         auto output4 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_sum());
         array_1d<int> ref4{15, 16, 18, 19, 20, 14, 15, 8};
         REQUIRE(xt::allclose(ref4, output4));
+
+        auto output5 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_prod(), condition);
+        array_1d<int> ref5{48, 2, 21, 4, 35, 48, 7, 8};
+        REQUIRE(xt::allclose(ref5, output5));
+
+        condition(root(tree)) = true;
+        auto output6 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_counter(), condition);
+        array_1d<int> ref6{2, 2, 2, 4, 2, 2, 7, 1};
+        REQUIRE(xt::allclose(ref6, output6));
     }
 
     TEST_CASE("propagate tree vectorial", "[tree_accumulator]") {
@@ -241,5 +250,16 @@ namespace tree_accumulator {
                            {15, 3},
                            {8,  1}};
         REQUIRE(xt::allclose(ref4, output4));
+
+        auto output5 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_prod(), condition);
+        array_2d<int> ref5{{48, 24},
+                           {2, 7},
+                           {21, 12},
+                           {4, 5},
+                           {35, 8},
+                           {48, 3},
+                           {7, 2},
+                           {8,  1}};
+        REQUIRE(xt::allclose(ref5, output5));
     }
 }

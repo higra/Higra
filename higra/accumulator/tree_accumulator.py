@@ -60,18 +60,32 @@ def propagate_sequential(tree, node_weights, condition):
     return res
 
 
-def propagate_sequential_and_accumulate(tree, node_weights, accumulator):
+def propagate_sequential_and_accumulate(tree, node_weights, accumulator, condition=None):
     """
-    Sequentially propagates parent values to children and accumulates with current value:
-    for each node :math:`i` from the root to the leaves,
-    :math:`output(i) = accumulator(node\_weights(i), output(parent(i)))`.
+    Sequentially propagates parent values to children and accumulates with the children value.
+
+    The root value is defined as:
+
+        - :math:`output(root) = accumulator(node\_weights(root))` if :math:`condition(root)`; and
+        - :math:`output(root) = node\_weights(root)` otherwise.
+
+    Then for each node :math:`i` from the root (excluded) to the leaves:
+
+        - :math:`output(i) = accumulator(node\_weights(i), output(parent(i)))` if :math:`condition(i)`; and
+        - :math:`output(i) = node\_weights(i)` otherwise .
+
+    If the condition array is not provided, then :math:`condition(i)=true` for every node :math:`i`.
 
     :param tree: input tree
     :param node_weights: Weights on the nodes of the tree
     :param accumulator: see :class:`~higra.Accumulators`
+    :param condition: Boolean array on the nodes of the tree (optional)
     :return: returns new tree node weights
     """
-    res = hg.cpp._propagate_sequential_and_accumulate(tree, node_weights, accumulator)
+    if condition is None:
+        res = hg.cpp._propagate_sequential_and_accumulate(tree, node_weights, accumulator)
+    else:
+        res = hg.cpp._propagate_sequential_and_accumulate(tree, node_weights, accumulator, condition)
     return res
 
 
