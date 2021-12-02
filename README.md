@@ -30,7 +30,7 @@ pip install higra
 
 Supported systems: 
 
- - Python 3.6, 3.7, 3.8, 3.9
+ - Python 3.7, 3.8, 3.9, 3.10
  - Linux 64 bits, macOS, Windows 64 bits (requires [Visual C++ Redistributable for Visual Studio 2015](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads))
 
 

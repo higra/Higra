@@ -817,6 +817,8 @@ The following example demonstrates the application of a propagate and accumulate
             // result = {15, 16, 18, 19, 20, 14, 15, 8};
 
 
+.. _tree conditional propagate and accumulate:
+
 Conditional sequential propagate and accumulate
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

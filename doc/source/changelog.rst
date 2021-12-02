@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.6.5
+-----
+
+- Add support for Python 3.10, remove support of Python 3.6  `#243 <https://github.com/higra/Higra/pull/243>`_
+- Add an optional condition to the tree propagate and accumulate function  see documentation
+  :ref:`tree conditional propagate and accumulate` :func:`~higra.propagate_sequential_and_accumulate`
+  `#241 <https://github.com/higra/Higra/pull/241>`_
+
 0.6.4
 -----
 
@@ -18,7 +26,7 @@ Changelog
 0.6.2
 -----
 
-- Add support for Python 3.9, remove support of Python 3.5`  `#233 <https://github.com/higra/Higra/pull/233>`_
+- Add support for Python 3.9, remove support of Python 3.5  `#233 <https://github.com/higra/Higra/pull/233>`_
 
 0.6.1
 -----
