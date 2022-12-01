@@ -230,6 +230,7 @@ namespace xt
         using backstrides_type = typename base_type::backstrides_type;
         using temporary_type = typename semantic_base::temporary_type;
         using expression_tag = Tag;
+        constexpr static std::size_t rank = SIZE_MAX;
 
         xarray_adaptor(storage_type&& storage);
         xarray_adaptor(const storage_type& storage);
@@ -251,6 +252,9 @@ namespace xt
 
         template <class E>
         xarray_adaptor& operator=(const xexpression<E>& e);
+
+        template <class P, class S>
+        void reset_buffer(P&& pointer, S&& size);
 
     private:
 
@@ -374,7 +378,8 @@ namespace xt
         : base_type()
     {
         base_type::resize(xt::shape<shape_type>(t));
-        L == layout_type::row_major ? nested_copy(m_storage.begin(), t) : nested_copy(this->template begin<layout_type::row_major>(), t);
+	constexpr auto tmp = layout_type::row_major;
+	L == tmp ? nested_copy(m_storage.begin(), t) : nested_copy(this->template begin<tmp>(), t);
     }
 
     /**
@@ -386,7 +391,8 @@ namespace xt
         : base_type()
     {
         base_type::resize(xt::shape<shape_type>(t));
-        L == layout_type::row_major ? nested_copy(m_storage.begin(), t) : nested_copy(this->template begin<layout_type::row_major>(), t);
+        constexpr auto tmp = layout_type::row_major;
+	L == tmp ? nested_copy(m_storage.begin(), t) : nested_copy(this->template begin<tmp>(), t);
     }
 
     /**
@@ -398,7 +404,8 @@ namespace xt
         : base_type()
     {
         base_type::resize(xt::shape<shape_type>(t));
-        L == layout_type::row_major ? nested_copy(m_storage.begin(), t) : nested_copy(this->template begin<layout_type::row_major>(), t);
+	constexpr auto tmp = layout_type::row_major;
+	L == tmp ? nested_copy(m_storage.begin(), t) : nested_copy(this->template begin<tmp>(), t);
     }
 
     /**
@@ -410,7 +417,8 @@ namespace xt
         : base_type()
     {
         base_type::resize(xt::shape<shape_type>(t));
-        L == layout_type::row_major ? nested_copy(m_storage.begin(), t) : nested_copy(this->template begin<layout_type::row_major>(), t);
+        constexpr auto tmp = layout_type::row_major;
+	L == tmp ? nested_copy(m_storage.begin(), t) : nested_copy(this->template begin<tmp>(), t);
     }
 
     /**
@@ -422,7 +430,8 @@ namespace xt
         : base_type()
     {
         base_type::resize(xt::shape<shape_type>(t));
-        L == layout_type::row_major ? nested_copy(m_storage.begin(), t) : nested_copy(this->template begin<layout_type::row_major>(), t);
+	constexpr auto tmp = layout_type::row_major;
+	L == tmp ? nested_copy(m_storage.begin(), t) : nested_copy(this->template begin<tmp>(), t);
     }
     //@}
 
@@ -615,6 +624,13 @@ namespace xt
     inline auto xarray_adaptor<EC, L, SC, Tag>::storage_impl() const noexcept -> const storage_type&
     {
         return m_storage;
+    }
+
+    template <class EC, layout_type L, class SC, class Tag>
+    template <class P, class S>
+    inline void xarray_adaptor<EC, L, SC, Tag>::reset_buffer(P&& pointer, S&& size)
+    {
+        return m_storage.reset_data(std::forward<P>(pointer), std::forward<S>(size));
     }
 }
 

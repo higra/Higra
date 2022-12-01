@@ -37,4 +37,5 @@ auto dispatch_accumulator(const functor_t & fun, const hg::accumulators & accumu
         case hg::accumulators::argmax:
             return fun(hg::accumulator_argmax());
     }
+    hg::unreachable();
 }

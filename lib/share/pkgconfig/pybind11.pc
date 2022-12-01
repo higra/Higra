@@ -1,0 +1,7 @@
+prefix=/home/user/CLionProjects/Higra/lib
+includedir=${prefix}/include
+
+Name: pybind11
+Description: Seamless operability between C++11 and Python
+Version: 2.10.1
+Cflags: -I${includedir}

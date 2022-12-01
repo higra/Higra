@@ -132,10 +132,10 @@ namespace xt
         template <class S, layout_type L>
         using const_reverse_broadcast_iterator = xfunctor_iterator<functor_type, typename xexpression_type::template const_reverse_broadcast_iterator<S, L>>;
 
-        using storage_iterator = xfunctor_iterator<functor_type, typename xexpression_type::storage_iterator>;
-        using const_storage_iterator = xfunctor_iterator<const functor_type, typename xexpression_type::const_storage_iterator>;
-        using reverse_storage_iterator = xfunctor_iterator<functor_type, typename xexpression_type::reverse_storage_iterator>;
-        using const_reverse_storage_iterator = xfunctor_iterator<const functor_type, typename xexpression_type::const_reverse_storage_iterator>;
+        using linear_iterator = xfunctor_iterator<functor_type, typename xexpression_type::linear_iterator>;
+        using const_linear_iterator = xfunctor_iterator<const functor_type, typename xexpression_type::const_linear_iterator>;
+        using reverse_linear_iterator = xfunctor_iterator<functor_type, typename xexpression_type::reverse_linear_iterator>;
+        using const_reverse_linear_iterator = xfunctor_iterator<const functor_type, typename xexpression_type::const_reverse_linear_iterator>;
 
         using iterator = xfunctor_iterator<functor_type, typename xexpression_type::iterator>;
         using const_iterator = xfunctor_iterator<const functor_type, typename xexpression_type::const_iterator>;
@@ -178,6 +178,9 @@ namespace xt
         using accessible_base::at;
         using accessible_base::operator[];
         using accessible_base::periodic;
+        using accessible_base::front;
+        using accessible_base::back;
+
         using accessible_base::in_bounds;
 
         xexpression_type& expression() noexcept;
@@ -198,9 +201,23 @@ namespace xt
 
         template <class FCT = functor_type>
         auto data_element(size_type i) const
-            -> decltype(std::declval<FCT>()(std::declval<undecay_expression>().data_element(i)))
+            -> decltype(std::declval<FCT>()(std::declval<const undecay_expression>().data_element(i)))
         {
             return m_functor(m_e.data_element(i));
+        }
+
+        template <class FCT = functor_type>
+        auto flat(size_type i)
+            -> decltype(std::declval<FCT>()(std::declval<undecay_expression>().flat(i)))
+        {
+            return m_functor(m_e.flat(i));
+        }
+
+        template <class FCT = functor_type>
+        auto flat(size_type i) const
+            -> decltype(std::declval<FCT>()(std::declval<const undecay_expression>().flat(i)))
+        {
+            return m_functor(m_e.flat(i));
         }
 
         // The following functions are defined inline because otherwise signatures
@@ -276,21 +293,21 @@ namespace xt
         template <class S, layout_type L = XTENSOR_DEFAULT_TRAVERSAL>
         const_reverse_broadcast_iterator<S, L> crend(const S& shape) const noexcept;
 
-        storage_iterator storage_begin() noexcept;
-        storage_iterator storage_end() noexcept;
+        linear_iterator linear_begin() noexcept;
+        linear_iterator linear_end() noexcept;
 
-        const_storage_iterator storage_begin() const noexcept;
-        const_storage_iterator storage_end() const noexcept;
-        const_storage_iterator storage_cbegin() const noexcept;
-        const_storage_iterator storage_cend() const noexcept;
+        const_linear_iterator linear_begin() const noexcept;
+        const_linear_iterator linear_end() const noexcept;
+        const_linear_iterator linear_cbegin() const noexcept;
+        const_linear_iterator linear_cend() const noexcept;
 
-        reverse_storage_iterator storage_rbegin() noexcept;
-        reverse_storage_iterator storage_rend() noexcept;
+        reverse_linear_iterator linear_rbegin() noexcept;
+        reverse_linear_iterator linear_rend() noexcept;
 
-        const_reverse_storage_iterator storage_rbegin() const noexcept;
-        const_reverse_storage_iterator storage_rend() const noexcept;
-        const_reverse_storage_iterator storage_crbegin() const noexcept;
-        const_reverse_storage_iterator storage_crend() const noexcept;
+        const_reverse_linear_iterator linear_rbegin() const noexcept;
+        const_reverse_linear_iterator linear_rend() const noexcept;
+        const_reverse_linear_iterator linear_crbegin() const noexcept;
+        const_reverse_linear_iterator linear_crend() const noexcept;
 
         template <class S>
         stepper stepper_begin(const S& shape) noexcept;
@@ -594,6 +611,8 @@ namespace xt
         using size_type = typename ST::size_type;
         using difference_type = typename ST::difference_type;
 
+        using shape_type = typename ST::shape_type;
+
         xfunctor_stepper() = default;
         xfunctor_stepper(const ST&, functor_type*);
 
@@ -730,7 +749,7 @@ namespace xt
      *
      * @warning This method is meant for performance, for expressions with a dynamic
      * number of dimensions (i.e. not known at compile time). Since it may have
-     * undefined behavior (see parameters), operator() should be prefered whenever
+     * undefined behavior (see parameters), operator() should be preferred whenever
      * it is possible.
      * @warning This method is NOT compatible with broadcasting, meaning the following
      * code has undefined behavior:
@@ -738,7 +757,7 @@ namespace xt
      * xt::xarray<double> a = {{0, 1}, {2, 3}};
      * xt::xarray<double> b = {0, 1};
      * auto fd = a + b;
-     * double res = fd.uncheked(0, 1);
+     * double res = fd.unchecked(0, 1);
      * \endcode
      */
     template <class D>
@@ -1095,7 +1114,7 @@ namespace xt
     template <layout_type L>
     inline auto xfunctor_applier_base<D>::crbegin() const noexcept
     {
-        return xfunctor_iterator<functor_type, decltype(m_e.template rbegin<L>())>
+        return xfunctor_iterator<const functor_type, decltype(m_e.template rbegin<L>())>
             (m_e.template rbegin<L>(), &m_functor);
     }
 
@@ -1108,7 +1127,7 @@ namespace xt
     template <layout_type L>
     inline auto xfunctor_applier_base<D>::crend() const noexcept
     {
-        return xfunctor_iterator<functor_type, decltype(m_e.template rend<L>())>
+        return xfunctor_iterator<const functor_type, decltype(m_e.template rend<L>())>
             (m_e.template rend<L>(), &m_functor);
     }
     //@}
@@ -1202,75 +1221,75 @@ namespace xt
     //@}
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_begin() noexcept -> storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_begin() noexcept -> linear_iterator
     {
-        return storage_iterator(m_e.storage_begin(), &m_functor);
+        return linear_iterator(m_e.linear_begin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_end() noexcept -> storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_end() noexcept -> linear_iterator
     {
-        return storage_iterator(m_e.storage_end(), &m_functor);
+        return linear_iterator(m_e.linear_end(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_begin() const noexcept -> const_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_begin() const noexcept -> const_linear_iterator
     {
-        return const_storage_iterator(m_e.storage_begin(), &m_functor);
+        return const_linear_iterator(m_e.linear_begin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_end() const noexcept -> const_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_end() const noexcept -> const_linear_iterator
     {
-        return const_storage_iterator(m_e.storage_end(), &m_functor);
+        return const_linear_iterator(m_e.linear_end(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_cbegin() const noexcept -> const_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_cbegin() const noexcept -> const_linear_iterator
     {
-        return const_storage_iterator(m_e.storage_cbegin(), &m_functor);
+        return const_linear_iterator(m_e.linear_cbegin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_cend() const noexcept -> const_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_cend() const noexcept -> const_linear_iterator
     {
-        return const_storage_iterator(m_e.storage_cend(), &m_functor);
+        return const_linear_iterator(m_e.linear_cend(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rbegin() noexcept -> reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_rbegin() noexcept -> reverse_linear_iterator
     {
-        return reverse_storage_iterator(m_e.storage_rbegin(), &m_functor);
+        return reverse_linear_iterator(m_e.linear_rbegin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rend() noexcept -> reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_rend() noexcept -> reverse_linear_iterator
     {
-        return reverse_storage_iterator(m_e.storage_rend(), &m_functor);
+        return reverse_linear_iterator(m_e.linear_rend(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rbegin() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_rbegin() const noexcept -> const_reverse_linear_iterator
     {
-        return const_reverse_storage_iterator(m_e.storage_rbegin(), &m_functor);
+        return const_reverse_linear_iterator(m_e.linear_rbegin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_rend() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_rend() const noexcept -> const_reverse_linear_iterator
     {
-        return const_reverse_storage_iterator(m_e.storage_rend(), &m_functor);
+        return const_reverse_linear_iterator(m_e.linear_rend(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_crbegin() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_crbegin() const noexcept -> const_reverse_linear_iterator
     {
-        return const_reverse_storage_iterator(m_e.storage_crbegin(), &m_functor);
+        return const_reverse_linear_iterator(m_e.linear_crbegin(), &m_functor);
     }
 
     template <class D>
-    inline auto xfunctor_applier_base<D>::storage_crend() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunctor_applier_base<D>::linear_crend() const noexcept -> const_reverse_linear_iterator
     {
-        return const_reverse_storage_iterator(m_e.storage_crend(), &m_functor);
+        return const_reverse_linear_iterator(m_e.linear_crend(), &m_functor);
     }
 
     /***************
@@ -1378,7 +1397,7 @@ namespace xt
 
         if (this->layout() == de.layout())
         {
-            std::copy(de.storage_begin(), de.storage_end(), this->storage_begin());
+            std::copy(de.linear_begin(), de.linear_end(), this->linear_begin());
         }
         else
         {

@@ -10,6 +10,8 @@
 #ifndef XTENSOR_LAYOUT_HPP
 #define XTENSOR_LAYOUT_HPP
 
+#include <type_traits>
+
 // Do not include anything else here.
 // xlayout.hpp is included in xtensor_forward.hpp
 // and we don't want to bring other headers to it.
@@ -52,6 +54,8 @@ namespace xt
 
     constexpr layout_type default_assignable_layout(layout_type l) noexcept;
 
+    constexpr layout_type layout_remove_any(const layout_type layout) noexcept;
+
     /******************
      * Implementation *
      ******************/
@@ -91,6 +95,11 @@ namespace xt
     {
         return (l == layout_type::row_major || l == layout_type::column_major) ?
             l : XTENSOR_DEFAULT_LAYOUT;
+    }
+
+    constexpr layout_type layout_remove_any(const layout_type layout) noexcept
+    {
+        return layout == layout_type::any ? XTENSOR_DEFAULT_LAYOUT : layout;
     }
 }
 

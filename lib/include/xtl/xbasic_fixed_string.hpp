@@ -16,6 +16,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <cassert>
 
 #ifdef __CLING__
 #include <nlohmann/json.hpp>
@@ -67,7 +68,61 @@ namespace xtl
         template <int selector>
         struct select_storage;
 
+        template <typename T>
+        struct fixed_small_string_storage_impl;
+
         template <class T, std::size_t N>
+        struct fixed_small_string_storage_impl<T[N]>
+        {
+            static_assert(N <= (1u << (8 * sizeof(T))), "small string");
+
+            fixed_small_string_storage_impl()
+            {
+                set_size(0);
+            }
+
+            fixed_small_string_storage_impl(T ptr[N], std::size_t size)
+                : m_buffer(ptr)
+            {
+                m_buffer[N - 1] = N - size;
+            }
+
+            T* buffer()
+            {
+                return m_buffer;
+            }
+
+            const T* buffer() const
+            {
+                return m_buffer;
+            }
+
+            std::size_t size() const
+            {
+                // Don't use std::make_unsinged_t here, this should remain C++11 compatible
+                using unsigned_type = typename std::make_unsigned<T>::type;
+                return N - reinterpret_cast<unsigned_type const*>(m_buffer)[N - 1];
+            }
+
+            void set_size(std::size_t sz)
+            {
+                assert(sz < N && "setting a small size");
+                // Don't use std::make_unsinged_t here, this should remain C++11 compatible
+                using unsigned_type = typename std::make_unsigned<T>::type;
+                reinterpret_cast<unsigned_type*>(m_buffer)[N - 1] = static_cast<unsigned_type>(N - sz);
+                m_buffer[sz] = '\0';
+            }
+
+            void adjust_size(std::ptrdiff_t val)
+            {
+                assert(size() + val >= 0 && "adjusting to positive size");
+                set_size(static_cast<std::size_t>(static_cast<std::ptrdiff_t>(size()) + val));
+            }
+
+            T m_buffer[N];
+        };
+
+        template <class T>
         struct fixed_string_storage_impl
         {
             fixed_string_storage_impl() = default;
@@ -108,7 +163,7 @@ namespace xtl
             std::size_t m_size;
         };
 
-        template <class T, std::size_t N>
+        template <class T>
         struct fixed_string_external_storage_impl
         {
             fixed_string_external_storage_impl() = default;
@@ -146,18 +201,28 @@ namespace xtl
             T m_buffer;
         };
 
+        template <class T, bool Small>
+        struct select_fixed_storage {
+          using type = fixed_string_storage_impl<T>;
+        };
+
+        template <class T>
+        struct select_fixed_storage<T, true> {
+          using type = fixed_small_string_storage_impl<T>;
+        };
+
         template <>
         struct select_storage<buffer | store_size>
         {
             template <class T, std::size_t N>
-            using type = fixed_string_storage_impl<T[N + 1], N>;
+            using type = typename select_fixed_storage<T[N + 1], N < (1u << (8 * sizeof(T)))>::type;
         };
 
         template <>
         struct select_storage<buffer>
         {
             template <class T, std::size_t N>
-            using type = fixed_string_external_storage_impl<T[N + 1], N>;
+            using type = fixed_string_external_storage_impl<T[N + 1]>;
         };
     }
 

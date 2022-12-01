@@ -334,7 +334,6 @@ namespace xt
     /***********************************
      * resize_container implementation *
      ***********************************/
-
     template <class C>
     inline bool resize_container(C& c, typename C::size_type size)
     {
@@ -575,6 +574,21 @@ namespace xt
     {
         return N;
     }
+    /***********************************
+     * has_storage_type implementation *
+     ***********************************/
+
+    template <class T, class = void>
+    struct has_storage_type : std::false_type
+    {};
+
+    template<class T>
+    struct xcontainer_inner_types;
+
+    template <class T>
+    struct has_storage_type<T, void_t<typename xcontainer_inner_types<T>::storage_type>>
+        : xtl::negation<std::is_same<typename std::remove_cv<typename xcontainer_inner_types<T>::storage_type>::type, invalid_type>>
+    {};
 
     /*************************************
      * has_data_interface implementation *
@@ -638,9 +652,14 @@ namespace xt
      * xtrivial_default_construct implemenation *
      ********************************************/
 
+#if defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE >= 7
+// has_trivial_default_constructor has not been available since libstdc++-7.
+#define XTENSOR_GLIBCXX_USE_CXX11_ABI 1
+#else
 #if defined(_GLIBCXX_USE_CXX11_ABI)
 #if _GLIBCXX_USE_CXX11_ABI || (defined(_GLIBCXX_USE_DUAL_ABI) && !_GLIBCXX_USE_DUAL_ABI)
 #define XTENSOR_GLIBCXX_USE_CXX11_ABI 1
+#endif
 #endif
 #endif
 
@@ -871,7 +890,7 @@ namespace xt
     template <class E>
     struct get_rank<E, decltype((void)E::rank, void())>
     {
-        constexpr static std::size_t value= E::rank;
+        constexpr static std::size_t value = E::rank;
     };
 
     /******************

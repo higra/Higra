@@ -152,7 +152,7 @@ namespace xt
         {
             const auto& de = e.derived_cast();
             R ev;
-            ev.resize({de.size()});
+            ev.resize({static_cast<typename R::shape_type::value_type>(de.size())});
 
             std::copy(de.cbegin(), de.cend(), ev.begin());
             std::sort(ev.begin(), ev.end());
@@ -279,15 +279,15 @@ namespace xt
             {
                 n_iters = std::accumulate(data.shape().begin(), data.shape().end() - 1,
                                           std::size_t(1), std::multiplies<>());
-                data_secondary_stride = data.strides()[data.dimension() - 2];
-                inds_secondary_stride = inds.strides()[inds.dimension() - 2];
+                data_secondary_stride = static_cast<std::ptrdiff_t>(data.shape(data.dimension() - 1));
+                inds_secondary_stride = static_cast<std::ptrdiff_t>(inds.shape(inds.dimension() - 1));
             }
             else
             {
                 n_iters = std::accumulate(data.shape().begin() + 1, data.shape().end(),
                                           std::size_t(1), std::multiplies<>());
-                data_secondary_stride = data.strides()[1];
-                inds_secondary_stride = inds.strides()[1];
+                data_secondary_stride = static_cast<std::ptrdiff_t>(data.shape(0));
+                inds_secondary_stride = static_cast<std::ptrdiff_t>(inds.shape(0));
             }
 
             auto ptr = data.data();
@@ -418,32 +418,24 @@ namespace xt
             std::sort(kth_copy.begin(), kth_copy.end());
         }
 
-        std::copy(de.storage_cbegin(), de.storage_cend(), ev.storage_begin()); // flatten
+        std::copy(de.linear_cbegin(), de.linear_cend(), ev.linear_begin()); // flatten
         std::size_t k_last = kth_copy.back();
-        std::nth_element(ev.storage_begin(), ev.storage_begin() + k_last, ev.storage_end());
+        std::nth_element(ev.linear_begin(), ev.linear_begin() + k_last, ev.linear_end());
 
         for (auto it = (kth_copy.rbegin() + 1); it != kth_copy.rend(); ++it)
         {
-            std::nth_element(ev.storage_begin(), ev.storage_begin() + *it, ev.storage_begin() + k_last);
+            std::nth_element(ev.linear_begin(), ev.linear_begin() + *it, ev.linear_begin() + k_last);
             k_last = *it;
         }
 
         return ev;
     }
 
-#ifdef X_OLD_CLANG
-    template <class E, class I, class R = detail::flatten_sort_result_type_t<E>>
-    inline R partition(const xexpression<E>& e, std::initializer_list<I> kth_container, placeholders::xtuph tag)
-    {
-        return partition(e, xtl::forward_sequence<std::vector<std::size_t>, decltype(kth_container)>(kth_container), tag);
-    }
-#else
     template <class E, class I, std::size_t N, class R = detail::flatten_sort_result_type_t<E>>
     inline R partition(const xexpression<E>& e, const I(&kth_container)[N], placeholders::xtuph tag)
     {
         return partition(e, xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container), tag);
     }
-#endif
 
     template <class E, class R = detail::flatten_sort_result_type_t<E>>
     inline R partition(const xexpression<E>& e, std::size_t kth, placeholders::xtuph tag)
@@ -507,19 +499,12 @@ namespace xt
         return res;
     }
 
-#ifdef X_OLD_CLANG
-    template <class E, class I>
-    inline auto partition(const xexpression<E>& e, std::initializer_list<I> kth_container, std::ptrdiff_t axis = -1)
-    {
-        return partition(e, xtl::forward_sequence<std::vector<std::size_t>, decltype(kth_container)>(kth_container), axis);
-    }
-#else
     template <class E, class T, std::size_t N>
     inline auto partition(const xexpression<E>& e, const T(&kth_container)[N], std::ptrdiff_t axis = -1)
     {
         return partition(e, xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container), axis);
     }
-#endif
+
     template <class E>
     inline auto partition(const xexpression<E>& e, std::size_t kth, std::ptrdiff_t axis = -1)
     {
@@ -573,32 +558,24 @@ namespace xt
             return de[a] < de[b];
         };
 
-        std::iota(ev.storage_begin(), ev.storage_end(), 0);
+        std::iota(ev.linear_begin(), ev.linear_end(), 0);
         std::size_t k_last = kth_copy.back();
-        std::nth_element(ev.storage_begin(), ev.storage_begin() + k_last, ev.storage_end(), arg_lambda);
+        std::nth_element(ev.linear_begin(), ev.linear_begin() + k_last, ev.linear_end(), arg_lambda);
 
         for (auto it = (kth_copy.rbegin() + 1); it != kth_copy.rend(); ++it)
         {
-            std::nth_element(ev.storage_begin(), ev.storage_begin() + *it, ev.storage_begin() + k_last, arg_lambda);
+            std::nth_element(ev.linear_begin(), ev.linear_begin() + *it, ev.linear_begin() + k_last, arg_lambda);
             k_last = *it;
         }
 
         return ev;
     }
 
-#ifdef X_OLD_CLANG
-    template <class E, class I>
-    inline auto argpartition(const xexpression<E>& e, std::initializer_list<I> kth_container, placeholders::xtuph tag)
-    {
-        return argpartition(e, xtl::forward_sequence<std::vector<std::size_t>, decltype(kth_container)>(kth_container), tag);
-    }
-#else
     template <class E, class I, std::size_t N>
     inline auto argpartition(const xexpression<E>& e, const I(&kth_container)[N], placeholders::xtuph tag)
     {
         return argpartition(e, xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container), tag);
     }
-#endif
 
     template <class E>
     inline auto argpartition(const xexpression<E>& e, std::size_t kth, placeholders::xtuph tag)
@@ -708,19 +685,11 @@ namespace xt
         return res;
     }
 
-#ifdef X_OLD_CLANG
-    template <class E, class I>
-    inline auto argpartition(const xexpression<E>& e, std::initializer_list<I> kth_container, std::ptrdiff_t axis = -1)
-    {
-        return argpartition(e, xtl::forward_sequence<std::vector<std::size_t>, decltype(kth_container)>(kth_container), axis);
-    }
-#else
     template <class E, class I, std::size_t N>
     inline auto argpartition(const xexpression<E>& e, const I(&kth_container)[N], std::ptrdiff_t axis = -1)
     {
         return argpartition(e, xtl::forward_sequence<std::array<std::size_t, N>, decltype(kth_container)>(kth_container), axis);
     }
-#endif
 
     template <class E>
     inline auto argpartition(const xexpression<E>& e, std::size_t kth, std::ptrdiff_t axis = -1)
@@ -799,31 +768,6 @@ namespace xt
             using type = xtensor<std::size_t, N - 1>;
         };
 
-        template <class IT, class F>
-        inline std::size_t cmp_idx(IT iter, IT end, std::ptrdiff_t inc, F&& cmp)
-        {
-            std::size_t idx = 0;
-            auto min = *iter;
-            iter += inc;
-            for (std::size_t i = 1; iter < end; iter += inc, ++i)
-            {
-                if (cmp(*iter, min))
-                {
-                    min = *iter;
-                    idx = i;
-                }
-            }
-            return idx;
-        }
-
-        template <layout_type L, class E, class F>
-        inline xtensor<std::size_t, 0> arg_func_impl(const E& e, F&& f)
-        {
-            return cmp_idx(e.template begin<L>(),
-                           e.template end<L>(), 1,
-                           std::forward<F>(f));
-        }
-
         template <layout_type L, class E, class F>
         inline typename argfunc_result_type<E>::type
         arg_func_impl(const E& e, std::size_t axis, F&& cmp)
@@ -835,7 +779,10 @@ namespace xt
 
             if (e.dimension() == 1)
             {
-                return arg_func_impl<L>(e, std::forward<F>(cmp));
+                auto begin = e.template begin<L>();
+                auto end = e.template end<L>();
+                std::size_t i = static_cast<std::size_t>(std::distance(begin, std::min_element(begin, end)));
+                return xtensor<size_t, 0>{i};
             }
 
             result_shape_type alt_shape;
@@ -888,14 +835,19 @@ namespace xt
     {
         using value_type = typename E::value_type;
         auto&& ed = eval(e.derived_cast());
-        return detail::arg_func_impl<L>(ed, std::less<value_type>());
+        auto begin = ed.template begin<L>();
+        auto end = ed.template end<L>();
+        std::size_t i = static_cast<std::size_t>(std::distance(begin, std::min_element(begin, end)));
+        return xtensor<size_t, 0>{i};
     }
 
     /**
-     * Find position of minimal value in xexpression
+     * Find position of minimal value in xexpression.
+     * By default, the returned index is into the flattened array.
+     * If `axis` is specified, the indices are along the specified axis.
      *
      * @param e input xexpression
-     * @param axis select axis (or none)
+     * @param axis select axis (optional)
      *
      * @return returns xarray with positions of minimal value
      */
@@ -913,14 +865,19 @@ namespace xt
     {
         using value_type = typename E::value_type;
         auto&& ed = eval(e.derived_cast());
-        return detail::arg_func_impl<L>(ed, std::greater<value_type>());
+        auto begin = ed.template begin<L>();
+        auto end = ed.template end<L>();
+        std::size_t i = static_cast<std::size_t>(std::distance(begin, std::max_element(begin, end)));
+        return xtensor<size_t, 0>{i};
     }
 
     /**
      * Find position of maximal value in xexpression
+     * By default, the returned index is into the flattened array.
+     * If `axis` is specified, the indices are along the specified axis.
      *
      * @param e input xexpression
-     * @param axis select axis (or none)
+     * @param axis select axis (optional)
      *
      * @return returns xarray with positions of maximal value
      */

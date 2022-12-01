@@ -320,9 +320,9 @@ namespace xt
     inline auto pycontainer<D>::get_buffer_size() const -> size_type
     {
         const size_type& (*min)(const size_type&, const size_type&) = std::min<size_type>;
-        size_type min_stride = this->strides().empty() ? size_type(1) : 
+        size_type min_stride = this->strides().empty() ? size_type(1) :
             std::max(size_type(1), std::accumulate(this->strides().cbegin(),
-                                                   this->strides().cend(), 
+                                                   this->strides().cend(),
                                                    std::numeric_limits<size_type>::max(),
                                                    min));
         return min_stride * static_cast<size_type>(PyArray_SIZE(this->python_array()));
@@ -511,19 +511,6 @@ namespace xt
             std::allocator<unsigned long long> b;
             std::allocator<double> c;
             std::allocator<std::complex<double>> d;
-            std::allocator<unsigned short> e;
-            std::allocator<short> f;
-            std::allocator<float> g;
-            std::allocator<unsigned int> h;
-            std::allocator<int> i;
-            std::allocator<unsigned char> j;
-            std::allocator<char> k;
-            if(!std::is_same<char, signed char>::value){
-                std::allocator<signed char> l;
-            }
-            std::allocator<unsigned long> m;
-            std::allocator<long> n;
-            std::allocator<bool> o;
         }
     }
 #endif

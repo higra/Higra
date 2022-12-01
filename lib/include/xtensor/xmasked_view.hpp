@@ -37,7 +37,7 @@ namespace xt
 
     template <class CTD, class CTM>
     struct xcontainer_inner_types<xmasked_view<CTD, CTM>>
-    {   
+    {
         using data_type = std::decay_t<CTD>;
         using mask_type = std::decay_t<CTM>;
         using base_value_type = typename data_type::value_type;
@@ -191,6 +191,8 @@ namespace xt
         using accessible_base::operator[];
         using accessible_base::periodic;
         using accessible_base::in_bounds;
+        using accessible_base::front;
+        using accessible_base::back;
 
         template <class It>
         reference element(It first, It last);

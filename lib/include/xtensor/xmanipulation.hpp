@@ -77,6 +77,9 @@ namespace xt
     auto vsplit(E& e, std::size_t n);
 
     template <class E>
+    auto flip(E&& e);
+
+    template <class E>
     auto flip(E&& e, std::size_t axis);
 
     template <std::ptrdiff_t N = 1, class E>
@@ -238,20 +241,11 @@ namespace xt
     }
 
     /// @cond DOXYGEN_INCLUDE_SFINAE
-#ifdef X_OLD_CLANG
-    template <class E, class I, class Tag = check_policy::none>
-    inline auto transpose(E&& e, std::initializer_list<I> permutation, Tag check_policy = Tag())
-    {
-        dynamic_shape<I> perm(permutation);
-        return detail::transpose_impl(std::forward<E>(e), std::move(perm), check_policy);
-    }
-#else
     template <class E, class I, std::size_t N, class Tag = check_policy::none>
     inline auto transpose(E&& e, const I(&permutation)[N], Tag check_policy = Tag())
     {
         return detail::transpose_impl(std::forward<E>(e), permutation, check_policy);
     }
-#endif
     /// @endcond
 
     /************************************
@@ -449,21 +443,12 @@ namespace xt
     }
 
     /// @cond DOXYGEN_INCLUDE_SFINAE
-#ifdef X_OLD_CLANG
-    template <class E, class I, class Tag = check_policy::none>
-    inline auto squeeze(E&& e, std::initializer_list<I> axis, Tag check_policy = Tag())
-    {
-        dynamic_shape<I> ax(axis);
-        return detail::squeeze_impl(std::forward<E>(e), std::move(ax), check_policy);
-    }
-#else
     template <class E, class I, std::size_t N, class Tag = check_policy::none>
     inline auto squeeze(E&& e, const I(&axis)[N], Tag check_policy = Tag())
     {
         using arr_t = std::array<I, N>;
         return detail::squeeze_impl(std::forward<E>(e), xtl::forward_sequence<arr_t, decltype(axis)>(axis), check_policy);
     }
-#endif
 
     template <class E, class Tag = check_policy::none>
     inline auto squeeze(E&& e, std::size_t axis, Tag check_policy = Tag())
@@ -607,7 +592,7 @@ namespace xt
     /**
      * @brief Split an xexpression into subexpressions horizontally (column-wise)
      *
-     * This method is equivalent to ``split(e, n, 1)``. 
+     * This method is equivalent to ``split(e, n, 1)``.
      *
      * @param e input xexpression
      * @param n number of elements to return
@@ -635,6 +620,24 @@ namespace xt
     /***********************
      * flip implementation *
      ***********************/
+
+    /**
+     * @brief Reverse the order of elements in an xexpression along every axis.
+     *
+     * @param e the input xexpression
+     *
+     * @return returns a view with the result of the flip.
+     */
+    template <class E>
+    inline auto flip(E&& e)
+    {
+        using size_type = typename std::decay_t<E>::size_type;
+        auto r = flip(e, 0);
+        for (size_type d = 1; d < e.dimension(); ++d) {
+            r = flip(r, d);
+        }
+        return r;
+    }
 
     /**
      * @brief Reverse the order of elements in an xexpression along the given axis.
@@ -920,7 +923,7 @@ namespace xt
      * @brief Repeats elements of an expression along a given axis.
      *
      * @param e the input xexpression
-     * @param repeats The number of repetition of each elements. The size of \ref repeats 
+     * @param repeats The number of repetition of each elements. The size of \ref repeats
      * must match the shape of the given \ref axis.
      * @param axis the axis along which to repeat the value
      *
@@ -936,7 +939,7 @@ namespace xt
      * @brief Repeats elements of an expression along a given axis.
      *
      * @param e the input xexpression
-     * @param repeats The number of repetition of each elements. The size of \ref repeats 
+     * @param repeats The number of repetition of each elements. The size of \ref repeats
      * must match the shape of the given \ref axis.
      * @param axis the axis along which to repeat the value
      *

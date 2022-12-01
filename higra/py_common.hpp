@@ -28,3 +28,30 @@ add_type_overloads(module_t & m, const char * doc, Args&&... args){
     add_type_overloads<F, Ts...>(m, "", std::forward<Args>(args)...);
 };
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+namespace workaround
+{
+    // Fixes "undefined symbol" issues with xtensor-python
+    inline void extra_allocator()
+    {
+        std::allocator<long long> a;
+        std::allocator<unsigned long long> b;
+        std::allocator<double> c;
+        std::allocator<std::complex<double>> d;
+        std::allocator<unsigned short> e;
+        std::allocator<short> f;
+        std::allocator<float> g;
+        std::allocator<unsigned int> h;
+        std::allocator<int> i;
+        std::allocator<unsigned char> j;
+        std::allocator<char> k;
+        if(!std::is_same<char, signed char>::value){
+            std::allocator<signed char> l;
+        }
+        std::allocator<unsigned long> m;
+        std::allocator<long> n;
+        std::allocator<bool> o;
+    }
+}
+#endif

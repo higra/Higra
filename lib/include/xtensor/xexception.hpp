@@ -14,11 +14,42 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 #include "xtensor_config.hpp"
+#include <xtl/xsequence.hpp>
+#include <xtl/xspan_impl.hpp>
+
+#ifdef __GNUC__
+#define XTENSOR_UNUSED_VARIABLE __attribute__ ((unused))
+#else
+#define XTENSOR_UNUSED_VARIABLE
+#endif
 
 namespace xt
 {
+    struct missing_type {};
+    namespace {
+        missing_type XTENSOR_UNUSED_VARIABLE missing;
+    }
+
+    namespace detail
+    {
+        template <class... Args>
+        struct last_type_is_missing_impl
+            : std::is_same<missing_type, xtl::mpl::back_t<xtl::mpl::vector<Args...>>>
+        {
+        };
+
+        template <>
+        struct last_type_is_missing_impl<>
+            : std::false_type
+        {
+        };
+
+        template <class... Args>
+        constexpr bool last_type_is_missing = last_type_is_missing_impl<Args...>::value;
+    }
 
     /*******************
      * broadcast_error *
@@ -147,31 +178,58 @@ namespace xt
         {
         }
 
+        template <class S, std::size_t dim>
+        inline void check_index_impl(const S&, missing_type)
+        {
+        }
+
         template <class S, std::size_t dim, class T, class... Args>
         inline void check_index_impl(const S& shape, T arg, Args... args)
         {
-            if (sizeof...(Args) + 1 > shape.size())
+            if (std::size_t(arg) >= std::size_t(shape[dim]) && shape[dim] != 1)
             {
-                check_index_impl<S, dim>(shape, args...);
+                XTENSOR_THROW(std::out_of_range,
+                              "index " + std::to_string(arg) + " is out of bounds for axis " +
+                              std::to_string(dim) + " with size " + std::to_string(shape[dim]));
             }
-            else
-            {
-                if (std::size_t(arg) >= std::size_t(shape[dim]) && shape[dim] != 1)
-                {
-                    XTENSOR_THROW(std::out_of_range,
-                                  "index " + std::to_string(arg) + " is out of bounds for axis " +
-                                  std::to_string(dim) + " with size " + std::to_string(shape[dim]));
-                }
-                check_index_impl<S, dim + 1>(shape, args...);
-            }
+            check_index_impl<S, dim + 1>(shape, args...);
         }
     }
 
-    template <class S, class... Args>
-    inline void check_index(const S& shape, Args... args)
+    template <class S>
+    inline void check_index(const S&)
     {
-        using value_type = typename S::value_type;
-        detail::check_index_impl<S, 0>(shape, static_cast<value_type>(args)...);
+    }
+
+    template <class S>
+    inline void check_index(const S&, missing_type)
+    {
+    }
+
+    template <class S, class Arg, class... Args>
+    inline void check_index(const S& shape, Arg arg, Args... args)
+    {
+        constexpr std::size_t nargs = sizeof...(Args) + 1;
+        if (nargs == shape.size())
+        {
+            detail::check_index_impl<S, 0>(shape, arg, args...);
+        }
+        else if (nargs > shape.size())
+        {
+            // Too many arguments: drop the first
+            check_index(shape, args...);
+        }
+        else if (detail::last_type_is_missing<Args...>)
+        {
+            // Too few arguments & last argument xt::missing: postfix index with zeros
+            detail::check_index_impl<S, 0>(shape, arg, args...);
+        }
+        else
+        {
+            // Too few arguments: ignore the beginning of the shape
+            auto it = shape.end() - nargs;
+            detail::check_index_impl<decltype(it), 0>(it, arg, args...);
+        }
     }
 
     template <class S, class It>
@@ -182,7 +240,7 @@ namespace xt
         auto dst = static_cast<size_type>(last - first);
         It efirst = last - static_cast<std::ptrdiff_t>((std::min)(shape.size(), dst));
         std::size_t axis = 0;
-        
+
         while (efirst != last)
         {
             if (*efirst >= value_type(shape[axis]) && shape[axis] != 1)
@@ -208,7 +266,7 @@ namespace xt
         {
             XTENSOR_THROW(std::out_of_range,
                           "Number of arguments (" + std::to_string(sizeof...(Args)) +
-                          ") us greater than the number of dimensions (" +
+                          ") is greater than the number of dimensions (" +
                           std::to_string(shape.size()) + ")");
         }
     }
