@@ -142,6 +142,127 @@ namespace xt
         return begin;
     }
 
+
+    /***********
+     * strides *
+     ***********/
+
+    namespace detail
+    {
+        template <class return_type, class S, class T, class D>
+        inline return_type compute_stride_impl(layout_type layout, const S& shape, T axis, D default_stride)
+        {
+            if (layout == layout_type::row_major)
+            {
+                return std::accumulate(
+                    shape.cbegin() + axis + 1,
+                    shape.cend(),
+                    static_cast<return_type>(1),
+                    std::multiplies<return_type>()
+                );
+            }
+            if (layout == layout_type::column_major)
+            {
+                return std::accumulate(
+                   shape.cbegin(),
+                    shape.cbegin() + axis,
+                    static_cast<return_type>(1),
+                    std::multiplies<return_type>()
+                );
+            }
+            return default_stride;
+        }
+    }
+
+    /**
+    * @ingroup strides
+    * @brief strides_type
+    *
+    * Choose stride type
+    */
+    enum class stride_type
+    {
+        internal = 0, ///< As used internally (with `stride(axis) == 0` if `shape(axis) == 1`)
+        normal = 1, ///< Normal stride corresponding to storage.
+        bytes = 2, ///< Normal stride in bytes.
+    };
+
+    /**
+    * @ingroup strides
+    * @brief strides
+    *
+    * Get strides of an object.
+    * @param a an array
+    * @return array
+    */
+    template <class E>
+    inline auto strides(const E& e, stride_type type = stride_type::normal) noexcept
+    {
+        using strides_type = typename E::strides_type;
+        using return_type = typename strides_type::value_type;
+        strides_type ret = e.strides();
+        auto shape = e.shape();
+
+        if (type == stride_type::internal)
+        {
+            return ret;
+        }
+
+        for (std::size_t i = 0; i < ret.size(); ++i)
+        {
+            if (shape[i] == 1)
+            {
+                ret[i] = detail::compute_stride_impl<return_type>(e.layout(), shape, i, ret[i]);
+            }
+        }
+
+        if (type == stride_type::bytes)
+        {
+            return_type f = static_cast<return_type>(sizeof(typename E::value_type));
+            std::for_each(ret.begin(), ret.end(), [f](auto& c){ c *= f; });
+        }
+
+        return ret;
+    }
+
+    /**
+    * @ingroup strides
+    * @brief strides
+    *
+    * Get stride of an object along an axis.
+    * @param a an array
+    * @return integer
+    */
+    template <class E>
+    inline auto strides(const E& e, std::size_t axis, stride_type type = stride_type::normal) noexcept
+    {
+        using strides_type = typename E::strides_type;
+        using return_type = typename strides_type::value_type;
+
+        return_type ret = e.strides()[axis];
+
+        if (type == stride_type::internal)
+        {
+            return ret;
+        }
+
+        if (ret == 0)
+        {
+            if (e.shape(axis) == 1)
+            {
+                ret = detail::compute_stride_impl<return_type>(e.layout(), e.shape(), axis, ret);
+            }
+        }
+
+        if (type == stride_type::bytes)
+        {
+            return_type f = static_cast<return_type>(sizeof(typename E::value_type));
+            ret *= f;
+        }
+
+        return ret;
+    }
+
     /******************
      * Implementation *
      ******************/
@@ -169,8 +290,16 @@ namespace xt
 
     namespace detail
     {
+
         template <std::size_t dim, class S>
         inline auto raw_data_offset(const S&) noexcept
+        {
+            using strides_value_type = std::decay_t<decltype(std::declval<S>()[0])>;
+            return strides_value_type(0);
+        }
+
+        template <std::size_t dim, class S>
+        inline auto raw_data_offset(const S&, missing_type) noexcept
         {
             using strides_value_type = std::decay_t<decltype(std::declval<S>()[0])>;
             return strides_value_type(0);
@@ -179,7 +308,7 @@ namespace xt
         template <std::size_t dim, class S, class Arg, class... Args>
         inline auto raw_data_offset(const S& strides, Arg arg, Args... args) noexcept
         {
-            return arg * strides[dim] + raw_data_offset<dim + 1>(strides, args...);
+            return static_cast<std::ptrdiff_t>(arg) * strides[dim] + raw_data_offset<dim + 1>(strides, args...);
         }
 
         template <layout_type L, std::ptrdiff_t static_dim>
@@ -270,11 +399,17 @@ namespace xt
             // Too many arguments: drop the first
             return data_offset<offset_type, S>(strides, args...);
         }
+        else if (detail::last_type_is_missing<Args...>)
+        {
+            // Too few arguments & last argument xt::missing: postfix index with zeros
+            return static_cast<offset_type>(detail::raw_data_offset<0>(strides, arg, args...));
+        }
         else
         {
             // Too few arguments: right to left scalar product
             auto view = strides.cend() - nargs;
             return static_cast<offset_type>(detail::raw_data_offset<0>(view, arg, args...));
+
         }
     }
 
@@ -461,10 +596,10 @@ namespace xt
         return detail::unravel_noexcept(index, strides, l);
     }
 
-    template <class S>
-    inline get_strides_t<S> ravel_from_strides(const S& index, const S& strides)
+    template <class S, class T>
+    inline get_value_type_t<T> ravel_from_strides(const T& index, const S& strides)
     {
-        return element_offset<get_strides_t<S>>(strides, index.begin(), index.end());
+        return element_offset<get_value_type_t<T>>(strides, index.begin(), index.end());
     }
 
     template <class S>
@@ -494,14 +629,13 @@ namespace xt
         return out;
     }
 
-    template <class S>
-    inline get_value_type<S> ravel_index(const S& index, const S& shape, layout_type l)
+    template <class S, class T>
+    inline get_value_type_t<T> ravel_index(const T& index, const S& shape, layout_type l)
     {
         using strides_type = get_strides_t<S>;
-        using strides_value_type = typename strides_type::value_type;
         strides_type strides = xtl::make_sequence<strides_type>(shape.size(), 0);
         compute_strides(shape, l, strides);
-        return ravel_from_strides(static_cast<strides_value_type>(index), strides);
+        return ravel_from_strides(index, strides);
     }
 
     template <class S, class stype>
@@ -629,6 +763,12 @@ namespace xt
             return true;
         }
 
+        template <class S, std::size_t dim>
+        inline bool check_in_bounds_impl(const S&, missing_type)
+        {
+            return true;
+        }
+
         template <class S, std::size_t dim, class T, class... Args>
         inline bool check_in_bounds_impl(const S& shape, T& arg, Args&... args)
         {
@@ -653,6 +793,11 @@ namespace xt
     {
         template <class S, std::size_t dim>
         inline void normalize_periodic_impl(const S&)
+        {
+        }
+
+        template <class S, std::size_t dim>
+        inline void normalize_periodic_impl(const S&, missing_type)
         {
         }
 

@@ -10,7 +10,6 @@
 
 #include "py_undirected_graph.hpp"
 #include "py_common_graph.hpp"
-#include "extra_xtensor_pybin_casters.hpp"
 
 namespace py = pybind11;
 

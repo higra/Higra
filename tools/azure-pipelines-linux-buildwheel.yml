@@ -2,21 +2,21 @@ jobs:
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
       name: 'linux_py37'
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
       CIBW_BUILD: 'cp37-*'
       NUMPY_VERSION: '1.17.5'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
       name: 'linux_py38'
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
       CIBW_BUILD: 'cp38-*'
       NUMPY_VERSION: '1.17.5'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
       name: 'linux_py39'
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
       CIBW_BUILD: 'cp39-*'
       NUMPY_VERSION: '1.19.5'
       force: true

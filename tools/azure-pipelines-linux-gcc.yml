@@ -8,12 +8,12 @@ jobs:
         gcc_9_tbb:
           gcc_version: '7'
           HG_USE_TBB: 'On'
-        gcc_7_coverage:
-          gcc_version: '7'
+        gcc_9_coverage:
+          gcc_version: '9'
           HG_USE_TBB: 'On'
           COVERAGE: 1
     pool:
-      vmImage: ubuntu-18.04
+      vmImage: ubuntu-20.04
     variables:
       CODECOV_TOKEN: $(CODECOV_TOKEN_scr)
       CC: gcc-$(gcc_version)

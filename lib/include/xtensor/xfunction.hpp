@@ -142,9 +142,10 @@ namespace xt
     struct xcontainer_inner_types<xfunction<F, CT...>>
     {
         // Added indirection for MSVC 2017 bug with the operator value_type()
-        using value_type = typename meta_identity<decltype(std::declval<F>()(std::declval<xvalue_type_t<std::decay_t<CT>>>()...))>::type;
-        using reference = value_type;
-        using const_reference = value_type;
+        using func_return_type = typename meta_identity<decltype(std::declval<F>()(std::declval<xvalue_type_t<std::decay_t<CT>>>()...))>::type;
+        using value_type = std::decay_t<func_return_type>;
+        using reference = func_return_type;
+        using const_reference = reference;
         using size_type = common_size_type_t<std::decay_t<CT>...>;
     };
 
@@ -230,10 +231,10 @@ namespace xt
         template <class S, layout_type L>
         using const_reverse_broadcast_iterator = typename iterable_base::template const_reverse_broadcast_iterator<S, L>;
 
-        using const_storage_iterator = xfunction_iterator<F, CT...>;
-        using storage_iterator = const_storage_iterator;
-        using const_reverse_storage_iterator = std::reverse_iterator<const_storage_iterator>;
-        using reverse_storage_iterator = std::reverse_iterator<storage_iterator>;
+        using const_linear_iterator = xfunction_iterator<F, CT...>;
+        using linear_iterator = const_linear_iterator;
+        using const_reverse_linear_iterator = std::reverse_iterator<const_linear_iterator>;
+        using reverse_linear_iterator = std::reverse_iterator<linear_iterator>;
 
         using iterator = typename iterable_base::iterator;
         using const_iterator = typename iterable_base::const_iterator;
@@ -271,6 +272,8 @@ namespace xt
         using accessible_base::operator[];
         using accessible_base::periodic;
         using accessible_base::in_bounds;
+        using accessible_base::front;
+        using accessible_base::back;
 
         template <class It>
         const_reference element(It first, It last) const;
@@ -290,15 +293,15 @@ namespace xt
         using iterable_base::crbegin;
         using iterable_base::crend;
 
-        const_storage_iterator storage_begin() const noexcept;
-        const_storage_iterator storage_end() const noexcept;
-        const_storage_iterator storage_cbegin() const noexcept;
-        const_storage_iterator storage_cend() const noexcept;
+        const_linear_iterator linear_begin() const noexcept;
+        const_linear_iterator linear_end() const noexcept;
+        const_linear_iterator linear_cbegin() const noexcept;
+        const_linear_iterator linear_cend() const noexcept;
 
-        const_reverse_storage_iterator storage_rbegin() const noexcept;
-        const_reverse_storage_iterator storage_rend() const noexcept;
-        const_reverse_storage_iterator storage_crbegin() const noexcept;
-        const_reverse_storage_iterator storage_crend() const noexcept;
+        const_reverse_linear_iterator linear_rbegin() const noexcept;
+        const_reverse_linear_iterator linear_rend() const noexcept;
+        const_reverse_linear_iterator linear_crbegin() const noexcept;
+        const_reverse_linear_iterator linear_crend() const noexcept;
 
         template <class S>
         const_stepper stepper_begin(const S& shape) const noexcept;
@@ -306,6 +309,8 @@ namespace xt
         const_stepper stepper_end(const S& shape, layout_type l) const noexcept;
 
         const_reference data_element(size_type i) const;
+
+        const_reference flat(size_type i) const;
 
         template <class UT = self_type, class = typename std::enable_if<UT::only_scalar::value>::type>
         operator value_type() const;
@@ -399,7 +404,7 @@ namespace xt
 
     private:
 
-        using data_type = std::tuple<decltype(linear_begin(std::declval<const std::decay_t<CT>>()))...>;
+        using data_type = std::tuple<decltype(xt::linear_begin(std::declval<const std::decay_t<CT>>()))...>;
 
         template <std::size_t... I>
         reference deref_impl(std::index_sequence<I...>) const;
@@ -435,7 +440,7 @@ namespace xt
         using xfunction_type = xfunction<F, CT...>;
 
         using value_type = typename xfunction_type::value_type;
-        using reference = typename xfunction_type::value_type;
+        using reference = typename xfunction_type::reference;
         using pointer = typename xfunction_type::const_pointer;
         using size_type = typename xfunction_type::size_type;
         using difference_type = typename xfunction_type::difference_type;
@@ -584,6 +589,20 @@ namespace xt
     }
 
     /**
+     * @name Data
+     */
+    /**
+     * Returns a constant reference to the element at the specified position of the underlying
+     * contiguous storage of the function.
+     * @param index index to underlying flat storage.
+     */
+    template <class F, class... CT>
+    inline auto xfunction<F, CT...>::flat(size_type index) const -> const_reference
+    {
+        return data_element_impl(std::make_index_sequence<sizeof...(CT)>(), index);
+    }
+
+    /**
      * Returns a constant reference to the element at the specified position in the expression.
      * @param args a list of indices specifying the position in the expression. Indices
      * must be unsigned integers, the number of indices must be equal to the number of
@@ -668,53 +687,53 @@ namespace xt
     //@}
 
     template <class F, class... CT>
-    inline auto xfunction<F, CT...>::storage_begin() const noexcept -> const_storage_iterator
+    inline auto xfunction<F, CT...>::linear_begin() const noexcept -> const_linear_iterator
     {
-        return storage_cbegin();
+        return linear_cbegin();
     }
 
     template <class F, class... CT>
-    inline auto xfunction<F, CT...>::storage_end() const noexcept -> const_storage_iterator
+    inline auto xfunction<F, CT...>::linear_end() const noexcept -> const_linear_iterator
     {
-        return storage_cend();
+        return linear_cend();
     }
 
     template <class F, class... CT>
-    inline auto xfunction<F, CT...>::storage_cbegin() const noexcept -> const_storage_iterator
+    inline auto xfunction<F, CT...>::linear_cbegin() const noexcept -> const_linear_iterator
     {
-        auto f = [](const auto& e) noexcept { return linear_begin(e); };
+        auto f = [](const auto& e) noexcept { return xt::linear_begin(e); };
         return build_iterator(f, std::make_index_sequence<sizeof...(CT)>());
     }
 
     template <class F, class... CT>
-    inline auto xfunction<F, CT...>::storage_cend() const noexcept -> const_storage_iterator
+    inline auto xfunction<F, CT...>::linear_cend() const noexcept -> const_linear_iterator
     {
-        auto f = [](const auto& e) noexcept { return linear_end(e); };
+        auto f = [](const auto& e) noexcept { return xt::linear_end(e); };
         return build_iterator(f, std::make_index_sequence<sizeof...(CT)>());
     }
 
     template <class F, class... CT>
-    inline auto xfunction<F, CT...>::storage_rbegin() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunction<F, CT...>::linear_rbegin() const noexcept -> const_reverse_linear_iterator
     {
-        return storage_crbegin();
+        return linear_crbegin();
     }
 
     template <class F, class... CT>
-    inline auto xfunction<F, CT...>::storage_rend() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunction<F, CT...>::linear_rend() const noexcept -> const_reverse_linear_iterator
     {
-        return storage_crend();
+        return linear_crend();
     }
 
     template <class F, class... CT>
-    inline auto xfunction<F, CT...>::storage_crbegin() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunction<F, CT...>::linear_crbegin() const noexcept -> const_reverse_linear_iterator
     {
-        return const_reverse_storage_iterator(storage_cend());
+        return const_reverse_linear_iterator(linear_cend());
     }
 
     template <class F, class... CT>
-    inline auto xfunction<F, CT...>::storage_crend() const noexcept -> const_reverse_storage_iterator
+    inline auto xfunction<F, CT...>::linear_crend() const noexcept -> const_reverse_linear_iterator
     {
-        return const_reverse_storage_iterator(storage_cbegin());
+        return const_reverse_linear_iterator(linear_cbegin());
     }
 
     template <class F, class... CT>
@@ -823,7 +842,7 @@ namespace xt
     template <class Func, std::size_t... I>
     inline auto xfunction<F, CT...>::build_iterator(Func&& f, std::index_sequence<I...>) const noexcept
     {
-        return const_storage_iterator(this, f(std::get<I>(m_e))...);
+        return const_linear_iterator(this, f(std::get<I>(m_e))...);
     }
 
     template <class F, class... CT>

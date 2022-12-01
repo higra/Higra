@@ -235,6 +235,24 @@ namespace xt
         static const bool value = true;
     };
 
+    template <class T, class R = T>
+    struct enable_indexed_stepper
+        : std::enable_if<is_indexed_stepper<T>::value, R>
+    {
+    };
+
+    template <class T, class R = T>
+    using enable_indexed_stepper_t = typename enable_indexed_stepper<T, R>::type;
+
+    template <class T, class R = T>
+    struct disable_indexed_stepper
+        : std::enable_if<!is_indexed_stepper<T>::value, R>
+    {
+    };
+
+    template <class T, class R = T>
+    using disable_indexed_stepper_t = typename disable_indexed_stepper<T, R>::type;
+
     /*************
      * xiterator *
      *************/
@@ -339,6 +357,12 @@ namespace xt
     bool operator<(const xiterator<St, S, L>& lhs,
                    const xiterator<St, S, L>& rhs);
 
+    template <class St, class S, layout_type L>
+    struct is_contiguous_container<xiterator<St, S, L>>
+        : std::false_type
+    {
+    };
+
     /*********************
      * xbounded_iterator *
      *********************/
@@ -399,12 +423,12 @@ namespace xt
     namespace detail
     {
         template <class C, class = void_t<>>
-        struct has_storage_iterator : std::false_type
+        struct has_linear_iterator : std::false_type
         {
         };
 
         template <class C>
-        struct has_storage_iterator<C, void_t<decltype(std::declval<C>().storage_cbegin())>>
+        struct has_linear_iterator<C, void_t<decltype(std::declval<C>().linear_cbegin())>>
             : std::true_type
         {
         };
@@ -413,9 +437,9 @@ namespace xt
     template <class C>
     XTENSOR_CONSTEXPR_RETURN auto linear_begin(C& c) noexcept
     {
-        return xtl::mpl::static_if<detail::has_storage_iterator<C>::value>([&](auto self)
+        return xtl::mpl::static_if<detail::has_linear_iterator<C>::value>([&](auto self)
         {
-            return self(c).storage_begin();
+            return self(c).linear_begin();
         }, /*else*/ [&](auto self)
         {
             return self(c).begin();
@@ -425,9 +449,9 @@ namespace xt
     template <class C>
     XTENSOR_CONSTEXPR_RETURN auto linear_end(C& c) noexcept
     {
-        return xtl::mpl::static_if<detail::has_storage_iterator<C>::value>([&](auto self)
+        return xtl::mpl::static_if<detail::has_linear_iterator<C>::value>([&](auto self)
         {
-            return self(c).storage_end();
+            return self(c).linear_end();
         }, /*else*/ [&](auto self)
         {
             return self(c).end();
@@ -437,9 +461,9 @@ namespace xt
     template <class C>
     XTENSOR_CONSTEXPR_RETURN auto linear_begin(const C& c) noexcept
     {
-        return xtl::mpl::static_if<detail::has_storage_iterator<C>::value>([&](auto self)
+        return xtl::mpl::static_if<detail::has_linear_iterator<C>::value>([&](auto self)
         {
-            return self(c).storage_cbegin();
+            return self(c).linear_cbegin();
         }, /*else*/ [&](auto self)
         {
             return self(c).cbegin();
@@ -449,9 +473,9 @@ namespace xt
     template <class C>
     XTENSOR_CONSTEXPR_RETURN auto linear_end(const C& c) noexcept
     {
-        return xtl::mpl::static_if<detail::has_storage_iterator<C>::value>([&](auto self)
+        return xtl::mpl::static_if<detail::has_linear_iterator<C>::value>([&](auto self)
         {
-            return self(c).storage_cend();
+            return self(c).linear_cend();
         }, /*else*/ [&](auto self)
         {
             return self(c).cend();
@@ -533,8 +557,8 @@ namespace xt
             static R apply(const It& it)
             {
                 R reg;
-                reg.load_unaligned(&(*it));
-                return reg;
+                return reg.load_unaligned(&(*it));
+                //return reg;
             }
         };
 

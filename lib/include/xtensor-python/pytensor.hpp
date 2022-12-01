@@ -21,6 +21,7 @@
 
 #include "pycontainer.hpp"
 #include "pystrides_adaptor.hpp"
+#include "pynative_casters.hpp"
 #include "xtensor_type_caster_base.hpp"
 
 namespace xt
@@ -99,16 +100,26 @@ namespace pybind11
             }
         };
 
-        // Type caster for casting xt::xtensor to ndarray
-        template <class T, std::size_t N, xt::layout_type L>
-        struct type_caster<xt::xtensor<T, N, L>> : xtensor_type_caster_base<xt::xtensor<T, N, L>>
-        {
-        };
-    }
+    } // namespace detail
 }
 
 namespace xt
 {
+    namespace detail {
+
+        template <std::size_t N>
+        struct numpy_strides
+        {
+            npy_intp value[N];
+        };
+
+        template <>
+        struct numpy_strides<0>
+        {
+            npy_intp* value = nullptr;
+        };
+
+    } // namespace detail
 
     template <class T, std::size_t N, layout_type L>
     struct xiterable_inner_types<pytensor<T, N, L>>
@@ -168,6 +179,7 @@ namespace xt
         using inner_shape_type = typename base_type::inner_shape_type;
         using inner_strides_type = typename base_type::inner_strides_type;
         using inner_backstrides_type = typename base_type::inner_backstrides_type;
+        constexpr static std::size_t rank = N;
 
         pytensor();
         pytensor(nested_initializer_list_t<T, N> t);
@@ -436,8 +448,8 @@ namespace xt
     template <class T, std::size_t N, layout_type L>
     inline void pytensor<T, N, L>::init_tensor(const shape_type& shape, const strides_type& strides)
     {
-        npy_intp python_strides[N];
-        std::transform(strides.begin(), strides.end(), python_strides,
+        detail::numpy_strides<N> python_strides;
+        std::transform(strides.begin(), strides.end(), python_strides.value,
                        [](auto v) { return sizeof(T) * v; });
         int flags = NPY_ARRAY_ALIGNED;
         if (!std::is_const<T>::value)
@@ -448,7 +460,7 @@ namespace xt
 
         auto tmp = pybind11::reinterpret_steal<pybind11::object>(
             PyArray_NewFromDescr(&PyArray_Type, (PyArray_Descr*) dtype.release().ptr(), static_cast<int>(shape.size()),
-                        const_cast<npy_intp*>(shape.data()), python_strides,
+                        const_cast<npy_intp*>(shape.data()), python_strides.value,
                         nullptr, flags, nullptr));
 
         if (!tmp)
@@ -471,7 +483,7 @@ namespace xt
         {
             return;
         }
-        
+
         if (PyArray_NDIM(this->python_array()) != N)
         {
             throw std::runtime_error("NumPy: ndarray has incorrect number of dimensions");

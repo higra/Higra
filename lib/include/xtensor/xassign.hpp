@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <type_traits>
 #include <utility>
+#include <functional>
 
 #include <xtl/xcomplex.hpp>
 #include <xtl/xsequence.hpp>
@@ -342,7 +343,8 @@ namespace xt
         template <class T>
         static constexpr bool simd_size_impl() { return xt_simd::simd_traits<T>::size > 1 || (is_bool<T>::value && use_xsimd()); }
         static constexpr bool simd_size() { return simd_size_impl<e1_value_type>() && simd_size_impl<e2_value_type>(); }
-        static constexpr bool simd_interface() { return has_simd_interface<E2, requested_value_type>(); }
+        static constexpr bool simd_interface() { return has_simd_interface<E1, requested_value_type>() && 
+                                                        has_simd_interface<E2, requested_value_type>(); }
 
     public:
 
@@ -374,7 +376,7 @@ namespace xt
         using traits = xassign_traits<E1, E2>;
 
         bool linear_assign = traits::linear_assign(de1, de2, trivial);
-        constexpr bool simd_assign = traits::simd_linear_assign();
+        constexpr bool simd_assign = traits::simd_assign();
         constexpr bool simd_linear_assign = traits::simd_linear_assign();
         constexpr bool simd_strided_assign = traits::simd_strided_assign();
         if (linear_assign)
@@ -417,16 +419,20 @@ namespace xt
     inline void xexpression_assigner<Tag>::computed_assign(xexpression<E1>& e1, const xexpression<E2>& e2)
     {
         using shape_type = typename E1::shape_type;
+        using comperator_type = std::greater<typename shape_type::value_type>;
+
         using size_type = typename E1::size_type;
 
         E1& de1 = e1.derived_cast();
         const E2& de2 = e2.derived_cast();
 
-        size_type dim = de2.dimension();
-        shape_type shape = uninitialized_shape<shape_type>(dim);
+        size_type dim2 = de2.dimension();
+        shape_type shape = uninitialized_shape<shape_type>(dim2);
+
         bool trivial_broadcast = de2.broadcast_shape(shape, true);
 
-        if (dim > de1.dimension() || shape > de1.shape())
+        auto && de1_shape = de1.shape();
+        if (dim2 > de1.dimension() || std::lexicographical_compare(shape.begin(), shape.end(), de1_shape.begin(), de1_shape.end(), comperator_type()))
         {
             typename E1::temporary_type tmp(shape);
             base_type::assign_data(tmp, e2, trivial_broadcast);
@@ -635,10 +641,20 @@ namespace xt
         }
 
 #if defined(XTENSOR_USE_TBB)
-        tbb::parallel_for(align_begin, align_end, simd_size, [&e1, &e2](size_t i)
+        if (size >= XTENSOR_TBB_THRESHOLD)
         {
-            e1.template store_simd<lhs_align_mode>(i, e2.template load_simd<rhs_align_mode, value_type>(i));
-        });
+            tbb::parallel_for(align_begin, align_end, simd_size, [&e1, &e2](size_t i)
+            {
+                e1.template store_simd<lhs_align_mode>(i, e2.template load_simd<rhs_align_mode, value_type>(i));
+            });
+        }
+        else
+        {
+            for (size_type i = align_begin; i < align_end; i += simd_size)
+            {
+                e1.template store_simd<lhs_align_mode>(i, e2.template load_simd<rhs_align_mode, value_type>(i));
+            }
+        }
 #elif defined(XTENSOR_USE_OPENMP)
         if (size >= XTENSOR_OPENMP_TRESHOLD)
         {

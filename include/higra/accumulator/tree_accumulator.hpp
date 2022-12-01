@@ -263,7 +263,7 @@ namespace hg {
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
 
-            auto aparents = parents(tree).storage_begin();
+            auto aparents = parents(tree).linear_begin();
 
             for (auto i: root_to_leaves_iterator(tree)) {
                 input_view.set_position(aparents[i]);
@@ -292,7 +292,7 @@ namespace hg {
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
 
-            auto aparents = parents(tree).storage_begin();
+            auto aparents = parents(tree).linear_begin();
 
             for (auto i: root_to_leaves_iterator(tree)) {
                 if (condition(i)) {
@@ -327,7 +327,7 @@ namespace hg {
             auto output_view = make_light_axis_view<vectorial>(output);
             auto inout_view = make_light_axis_view<vectorial>(output);
 
-            auto aparents = parents(tree).storage_begin();
+            auto aparents = parents(tree).linear_begin();
 
             // root cannot be deleted
             output_view.set_position(root(tree));
@@ -374,7 +374,7 @@ namespace hg {
             auto output_view = make_light_axis_view<vectorial>(output);
             auto parent_view = make_light_axis_view<vectorial>(output);
 
-            auto aparents = parents(tree).storage_begin();
+            auto aparents = parents(tree).linear_begin();
             auto acc = accumulator.template make_accumulator<vectorial>(output_view);
             // root cannot be deleted
             output_view.set_position(root(tree));
@@ -432,7 +432,7 @@ namespace hg {
             auto output_view = make_light_axis_view<vectorial>(output);
             auto parent_view = make_light_axis_view<vectorial>(output);
 
-            auto aparents = parents(tree).storage_begin();
+            auto aparents = parents(tree).linear_begin();
             auto acc = accumulator.template make_accumulator<vectorial>(output_view);
             // root cannot be deleted
             output_view.set_position(root(tree));

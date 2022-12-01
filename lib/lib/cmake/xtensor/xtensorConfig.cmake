@@ -41,7 +41,7 @@ endmacro()
 ####################################################################################
 
 include(CMakeFindDependencyMacro)
-find_dependency(xtl 0.6.16)
+find_dependency(xtl 0.7.0)
 
 if(NOT TARGET xtensor)
     include("${CMAKE_CURRENT_LIST_DIR}/xtensorTargets.cmake")
@@ -56,6 +56,7 @@ endif()
 
 if(XTENSOR_USE_TBB)
     find_dependency(TBB)
+    target_link_libraries(xtensor INTERFACE tbb)
     target_compile_definitions(xtensor INTERFACE XTENSOR_USE_TBB)
 endif()
 

@@ -8,10 +8,14 @@
 #include <xtensor/xassign.hpp>
 #include <xtensor/xaxis_iterator.hpp>
 #include <xtensor/xaxis_slice_iterator.hpp>
+#include <xtensor/xblockwise_reducer.hpp>
+#include <xtensor/xblockwise_reducer_functors.hpp>
 #include <xtensor/xbroadcast.hpp>
 #include <xtensor/xbuffer_adaptor.hpp>
 #include <xtensor/xbuilder.hpp>
 #include <xtensor/xchunked_array.hpp>
+#include <xtensor/xchunked_assign.hpp>
+#include <xtensor/xchunked_view.hpp>
 #include <xtensor/xcomplex.hpp>
 #include <xtensor/xcontainer.hpp>
 #include <xtensor/xcsv.hpp>
@@ -34,6 +38,7 @@
 #include <xtensor/xmanipulation.hpp>
 #include <xtensor/xmasked_view.hpp>
 #include <xtensor/xmath.hpp>
+#include <xtensor/xmultiindex_iterator.hpp>
 #include <xtensor/xnoalias.hpp>
 #include <xtensor/xnorm.hpp>
 #include <xtensor/xoffset_view.hpp>

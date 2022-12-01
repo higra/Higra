@@ -181,10 +181,15 @@ namespace xt
         template <class... Args>
         const_reference unchecked(Args... args) const;
 
+        reference flat(size_type index);
+        const_reference flat(size_type index) const;
+
         using base_type::operator[];
         using base_type::at;
         using base_type::periodic;
         using base_type::in_bounds;
+        using base_type::front;
+        using base_type::back;
 
         template <class It>
         reference element(It first, It last);
@@ -451,6 +456,18 @@ namespace xt
     }
 
     template <class CT, class S, layout_type L, class FST>
+    inline auto xdynamic_view<CT, S, L, FST>::flat(size_type i) -> reference
+    {
+        return base_type::storage()[data_offset() + i];
+    }
+
+    template <class CT, class S, layout_type L, class FST>
+    inline auto xdynamic_view<CT, S, L, FST>::flat(size_type i) const -> const_reference
+    {
+        return base_type::storage()[data_offset() + i];
+    }
+
+    template <class CT, class S, layout_type L, class FST>
     template <class It>
     inline auto xdynamic_view<CT, S, L, FST>::element(It first, It last) -> reference
     {
@@ -482,7 +499,7 @@ namespace xt
     template <class T>
     inline void xdynamic_view<CT, S, L, FST>::fill(const T& value)
     {
-        return std::fill(this->storage_begin(), this->storage_end(), value);
+        return std::fill(this->linear_begin(), this->linear_end(), value);
     }
 
     template <class CT, class S, layout_type L, class FST>

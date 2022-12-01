@@ -42,6 +42,12 @@ endmacro()
 ####################################################################################
 
 if(NOT TARGET xsimd)
+    set(xsimd_ENABLE_XTL_COMPLEX OFF)
+    if(xsimd_ENABLE_XTL_COMPLEX)
+        include(CMakeFindDependencyMacro)
+        find_dependency(xtl)
+    endif()
+
     include("${CMAKE_CURRENT_LIST_DIR}/xsimdTargets.cmake")
     get_target_property(xsimd_INCLUDE_DIRS xsimd INTERFACE_INCLUDE_DIRECTORIES)
 endif()

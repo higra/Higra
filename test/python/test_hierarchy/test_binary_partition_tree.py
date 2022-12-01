@@ -139,10 +139,10 @@ class TestBinaryPartitionTree(unittest.TestCase):
 
         ref_parents = np.asarray((5, 5, 6, 6, 8, 7, 7, 8, 8))
         ref_altitudes = np.asarray((0., 0., 0., 0., 0., 1.,
-                                    2., 3., 4.182275))
+                                    2., 3., 4.18227544))
 
         self.assertTrue(np.all(tree.parents() == ref_parents))
-        self.assertTrue(np.allclose(altitudes, ref_altitudes))
+        self.assertTrue(np.allclose(altitudes, ref_altitudes, rtol=1e-5, atol=1e-1))
 
     def test_binary_partition_tree_exponential_linkage_equiv(self):
         np.random.seed(10)

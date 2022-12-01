@@ -57,6 +57,8 @@ namespace xt
         using not_a_layout = xtl::negation<std::is_same<layout_type,T>>;
     }
 
+#ifndef IN_DOXYGEN
+
     /**************************
      * xarray_adaptor builder *
      **************************/
@@ -87,7 +89,7 @@ namespace xt
      */
     template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class C, class SC,
               XTL_REQUIRES(detail::not_an_array<std::decay_t<SC>>,
-                           std::is_pointer<C>)>
+                           std::is_pointer<std::remove_reference_t<C>>)>
     inline auto adapt(C&& pointer, const SC& shape, layout_type l = L)
     {
         static_assert(!xtl::is_integral<SC>::value, "shape cannot be a integer");
@@ -202,7 +204,7 @@ namespace xt
     /***************************
      * xtensor_adaptor builder *
      ***************************/
-
+    
     /**
      * Constructs a 1-D xtensor_adaptor of the given stl-like container,
      * with the specified layout_type.
@@ -245,7 +247,7 @@ namespace xt
      */
     template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class C, class SC,
               XTL_REQUIRES(detail::is_array<std::decay_t<SC>>,
-                           std::is_pointer<C>)>
+                           std::is_pointer<std::remove_reference_t<C>>)>
     inline auto adapt(C&& pointer, const SC& shape, layout_type l = L)
     {
         static_assert(!xtl::is_integral<SC>::value, "shape cannot be a integer");
@@ -388,7 +390,7 @@ namespace xt
      * @param shape the shape of the xtensor_fixed_adaptor
      */
     template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class C, std::size_t... X,
-              XTL_REQUIRES(std::is_pointer<C>)>
+              XTL_REQUIRES(std::is_pointer<std::remove_reference_t<C>>)>
     inline auto adapt(C&& pointer, const fixed_shape<X...>& /*shape*/)
     {
         using buffer_type = xbuffer_adaptor<C, xt::no_ownership, detail::default_allocator_for_ptr_t<C>>;
@@ -396,21 +398,138 @@ namespace xt
         return return_type(buffer_type(pointer, detail::fixed_compute_size<fixed_shape<X...>>::value));
     }
 
-#ifndef X_OLD_CLANG
     template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class C, class T,  std::size_t N>
     inline auto adapt(C&& ptr, const T(&shape)[N])
     {
         using shape_type = std::array<std::size_t, N>;
         return adapt(std::forward<C>(ptr), xtl::forward_sequence<shape_type, decltype(shape)>(shape));
     }
-#else
+
+#else // IN_DOXYGEN
+
+    /**
+     * Constructs:
+     * - an xarray_adaptor if SC is not an array type
+     * - an xtensor_adaptor if SC is an array type
+     *
+     * from the given stl-like container or pointer, with the specified shape and layout.
+     * If the adaptor is built from a pointer, it does not take its ownership.
+     * @param container the container or pointer to adapt
+     * @param shape the shape of the adaptor
+     * @param l the layout_type of the adaptor
+     */
+    template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class C, class SC>
+    inline auto adapt(C&& container, const SC& shape, layout_type l = L);
+
+    /**
+     * Constructs:
+     * - an xarray_adaptor if SC is not an array type
+     * - an xtensor_adaptor if SC is an array type
+     *
+     * from the given stl-like container with the specified shape and strides.
+     * @param container the container to adapt
+     * @param shape the shape of the adaptor
+     * @param strides the strides of the adaptor
+     */
+    template <class C, class SC, class SS>
+    inline auto adapt(C&& container, SC&& shape, SS&& strides);
+
+    /**
+     * Constructs:
+     * - an xarray_adaptor if SC is not an array type
+     * - an xtensor_adaptor if SC is an array type
+     * 
+     * of the given dynamically allocated C array, with the specified shape and layout.
+     * @param pointer the pointer to the beginning of the dynamic array
+     * @param size the size of the dynamic array
+     * @param ownership indicates whether the adaptor takes ownership of the array.
+     *        Possible values are ``no_ownership()`` or ``acquire_ownership()``
+     * @param shape the shape of the adaptor
+     * @param l the layout_type of the adaptor
+     * @param alloc the allocator used for allocating / deallocating the dynamic array
+     */
+    template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class P, class O, class SC, class A = detail::default_allocator_for_ptr_t<P>>
+    inline auto
+    adapt(P&& pointer, typename A::size_type size, O ownership, const SC& shape, layout_type l = L, const A& alloc = A());
+
+    /**
+     * Constructs:
+     * - an xarray_adaptor if SC is not an array type
+     * - an xtensor_adaptor if SC is an array type
+     *
+     * of the given dynamically allocated C array, with the specified shape and strides.
+     * @param pointer the pointer to the beginning of the dynamic array
+     * @param size the size of the dynamic array
+     * @param ownership indicates whether the adaptor takes ownership of the array.
+     *        Possible values are ``no_ownership()`` or ``acquire_ownership()``
+     * @param shape the shape of the adaptor
+     * @param strides the strides of the adaptor
+     * @param alloc the allocator used for allocating / deallocating the dynamic array
+     */
+    template <class P, class O, class SC, class SS, class A = detail::default_allocator_for_ptr_t<P>>
+    inline auto
+    adapt(P&& pointer, typename A::size_type size, O ownership, SC&& shape, SS&& strides, const A& alloc = A());
+
+    /**
+     * Contructs:
+     * - an xarray_adaptor if SC is not an array type
+     * - an xtensor_adaptor if SC is an array type
+     *
+     * of the given C array allocated on the stack, with the specified shape and layout.
+     * @param c_array the C array allocated on the stack
+     * @param shape the shape of the adaptor
+     * @param l the layout_type of the adaptor
+     */
+    template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class T, std::size_t N, class SC>
+    inline auto adapt(T (&c_array)[N], const SC& shape, layout_type l = L);
+
+    /**
+     * Contructs:
+     * - an xarray_adaptor if SC is not an array type
+     * - an xtensor_adaptor if SC is an array type
+     *
+     * of the given C array allocated on the stack, with the
+     * specified shape and strides.
+     * @param c_array the C array allocated on the stack
+     * @param shape the shape of the adaptor
+     * @param strides the strides of the adaptor
+     */
+    template <class T, std::size_t N, class SC, class SS>
+    inline auto adapt(T (&c_array)[N], SC&& shape, SS&& strides);
+
+    /**
+     * Constructs an non-owning xtensor_fixed_adaptor from a pointer with the
+     * specified shape and layout.
+     * @param pointer the pointer to adapt
+     * @param shape the shape of the xtensor_fixed_adaptor
+     */
+    template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class C, std::size_t... X>
+    inline auto adapt(C&& pointer, const fixed_shape<X...>& /*shape*/);
+
+    /**
+     * Constructs a 1-D xtensor_adaptor of the given stl-like container,
+     * with the specified layout_type.
+     * @param container the container to adapt
+     * @param l the layout_type of the xtensor_adaptor
+     */
     template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class C>
-    inline auto adapt(C&& ptr, std::initializer_list<std::size_t> shape)
-    {
-        using shape_type = xt::dynamic_shape<std::size_t>;
-        return adapt(std::forward<C>(ptr), xtl::forward_sequence<shape_type, decltype(shape)>(shape));
-    }
-#endif
+    inline xtensor_adaptor<C, 1, L> adapt(C&& container, layout_type l = L);
+
+    /**
+     * Constructs a 1-D xtensor_adaptor of the given dynamically allocated C array,
+     * with the specified layout.
+     * @param pointer the pointer to the beginning of the dynamic array
+     * @param size the size of the dynamic array
+     * @param ownership indicates whether the adaptor takes ownership of the array.
+     *        Possible values are ``no_ownership()`` or ``acquire_ownership()``
+     * @param l the layout_type of the xtensor_adaptor
+     * @param alloc the allocator used for allocating / deallocating the dynamic array
+     */
+    template <layout_type L = XTENSOR_DEFAULT_LAYOUT, class P, class O, class A = detail::default_allocator_for_ptr_t<P>>
+    inline xtensor_adaptor<xbuffer_adaptor<xtl::closure_type_t<P>, O, A>, 1, L>
+    adapt(P&& pointer, typename A::size_type size, O ownership, layout_type l = L, const A& alloc = A());
+
+#endif // IN_DOXYGEN
 
     /*****************************
      * smart_ptr adapter builder *
@@ -514,7 +633,6 @@ namespace xt
         );
     }
 
-#ifndef X_OLD_CLANG
     /**
      * Adapt a smart pointer to a typed memory block (unique_ptr or shared_ptr)
      *
@@ -608,7 +726,6 @@ namespace xt
             l
         );
     }
-#endif
 }
 
 #endif

@@ -2,11 +2,11 @@ jobs:
   - job: 'OSX'
     strategy:
       matrix:
-        macOS_10_15:
-          image_name: 'macOS-10.15'
+        macOS_11:
+          image_name: 'macOS-11'
           HG_USE_TBB: 'Off'
-        macOS_10_15_TBB:
-          image_name: 'macOS-10.15'
+        macOS_11_TBB:
+          image_name: 'macOS-11'
           HG_USE_TBB: 'On'
     pool:
       vmImage: $(image_name)
@@ -16,12 +16,12 @@ jobs:
     timeoutInMinutes: 360
     steps:
 
-      - script: |
-          echo "Removing homebrew for Azure to avoid conflicts with conda"
-          curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/uninstall > ~/uninstall_homebrew
-          chmod +x ~/uninstall_homebrew
-          ~/uninstall_homebrew -f -q
-        displayName: Remove homebrew
+      #- script: |
+      #    echo "Removing homebrew for Azure to avoid conflicts with conda"
+      #    curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh > ~/uninstall_homebrew
+      #    chmod +x ~/uninstall_homebrew
+      #    ~/uninstall_homebrew -f -q
+      #  displayName: Remove homebrew
 
       - bash: |
           echo "##vso[task.prependpath]$CONDA/bin"

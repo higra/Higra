@@ -1,7 +1,7 @@
-prefix=/home/perretb/Higra/lib
+prefix=/home/user/CLionProjects/Higra/lib
 includedir=${prefix}/include
 
 Name: xtl
 Description: Basic tools (containers, algorithms) used by other quantstack packages.
-Version: 0.6.23
+Version: 0.7.4
 Cflags: -I${includedir}
