@@ -32,6 +32,10 @@ namespace tree {
         hg::tree t1;
         REQUIRE(hg::num_vertices(t1) == 0);
 
+        array_1d<index_t> p1{};
+        hg::tree t11(p1);
+        REQUIRE(hg::num_vertices(t11) == 0);
+
         array_1d<index_t> p2{5, 5, 6, 6, 6, 7, 7, 7};
         hg::tree t2(p2);
         REQUIRE(hg::num_vertices(t2) == 8);
