@@ -255,6 +255,12 @@ namespace hg {
         private:
 
             void _init() {
+                if (_parents.size() == 0) {
+                    _root = invalid_index;
+                    _num_vertices = 0;
+                    _num_leaves = 0;
+                    return;
+                }
                 hg_assert(_parents.shape().size() == 1, "parents must be a linear (1d) array");
                 _num_vertices = _parents.size();
                 _root = _num_vertices - 1;

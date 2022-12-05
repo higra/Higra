@@ -40,6 +40,15 @@ class TestTree(unittest.TestCase):
         self.assertTrue(t.parent(4) == 6)
         self.assertTrue(np.all(t.parent((0, 5, 2, 3, 7)) == (5, 7, 6, 6, 7)))
 
+    def test_empty_tree(self):
+        t = hg.Tree([])
+
+        self.assertTrue(t.category() == hg.TreeCategory.PartitionTree)
+        self.assertTrue(t.root() == -1)
+        self.assertTrue(t.num_vertices() == 0)
+        self.assertTrue(t.num_edges() == 0)
+        self.assertTrue(t.num_leaves() == 0)
+
     def test_dynamic_attributes(self):
         t = TestTree.get_tree()
         t.new_attribute = 42
