@@ -48,6 +48,7 @@ class TestAlgorithmTree(unittest.TestCase):
         output = hg.reconstruct_leaf_data(tree, altitudes, condition)
         ref = np.asarray((1, 4, 4, 1, 1, 6), dtype=np.int32)
 
+        self.assertTrue(condition[1] == False)
         self.assertTrue(np.all(ref == output))
 
     def test_reconstruct_leaf_data_default(self):
