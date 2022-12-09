@@ -16,18 +16,37 @@ import numpy as np
 def reconstruct_leaf_data(tree, altitudes, deleted_nodes=None, leaf_graph=None):
     """
     Each leaf of the tree takes the altitude of its closest non deleted ancestor.
+    The root node is never deleted. In a component tree, leaves are always deleted.
 
-    The root node is never deleted.
-    In a component tree, leaves are always deleted.
+    The result is an array of shape ``[tree.num_leaves()] + altitudes.shape[1:]`` such
+    that :math:`result[i]` is the altitude of the smallest node :math:`n` containing :math:`i` such that
+    :math:`deleted\_nodes[n]` is false and for all nodes :math:`j` in the branch from :math:`i`
+    (included) to :math:`n` (excluded), :math:`deleted\_nodes[j]` is true.
 
     If :attr:`deleted_nodes` is ``None`` then its default value is set to `np.zeros((tree.numvertices(),)`
     (no nodes are deleted).
+
+    :Complexity:
+
+    This algorithms runs in linear time :math:`O(tree.num\_vertices())`.
+
+    :Example:
+
+        >>> tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        >>> altitudes = np.asarray(((1, 8), (2, 7), (3, 6), (4, 5), (5, 4), (6, 3), (7, 2), (8, 1)), dtype=np.int32)
+        >>> condition = np.asarray((True, False, True, False, True, True, False, False), np.bool_)
+        >>> hg.reconstruct_leaf_data(tree, altitudes, condition)
+        array([[8, 1],
+               [2, 7],
+               [7, 2],
+               [4, 5],
+               [7, 2]])
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param altitudes: node altitudes of the input tree
     :param deleted_nodes: binary node weights indicating which nodes are deleted (optional)
     :param leaf_graph: graph of the tree leaves (optional, deduced from :class:`~higra.CptHierarchy`)
-    :return: Leaf weights
+    :return: Leaf weights: array of shape ``[tree.num_leaves()] + altitudes.shape[1:]`` and of dtype ``altitudes.dtype``
     """
 
     if deleted_nodes is None:
@@ -38,6 +57,7 @@ def reconstruct_leaf_data(tree, altitudes, deleted_nodes=None, leaf_graph=None):
             leaf_weights = altitudes[parents[np.arange(tree.num_leaves())], ...]
     else:
         if tree.category() == hg.TreeCategory.ComponentTree:
+            deleted_nodes = deleted_nodes.copy()
             deleted_nodes[:tree.num_leaves()] = True
 
         reconstruction = hg.propagate_sequential(tree, altitudes, deleted_nodes)
@@ -52,9 +72,9 @@ def reconstruct_leaf_data(tree, altitudes, deleted_nodes=None, leaf_graph=None):
 @hg.argument_helper(hg.CptHierarchy)
 def labelisation_horizontal_cut_from_threshold(tree, altitudes, threshold, leaf_graph=None):
     """
-    Labelize tree leaves according to an horizontal cut of the tree given by its altitude.
+    Labelize tree leaves according to a horizontal cut of the tree given by its altitude.
 
-    Two leaves are in the same region (ie. have the same label) if
+    Two leaves are in the same region (i.e. have the same label) if
     the altitude of their lowest common ancestor is strictly greater
     than the specified threshold.
 
@@ -79,11 +99,11 @@ def labelisation_horizontal_cut_from_threshold(tree, altitudes, threshold, leaf_
 @hg.argument_helper(hg.CptHierarchy)
 def labelisation_horizontal_cut_from_num_regions(tree, altitudes, num_regions, mode="at_least", leaf_graph=None):
     """
-    Labelize tree leaves according to an horizontal cut of the tree given by its number of regions.
+    Labelize tree leaves according to a horizontal cut of the tree given by its number of regions.
 
-    If :attr:`mode` is ``"at_least"`` (default), the the smallest horizontal cut having at least the given number of
+    If :attr:`mode` is ``"at_least"`` (default), the smallest horizontal cut having at least the given number of
     regions is considered.
-    If :attr:`mode` is ``"at_most"``, the the largest horizontal cut having at most the given number of
+    If :attr:`mode` is ``"at_most"``, the largest horizontal cut having at most the given number of
     regions is considered.
 
     Consider using the class :class:`~higra.HorizontalCutExplorer` if you plan to compute several horizontal cuts from a
@@ -155,7 +175,7 @@ def filter_non_relevant_node_from_tree(tree, altitudes, non_relevant_functor, le
     Filter the given tree according to a functor telling if nodes are relevant or not.
 
     In a binary a tree, each inner node (non leaf node) is associated to the frontier separating its two children.
-    If a the frontier associated to a node is considered as non relevant (for example because on of the two children
+    If the frontier associated to a node is considered as non-relevant (for example because on of the two children
     of the node is too small) then the corresponding frontier is removed effectively merging its two children.
 
     This function returns a binary partition tree such that:
