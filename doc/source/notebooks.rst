@@ -4,24 +4,62 @@ Python notebooks
 ================
 
 The following python notebooks contain examples demonstrating Higra usage.
+Data can be points, images, or meshes, or anything that can be transformed into a graph.
+
+
+Component trees
+---------------
+These examples deal with upper and lower treshold set of vertex-weighted graphs.
 
 ================================================================= ============= ============= ============
-Hierarchy filtering                                                   |v1|_        |dl1|_        |co1|_
-Watershed hierarchies                                                 |v2|_        |dl2|_        |co2|_
 Connected image filtering with component trees                        |v3|_        |dl3|_        |co3|_
-Computing a saliency map with the shaping framework                   |v8|_        |dl8|_        |co8|_
 Filtering with non-increasing criterion - The shaping framework       |v9|_        |dl9|_        |co9|_
-Visualizing hierarchical image segmentation                           |v13|_       |dl13|_       |co13|_
-Illustrations of SoftwareX 2019 article                               |v10|_       |dl10|_       |co10|_
-Illustrations of Pattern Recognition Letters 2019 article             |v11|_       |dl11|_       |co11|_
-Multiscale Hierarchy Alignment and Combination                        |v4|_        |dl4|_        |co4|_
 Pattern spectra - granulometry based on connected filters             |v15|_       |dl15|_       |co15|_
+================================================================= ============= ============= ============
+
+Hierarchical segmentation
+-------------------------
+These examples deal with images, weights are on edges of the associated graph.
+
+================================================================= ============= ============= ============
+Visualizing hierarchical image segmentation                           |v13|_       |dl13|_       |co13|_
+Watershed hierarchies                                                 |v2|_        |dl2|_        |co2|_
+Hierarchy filtering                                                   |v1|_        |dl1|_        |co1|_
+Computing a saliency map with the shaping framework                   |v8|_        |dl8|_        |co8|_
+Multiscale Hierarchy Alignment and Combination                        |v4|_        |dl4|_        |co4|_
+================================================================= ============= ============= ============
+
+Triangular meshes
+-----------------
+We provide two examples.
+
+1. The first one uses trimesh, a simple, pure-python. It can be slow, and not-memory efficient.
+
+2. The second one uses igl, an efficient C++ geometry processing library, with python bindings.
+
+================================================================= ============= ============= ============
+Hierarchical mesh segmentation -- trimesh                             |v16|_       |dl16|_       |co17|_
+Hierarchical mesh segmentation -- igl                                 |v17|_       |dl16|_       |co17|_
+================================================================= ============= ============= ============
+
+Useful tools
+------------
+================================================================= ============= ============= ============
 Region Adjacency Graph                                                |v5|_        |dl5|_        |co5|_
 Interactive object segmentation                                       |v6|_        |dl6|_        |co6|_
-Fuzzy-marker-based interactive object segmentation - DGMM 2021        |v14|_       |dl14|_       |co14|_
-Astronomical object detection with the Max-Tree                       |v12|_       |dl12|_       |co12|_
 Contour Simplification                                                |v7|_        |dl7|_        |co7|_
 ================================================================= ============= ============= ============
+
+Illustrative applications from scientific papers
+------------------------------------------------
+================================================================= ============= ============= ============
+Points and Images - Illustrations of SoftwareX 2019 article           |v10|_       |dl10|_       |co10|_
+Non-relevant node removal, on both point and images. PRL 2019         |v11|_       |dl11|_       |co11|_
+Fuzzy-marker-based interactive object segmentation - DGMM 2021        |v14|_       |dl14|_       |co14|_
+Astronomical object detection with the Max-Tree - MMTA 2016           |v12|_       |dl12|_       |co12|_
+================================================================= ============= ============= ============
+
+
 
 .. |v1| unicode:: &#x1f441; .. view
 .. _v1: https://github.com/higra/Higra-Notebooks/blob/master/Hierarchy%20filtering.ipynb
@@ -172,4 +210,25 @@ Contour Simplification                                                |v7|_     
 
 .. |co15| image:: /images/colab.png
 .. _co15: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Pattern%20spectra%20-%20granulometry%20based%20on%20connected%20filters.ipynb
+
+
+.. |v16| unicode:: &#x1f441; .. view
+.. _v16: https://github.com/higra/Higra-Notebooks/blob/master/Watershed_on_a_Mesh_Trimesh.ipynb
+
+.. |dl16| unicode:: &#x1f4be; .. download
+.. _dl16: https://cdn.jsdelivr.net/gh/higra/Higra-Notebooks/Watershed_on_a_Mesh_Trimesh.ipynb
+
+.. |co16| image:: /images/colab.png
+.. _co16: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Watershed_on_a_Mesh_Trimesh.ipynb
+
+
+.. |v17| unicode:: &#x1f441; .. view
+.. _v17: https://github.com/higra/Higra-Notebooks/blob/master/Watershed_on_a_Mesh_IGL.ipynb
+
+.. |dl17| unicode:: &#x1f4be; .. download
+.. _dl17: https://cdn.jsdelivr.net/gh/higra/Higra-Notebooks/Watershed_on_a_Mesh_IGL.ipynb
+
+.. |co17| image:: /images/colab.png
+.. _co17: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Watershed_on_a_Mesh_IGL.ipynb
+
 
