@@ -142,7 +142,7 @@ class TestHGUtils(unittest.TestCase):
         self.assertTrue(r.shape == (4, 5, 2))
 
     def test_common_type(self):
-        a_bool = np.zeros((1, 1), dtype=np.bool)
+        a_bool = np.zeros((1, 1), dtype=np.bool_)
         a_uint16 = np.zeros((1, 1), dtype=np.uint16)
         a_int8 = np.zeros((1, 1), dtype=np.int8)
         a_uint64 = np.zeros((1, 1), dtype=np.uint64)
@@ -171,7 +171,7 @@ class TestHGUtils(unittest.TestCase):
 
     def test_type_consistency(self):
         tree = hg.Tree((2, 2, 2))
-        for t in (np.bool, np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, np.int64, np.uint64, np.float, np.double):
+        for t in (np.bool_, np.int8, np.uint8, np.int16, np.uint16, np.int32, np.uint32, np.int64, np.uint64, np.float32, np.float64):
             a = np.zeros(3, dtype=t)
             res = hg.reconstruct_leaf_data(tree, a)
             self.assertTrue(a.dtype == res.dtype)

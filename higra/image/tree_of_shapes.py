@@ -146,7 +146,7 @@ def component_tree_multivariate_tree_of_shapes_image2d(image, padding='mean', or
                                                                original_size=False, immersion=False)
 
     if original_size and (immersion or padding != "none"):
-        deleted_vertices = np.ones((tree.num_leaves(),), dtype=np.bool)
+        deleted_vertices = np.ones((tree.num_leaves(),), dtype=np.bool_)
         deleted = np.reshape(deleted_vertices, shape)
 
         if immersion:
@@ -161,7 +161,7 @@ def component_tree_multivariate_tree_of_shapes_image2d(image, padding='mean', or
         all_deleted = hg.accumulate_sequential(tree, deleted_vertices, hg.Accumulators.min)
         shape = (image.shape[0], image.shape[1])
     else:
-        all_deleted = np.zeros((tree.num_vertices(),), dtype=np.bool)
+        all_deleted = np.zeros((tree.num_vertices(),), dtype=np.bool_)
 
     holes = altitudes < altitudes[tree.parents()]
 

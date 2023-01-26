@@ -15,11 +15,19 @@
 
 #include "test_utils.hpp"
 
+#include <array>
+#include "higra/graph.hpp"
+#include "higra/algo/graph_weights.hpp"
+#include "higra/algo/tree.hpp"
+#include "higra/image/graph_image.hpp"
+#include "higra/hierarchy/watershed_hierarchy.hpp"
+#include "xtensor/xadapt.hpp"
 using namespace hg;
 using namespace xt;
 using namespace std;
 
 TEST_CASE("unused", "[experimental]") {
+
 
 }
 
