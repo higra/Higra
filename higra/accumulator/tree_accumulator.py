@@ -116,7 +116,7 @@ def propagate_parallel(tree, node_weights, condition=None):
     """
 
     if condition is not None:
-        condition = hg.cast_to_dtype(condition, np.bool)
+        condition = hg.cast_to_dtype(condition, np.bool_)
         res = hg.cpp._propagate_parallel(tree, node_weights, condition)
     else:
         res = hg.cpp._propagate_parallel(tree, node_weights)

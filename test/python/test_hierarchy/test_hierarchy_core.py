@@ -178,7 +178,7 @@ class TestHierarchyCore(unittest.TestCase):
         t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
         criterion = np.asarray(
-            (False, False, False, True, True, True, True, False, True, False, True, False), dtype=np.bool)
+            (False, False, False, True, True, True, True, False, True, False, True, False), dtype=np.bool_)
 
         new_tree, node_map = hg.simplify_tree(t, criterion, process_leaves=True)
 
@@ -190,7 +190,7 @@ class TestHierarchyCore(unittest.TestCase):
     def test_simplify_tree_with_leaves2(self):
         t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
-        criterion = np.zeros(t.num_vertices(), dtype=np.bool)
+        criterion = np.zeros(t.num_vertices(), dtype=np.bool_)
         criterion[:8] = True
         new_tree, node_map = hg.simplify_tree(t, criterion, process_leaves=True)
 
@@ -202,7 +202,7 @@ class TestHierarchyCore(unittest.TestCase):
     def test_simplify_tree_with_leaves3(self):
         t = hg.Tree((7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11))
 
-        criterion = np.zeros(t.num_vertices(), dtype=np.bool)
+        criterion = np.zeros(t.num_vertices(), dtype=np.bool_)
         criterion[:9] = True
         new_tree, node_map = hg.simplify_tree(t, criterion, process_leaves=True)
 
@@ -216,7 +216,7 @@ class TestHierarchyCore(unittest.TestCase):
         vertex_values = np.asarray((1, 5, 4, 3, 3, 6), dtype=np.int32)
         tree, altitudes = hg.component_tree_max_tree(g, vertex_values)
 
-        condition = np.asarray((False, False, False, False, False, False, False, True, False, True, False), np.bool)
+        condition = np.asarray((False, False, False, False, False, False, False, True, False, True, False), np.bool_)
 
         new_tree, node_map = hg.simplify_tree(tree, condition)
 

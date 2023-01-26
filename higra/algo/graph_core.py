@@ -118,7 +118,7 @@ def adjacency_matrix_2_undirected_graph(adjacency_matrix, non_edge_value=0):
         sources, targets, edge_weights = sp.find(adjacency_matrix)
     else:
         adjacency_matrix = adjacency_matrix.copy()
-        adjacency_matrix[np.tri(*adjacency_matrix.shape, k=-1, dtype=np.bool)] = non_edge_value
+        adjacency_matrix[np.tri(*adjacency_matrix.shape, k=-1, dtype=np.bool_)] = non_edge_value
         if non_edge_value != 0:
             mask = adjacency_matrix != non_edge_value
         else:
