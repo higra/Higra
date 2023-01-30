@@ -38,8 +38,8 @@ We provide two examples.
 2. The second one uses igl, an efficient C++ geometry processing library, with python bindings.
 
 ================================================================= ============= ============= ============
-Hierarchical mesh segmentation -- trimesh                             |v16|_       |dl16|_       |co17|_
-Hierarchical mesh segmentation -- igl                                 |v17|_       |dl16|_       |co17|_
+Hierarchical mesh segmentation -- trimesh                             |v16|_       |dl16|_       |co16|_
+Hierarchical mesh segmentation -- igl                                 |v17|_       |dl17|_       |co17|_
 ================================================================= ============= ============= ============
 
 Useful tools
@@ -230,5 +230,3 @@ Astronomical object detection with the Max-Tree - MMTA 2016           |v12|_    
 
 .. |co17| image:: /images/colab.png
 .. _co17: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Watershed_on_a_Mesh_IGL.ipynb
-
-
