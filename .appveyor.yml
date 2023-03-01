@@ -35,9 +35,13 @@ environment:
       CIBW_BUILD: "cp39*"
       CIBW_BEFORE_BUILD: "pip install cmake numpy==1.19.5"
     - CIBUILDWHEEL: 1
-      TAG_SCENARIO: false
+      TAG_SCENARIO: true
       CIBW_BUILD: "cp310*"
       CIBW_BEFORE_BUILD: "pip install cmake numpy==1.21.4"
+    - CIBUILDWHEEL: 1
+      TAG_SCENARIO: false
+      CIBW_BUILD: "cp311*"
+      CIBW_BEFORE_BUILD: "pip install cmake numpy==1.23.5"
 
 for:
   -
@@ -65,7 +69,7 @@ install:
     python setup.py bdist_wheel
     )  else (
     conda install tbb-devel==2019.0 &&
-    pip install cibuildwheel==2.2.2 &&
+    pip install cibuildwheel==2.12.0 &&
     cibuildwheel --output-dir wheelhouse
     )
 

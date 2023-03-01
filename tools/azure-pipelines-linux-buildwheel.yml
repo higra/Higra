@@ -19,7 +19,6 @@ jobs:
       vmImage: 'ubuntu-20.04'
       CIBW_BUILD: 'cp39-*'
       NUMPY_VERSION: '1.19.5'
-      force: true
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
@@ -27,3 +26,11 @@ jobs:
       vmImage: 'ubuntu-20.04'
       CIBW_BUILD: 'cp310-*'
       NUMPY_VERSION: '1.21.4'
+
+  - template: azure-pipelines-unix-buildwheel-template.yml
+    parameters:
+      name: 'linux_py311'
+      vmImage: 'ubuntu-20.04'
+      CIBW_BUILD: 'cp311-*'
+      NUMPY_VERSION: '1.23.5'
+      force: true
