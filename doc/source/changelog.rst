@@ -1,6 +1,18 @@
 Changelog
 =========
 
+0.6.6
+-----
+
+- Add support for Python 3.11  `#261 <https://github.com/higra/Higra/pull/261>`_
+- Improve `notebooks section <https://higra.readthedocs.io/en/stable/notebooks.html>`_ of the doc and add new notebooks on 3D mesh processing:
+  `*Watershed on a mesh with IGL* <https://github.com/higra/Higra-Notebooks/blob/master/Watershed_on_a_Mesh_IGL.ipynb>`_
+  and
+  `*Watershed on a mesh with Trimesh* <https://github.com/higra/Higra-Notebooks/blob/master/Watershed_on_a_Mesh_Trimesh.ipynb>`_
+  `#258 <https://github.com/higra/Higra/pull/258>`_
+- Fix unwanted behavior in :func:`~higra.reconstruct_leaf_data` `#254 <https://github.com/higra/Higra/pull/254>`_
+- Fix crash when creating an empty tree in Python `#252 <https://github.com/higra/Higra/pull/252>`_
+
 0.6.5
 -----
 
