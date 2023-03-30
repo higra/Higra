@@ -148,8 +148,49 @@ namespace hg {
     /**
      * Transforms a contour map represented in 2d Khalimsky space into a weighted 4 adjacency edge weighted regular graph
      * (0-face and 2-face of the Khalimsky space are ignored).
-     * @param embedding
-     * @return
+     * @param xkhalimsky 2d array representing the khalimsky space
+     * @param g 4 adjacency graph, with the same number of vertices as the embedding
+     * @param embedding embedding of the graph, dimension is half the size of the khalimsky space
+     * @param extra_border if true, the khalimsky space will have an extra border of 0-faces and 1-faces
+     * @return 2d array representing the weights of the edges in the khalimsky space
+     */
+    template<typename T, typename result_type = typename T::value_type>
+    auto
+    khalimsky_2_graph_4_adjacency(const xt::xexpression<T> &xkhalimsky, const ugraph & g, const embedding_grid_2d& embedding, bool extra_border = false) {
+        HG_TRACE();
+        const auto &khalimsky = xkhalimsky.derived_cast();
+        hg_assert(khalimsky.dimension() == 2, "Only 2d khalimsky grids are supported!");
+
+        auto &shape = khalimsky.shape();
+
+        index_t border = (extra_border) ? 0 : 1;
+
+        hg_assert(num_vertices(g) == embedding.size(), "Graph size does not match.");
+        hg_assert(embedding.shape()[0] == (index_t) shape[0] / 2 + border, "Embedding shape[0] does not match.");
+        hg_assert(embedding.shape()[1] == (index_t) shape[1] / 2 + border, "Embedding shape[1] does not match.");
+
+        array_1d <result_type> weights = xt::zeros<result_type>({num_edges(g)});
+
+        point_2d_i one{{1, 1}};
+        for (auto e : edge_iterator(g)) {
+            auto s = embedding.lin2grid(source(e, g));
+            auto t = embedding.lin2grid(target(e, g));
+            if (extra_border) {
+                weights(e) = khalimsky[s + t + one];
+            } else {
+                weights(e) = khalimsky[s + t];
+            }
+        }
+
+        return weights;
+    };
+
+    /**
+     * Transforms a contour map represented in 2d Khalimsky space into a weighted 4 adjacency edge weighted regular graph
+     * (0-face and 2-face of the Khalimsky space are ignored).
+     * @param xkhalimsky 2d array representing the khalimsky space
+     * @param extra_border if true, the khalimsky space will have an extra border of 0-faces and 1-faces
+     * @return A tuple composed of the 4 adjacency graph, the embedding of the graph, and the weights of the edges in the khalimsky space
      */
     template<typename T, typename result_type = typename T::value_type>
     auto
@@ -166,20 +207,8 @@ namespace hg {
         embedding_grid_2d res_embedding(res_shape);
 
         auto g = get_4_adjacency_graph(res_embedding);
-        array_1d <result_type> weights = xt::zeros<result_type>({num_edges(g)});
-
-        point_2d_i one{{1, 1}};
-        for (auto e : edge_iterator(g)) {
-            auto s = res_embedding.lin2grid(source(e, g));
-            auto t = res_embedding.lin2grid(target(e, g));
-            if (extra_border) {
-                weights(e) = khalimsky[s + t + one];
-            } else {
-                weights(e) = khalimsky[s + t];
-            }
-        }
+        array_1d <result_type> weights = khalimsky_2_graph_4_adjacency(khalimsky, g, res_embedding, extra_border);
 
         return std::make_tuple(std::move(g), std::move(res_embedding), std::move(weights));
     };
-
 }

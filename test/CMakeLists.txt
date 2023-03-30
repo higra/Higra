@@ -27,7 +27,7 @@ add_custom_target(all_tests ALL
 if (DO_AUTO_TEST)
     add_custom_command(TARGET all_tests
             COMMENT "Run tests"
-            POST_BUILD COMMAND ctest
+            POST_BUILD COMMAND ctest -V
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             )
 endif ()

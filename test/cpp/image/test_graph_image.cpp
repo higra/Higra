@@ -175,10 +175,13 @@ namespace graph_image {
                 {0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0}
         };
         auto r2 = khalimsky_2_graph_4_adjacency(ref2, true);
-        //auto & graph2 = std::get<0>(r2);
+        auto &graph2 = std::get<0>(r2);
         auto &embedding2 = std::get<1>(r2);
         auto &weights2 = std::get<2>(r2);
         REQUIRE(xt::allclose(embedding2.shape(), ref_shape));
         REQUIRE(xt::allclose(data, weights2));
+
+        auto weights3 = khalimsky_2_graph_4_adjacency(ref2, graph2, embedding2, true);
+        REQUIRE(xt::allclose(data, weights3));
     }
 }

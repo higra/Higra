@@ -26,11 +26,15 @@ struct def_kalhimsky_2_contour {
     static
     void def(pybind11::module &m, const char *doc) {
         m.def("_khalimsky_2_graph_4_adjacency", [](const pyarray<value_t> &khalimsky,
+                                                   const hg::ugraph &graph,
+                                                   const std::vector<size_t> &shape,
                                                    bool extra_border) {
-                  return hg::khalimsky_2_graph_4_adjacency(khalimsky, extra_border);
+                  return hg::khalimsky_2_graph_4_adjacency(khalimsky, graph, hg::embedding_grid_2d(shape), extra_border);
               },
               doc,
               py::arg("khalimsky"),
+              py::arg("graph"),
+              py::arg("embedding"),
               py::arg("extra_border") = false);
     }
 };
