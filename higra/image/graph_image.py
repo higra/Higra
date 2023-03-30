@@ -27,19 +27,33 @@ def graph_4_adjacency_2_khalimsky(graph, edge_weights, shape, add_extra_border=F
     return hg.cpp._graph_4_adjacency_2_khalimsky(graph, shape, edge_weights, add_extra_border)
 
 
-def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False):
+def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False, graph=None):
     """
     Create a 4 adjacency edge-weighted graph from a contour image in the Khalimsky grid.
 
     :param khalimsky: a 2d array
     :param extra_border: if False the shape of the Khalimsky image  is 2 * shape - 1 and 2 * shape + 1 otherwise, where shape is the shape of the resulting grid graph
+    :param graph: a 4-adjacency graph (Concept :class:`~higra.CptGridGraph`) of the correct shape (optional). If not given, a new graph is created.
     :return: a graph (Concept :class:`~higra.CptGridGraph`) and its edge weights
     """
 
-    graph, embedding, edge_weights = hg.cpp._khalimsky_2_graph_4_adjacency(khalimsky, extra_border)
+    border = 0 if extra_border else 1
+    res_shape = khalimsky.shape[0] // 2 + border, khalimsky.shape[1] // 2 + border
 
-    hg.CptGridGraph.link(graph, hg.normalize_shape(embedding.shape()))
-    hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
+    if graph is not None:
+        graph_shape = hg.CptGridGraph.get_shape(graph)
+        if graph_shape is None:
+            raise ValueError("The given graph must be a grid graph.")
+        if len(graph_shape) != 2:
+            raise ValueError("The given graph must be a 2d grid graph.")
+        if hg.get_attribute(graph, "no_border_vertex_out_degree") != 4:
+            raise ValueError("The given graph must be a 4 adjacency graph.")
+        if graph_shape != res_shape:
+            raise ValueError("The given graph shape is " + str(graph_shape) + " but the expected shape is " + str(res_shape) + ".")
+    else:
+        graph = hg.get_4_adjacency_graph(res_shape)
+
+    edge_weights = hg.cpp._khalimsky_2_graph_4_adjacency(khalimsky, graph, res_shape, extra_border)
 
     return graph, edge_weights
 

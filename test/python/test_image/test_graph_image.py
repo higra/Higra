@@ -36,6 +36,9 @@ class TestGraphImage(unittest.TestCase):
         self.assertTrue(np.allclose(shape, (2, 3)))
         self.assertTrue(np.allclose(data, weights))
 
+        _, weights2 = hg.khalimsky_2_graph_4_adjacency(ref, graph=graph)
+        self.assertTrue(np.allclose(data, weights2))
+
     def test_get_4_adjacency_graph(self):
         shape = (2, 3)
         graph = hg.get_4_adjacency_graph(shape)
