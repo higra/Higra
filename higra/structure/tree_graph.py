@@ -235,3 +235,54 @@ def __sub_tree(self, root_node):
     :return: the sub tree rooted in :attr:`root` and the node map
     """
     return hg.cpp._sub_tree(self, root_node)
+
+
+@hg.extend_class(hg.Tree, method_name="to_undirected_graph")
+def __to_undirected_graph(self, include_leaves=True):
+    """
+    Convert the tree to an undirected graph.
+
+    If :attr:`include_leaves` is True, the leaves of the tree are also included in the graph and there is a direct mapping
+    between the nodes of the tree and the vertices of the graph and between the edges of the tree and the edges of the graph
+    (node/edge in the tree and its corresponding vertex/edge in the graph have the same index).
+    Otherwise, the leaves of the tree are not included in the graph and the first ```tree.num_leaves()`` edges from the tree
+    are also discarded (those including a leaf). The mapping between the nodes of the tree and the vertices of the graph is
+    then shifted by ```tree.num_leaves()`` (a vertex/edge in the graph of index ```i``` corresponds to a node/edge in the tree
+    of index ```i + tree.num_leaves()```).
+
+    :Example:
+
+    >>> t = Tree((5, 5, 6, 6, 6, 7, 7, 7))
+    >>> g = t.to_undirected_graph()
+    >>> type(g)
+    <class 'higra.higram.UndirectedGraph'>
+    >>> g.num_vertices()
+    8
+    >>> g.num_edges()
+    7
+    >>> g.edge_list()
+    (array([0, 1, 2, 3, 4, 5, 6]), array([5, 5, 6, 6, 6, 7, 7]))
+
+    >>> g = t.to_undirected_graph(include_leaves=False)
+    >>> type(g)
+    <class 'higra.higram.UndirectedGraph'>
+    >>> g.num_vertices()
+    3
+    >>> g.num_edges()
+    2
+    >>> g.edge_list()
+    (array([0, 2]), array([1, 2]))
+
+    :param include_leaves: if True, the leaves of the tree are also included in the graph
+    :return: an undirected graph whose vertices are the nodes of the tree and whose edges are the parent relation of the tree
+    """
+    sources, targets = self.edge_list()
+    if include_leaves:
+        g = hg.UndirectedGraph(self.num_vertices())
+        g.add_edges(sources, targets)
+    else:
+        num_leaves = self.num_leaves()
+        g = hg.UndirectedGraph(self.num_vertices() - num_leaves)
+        g.add_edges(sources[num_leaves:] - num_leaves, targets[num_leaves:] - num_leaves)
+
+    return g

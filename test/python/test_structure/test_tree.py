@@ -337,6 +337,25 @@ class TestTree(unittest.TestCase):
         self.assertTrue(np.all(sub_tree.parents() == (0,)))
         self.assertTrue(np.all(node_map == (3,)))
 
+    def test_tree_2_undirected_graph(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+
+        g = tree.to_undirected_graph()
+
+        self.assertTrue(isinstance(g, hg.UndirectedGraph))
+        self.assertTrue(g.num_vertices() == tree.num_vertices())
+        self.assertTrue(g.num_edges() == tree.num_edges())
+        self.assertTrue(np.all(g.sources() == tree.sources()))
+        self.assertTrue(np.all(g.targets() == tree.targets()))
+
+        g = tree.to_undirected_graph(include_leaves=False)
+
+        self.assertTrue(isinstance(g, hg.UndirectedGraph))
+        self.assertTrue(g.num_vertices() == tree.num_vertices() - tree.num_leaves())
+        self.assertTrue(g.num_edges() == tree.num_edges() - tree.num_leaves())
+        self.assertTrue(np.all(g.sources() == tree.sources()[tree.num_leaves():] - tree.num_leaves()))
+        self.assertTrue(np.all(g.targets() == tree.targets()[tree.num_leaves():] - tree.num_leaves()))
+
 
 if __name__ == '__main__':
     unittest.main()
