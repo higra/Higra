@@ -70,18 +70,28 @@ def dendrogram_purity(tree, leaf_labels):
 
 
 @hg.argument_helper(hg.CptHierarchy)
-def dasgupta_cost(tree, edge_weights, leaf_graph):
+def dasgupta_cost(tree, edge_weights, leaf_graph, mode="dissimilarity"):
     """
     Dasgupta's cost is an unsupervised measure of the quality of a hierarchical clustering of an edge weighted graph.
 
     Let :math:`T` be a tree representing a hierarchical clustering of the graph :math:`G=(V, E)`.
-    Let :math:`w` be a dissimilarity function on the edges :math:`E` of the graph.
 
-    The Dasgupta's cost is define as:
+    If :math:`w` is a dissimilarity function on the edges :math:`E` of the graph
+    (:attr:`mode` is equal to ``"dissimilarity"``), then the Dasgupta's cost is defined as:
 
     .. math::
 
         dasgupta(T, V, E, w) = \sum_{\{x,y\}\in E} \\frac{area(lca_T(x,y))}{w(\{x,y\})}
+
+    where :math:`area` is the area of a node in the tree and :math:`lca_T` is the lowest common ancestor of two nodes.
+
+    If :math:`w` is a similarity function on the edges :math:`E` of the graph
+    (:attr:`mode` is equal to ``"similarity"``), then the Dasgupta's cost is defined as:
+
+    .. math::
+
+        dasgupta(T, V, E, w) = \sum_{\{x,y\}\in E} area(lca_T(x,y)) \\times w(\{x,y\})
+
 
     :See:
 
@@ -94,8 +104,9 @@ def dasgupta_cost(tree, edge_weights, leaf_graph):
     :math:`m` the number of edges in :math:`E`.
 
     :param tree: Input tree
-    :param edge_weights: Edge weights on the leaf graph (dissimilarities)
+    :param edge_weights: Edge weights on the leaf graph of the input tree
     :param leaf_graph: Leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :param mode: "dissimilarity" or "similarity" (default: "dissimilarity")
     :return: a real number
     """
     area = hg.attribute_area(tree, leaf_graph=leaf_graph)
@@ -103,7 +114,12 @@ def dasgupta_cost(tree, edge_weights, leaf_graph):
     lcaf = tree.lowest_common_ancestor_preprocess()
     lca = lcaf.lca(leaf_graph)
 
-    return np.sum(area[lca] / edge_weights)
+    if mode == "dissimilarity":
+        return np.sum(area[lca] / edge_weights)
+    elif mode == "similarity":
+        return np.sum(area[lca] * edge_weights)
+    else:
+        raise ValueError("Unknown mode: " + mode)
 
 
 @hg.argument_helper(hg.CptHierarchy)

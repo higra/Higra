@@ -77,6 +77,12 @@ class TestHierarchicalCost(unittest.TestCase):
         ref_cost = 2 / 1 + 4 / 3 + 9 / 7 + 9 / 7 + 2 / 1 + 2 / 1 + 9 / 5 + 9 / 6 + 9 / 6 + 7 / 4 + 2 / 1 + 3 / 2
         self.assertTrue(np.isclose(cost, ref_cost))
 
+        edge_weights = 1 / edge_weights
+
+        cost = hg.dasgupta_cost(tree, edge_weights, mode="similarity")
+
+        self.assertTrue(np.isclose(cost, ref_cost))
+
     def test_tree_sampling_divergence(self):
         g = hg.get_4_adjacency_graph((3, 3))
         edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 2, 2))
