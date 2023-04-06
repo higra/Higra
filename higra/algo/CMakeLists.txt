@@ -11,6 +11,7 @@
 set(PY_FILES
         __init__.py
         alignment.py
+        bipartite_graph.py
         graph_core.py
         graph_weights.py
         horizontal_cuts.py
@@ -23,6 +24,7 @@ set(PY_FILES
 
 set(PYMODULE_COMPONENTS ${PYMODULE_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/py_alignement.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/py_bipartite_graph.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_graph_core.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_graph_weights.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/py_horizontal_cuts.cpp
