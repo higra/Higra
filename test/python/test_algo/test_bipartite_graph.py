@@ -57,3 +57,35 @@ class TestBipartiteGraph(unittest.TestCase):
 
         self.assertFalse(ans)
         self.assertTrue(len(color) == 0)
+
+    def test_bipartite_graph_matching(self):
+        g = hg.UndirectedGraph(6)
+        g.add_edges(np.array([0, 0, 1, 1, 2, 1]), np.array([3, 4, 3, 5, 5, 4]))
+        weights = np.array([3, 1, 6, 0, 10, 2])
+
+        edges = hg.bipartite_graph_matching(g, weights)
+        edge_set = set(edges)
+
+        ref_edge_set = set([4, 0, 5])
+
+        n = g.num_vertices() // 2
+        self.assertTrue(len(edges) == n)
+
+        self.assertTrue(edge_set == ref_edge_set)
+
+    def test_bipartite_graph_matching_unbalanced_mixed(self):
+        g = hg.UndirectedGraph(7)
+        g.add_edges(np.array([5, 5, 1, 1, 4, 6]), np.array([2, 3, 2, 3, 0, 0]))
+        weights = np.array([1, 2, 2, 5, 8, 5])
+
+        edges = hg.bipartite_graph_matching(g, weights)
+        edge_set = set(edges)
+
+        ref_edge_set = set([1, 2, 5])
+
+        self.assertTrue(edge_set == ref_edge_set)
+
+        edges = hg.bipartite_graph_matching((g.sources(), g.targets(), g.num_vertices()), weights)
+        edge_set = set(edges)
+
+        self.assertTrue(edge_set == ref_edge_set)

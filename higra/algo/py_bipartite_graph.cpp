@@ -25,7 +25,6 @@ namespace py = pybind11;
 using namespace hg;
 
 
-
 void py_init_bipartite_graph(pybind11::module &m) {
     xt::import_numpy();
 
@@ -35,7 +34,8 @@ void py_init_bipartite_graph(pybind11::module &m) {
           "Check if the graph is bipartite.",
           py::arg("graph"));
 
-    m.def("_is_bipartite_graph", [](const pytensor_1d<index_t> & sources, const pytensor_1d<index_t> & targets, index_t num_vertices) {
+    m.def("_is_bipartite_graph",
+          [](const pytensor_1d<index_t> &sources, const pytensor_1d<index_t> &targets, index_t num_vertices) {
               return hg::is_bipartite_graph(sources, targets, num_vertices);
           },
           "Check if the graph is bipartite.",
@@ -43,4 +43,19 @@ void py_init_bipartite_graph(pybind11::module &m) {
           py::arg("targets"),
           py::arg("num_vertices"));
 
+    m.def("_bipartite_graph_matching",
+          [](
+                  const pytensor_1d<index_t> &sources,
+                  const pytensor_1d<index_t> &targets,
+                  index_t num_vertices,
+                  const pytensor_1d<index_t> &weights) {
+              hg::graph_algorithms::CSA csa(sources, targets, num_vertices, weights);
+              return csa.edge_indices();
+          },
+          "Compute a minimum weight matching in a bipartite graph.",
+          py::arg("sources"),
+          py::arg("targets"),
+          py::arg("num_vertices"),
+          py::arg("weights")
+    );
 }

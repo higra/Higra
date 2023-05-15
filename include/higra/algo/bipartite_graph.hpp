@@ -162,7 +162,7 @@ namespace hg {
         hg_assert_1d_array(weights);
         hg_assert_integral_value_type(weights);
         hg_assert(num_vertices(graph) % 2 == 0, "The number of vertices must be even.");
-        hg::graph_algorithms::CSA csa(graph, weights);
+        hg::graph_algorithms::CSA csa(sources(graph), targets(graph), num_vertices(graph), weights);
         return csa.edge_indices();
     }
 

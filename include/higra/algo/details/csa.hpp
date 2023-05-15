@@ -866,19 +866,29 @@ if (f_a != a) \
         public:
 
             // construct and solve assignment problem
-            template<typename graph_t, typename T>
-            CSA(const graph_t &graph, const xt::xexpression<T> &xweights) {
+            template<typename T1, typename T2>
+            CSA(const xt::xexpression<T1> &xsources,
+                const xt::xexpression<T1> &xtargets,
+                index_t num_vertices,
+                const xt::xexpression<T2> &xweights) {
+                auto &sources = xsources.derived_cast();
+                auto &targets = xtargets.derived_cast();
                 auto &weights = xweights.derived_cast();
                 hg_assert_integral_value_type(weights);
-                hg_assert_edge_weights(graph, weights);
+                hg_assert_1d_array(sources);
+                hg_assert_1d_array(targets);
+                hg_assert_integral_value_type(sources);
+                hg_assert_integral_value_type(targets);
+                hg_assert_same_shape(sources, targets);
+                hg_assert_same_shape(sources, weights);
                 hg_assert_1d_array(weights);
-                size_t n = num_vertices(graph);
-                size_t m = num_edges(graph);
+                size_t n = num_vertices;
+                size_t m = sources.size();
                 hg_assert(n > 0, "Graph cannot be empty.");
                 hg_assert(m > 0, "Graph must have a least one edge.");
                 hg_assert((n % 2) == 0, "Number of vertices must be even.");
                 _init(n, m);
-                init(graph, weights);
+                init(sources, targets, weights);
                 main();
             }
 
@@ -1155,8 +1165,12 @@ Miscellaneous variables.
             }
         */
 
-            template<typename graph_t, typename T>
-            void init(const graph_t &graph, const xt::xexpression<T> &xweights) {
+            template<typename T1, typename T2>
+            void init(const xt::xexpression<T1> &xsources,
+                      const xt::xexpression<T1> &xtargets,
+                      const xt::xexpression<T2> &xweights) {
+                auto &sources = xsources.derived_cast();
+                auto &targets = xtargets.derived_cast();
                 auto &weights = xweights.derived_cast();
 #if    defined(USE_P_REFINE) || defined(USE_P_UPDATE) || defined(USE_SP_AUG)
                 rhs_ptr	r_v;
@@ -1167,7 +1181,7 @@ Miscellaneous variables.
 #endif
 
                 //describe_self();
-                epsilon = parse(graph, weights);
+                epsilon = parse(sources, targets, weights);
 
                 scale_factor = DEFAULT_SCALE_FACTOR;
 
@@ -1477,9 +1491,13 @@ setup is free.
                 index_t edge_index;
             } *ta_ptr;
 
-            template<typename graph_t, typename T>
-            index_t parse(const graph_t &graph, const xt::xexpression<T> &xweights) {
+            template<typename T1, typename T2>
+            index_t parse(const xt::xexpression<T1> &xsources,
+                          const xt::xexpression<T1> &xtargets,
+                          const xt::xexpression<T2> &xweights) {
                 auto &weights = xweights.derived_cast();
+                auto &sources = xsources.derived_cast();
+                auto &targets = xtargets.derived_cast();
 
                 //size_t arc_count;
                 size_t tail, head, lhs_n,
@@ -1534,9 +1552,9 @@ setup is free.
 
 
                 for (size_t i = 0; i < m; i++) {
-                    auto edge = edge_from_index(i, graph);
-                    tail = edge.source + 1;
-                    head = edge.target + 1;
+
+                    tail = sources(i) + 1;
+                    head = targets(i) + 1;
                     cost = (int64_t) weights(i);
 
                     head -= id_offset;
