@@ -184,4 +184,58 @@ namespace graph_image {
         auto weights3 = khalimsky_2_graph_4_adjacency(ref2, graph2, embedding2, true);
         REQUIRE(xt::allclose(data, weights3));
     }
+
+    TEST_CASE("get_bipartite_matching_graph_contour_image_2d ", "[graph_image]") {
+        array_2d<int> im1{
+                {1, 0, 0, 1},
+                {0, 0, 0, 1},
+        };
+        array_2d<int> im2{
+                {0, 0, 0, 1},
+                {0, 0, 1, 0},
+        };
+        embedding_grid_2d embedding{im1.shape()};//{(index_t) im1.shape()[1], (index_t) im1.shape()[0]}};
+
+        auto res = get_bipartite_matching_graph_contour_image_2d(embedding, im1, im2, 1);
+        auto &sources = std::get<0>(res);
+        auto &targets = std::get<1>(res);
+        auto &weights = std::get<2>(res);
+        auto &node_map = std::get<3>(res);
+        auto &num_nodes1 = std::get<4>(res);
+        auto &num_nodes2 = std::get<5>(res);
+
+        REQUIRE(num_nodes1 == 2);
+        REQUIRE(num_nodes2 == 2);
+        REQUIRE(xt::allclose(sources, xt::xarray<index_t>{0, 1, 1}));
+        REQUIRE(xt::allclose(targets, xt::xarray<index_t>{2, 2, 3}));
+        REQUIRE(xt::allclose(weights, xt::xarray<double>{0, 1, 1}));
+        REQUIRE(xt::allclose(node_map, xt::xarray<index_t>{3, 7, 3, 6}));
+    }
+
+    TEST_CASE("get_bipartite_matching_graph_contour_image_2d 2", "[graph_image]") {
+        array_2d<int> im1{
+                {1, 0, 0, 1},
+                {0, 0, 0, 1},
+        };
+        array_2d<int> im2{
+                {0, 0, 0, 1},
+                {0, 0, 1, 0},
+        };
+        embedding_grid_2d embedding{im1.shape()};//{(index_t) im1.shape()[1], (index_t) im1.shape()[0]}};
+
+        auto res = get_bipartite_matching_graph_contour_image_2d(embedding, im1, im2, sqrt(2));
+        auto &sources = std::get<0>(res);
+        auto &targets = std::get<1>(res);
+        auto &weights = std::get<2>(res);
+        auto &node_map = std::get<3>(res);
+        auto &num_nodes1 = std::get<4>(res);
+        auto &num_nodes2 = std::get<5>(res);
+
+        REQUIRE(num_nodes1 == 2);
+        REQUIRE(num_nodes2 == 2);
+        REQUIRE(xt::allclose(sources, xt::xarray<index_t>{0, 0, 1, 1}));
+        REQUIRE(xt::allclose(targets, xt::xarray<index_t>{2, 3, 2, 3}));
+        REQUIRE(xt::allclose(weights, xt::xarray<double>{0, sqrt(2), 1, 1}));
+        REQUIRE(xt::allclose(node_map, xt::xarray<index_t>{3, 7, 3, 6}));
+    }
 }
