@@ -389,8 +389,8 @@ Please report any problems to robert@cs.stanford.edu.
 
 #endif
 
-#include <sys/types.h>
-#include <sys/times.h>
+//#include <sys/types.h>
+//#include <sys/times.h>
 
 
 namespace hg {
@@ -936,12 +936,12 @@ if (f_a != a) \
                 double_pushes = 0,
                 pushes = 0,
                 relabelings = 0,
-                refines = 0,
-                refine_time = 0;
+                refines = 0
+                /*refine_time = 0*/;
 #ifdef    USE_P_REFINE
                 p_refines = 0,
                       r_scans = 0,
-                p_refine_time = 0;
+                /*p_refine_time = 0*/;
 #endif
 #ifdef    USE_P_UPDATE
                 p_updates = 0,
@@ -1026,12 +1026,12 @@ if (f_a != a) \
             size_t double_pushes,
                     pushes,
                     relabelings,
-                    refines,
-                    refine_time;
+                    refines
+                    /*refine_time*/;
 #ifdef    USE_P_REFINE
             size_t	p_refines,
                     r_scans,
-                    p_refine_time;
+                    /*p_refine_time*/;
 #endif
 #ifdef    USE_P_UPDATE
             size_t	p_updates,
@@ -1931,7 +1931,7 @@ is chosen so that the arc just matched has implicit reduced cost
                 WORK_TYPE	old_refine_work_po;
 #endif
 
-                refine_time -= myclock();
+                //refine_time -= myclock();
                 refines++;
 /*
 Saturate all negative arcs: Negative arcs are exactly those
@@ -1996,7 +1996,7 @@ of EXPLICIT_PRICES.
                   sp_aug();
 #endif
 
-                refine_time += myclock();
+                //refine_time += myclock();
             }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -2040,14 +2040,14 @@ of EXPLICIT_PRICES.
 ///////////////////////////////////////////////////////////////////////////
 // timer.c ////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-
+/*
             size_t myclock() {
                 struct tms hold;
 
                 (void) times(&hold);
                 return (hold.tms_utime);
             }
-
+*/
 ///////////////////////////////////////////////////////////////////////////
 // update_epsilon.c ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
