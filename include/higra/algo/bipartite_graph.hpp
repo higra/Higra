@@ -39,8 +39,8 @@ namespace hg {
      * If the graph is not bipartite, the array is empty.
      */
     template<typename graph_t>
-    std::pair<bool, array_1d<u_char>> is_bipartite_graph(const graph_t &g) {
-        array_1d<u_char> color({num_vertices(g)}, 2);
+    std::pair<bool, array_1d<unsigned char>> is_bipartite_graph(const graph_t &g) {
+        array_1d<unsigned char> color({num_vertices(g)}, 2);
         std::stack<index_t> stack;
         for (auto o: vertex_iterator(g)) {
             if (color[o] == 2) {
@@ -89,7 +89,7 @@ namespace hg {
      * If the graph is not bipartite, the array is empty.
      */
     template<typename T>
-    std::pair<bool, array_1d<u_char>> is_bipartite_graph(const xt::xexpression<T> &xsources,
+    std::pair<bool, array_1d<unsigned char>> is_bipartite_graph(const xt::xexpression<T> &xsources,
                                                          const xt::xexpression<T> &xtargets,
                                                          index_t num_vertices) {
         auto &sources = xsources.derived_cast();
@@ -102,7 +102,7 @@ namespace hg {
 
         union_find uf(num_vertices);
         array_1d<index_t> map({(size_t) num_vertices}, invalid_index);
-        array_1d<u_char> color({(size_t) num_vertices}, 0);
+        array_1d<unsigned char> color({(size_t) num_vertices}, 0);
 
         for (index_t i = 0; i < (index_t)sources.size(); ++i) {
             auto s = sources[i];
