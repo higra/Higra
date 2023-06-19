@@ -286,11 +286,11 @@ namespace hg {
                                 }
                                 index_t num_node1 = node_map1.size() - 1;
                                 auto it = node_map2.find(lin2);
-                                if (it == node_map2.end()) {
-                                    node_map2[lin2] = node_map2.size();
+                                if (node_map2.count(lin2) == 0) {
+                                    auto nelem = node_map2.size();
+                                    node_map2[lin2] = nelem;
                                 }
                                 index_t num_node2 = node_map2[lin2];
-
                                 sources.push_back(num_node1);
                                 targets.push_back(num_node2);
                                 weights.push_back(n.distance);
