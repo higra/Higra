@@ -18,6 +18,9 @@
 template<typename T>
 using pyarray = xt::pyarray<T>;
 
+template<typename T, int n>
+using pytensor = xt::pytensor<T, n>;
+
 namespace py = pybind11;
 
 
@@ -58,6 +61,30 @@ struct def_contour2Khalimsky {
     }
 };
 
+struct def_get_bipartite_matching_graph_contour_image_2d {
+    template<typename value_t>
+    static
+    void def(pybind11::module &m, const char *doc) {
+        m.def("_get_bipartite_matching_graph_contour_image_2d",
+              [](const pytensor<value_t, 2> &image1,
+                 const pytensor<value_t, 2> &image2,
+                 double max_distance) {
+                  hg::embedding_grid_2d embedding(image1.shape());
+                  auto res = hg::get_bipartite_matching_graph_contour_image_2d(embedding, image1, image2, max_distance);
+                  return py::make_tuple(std::move(std::get<0>(res)), // sources
+                                        std::move(std::get<1>(res)), // targets
+                                        std::move(std::get<2>(res)), // edge weights
+                                        std::move(std::get<3>(res)), // node map
+                                        std::move(std::get<4>(res)), // num_nodes1
+                                        std::move(std::get<5>(res))); // num_nodes2
+              },
+              doc,
+              py::arg("image1"),
+              py::arg("image2"),
+              py::arg("max_distance"));
+    }
+};
+
 void py_init_graph_image(pybind11::module &m) {
     xt::import_numpy();
 
@@ -71,6 +98,12 @@ void py_init_graph_image(pybind11::module &m) {
             (m,
              "Create a 4 adjacency edge-weighted graph from a contour image in the Khalimsky grid. "
              "Returns a tuple of three elements (graph, embedding, edge_weights)."
+            );
+
+    add_type_overloads<def_get_bipartite_matching_graph_contour_image_2d, bool>
+            (m,
+             "Create a bipartite matching graph from two images. "
+             "Returns a tuple of six elements (sources, targets, edge_weights, node_map, num_nodes1, num_nodes2)."
             );
 
 }

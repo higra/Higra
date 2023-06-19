@@ -306,7 +306,7 @@ namespace hg {
                     for (; flag && t != m_temp.end(); t++, v++) {
                         *t = *v;
                     }
-                    *m_storage_begin = cur_index;
+                    *m_storage_begin = (storage_value_type)cur_index;
                 }
 
                 cur_index++;
@@ -318,7 +318,7 @@ namespace hg {
 
                 if (*value_begin < *m_temp.begin()) {
                     *m_temp.begin() = *value_begin;
-                    *m_storage_begin = cur_index;
+                    *m_storage_begin = (storage_value_type)cur_index;
                 }
 
                 cur_index++;
@@ -390,7 +390,7 @@ namespace hg {
                     for (; flag && t != m_temp.end(); t++, v++) {
                         *t = *v;
                     }
-                    *m_storage_begin = cur_index;
+                    *m_storage_begin = (storage_value_type)cur_index;
                 }
 
                 cur_index++;
@@ -402,7 +402,7 @@ namespace hg {
 
                 if (*value_begin > *m_temp.begin()) {
                     *m_temp.begin() = *value_begin;
-                    *m_storage_begin = cur_index;
+                    *m_storage_begin = (storage_value_type)cur_index;
                 }
 
                 cur_index++;

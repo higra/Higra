@@ -87,7 +87,7 @@ namespace hg {
                 std::vector<int> p;
                 p.reserve(num_vertices(m_tree));
                 for (auto v: parents(m_tree))
-                    p.push_back(v);
+                    p.push_back((int)v);
 
                 m_out.write(reinterpret_cast<const char *>(&p[0]), std::streamsize(p.size() * sizeof(int)));
             }

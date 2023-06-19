@@ -9,6 +9,7 @@
 ############################################################################
 
 from .alignment import *
+from .bipartite_graph import *
 from .graph_core import *
 from .graph_weights import *
 from .horizontal_cuts import *

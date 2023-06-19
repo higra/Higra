@@ -96,7 +96,7 @@ namespace hg {
             index_t query(index_t l, index_t r) const {
                 auto level = fast_log2(r - l);
                 auto p1 = m_sparse_table[level](l);
-                auto p2 = m_sparse_table[level](r - (1 << level));
+                auto p2 = m_sparse_table[level](r - ((size_t)1 << level));
                 return m_data[p1] < m_data[p2] ? p1 : p2;
             }
 
@@ -183,7 +183,7 @@ namespace hg {
                     m_sparse_table.push_back(array_1d<index_t>::from_shape({(size_t) size_lvlp1}));
                     parfor(0, size_lvlp1, [this, lvl](index_t i) {
                         auto p1 = m_sparse_table[lvl](i);
-                        auto p2 = m_sparse_table[lvl](i + (1 << lvl));
+                        auto p2 = m_sparse_table[lvl](i + ((size_t)1 << lvl));
                         m_sparse_table[lvl + 1](i) = m_data[p1] < m_data[p2] ? p1 : p2;
                     });
                 }

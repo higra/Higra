@@ -26,7 +26,7 @@ namespace test_fibonacci_heap {
             return m_value;
         }
 
-        node() {
+        node() : m_value(0), m_index(invalid_index) {
 
         }
 

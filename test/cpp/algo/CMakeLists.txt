@@ -10,6 +10,7 @@
 
 set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/test_alignment.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_bipartite_graph.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_graph_core.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_graph_weights.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_horizontal_cuts.cpp

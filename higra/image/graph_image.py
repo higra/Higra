@@ -269,3 +269,79 @@ def get_nd_regular_graph(shape, neighbour_list):
                      hg.get_attribute(graph_implicit, "no_border_vertex_out_degree"))
 
     return graph
+
+
+def match_pixels_image_2d(image1, image2, max_distance=0.0075, mode="relative"):
+    """
+    Computes a matching between the pixels of two images.
+
+    The matching is computed by solving a minimum cost bipartite graph matching problem.
+    Any pixel whose value if less than or equal to 0 is considered as a missing pixel and is not matched.
+    The cost of a match between two pixels is the Euclidean distance between the two pixels.
+
+    Two pixels are matchable if their distance is less than:
+
+        - :attr:`max_distance` * diagonal size if :attr:`mode` is "relative"
+        - :attr:`max_distance` if :attr:`mode` is "absolute"
+
+    The algorithm computes a matching of maximum size and minimum cost between the matchable pixels of both images.
+    The algorithm returns a pair of arrays ``(sources, targets)`` representing the edges linking matched pixels:
+
+        - ``sources[i]`` is the linear index of the source pixel in :attr:`image_1` of the edge ``i``
+        - ``targets[i]`` is the linear index of the target pixel in :attr:`image_2` of the edge ``i``
+
+    The following figure illustrates the matching of pixels between two images. The blue squares represent the pixels
+    of the first image, the green squares represent the pixels of the second images, and the red lines represent the
+    matching between blue and green pixels.
+
+    .. image:: images/demo_match_pixels_image_2d.svg
+      :width: 400
+      :alt: Demonstration of the matching of pixels between two images.
+
+
+
+    This function is a reimplementation of the function ``correspondPixels`` used to compute boundary based assessment
+    measures of segmentations in the `BSDS500 dataset <https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/bsds/>`_.
+
+    :Example:
+
+    Let's match two images, with a maximum distance of :math:`1.3\\approx \sqrt(2)`:
+
+    >>> im1 = np.asarray([[1, 0, 0, 1, 1],
+    >>>                   [0, 0, 0, 1, 0],
+    >>>                   [0, 0, 0, 1, 0],
+    >>>                   [0, 0, 1, 1, 1]])
+    >>> im2 = np.asarray([[0, 0, 1, 1, 0],
+    >>>                   [0, 0, 1, 0, 0],
+    >>>                   [0, 0, 1, 0, 1],
+    >>>                   [1, 1, 1, 1, 0]])
+    >>> hg.match_pixels_image_2d(im1, im2, 1.3, "absolute")
+    (array([ 3, 4, 8, 13, 17, 18, 19]), array([ 2, 3, 7, 12, 17, 18, 14]))
+
+    Hence, pixel 3 of ``im1`` is matched with pixel 2 of ``im2``, pixel 4 of ``im1`` is matched with pixel 3 of ``im2``,
+    and so on.
+
+    :param image1: a 2d array representing the first image
+    :param image2: a 2d array representing the second image
+    :param max_distance: the maximum distance between two pixels to be matched
+    :param mode: "relative" or "absolute"
+    :return: a pair of arrays ``(sources, targets)`` representing the edges linking matched pixels
+    """
+    if max_distance < 0:
+        raise ValueError("max_distance must be positive.")
+
+    if mode == "relative":
+        height, width = image1.shape
+        diagonal = np.sqrt(height * height + width * width)
+        max_distance = max_distance * diagonal
+    elif mode == "absolute":
+        pass
+    else:
+        raise ValueError("mode must be 'relative' or 'absolute'.")
+
+    sources, targets, weights, node_map, num_nodes1, num_nodes2 = \
+        hg.cpp._get_bipartite_matching_graph_contour_image_2d(image1 > 0, image2 > 0, max_distance)
+
+    matched_edges = hg.bipartite_graph_matching((sources, targets, num_nodes1 + num_nodes2), (weights * 1000).astype(np.int64))
+
+    return node_map[sources[matched_edges]], node_map[targets[matched_edges]]

@@ -6,3 +6,7 @@ dependencies
 Testing
 
 
+
+out/
+
+.vs/

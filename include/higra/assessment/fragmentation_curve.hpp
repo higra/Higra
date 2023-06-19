@@ -265,7 +265,7 @@ namespace hg {
             }
 
             return hg::fragmentation_curve<>{
-                    xt::eval(xt::arange<double>(1, (index_t)final_scores.size() + 1)),
+                    xt::eval(xt::arange<double>(1, (double)((index_t)final_scores.size() + 1))),
                     xt::eval(final_scores / (double) num_leaves(m_tree)),
                     m_num_regions_ground_truth};
         }
@@ -409,7 +409,7 @@ namespace hg {
 
         auto hc_explorer = make_horizontal_cut_explorer(tree, altitudes);
         auto &num_regions_cuts = hc_explorer.num_regions_cuts();
-        auto last_cut = std::upper_bound(num_regions_cuts.begin(), num_regions_cuts.end(), max_regions);
+        auto last_cut = std::upper_bound(num_regions_cuts.begin(), num_regions_cuts.end(), (index_t)max_regions);
 
         index_t num_cuts = std::distance(num_regions_cuts.begin(), last_cut);
 

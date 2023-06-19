@@ -85,7 +85,7 @@ namespace hg {
                                           * std::abs(
                                 std::cos(edge_orientation - xt::numeric_constants<double>::PI_2 - segment_orientation));
                         if (new_weight > final_weights(edge_index)) {
-                            final_weights(edge_index) = new_weight;
+                            final_weights(edge_index) = (value_t)new_weight;
                         }
                     }
                 }

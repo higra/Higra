@@ -101,6 +101,41 @@ class TestGraphImage(unittest.TestCase):
 
         self.assertTrue(ref_edges == res_edges)
 
+    def test_match_pixels_image_2d(self):
+        im1 = np.asarray([[1, 0, 0, 1],
+                          [0, 0, 0, 1]])
+        im2 = np.asarray([[0, 0, 0, 1],
+                          [0, 0, 1, 0]])
+
+        sources, targets = hg.match_pixels_image_2d(im1, im2, 1.3, "absolute")
+
+        ref_edges = set(((3, 3), (7, 6)))
+        for e in zip(sources, targets):
+            e = tuple(e)
+            self.assertTrue(e in ref_edges)
+            ref_edges.remove(e)
+
+
+    def test_match_pixels_image_2d_2(self):
+        im1 = np.asarray([[1, 0, 0, 1, 1], #3, 2;  4, 3
+                          [0, 0, 0, 1, 0], #8, 7
+                          [0, 0, 0, 1, 0], #13, 12
+                          [0, 0, 1, 1, 1]]) #17, 17; 18,18; 19, 14
+        im2 = np.asarray([[0, 0, 1, 1, 0],
+                          [0, 0, 1, 0, 0],
+                          [0, 0, 1, 0, 1],
+                          [1, 1, 1, 1, 0]])
+
+        sources, targets = hg.match_pixels_image_2d(im1, im2, 1.3, "absolute")
+        ref_edges = set(((3, 2), (4, 3), (8, 7), (13, 12), (17, 17), (18, 18), (19, 14)))
+        for e in zip(sources, targets):
+            e = tuple(e)
+            self.assertTrue(e in ref_edges)
+            ref_edges.remove(e)
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
