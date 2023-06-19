@@ -1,6 +1,17 @@
 Changelog
 =========
 
+0.6.7
+-----
+
+- Add function :func:`~higra.is_bipartite_graph` `#265 <https://github.com/higra/Higra/pull/265>`_
+- Add function :func:`~higra.bipartite_graph_matching` for minimum cost matching in bipartite graphs `#265 <https://github.com/higra/Higra/pull/265>`_
+- Add function :func:`~higra.match_pixels_image_2d` to compute the optimal matching between the pixels/contours of 2 images `#265 <https://github.com/higra/Higra/pull/265>`_
+- Add "similarity" mode in Dasgupta quality measure  :func:`~higra.dasgupta_cost` `#264 <https://github.com/higra/Higra/pull/264>`_
+- Add :func:`~higra.Tree.to_undirected_graph` to the tree class `#263 <https://github.com/higra/Higra/pull/263>`_
+- Add option to use a preexisting graph in :func:`~higra.graph_4_adjacency_2_khalimsky` `#262 <https://github.com/higra/Higra/pull/262>`_
+
+
 0.6.6
 -----
 
