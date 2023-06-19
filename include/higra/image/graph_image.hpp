@@ -97,7 +97,7 @@ namespace hg {
         array_2d<result_type> res = xt::zeros<result_type>(res_shape);
 
         point_2d_i one{{1, 1}};
-        for (auto e: edge_iterator(graph)) {
+        for (const auto &e: edge_iterator(graph)) {
             auto s = source(e, graph);
             auto t = target(e, graph);
             if (t > s) {
@@ -174,7 +174,7 @@ namespace hg {
         array_1d<result_type> weights = xt::zeros<result_type>({num_edges(g)});
 
         point_2d_i one{{1, 1}};
-        for (auto e: edge_iterator(g)) {
+        for (const auto &e: edge_iterator(g)) {
             auto s = embedding.lin2grid(source(e, g));
             auto t = embedding.lin2grid(target(e, g));
             if (extra_border) {
@@ -241,7 +241,7 @@ namespace hg {
         hg_assert(embedding.shape()[0] == (index_t)contour_image1.shape()[0], "Embedding shape[0] does not match.");
         hg_assert(embedding.shape()[1] == (index_t)contour_image1.shape()[1], "Embedding shape[1] does not match.");
 
-        index_t max_distance_sup = std::ceil(max_distance);
+        index_t max_distance_sup = (index_t)std::ceil(max_distance);
         hg_assert(max_distance >= 0, "Max distance must be positive.");
 
         struct neighbor {
@@ -262,10 +262,8 @@ namespace hg {
             }
         }
 
-
         std::vector<index_t> node_map1;
         std::unordered_map<index_t, index_t> node_map2;
-
 
         index_t height = embedding.shape()[0];
         index_t width = embedding.shape()[1];
@@ -303,12 +301,10 @@ namespace hg {
             }
         }
 
-
         size_t num_nodes1 = node_map1.size();
         size_t num_nodes2 = node_map2.size();
 
         array_1d<index_t> node_map = array_1d<index_t>::from_shape({num_nodes1 + num_nodes2});
-
 
         for (size_t i = 0; i < num_nodes1; ++i) {
             node_map[i] = node_map1[i];

@@ -898,10 +898,10 @@ if (f_a != a) \
             }
 
             // number of edges in the assignment (n)
-            int edges() { return result_n; }
+            index_t edges() { return result_n; }
 
             // total cost of the assignment
-            int cost() { return result_cost; }
+            index_t cost() { return result_cost; }
 
             array_1d<index_t> edge_indices() {
                 std::vector<size_t> shape = {(size_t) result_n};
@@ -920,13 +920,13 @@ if (f_a != a) \
             index_t *result_edge_index;
             index_t result_cost;
 
-            void _init(int _n, int _m) {
+            void _init(index_t _n, index_t _m) {
                 result_n = 0;
                 result_edge_index = NULL;
                 result_cost = 0;
 
-                this->n = _n;
-                this->m = _m;
+                this->n = (size_t)_n;
+                this->m = (size_t)_m;
                 head_lhs_node = NULL, tail_lhs_node = NULL;
                 head_rhs_node = NULL, tail_rhs_node = NULL;
                 head_lr_arc = NULL, tail_lr_arc = NULL;
@@ -1181,7 +1181,7 @@ Miscellaneous variables.
 #endif
 
                 //describe_self();
-                epsilon = parse(sources, targets, weights);
+                epsilon = (double)parse(sources, targets, weights);
 
                 scale_factor = DEFAULT_SCALE_FACTOR;
 
@@ -1255,7 +1255,8 @@ setup is free.
                 for (lhs_ptr v = head_lhs_node; v != tail_lhs_node; v++) {
                     result_n++;
                 }
-
+                if (result_n == 0)
+                    return;
                 // initialize
                 result_edge_index = new index_t[result_n];
                 result_cost = 0;
@@ -1467,7 +1468,7 @@ setup is free.
 #define NONCONTIG    1007    /* Node id numbers not contiguous */
 #define NOMEM        1008    /* Not enough memory */
 
-            const char *err_messages[8] = {
+            /*const std::string err_messages[8] = {
                     "Can't read from the input file.",
                     "Not a correct assignment problem line.",
                     "Error reading a node descriptor from the input.",
@@ -1478,16 +1479,17 @@ setup is free.
                     "Can't obtain enough memory to solve this problem.",
             };
 
-            void parse_error(int err_index) {
-                (void) fprintf(stderr, "CSA: Error while parsing the input: %s \n",
-                               err_messages[(err_index % ERRBASE) - 1]);
-                exit(1);
-            }
+            void parse_error(string s) {
+                throw std::invalid_argument("CSA: Error while parsing the input: %s \n" + err_messages[(err_index % ERRBASE) - 1]);
+                //(void) fprintf(stderr, "CSA: Error while parsing the input: %s \n",
+                //               err_messages[(err_index % ERRBASE) - 1]);
+                //exit(1);
+            }*/
 
             typedef struct temp_arc {
                 lhs_ptr tail;
                 rhs_ptr head;
-                int64_t cost;
+                index_t cost;
                 index_t edge_index;
             } *ta_ptr;
 
@@ -1515,6 +1517,8 @@ setup is free.
 
                 //arc_count = m;
                 lhs_n = n / 2;
+                if (lhs_n == 0)
+                    return 0;
 
                 head_lr_arc = (lr_aptr) malloc((m + 1) * sizeof(struct lr_arc));
                 tail_lr_arc = head_lr_arc + m;
@@ -1545,7 +1549,7 @@ setup is free.
                 temp_arcs = (ta_ptr) malloc(m * sizeof(struct temp_arc));
                 if ((head_lhs_node == NULL) || (head_lr_arc == NULL) ||
                     (lhs_degree == NULL) || (temp_arcs == NULL))
-                    parse_error(NOMEM);
+                    throw std::invalid_argument("CSA: Error while parsing the input: memory allocation failed.");
                 temp_a = temp_arcs;
                 for (tail = 0; tail < lhs_n; tail++)
                     lhs_degree[tail] = 0;
@@ -1565,7 +1569,8 @@ setup is free.
                     }
                     if ((tail < 1) || (tail > lhs_n) ||
                         (head < 1) || (head > n - lhs_n))
-                        parse_error(BADINPUT4);
+                        throw std::invalid_argument("CSA: Error while parsing the input: Invalid edge descriptors.");
+                        
 
                     head--;
                     tail--;
@@ -1585,7 +1590,7 @@ setup is free.
                 a = head_lr_arc;
                 for (tail = 0, l_v = head_lhs_node; l_v != tail_lhs_node; l_v++, tail++) {
                     l_v->priced_out = l_v->first = a;
-                    l_v->matched = NULL;
+                    l_v->matched = nullptr;
                     a += lhs_degree[tail];
 #ifdef    QUICK_MIN
                     if (lhs_degree[tail] < NUM_BEST + 1)
@@ -2003,7 +2008,7 @@ of EXPLICIT_PRICES.
 // stack.c ////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-            const char *nomem_msg = "Insufficient memory.\n";
+            //const char *nomem_msg = "Insufficient memory.\n";
 
             void st_reset(stack s) {
                 s->top = s->bottom;
@@ -2020,13 +2025,16 @@ of EXPLICIT_PRICES.
                 s = (stack) malloc(sizeof(struct stack_st));
 
                 if (s == NULL) {
-                    (void) fprintf(stderr, "%s", nomem_msg);
-                    exit(9);
+                    throw std::runtime_error("Insufficient memory.");
+                    //(void) fprintf(stderr, "%s", nomem_msg);
+                    //exit(9);
                 }
                 s->bottom = (char **) malloc(size * sizeof(char *));
                 if (s->bottom == NULL) {
-                    (void) fprintf(stderr, "%s", nomem_msg);
-                    exit(9);
+                    free(s);
+                    throw std::runtime_error("Insufficient memory.");
+                    //(void) fprintf(stderr, "%s", nomem_msg);
+                    // exit(9);
                 }
                 s->top = s->bottom;
                 return (s);

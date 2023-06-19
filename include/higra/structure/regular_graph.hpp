@@ -183,8 +183,8 @@ namespace hg {
 
                 source_coordinates = graph.m_embedding.lin2grid(source);
                 safe_area = graph.is_in_safe_area(source_coordinates);
-                num_elem = graph.m_neighbours.size();
-                current_element = (end) ? graph.m_neighbours.size() : 0;
+                num_elem = (int)graph.m_neighbours.size();
+                current_element = (end) ? (int)graph.m_neighbours.size() : 0;
                 if (current_element != num_elem) {
                     if (safe_area) {
                         neighbour = source + graph.m_relative_neighbours[current_element];

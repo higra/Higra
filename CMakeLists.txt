@@ -84,7 +84,7 @@ if(CCACHE_FOUND)
 endif(CCACHE_FOUND)
 
 set(CMAKE_CXX_STANDARD 14)
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+if ((CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT (CMAKE_CXX_SIMULATE_ID MATCHES "MSVC") ) OR CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-local-typedefs")# -Wno-unused-but-set-variable -Wno-missing-braces -Wno-mismatched-tags -Wno-unneeded-internal-declaration")
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -114,7 +114,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU"
             endif ()
         endif ()
     endif()
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC")) 
+    # @todo Clang as MVSC:more works needed for flags 
     # using Visual Studio C++
     CHECK_CXX_COMPILER_FLAG("/std:c++14" COMPILER_SUPPORTS_CXX14)
     if(COMPILER_SUPPORTS_CXX14)
@@ -125,10 +126,10 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 
     add_definitions("-DNOMINMAX")
     if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast /GL /EHsc /MP /bigobj /O2")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /GL /EHsc /MP /bigobj /O2 /wd4244 /wd4267") 
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG /MANIFEST:NO")
     else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /EHsc /MP /bigobj")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /EHsc /MP /bigobj /wd4244 /wd4267")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  /MANIFEST:NO")
     endif()
 else()

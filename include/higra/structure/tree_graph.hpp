@@ -104,7 +104,7 @@ namespace hg {
             //BidirectionalGraph associated types
             using in_edge_iterator = out_edge_iterator;
 
-            tree() : _root(invalid_index), _num_vertices(0), _num_leaves(0) {
+            tree() : _root(invalid_index), _num_vertices(0), _num_leaves(0), _children_computed(false), _category(tree_category::partition_tree){
 
             }
 

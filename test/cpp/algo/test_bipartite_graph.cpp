@@ -85,7 +85,7 @@ namespace test_alignment {
 
         REQUIRE(ans);
         REQUIRE(color.size() == 6);
-        for (auto e: edge_iterator(g)){
+        for (const auto & e: edge_iterator(g)){
             REQUIRE(color[e.source] != color[e.target]);
         }
     }
@@ -101,7 +101,7 @@ namespace test_alignment {
 
         REQUIRE(ans);
         REQUIRE(color.size() == 6);
-        for (auto e: edge_iterator(g)){
+        for (const auto & e: edge_iterator(g)){
             REQUIRE(color[e.source] != color[e.target]);
         }
     }
@@ -116,7 +116,7 @@ namespace test_alignment {
 
         REQUIRE(ans);
         REQUIRE(color.size() == 6);
-        for (auto e: edge_iterator(g)){
+        for (const auto &e: edge_iterator(g)){
             REQUIRE(color[e.source] != color[e.target]);
         }
     }
@@ -131,7 +131,7 @@ namespace test_alignment {
 
         REQUIRE(ans);
         REQUIRE(color.size() == 6);
-        for (auto e: edge_iterator(g)){
+        for (const auto &e: edge_iterator(g)){
             REQUIRE(color[e.source] != color[e.target]);
         }
     }
@@ -144,7 +144,7 @@ namespace test_alignment {
         auto &ans = res.first;
         auto &color = res.second;
 
-        REQUIRE_FALSE(ans);
+        REQUIRE(!ans);
         REQUIRE(color.size() == 0);
     }
 
@@ -156,7 +156,7 @@ namespace test_alignment {
         auto &ans = res.first;
         auto &color = res.second;
 
-        REQUIRE_FALSE(ans);
+        REQUIRE(!ans);
         REQUIRE(color.size() == 0);
     }
 
@@ -168,8 +168,8 @@ namespace test_alignment {
         index_t split = n * 4 / 5;
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dis(0, split - 1);
-        std::uniform_int_distribution<> dis2(split, n - 1);
+        std::uniform_int_distribution<index_t> dis(0, split - 1);
+        std::uniform_int_distribution<index_t> dis2(split, n - 1);
 
 
         array_1d<index_t> randomized_order = xt::random::permutation(n);
@@ -184,7 +184,7 @@ namespace test_alignment {
 
         REQUIRE(ans);
         REQUIRE(color.size() == (size_t)n);
-        for (auto e: edge_iterator(g)){
+        for (const auto &e: edge_iterator(g)){
             REQUIRE(color[e.source] != color[e.target]);
         }
     }
@@ -197,8 +197,8 @@ namespace test_alignment {
         index_t split = n * 4 / 5;
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dis(0, split - 1);
-        std::uniform_int_distribution<> dis2(split, n - 1);
+        std::uniform_int_distribution<index_t> dis(0, split - 1);
+        std::uniform_int_distribution<index_t> dis2(split, n - 1);
 
 
         array_1d<index_t> randomized_order = xt::random::permutation(n);
@@ -213,7 +213,7 @@ namespace test_alignment {
 
         REQUIRE(ans);
         REQUIRE(color.size() == (size_t)n);
-        for (auto e: edge_iterator(g)){
+        for (const auto &e: edge_iterator(g)){
             REQUIRE(color[e.source] != color[e.target]);
         }
     }

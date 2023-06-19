@@ -108,11 +108,19 @@ namespace hg {
 #endif
 
 #ifdef HG_ENABLE_TRACE
-#define HG_TRACE(M, ...) do{                                            \
+#define HG_TRACE() do{                                                  \
+if(hg::logger::trace_enabled()){                                        \
+    HG_LOG_EMIT("TRACE", "function called");                            \
+}                                                                       \
+}while(0)
+
+#define HG_TRACE_INFO(M, ...) do{                                       \
 if(hg::logger::trace_enabled()){                                        \
     HG_LOG_EMIT("TRACE", "function called " M, ##__VA_ARGS__);          \
 }                                                                       \
 }while(0)
 #else
-#define HG_TRACE(...)  do{}while(0)
+#define HG_TRACE()  do{}while(0)
+
+#define HG_TRACE_INFO(...)  do{}while(0)
 #endif

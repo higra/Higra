@@ -158,7 +158,7 @@ namespace hg {
 
             fibonacci_heap &operator=(const fibonacci_heap &) = delete;
 
-            fibonacci_heap(fibonacci_heap &&other) {
+            fibonacci_heap(fibonacci_heap &&other) noexcept {
                 m_heap = other.m_heap;
                 m_size = other.m_size;
                 other.m_heap = nullptr;
