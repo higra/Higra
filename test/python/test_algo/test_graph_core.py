@@ -171,7 +171,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         with self.assertRaises(ValueError):
             hg.adjacency_matrix_2_undirected_graph(ref_adj_mat, non_edge_value=-1)
 
-    def ultrametric_open(self):
+    def test_ultrametric_open(self):
         graph = hg.get_4_adjacency_graph((3, 3))
         edge_weights = np.asarray((2, 3, 9, 5, 10, 1, 5, 8, 2, 2, 4, 3), dtype=np.int32)
 

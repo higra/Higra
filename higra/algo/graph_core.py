@@ -137,19 +137,35 @@ def ultrametric_open(graph, edge_weights):
     Subdominant ultrametric of the given edge weighted graph.
 
     The subdominant ultrametric relative to a given dissimilarity measure (here the graph edge weights)
-    is defined as the largest ultrametric smaller than the dissimilarity measure.
+    is defined as the largest ultrametric smaller than the given dissimilarity measure. The result is thus a
+    saliency map: new edge weights such that any upper thresholding of the edge weights will produce graph cut.
 
-    In the case of an edge weighted undirected graph, the value of the subdominant ultrametric on the
-    edge :math:`e_{xy}` is given by the min-max distance between :math:`x` and :math:`y`.
+    In the case of an edge weighted undirected graph, the value of the subdominant ultrametric :math:`u(e_{xy})` on the
+    edge :math:`e_{xy}` is given by the min-max distance between :math:`x` and :math:`y`:
 
-    Complexity: :math:`\mathcal{O}(n*log(n))` with :math:`n` the number of edges in the graph
+    .. math::
+
+        u(e_{xy}) = min_{p \in P_{xy}} max_{e \in p} w(e)
+
+    where :math:`P_{xy}` is the set of all paths between :math:`x` and :math:`y`.
+
+    This function is a morphological opening: it is increasing, idempotent and anti-extensive (with respect to :attr:`edge_weights`).
+
+    Complexity: :math:`\mathcal{O}(n*log(n))` with :math:`n` the number of edges in the graph.
+
+    :Example:
+
+    >>> graph = hg.get_4_adjacency_graph((3, 3))
+    >>> edge_weights = np.asarray((2, 3, 9, 5, 10, 1, 5, 8, 2, 2, 4, 3))
+    >>> hg.ultrametric_open(graph, edge_weights)
+    array([2, 3, 9, 3, 9, 1, 4, 3, 2, 2, 4, 3])
 
     :param graph: Input graph
-    :param edge_weights: Graph edge weights
+    :param edge_weights: Graph edge weights (disimilarity measure)
     :return: edge weights corresponding to the subdominant ultrametric
     """
-    tree, altitudes = hg.bpt_canonical(edge_weights, graph)
-    return hg.saliency(altitudes)
+    tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+    return hg.saliency(tree, altitudes)
 
 
 def minimum_spanning_tree(graph, edge_weights):
