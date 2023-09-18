@@ -101,6 +101,17 @@ class TestGraphImage(unittest.TestCase):
 
         self.assertTrue(ref_edges == res_edges)
 
+    def test_match_pixels_image_2d_empty(self):
+        im1 = np.asarray([[1, 0, 0, 0],
+                          [0, 0, 0, 0]])
+        im2 = np.asarray([[0, 0, 0, 1],
+                          [0, 0, 0, 0]])
+
+        sources, targets = hg.match_pixels_image_2d(im1, im2, 1.3, "absolute")
+
+        self.assertTrue(len(sources) == 0)
+        self.assertTrue(len(targets) == 0)
+
     def test_match_pixels_image_2d(self):
         im1 = np.asarray([[1, 0, 0, 1],
                           [0, 0, 0, 1]])

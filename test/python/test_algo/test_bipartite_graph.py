@@ -58,6 +58,13 @@ class TestBipartiteGraph(unittest.TestCase):
         self.assertFalse(ans)
         self.assertTrue(len(color) == 0)
 
+    def test_bipartite_graph_matching_empty(self):
+        g = hg.UndirectedGraph(6)
+        weights = np.array([])
+
+        edges = hg.bipartite_graph_matching(g, weights)
+        self.assertTrue(len(edges) == 0)
+
     def test_bipartite_graph_matching(self):
         g = hg.UndirectedGraph(6)
         g.add_edges(np.array([0, 0, 1, 1, 2, 1]), np.array([3, 4, 3, 5, 5, 4]))
