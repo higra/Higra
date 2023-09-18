@@ -31,7 +31,7 @@ jobs:
       - script: |
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
-          conda install cmake tbb-devel==2019.9 scikit-learn==1.0.1 -c conda-forge
+          conda install cmake tbb-devel==2019.9 scikit-learn -c conda-forge
         displayName: Install python packages
 
       - script: |

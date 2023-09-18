@@ -129,11 +129,21 @@ def bipartite_graph_matching(graph, edge_weights):
             targets = graph[1]
             num_vertices = graph[2]
             num_edges = len(sources)
+
+            if len(targets) != num_edges:
+                raise ValueError("sources and targets must have the same length")
+
         except Exception as e:
             raise TypeError("graph must be an undirected graph or a tuple (sources, targets, num_vertices)", e)
 
+    if len(edge_weights) != num_edges:
+        raise ValueError("edge_weights must have the same length as the number of edges of the graph")
+
     if not check:
         raise ValueError("graph must be bipartite")
+
+    if num_edges == 0:
+        return np.array([], dtype=np.int64)
 
     # if edge weights dtype is floating point, emit a warning
     if np.issubdtype(edge_weights.dtype, np.floating):
