@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.6.8
+-----
+
+- Add support for Python 3.12 and remove Python 3.7 `#272 <https://github.com/higra/Higra/pull/272>`_
+- Fix bug with empty graphs in function :func:`~higra.bipartite_graph_matching` for minimum cost matching in bipartite graphs `#270 <https://github.com/higra/Higra/pull/270>`_
+- Fix bug in function :func:`~higra.ultrametric_open` `#268 <https://github.com/higra/Higra/pull/268>`_
+
 0.6.7
 -----
 
