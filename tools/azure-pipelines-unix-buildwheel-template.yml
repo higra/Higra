@@ -35,7 +35,7 @@ jobs:
         condition: startsWith('${{ parameters.name }}', 'mac')
 
       - script: |
-          pip install cibuildwheel==2.12.0 twine
+          pip install cibuildwheel==2.16.2 twine
         displayName: Install python packages
 
       - script: |

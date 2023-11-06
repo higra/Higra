@@ -2,18 +2,18 @@ jobs:
   - job: 'Linux_gcc'
     strategy:
       matrix:
-        gcc_7:
-          gcc_version: '7'
+        gcc_9:
+          gcc_version: '9'
           HG_USE_TBB: 'Off'
         gcc_9_tbb:
-          gcc_version: '7'
+          gcc_version: '9'
           HG_USE_TBB: 'On'
         gcc_9_coverage:
           gcc_version: '9'
           HG_USE_TBB: 'On'
           COVERAGE: 1
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-22.04
     variables:
       CODECOV_TOKEN: $(CODECOV_TOKEN_scr)
       CC: gcc-$(gcc_version)
@@ -22,11 +22,6 @@ jobs:
     steps:
 
       - script: |
-          if [[ $(gcc_version) == '6' || $(gcc_version) == '7' || $(gcc_version) == '8' ]]; then
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-            sudo apt-get update
-            sudo apt-get --no-install-suggests --no-install-recommends install g++-$(gcc_version)
-          fi
           if [[ $(COVERAGE) -eq 1 ]]; then
             sudo apt-get update
             sudo apt-get --no-install-suggests --no-install-recommends install lcov
