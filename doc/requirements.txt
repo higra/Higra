@@ -1,4 +1,5 @@
 sphinx==3.0.3
+sphinx_rtd_theme
 sphinx-tabs
 breathe
 Jinja2<3.1
