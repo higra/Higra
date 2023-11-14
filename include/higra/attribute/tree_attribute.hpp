@@ -199,7 +199,7 @@ namespace hg {
         array_1d<bool> extrema = xt::ones<bool>({num_vertices(tree)});
 
         const auto num_leaves = (hg::index_t) hg::num_leaves(tree);
-        xt::noalias(xt::view(extrema, xt::range(0, num_leaves))) = xt::zeros<bool>({num_leaves});
+        xt::view(extrema, xt::range(0, num_leaves)) = 0;
 
         for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude, root_it::exclude)) {
             bool p_non_canonical = altitudes(n) == altitudes(parent(n, tree));
