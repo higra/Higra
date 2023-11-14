@@ -196,18 +196,15 @@ namespace hg {
         hg_assert_node_weights(tree, altitudes);
         hg_assert_1d_array(altitudes);
 
-        tree.compute_children();
-        array_1d<bool> extrema = xt::zeros<bool>({num_vertices(tree)});
-        for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
-            bool flag = true;
-            for (auto c: children_iterator(n, tree)) {
-                bool c_non_canonical = altitudes(c) == altitudes(n);
-                if (!(is_leaf(c, tree) || (c_non_canonical && extrema(c)))) {
-                    flag = false;
-                }
-                extrema(c) = extrema(c) && !c_non_canonical;
-            }
-            extrema(n) = flag;
+        array_1d<bool> extrema = xt::ones<bool>({num_vertices(tree)});
+
+        const auto num_leaves = (hg::index_t) hg::num_leaves(tree);
+        xt::view(extrema, xt::range(0, num_leaves)) = 0;
+
+        for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude, root_it::exclude)) {
+            bool p_non_canonical = altitudes(n) == altitudes(parent(n, tree));
+            extrema(parent(n, tree)) = extrema(n) && p_non_canonical && extrema(parent(n, tree));
+            extrema(n) = extrema(n) && !p_non_canonical;
         }
         return extrema;
     }
