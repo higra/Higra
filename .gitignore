@@ -4,9 +4,9 @@ cmake-build*
 dependencies
 .idea
 Testing
-
-
-
 out/
-
 .vs/
+build
+__pycache__
+higra.egg-info
+dist

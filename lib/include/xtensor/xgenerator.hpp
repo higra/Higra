@@ -1,11 +1,11 @@
 /***************************************************************************
-* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
-* Copyright (c) QuantStack                                                 *
-*                                                                          *
-* Distributed under the terms of the BSD 3-Clause License.                 *
-*                                                                          *
-* The full license is in the file LICENSE, distributed with this software. *
-****************************************************************************/
+ * Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+ * Copyright (c) QuantStack                                                 *
+ *                                                                          *
+ * Distributed under the terms of the BSD 3-Clause License.                 *
+ *                                                                          *
+ * The full license is in the file LICENSE, distributed with this software. *
+ ****************************************************************************/
 
 #ifndef XTENSOR_GENERATOR_HPP
 #define XTENSOR_GENERATOR_HPP
@@ -22,9 +22,9 @@
 #include "xaccessible.hpp"
 #include "xexpression.hpp"
 #include "xiterable.hpp"
+#include "xstrided_view.hpp"
 #include "xstrides.hpp"
 #include "xutils.hpp"
-#include "xstrided_view.hpp"
 
 namespace xt
 {
@@ -162,13 +162,13 @@ namespace xt
         rebind_t<OR, OF> build_generator(OF&& func) const;
 
         template <class O = xt::dynamic_shape<typename shape_type::value_type>>
-        auto reshape(O&& shape) const &;
+        auto reshape(O&& shape) const&;
 
         template <class O = xt::dynamic_shape<typename shape_type::value_type>>
         auto reshape(O&& shape) &&;
 
         template <class T>
-        auto reshape(std::initializer_list<T> shape) const &;
+        auto reshape(std::initializer_list<T> shape) const&;
 
         template <class T>
         auto reshape(std::initializer_list<T> shape) &&;
@@ -211,9 +211,11 @@ namespace xt
     template <class F, class R, class S>
     template <class Func>
     inline xgenerator<F, R, S>::xgenerator(Func&& f, const S& shape) noexcept
-        : m_f(std::forward<Func>(f)), m_shape(shape)
+        : m_f(std::forward<Func>(f))
+        , m_shape(shape)
     {
     }
+
     //@}
 
     /**
@@ -246,6 +248,7 @@ namespace xt
     /**
      * @name Data
      */
+
     /**
      * Returns the evaluated element at the specified position in the function.
      * @param args a list of indices specifying the position in the function. Indices
@@ -269,16 +272,16 @@ namespace xt
      *
      * @warning This method is meant for performance, for expressions with a dynamic
      * number of dimensions (i.e. not known at compile time). Since it may have
-     * undefined behavior (see parameters), operator() should be prefered whenever
+     * undefined behavior (see parameters), operator() should be preferred whenever
      * it is possible.
      * @warning This method is NOT compatible with broadcasting, meaning the following
      *  code has undefined behavior:
-     * \code{.cpp}
+     * @code{.cpp}
      * xt::xarray<double> a = {{0, 1}, {2, 3}};
      * xt::xarray<double> b = {0, 1};
      * auto fd = a + b;
      * double res = fd.uncheked(0, 1);
-     * \endcode
+     * @endcode
      */
     template <class F, class R, class S>
     template <class... Args>
@@ -302,6 +305,7 @@ namespace xt
         XTENSOR_TRY(check_element_index(shape(), first, last));
         return m_f.element(bounded_iterator(first, shape().cbegin()), bounded_iterator(last, shape().cend()));
     }
+
     //@}
 
     /**
@@ -332,6 +336,7 @@ namespace xt
     {
         return false;
     }
+
     //@}
 
     template <class F, class R, class S>
@@ -375,15 +380,15 @@ namespace xt
      * Reshapes the generator and keeps old elements. The `shape` argument can have one of its value
      * equal to `-1`, in this case the value is inferred from the number of elements in the generator
      * and the remaining values in the `shape`.
-     * \code{.cpp}
+     * @code{.cpp}
      * auto a = xt::arange<double>(50).reshape({-1, 10});
      * //a.shape() is {5, 10}
-     * \endcode
-     * @param shape the new shape (has to have same number of elements as the original genrator)
+     * @endcode
+     * @param shape the new shape (has to have same number of elements as the original generator)
      */
     template <class F, class R, class S>
     template <class O>
-    inline auto xgenerator<F, R, S>::reshape(O&& shape) const &
+    inline auto xgenerator<F, R, S>::reshape(O&& shape) const&
     {
         return reshape_view(*this, compute_shape(shape, xtl::is_signed<typename std::decay_t<O>::value_type>()));
     }
@@ -392,12 +397,15 @@ namespace xt
     template <class O>
     inline auto xgenerator<F, R, S>::reshape(O&& shape) &&
     {
-        return reshape_view(std::move(*this), compute_shape(shape, xtl::is_signed<typename std::decay_t<O>::value_type>()));
+        return reshape_view(
+            std::move(*this),
+            compute_shape(shape, xtl::is_signed<typename std::decay_t<O>::value_type>())
+        );
     }
 
     template <class F, class R, class S>
     template <class T>
-    inline auto xgenerator<F, R, S>::reshape(std::initializer_list<T> shape) const &
+    inline auto xgenerator<F, R, S>::reshape(std::initializer_list<T> shape) const&
     {
         return reshape_view(*this, compute_shape(shape));
     }
@@ -426,10 +434,10 @@ namespace xt
         int_type accumulator(1);
         std::size_t neg_idx = 0;
         std::size_t i = 0;
-        for(std::size_t j = 0; j != shape.size(); ++j, ++i)
+        for (std::size_t j = 0; j != shape.size(); ++j, ++i)
         {
             auto dim = shape[j];
-            if(dim < 0)
+            if (dim < 0)
             {
                 XTENSOR_ASSERT(dim == -1 && !neg_idx);
                 neg_idx = i;
@@ -440,9 +448,10 @@ namespace xt
             }
             accumulator *= dim;
         }
-        if(accumulator < 0)
+        if (accumulator < 0)
         {
-            sh[neg_idx] = this->size() / static_cast<size_type>(std::make_unsigned_t<int_type>(std::abs(accumulator)));
+            sh[neg_idx] = this->size()
+                          / static_cast<size_type>(std::make_unsigned_t<int_type>(std::abs(accumulator)));
         }
         return sh;
     }

@@ -1,16 +1,17 @@
 /***************************************************************************
-* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
-* Copyright (c) QuantStack                                                 *
-*                                                                          *
-* Distributed under the terms of the BSD 3-Clause License.                 *
-*                                                                          *
-* The full license is in the file LICENSE, distributed with this software. *
-****************************************************************************/
+ * Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+ * Copyright (c) QuantStack                                                 *
+ *                                                                          *
+ * Distributed under the terms of the BSD 3-Clause License.                 *
+ *                                                                          *
+ * The full license is in the file LICENSE, distributed with this software. *
+ ****************************************************************************/
 
 #ifndef XTENSOR_INDEX_VIEW_HPP
 #define XTENSOR_INDEX_VIEW_HPP
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <tuple>
 #include <type_traits>
@@ -42,8 +43,7 @@ namespace xt
         };
 
         template <class CT, class I>
-        struct xindex_view_base
-            : xindex_view_base_impl<xexpression_tag_t<CT>, CT, I>
+        struct xindex_view_base : xindex_view_base_impl<xexpression_tag_t<CT>, CT, I>
         {
         };
 
@@ -102,7 +102,7 @@ namespace xt
         using expression_tag = typename extension_base::expression_tag;
 
         using value_type = typename xexpression_type::value_type;
-        using reference = typename xexpression_type::reference;
+        using reference = inner_reference_t<CT>;
         using const_reference = typename xexpression_type::const_reference;
         using pointer = typename xexpression_type::pointer;
         using const_pointer = typename xexpression_type::const_pointer;
@@ -286,9 +286,12 @@ namespace xt
     template <class CT, class I>
     template <class CTA, class I2>
     inline xindex_view<CT, I>::xindex_view(CTA&& e, I2&& indices) noexcept
-        : m_e(std::forward<CTA>(e)), m_indices(std::forward<I2>(indices)), m_shape({ m_indices.size() })
+        : m_e(std::forward<CTA>(e))
+        , m_indices(std::forward<I2>(indices))
+        , m_shape({m_indices.size()})
     {
     }
+
     //@}
 
     /**
@@ -304,6 +307,7 @@ namespace xt
     {
         return semantic_base::operator=(e);
     }
+
     //@}
 
     template <class CT, class I>
@@ -350,7 +354,6 @@ namespace xt
     {
         return m_shape;
     }
-
 
     /**
      * Returns the i-th dimension of the expression.
@@ -455,16 +458,14 @@ namespace xt
      */
     template <class CT, class I>
     template <class S>
-    inline auto xindex_view<CT, I>::operator[](const S& index)
-        -> disable_integral_t<S, reference>
+    inline auto xindex_view<CT, I>::operator[](const S& index) -> disable_integral_t<S, reference>
     {
         return m_e[m_indices[index[0]]];
     }
 
     template <class CT, class I>
     template <class OI>
-    inline auto xindex_view<CT, I>::operator[](std::initializer_list<OI> index)
-        -> reference
+    inline auto xindex_view<CT, I>::operator[](std::initializer_list<OI> index) -> reference
     {
         return m_e[m_indices[*(index.begin())]];
     }
@@ -483,16 +484,14 @@ namespace xt
      */
     template <class CT, class I>
     template <class S>
-    inline auto xindex_view<CT, I>::operator[](const S& index) const
-        -> disable_integral_t<S, const_reference>
+    inline auto xindex_view<CT, I>::operator[](const S& index) const -> disable_integral_t<S, const_reference>
     {
         return m_e[m_indices[index[0]]];
     }
 
     template <class CT, class I>
     template <class OI>
-    inline auto xindex_view<CT, I>::operator[](std::initializer_list<OI> index) const
-        -> const_reference
+    inline auto xindex_view<CT, I>::operator[](std::initializer_list<OI> index) const -> const_reference
     {
         return m_e[m_indices[*(index.begin())]];
     }
@@ -544,6 +543,7 @@ namespace xt
     {
         return m_e;
     }
+
     //@}
 
     /**
@@ -574,6 +574,7 @@ namespace xt
     {
         return false;
     }
+
     //@}
 
     /***************
@@ -637,9 +638,11 @@ namespace xt
     template <class ECT, class CCT>
     template <class ECTA, class CCTA>
     inline xfiltration<ECT, CCT>::xfiltration(ECTA&& e, CCTA&& condition)
-        : m_e(std::forward<ECTA>(e)), m_condition(std::forward<CCTA>(condition))
+        : m_e(std::forward<ECTA>(e))
+        , m_condition(std::forward<CCTA>(condition))
     {
     }
+
     //@}
 
     /**
@@ -655,8 +658,14 @@ namespace xt
     template <class E>
     inline auto xfiltration<ECT, CCT>::operator=(const E& e) -> disable_xexpression<E, self_type&>
     {
-        return apply([this, &e](const_reference v, bool cond) { return cond ? e : v; });
+        return apply(
+            [this, &e](const_reference v, bool cond)
+            {
+                return cond ? e : v;
+            }
+        );
     }
+
     //@}
 
     /**
@@ -672,7 +681,12 @@ namespace xt
     template <class E>
     inline auto xfiltration<ECT, CCT>::operator+=(const E& e) -> disable_xexpression<E, self_type&>
     {
-        return apply([&e](const_reference v, bool cond) { return cond ? v + e : v; });
+        return apply(
+            [&e](const_reference v, bool cond)
+            {
+                return cond ? v + e : v;
+            }
+        );
     }
 
     /**
@@ -684,7 +698,12 @@ namespace xt
     template <class E>
     inline auto xfiltration<ECT, CCT>::operator-=(const E& e) -> disable_xexpression<E, self_type&>
     {
-        return apply([&e](const_reference v, bool cond) { return cond ? v - e : v; });
+        return apply(
+            [&e](const_reference v, bool cond)
+            {
+                return cond ? v - e : v;
+            }
+        );
     }
 
     /**
@@ -696,7 +715,12 @@ namespace xt
     template <class E>
     inline auto xfiltration<ECT, CCT>::operator*=(const E& e) -> disable_xexpression<E, self_type&>
     {
-        return apply([&e](const_reference v, bool cond) { return cond ? v * e : v; });
+        return apply(
+            [&e](const_reference v, bool cond)
+            {
+                return cond ? v * e : v;
+            }
+        );
     }
 
     /**
@@ -708,7 +732,12 @@ namespace xt
     template <class E>
     inline auto xfiltration<ECT, CCT>::operator/=(const E& e) -> disable_xexpression<E, self_type&>
     {
-        return apply([&e](const_reference v, bool cond) { return cond ? v / e : v; });
+        return apply(
+            [&e](const_reference v, bool cond)
+            {
+                return cond ? v / e : v;
+            }
+        );
     }
 
     /**
@@ -720,7 +749,12 @@ namespace xt
     template <class E>
     inline auto xfiltration<ECT, CCT>::operator%=(const E& e) -> disable_xexpression<E, self_type&>
     {
-        return apply([&e](const_reference v, bool cond) { return cond ? v % e : v; });
+        return apply(
+            [&e](const_reference v, bool cond)
+            {
+                return cond ? v % e : v;
+            }
+        );
     }
 
     template <class ECT, class CCT>
@@ -739,13 +773,13 @@ namespace xt
      * @param e the underlying xexpression
      * @param indices the indices to select
      *
-     * \code{.cpp}
+     * @code{.cpp}
      * xarray<double> a = {{1,5,3}, {4,5,6}};
      * b = index_view(a, {{0, 0}, {1, 0}, {1, 1}});
      * std::cout << b << std::endl; // {1, 4, 5}
      * b += 100;
      * std::cout << a << std::endl; // {{101, 5, 3}, {104, 105, 6}}
-     * \endcode
+     * @endcode
      */
     template <class E, class I>
     inline auto index_view(E&& e, I&& indices) noexcept
@@ -758,7 +792,7 @@ namespace xt
     inline auto index_view(E&& e, const xindex (&indices)[L]) noexcept
     {
         using view_type = xindex_view<xclosure_t<E>, std::array<xindex, L>>;
-        return view_type(std::forward<E>(e), to_array(indices));
+        return view_type(std::forward<E>(e), xt::to_array(indices));
     }
 
     /**
@@ -774,11 +808,11 @@ namespace xt
      * @param e the underlying xexpression
      * @param condition xexpression with shape of \a e which selects indices
      *
-     * \code{.cpp}
+     * @code{.cpp}
      * xarray<double> a = {{1,5,3}, {4,5,6}};
      * b = filter(a, a >= 5);
      * std::cout << b << std::endl; // {5, 5, 6}
-     * \endcode
+     * @endcode
      *
      * \sa filtration
      */
@@ -801,11 +835,11 @@ namespace xt
      * @param e the \ref xexpression to filter
      * @param condition the filtering \ref xexpression
      *
-     * \code{.cpp}
+     * @code{.cpp}
      * xarray<double> a = {{1,5,3}, {4,5,6}};
      * filtration(a, a >= 5) += 2;
      * std::cout << a << std::endl; // {{1, 7, 3}, {4, 7, 8}}
-     * \endcode
+     * @endcode
      */
     template <class E, class C>
     inline auto filtration(E&& e, C&& condition) noexcept

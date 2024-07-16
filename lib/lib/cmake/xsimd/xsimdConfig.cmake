@@ -45,7 +45,7 @@ if(NOT TARGET xsimd)
     set(xsimd_ENABLE_XTL_COMPLEX OFF)
     if(xsimd_ENABLE_XTL_COMPLEX)
         include(CMakeFindDependencyMacro)
-        find_dependency(xtl)
+        find_dependency(xtl REQUIRED)
     endif()
 
     include("${CMAKE_CURRENT_LIST_DIR}/xsimdTargets.cmake")
