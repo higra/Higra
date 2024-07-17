@@ -3,11 +3,11 @@
 if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" LESS 2.8)
    message(FATAL_ERROR "CMake >= 2.8.0 required")
 endif()
-if(CMAKE_VERSION VERSION_LESS "2.8.12")
-   message(FATAL_ERROR "CMake >= 2.8.12 required")
+if(CMAKE_VERSION VERSION_LESS "3.0.0")
+   message(FATAL_ERROR "CMake >= 3.0.0 required")
 endif()
 cmake_policy(PUSH)
-cmake_policy(VERSION 2.8.12...3.28)
+cmake_policy(VERSION 3.0.0...3.28)
 #----------------------------------------------------------------
 # Generated CMake target import file.
 #----------------------------------------------------------------
@@ -19,7 +19,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_cmake_targets_defined "")
 set(_cmake_targets_not_defined "")
 set(_cmake_expected_targets "")
-foreach(_cmake_expected_target IN ITEMS Catch2::Catch2 Catch2::Catch2WithMain)
+foreach(_cmake_expected_target IN ITEMS Catch2::Catch2)
   list(APPEND _cmake_expected_targets "${_cmake_expected_target}")
   if(TARGET "${_cmake_expected_target}")
     list(APPEND _cmake_targets_defined "${_cmake_expected_target}")
@@ -56,18 +56,11 @@ if(_IMPORT_PREFIX STREQUAL "/")
 endif()
 
 # Create imported target Catch2::Catch2
-add_library(Catch2::Catch2 STATIC IMPORTED)
+add_library(Catch2::Catch2 INTERFACE IMPORTED)
 
 set_target_properties(Catch2::Catch2 PROPERTIES
-  INTERFACE_COMPILE_FEATURES "cxx_std_14"
+  INTERFACE_COMPILE_FEATURES "cxx_alignas;cxx_alignof;cxx_attributes;cxx_auto_type;cxx_constexpr;cxx_defaulted_functions;cxx_deleted_functions;cxx_final;cxx_lambdas;cxx_noexcept;cxx_override;cxx_range_for;cxx_rvalue_references;cxx_static_assert;cxx_strong_enums;cxx_trailing_return_types;cxx_unicode_literals;cxx_user_literals;cxx_variadic_macros"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-)
-
-# Create imported target Catch2::Catch2WithMain
-add_library(Catch2::Catch2WithMain STATIC IMPORTED)
-
-set_target_properties(Catch2::Catch2WithMain PROPERTIES
-  INTERFACE_LINK_LIBRARIES "Catch2::Catch2"
 )
 
 # Load information for each installed configuration.
