@@ -18,19 +18,19 @@ jobs:
       name: 'linux_py310'
       vmImage: 'ubuntu-22.04'
       CIBW_BUILD: 'cp310-*'
-      NUMPY_VERSION: '1.21.4'
+      NUMPY_VERSION: '2.0.0'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
       name: 'linux_py311'
       vmImage: 'ubuntu-22.04'
       CIBW_BUILD: 'cp311-*'
-      NUMPY_VERSION: '1.23.5'
+      NUMPY_VERSION: '2.0.0'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
       name: 'linux_py312'
       vmImage: 'ubuntu-22.04'
       CIBW_BUILD: 'cp312-*'
-      NUMPY_VERSION: '1.26.0'
+      NUMPY_VERSION: '2.0.0'
       force: true
