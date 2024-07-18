@@ -65,10 +65,10 @@ install:
   - conda info -a
   #  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - if %CIBUILDWHEEL% == 0 (
-    conda install cmake numpy tbb-devel==2019.0 scipy scikit-learn -c conda-forge &&
+    conda install cmake setuptools numpy tbb-devel==2019.0 scipy scikit-learn -c conda-forge &&
     python setup.py bdist_wheel
     )  else (
-    conda install tbb-devel==2019.0 &&
+    conda install setuptools tbb-devel==2019.0 &&
     pip install cibuildwheel==2.16.2 &&
     cibuildwheel --output-dir wheelhouse
     )
