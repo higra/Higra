@@ -1217,7 +1217,7 @@ namespace xt
             tbb::static_partitioner sp;
             tbb::parallel_for(
                 tbb::blocked_range<size_t>(0ul, outer_loop_size),
-                [&e1, &e2, is_row_major, step_dim, simd_size, simd_rest, &max_shape, &idx_ = idx](
+                [&e1, &e2, is_row_major, needs_cast, step_dim, simd_size, simd_rest, &max_shape, &idx_ = idx](
                     const tbb::blocked_range<size_t>& r
                 )
                 {
