@@ -125,11 +125,12 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "
     endif()
 
     add_definitions("-DNOMINMAX")
+    # /Zc:lambda added to fix bug with implicit capture of constexpr var in lambda https://learn.microsoft.com/en-us/cpp/build/reference/zc-lambda?view=msvc-170
     if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /GL /EHsc /MP /bigobj /O2 /wd4244 /wd4267") 
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /GL /EHsc /MP /bigobj /O2 /wd4244 /wd4267 /Zc:lambda") 
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG /MANIFEST:NO")
     else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /EHsc /MP /bigobj /wd4244 /wd4267")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /EHsc /MP /bigobj /wd4244 /wd4267 /Zc:lambda")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  /MANIFEST:NO")
     endif()
 else()
