@@ -1,21 +1,21 @@
 /***************************************************************************
-* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
-* Copyright (c) QuantStack                                                 *
-*                                                                          *
-* Distributed under the terms of the BSD 3-Clause License.                 *
-*                                                                          *
-* The full license is in the file LICENSE, distributed with this software. *
-****************************************************************************/
+ * Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+ * Copyright (c) QuantStack                                                 *
+ *                                                                          *
+ * Distributed under the terms of the BSD 3-Clause License.                 *
+ *                                                                          *
+ * The full license is in the file LICENSE, distributed with this software. *
+ ****************************************************************************/
 
 #ifndef XTENSOR_XREPEAT
 #define XTENSOR_XREPEAT
 
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "xaccessible.hpp"
+#include "xexpression.hpp"
 #include "xiterable.hpp"
-
 
 namespace xt
 {
@@ -41,8 +41,7 @@ namespace xt
         };
 
         template <class CT, class X>
-        struct xrepeat_base
-            : xrepeat_base_impl<xexpression_tag_t<CT>, CT, X>
+        struct xrepeat_base : xrepeat_base_impl<xexpression_tag_t<CT>, CT, X>
         {
         };
 
@@ -65,7 +64,8 @@ namespace xt
 
         static constexpr bool is_const = std::is_const<std::remove_reference_t<CT>>::value;
 
-        using extract_storage_type = xtl::mpl::eval_if_t<has_data_interface<xexpression_type>,
+        using extract_storage_type = xtl::mpl::eval_if_t<
+            has_data_interface<xexpression_type>,
             detail::expr_storage_type<xexpression_type>,
             make_invalid_type<>>;
         using storage_type = std::conditional_t<is_const, const extract_storage_type, extract_storage_type>;
@@ -128,7 +128,7 @@ namespace xt
         using stepper = typename iterable_type::stepper;
         using const_stepper = typename iterable_type::const_stepper;
 
-        template<class CTA>
+        template <class CTA>
         explicit xrepeat(CTA&& e, R&& repeats, size_type axis);
 
         using accessible_base::size;
@@ -172,12 +172,11 @@ namespace xt
         template <class Arg, class... Args>
         const_reference access(Arg arg, Args... args) const;
 
-        template<std::size_t I, class Arg, class... Args>
+        template <std::size_t I, class Arg, class... Args>
         const_reference access_impl(stepper&& s, Arg arg, Args... args) const;
 
-        template<std::size_t I>
+        template <std::size_t I>
         const_reference access_impl(stepper&& s) const;
-
     };
 
     /*******************
@@ -264,7 +263,9 @@ namespace xt
         , m_shape(e.shape())
     {
         using shape_value_type = typename shape_type::value_type;
-        m_shape[axis] = static_cast<shape_value_type>(std::accumulate(m_repeats.begin(), m_repeats.end(), 0));
+        m_shape[axis] = static_cast<shape_value_type>(
+            std::accumulate(m_repeats.begin(), m_repeats.end(), shape_value_type(0))
+        );
     }
 
     /**
@@ -294,6 +295,7 @@ namespace xt
     {
         return false;
     }
+
     //@}
 
     /**
@@ -321,16 +323,16 @@ namespace xt
      *
      * @warning This method is meant for performance, for expressions with a dynamic
      * number of dimensions (i.e. not known at compile time). Since it may have
-     * undefined behavior (see parameters), operator() should be prefered whenever
+     * undefined behavior (see parameters), operator() should be preferred whenever
      * it is possible.
      * @warning This method is NOT compatible with broadcasting, meaning the following
      * code has undefined behavior:
-     * \code{.cpp}
+     * @code{.cpp}
      * xt::xarray<double> a = {{0, 1}, {2, 3}};
      * xt::xarray<double> b = {0, 1};
      * auto fd = a + b;
      * double res = fd.uncheked(0, 1);
-     * \endcode
+     * @endcode
      */
     template <class CT, class R>
     template <class... Args>
@@ -370,6 +372,7 @@ namespace xt
     {
         return m_e;
     }
+
     //@}
 
     /**
@@ -400,6 +403,7 @@ namespace xt
     {
         return false;
     }
+
     //@}
 
     template <class CT, class R>
@@ -447,15 +451,15 @@ namespace xt
     }
 
     template <class CT, class R>
-    template<std::size_t I, class Arg, class... Args>
+    template <std::size_t I, class Arg, class... Args>
     inline auto xrepeat<CT, R>::access_impl(stepper&& s, Arg arg, Args... args) const -> const_reference
     {
         s.step(I, static_cast<size_type>(arg));
-        return access_impl<I+1>(std::forward<stepper>(s), args...);
+        return access_impl<I + 1>(std::forward<stepper>(s), args...);
     }
 
     template <class CT, class R>
-    template<std::size_t I>
+    template <std::size_t I>
     inline auto xrepeat<CT, R>::access_impl(stepper&& s) const -> const_reference
     {
         return *s;
@@ -465,7 +469,7 @@ namespace xt
      * xrepeat_stepper implementation *
      **********************************/
 
-    template<class S, class R>
+    template <class S, class R>
     xrepeat_stepper<S, R>::xrepeat_stepper(S&& s, const shape_type& shape, const repeats_type& repeats, size_type axis)
         : m_substepper(std::forward<S>(s))
         , m_shape(shape)
@@ -474,15 +478,16 @@ namespace xt
         , m_subposition(0)
         , m_repeating_axis(axis)
         , m_repeats(repeats)
-    {}
+    {
+    }
 
-    template<class S, class R>
+    template <class S, class R>
     inline auto xrepeat_stepper<S, R>::operator*() const -> reference
     {
         return m_substepper.operator*();
     }
 
-    template<class S, class R>
+    template <class S, class R>
     inline void xrepeat_stepper<S, R>::step(size_type dim, size_type steps_to_go)
     {
         if (m_positions[dim] + steps_to_go >= m_shape[dim])
@@ -507,7 +512,7 @@ namespace xt
         }
     }
 
-    template<class S, class R>
+    template <class S, class R>
     inline void xrepeat_stepper<S, R>::step_back(size_type dim, size_type steps_to_go)
     {
         if (m_positions[dim] < steps_to_go)
@@ -532,7 +537,7 @@ namespace xt
         }
     }
 
-    template<class S, class R>
+    template <class S, class R>
     inline void xrepeat_stepper<S, R>::reset(size_type dim)
     {
         m_substepper.reset(dim);
@@ -544,7 +549,7 @@ namespace xt
         }
     }
 
-    template<class S, class R>
+    template <class S, class R>
     inline void xrepeat_stepper<S, R>::reset_back(size_type dim)
     {
         m_substepper.reset_back(dim);
@@ -556,7 +561,7 @@ namespace xt
         }
     }
 
-    template<class S, class R>
+    template <class S, class R>
     inline void xrepeat_stepper<S, R>::to_begin()
     {
         m_substepper.to_begin();
@@ -565,13 +570,19 @@ namespace xt
         m_repeating_steps = 0;
     }
 
-    template<class S, class R>
+    template <class S, class R>
     inline void xrepeat_stepper<S, R>::to_end(layout_type l)
     {
         m_substepper.to_end(l);
-        std::transform(m_shape.begin(), m_shape.end(), m_positions.begin(), [](auto value) {
-            return value - 1;
-        });
+        std::transform(
+            m_shape.begin(),
+            m_shape.end(),
+            m_positions.begin(),
+            [](auto value)
+            {
+                return value - 1;
+            }
+        );
         if (layout_type::row_major == l)
         {
             ++m_positions.front();
@@ -584,13 +595,13 @@ namespace xt
         m_repeating_steps = 0;
     }
 
-    template<class S, class R>
+    template <class S, class R>
     inline void xrepeat_stepper<S, R>::step_leading()
     {
         step(m_shape.size() - 1, 1);
     }
 
-    template<class S, class R>
+    template <class S, class R>
     inline void xrepeat_stepper<S, R>::make_step(size_type dim, size_type steps_to_go)
     {
         if (steps_to_go > 0)
@@ -615,7 +626,7 @@ namespace xt
         }
     }
 
-    template<class S, class R>
+    template <class S, class R>
     inline void xrepeat_stepper<S, R>::make_step_back(size_type dim, size_type steps_to_go)
     {
         if (steps_to_go > 0)
@@ -640,8 +651,9 @@ namespace xt
         }
     }
 
-    template<class S, class R>
-    inline auto xrepeat_stepper<S, R>::get_next_positions(size_type dim, size_type steps_to_go) const -> std::vector<size_type>
+    template <class S, class R>
+    inline auto xrepeat_stepper<S, R>::get_next_positions(size_type dim, size_type steps_to_go) const
+        -> std::vector<size_type>
     {
         size_type next_position_for_dim = m_positions[dim] + steps_to_go;
         if (dim > 0)
@@ -664,8 +676,9 @@ namespace xt
         return next_positions;
     }
 
-    template<class S, class R>
-    inline auto xrepeat_stepper<S, R>::get_next_positions_back(size_type dim, size_type steps_to_go) const -> std::vector<size_type>
+    template <class S, class R>
+    inline auto xrepeat_stepper<S, R>::get_next_positions_back(size_type dim, size_type steps_to_go) const
+        -> std::vector<size_type>
     {
         auto next_position_for_dim = static_cast<std::ptrdiff_t>(m_positions[dim] - steps_to_go);
         if (dim > 0)
