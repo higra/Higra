@@ -1,11 +1,11 @@
 /***************************************************************************
-* Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
-* Copyright (c) QuantStack                                                 *
-*                                                                          *
-* Distributed under the terms of the BSD 3-Clause License.                 *
-*                                                                          *
-* The full license is in the file LICENSE, distributed with this software. *
-****************************************************************************/
+ * Copyright (c) Johan Mabille, Sylvain Corlay and Wolf Vollprecht          *
+ * Copyright (c) QuantStack                                                 *
+ *                                                                          *
+ * Distributed under the terms of the BSD 3-Clause License.                 *
+ *                                                                          *
+ * The full license is in the file LICENSE, distributed with this software. *
+ ****************************************************************************/
 
 #ifndef XTENSOR_BROADCAST_HPP
 #define XTENSOR_BROADCAST_HPP
@@ -57,8 +57,7 @@ namespace xt
         };
 
         template <class CT, class X>
-        struct xbroadcast_base
-            : xbroadcast_base_impl<xexpression_tag_t<CT>, CT, X>
+        struct xbroadcast_base : xbroadcast_base_impl<xexpression_tag_t<CT>, CT, X>
         {
         };
 
@@ -285,10 +284,12 @@ namespace xt
     template <class CT, class X>
     template <class CTA>
     inline xbroadcast<CT, X>::xbroadcast(CTA&& e, shape_type&& s)
-        : m_e(std::forward<CTA>(e)), m_shape(std::move(s))
+        : m_e(std::forward<CTA>(e))
+        , m_shape(std::move(s))
     {
         xt::broadcast_shape(m_e.shape(), m_shape);
     }
+
     //@}
 
     /**
@@ -346,16 +347,16 @@ namespace xt
      *
      * @warning This method is meant for performance, for expressions with a dynamic
      * number of dimensions (i.e. not known at compile time). Since it may have
-     * undefined behavior (see parameters), operator() should be prefered whenever
+     * undefined behavior (see parameters), operator() should be preferred whenever
      * it is possible.
      * @warning This method is NOT compatible with broadcasting, meaning the following
      * code has undefined behavior:
-     * \code{.cpp}
+     * @code{.cpp}
      * xt::xarray<double> a = {{0, 1}, {2, 3}};
      * xt::xarray<double> b = {0, 1};
      * auto fd = a + b;
      * double res = fd.uncheked(0, 1);
-     * \endcode
+     * @endcode
      */
     template <class CT, class X>
     template <class... Args>
@@ -386,6 +387,7 @@ namespace xt
     {
         return m_e;
     }
+
     //@}
 
     /**
@@ -414,10 +416,11 @@ namespace xt
     template <class S>
     inline bool xbroadcast<CT, X>::has_linear_assign(const S& strides) const noexcept
     {
-        return this->dimension() == m_e.dimension() &&
-            std::equal(m_shape.cbegin(), m_shape.cend(), m_e.shape().cbegin()) &&
-            m_e.has_linear_assign(strides);
+        return this->dimension() == m_e.dimension()
+               && std::equal(m_shape.cbegin(), m_shape.cend(), m_e.shape().cbegin())
+               && m_e.has_linear_assign(strides);
     }
+
     //@}
 
     template <class CT, class X>

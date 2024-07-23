@@ -126,10 +126,10 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "
 
     add_definitions("-DNOMINMAX")
     if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /GL /EHsc /MP /bigobj /O2 /wd4244 /wd4267") 
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /GL /EHsc /MP /bigobj /O2 /wd4244 /wd4267 /Zc:lambda")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LTCG /MANIFEST:NO")
     else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /EHsc /MP /bigobj /wd4244 /wd4267")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  /EHsc /MP /bigobj /wd4244 /wd4267 /Zc:lambda")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  /MANIFEST:NO")
     endif()
 else()
@@ -210,3 +210,4 @@ endif ()
 
 message("CMAKE_CXX_FLAGS" ${CMAKE_CXX_FLAGS})
 message("CMAKE_EXE_LINKER_FLAGS" ${CMAKE_EXE_LINKER_FLAGS})
+

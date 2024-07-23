@@ -33,15 +33,15 @@ environment:
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
       CIBW_BUILD: "cp310*"
-      CIBW_BEFORE_BUILD: "pip install cmake numpy==1.21.4"
+      CIBW_BEFORE_BUILD: "pip install cmake numpy==2.0.0"
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
       CIBW_BUILD: "cp311*"
-      CIBW_BEFORE_BUILD: "pip install cmake numpy==1.23.5"
+      CIBW_BEFORE_BUILD: "pip install cmake numpy==2.0.0"
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: false
       CIBW_BUILD: "cp312*"
-      CIBW_BEFORE_BUILD: "pip install cmake numpy==1.26.0"
+      CIBW_BEFORE_BUILD: "pip install cmake numpy==2.0.0"
 
 for:
   -

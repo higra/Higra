@@ -285,7 +285,6 @@ namespace hg {
                                     found = true;
                                 }
                                 index_t num_node1 = node_map1.size() - 1;
-                                auto it = node_map2.find(lin2);
                                 if (node_map2.count(lin2) == 0) {
                                     auto nelem = node_map2.size();
                                     node_map2[lin2] = nelem;
