@@ -3,4 +3,4 @@ sphinx_rtd_theme
 sphinx-tabs
 breathe
 Jinja2<3.1
-higra==0.6.8
+higra==0.6.9
