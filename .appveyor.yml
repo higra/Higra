@@ -29,7 +29,7 @@ environment:
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
       CIBW_BUILD: "cp39*"
-      CIBW_BEFORE_BUILD: "pip install cmake numpy==1.19.5"
+      CIBW_BEFORE_BUILD: "pip install cmake numpy==2.0.0"
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
       CIBW_BUILD: "cp310*"

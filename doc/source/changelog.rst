@@ -1,8 +1,8 @@
 Changelog
 =========
 
-0.6.9
------
+0.6.10
+------
 
 - Add support for Numpy 2.0 `#278 <https://github.com/higra/Higra/pull/278>`_
 - Improve performance of function :func:`~higra.attribute_extrema` `#273 <https://github.com/higra/Higra/pull/273>`_
