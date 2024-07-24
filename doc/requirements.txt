@@ -1,6 +1,5 @@
-sphinx==3.0.3
+sphinx==7.4.7
 sphinx_rtd_theme
 sphinx-tabs
 breathe
-Jinja2<3.1
 higra==0.6.10
