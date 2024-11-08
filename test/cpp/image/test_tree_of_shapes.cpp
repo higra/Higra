@@ -59,6 +59,9 @@ namespace tree_of_shapes {
     }
 
     TEST_CASE("test interpolate_plain_map_khalimsky2d", "[tree_of_shapes]") {
+
+
+
         array_1d<int> image{1, 1, 1, 1, 1, 1,
                             1, 0, 0, 3, 3, 1,
                             1, 0, 1, 1, 3, 1,
@@ -397,6 +400,146 @@ TEST_CASE("test tree of shapes self duality", "[tree_of_shapes]") {
     auto res1 = component_tree_tree_of_shapes_image2d(image);
     auto res2 = component_tree_tree_of_shapes_image2d(-image);
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
+}
+
+// 3D ToS tests
+
+TEST_CASE("test tree of shapes 3D self duality", "[tree_of_shapes]") {
+    xt::random::seed(42);
+    array_3d<double> image = xt::random::rand<double>({25, 38, 24});
+
+    auto res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::mean, true, true);
+    auto res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::mean, true, true);
+    
+    REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
+
+    res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::mean, true, false);
+    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::mean, true, false);
+    
+    REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
+
+    res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::mean, false, false);
+    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::mean, false, false);
+    
+    REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
+
+    res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::mean, false, true);
+    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::mean, false, true);
+    
+    REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
+
+    res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::none, false, false);
+    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::none, false, false);
+    
+    REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
+
+    res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::none, true, false);
+    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::none, true, false);
+    
+    REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
+
+    res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::none, true, true);
+    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::none, true, true);
+    
+    REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
+
+    res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::none, false, true);
+    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::none, false, true);
+    
+    REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
+}
+
+TEST_CASE("test tree of shapes 3D=2D no immersion no padding original space", "[tree_of_shapes]") {
+    // A "3D" array which is the same as in previous unit test should 
+    // give the same result
+    array_nd<float> image{{{1, 1, 1, 1, 1},
+                          {1, 0, 1, 2, 1},
+                          {1, 1, 1, 1, 1}}};
+
+    auto result = component_tree_tree_of_shapes_image3d(image, tos_padding::none, /*original*/true, /*immersion*/false);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
+
+    array_1d <index_t>
+            ref_parents{17, 17, 17, 17, 17,
+                        17, 16, 17, 15, 17,
+                        17, 17, 17, 17, 17, 17, 17, 17};
+    array_1d<float> ref_altitudes{1, 1, 1, 1, 1,
+                                  1, 0, 1, 2, 1,
+                                  1, 1, 1, 1, 1, 2, 0, 1};
+
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
+}
+
+TEST_CASE("test tree of shapes 3D=2D default param", "[tree_of_shapes]") {
+
+    array_nd<float> image{{{1, 1},
+                          {1, -2},
+                          {1, 7}}};
+
+    auto result = component_tree_tree_of_shapes_image3d(image, tos_padding::mean, true);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
+
+    array_1d <index_t>
+            ref_parents{7, 7,
+                        7, 6,
+                        7, 8,
+                        7, 9, 9, 9};
+    array_1d<float>
+            ref_altitudes{1., 1.,
+                          1., -2.,
+                          1., 7.,
+                          -2., 1., 7., 1.5};
+
+
+    INFO("altitudes are : " << altitudes << "\nexpected : " << ref_altitudes);
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
+}
+
+TEST_CASE("test tree of shapes 3D default param", "[tree_of_shapes]") {
+
+    array_nd<float> image = {{{1, 1, 1},
+                             {1, 1, 1},
+                             {1, 1, 1}},
+                             {{1, 1, 1},
+                             {1, -2, 1},
+                             {1, 1, 1}},
+                             {{1, 1, 1},
+                             {1, 1, 1},
+                             {1, 1, 1}}};
+
+    auto result = component_tree_tree_of_shapes_image3d(image, tos_padding::mean, true);
+    auto &tree = result.tree;
+    auto &altitudes = result.altitudes;
+
+    array_1d<float>
+            ref_parents{28., 28., 28.,
+                        28., 28., 28.,
+                        28., 28., 28.,
+                        28., 28., 28.,
+                        28., 27., 28.,
+                        28., 28., 28.,
+                        28., 28., 28.,
+                        28., 28., 28.,
+                        28., 28., 28., 28., 28};
+    array_1d<float>
+            ref_altitudes{1., 1. , 1.,
+                          1., 1. , 1.,
+                          1., 1. , 1.,
+                          1., 1. , 1.,
+                          1., -2., 1.,
+                          1., 1. , 1.,
+                          1., 1. , 1.,
+                          1., 1. , 1.,
+                          1., 1. , 1., -2., 1.};
+
+
+    INFO("altitudes are : " << altitudes << "\nexpected : " << ref_altitudes);
+    REQUIRE((tree.parents() == ref_parents));
+    REQUIRE((altitudes == ref_altitudes));
 }
 
 }

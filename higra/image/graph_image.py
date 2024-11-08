@@ -135,6 +135,21 @@ def get_8_adjacency_graph(shape):
 
     return graph
 
+def get_6_adjacency_graph(shape):
+    """
+    Create an explicit undirected 6 adjacency graph of the given shape.
+
+    :param shape: a pair (height, width)
+    :return: a graph (Concept :class:`~higra.CptGridGraph`)
+    """
+    graph_implicit = get_6_adjacency_implicit_graph(shape)
+    graph = graph_implicit.as_explicit_graph()
+
+    hg.CptGridGraph.link(graph, hg.CptGridGraph.get_shape(graph_implicit))
+    hg.set_attribute(graph, "no_border_vertex_out_degree",
+                     hg.get_attribute(graph_implicit, "no_border_vertex_out_degree"))
+
+    return graph
 
 def get_4_adjacency_implicit_graph(shape):
     """
@@ -175,6 +190,29 @@ def get_8_adjacency_implicit_graph(shape):
 
     return graph
 
+def get_6_adjacency_implicit_graph(shape):
+    """
+    Create an implicit undirected 6 adjacency graph of the given shape (edges are not stored).
+
+    :param shape: a pair (height, width)
+    :return: a graph (Concept :class:`~higra.CptGridGraph`)
+    """
+    shape = hg.normalize_shape(shape)
+    if len(shape) != 3:
+        raise ValueError("Shape must be a 1d array of size 3.")
+
+    neighbours = np.array((((-1, 0 , 0)),
+                           ((1 , 0 , 0)),
+                           ((0 , -1, 0)),
+                           ((0 , 1 , 0)),
+                           ((0 , 0 , -1)),
+                           ((0 , 0 , 1))), dtype=np.int64)
+    graph = hg.RegularGraph3d(shape, neighbours)
+
+    hg.CptGridGraph.link(graph, shape)
+    hg.set_attribute(graph, "no_border_vertex_out_degree", 6)
+
+    return graph
 
 def get_nd_regular_implicit_graph(shape, neighbour_list):
     """
