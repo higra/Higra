@@ -80,6 +80,34 @@ struct def_tree_of_shapes {
               py::arg("immersion") = true,
               py::arg("exterior_vertex") = 0
         );
+
+        m.def("_component_tree_tree_of_shapes", [](const pyarray<value_t> &image,
+                                                           const std::string &padding,
+                                                           bool original_size,
+                                                           bool immersion,
+                                                           hg::index_t exterior_vertex) {
+                  hg::tos_padding tpadding;
+                  if (padding == "none") {
+                      tpadding = hg::tos_padding::none;
+                  } else if (padding == "zero") {
+                      tpadding = hg::tos_padding::zero;
+                  } else if (padding == "mean") {
+                      tpadding = hg::tos_padding::mean;
+                  } else {
+                      throw std::runtime_error("tree_of_shapes: Unknown padding option.");
+                  }
+
+                  auto res = hg::component_tree_tree_of_shapes(image, tpadding, original_size, immersion,
+                                                                   exterior_vertex);
+                  return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
+              },
+              doc,
+              py::arg("image"),
+              py::arg("padding") = "mean",
+              py::arg("original_size") = true,
+              py::arg("immersion") = true,
+              py::arg("exterior_vertex") = 0
+        );
     }
 };
 

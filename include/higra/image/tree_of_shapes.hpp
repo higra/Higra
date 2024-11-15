@@ -656,9 +656,54 @@ namespace hg {
 
 
     /**
-     * An adaptation of the tree of shapes for 3D images.
+     * Computes the tree of shapes of a 3d image.
+     * The Tree of Shapes was described in [1].
+     *
+     * The algorithm used in this implementation was first described in [2].
+     *
+     * The tree is computed in the interpolated multivalued Khalimsky space to provide a continuous and autodual representation of
+     * input image.
+     *
+     * If padding is different from tos_padding::none, an extra border of pixels is added to the input image before
+     * anything else. This will ensure the existence of a shape encompassing all the shapes inside the input image
+     * (if exterior_vertex is inside the extra border): this shape will be the root of the tree.
+     * The padding value can be:
+     *   - 0 is padding == tos_padding::zero
+     *   - the mean value of the boundary pixels of the input image if padding == tos_padding::mean
+     *
+     * If original_size is true, all the nodes corresponding to pixels not belonging to the input image are removed
+     * (except for the root node).
+     * If original_size is false, the returned tree is the tree constructed in the interpolated/padded space.
+     * In practice if the size of the input image is (h, w, d), the leaves of the returned tree will correspond to an image of size:
+     *   - (h, w, d) if original_size is true;
+     *   - (h * 2 - 1, w * 2 - 1, d * 2 - 1) is original_size is false and padding is tos_padding::none; and
+     *   - ((h + 2) * 2 - 1, (w + 2) * 2 - 1, (d + 2) * 2 - 1) otherwise.
+     *
+     * :Advanced options:
      * 
-     *  Usage is the same as the component_tree_tree_of_shapes_image2d function.
+     * Use with care the following options may lead to unexpected results:
+     * 
+     * Immersion defines if the initial image should be first converted as an equivalent continuous representation called a
+     * plain map. If the immersion is deactivated the level lines of the shapes of the image may intersect (if the image is not
+     * well composed) and the result of the algorithm is undefined. If immersion is deactivated, the factor :math:`*2 - 1`
+     * has to be removed in the result sizes given above.
+     * 
+     * Exterior_vertex defines the linear coordinates of the pixel corresponding to the exterior (interior and exterior
+     * of a shape is defined with respect to this point). The coordinate of this point must be given in the
+     * padded/interpolated space.
+     *
+     * [1] Pa. Monasse, and F. Guichard, "Fast computation of a contrast-invariant image representation,"
+     *     Image Processing, IEEE Transactions on, vol.9, no.5, pp.860-872, May 2000
+     *
+     * [2] Th. Géraud, E. Carlinet, S. Crozet, and L. Najman, "A Quasi-linear Algorithm to Compute the Tree
+     *     of Shapes of nD Images", ISMM 2013.
+     *
+     * @tparam T
+     * @param ximage Must be a 3d array
+     * @param padding Defines if an extra boundary of pixels is added to the original image (see enum tos_padding).
+     * @param original_size remove all nodes corresponding to interpolated/padded pixels
+     * @param exterior_vertex linear coordinate of the exterior point
+     * @return a node weighted tree
      */
     template<typename T>
     auto component_tree_tree_of_shapes_image3d(const xt::xexpression<T> &ximage,
@@ -836,9 +881,281 @@ namespace hg {
                                                                                       exterior_vertex);
                 return process_sorted_pixels(graph, res_sort.first, res_sort.second);
             }
-
         }
+    }
 
+    /**
+     * Computes the tree of shapes of an image.
+     * The Tree of Shapes was described in [1].
+     *
+     * The algorithm used in this implementation was first described in [2].
+     *
+     * The tree is computed in the interpolated multivalued Khalimsky space to provide a continuous and autodual representation of
+     * input image.
+     *
+     * If padding is different from tos_padding::none, an extra border of pixels is added to the input image before
+     * anything else. This will ensure the existence of a shape encompassing all the shapes inside the input image
+     * (if exterior_vertex is inside the extra border): this shape will be the root of the tree.
+     * The padding value can be:
+     *   - 0 is padding == tos_padding::zero
+     *   - the mean value of the boundary pixels of the input image if padding == tos_padding::mean
+     *
+     * If original_size is true, all the nodes corresponding to pixels not belonging to the input image are removed
+     * (except for the root node).
+     * If original_size is false, the returned tree is the tree constructed in the interpolated/padded space.
+     * In practice if the size of the input image is (h, w, d), the leaves of the returned tree will correspond to an image of size:
+     *   - (h, w, d) if original_size is true;
+     *   - (h * 2 - 1, w * 2 - 1, d * 2 - 1) is original_size is false and padding is tos_padding::none; and
+     *   - ((h + 2) * 2 - 1, (w + 2) * 2 - 1, (d + 2) * 2 - 1) otherwise.
+     *
+     * :Advanced options:
+     *
+     * Use with care the following options may lead to unexpected results:
+     *
+     * Immersion defines if the initial image should be first converted as an equivalent continuous representation called a
+     * plain map. If the immersion is deactivated the level lines of the shapes of the image may intersect (if the image is not
+     * well composed) and the result of the algorithm is undefined. If immersion is deactivated, the factor :math:`*2 - 1`
+     * has to be removed in the result sizes given above.
+     *
+     * Exterior_vertex defines the linear coordinates of the pixel corresponding to the exterior (interior and exterior
+     * of a shape is defined with respect to this point). The coordinate of this point must be given in the
+     * padded/interpolated space.
+     *
+     * [1] Pa. Monasse, and F. Guichard, "Fast computation of a contrast-invariant image representation,"
+     *     Image Processing, IEEE Transactions on, vol.9, no.5, pp.860-872, May 2000
+     *
+     * [2] Th. Géraud, E. Carlinet, S. Crozet, and L. Najman, "A Quasi-linear Algorithm to Compute the Tree
+     *     of Shapes of nD Images", ISMM 2013.
+     *
+     * @tparam T
+     * @param ximage Must be a 2d or 3d array
+     * @param padding Defines if an extra boundary of pixels is added to the original image (see enum tos_padding).
+     * @param original_size remove all nodes corresponding to interpolated/padded pixels
+     * @param exterior_vertex linear coordinate of the exterior point
+     * @return a node weighted tree
+     */
+    template<typename T>
+    auto component_tree_tree_of_shapes(const xt::xexpression<T> &ximage,
+                                    tos_padding padding = tos_padding::mean,
+                                    bool original_size = true,
+                                    bool immersion = true,
+                                    index_t exterior_vertex = 0) {
+        HG_TRACE();
+        auto &image = ximage.derived_cast();
+        const int dim = image.dimension();
+        hg_assert(dim == 2 || dim == 3, "image must be a 2d or 3d array");
 
+        // lamda to assign value according to dimension
+        auto if_3D = [&dim](auto a, auto b) {return dim == 3 ? (a) : (b);};
+
+        auto shape = image.shape();
+
+        size_t x = shape[0];
+        size_t y = shape[1];
+        size_t z = if_3D(shape[2], 1); // 2D <=> 3D with z = 1
+
+        auto vertex_weights = xt::flatten(image);
+        using value_type = typename T::value_type;
+
+        size_t rx;
+        size_t ry;
+        size_t rz;
+
+        array_3d<value_type> cooked_vertex_values;
+
+        auto do_padding = [&padding, &x, &y, &z, &dim, &if_3D](const auto &image) {
+            value_type pad_value;
+            auto image_cpy = xt::reshape_view(image, {x, y, z});
+
+            switch (padding) {
+            case tos_padding::zero:
+                pad_value = 0;
+                break;
+            case tos_padding::mean: {
+                double duplicates = 4;
+                double vertices   = 4;
+
+                // compute mean of all boundary pixels
+                auto tmp = xt::sum(xt::view(image_cpy, 0              , xt::all(), 0                 ))() +
+                        xt::sum(xt::view(image_cpy, x - 1          , xt::all(), 0                 ))();
+
+                if (x > 2) {
+                    tmp += xt::sum(xt::view(image_cpy, xt::range(1, x - 1), 0    , 0                     ))() +
+                        xt::sum(xt::view(image_cpy, xt::range(1, x - 1), y - 1, 0                     ))();
+                }
+                if(z > 2) {
+                    tmp += xt::sum(xt::view(image_cpy, 0                  , xt::all(), z - 1              ))() +
+                        xt::sum(xt::view(image_cpy, x - 1              , xt::all(), z - 1              ))() +
+                        xt::sum(xt::view(image_cpy, xt::range(1, x - 1), 0        , z - 1              ))() +
+                        xt::sum(xt::view(image_cpy, xt::range(1, x - 1), y - 1    , z - 1              ))() +
+                        xt::sum(xt::view(image_cpy, 0                  , 0        , xt::range(1, z - 1)))() +
+                        xt::sum(xt::view(image_cpy, x - 1              , y - 1    , xt::range(1, z - 1)))() +
+                        xt::sum(xt::view(image_cpy, 0                  , y - 1    , xt::range(1, z - 1)))() +
+                        xt::sum(xt::view(image_cpy, x - 1              , 0        , xt::range(1, z - 1)))();
+
+                    duplicates *= 4;
+                    vertices   += 8;
+                }
+                double l = if_3D(x + y + z, x + y);
+                pad_value = (value_type) (tmp / ((std::max)((vertices/dim) * l - duplicates, 1.0)));
+                break;
+            }
+            case none:
+            default:
+                throw std::runtime_error("Incorrect padding value.");
+            }
+            auto padding_x = x + 2;
+            auto padding_y = y + 2;
+            auto padding_z = if_3D(z + 2, 1);
+            array_1d<value_type> padded_vertices = array_1d<value_type>::from_shape({(padding_x * padding_y * padding_z)}); // plain 1D array
+            auto padded_image = xt::reshape_view(padded_vertices, {padding_x, padding_y, padding_z}); // construct padding image with dimensions += 2
+
+            // fill padded image with corresponding values
+            xt::view(padded_image, xt::all(), xt::all(), xt::all()) = pad_value;
+            auto range_x = xt::range(1, x + 1);
+            auto range_y = xt::range(1, y + 1);
+            auto range_z = if_3D(xt::range(1, z + 1), xt::range(0, z + 1));
+
+            xt::noalias(xt::view(padded_image, range_x, range_y, range_z)) = image_cpy; // put original in center of padded one
+
+            return padded_vertices;
+        };
+
+        auto process_sorted_pixels = [&original_size, &padding, &rx, &ry, &rz, &immersion, &if_3D](auto &graph,
+                                                                                                auto &sorted_vertex_indices,
+                                                                                                auto &enqueued_levels) {
+            auto res_tree = component_tree_internal::tree_from_sorted_vertices(graph, enqueued_levels,
+                                                                            sorted_vertex_indices);
+            auto &tree = res_tree.tree;
+            auto &altitudes = res_tree.altitudes;
+
+            if (!original_size || (!immersion && padding == tos_padding::none)) {
+                return res_tree;
+            }
+
+            array_1d<bool> deleted_vertices({num_leaves(res_tree.tree)}, true);
+            auto deleted = xt::reshape_view(deleted_vertices, {rx, ry, rz});
+            if (immersion) {
+                if (padding != tos_padding::none) {
+                    auto range_z = if_3D(xt::range(2, rz - 2, 2), xt::range(0, rz, 1));
+                    xt::view(deleted, xt::range(2, rx - 2, 2), xt::range(2, ry - 2, 2), range_z) = false;
+                } else {
+                    auto range_z = if_3D(xt::range(0, rz, 2), xt::range(0, rz, 1));
+                    xt::view(deleted, xt::range(0, rx, 2), xt::range(0, ry, 2), range_z) = false;
+                }
+            } else {
+                if (padding != tos_padding::none) {
+                    auto range_z = if_3D(xt::range(1, rz - 1, 2), xt::range(0, rz, 1));
+                    xt::view(deleted, xt::range(1, rx - 1), xt::range(1, ry - 1), range_z) = false;
+                } // else handled by bypass if on top
+            }
+
+            auto all_deleted = accumulate_sequential(tree, deleted_vertices, accumulator_min());
+
+            auto stree = simplify_tree(tree, all_deleted, true);
+            array_1d<value_type> saltitudes = xt::index_view(altitudes, stree.node_map);
+            return make_node_weighted_tree(std::move(stree.tree), std::move(saltitudes));
+        };
+
+        // construct graph according to given parameters (immersion, padding)
+        if (immersion) {
+            if (padding != tos_padding::none) {
+                auto cooked_vertex_values = if_3D(
+                    tree_of_shapes_internal::interpolate_plain_map_khalimsky_3d(
+                        do_padding(image),
+                        {(index_t) (x + 2), (index_t) (y + 2), (index_t) (z + 2)}),
+                    tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
+                        do_padding(image),
+                        {(index_t) (x + 2), (index_t) (y + 2)}));
+
+                rx = (x + 2) * 2 - 1;
+                ry = (y + 2) * 2 - 1;
+                rz = if_3D((z + 2) * 2 - 1, 1);
+
+                if(dim == 3) {
+                    auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
+                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
+                                                                                        exterior_vertex);
+                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+                } else {
+                    auto graph = get_4_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry)});
+                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
+                                                                                        exterior_vertex);
+                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+                }
+            } else {
+                rx = x * 2 - 1;
+                ry = y * 2 - 1;
+                rz = if_3D(z * 2 - 1, 1);
+
+                if(dim == 3) {
+                    embedding_grid_3d embedding(image.shape());
+                    auto cooked_vertex_values = tree_of_shapes_internal::interpolate_plain_map_khalimsky_3d(
+                        vertex_weights,
+                        embedding);
+                    auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
+                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
+                                                                                        exterior_vertex);
+                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+
+                } else {
+                    embedding_grid_2d embedding(image.shape());
+                    auto cooked_vertex_values = tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
+                        vertex_weights,
+                        embedding);
+                    auto graph = get_4_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry)});
+                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
+                                                                                        exterior_vertex);
+                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+
+                }
+            }
+        } else {
+            if (padding != tos_padding::none) {
+                auto padded_vertices = do_padding(image);
+
+                rx = x + 2;
+                ry = y + 2;
+                rz = if_3D(z + 2, 1);
+
+                // clearly not optimal
+                array_2d<value_type> plain_map = array_2d<value_type>::from_shape({rx * ry * rz, 2});
+                xt::noalias(xt::view(plain_map, xt::all(), 0)) = padded_vertices;
+                xt::noalias(xt::view(plain_map, xt::all(), 1)) = padded_vertices;
+
+                if(dim == 3) {
+                    auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
+                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
+                                                                                        exterior_vertex);
+                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+                } else {
+                    auto graph = get_4_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry)});
+                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
+                                                                                        exterior_vertex);
+                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+                }
+            } else {
+                rx = x;
+                ry = y;
+                rz = z;
+
+                array_2d<value_type> plain_map = array_2d<value_type>::from_shape({rx * ry * rz, 2});
+                xt::noalias(xt::view(plain_map, xt::all(), 0)) = xt::ravel(image);
+                xt::noalias(xt::view(plain_map, xt::all(), 1)) = xt::ravel(image);
+
+                if(dim == 3) {
+                    auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
+                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
+                                                                                        exterior_vertex);
+                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+                } else {
+                    auto graph = get_4_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry)});
+                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
+                                                                                        exterior_vertex);
+                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+                }
+            }
+        }
     }
 };
+
