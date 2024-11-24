@@ -22,6 +22,9 @@
 #include "higra/image/graph_image.hpp"
 #include "higra/hierarchy/watershed_hierarchy.hpp"
 #include "xtensor/xadapt.hpp"
+
+#include "higra/image/tree_of_shapes.hpp"
+
 using namespace hg;
 using namespace xt;
 using namespace std;
@@ -32,3 +35,7 @@ TEST_CASE("unused", "[experimental]") {
 }
 
 
+bool test_interpolate_khalimsky() {
+    std::cout << "here" << std::endl;
+    return false;
+}

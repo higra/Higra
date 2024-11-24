@@ -206,7 +206,7 @@ class TestAttributes(unittest.TestCase):
                             (0, -1, 1, 0),
                             (0, 0, 0, 0)))
 
-        tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image)
+        tree, altitudes = hg.component_tree_tree_of_shapes_image(image)
 
         res = hg.attribute_contour_length(tree)
 

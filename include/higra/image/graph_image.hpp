@@ -51,6 +51,23 @@ namespace hg {
     }
 
     /**
+     * Create of 6 adjacency implicit regular graph for the given embedding
+     * @param embedding
+     * @return
+     */
+    inline
+    auto get_6_adjacency_implicit_graph(const embedding_grid_3d &embedding) {
+        std::vector<point_3d_i> neighbours = {{{-1, 0 , 0}},
+                                              {{1 , 0 , 0}},
+                                              {{0 , -1, 0}},
+                                              {{0 , 1 , 0}},
+                                              {{0 , 0 , -1}},
+                                              {{0 , 0 , 1}}};
+
+        return regular_grid_graph_3d(embedding, std::move(neighbours));
+    }
+
+    /**
      * Create of 4 adjacency explicit regular graph for the given embedding
      * @param embedding
      * @return
