@@ -18,11 +18,22 @@
 #include "xtensor/xview.hpp"
 #include "xtensor/xnoalias.hpp"
 #include "xtensor/xindex_view.hpp"
+#include "xtensor/xio.hpp"
 
 #include <map>
 #include <deque>
 
 namespace hg {
+
+    /**
+     * Padding mode for the function component_tree_tree_of_shapes
+     */
+    enum tos_padding {
+        none,
+        mean,
+        zero
+    };
+
 
     namespace tree_of_shapes_internal {
 
@@ -181,53 +192,50 @@ namespace hg {
             index_t m_size = 0;
         };
 
-        template<typename T, typename value_type=typename T::value_type>
-        auto interpolate_plain_map_khalimsky_2d(const xt::xexpression<T> &ximage, const embedding_grid_2d &embedding) {
+        template<typename T1, typename T2>
+        auto fill_khalimsky_plane_2d(const xt::xexpression<T1> &ximage2d, xt::xexpression<T2> &xplain_map2d) {
+            auto &image2d = ximage2d.derived_cast();
+            auto &plain_map2d = xplain_map2d.derived_cast();
+            size_t h = image2d.shape(0);
+            size_t w = image2d.shape(1);
+
+
+            // 2 faces and horizontal 1 face
+            for(size_t y = 0; y < h; y++){
+                plain_map2d(2 * y, 0, 0) = image2d(y, 0);
+                plain_map2d(2 * y, 0, 1) = image2d(y, 0);
+                for(size_t x = 1; x < w; x++){
+                    plain_map2d(2 * y, 2 * x, 0) = image2d(y, x);
+                    plain_map2d(2 * y, 2 * x, 1) = image2d(y, x);
+                    plain_map2d(2 * y, 2 * x - 1, 0) = std::min(image2d(y, x - 1), image2d(y, x));
+                    plain_map2d(2 * y, 2 * x - 1, 1) = std::max(image2d(y, x - 1), image2d(y, x));
+                }
+            }
+
+            for(size_t y = 1; y < 2 * h - 2; y+=2){
+                for(size_t x = 0; x < 2 * w - 1; x++){
+                    plain_map2d(y, x, 0) = std::min(plain_map2d(y - 1, x, 0), plain_map2d(y + 1, x, 0));
+                    plain_map2d(y, x, 1) = std::max(plain_map2d(y - 1, x, 1), plain_map2d(y + 1, x, 1));
+                }
+            }
+        }
+
+        /*template<typename T, typename value_type=typename T::value_type>
+        auto interpolate_plain_map_khalimsky_2d(const xt::xexpression<T> &ximage, const embedding_grid_2d &embedding, xt::xexpression<T> &xplain_map) {
             auto &image = ximage.derived_cast();
+            auto &plain_map = xplain_map.derived_cast();
             size_t h = embedding.shape()[0];
             size_t w = embedding.shape()[1];
             size_t h2 = h * 2 - 1;
             size_t w2 = w * 2 - 1;
 
-            array_2d<value_type> plain_map = array_2d<value_type>::from_shape({h2 * w2, 2});
+            //array_2d<value_type> plain_map = array_2d<value_type>::from_shape({h2 * w2, 2});
             const auto image2d = xt::reshape_view(image, {h, w});
             auto plain_map2d = xt::reshape_view(plain_map, {h2, w2, (size_t) 2});
 
-            // 2 faces
-            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(0, w2, 2), 0)) = image2d;
-            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(0, w2, 2), 1)) = image2d;
-
-            // horizontal 1 face
-            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(1, w2, 2), 0)) =
-                    xt::minimum(xt::view(image2d, xt::all(), xt::range(0, w - 1)),
-                                xt::view(image2d, xt::all(), xt::range(1, w)));
-            xt::noalias(xt::view(plain_map2d, xt::range(0, h2, 2), xt::range(1, w2, 2), 1)) =
-                    xt::maximum(xt::view(image2d, xt::all(), xt::range(0, w - 1)),
-                                xt::view(image2d, xt::all(), xt::range(1, w)));
-
-            // vertical 1 face
-            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(0, w2, 2), 0)) =
-                    xt::minimum(xt::view(image2d, xt::range(0, h - 1), xt::all()),
-                                xt::view(image2d, xt::range(1, h), xt::all()));
-            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(0, w2, 2), 1)) =
-                    xt::maximum(xt::view(image2d, xt::range(0, h - 1), xt::all()),
-                                xt::view(image2d, xt::range(1, h), xt::all()));
-
-            // 0 face
-            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(1, w2, 2), 0)) =
-                    xt::minimum(
-                            xt::minimum(xt::view(image2d, xt::range(0, h - 1), xt::range(0, w - 1)),
-                                        xt::view(image2d, xt::range(0, h - 1), xt::range(1, w))),
-                            xt::minimum(xt::view(image2d, xt::range(1, h), xt::range(0, w - 1)),
-                                        xt::view(image2d, xt::range(1, h), xt::range(1, w))));
-            xt::noalias(xt::view(plain_map2d, xt::range(1, h2, 2), xt::range(1, w2, 2), 1)) =
-                    xt::maximum(
-                            xt::maximum(xt::view(image2d, xt::range(0, h - 1), xt::range(0, w - 1)),
-                                        xt::view(image2d, xt::range(0, h - 1), xt::range(1, w))),
-                            xt::maximum(xt::view(image2d, xt::range(1, h), xt::range(0, w - 1)),
-                                        xt::view(image2d, xt::range(1, h), xt::range(1, w))));
+            fill_khalimsky_plane_2d(image2d, plain_map2d);
             return plain_map;
-        }
+        }*/
 
         /**
         * Interpolate khalimsky function for 3D images.
@@ -237,121 +245,33 @@ namespace hg {
         * 
         * @return a projection of the image in the Khalimsky grid
         */
-        template<typename T, typename value_type=typename T::value_type>
-        auto interpolate_plain_map_khalimsky_3d(const xt::xexpression<T> &ximage, const embedding_grid_3d &embedding) {
-            auto &image = ximage.derived_cast();
-            size_t x = embedding.shape()[0];
-            size_t y = embedding.shape()[1];
-            size_t z = embedding.shape()[2];
+        template<typename T, typename T2>
+        auto interpolate_plain_map_khalimsky_3d(const xt::xexpression<T> &ximage3d, const embedding_grid_3d &embedding, xt::xexpression<T2> &xplain_map3d) {
+            auto &image3d = ximage3d.derived_cast();
+            auto &plain_map3d = xplain_map3d.derived_cast();
+            size_t d = embedding.shape()[0];
+            size_t h = embedding.shape()[1];
+            size_t w = embedding.shape()[2];
 
-            // size of cubical complex is doubled in each dimension
-            size_t x2 = x * 2 - 1;
-            size_t y2 = y * 2 - 1;
-            size_t z2 = z * 2 - 1;
+            size_t d2 = d * 2 - 1;
+            size_t h2 = h * 2 - 1;
+            size_t w2 = w * 2 - 1;
 
-            array_2d<value_type> plain_map = array_2d<value_type>::from_shape({x2 * y2 * z2, 2}); // set valued map
-            const auto image3d = xt::reshape_view(image, {x, y, z}); // our original 3D image
-            auto plain_map3d = xt::reshape_view(plain_map, {x2, y2, z2, (size_t) 2}); // the 3D associated map
+            // go over x-y odd planes and fill them as 2D Khalimsky plane
+            for(size_t z = 0; z < d; z++){
+                auto plain_map2d = xt::view(plain_map3d, 2 * z, xt::all(), xt::all(), xt::all());
+                fill_khalimsky_plane_2d(xt::view(image3d, z, xt::all(), xt::all()), plain_map2d);
+            }
 
-            // 3-face (cube)
-            xt::noalias(xt::view(plain_map3d, xt::range(0, x2, 2), xt::range(0, y2, 2), xt::range(0, z2, 2), 0)) = image3d;
-            xt::noalias(xt::view(plain_map3d, xt::range(0, x2, 2), xt::range(0, y2, 2), xt::range(0, z2, 2), 1)) = image3d;
-
-            // 2-face (face)
-            // on x
-            xt::noalias(xt::view(plain_map3d, xt::range(1, x2, 2), xt::range(0, y2, 2), xt::range(0, z2, 2), 0)) =
-                    xt::minimum(xt::view(image3d, xt::range(0, x - 1), xt::all(), xt::all()),
-                                xt::view(image3d, xt::range(1, x), xt::all(), xt::all()));
-            xt::noalias(xt::view(plain_map3d, xt::range(1, x2, 2), xt::range(0, y2, 2), xt::range(0, z2, 2), 1)) =
-                    xt::maximum(xt::view(image3d, xt::range(0, x - 1), xt::all(), xt::all()),
-                                xt::view(image3d, xt::range(1, x), xt::all(), xt::all()));
-            // on y
-            xt::noalias(xt::view(plain_map3d, xt::range(0, x2, 2), xt::range(1, y2, 2), xt::range(0, z2, 2), 0)) =
-                    xt::minimum(xt::view(image3d, xt::all(), xt::range(0, y - 1), xt::all()),
-                                xt::view(image3d, xt::all(), xt::range(1, y), xt::all()));
-            xt::noalias(xt::view(plain_map3d, xt::range(0, x2, 2), xt::range(1, y2, 2), xt::range(0, z2, 2), 1)) =
-                    xt::maximum(xt::view(image3d, xt::all(), xt::range(0, y - 1), xt::all()),
-                                xt::view(image3d, xt::all(), xt::range(1, y), xt::all()));
-
-            // on z
-            xt::noalias(xt::view(plain_map3d, xt::range(0, x2, 2), xt::range(0, y2, 2), xt::range(1, z2, 2), 0)) =
-                    xt::minimum(xt::view(image3d, xt::all(), xt::all(), xt::range(0, z - 1)),
-                                xt::view(image3d, xt::all(), xt::all(), xt::range(1, z)));
-            xt::noalias(xt::view(plain_map3d, xt::range(0, x2, 2), xt::range(0, y2, 2), xt::range(1, z2, 2), 1)) =
-                    xt::maximum(xt::view(image3d, xt::all(), xt::all(), xt::range(0, z - 1)),
-                                xt::view(image3d, xt::all(), xt::all(), xt::range(1, z)));
-
-            // 1-face (vertices)
-            // on x
-            xt::noalias(xt::view(plain_map3d, xt::range(1, x2, 2), xt::range(1, y2, 2), xt::range(0, z2, 2), 0)) =
-                    xt::minimum(
-                            xt::minimum(xt::view(image3d, xt::range(0, x - 1), xt::range(0, y - 1), xt::all()),
-                                        xt::view(image3d, xt::range(0, x - 1), xt::range(1, y), xt::all())),
-                            xt::minimum(xt::view(image3d, xt::range(1, x), xt::range(0, y - 1), xt::all()),
-                                        xt::view(image3d, xt::range(1, x), xt::range(1, y), xt::all())));
-            xt::noalias(xt::view(plain_map3d, xt::range(1, x2, 2), xt::range(1, y2, 2), xt::range(0, z2, 2), 1)) =
-                    xt::maximum(
-                            xt::maximum(xt::view(image3d, xt::range(0, x - 1), xt::range(0, y - 1), xt::all()),
-                                        xt::view(image3d, xt::range(0, x - 1), xt::range(1, y), xt::all())),
-                            xt::maximum(xt::view(image3d, xt::range(1, x), xt::range(0, y - 1), xt::all()),
-                                        xt::view(image3d, xt::range(1, x), xt::range(1, y), xt::all())));
-
-            // on y
-            xt::noalias(xt::view(plain_map3d, xt::range(1, x2, 2), xt::range(0, y2, 2), xt::range(1, z2, 2), 0)) =
-                    xt::minimum(
-                            xt::minimum(xt::view(image3d, xt::range(0, x - 1), xt::all(), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(0, x - 1), xt::all(), xt::range(1, z))),
-                            xt::minimum(xt::view(image3d, xt::range(1, x), xt::all(), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(1, x), xt::all(), xt::range(1, z))));
-            xt::noalias(xt::view(plain_map3d, xt::range(1, x2, 2), xt::range(0, y2, 2), xt::range(1, z2, 2), 1)) =
-                    xt::maximum(
-                            xt::maximum(xt::view(image3d, xt::range(0, x - 1), xt::all(), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(0, x - 1), xt::all(), xt::range(1, z))),
-                            xt::maximum(xt::view(image3d, xt::range(1, x), xt::all(), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(1, x), xt::all(), xt::range(1, z))));
-            // on z
-            xt::noalias(xt::view(plain_map3d, xt::range(0, x2, 2), xt::range(1, y2, 2), xt::range(1, z2, 2), 0)) =
-                    xt::minimum(
-                            xt::minimum(xt::view(image3d, xt::all(), xt::range(0, y - 1), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::all(), xt::range(0, y - 1), xt::range(1, z))),
-                            xt::minimum(xt::view(image3d, xt::all(), xt::range(1, y), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::all(), xt::range(1, y), xt::range(1, z))));
-            xt::noalias(xt::view(plain_map3d, xt::range(0, x2, 2), xt::range(1, y2, 2), xt::range(1, z2, 2), 1)) =
-                    xt::maximum(
-                            xt::maximum(xt::view(image3d, xt::all(), xt::range(0, y - 1), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::all(), xt::range(0, y - 1), xt::range(1, z))),
-                            xt::maximum(xt::view(image3d, xt::all(), xt::range(1, y), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::all(), xt::range(1, y), xt::range(1, z))));
-
-
-            // 0-face (edge)
-            xt::noalias(xt::view(plain_map3d, xt::range(1, x2, 2), xt::range(1, y2, 2), xt::range(1, z2, 2), 0)) =
-                    xt::minimum(
-                        xt::minimum(
-                            xt::minimum(xt::view(image3d, xt::range(0, x - 1), xt::range(0, y - 1), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(0, x - 1), xt::range(0, y - 1), xt::range(1, z))),
-                            xt::minimum(xt::view(image3d, xt::range(1, x), xt::range(0, y - 1), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(1, x), xt::range(0, y - 1), xt::range(1, z)))),
-                        xt::minimum(
-                            xt::minimum(xt::view(image3d, xt::range(0, x - 1), xt::range(1, y), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(0, x - 1), xt::range(1, y), xt::range(1, z))),
-                            xt::minimum(xt::view(image3d, xt::range(1, x), xt::range(1, y), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(1, x), xt::range(1, y), xt::range(1, z)))));
-
-            xt::noalias(xt::view(plain_map3d, xt::range(1, x2, 2), xt::range(1, y2, 2), xt::range(1, z2, 2), 1)) =
-                    xt::maximum(
-                        xt::maximum(
-                            xt::maximum(xt::view(image3d, xt::range(0, x - 1), xt::range(0, y - 1), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(0, x - 1), xt::range(0, y - 1), xt::range(1, z))),
-                            xt::maximum(xt::view(image3d, xt::range(1, x), xt::range(0, y - 1), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(1, x), xt::range(0, y - 1), xt::range(1, z)))),
-                        xt::maximum(
-                            xt::maximum(xt::view(image3d, xt::range(0, x - 1), xt::range(1, y), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(0, x - 1), xt::range(1, y), xt::range(1, z))),
-                            xt::maximum(xt::view(image3d, xt::range(1, x), xt::range(1, y), xt::range(0, z - 1)),
-                                        xt::view(image3d, xt::range(1, x), xt::range(1, y), xt::range(1, z)))));
-
-            return plain_map;
+            // go over x-y even planes and fill them
+            for(size_t z = 1; z < d2 - 1 ; z += 2){
+                for(size_t y = 0; y < h2; y++){
+                    for(size_t x = 0; x < w2; x++){
+                        plain_map3d(z, y, x, 0) = std::min(plain_map3d(z - 1, y, x, 0), plain_map3d(z + 1, y, x, 0));
+                        plain_map3d(z, y, x, 1) = std::max(plain_map3d(z - 1, y, x, 1), plain_map3d(z + 1, y, x, 1));
+                    }
+                }
+            }
         }
 
         template<typename graph_t,
@@ -453,433 +373,204 @@ namespace hg {
             return std::make_pair(std::move(sorted_vertex_indices), std::move(enqueued_level));
         }
 
-    }
+        template<typename T>
+        auto get_padding_value(const xt::xexpression<T> &ximage, tos_padding padding) {
+            auto &image = ximage.derived_cast();
+            using value_type = typename T::value_type;
+            auto dim = image.dimension();
 
-    /**
-     * Padding mode for the function component_tree_tree_of_shapes
-     */
-    enum tos_padding {
-        none,
-        mean,
-        zero
-    };
 
-    /**
-     * Computes the tree of shapes of a 2d image.
-     * The Tree of Shapes was described in [1].
-     *
-     * The algorithm used in this implementation was first described in [2].
-     *
-     * The tree is computed in the interpolated multivalued Khalimsky space to provide a continuous and autodual representation of
-     * input image.
-     *
-     * If padding is different from tos_padding::none, an extra border of pixels is added to the input image before
-     * anything else. This will ensure the existence of a shape encompassing all the shapes inside the input image
-     * (if exterior_vertex is inside the extra border): this shape will be the root of the tree.
-     * The padding value can be:
-     *   - 0 is padding == tos_padding::zero
-     *   - the mean value of the boundary pixels of the input image if padding == tos_padding::mean
-     *
-     * If original_size is true, all the nodes corresponding to pixels not belonging to the input image are removed
-     * (except for the root node).
-     * If original_size is false, the returned tree is the tree constructed in the interpolated/padded space.
-     * In practice if the size of the input image is (h, w), the leaves of the returned tree will correspond to an image of size:
-     *   - (h, w) if original_size is true;
-     *   - (h * 2 - 1, w * 2 - 1) is original_size is false and padding is tos_padding::none; and
-     *   - ((h + 2) * 2 - 1, (w + 2) * 2 - 1) otherwise.
-     *
-     * :Advanced options:
-     * 
-     * Use with care the following options may lead to unexpected results:
-     * 
-     * Immersion defines if the initial image should be first converted as an equivalent continuous representation called a
-     * plain map. If the immersion is deactivated the level lines of the shapes of the image may intersect (if the image is not
-     * well composed) and the result of the algorithm is undefined. If immersion is deactivated, the factor :math:`*2 - 1`
-     * has to be removed in the result sizes given above.
-     * 
-     * Exterior_vertex defines the linear coordinates of the pixel corresponding to the exterior (interior and exterior
-     * of a shape is defined with respect to this point). The coordinate of this point must be given in the
-     * padded/interpolated space.
-     *
-     * [1] Pa. Monasse, and F. Guichard, "Fast computation of a contrast-invariant image representation,"
-     *     Image Processing, IEEE Transactions on, vol.9, no.5, pp.860-872, May 2000
-     *
-     * [2] Th. Géraud, E. Carlinet, S. Crozet, and L. Najman, "A Quasi-linear Algorithm to Compute the Tree
-     *     of Shapes of nD Images", ISMM 2013.
-     *
-     * @tparam T
-     * @param ximage Must be a 2d array
-     * @param padding Defines if an extra boundary of pixels is added to the original image (see enum tos_padding).
-     * @param original_size remove all nodes corresponding to interpolated/padded pixels
-     * @param exterior_vertex linear coordinate of the exterior point
-     * @return a node weighted tree
-     */
-    template<typename T>
-    auto component_tree_tree_of_shapes_image2d(const xt::xexpression<T> &ximage,
-                                               tos_padding padding = tos_padding::mean,
-                                               bool original_size = true,
-                                               bool immersion = true,
-                                               index_t exterior_vertex = 0) {
-        HG_TRACE();
-        auto &image = ximage.derived_cast();
-        hg_assert(image.dimension() == 2, "image must be a 2d array");
-        embedding_grid_2d embedding(image.shape());
-        auto shape = embedding.shape();
-        size_t h = shape[0];
-        size_t w = shape[1];
-        auto vertex_weights = xt::flatten(image);
-        using value_type = typename T::value_type;
-
-        size_t rh;
-        size_t rw;
-
-        array_2d<value_type> cooked_vertex_values;
-
-        auto do_padding = [&padding, &h, &w](const auto &image) {
-            value_type pad_value;
+            value_type pad_value = 0;
             switch (padding) {
                 case tos_padding::zero:
                     pad_value = 0;
                     break;
-                case tos_padding::mean: {
-                    auto tmp = xt::sum(xt::view(image, 0, xt::all()))() +
-                               xt::sum(xt::view(image, h - 1, xt::all()))();
-                    if (h > 2) {
-                        tmp += xt::sum(xt::view(image, xt::range(1, h - 1), 0))() +
-                               xt::sum(xt::view(image, xt::range(1, h - 1), w - 1))();
+                case tos_padding::mean:
+                    // compute mean of image boundaries
+                    if (dim == 2){
+                        size_t h = image.shape(0);
+                        size_t w = image.shape(1);
+                        size_t num_elements = w;
+                        for(size_t x = 0; x < w; x++){
+                            pad_value += image(0, x);
+                        }
+                        if(h > 1){
+                            for(size_t x = 0; x < w; x++){
+                                pad_value += image(h - 1, x);
+                            }
+                            num_elements += w;
+                        }
+                        if(h > 2){
+                            for(size_t y = 1; y < h - 1; y++){
+                                pad_value += image(y, 0);
+                            }
+                            num_elements += (h - 2);
+                            if (w > 1){
+                                for(size_t y = 1; y < h - 1; y++){
+                                    pad_value += image(y, w - 1);
+                                }
+                                num_elements += (h - 2);
+                            }
+                        }
+                        pad_value /= num_elements;
+                    }else if(dim == 3){
+                        size_t d = image.shape(0);
+                        size_t h = image.shape(1);
+                        size_t w = image.shape(2);
+                        size_t num_elements = w * h;
+                        for(size_t y = 0; y < h; y++){
+                            for(size_t x = 0; x < w; x++){
+                                pad_value += image(0, y, x);
+                            }
+                        }
+                        if(d > 1){
+                            for(size_t y = 0; y < h; y++){
+                                for(size_t x = 0; x < w; x++){
+                                    pad_value += image(d - 1, y, x);
+                                }
+                            }
+                            num_elements += w * h;
+                        }
+                        if(d > 2){
+                            for(size_t z = 1; z < d - 1; z++){
+                                for(size_t y = 0; y < h; y++){
+                                    pad_value += image(z, y, 0);
+                                }
+                            }
+                            num_elements += (d - 2) * h;
+                            if (w > 1){
+                                for(size_t z = 1; z < d - 1; z++){
+                                    for(size_t y = 0; y < h; y++){
+                                        pad_value += image(z, y, w - 1);
+                                    }
+                                }
+                                num_elements += (d - 2) * h;
+                            }
+                            for(size_t z = 1; z < d - 1; z++){
+                                for(size_t x = 1; x < w - 1; x++){
+                                    pad_value += image(z, 0, x);
+                                }
+                            }
+                            num_elements += (d - 2) * (w - 2);
+                            if (h > 1){
+                                for(size_t z = 1; z < d - 1; z++){
+                                    for(size_t x = 1; x < w - 1; x++){
+                                        pad_value += image(z, h - 1, x);
+                                    }
+                                }
+                                num_elements += (d - 2) * (w - 2);
+                            }
+                        }
+                        pad_value /= num_elements;
+                    }else{
+                        throw std::runtime_error("Unsupported dimension");
                     }
-                    pad_value = (value_type) (tmp / ((std::max)(2.0 * (w + h) - 4, 1.0)));
+
                     break;
-                }
-                case none:
-                default:
-                    throw std::runtime_error("Incorrect padding value.");
+                case tos_padding::none:
+                    throw std::runtime_error("Padding value requested for no padding.");
             }
-            array_1d<value_type> padded_vertices = array_1d<value_type>::from_shape({(w + 2) * (h + 2)});
-            auto padded_image = xt::reshape_view(padded_vertices, {h + 2, w + 2});
-
-            xt::noalias(xt::view(padded_image, xt::range(1, h + 1), xt::range(1, w + 1))) = image;
-            xt::view(padded_image, 0, xt::all()) = pad_value;
-            xt::view(padded_image, h + 1, xt::all()) = pad_value;
-            xt::view(padded_image, xt::all(), 0) = pad_value;
-            xt::view(padded_image, xt::all(), w + 1) = pad_value;
-            return padded_vertices;
-        };
-
-        auto process_sorted_pixels = [&original_size, &padding, &rh, &rw, &immersion](auto &graph,
-                                                                                      auto &sorted_vertex_indices,
-                                                                                      auto &enqueued_levels) {
-            auto res_tree = component_tree_internal::tree_from_sorted_vertices(graph, enqueued_levels,
-                                                                               sorted_vertex_indices);
-            auto &tree = res_tree.tree;
-            auto &altitudes = res_tree.altitudes;
-
-            if (!original_size || (!immersion && padding == tos_padding::none)) {
-                return res_tree;
-            }
-
-            array_1d<bool> deleted_vertices({num_leaves(res_tree.tree)}, true);
-            auto deleted = xt::reshape_view(deleted_vertices, {rh, rw});
-            if (immersion) {
-                if (padding != tos_padding::none) {
-                    xt::view(deleted, xt::range(2, rh - 2, 2), xt::range(2, rw - 2, 2)) = false;
-                } else {
-                    xt::view(deleted, xt::range(0, rh, 2), xt::range(0, rw, 2)) = false;
-                }
-            } else {
-                if (padding != tos_padding::none) {
-                    xt::view(deleted, xt::range(1, rh - 1), xt::range(1, rw - 1)) = false;
-                } // else handled by bypass if on top
-            }
-
-            auto all_deleted = accumulate_sequential(tree, deleted_vertices, accumulator_min());
-
-            auto stree = simplify_tree(tree, all_deleted, true);
-            array_1d<value_type> saltitudes = xt::index_view(altitudes, stree.node_map);
-            return make_node_weighted_tree(std::move(stree.tree), std::move(saltitudes));
-        };
-
-        if (immersion) {
-            if (padding != tos_padding::none) {
-
-
-                auto cooked_vertex_values =
-                        tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
-                                do_padding(image),
-                                {(index_t) (h + 2), (index_t) (w + 2)});
-                rh = (h + 2) * 2 - 1;
-                rw = (w + 2) * 2 - 1;
-                auto graph = get_4_adjacency_implicit_graph({(index_t) rh, (index_t) rw});
-                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
-                                                                                      exterior_vertex);
-                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-            } else {
-                auto cooked_vertex_values =
-                        tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
-                                vertex_weights,
-                                embedding);
-                rh = h * 2 - 1;
-                rw = w * 2 - 1;
-                auto graph = get_4_adjacency_implicit_graph({(index_t) rh, (index_t) rw});
-                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
-                                                                                      exterior_vertex);
-                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-            }
-        } else {
-            if (padding != tos_padding::none) {
-                auto padded_vertices = do_padding(image);
-
-                rh = h + 2;
-                rw = w + 2;
-                auto graph = get_4_adjacency_implicit_graph({(index_t) rh, (index_t) rw});
-
-                // clearly not optimal
-                array_2d<value_type> plain_map = array_2d<value_type>::from_shape({rh * rw, 2});
-                xt::noalias(xt::view(plain_map, xt::all(), 0)) = padded_vertices;
-                xt::noalias(xt::view(plain_map, xt::all(), 1)) = padded_vertices;
-                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
-                                                                                      exterior_vertex);
-                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-            } else {
-                rh = h;
-                rw = w;
-                auto graph = get_4_adjacency_implicit_graph({(index_t) rh, (index_t) rw});
-                array_2d<value_type> plain_map = array_2d<value_type>::from_shape({rh * rw, 2});
-                xt::noalias(xt::view(plain_map, xt::all(), 0)) = xt::ravel(image);
-                xt::noalias(xt::view(plain_map, xt::all(), 1)) = xt::ravel(image);
-                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
-                                                                                      exterior_vertex);
-                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-            }
+            return pad_value;
         }
-    }
 
+        template <typename T, typename value_type=typename T::value_type>
+        void fill_padding(xt::xexpression<T> & xplain_map, const value_type padding_value, bool immersion, bool is_input3d){
+            auto & plain_map = xplain_map.derived_cast();
+            auto shape = plain_map.shape();
+            size_t d = shape[0];
+            size_t h = shape[1];
+            size_t w = shape[2];
 
-    /**
-     * Computes the tree of shapes of a 3d image.
-     * The Tree of Shapes was described in [1].
-     *
-     * The algorithm used in this implementation was first described in [2].
-     *
-     * The tree is computed in the interpolated multivalued Khalimsky space to provide a continuous and autodual representation of
-     * input image.
-     *
-     * If padding is different from tos_padding::none, an extra border of pixels is added to the input image before
-     * anything else. This will ensure the existence of a shape encompassing all the shapes inside the input image
-     * (if exterior_vertex is inside the extra border): this shape will be the root of the tree.
-     * The padding value can be:
-     *   - 0 is padding == tos_padding::zero
-     *   - the mean value of the boundary pixels of the input image if padding == tos_padding::mean
-     *
-     * If original_size is true, all the nodes corresponding to pixels not belonging to the input image are removed
-     * (except for the root node).
-     * If original_size is false, the returned tree is the tree constructed in the interpolated/padded space.
-     * In practice if the size of the input image is (h, w, d), the leaves of the returned tree will correspond to an image of size:
-     *   - (h, w, d) if original_size is true;
-     *   - (h * 2 - 1, w * 2 - 1, d * 2 - 1) is original_size is false and padding is tos_padding::none; and
-     *   - ((h + 2) * 2 - 1, (w + 2) * 2 - 1, (d + 2) * 2 - 1) otherwise.
-     *
-     * :Advanced options:
-     * 
-     * Use with care the following options may lead to unexpected results:
-     * 
-     * Immersion defines if the initial image should be first converted as an equivalent continuous representation called a
-     * plain map. If the immersion is deactivated the level lines of the shapes of the image may intersect (if the image is not
-     * well composed) and the result of the algorithm is undefined. If immersion is deactivated, the factor :math:`*2 - 1`
-     * has to be removed in the result sizes given above.
-     * 
-     * Exterior_vertex defines the linear coordinates of the pixel corresponding to the exterior (interior and exterior
-     * of a shape is defined with respect to this point). The coordinate of this point must be given in the
-     * padded/interpolated space.
-     *
-     * [1] Pa. Monasse, and F. Guichard, "Fast computation of a contrast-invariant image representation,"
-     *     Image Processing, IEEE Transactions on, vol.9, no.5, pp.860-872, May 2000
-     *
-     * [2] Th. Géraud, E. Carlinet, S. Crozet, and L. Najman, "A Quasi-linear Algorithm to Compute the Tree
-     *     of Shapes of nD Images", ISMM 2013.
-     *
-     * @tparam T
-     * @param ximage Must be a 3d array
-     * @param padding Defines if an extra boundary of pixels is added to the original image (see enum tos_padding).
-     * @param original_size remove all nodes corresponding to interpolated/padded pixels
-     * @param exterior_vertex linear coordinate of the exterior point
-     * @return a node weighted tree
-     */
-    template<typename T>
-    auto component_tree_tree_of_shapes_image3d(const xt::xexpression<T> &ximage,
-                                               tos_padding padding = tos_padding::mean,
-                                               bool original_size = true,
-                                               bool immersion = true,
-                                               index_t exterior_vertex = 0) {
-        HG_TRACE();
-        auto &image = ximage.derived_cast();
-        hg_assert(image.dimension() == 3, "image must be a 3d array");
-        embedding_grid_3d embedding(image.shape());
-        auto shape = embedding.shape();
-        size_t z = shape[2];
-        size_t y = shape[1];
-        size_t x = shape[0]; 
+            if(is_input3d) {
+                // fill all 6 faces of the cube with padding value
+                // front and back faces
+                for (size_t y = 0; y < h; y++) {
+                    for (size_t x = 0; x < w; x++) {
+                        plain_map(0, y, x, 0) = padding_value;
+                        plain_map(0, y, x, 1) = padding_value;
+                        plain_map(d - 1, y, x, 0) = padding_value;
+                        plain_map(d - 1, y, x, 1) = padding_value;
+                    }
+                }
+                // top and bottom faces
+                for (size_t z = 1; z < d - 1; z++) {
+                    for (size_t x = 0; x < w; x++) {
+                        plain_map(z, 0, x, 0) = padding_value;
+                        plain_map(z, 0, x, 1) = padding_value;
+                        plain_map(z, h - 1, x, 0) = padding_value;
+                        plain_map(z, h - 1, x, 1) = padding_value;
+                    }
+                }
+                // left and right faces
+                for (size_t z = 1; z < d - 1; z++) {
+                    for (size_t y = 1; y < h - 1; y++) {
+                        plain_map(z, y, 0, 0) = padding_value;
+                        plain_map(z, y, 0, 1) = padding_value;
+                        plain_map(z, y, w - 1, 0) = padding_value;
+                        plain_map(z, y, w - 1, 1) = padding_value;
+                    }
+                }
 
-        auto vertex_weights = xt::flatten(image);
-        using value_type = typename T::value_type;
-
-        size_t rx;
-        size_t ry;
-        size_t rz;
-
-        array_3d<value_type> cooked_vertex_values;
-
-        auto do_padding = [&padding, &x, &y, &z](const auto &image) {
-            value_type pad_value;
-            switch (padding) {
-                case tos_padding::zero:
-                    pad_value = 0;
-                    break;
-                case tos_padding::mean: {
-                    double duplicates = 4;
-                    double vertices   = 4;
-                    double dimension  = 2;
-
-                    // compute mean of all boundary pixels
-                    auto tmp = xt::sum(xt::view(image, 0                  , xt::all(), 0                 ))() +
-                               xt::sum(xt::view(image, x - 1              , xt::all(), 0                 ))();
-
-                    if (y > 2) {
-                        tmp += xt::sum(xt::view(image, xt::range(1, x - 1), 0    , 0                     ))() +
-                               xt::sum(xt::view(image, xt::range(1, x - 1), y - 1, 0                     ))();
+                if (immersion) {
+                    // interpolate inner faces
+                    // front and back faces
+                    for (size_t y = 2; y < h - 2; y++) {
+                        for (size_t x = 2; x < w - 2; x++) {
+                            plain_map(1, y, x, 0) = std::min(plain_map(0, y, x, 0), plain_map(2, y, x, 0));
+                            plain_map(1, y, x, 1) = std::max(plain_map(0, y, x, 1), plain_map(2, y, x, 1));
+                            plain_map(d - 2, y, x, 0) = std::min(plain_map(d - 1, y, x, 0), plain_map(d - 3, y, x, 0));
+                            plain_map(d - 2, y, x, 1) = std::max(plain_map(d - 1, y, x, 1), plain_map(d - 3, y, x, 1));
+                        }
+                    }
+                    // left and right faces
+                    for (size_t z = 1; z < d - 1; z++) {
+                        for (size_t y = 2; y < h - 2; y++) {
+                            plain_map(z, y, 1, 0) = std::min(plain_map(z, y, 0, 0), plain_map(z, y, 2, 0));
+                            plain_map(z, y, 1, 1) = std::max(plain_map(z, y, 0, 1), plain_map(z, y, 2, 1));
+                            plain_map(z, y, w - 2, 0) = std::min(plain_map(z, y, w - 1, 0), plain_map(z, y, w - 3, 0));
+                            plain_map(z, y, w - 2, 1) = std::max(plain_map(z, y, w - 1, 1), plain_map(z, y, w - 3, 1));
+                        }
                     }
 
-                    if(z > 2) {
-                        tmp += xt::sum(xt::view(image, 0                  , xt::all(), z - 1              ))() +
-                               xt::sum(xt::view(image, x - 1              , xt::all(), z - 1              ))() +
-                               xt::sum(xt::view(image, xt::range(1, x - 1), 0        , z - 1              ))() +
-                               xt::sum(xt::view(image, xt::range(1, x - 1), y - 1    , z - 1              ))() +
-                               xt::sum(xt::view(image, 0                  , 0        , xt::range(1, z - 1)))() +
-                               xt::sum(xt::view(image, x - 1              , y - 1    , xt::range(1, z - 1)))() +
-                               xt::sum(xt::view(image, 0                  , y - 1    , xt::range(1, z - 1)))() +
-                               xt::sum(xt::view(image, x - 1              , 0        , xt::range(1, z - 1)))();
-
-                        duplicates *= 4;
-                        vertices   += 8;
-                        dimension  += 1;
+                    // top and bottom faces
+                    for (size_t z = 1; z < d - 1; z++) {
+                        for (size_t x = 1; x < w - 1; x++) {
+                            plain_map(z, 1, x, 0) = std::min(plain_map(z, 0, x, 0), plain_map(z, 2, x, 0));
+                            plain_map(z, 1, x, 1) = std::max(plain_map(z, 0, x, 1), plain_map(z, 2, x, 1));
+                            plain_map(z, h - 2, x, 0) = std::min(plain_map(z, h - 1, x, 0), plain_map(z, h - 3, x, 0));
+                            plain_map(z, h - 2, x, 1) = std::max(plain_map(z, h - 1, x, 1), plain_map(z, h - 3, x, 1));
+                        }
                     }
-
-                    double l = dimension == 2 ? x + y : x + y + z;
-                    pad_value = (value_type) (tmp / ((std::max)((vertices/dimension) * l - duplicates, 1.0)));
-                    break;
-                }
-                case none:
-                default:
-                    throw std::runtime_error("Incorrect padding value.");
-            }
-            array_1d<value_type> padded_vertices = array_1d<value_type>::from_shape({(x + 2) * (y + 2) * (z + 2)}); // plain 1D array 
-            auto padded_image = xt::reshape_view(padded_vertices, {x + 2, y + 2, z + 2}); // construct padding image with dimensions += 2
-
-            // fill padded image with corresponding values
-            xt::view(padded_image, xt::all(), xt::all(), xt::all()) = pad_value;
-            xt::noalias(xt::view(padded_image, xt::range(1, x + 1), xt::range(1, y + 1), xt::range(1, z + 1))) = image; // put original in center of padded one
-
-            return padded_vertices;
-        };
-
-        auto process_sorted_pixels = [&original_size, &padding, &rx, &ry, &rz, &immersion](auto &graph,
-                                                                                      auto &sorted_vertex_indices,
-                                                                                      auto &enqueued_levels) {
-            auto res_tree = component_tree_internal::tree_from_sorted_vertices(graph, enqueued_levels,
-                                                                               sorted_vertex_indices);
-            auto &tree = res_tree.tree;
-            auto &altitudes = res_tree.altitudes;
-
-            if (!original_size || (!immersion && padding == tos_padding::none)) {
-                return res_tree;
-            }
-
-
-            array_1d<bool> deleted_vertices({num_leaves(res_tree.tree)}, true);
-            auto deleted = xt::reshape_view(deleted_vertices, {rx, ry, rz}); 
-            if (immersion) {
-                if (padding != tos_padding::none) {
-                    xt::view(deleted, xt::range(2, rx - 2, 2), xt::range(2, ry - 2, 2), xt::range(2, rz - 2, 2)) = false;
-                } else {
-                    xt::view(deleted, xt::range(0, rx, 2), xt::range(0, ry, 2), xt::range(0, rz, 2)) = false;
                 }
             } else {
-                if (padding != tos_padding::none) {
-                    xt::view(deleted, xt::range(1, rx - 1), xt::range(1, ry - 1), xt::range(1, rz - 1)) = false;
-                } // else handled by bypass if on top
-            }
-
-            auto all_deleted = accumulate_sequential(tree, deleted_vertices, accumulator_min());
-
-            auto stree = simplify_tree(tree, all_deleted, true);
-            array_1d<value_type> saltitudes = xt::index_view(altitudes, stree.node_map);
-            return make_node_weighted_tree(std::move(stree.tree), std::move(saltitudes));
-        };
-
-        // construct graph according to given parameters (immersion, padding)
-        if (immersion) {
-            if (padding != tos_padding::none) {
-                auto cooked_vertex_values =
-                        tree_of_shapes_internal::interpolate_plain_map_khalimsky_3d(
-                                do_padding(image),
-                                {(index_t) (x + 2), (index_t) (y + 2), (index_t) (z + 2)});
-                
-                rz = (z + 2) * 2 - 1;
-                ry = (y + 2) * 2 - 1;
-                rx = (x + 2) * 2 - 1;
-
-                auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
-
-                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
-                                                                                      exterior_vertex);
-                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-            } else {
-                auto cooked_vertex_values =
-                        tree_of_shapes_internal::interpolate_plain_map_khalimsky_3d(
-                                vertex_weights,
-                                embedding);
-                rz = z * 2 - 1;
-                ry = y * 2 - 1;
-                rx = x * 2 - 1;
-
-                auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
-
-                
-                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
-                                                                                      exterior_vertex);
-                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-            }
-        } else {
-            if (padding != tos_padding::none) {
-                auto padded_vertices = do_padding(image);
-
-                rz = z + 2;
-                ry = y + 2;
-                rx = x + 2;
-
-                auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
-
-
-                // clearly not optimal
-                array_2d<value_type> plain_map = array_2d<value_type>::from_shape({rx * ry * rz, 2});
-                xt::noalias(xt::view(plain_map, xt::all(), 0)) = padded_vertices;
-                xt::noalias(xt::view(plain_map, xt::all(), 1)) = padded_vertices;
-                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
-                                                                                      exterior_vertex);
-                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-            } else {
-                rz = z;
-                ry = y;
-                rx = x;
-
-                auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
-
-                array_2d<value_type> plain_map = array_2d<value_type>::from_shape({rx * ry * rz, 2});
-                xt::noalias(xt::view(plain_map, xt::all(), 0)) = xt::ravel(image);
-                xt::noalias(xt::view(plain_map, xt::all(), 1)) = xt::ravel(image);
-                auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
-                                                                                      exterior_vertex);
-                return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+                // fill border of x y plane
+                for(size_t x = 0; x < w; x++){
+                    plain_map(0, 0, x, 0) = padding_value;
+                    plain_map(0, 0, x, 1) = padding_value;
+                    plain_map(0, h - 1, x, 0) = padding_value;
+                    plain_map(0, h - 1, x, 1) = padding_value;
+                }
+                for(size_t y = 1; y < h - 1; y++){
+                    plain_map(0, y, 0, 0) = padding_value;
+                    plain_map(0, y, 0, 1) = padding_value;
+                    plain_map(0, y, w - 1, 0) = padding_value;
+                    plain_map(0, y, w - 1, 1) = padding_value;
+                }
+                if (immersion){
+                    // interpolate inner border of x y plane
+                    for(size_t x = 2; x < w - 2; x++){
+                        plain_map(0, 1, x, 0) = std::min(plain_map(0, 0, x, 0), plain_map(0, 2, x, 0));
+                        plain_map(0, 1, x, 1) = std::max(plain_map(0, 0, x, 1), plain_map(0, 2, x, 1));
+                        plain_map(0, h - 2, x, 0) = std::min(plain_map(0, h - 1, x, 0), plain_map(0, h - 3, x, 0));
+                        plain_map(0, h - 2, x, 1) = std::max(plain_map(0, h - 1, x, 1), plain_map(0, h - 3, x, 1));
+                    }
+                    for(size_t y = 1; y < h - 1; y++){
+                        plain_map(0, y, 1, 0) = std::min(plain_map(0, y, 0, 0), plain_map(0, y, 2, 0));
+                        plain_map(0, y, 1, 1) = std::max(plain_map(0, y, 0, 1), plain_map(0, y, 2, 1));
+                        plain_map(0, y, w - 2, 0) = std::min(plain_map(0, y, w - 1, 0), plain_map(0, y, w - 3, 0));
+                        plain_map(0, y, w - 2, 1) = std::max(plain_map(0, y, w - 1, 1), plain_map(0, y, w - 3, 1));
+                    }
+                }
             }
         }
     }
@@ -935,227 +626,147 @@ namespace hg {
      * @return a node weighted tree
      */
     template<typename T>
-    auto component_tree_tree_of_shapes(const xt::xexpression<T> &ximage,
-                                    tos_padding padding = tos_padding::mean,
-                                    bool original_size = true,
-                                    bool immersion = true,
-                                    index_t exterior_vertex = 0) {
+    auto component_tree_tree_of_shapes_image(const xt::xexpression<T> &ximage,
+                                             tos_padding padding = tos_padding::mean,
+                                             bool original_size = true,
+                                             bool immersion = true,
+                                             index_t exterior_vertex = 0) {
         HG_TRACE();
         auto &image = ximage.derived_cast();
         const int dim = image.dimension();
         hg_assert(dim == 2 || dim == 3, "image must be a 2d or 3d array");
 
-        // lamda to assign value according to dimension
-        auto if_3D = [&dim](auto a, auto b) {return dim == 3 ? (a) : (b);};
+        using value_type = typename T::value_type;
+
+        bool is_input_3d = dim == 3;
 
         auto shape = image.shape();
 
-        size_t x = shape[0];
-        size_t y = shape[1];
-        size_t z = if_3D(shape[2], 1); // 2D <=> 3D with z = 1
+        size_t d = (is_input_3d) ? shape[0] : 1;
+        size_t h = (is_input_3d) ? shape[1] : shape[0];
+        size_t w = (is_input_3d) ? shape[2] : shape[1];
 
-        auto vertex_weights = xt::flatten(image);
-        using value_type = typename T::value_type;
+        auto image3d = xt::reshape_view(image, {d, h, w});
+        auto shape3d = image3d.shape();
 
-        size_t rx;
-        size_t ry;
-        size_t rz;
+        // ----------------
+        // Compute intermediate plain map representation size
+        // ----------------
+        bool do_padding = padding != tos_padding::none;
+        size_t padding_size = (do_padding) ? 1 : 0;
+        size_t immersion_factor = (immersion)? 2 : 1;
+        size_t border_size_hw = padding_size * immersion_factor;
+        size_t border_size_d = (is_input_3d)? border_size_hw : 0;
 
-        array_3d<value_type> cooked_vertex_values;
+        size_t d_plain_map;
+        if(is_input_3d){
+            d_plain_map = (immersion)? (d + padding_size * 2) * 2 - 1 : d + padding_size * 2;
+        }else{
+            d_plain_map = 1;
+        }
+        size_t h_plain_map = (immersion)? (h + padding_size * 2) * 2 - 1 : h + padding_size * 2;
+        size_t w_plain_map = (immersion)? (w + padding_size * 2) * 2 - 1 : w + padding_size * 2;
 
-        auto do_padding = [&padding, &x, &y, &z, &dim, &if_3D](const auto &image) {
-            value_type pad_value;
-            auto image_cpy = xt::reshape_view(image, {x, y, z});
 
-            switch (padding) {
-            case tos_padding::zero:
-                pad_value = 0;
-                break;
-            case tos_padding::mean: {
-                double duplicates = 4;
-                double vertices   = 4;
+        // ----------------
+        // Compute plain map, do Khalimsky interpolation if needed, then fill padding is needed
+        // ----------------
+        array_4d<value_type> plain_map({d_plain_map, h_plain_map, w_plain_map, (size_t)2});
 
-                // compute mean of all boundary pixels
-                auto tmp = xt::sum(xt::view(image_cpy, 0              , xt::all(), 0                 ))() +
-                        xt::sum(xt::view(image_cpy, x - 1          , xt::all(), 0                 ))();
+        auto plain_map_interior = xt::view(plain_map, xt::range(border_size_d, d_plain_map - border_size_d),
+                                           xt::range(border_size_hw, h_plain_map - border_size_hw),
+                                           xt::range(border_size_hw, w_plain_map - border_size_hw), xt::all());
 
-                if (x > 2) {
-                    tmp += xt::sum(xt::view(image_cpy, xt::range(1, x - 1), 0    , 0                     ))() +
-                        xt::sum(xt::view(image_cpy, xt::range(1, x - 1), y - 1, 0                     ))();
-                }
-                if(z > 2) {
-                    tmp += xt::sum(xt::view(image_cpy, 0                  , xt::all(), z - 1              ))() +
-                        xt::sum(xt::view(image_cpy, x - 1              , xt::all(), z - 1              ))() +
-                        xt::sum(xt::view(image_cpy, xt::range(1, x - 1), 0        , z - 1              ))() +
-                        xt::sum(xt::view(image_cpy, xt::range(1, x - 1), y - 1    , z - 1              ))() +
-                        xt::sum(xt::view(image_cpy, 0                  , 0        , xt::range(1, z - 1)))() +
-                        xt::sum(xt::view(image_cpy, x - 1              , y - 1    , xt::range(1, z - 1)))() +
-                        xt::sum(xt::view(image_cpy, 0                  , y - 1    , xt::range(1, z - 1)))() +
-                        xt::sum(xt::view(image_cpy, x - 1              , 0        , xt::range(1, z - 1)))();
-
-                    duplicates *= 4;
-                    vertices   += 8;
-                }
-                double l = if_3D(x + y + z, x + y);
-                pad_value = (value_type) (tmp / ((std::max)((vertices/dim) * l - duplicates, 1.0)));
-                break;
-            }
-            case none:
-            default:
-                throw std::runtime_error("Incorrect padding value.");
-            }
-            auto padding_x = x + 2;
-            auto padding_y = y + 2;
-            auto padding_z = if_3D(z + 2, 1);
-            array_1d<value_type> padded_vertices = array_1d<value_type>::from_shape({(padding_x * padding_y * padding_z)}); // plain 1D array
-            auto padded_image = xt::reshape_view(padded_vertices, {padding_x, padding_y, padding_z}); // construct padding image with dimensions += 2
-
-            // fill padded image with corresponding values
-            xt::view(padded_image, xt::all(), xt::all(), xt::all()) = pad_value;
-            auto range_x = xt::range(1, x + 1);
-            auto range_y = xt::range(1, y + 1);
-            auto range_z = if_3D(xt::range(1, z + 1), xt::range(0, z + 1));
-
-            xt::noalias(xt::view(padded_image, range_x, range_y, range_z)) = image_cpy; // put original in center of padded one
-
-            return padded_vertices;
-        };
-
-        auto process_sorted_pixels = [&original_size, &padding, &rx, &ry, &rz, &immersion, &if_3D](auto &graph,
-                                                                                                auto &sorted_vertex_indices,
-                                                                                                auto &enqueued_levels) {
-            auto res_tree = component_tree_internal::tree_from_sorted_vertices(graph, enqueued_levels,
-                                                                            sorted_vertex_indices);
-            auto &tree = res_tree.tree;
-            auto &altitudes = res_tree.altitudes;
-
-            if (!original_size || (!immersion && padding == tos_padding::none)) {
-                return res_tree;
-            }
-
-            array_1d<bool> deleted_vertices({num_leaves(res_tree.tree)}, true);
-            auto deleted = xt::reshape_view(deleted_vertices, {rx, ry, rz});
-            if (immersion) {
-                if (padding != tos_padding::none) {
-                    auto range_z = if_3D(xt::range(2, rz - 2, 2), xt::range(0, rz, 1));
-                    xt::view(deleted, xt::range(2, rx - 2, 2), xt::range(2, ry - 2, 2), range_z) = false;
-                } else {
-                    auto range_z = if_3D(xt::range(0, rz, 2), xt::range(0, rz, 1));
-                    xt::view(deleted, xt::range(0, rx, 2), xt::range(0, ry, 2), range_z) = false;
-                }
-            } else {
-                if (padding != tos_padding::none) {
-                    auto range_z = if_3D(xt::range(1, rz - 1, 2), xt::range(0, rz, 1));
-                    xt::view(deleted, xt::range(1, rx - 1), xt::range(1, ry - 1), range_z) = false;
-                } // else handled by bypass if on top
-            }
-
-            auto all_deleted = accumulate_sequential(tree, deleted_vertices, accumulator_min());
-
-            auto stree = simplify_tree(tree, all_deleted, true);
-            array_1d<value_type> saltitudes = xt::index_view(altitudes, stree.node_map);
-            return make_node_weighted_tree(std::move(stree.tree), std::move(saltitudes));
-        };
-
-        // construct graph according to given parameters (immersion, padding)
-        if (immersion) {
-            if (padding != tos_padding::none) {
-                auto cooked_vertex_values = if_3D(
-                    tree_of_shapes_internal::interpolate_plain_map_khalimsky_3d(
-                        do_padding(image),
-                        {(index_t) (x + 2), (index_t) (y + 2), (index_t) (z + 2)}),
-                    tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
-                        do_padding(image),
-                        {(index_t) (x + 2), (index_t) (y + 2)}));
-
-                rx = (x + 2) * 2 - 1;
-                ry = (y + 2) * 2 - 1;
-                rz = if_3D((z + 2) * 2 - 1, 1);
-
-                if(dim == 3) {
-                    auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
-                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
-                                                                                        exterior_vertex);
-                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-                } else {
-                    auto graph = get_4_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry)});
-                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
-                                                                                        exterior_vertex);
-                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-                }
-            } else {
-                rx = x * 2 - 1;
-                ry = y * 2 - 1;
-                rz = if_3D(z * 2 - 1, 1);
-
-                if(dim == 3) {
-                    embedding_grid_3d embedding(image.shape());
-                    auto cooked_vertex_values = tree_of_shapes_internal::interpolate_plain_map_khalimsky_3d(
-                        vertex_weights,
-                        embedding);
-                    auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
-                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
-                                                                                        exterior_vertex);
-                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-
-                } else {
-                    embedding_grid_2d embedding(image.shape());
-                    auto cooked_vertex_values = tree_of_shapes_internal::interpolate_plain_map_khalimsky_2d(
-                        vertex_weights,
-                        embedding);
-                    auto graph = get_4_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry)});
-                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, cooked_vertex_values,
-                                                                                        exterior_vertex);
-                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-
-                }
-            }
+        if(immersion){
+            tree_of_shapes_internal::interpolate_plain_map_khalimsky_3d(image3d, embedding_grid_3d(shape3d), plain_map_interior);
         } else {
-            if (padding != tos_padding::none) {
-                auto padded_vertices = do_padding(image);
-
-                rx = x + 2;
-                ry = y + 2;
-                rz = if_3D(z + 2, 1);
-
-                // clearly not optimal
-                array_2d<value_type> plain_map = array_2d<value_type>::from_shape({rx * ry * rz, 2});
-                xt::noalias(xt::view(plain_map, xt::all(), 0)) = padded_vertices;
-                xt::noalias(xt::view(plain_map, xt::all(), 1)) = padded_vertices;
-
-                if(dim == 3) {
-                    auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
-                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
-                                                                                        exterior_vertex);
-                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-                } else {
-                    auto graph = get_4_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry)});
-                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
-                                                                                        exterior_vertex);
-                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-                }
-            } else {
-                rx = x;
-                ry = y;
-                rz = z;
-
-                array_2d<value_type> plain_map = array_2d<value_type>::from_shape({rx * ry * rz, 2});
-                xt::noalias(xt::view(plain_map, xt::all(), 0)) = xt::ravel(image);
-                xt::noalias(xt::view(plain_map, xt::all(), 1)) = xt::ravel(image);
-
-                if(dim == 3) {
-                    auto graph = get_6_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry), (index_t) (rz)});
-                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
-                                                                                        exterior_vertex);
-                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
-                } else {
-                    auto graph = get_4_adjacency_implicit_graph({(index_t) (rx), (index_t) (ry)});
-                    auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(graph, plain_map,
-                                                                                        exterior_vertex);
-                    return process_sorted_pixels(graph, res_sort.first, res_sort.second);
+            for(size_t z = 0; z < d; z++){
+                for(size_t y = 0; y < h; y++){
+                    for(size_t x = 0; x < w; x++){
+                        plain_map_interior(z, y, x, 0) = image3d(z, y, x);
+                        plain_map_interior(z, y, x, 1) = image3d(z, y, x);
+                    }
                 }
             }
         }
+
+        if(do_padding){
+            auto padding_value = tree_of_shapes_internal::get_padding_value(image, padding);
+            tree_of_shapes_internal::fill_padding(plain_map, padding_value, immersion, is_input_3d);
+        }
+
+        // ----------------
+        // Sort vertices with flooding from the exterior vertex and then compute the associated component tree
+        // ----------------
+        auto graph = get_6_adjacency_implicit_graph({(index_t) d_plain_map, (index_t) h_plain_map, (index_t) w_plain_map});
+
+        auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(
+                graph,
+                xt::reshape_view(plain_map, {d_plain_map * h_plain_map * w_plain_map, (size_t)2}),
+                exterior_vertex);
+        auto &sorted_vertex_indices = res_sort.first;
+        auto &enqueued_levels = res_sort.second;
+
+        auto res_tree = component_tree_internal::tree_from_sorted_vertices(graph, enqueued_levels, sorted_vertex_indices);
+
+        // ----------------
+        // Remove nodes corresponding to padding and Khalimsky interpolation if needed
+        // ----------------
+        if (!original_size || (!immersion && padding == tos_padding::none)) {
+            return res_tree;
+        }
+
+        auto &tree = res_tree.tree;
+        auto &altitudes = res_tree.altitudes;
+
+
+        array_1d<bool> deleted_vertices({num_leaves(res_tree.tree)}, true);
+        auto deleted = xt::reshape_view(deleted_vertices, {d_plain_map, h_plain_map, w_plain_map});
+        xt::view(deleted, xt::range(border_size_d, d_plain_map - border_size_d, immersion_factor),
+                 xt::range(border_size_hw, h_plain_map - border_size_hw, immersion_factor),
+                 xt::range(border_size_hw, w_plain_map - border_size_hw, immersion_factor)) = false;
+
+        auto all_deleted = accumulate_sequential(tree, deleted_vertices, accumulator_min());
+
+        auto stree = simplify_tree(tree, all_deleted, true);
+        array_1d<value_type> simplified_altitudes = xt::index_view(altitudes, stree.node_map);
+        return make_node_weighted_tree(std::move(stree.tree), std::move(simplified_altitudes));
+
     }
+
+    /**
+     * @deprecated use component_tree_tree_of_shapes_image instead
+     * @see description of component_tree_tree_of_shapes_image
+     */
+    template<typename T>
+    auto component_tree_tree_of_shapes_image2d(const xt::xexpression<T> &ximage,
+                                               tos_padding padding = tos_padding::mean,
+                                               bool original_size = true,
+                                               bool immersion = true,
+                                               index_t exterior_vertex = 0) {
+        HG_TRACE();
+        auto &image = ximage.derived_cast();
+        hg_assert(image.dimension() == 2, "image must be a 2d array");
+        return component_tree_tree_of_shapes_image(image, padding, original_size, immersion, exterior_vertex);
+    }
+
+
+    /**
+     * @deprecated use component_tree_tree_of_shapes_image instead
+     * @see description of component_tree_tree_of_shapes_image
+     */
+    template<typename T>
+    auto component_tree_tree_of_shapes_image3d(const xt::xexpression<T> &ximage,
+                                               tos_padding padding = tos_padding::mean,
+                                               bool original_size = true,
+                                               bool immersion = true,
+                                               index_t exterior_vertex = 0) {
+        HG_TRACE();
+        auto &image = ximage.derived_cast();
+        hg_assert(image.dimension() == 3, "image must be a 3d array");
+        return component_tree_tree_of_shapes_image(image, padding, original_size, immersion, exterior_vertex);
+    }
+
+
 };
 

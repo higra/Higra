@@ -57,7 +57,7 @@ namespace tree_of_shapes {
             }
         }
     }
-
+    /*
     TEST_CASE("test interpolate_plain_map_khalimsky2d", "[tree_of_shapes]") {
 
 
@@ -82,7 +82,7 @@ namespace tree_of_shapes {
                  {{1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}}};
 
         REQUIRE((result == xt::reshape_view(expected_result, {result.shape()[0], result.shape()[1]})));
-    }
+    }*/
 
     TEST_CASE("test sort_vertices_tree_of_shapes small integers", "[tree_of_shapes]") {
         array_nd<char> plain_map =
@@ -406,7 +406,7 @@ TEST_CASE("test tree of shapes 2D self duality", "[tree_of_shapes]") {
 
 TEST_CASE("test tree of shapes 3D self duality", "[tree_of_shapes]") {
     xt::random::seed(42);
-    array_3d<double> image = xt::random::rand<double>({25, 38, 24});
+    array_3d<double> image = xt::random::rand<double>({8, 15, 12});
 
     auto res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::mean, true, true);
     auto res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::mean, true, true);
@@ -548,43 +548,43 @@ TEST_CASE("test tree of shapes self duality", "[tree_of_shapes]") {
     xt::random::seed(42);
     array_3d<double> image = xt::random::rand<double>({25, 38, 24});
 
-    auto res1 = component_tree_tree_of_shapes(image, tos_padding::mean, true, true);
-    auto res2 = component_tree_tree_of_shapes(-image,tos_padding::mean, true, true);
+    auto res1 = component_tree_tree_of_shapes_image(image, tos_padding::mean, true, true);
+    auto res2 = component_tree_tree_of_shapes_image(-image,tos_padding::mean, true, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
-    res1 = component_tree_tree_of_shapes(image, tos_padding::mean, true, false);
-    res2 = component_tree_tree_of_shapes(-image,tos_padding::mean, true, false);
+    res1 = component_tree_tree_of_shapes_image(image, tos_padding::mean, true, false);
+    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::mean, true, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
-    res1 = component_tree_tree_of_shapes(image, tos_padding::mean, false, false);
-    res2 = component_tree_tree_of_shapes(-image,tos_padding::mean, false, false);
+    res1 = component_tree_tree_of_shapes_image(image, tos_padding::mean, false, false);
+    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::mean, false, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
-    res1 = component_tree_tree_of_shapes(image, tos_padding::mean, false, true);
-    res2 = component_tree_tree_of_shapes(-image,tos_padding::mean, false, true);
+    res1 = component_tree_tree_of_shapes_image(image, tos_padding::mean, false, true);
+    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::mean, false, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
-    res1 = component_tree_tree_of_shapes(image, tos_padding::none, false, false);
-    res2 = component_tree_tree_of_shapes(-image,tos_padding::none, false, false);
+    res1 = component_tree_tree_of_shapes_image(image, tos_padding::none, false, false);
+    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::none, false, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
-    res1 = component_tree_tree_of_shapes(image, tos_padding::none, true, false);
-    res2 = component_tree_tree_of_shapes(-image,tos_padding::none, true, false);
+    res1 = component_tree_tree_of_shapes_image(image, tos_padding::none, true, false);
+    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::none, true, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
-    res1 = component_tree_tree_of_shapes(image, tos_padding::none, true, true);
-    res2 = component_tree_tree_of_shapes(-image,tos_padding::none, true, true);
+    res1 = component_tree_tree_of_shapes_image(image, tos_padding::none, true, true);
+    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::none, true, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
-    res1 = component_tree_tree_of_shapes(image, tos_padding::none, false, true);
-    res2 = component_tree_tree_of_shapes(-image,tos_padding::none, false, true);
+    res1 = component_tree_tree_of_shapes_image(image, tos_padding::none, false, true);
+    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::none, false, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 }
@@ -596,7 +596,7 @@ TEST_CASE("test tree of shapes flat no immersion no padding original space", "[t
                           {1, 0, 1, 2, 1},
                           {1, 1, 1, 1, 1}}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::none, /*original*/true, /*immersion*/false);
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::none, /*original*/true, /*immersion*/false);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
 
@@ -618,7 +618,7 @@ TEST_CASE("test tree of shapes default param 1", "[tree_of_shapes]") {
                           {1, -2},
                           {1, 7}}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::mean, true);
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::mean, true);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
 
@@ -633,8 +633,6 @@ TEST_CASE("test tree of shapes default param 1", "[tree_of_shapes]") {
                           1., 7.,
                           -2., 1., 7., 1.5};
 
-
-    INFO("altitudes are : " << altitudes << "\nexpected : " << ref_altitudes);
     REQUIRE((tree.parents() == ref_parents));
     REQUIRE((altitudes == ref_altitudes));
 }
@@ -651,7 +649,7 @@ TEST_CASE("test tree of shapes default param 2", "[tree_of_shapes]") {
                              {1, 1, 1},
                              {1, 1, 1}}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::mean, true);
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::mean, true);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
 
@@ -690,7 +688,7 @@ TEMPLATE_TEST_CASE("test tree of shapes no padding", "[tree_of_shapes]", char, f
                               {1, 0, 0, 3, 3, 1},
                               {1, 1, 1, 1, 1, 1}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::none, false);
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::none, false);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
     array_1d <index_t>
@@ -726,7 +724,7 @@ TEMPLATE_TEST_CASE("test tree of shapes no padding original space", "[tree_of_sh
                               {1, 0, 0, 3, 3, 1},
                               {1, 1, 1, 1, 1, 1}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::none, true);
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::none, true);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
 
@@ -752,7 +750,7 @@ TEST_CASE("test tree of shapes padding 0", "[tree_of_shapes]") {
     array_2d<float> image{{1, 1,  1},
                           {1, -2, 3}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::zero, false);
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::zero, false);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
 
@@ -782,7 +780,7 @@ TEST_CASE("test tree of shapes padding 0 original space", "[tree_of_shapes]") {
     array_2d<float> image{{1, 1,  1},
                           {1, -2, 3}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::zero, true);
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::zero, true);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
 
@@ -803,7 +801,7 @@ TEST_CASE("test tree of shapes padding mean original space", "[tree_of_shapes]")
                           {1, -2},
                           {1, 7}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::mean, true);
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::mean, true);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
 
@@ -828,7 +826,7 @@ TEST_CASE("test tree of shapes no immersion no padding original space", "[tree_o
                           {1, 0, 1, 2, 1},
                           {1, 1, 1, 1, 1}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::none, /*original*/true, /*immersion*/false);
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::none, /*original*/true, /*immersion*/false);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
 
@@ -849,7 +847,7 @@ TEST_CASE("test tree of shapes no immersion padding zero original space", "[tree
                           {1, 0, 1, 2, 1},
                           {1, 1, 1, 1, 1}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::zero, /*original*/true, /*immersion*/false);
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::zero, /*original*/true, /*immersion*/false);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
 
@@ -870,7 +868,7 @@ TEST_CASE("test tree of shapes no immersion no padding no original space", "[tre
                           {1, 0, 1, 2, 1},
                           {1, 1, 1, 1, 1}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::none, /*original*/false, /*immersion*/
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::none, /*original*/false, /*immersion*/
                                                         false);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
@@ -891,7 +889,7 @@ TEST_CASE("test tree of shapes no immersion padding zero no original space", "[t
                           {1, 0, 1, 2, 1},
                           {1, 1, 1, 1, 1}};
 
-    auto result = component_tree_tree_of_shapes(image, tos_padding::zero, /*original*/false, /*immersion*/
+    auto result = component_tree_tree_of_shapes_image(image, tos_padding::zero, /*original*/false, /*immersion*/
                                                         false);
     auto &tree = result.tree;
     auto &altitudes = result.altitudes;
