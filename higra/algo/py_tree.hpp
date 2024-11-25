@@ -12,5 +12,6 @@
 
 #include "pybind11/pybind11.h"
 
-
-void py_init_algo_tree(pybind11::module &m);
+namespace py_tree {
+    void py_init_algo_tree(pybind11::module &m);
+}

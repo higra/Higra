@@ -11,6 +11,7 @@
 #pragma once
 
 #include "pybind11/pybind11.h"
-
-void py_init_log(pybind11::module &m);
+namespace py_log {
+    void py_init_log(pybind11::module &m);
+}
 

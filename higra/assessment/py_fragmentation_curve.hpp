@@ -12,5 +12,8 @@
 
 #include "pybind11/pybind11.h"
 
-void py_init_fragmentation_curve(pybind11::module &m);
+namespace py_fragmentation_curve {
+    void py_init_fragmentation_curve(pybind11::module &m);
+}
+
 

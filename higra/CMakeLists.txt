@@ -23,6 +23,10 @@ set(PYMODULE_COMPONENTS
         py_sorting.cpp
         pymodule.cpp)
 
+set_source_files_properties(
+        pymodule.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON
+)
+
 add_subdirectory(accumulator)
 add_subdirectory(algo)
 add_subdirectory(assessment)
@@ -55,5 +59,11 @@ endif ()
 get_target_property(_higram_file_name higram OUTPUT_NAME)
 set(HIGRA_CPP_MODULE_NAME $<TARGET_FILE:${higram}> PARENT_SCOPE)
 set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} higram CACHE INTERNAL "" FORCE)
+
+if (HG_UNITY_BUILD)
+    message("Enabling unity build for higram")
+    set_target_properties(higram PROPERTIES UNITY_BUILD ON)
+    set_target_properties(higram PROPERTIES UNITY_BUILD_BATCH_SIZE ${HG_UNITY_BUILD_BATCH_SIZE})
+endif ()
 
 message("Python CMAKE_CXX_FLAGS" ${CMAKE_CXX_FLAGS})

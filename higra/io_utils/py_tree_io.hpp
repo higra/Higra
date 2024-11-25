@@ -12,4 +12,6 @@
 
 #include "pybind11/pybind11.h"
 
-void py_init_tree_io(pybind11::module &m);
+namespace py_tree_io {
+    void py_init_tree_io(pybind11::module &m);
+}

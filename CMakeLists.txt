@@ -105,7 +105,7 @@ if ((CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT (CMAKE_CXX_SIMULATE_ID MATCHE
         # check link time optimization -faligned-new
         CHECK_CXX_COMPILER_FLAG("-flto" HAS_LTO_FLAG)
         if (HAS_LTO_FLAG)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto=auto")
         endif()
         if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
             CHECK_CXX_COMPILER_FLAG("-ipo" HAS_IPO_FLAG)
@@ -181,6 +181,18 @@ endif ()
 
 option(HG_BUILD_WHEEL
         "Should be set to On when building a wheel." OFF)
+
+option(HG_UNITY_BUILD
+        "Enable unity build." OFF)
+
+set(HG_UNITY_BUILD_BATCH_SIZE 8 CACHE STRING "Set the batch size for unity build.")
+string(REGEX MATCH "^[0-9]+$" IS_VALID_HG_UNITY_BUILD_BATCH_SIZE "${HG_UNITY_BUILD_BATCH_SIZE}")
+if(NOT IS_VALID_HG_UNITY_BUILD_BATCH_SIZE)
+    message(FATAL_ERROR "HG_UNITY_BUILD_BATCH_SIZE must be an integer. Provided: ${HG_UNITY_BUILD_BATCH_SIZE}")
+else()
+    message(STATUS "Unity build batch size: ${HG_UNITY_BUILD_BATCH_SIZE}")
+endif()
+
 
 ##########################
 #  Build Python bindings
