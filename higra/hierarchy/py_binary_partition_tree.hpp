@@ -12,6 +12,8 @@
 
 #include "pybind11/pybind11.h"
 
+namespace py_binary_partition_tree {
+    void py_init_binary_partition_tree(pybind11::module &m);
+}
 
-void py_init_binary_partition_tree(pybind11::module &m);
 

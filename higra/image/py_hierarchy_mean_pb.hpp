@@ -11,6 +11,7 @@
 #pragma once
 
 #include "pybind11/pybind11.h"
-
-void py_init_hierarchy_mean_pb(pybind11::module &m);
+namespace py_hierarchy_mean_pb {
+    void py_init_hierarchy_mean_pb(pybind11::module &m);
+}
 

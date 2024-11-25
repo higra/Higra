@@ -11,5 +11,7 @@
 #pragma once
 
 #include "pybind11/pybind11.h"
+namespace py_tree_of_shapes {
+    void py_init_tree_of_shapes_image(pybind11::module &m);
+}
 
-void py_init_tree_of_shapes_image(pybind11::module &m);

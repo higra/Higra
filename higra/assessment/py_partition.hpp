@@ -11,6 +11,8 @@
 #pragma once
 
 #include "pybind11/pybind11.h"
+namespace py_partition {
+    void py_init_assessment_partition(pybind11::module &m);
+}
 
-void py_init_assessment_partition(pybind11::module &m);
 

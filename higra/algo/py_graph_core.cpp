@@ -14,93 +14,96 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
-template<typename T>
-using pyarray = xt::pyarray<T>;
+namespace py_graph_core {
 
-namespace py = pybind11;
+    template<typename T>
+    using pyarray = xt::pyarray<T>;
 
-template<typename graph_t>
-struct def_graph_cut_2_labelisation {
-    template<typename value_t>
-    static
-    void def(pybind11::module &m, const char *doc) {
-        m.def("_graph_cut_2_labelisation", [](const graph_t &graph,
-                                              const pyarray<value_t> &edge_weights) {
-                  return hg::graph_cut_2_labelisation(graph, edge_weights);
+    namespace py = pybind11;
+
+    template<typename graph_t>
+    struct def_graph_cut_2_labelisation {
+        template<typename value_t>
+        static
+        void def(pybind11::module &m, const char *doc) {
+            m.def("_graph_cut_2_labelisation", [](const graph_t &graph,
+                                                  const pyarray<value_t> &edge_weights) {
+                      return hg::graph_cut_2_labelisation(graph, edge_weights);
+                  },
+                  doc,
+                  py::arg("graph"),
+                  py::arg("edge_weights"));
+        }
+    };
+
+    template<typename graph_t>
+    struct def_labelisation_2_graph_cut {
+        template<typename value_t>
+        static
+        void def(pybind11::module &m, const char *doc) {
+            m.def("_labelisation_2_graph_cut", [](const graph_t &graph,
+                                                  const pyarray<value_t> &vertex_labels) {
+                      return hg::labelisation_2_graph_cut(graph, vertex_labels);
+                  },
+                  doc,
+                  py::arg("graph"),
+                  py::arg("vertex_labels"));
+        }
+    };
+
+    template<typename graph_t>
+    struct def_minimum_spanning_tree {
+        template<typename value_t>
+        static
+        void def(pybind11::module &m, const char *doc) {
+            m.def("_minimum_spanning_tree", [](const graph_t &graph,
+                                               const pyarray<value_t> &edge_weights) {
+                      auto res = hg::minimum_spanning_tree(graph, edge_weights);
+                      return pybind11::make_tuple(std::move(res.mst), std::move(res.mst_edge_map));
+                  },
+                  doc,
+                  py::arg("graph"),
+                  py::arg("edge_weights"));
+        }
+    };
+
+    void py_init_algo_graph_core(pybind11::module &m) {
+        //xt::import_numpy();
+
+        add_type_overloads<def_graph_cut_2_labelisation<hg::ugraph>,
+                HG_TEMPLATE_NUMERIC_TYPES>
+                (m,
+                 "Labelize graph vertices according to the given graph cut. "
+                 "Each edge having a non zero value in the given edge_weights "
+                 "are assumed to be part of the cut."
+                );
+
+        add_type_overloads<def_labelisation_2_graph_cut<hg::ugraph>,
+                HG_TEMPLATE_INTEGRAL_TYPES>
+                (m,
+                 "Determine the graph cut that corresponds to a given labeling "
+                 "of the graph vertices. "
+                 "The result is a weighting of the graph edges where edges with "
+                 "a non zero weight are part of the cut."
+                );
+
+        add_type_overloads<def_minimum_spanning_tree<hg::ugraph>,
+                HG_TEMPLATE_NUMERIC_TYPES>
+                (m,
+                 ""
+                );
+
+        m.def("_line_graph", [](const hg::ugraph &graph) {
+                  return hg::line_graph(graph);
               },
-              doc,
-              py::arg("graph"),
-              py::arg("edge_weights"));
-    }
-};
+              "",
+              py::arg("graph"));
 
-template<typename graph_t>
-struct def_labelisation_2_graph_cut {
-    template<typename value_t>
-    static
-    void def(pybind11::module &m, const char *doc) {
-        m.def("_labelisation_2_graph_cut", [](const graph_t &graph,
-                                              const pyarray<value_t> &vertex_labels) {
-                  return hg::labelisation_2_graph_cut(graph, vertex_labels);
+        m.def("_line_graph", [](const hg::tree &tree) {
+                  tree.compute_children();
+                  return hg::line_graph(tree);
               },
-              doc,
-              py::arg("graph"),
-              py::arg("vertex_labels"));
+              "",
+              py::arg("tree"));
     }
-};
-
-template<typename graph_t>
-struct def_minimum_spanning_tree {
-    template<typename value_t>
-    static
-    void def(pybind11::module &m, const char *doc) {
-        m.def("_minimum_spanning_tree", [](const graph_t &graph,
-                                           const pyarray<value_t> &edge_weights) {
-                  auto res = hg::minimum_spanning_tree(graph, edge_weights);
-                  return pybind11::make_tuple(std::move(res.mst), std::move(res.mst_edge_map));
-              },
-              doc,
-              py::arg("graph"),
-              py::arg("edge_weights"));
-    }
-};
-
-void py_init_algo_graph_core(pybind11::module &m) {
-    xt::import_numpy();
-
-    add_type_overloads<def_graph_cut_2_labelisation<hg::ugraph>,
-            HG_TEMPLATE_NUMERIC_TYPES>
-            (m,
-             "Labelize graph vertices according to the given graph cut. "
-             "Each edge having a non zero value in the given edge_weights "
-             "are assumed to be part of the cut."
-            );
-
-    add_type_overloads<def_labelisation_2_graph_cut<hg::ugraph>,
-            HG_TEMPLATE_INTEGRAL_TYPES>
-            (m,
-             "Determine the graph cut that corresponds to a given labeling "
-             "of the graph vertices. "
-             "The result is a weighting of the graph edges where edges with "
-             "a non zero weight are part of the cut."
-            );
-
-    add_type_overloads<def_minimum_spanning_tree<hg::ugraph>,
-            HG_TEMPLATE_NUMERIC_TYPES>
-            (m,
-             ""
-            );
-
-    m.def("_line_graph", [](const hg::ugraph &graph) {
-              return hg::line_graph(graph);
-          },
-          "",
-          py::arg("graph"));
-
-    m.def("_line_graph", [](const hg::tree &tree) {
-              tree.compute_children();
-              return hg::line_graph(tree);
-          },
-          "",
-          py::arg("tree"));
 }

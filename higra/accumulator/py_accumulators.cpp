@@ -11,23 +11,25 @@
 #include "py_accumulators.hpp"
 #include "../py_common.hpp"
 #include "higra/accumulator/accumulator.hpp"
+namespace py_accumulator{
+    namespace py = pybind11;
 
-namespace py = pybind11;
+    void py_init_accumulators(pybind11::module &m) {
 
-void py_init_accumulators(pybind11::module &m) {
+        // only exposes enumeration
+        py::enum_<hg::accumulators>(m, "Accumulators",
+                "The Accumulators class enumerates the various way of combining a list of values into a single value "
+                "that are used in various algorithms.")
+                .value("min", hg::accumulators::min)
+                .value("max", hg::accumulators::max)
+                .value("mean", hg::accumulators::mean)
+                .value("counter", hg::accumulators::counter)
+                .value("sum", hg::accumulators::sum)
+                .value("prod", hg::accumulators::prod)
+                .value("first", hg::accumulators::first)
+                .value("last", hg::accumulators::last)
+                .value("argmin", hg::accumulators::argmin)
+                .value("argmax", hg::accumulators::argmax);
+    }
 
-    // only exposes enumeration
-    py::enum_<hg::accumulators>(m, "Accumulators",
-            "The Accumulators class enumerates the various way of combining a list of values into a single value "
-            "that are used in various algorithms.")
-            .value("min", hg::accumulators::min)
-            .value("max", hg::accumulators::max)
-            .value("mean", hg::accumulators::mean)
-            .value("counter", hg::accumulators::counter)
-            .value("sum", hg::accumulators::sum)
-            .value("prod", hg::accumulators::prod)
-            .value("first", hg::accumulators::first)
-            .value("last", hg::accumulators::last)
-            .value("argmin", hg::accumulators::argmin)
-            .value("argmax", hg::accumulators::argmax);
 }

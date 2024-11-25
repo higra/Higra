@@ -14,18 +14,22 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 
-template<typename T>
-using pyarray = xt::pyarray<T>;
+namespace py_tree_fusion {
 
-namespace py = pybind11;
-using namespace hg;
+    template<typename T>
+    using pyarray = xt::pyarray<T>;
 
-void py_init_tree_fusion(pybind11::module &m) {
-    xt::import_numpy();
+    namespace py = pybind11;
+    using namespace hg;
 
-    m.def("_tree_fusion_depth_map", [](const std::vector<tree *> &trees) {
-        return tree_fusion_depth_map(trees);
-    });
+    void py_init_tree_fusion(pybind11::module &m) {
+        //xt::import_numpy();
+
+        m.def("_tree_fusion_depth_map", [](const std::vector<tree *> &trees) {
+            return tree_fusion_depth_map(trees);
+        });
+
+    }
 
 }
 

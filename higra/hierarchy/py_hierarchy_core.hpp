@@ -12,4 +12,7 @@
 
 #include "pybind11/pybind11.h"
 
-void py_init_hierarchy_core(pybind11::module &m);
+namespace py_hierarchy_core {
+    void py_init_hierarchy_core(pybind11::module &m);
+}
+

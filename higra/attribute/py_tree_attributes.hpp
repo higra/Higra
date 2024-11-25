@@ -11,5 +11,7 @@
 #pragma once
 
 #include "pybind11/pybind11.h"
+namespace py_attributes {
+    void py_init_attributes(pybind11::module &m);
+}
 
-void py_init_attributes(pybind11::module &m);

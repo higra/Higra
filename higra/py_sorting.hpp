@@ -12,5 +12,6 @@
 
 #include "pybind11/pybind11.h"
 
-
-void py_init_sorting(pybind11::module &m);
+namespace py_sorting {
+    void py_init_sorting(pybind11::module &m);
+}

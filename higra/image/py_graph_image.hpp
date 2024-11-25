@@ -11,5 +11,6 @@
 #pragma once
 
 #include "pybind11/pybind11.h"
-
-void py_init_graph_image(pybind11::module &m);
+namespace py_graph_image {
+    void py_init_graph_image(pybind11::module &m);
+}

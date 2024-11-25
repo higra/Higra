@@ -12,5 +12,6 @@
 
 #include "pybind11/pybind11.h"
 
-
-void py_init_bipartite_graph(pybind11::module &m);
+namespace py_bipartite_graph {
+    void py_init_bipartite_graph(pybind11::module &m);
+}

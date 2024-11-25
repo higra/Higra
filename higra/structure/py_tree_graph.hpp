@@ -11,5 +11,6 @@
 #pragma once
 
 #include "pybind11/pybind11.h"
-
-void py_init_tree_graph(pybind11::module &m);
+namespace py_tree_graph {
+    void py_init_tree_graph(pybind11::module &m);
+}
