@@ -12,5 +12,6 @@
 
 #include "pybind11/pybind11.h"
 
-
-void py_init_accumulators(pybind11::module &m);
+namespace py_accumulator {
+    void py_init_accumulators(pybind11::module &m);
+}

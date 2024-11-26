@@ -105,7 +105,9 @@ class CMakeBuild(build_ext):
             cmake_args = cmake_args + [
                 '-DHG_USE_TBB=On',
                 '-DTBB_INCLUDE_DIR=' + tbb_include,
-                '-DTBB_LIBRARY=' + tbb_link]
+                '-DTBB_LIBRARY=' + tbb_link,
+                '-DHG_UNITY_BUILD=On',
+                '-DHG_UNITY_BUILD_BATCH_SIZE=4']
 
         cfg = 'Debug' if force_debug or self.debug else 'Release'
         build_args = ['--config', cfg]

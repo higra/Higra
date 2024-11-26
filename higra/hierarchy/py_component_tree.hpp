@@ -11,5 +11,7 @@
 #pragma once
 
 #include "pybind11/pybind11.h"
+namespace py_component_tree {
+    void py_init_component_tree(pybind11::module &m);
+}
 
-void py_init_component_tree(pybind11::module &m);

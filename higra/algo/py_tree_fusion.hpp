@@ -11,5 +11,6 @@
 #pragma once
 
 #include "pybind11/pybind11.h"
-
-void py_init_tree_fusion(pybind11::module &m);
+namespace py_tree_fusion {
+    void py_init_tree_fusion(pybind11::module &m);
+}

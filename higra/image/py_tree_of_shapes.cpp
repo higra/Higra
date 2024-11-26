@@ -15,10 +15,11 @@
 #include "xtensor-python/pytensor.hpp"
 #include <string>
 
-template<typename T>
-using pyarray = xt::pyarray<T>;
+namespace py_tree_of_shapes {
+    template<typename T>
+    using pyarray = xt::pyarray<T>;
 
-namespace py = pybind11;
+    namespace py = pybind11;
 
 
 struct def_tree_of_shapes {
@@ -56,11 +57,12 @@ struct def_tree_of_shapes {
 };
 
 
-void py_init_tree_of_shapes_image(pybind11::module &m) {
-    xt::import_numpy();
+    void py_init_tree_of_shapes_image(pybind11::module &m) {
+        //xt::import_numpy();
 
     add_type_overloads<def_tree_of_shapes, uint8_t, uint16_t, int32_t, int64_t, float, double>
             (m, "");
 
 
+    }
 }

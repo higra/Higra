@@ -12,5 +12,7 @@
 
 #include "pybind11/pybind11.h"
 
+namespace py_pink_io {
+    void py_init_pink_io(pybind11::module &m);
+}
 
-void py_init_pink_io(pybind11::module &m);

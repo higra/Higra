@@ -40,6 +40,12 @@ if (DO_CPP_TEST)
     add_test(NAME Test_cpp COMMAND test_exe)
     set(UNIT_TEST_TARGETS ${UNIT_TEST_TARGETS} test_exe PARENT_SCOPE)
 
+    if (HG_UNITY_BUILD)
+        message("Enabling unity build for test_exe")
+        set_target_properties(test_exe PROPERTIES UNITY_BUILD ON)
+        set_target_properties(test_exe PROPERTIES UNITY_BUILD_BATCH_SIZE ${HG_UNITY_BUILD_BATCH_SIZE})
+    endif ()
+
     add_subdirectory(resources)
 
 endif (DO_CPP_TEST)

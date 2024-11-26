@@ -11,5 +11,6 @@
 #pragma once
 
 #include "pybind11/pybind11.h"
-
-void py_init_horizontal_cuts(pybind11::module &m);
+namespace py_horizontal_cuts {
+    void py_init_horizontal_cuts(pybind11::module &m);
+}
