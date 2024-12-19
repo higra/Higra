@@ -13,9 +13,9 @@
 
 xtl_target_version="0.7.7"
 xtensor_target_version="0.25.0"
-xsimd_target_version="13.0.0"
+xsimd_target_version="13.1.0"
 xtensor_python_target_version="0.27.0"
-pybind11_target_version="2.13.1"
+pybind11_target_version="2.13.6"
 catch_target_version="2.13.9"
 
 #exit on any failure !

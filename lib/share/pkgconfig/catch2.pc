@@ -1,7 +1,7 @@
-prefix=/home/jordao/Softwares/Higra/lib
+prefix=/home/perretb/Higra/lib
 exec_prefix=${prefix}
-includedir=/home/jordao/Softwares/Higra/lib/include
-libdir=/home/jordao/Softwares/Higra/lib/lib
+includedir=/home/perretb/Higra/lib/include
+libdir=/home/perretb/Higra/lib/lib
 
 Name: Catch2
 Description: A modern, C++-native, header-only, test framework for C++11

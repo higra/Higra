@@ -284,9 +284,9 @@ namespace xsimd
             return detail::load_unaligned<A>(mem, cvt, generic {}, detail::conversion_type<A, T_in, T_out> {});
         }
 
-        // rotate_left
+        // rotate_right
         template <size_t N, class A, class T>
-        XSIMD_INLINE batch<T, A> rotate_left(batch<T, A> const& self, requires_arch<generic>) noexcept
+        XSIMD_INLINE batch<T, A> rotate_right(batch<T, A> const& self, requires_arch<generic>) noexcept
         {
             struct rotate_generator
             {
@@ -300,14 +300,14 @@ namespace xsimd
         }
 
         template <size_t N, class A, class T>
-        XSIMD_INLINE batch<std::complex<T>, A> rotate_left(batch<std::complex<T>, A> const& self, requires_arch<generic>) noexcept
+        XSIMD_INLINE batch<std::complex<T>, A> rotate_right(batch<std::complex<T>, A> const& self, requires_arch<generic>) noexcept
         {
-            return { rotate_left<N>(self.real()), rotate_left<N>(self.imag()) };
+            return { rotate_right<N>(self.real()), rotate_right<N>(self.imag()) };
         }
 
-        // rotate_right
+        // rotate_left
         template <size_t N, class A, class T>
-        XSIMD_INLINE batch<T, A> rotate_right(batch<T, A> const& self, requires_arch<generic>) noexcept
+        XSIMD_INLINE batch<T, A> rotate_left(batch<T, A> const& self, requires_arch<generic>) noexcept
         {
             struct rotate_generator
             {
@@ -321,9 +321,9 @@ namespace xsimd
         }
 
         template <size_t N, class A, class T>
-        XSIMD_INLINE batch<std::complex<T>, A> rotate_right(batch<std::complex<T>, A> const& self, requires_arch<generic>) noexcept
+        XSIMD_INLINE batch<std::complex<T>, A> rotate_left(batch<std::complex<T>, A> const& self, requires_arch<generic>) noexcept
         {
-            return { rotate_right<N>(self.real()), rotate_right<N>(self.imag()) };
+            return { rotate_left<N>(self.real()), rotate_left<N>(self.imag()) };
         }
 
         // Scatter with runtime indexes.
@@ -459,6 +459,7 @@ namespace xsimd
         XSIMD_INLINE batch<T, A> shuffle(batch<T, A> const& x, batch<T, A> const& y, batch_constant<ITy, A, Indices...>, requires_arch<generic>) noexcept
         {
             constexpr size_t bsize = sizeof...(Indices);
+            static_assert(bsize == batch<T, A>::size, "valid shuffle");
 
             // Detect common patterns
             XSIMD_IF_CONSTEXPR(detail::is_swizzle_fst(bsize, Indices...))
@@ -486,14 +487,15 @@ namespace xsimd
                 return select(batch_bool_constant<T, A, (Indices < bsize)...>(), x, y);
             }
 
-#if defined(__has_builtin)
-#if __has_builtin(__builtin_shuffle_vector)
-#define builtin_shuffle __builtin_shuffle_vector
+#if defined(__has_builtin) && !defined(XSIMD_WITH_EMULATED)
+#if __has_builtin(__builtin_shufflevector)
+#define builtin_shuffle __builtin_shufflevector
 #endif
 #endif
 
 #if defined(builtin_shuffle)
-            return builtin_shuffle(x.data, y.data, Indices...);
+            typedef T vty __attribute__((__vector_size__(sizeof(batch<T, A>))));
+            return (typename batch<T, A>::register_type)builtin_shuffle((vty)x.data, (vty)y.data, Indices...);
 
 // FIXME: my experiments show that GCC only correctly optimizes this builtin
 // starting at GCC 13, where it already has __builtin_shuffle_vector
@@ -635,6 +637,32 @@ namespace xsimd
             T_out* buffer = reinterpret_cast<T_out*>(dst);
             lo.store_unaligned(buffer);
             hi.store_unaligned(buffer + real_batch::size);
+        }
+
+        // transpose
+        template <class A, class T>
+        XSIMD_INLINE void transpose(batch<T, A>* matrix_begin, batch<T, A>* matrix_end, requires_arch<generic>) noexcept
+        {
+            assert((matrix_end - matrix_begin == batch<T, A>::size) && "correctly sized matrix");
+            (void)matrix_end;
+            alignas(A::alignment()) T scratch_buffer[batch<T, A>::size * batch<T, A>::size];
+            for (size_t i = 0; i < batch<T, A>::size; ++i)
+            {
+                matrix_begin[i].store_aligned(&scratch_buffer[i * batch<T, A>::size]);
+            }
+            // FIXME: this is super naive we can probably do better.
+            for (size_t i = 0; i < batch<T, A>::size; ++i)
+            {
+                for (size_t j = 0; j < i; ++j)
+                {
+                    std::swap(scratch_buffer[i * batch<T, A>::size + j],
+                              scratch_buffer[j * batch<T, A>::size + i]);
+                }
+            }
+            for (size_t i = 0; i < batch<T, A>::size; ++i)
+            {
+                matrix_begin[i] = batch<T, A>::load_aligned(&scratch_buffer[i * batch<T, A>::size]);
+            }
         }
 
     }

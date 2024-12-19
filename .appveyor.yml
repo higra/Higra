@@ -11,11 +11,10 @@ image:
   - Visual Studio 2019
 
 environment:
-  MINICONDA: C:\Miniconda38-x64
   CIBW_TEST_COMMAND: "pip install scipy scikit-learn && python -c \"import unittest;result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)\""
   CIBW_BUILD_VERBOSITY: "1"
   CIBW_SKIP: "*win32"
-  CIBW_ENVIRONMENT: "HG_USE_TBB=1 TBB_DLL=C:/Miniconda38-x64/Library/bin/tbb.dll TBB_INCLUDE_DIR=C:/Miniconda38-x64/Library/include TBB_LIBRARY=C:/Miniconda38-x64/Library/lib"
+  CIBW_ENVIRONMENT: "HG_USE_TBB=1 TBB_DLL=C:/MinicondaCustom/Library/bin/tbb.dll TBB_INCLUDE_DIR=C:/MinicondaCustom/Library/include TBB_LIBRARY=C:/MinicondaCustom/Library/lib"
   TWINE_USERNAME: "__token__"
   TWINE_PASSWORD:
     secure: vtNHhi7Iu10A6uvWUQ/kpRSnlfjyg3BAF/hvlXZAKZrRbQHgj8HNHNfhnNbhUv4hZhUXZxgrCs9s4+vtzXeIdykPk5xqIXCx1mgl56u5mVszyMpI73JTI4Ianfmu9YvXftOFLyjCs1h7c01GTVlbMeIQ6dJApNg2/XYlnmB5IKrN2xxK4M8uvydIAfrMlf4SVLnhFTzu3/1ooHSYYyjV8vzmlnNeXlgdWHkaspWJGSlhqvWQrv6iF8ZBbhZsYQKQEYf0mstKR/pEtUwvj2Q3gw==
@@ -25,23 +24,23 @@ environment:
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
       CIBW_BUILD: "cp38*"
-      CIBW_BEFORE_BUILD: "pip install cmake numpy==1.17.5"
+      CIBW_BEFORE_BUILD: "pip install setuptools wheel cmake numpy==1.17.5"
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
       CIBW_BUILD: "cp39*"
-      CIBW_BEFORE_BUILD: "pip install cmake numpy==2.0.0"
+      CIBW_BEFORE_BUILD: "pip install setuptools wheel cmake numpy==2.0.0"
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
       CIBW_BUILD: "cp310*"
-      CIBW_BEFORE_BUILD: "pip install cmake numpy==2.0.0"
+      CIBW_BEFORE_BUILD: "pip install setuptools wheel cmake numpy==2.0.0"
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
       CIBW_BUILD: "cp311*"
-      CIBW_BEFORE_BUILD: "pip install cmake numpy==2.0.0"
+      CIBW_BEFORE_BUILD: "pip install setuptools wheel cmake numpy==2.0.0"
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: false
       CIBW_BUILD: "cp312*"
-      CIBW_BEFORE_BUILD: "pip install cmake numpy==2.0.0"
+      CIBW_BEFORE_BUILD: "pip install setuptools wheel cmake numpy==2.0.0"
 
 for:
   -
@@ -52,15 +51,21 @@ for:
 
     skip_non_tags: true
 
-
-
 init:
   - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2017" set VCVARPATH="C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
   - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2019" set VCVARPATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
   - "%VCVARPATH%"
   - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%MINICONDA%\\Library\\bin;%PATH%"
 
+
+
 install:
+  - ps: |
+      Invoke-WebRequest -Uri https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe -OutFile Miniconda3-latest-Windows-x86_64.exe
+      Start-Process -Wait -FilePath .\Miniconda3-latest-Windows-x86_64.exe -ArgumentList '/S', '/D=C:\MinicondaCustom'
+      [System.Environment]::SetEnvironmentVariable('PATH', $env:PATH + ';C:\MinicondaCustom;C:\MinicondaCustom\Scripts;C:\MinicondaCustom\Library\bin', [System.EnvironmentVariableTarget]::Machine)
+
+  - set PATH=C:\MinicondaCustom;C:\MinicondaCustom\Scripts;C:\MinicondaCustom\Library\bin;%PATH%
   - conda config --set always_yes yes --set changeps1 no
   - conda info -a
   #  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
@@ -69,7 +74,7 @@ install:
     python setup.py bdist_wheel
     )  else (
     conda install tbb-devel==2019.0 &&
-    pip install cibuildwheel==2.16.2 &&
+    conda install conda-forge::cibuildwheel==2.21.3 &&
     cibuildwheel --output-dir wheelhouse
     )
 
