@@ -1235,7 +1235,7 @@ namespace xsimd
                     inf_result = (x == constants::infinity<batch_type>()) || inf_result;
 #endif
                     auto ltza = a < batch_type(0.);
-                    batch_type r;
+                    batch_type r(0);
                     batch_type r1 = other(q);
                     if (any(ltza))
                     {
@@ -2026,7 +2026,28 @@ namespace xsimd
             auto cond = (y == ze);
             r = select(cond, r, r * exp(-y * arga));
             theta = select(cond, theta, theta + y * log(absa));
-            return select(absa == ze, cplx_batch(ze), cplx_batch(r * cos(theta), r * sin(theta)));
+            auto sincosTheta = xsimd::sincos(theta);
+            return select(absa == ze, cplx_batch(ze), cplx_batch(r * sincosTheta.second, r * sincosTheta.first));
+        }
+
+        template <class A, class T>
+        inline batch<std::complex<T>, A> pow(const batch<std::complex<T>, A>& a, const batch<T, A>& z, requires_arch<generic>) noexcept
+        {
+            using cplx_batch = batch<std::complex<T>, A>;
+
+            auto absa = abs(a);
+            auto arga = arg(a);
+            auto r = pow(absa, z);
+
+            auto theta = z * arga;
+            auto sincosTheta = xsimd::sincos(theta);
+            return select(absa == 0, cplx_batch(0), cplx_batch(r * sincosTheta.second, r * sincosTheta.first));
+        }
+
+        template <class A, class T>
+        inline batch<std::complex<T>, A> pow(const batch<T, A>& a, const batch<std::complex<T>, A>& z, requires_arch<generic>) noexcept
+        {
+            return pow(batch<std::complex<T>, A> { a, batch<T, A> {} }, z);
         }
 
         // reciprocal
