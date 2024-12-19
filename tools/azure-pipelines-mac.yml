@@ -3,10 +3,10 @@ jobs:
     strategy:
       matrix:
         macOS_11:
-          image_name: 'macOS-12'
+          image_name: 'macOS-14'
           HG_USE_TBB: 'Off'
         macOS_11_TBB:
-          image_name: 'macOS-12'
+          image_name: 'macOS-14'
           HG_USE_TBB: 'On'
     pool:
       vmImage: $(image_name)

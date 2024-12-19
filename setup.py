@@ -158,11 +158,11 @@ def prepare_dll_windows():
 try:
     python_version = sys.version_info[1] # TODO: python 3 assumed...
     requires_list = {
-        8:['numpy>=1.17.5'],
         9:['numpy>=1.19.5'],
         10:['numpy>=1.21.4'],
         11:['numpy>=1.23.5'],
         12:['numpy>=1.26.0'],
+        13:['numpy>=2.1.3']
     }
     if use_tbb and platform.system() == "Windows":
         prepare_dll_windows()
