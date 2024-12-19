@@ -8,7 +8,7 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 project(higra)
 
 ##########################
@@ -198,9 +198,8 @@ endif()
 #  Build Python bindings
 ##########################
 
-find_package(PythonInterp 3 REQUIRED)
+find_package(Python COMPONENTS Interpreter NumPy REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
-find_package(NumPy REQUIRED)
 add_subdirectory(higra)
 configure_file(setup.py ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
 configure_file(README.md ${CMAKE_CURRENT_BINARY_DIR}/README.md COPYONLY)

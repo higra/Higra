@@ -30,7 +30,7 @@ add_subdirectory(test_io_utils)
 add_subdirectory(test_structure)
 
 add_test(NAME Test_python
-COMMAND ${PYTHON_EXECUTABLE} -c "import sys;\
+COMMAND ${Python_EXECUTABLE} -c "import sys;\
 sys.path.insert(0, '${CMAKE_CURRENT_BINARY_DIR}/../..');\
 import unittest;\
 result=unittest.TextTestRunner().run(unittest.defaultTestLoader.discover('${CMAKE_CURRENT_BINARY_DIR}'));

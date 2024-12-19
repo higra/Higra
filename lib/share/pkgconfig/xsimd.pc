@@ -1,0 +1,8 @@
+prefix=/home/perretb/Higra/lib
+libdir=/home/perretb/Higra/lib/lib
+includedir=/home/perretb/Higra/lib/include
+
+Name: xsimd
+Description: xsimd provides a unified means for using SIMD features for library authors..
+Version: 13.1.0
+Cflags: -I${includedir}

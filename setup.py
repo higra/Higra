@@ -95,8 +95,18 @@ class CMakeBuild(build_ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         extdir = os.path.join(extdir, "higra")
 
+        print("Setup.py: python executable: ", sys.executable)
+
+        # test if numpy is installed
+        try:
+            import numpy
+            print("Setup.py: numpy version: ", numpy.__version__)
+        except ImportError as e:
+            print("Setup.py: numpy is not installed. Please install numpy first.", e)
+            exit(1)
+
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DPython_EXECUTABLE=' + sys.executable,
                       '-DHG_BUILD_WHEEL=On',
                       '-DDO_CPP_TEST=Off']
 

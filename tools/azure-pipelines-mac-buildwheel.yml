@@ -2,35 +2,35 @@ jobs:
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
       name: 'mac_py38'
-      vmImage: 'macOS-12'
+      vmImage: 'macOS-14'
       CIBW_BUILD: 'cp38-*'
       NUMPY_VERSION: '1.17.5'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
       name: 'mac_py39'
-      vmImage: 'macOS-12'
+      vmImage: 'macOS-14'
       CIBW_BUILD: 'cp39-*'
       NUMPY_VERSION: '2.0.0'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
       name: 'mac_py310'
-      vmImage: 'macOS-12'
+      vmImage: 'macOS-14'
       CIBW_BUILD: 'cp310-*'
       NUMPY_VERSION: '2.0.0'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
       name: 'mac_py311'
-      vmImage: 'macOS-12'
+      vmImage: 'macOS-14'
       CIBW_BUILD: 'cp311-*'
       NUMPY_VERSION: '2.0.0'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
       name: 'mac_py312'
-      vmImage: 'macOS-12'
+      vmImage: 'macOS-14'
       CIBW_BUILD: 'cp312-*'
       NUMPY_VERSION: '2.0.0'
       force: true
