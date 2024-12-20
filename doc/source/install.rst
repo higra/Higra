@@ -51,7 +51,7 @@ environment variable).
 
 
 Sometimes, cmake gets confused when several Python versions are installed on the system.
-You can specify which version to use with ``-DPYTHON_EXECUTABLE:FILEPATH=/PATH-TO-PYTHON/python``, e.g.
+You can specify which version to use with ``-DPython_EXECUTABLE:FILEPATH=/PATH-TO-PYTHON/python``, e.g.
 
 .. code-block:: bash
 

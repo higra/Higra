@@ -5,7 +5,7 @@ import platform
 import subprocess
 import os.path
 
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_namespace_packages
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
@@ -181,6 +181,8 @@ try:
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     os.symlink(os.path.join(cur_dir, 'include'), 'higra/include')
     os.symlink(os.path.join(cur_dir, 'lib'), 'higra/lib')
+    packages = find_namespace_packages(include=["higra", "higra.*"])
+    print("Setup.py: packages: ", packages)
     setup(
         name='higra',
         version=get_version(),
@@ -190,18 +192,7 @@ try:
         url='https://github.com/higra/Higra',
         long_description=open('README.md').read(),
         long_description_content_type="text/markdown",
-        packages=[
-            'higra',
-            'higra.accumulator',
-            'higra.algo',
-            'higra.assessment',
-            'higra.attribute',
-            'higra.hierarchy',
-            'higra.image',
-            'higra.interop',
-            'higra.io_utils',
-            'higra.plot',
-            'higra.structure'],
+        packages=packages,
         ext_modules=[CMakeExtension('higram')],
         cmdclass=dict(build_ext=CMakeBuild),
         include_package_data=True,
