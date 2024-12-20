@@ -23,10 +23,6 @@ environment:
   matrix:
     - CIBUILDWHEEL: 1
       TAG_SCENARIO: true
-      CIBW_BUILD: "cp38*"
-      CIBW_BEFORE_BUILD: "pip install setuptools wheel cmake numpy==1.17.5"
-    - CIBUILDWHEEL: 1
-      TAG_SCENARIO: true
       CIBW_BUILD: "cp39*"
       CIBW_BEFORE_BUILD: "pip install setuptools wheel cmake numpy==2.0.0"
     - CIBUILDWHEEL: 1
@@ -38,9 +34,13 @@ environment:
       CIBW_BUILD: "cp311*"
       CIBW_BEFORE_BUILD: "pip install setuptools wheel cmake numpy==2.0.0"
     - CIBUILDWHEEL: 1
-      TAG_SCENARIO: false
+      TAG_SCENARIO: true
       CIBW_BUILD: "cp312*"
       CIBW_BEFORE_BUILD: "pip install setuptools wheel cmake numpy==2.0.0"
+    - CIBUILDWHEEL: 1
+      TAG_SCENARIO: false
+      CIBW_BUILD: "cp313*"
+      CIBW_BEFORE_BUILD: "pip install setuptools wheel cmake numpy==2.1.3"
 
 for:
   -
