@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.6.11
+------
+
+- Add support for Python 3.13 and remove Python 3.8 `#283 <https://github.com/higra/Higra/pull/283>`_
+- Add functions  :func:`~higra.component_tree_tree_of_shapes_image` and :func:`~higra.component_tree_tree_of_shapes_image3d` for 3D tree of shapes `#280 <https://github.com/higra/Higra/pull/280>`_
+- Add utility functions  :func:`~higra.get_6_adjacency_graph` and :func:`~higra.get_6_adjacency_implicit_graph` for 3D regular graphs `#280 <https://github.com/higra/Higra/pull/280>`_
+
 0.6.10
 ------
 
@@ -54,7 +61,7 @@ Changelog
   `#238 <https://github.com/higra/Higra/pull/238>`_
 - Add new fast lowest common ancestor algorithm  :func:`~higra.Tree.lowest_common_ancestor_preprocess` with :math:`O(n)`
   time preprocessing and average :math:`O(1)` time query (based on sparse table with blocks). The expected speedup
-  is comprised between 1.2 and 1.8 compared to the previous method  (parse table without block wich is still available).
+  is comprised between 1.2 and 1.8 compared to the previous method  (parse table without block which is still available).
   `#237 <https://github.com/higra/Higra/pull/237>`_
 - Add options to set a global thread number limit :func:`~higra.set_num_threads`
   `#234 <https://github.com/higra/Higra/pull/234>`_
