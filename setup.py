@@ -5,7 +5,7 @@ import platform
 import subprocess
 import os.path
 
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_namespace_packages
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
@@ -95,8 +95,18 @@ class CMakeBuild(build_ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         extdir = os.path.join(extdir, "higra")
 
+        print("Setup.py: python executable: ", sys.executable)
+
+        # test if numpy is installed
+        try:
+            import numpy
+            print("Setup.py: numpy version: ", numpy.__version__)
+        except ImportError as e:
+            print("Setup.py: numpy is not installed. Please install numpy first.", e)
+            exit(1)
+
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DPython_EXECUTABLE=' + sys.executable,
                       '-DHG_BUILD_WHEEL=On',
                       '-DDO_CPP_TEST=Off']
 
@@ -158,11 +168,11 @@ def prepare_dll_windows():
 try:
     python_version = sys.version_info[1] # TODO: python 3 assumed...
     requires_list = {
-        8:['numpy>=1.17.5'],
         9:['numpy>=1.19.5'],
         10:['numpy>=1.21.4'],
         11:['numpy>=1.23.5'],
         12:['numpy>=1.26.0'],
+        13:['numpy>=2.1.3'],
     }
     if use_tbb and platform.system() == "Windows":
         prepare_dll_windows()
@@ -171,6 +181,8 @@ try:
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     os.symlink(os.path.join(cur_dir, 'include'), 'higra/include')
     os.symlink(os.path.join(cur_dir, 'lib'), 'higra/lib')
+    packages = find_namespace_packages(include=["higra", "higra.*"])
+    print("Setup.py: packages: ", packages)
     setup(
         name='higra',
         version=get_version(),
@@ -180,18 +192,7 @@ try:
         url='https://github.com/higra/Higra',
         long_description=open('README.md').read(),
         long_description_content_type="text/markdown",
-        packages=[
-            'higra',
-            'higra.accumulator',
-            'higra.algo',
-            'higra.assessment',
-            'higra.attribute',
-            'higra.hierarchy',
-            'higra.image',
-            'higra.interop',
-            'higra.io_utils',
-            'higra.plot',
-            'higra.structure'],
+        packages=packages,
         ext_modules=[CMakeExtension('higram')],
         cmdclass=dict(build_ext=CMakeBuild),
         include_package_data=True,

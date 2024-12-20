@@ -1,8 +1,0 @@
-prefix=/home/jordao/Softwares/Higra/lib
-libdir=/home/jordao/Softwares/Higra/lib/lib
-includedir=/home/jordao/Softwares/Higra/lib/include
-
-Name: xsimd
-Description: xsimd provides a unified means for using SIMD features for library authors..
-Version: 13.0.0
-Cflags: -I${includedir}

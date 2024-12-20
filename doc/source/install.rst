@@ -16,7 +16,7 @@ The Python package can be installed with Pypi:
 
 Supported systems:
 
- - Python 3.5, 3.6, 3.7, 3.8
+ - Python 3
  - Linux 64 bits, macOS, Windows 64 bits
 
 Manual build
@@ -29,8 +29,8 @@ a wrapper `setuptools <https://setuptools.readthedocs.io/en/latest/>`_
 Building Higra from source requires:
 
     * a c++ 14 compiler (tested with GCC, Clang, Visual Studio 2019)
-    * cmake (2.8+)
-    * Python (3.5+) with Numpy (1.17.3+)
+    * cmake
+    * Python 3 with Numpy
 
 With cmake
 **********
@@ -51,11 +51,11 @@ environment variable).
 
 
 Sometimes, cmake gets confused when several Python versions are installed on the system.
-You can specify which version to use with ``-DPYTHON_EXECUTABLE:FILEPATH=/PATH-TO-PYTHON/python``, e.g.
+You can specify which version to use with ``-DPython_EXECUTABLE:FILEPATH=/PATH-TO-PYTHON/python``, e.g.
 
 .. code-block:: bash
 
-    cmake -DDO_AUTO_TEST=ON -DHG_USE_TBB=OFF -DPYTHON_EXECUTABLE:FILEPATH=/anaconda3/bin/python ../Higra/
+    cmake -DDO_AUTO_TEST=ON -DHG_USE_TBB=OFF -DPython_EXECUTABLE=/anaconda3/bin/python ../Higra/
 
 
 Cmake options:

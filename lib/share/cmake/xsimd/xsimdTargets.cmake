@@ -16,7 +16,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_targetsDefined)
 set(_targetsNotDefined)
 set(_expectedTargets)
-foreach(_expectedTarget pybind11::pybind11_headers)
+foreach(_expectedTarget xsimd)
   list(APPEND _expectedTargets ${_expectedTarget})
   if(NOT TARGET ${_expectedTarget})
     list(APPEND _targetsNotDefined ${_expectedTarget})
@@ -50,11 +50,11 @@ if(_IMPORT_PREFIX STREQUAL "/")
   set(_IMPORT_PREFIX "")
 endif()
 
-# Create imported target pybind11::pybind11_headers
-add_library(pybind11::pybind11_headers INTERFACE IMPORTED)
+# Create imported target xsimd
+add_library(xsimd INTERFACE IMPORTED)
 
-set_target_properties(pybind11::pybind11_headers PROPERTIES
-  INTERFACE_COMPILE_FEATURES "cxx_inheriting_constructors;cxx_user_literals;cxx_right_angle_brackets"
+set_target_properties(xsimd PROPERTIES
+  INTERFACE_COMPILE_FEATURES "cxx_std_11"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
 )
 
@@ -64,7 +64,7 @@ endif()
 
 # Load information for each installed configuration.
 get_filename_component(_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-file(GLOB CONFIG_FILES "${_DIR}/pybind11Targets-*.cmake")
+file(GLOB CONFIG_FILES "${_DIR}/xsimdTargets-*.cmake")
 foreach(f ${CONFIG_FILES})
   include(${f})
 endforeach()

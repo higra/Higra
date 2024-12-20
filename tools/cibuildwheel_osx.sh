@@ -26,5 +26,5 @@ mv ${tbb_dir}/include ${home}/tbb/
 
 cd ${cur_dir}
 
-pip install numpy==$NUMPY_VERSION
+
 
