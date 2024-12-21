@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.6.11
+0.6.12
 ------
 
 - Add support for Python 3.13 and remove Python 3.8 `#283 <https://github.com/higra/Higra/pull/283>`_

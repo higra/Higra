@@ -2,4 +2,4 @@ sphinx==7.4.7
 sphinx_rtd_theme
 sphinx-tabs
 breathe
-higra==0.6.11
+higra==0.6.12

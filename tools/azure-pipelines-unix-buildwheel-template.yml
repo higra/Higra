@@ -35,7 +35,8 @@ jobs:
         condition: startsWith('${{ parameters.name }}', 'mac')
 
       - script: |
-          pip install cibuildwheel==2.21.3 twine
+          python3 --version;
+          python3 -m pip install cibuildwheel==2.21.3
         displayName: Install python packages
 
       - script: |
@@ -44,13 +45,15 @@ jobs:
         workingDirectory: $(Build.SourcesDirectory)
 
       - script: |
-          python -m twine upload -u __token__ -p $(TWINE_TOKEN) wheelhouse/*.whl
+          python3 -m pip install twine;
+          python3 -m twine upload -u __token__ -p $(TWINE_TOKEN) wheelhouse/*.whl
         displayName: Upload wheel
         workingDirectory: $(Build.SourcesDirectory)
         condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/')
 
       - script: |
-          python -m twine upload -r testpypi -u __token__ -p $(TWINE_TOKEN_TEST) wheelhouse/*.whl
+          python3 -m pip install twine;
+          python3 -m twine upload -r testpypi -u __token__ -p $(TWINE_TOKEN_TEST) wheelhouse/*.whl
         displayName: Test upload wheel
         workingDirectory: $(Build.SourcesDirectory)
         condition: eq('${{ parameters.pypitest }}', 'true')
