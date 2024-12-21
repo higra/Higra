@@ -6,6 +6,7 @@ jobs:
       vmImage: 'macOS-14'
       CIBW_BUILD: 'cp39-*'
       NUMPY_VERSION: '2.0.0'
+      force: true
 
   - template: azure-pipelines-unix-buildwheel-template.yml
     parameters:
