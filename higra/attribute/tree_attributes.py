@@ -747,3 +747,22 @@ def attribute_moment_of_inertia(tree, leaf_graph):
     I_1 = (miu_20 + miu_02) / (M_00 ** 2)
 
     return I_1
+
+
+@hg.auto_cache
+def attribute_contrast(tree, altitudes):
+    """
+    Given a node :math:`n` of the tree :math:`T`, the contrast of :math:`n` is the difference between
+    the altitude of the deepest minima of the subtree rooted in :math:`n` and the altitude of :math:`n`.
+
+    :param tree: Input tree
+    :param altitudes: Tree node altitudes
+    :return: a 1d array like :attr:`altitudes`
+    """
+
+    res = hg.accumulate_sequential(tree,
+                                   altitudes[:tree.num_leaves()],
+                                   hg.Accumulators.max)
+    res -= altitudes
+
+    return res
