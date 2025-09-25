@@ -12,6 +12,7 @@ Tree attributes
     attribute_contour_length
     attribute_contour_strength
     attribute_compactness
+    attribute_contrast
     attribute_depth
     attribute_dynamics
     attribute_extinction_value
@@ -40,6 +41,8 @@ Tree attributes
 .. autofunction:: higra.attribute_contour_strength
 
 .. autofunction:: higra.attribute_compactness
+
+.. autofunction:: higra.attribute_contrast
 
 .. autofunction:: higra.attribute_depth
 
