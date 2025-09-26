@@ -203,7 +203,7 @@ def print_partition_tree(tree, *,
 
     r = []
     for i in range(screen.shape[0]):
-        s = screen[i, :].astype('|S1').tostring().decode('utf-8')
+        s = screen[i, :].astype('|S1').tobytes().decode('utf-8')
         s = s.rstrip()
         if s != "":
             r.append(s)
