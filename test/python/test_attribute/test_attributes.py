@@ -557,6 +557,64 @@ class TestAttributes(unittest.TestCase):
         res = hg.attribute_height(t, altitudes, "decreasing")
         self.assertTrue(np.all(res == ref))
 
+    def test_attribute_height_contrast_inc(self):
+        graph = hg.get_4_adjacency_implicit_graph((10, 10))
+        vertex_weights = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                   [0, 4, 3, 4, 0, 0, 0, 2, 2, 0],
+                                   [0, 2, 3, 3, 2, 1, 2, 2, 0, 0],
+                                   [0, 2, 4, 3, 2, 1, 0, 1, 0, 0],
+                                   [0, 0, 2, 0, 0, 0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 3, 0, 4, 2, 0, 0],
+                                   [0, 1, 1, 0, 3, 2, 4, 4, 0, 0],
+                                   [0, 1, 1, 0, 3, 0, 4, 4, 1, 0],
+                                   [0, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+                                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype=np.uint8)
+        ref_map = np.array([[4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+                            [4, 0, 1, 0, 4, 4, 4, 0, 0, 4],
+                            [4, 2, 1, 1, 2, 3, 0, 0, 4, 4],
+                            [4, 2, 0, 1, 2, 3, 4, 3, 4, 4],
+                            [4, 4, 2, 4, 4, 4, 4, 4, 4, 4],
+                            [4, 4, 4, 4, 0, 4, 0, 2, 4, 4],
+                            [4, 0, 0, 4, 0, 2, 0, 0, 4, 4],
+                            [4, 0, 0, 4, 0, 4, 0, 0, 3, 4],
+                            [4, 0, 0, 4, 4, 4, 4, 3, 3, 4],
+                            [4, 4, 4, 4, 4, 4, 4, 4, 4, 4]], dtype=np.uint8)
+
+        tree, altitudes = hg.component_tree_max_tree(graph, vertex_weights)
+        contrast = hg.attribute_height(tree, altitudes, True, "current")
+        map = hg.reconstruct_leaf_data(tree, contrast)
+
+        self.assertTrue(np.allclose(ref_map, map))
+
+    def test_attribute_height_contrast_dec(self):
+        graph = hg.get_4_adjacency_implicit_graph((10, 10))
+        vertex_weights = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                   [0, 4, 3, 4, 0, 0, 0, 2, 2, 0],
+                                   [0, 2, 3, 3, 2, 1, 2, 2, 0, 0],
+                                   [0, 2, 4, 3, 2, 1, 0, 1, 0, 0],
+                                   [0, 0, 2, 0, 0, 0, 0, 0, 0, 0],
+                                   [0, 0, 0, 0, 3, 0, 4, 2, 0, 0],
+                                   [0, 1, 1, 0, 3, 2, 4, 4, 0, 0],
+                                   [0, 1, 1, 0, 3, 0, 4, 4, 1, 0],
+                                   [0, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+                                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype=np.uint8)
+        ref_map = np.array([[4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+                            [4, 0, 1, 0, 4, 4, 4, 0, 0, 4],
+                            [4, 2, 1, 1, 2, 3, 0, 0, 4, 4],
+                            [4, 2, 0, 1, 2, 3, 4, 3, 4, 4],
+                            [4, 4, 2, 4, 4, 4, 4, 4, 4, 4],
+                            [4, 4, 4, 4, 0, 4, 0, 2, 4, 4],
+                            [4, 0, 0, 4, 0, 2, 0, 0, 4, 4],
+                            [4, 0, 0, 4, 0, 4, 0, 0, 3, 4],
+                            [4, 0, 0, 4, 4, 4, 4, 3, 3, 4],
+                            [4, 4, 4, 4, 4, 4, 4, 4, 4, 4]], dtype=np.uint8)
+
+        tree, altitudes = hg.component_tree_min_tree(graph, vertex_weights.max()-vertex_weights)
+        contrast = hg.attribute_height(tree, altitudes, False, "current")
+        map = hg.reconstruct_leaf_data(tree, contrast)
+
+        self.assertTrue(np.allclose(ref_map, map))
+
     def test_attribute_dynamics(self):
         t = hg.Tree((8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12))
         altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 8, 10.))
@@ -667,35 +725,6 @@ class TestAttributes(unittest.TestCase):
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0.1481, 0.2222, 0.16, 0.2222, 0.2756)
         self.assertTrue(np.allclose(res,ref,atol=0.0001))
-
-    def test_contrast(self):
-        graph = hg.get_4_adjacency_implicit_graph((10, 10))
-        vertex_weights = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                   [0, 4, 3, 4, 0, 0, 0, 2, 2, 0],
-                                   [0, 2, 3, 3, 2, 1, 2, 2, 0, 0],
-                                   [0, 2, 4, 3, 2, 1, 0, 1, 0, 0],
-                                   [0, 0, 2, 0, 0, 0, 0, 0, 0, 0],
-                                   [0, 0, 0, 0, 3, 0, 4, 2, 0, 0],
-                                   [0, 1, 1, 0, 3, 2, 4, 4, 0, 0],
-                                   [0, 1, 1, 0, 3, 0, 4, 4, 1, 0],
-                                   [0, 1, 1, 0, 0, 0, 0, 1, 1, 0],
-                                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype=np.uint8)
-        ref_map = np.array([[4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
-                            [4, 0, 1, 0, 4, 4, 4, 0, 0, 4],
-                            [4, 2, 1, 1, 2, 3, 0, 0, 4, 4],
-                            [4, 2, 0, 1, 2, 3, 4, 3, 4, 4],
-                            [4, 4, 2, 4, 4, 4, 4, 4, 4, 4],
-                            [4, 4, 4, 4, 0, 4, 0, 2, 4, 4],
-                            [4, 0, 0, 4, 0, 2, 0, 0, 4, 4],
-                            [4, 0, 0, 4, 0, 4, 0, 0, 3, 4],
-                            [4, 0, 0, 4, 4, 4, 4, 3, 3, 4],
-                            [4, 4, 4, 4, 4, 4, 4, 4, 4, 4]], dtype=np.uint8)
-
-        tree, altitudes = hg.component_tree_max_tree(graph, vertex_weights)
-        contrast = hg.attribute_contrast(tree, altitudes)
-        map = hg.reconstruct_leaf_data(tree, contrast)
-
-        self.assertTrue(np.allclose(ref_map, map))
 
 
 if __name__ == '__main__':
