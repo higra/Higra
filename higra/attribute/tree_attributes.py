@@ -489,8 +489,9 @@ def attribute_extinction_value(tree, altitudes, attribute, increasing_altitudes=
 def attribute_height(tree, altitudes, increasing_altitudes="auto", reference_altitude="parent"):
     """
     In a tree :math:`T`, given that the altitudes of the nodes vary monotically from the leaves to the root,
-    the height of a node :math:`n` of :math:`T` is equal to the difference between the altitude of the parent
-    of :math:`n` and the altitude of the deepest non-leaf node in the subtree of :math:`T` rooted in :math:`n`.
+    the height of a node :math:n of :math:T is equal to the difference between the altitude of the reference
+    node (either :math:n or the parent of :math:n) and the altitude of the deepest non-leaf node in the subtree
+    of :math:T rooted in :math:n.
 
     Possible values of :attr:`increasing_altitude` are:
 
@@ -503,10 +504,8 @@ def attribute_height(tree, altitudes, increasing_altitudes="auto", reference_alt
 
     Possible values of :attr:`reference_altitude` are:
 
-        - ``'parent'``: the function will compute the height attribute.
-        - ```'current'``: the function will compute the contrast attribute.
-          (ie. the difference between the altitude of the current node and the altitude of the
-          deepest non-leaf node in the subtree of :math:`T` rooted in :math:`n`).
+        - ``'parent'``: the reference altitude is the altitude of the parent of the current node.
+        - ``'current'``: the reference altitude is the altitude of the current node.
 
     :param tree: Input tree
     :param altitudes: Tree node altitudes
