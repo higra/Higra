@@ -15,6 +15,7 @@ These examples deal with upper and lower treshold set of vertex-weighted graphs.
 Connected image filtering with component trees                        |v3|_        |dl3|_        |co3|_
 Filtering with non-increasing criterion - The shaping framework       |v9|_        |dl9|_        |co9|_
 Pattern spectra - granulometry based on connected filters             |v15|_       |dl15|_       |co15|_
+Attribute Maps - Component Tree Attribute as Image                    |v18|_       |dl18|_       |co18|_
 ================================================================= ============= ============= ============
 
 Hierarchical segmentation
@@ -230,3 +231,13 @@ Astronomical object detection with the Max-Tree - MMTA 2016           |v12|_    
 
 .. |co17| image:: /images/colab.png
 .. _co17: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Watershed_on_a_Mesh_IGL.ipynb
+
+
+.. |v18| unicode:: &#x1f441; .. view
+.. _v18: https://github.com/higra/Higra-Notebooks/blob/master/Component%20Tree%20Attribute%20as%20Image.ipynb
+
+.. |dl18| unicode:: &#x1f4be; .. download
+.. _dl18: https://cdn.jsdelivr.net/gh/higra/Higra-Notebooks/Component%20Tree%20Attribute%20as%20Image.ipynb
+
+.. |co18| image:: /images/colab.png
+.. _co18: https://colab.research.google.com/github/higra/Higra-Notebooks/blob/master/Component%20Tree%20Attribute%20as%20Image.ipynb
