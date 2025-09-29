@@ -486,11 +486,12 @@ def attribute_extinction_value(tree, altitudes, attribute, increasing_altitudes=
 
 
 @hg.auto_cache
-def attribute_height(tree, altitudes, increasing_altitudes="auto"):
+def attribute_height(tree, altitudes, increasing_altitudes="auto", reference_altitude="parent"):
     """
     In a tree :math:`T`, given that the altitudes of the nodes vary monotically from the leaves to the root,
-    the height of a node :math:`n` of :math:`T` is equal to the difference between the altitude of the parent
-    of :math:`n` and the altitude of the deepest non-leaf node in the subtree of :math:`T` rooted in :math:`n`.
+    the height of a node :math:n of :math:T is equal to the difference between the altitude of the reference
+    node (either :math:n or the parent of :math:n) and the altitude of the deepest non-leaf node in the subtree
+    of :math:T rooted in :math:n.
 
     Possible values of :attr:`increasing_altitude` are:
 
@@ -501,14 +502,32 @@ def attribute_height(tree, altitudes, increasing_altitudes="auto"):
         - ``False`` or ``'decreasing'``: this means that altitudes are decreasing from the leaves to the root
           (ie. for any node :math:`n`, :math:`altitude(n) \geq altitude(parent(n))`.
 
+    Possible values of :attr:`reference_altitude` are:
+
+        - ``'parent'``: the reference altitude is the altitude of the parent of the current node.
+        - ``'current'``: the reference altitude is the altitude of the current node.
+
     :param tree: Input tree
     :param altitudes: Tree node altitudes
     :param increasing_altitudes: possible values 'auto', True, False, 'increasing', and 'decreasing'
+    :param reference_altitude: possible values 'parent' and 'current'
     :return: a 1d array like :attr:`altitudes`
     """
     inc = __process_param_increasing_altitudes(tree, altitudes, increasing_altitudes)
 
-    res = hg.cpp._attribute_height(tree, altitudes, inc)
+    if reference_altitude == "current":
+        if inc:
+            res = hg.accumulate_sequential(tree,
+                                           altitudes[:tree.num_leaves()],
+                                           hg.Accumulators.max)\
+                  - altitudes
+        else:
+            res = altitudes -\
+                  hg.accumulate_sequential(tree,
+                                           altitudes[:tree.num_leaves()],
+                                           hg.Accumulators.min)
+    else:
+        res = hg.cpp._attribute_height(tree, altitudes, inc)
 
     return res
 
@@ -709,9 +728,9 @@ def attribute_moment_of_inertia(tree, leaf_graph):
     .. math::
 
         I_1 = \eta_{20} + \eta_{02}
-        
+
     where :math:`\eta_{ij}` are given by:
-    
+
         :math:`\eta_{ij} = \\frac{\mu_{ij}}{\mu_{00}^{1+\\frac{i+j}{2}}}`
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
