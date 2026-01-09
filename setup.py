@@ -173,6 +173,7 @@ try:
         11:['numpy>=1.23.5'],
         12:['numpy>=1.26.0'],
         13:['numpy>=2.1.3'],
+        14:['numpy>=2.3.2'],
     }
     if use_tbb and platform.system() == "Windows":
         prepare_dll_windows()

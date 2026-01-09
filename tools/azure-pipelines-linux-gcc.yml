@@ -2,18 +2,18 @@ jobs:
   - job: 'Linux_gcc'
     strategy:
       matrix:
-        gcc_9:
-          gcc_version: '9'
+        gcc_14:
+          gcc_version: '14'
           HG_USE_TBB: 'Off'
-        gcc_9_tbb:
-          gcc_version: '9'
+        gcc_14_tbb:
+          gcc_version: '14'
           HG_USE_TBB: 'On'
-        gcc_9_coverage:
-          gcc_version: '9'
+        gcc_14_coverage:
+          gcc_version: '14'
           HG_USE_TBB: 'On'
           COVERAGE: 1
     pool:
-      vmImage: ubuntu-22.04
+      vmImage: ubuntu-24.04
     variables:
       CODECOV_TOKEN: $(CODECOV_TOKEN_scr)
       CC: gcc-$(gcc_version)
@@ -58,7 +58,7 @@ jobs:
           set -e
           if [ -n "$COVERAGE" ]; then
             ctest -R Test_cpp
-            lcov --directory . --capture --output-file coverage.info && # capture coverage info
+            lcov --directory . --capture --gcov-tool gcov-14 --output-file coverage.info && # capture coverage info
             lcov --remove coverage.info '*lib/include*' --output-file coverage.info && # filter out system
             lcov --remove coverage.info '/usr*' --output-file coverage.info && # filter out system
             lcov --list coverage.info #debug info

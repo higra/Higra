@@ -27,16 +27,14 @@ jobs:
     timeoutInMinutes: 60
     steps:
 
-      - bash: echo "##vso[task.prependpath]$CONDA/bin"
-        displayName: Add conda to PATH
-
-      - bash: echo "##vso[task.prependpath]/Users/runner/.local/bin"
-        displayName: Add user conda to PATH for mac
-        condition: startsWith('${{ parameters.name }}', 'mac')
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.14'
+          addToPath: true
 
       - script: |
-          python3 --version;
-          python3 -m pip install cibuildwheel==2.21.3
+          python --version;
+          python -m pip install cibuildwheel==3.3.1
         displayName: Install python packages
 
       - script: |
@@ -45,15 +43,15 @@ jobs:
         workingDirectory: $(Build.SourcesDirectory)
 
       - script: |
-          python3 -m pip install twine;
-          python3 -m twine upload -u __token__ -p $(TWINE_TOKEN) wheelhouse/*.whl
+          python -m pip install twine;
+          python -m twine upload -u __token__ -p $(TWINE_TOKEN) wheelhouse/*.whl
         displayName: Upload wheel
         workingDirectory: $(Build.SourcesDirectory)
         condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/')
 
       - script: |
-          python3 -m pip install twine;
-          python3 -m twine upload -r testpypi -u __token__ -p $(TWINE_TOKEN_TEST) wheelhouse/*.whl
+          python -m pip install twine;
+          python -m twine upload -r testpypi -u __token__ -p $(TWINE_TOKEN_TEST) wheelhouse/*.whl
         displayName: Test upload wheel
         workingDirectory: $(Build.SourcesDirectory)
         condition: eq('${{ parameters.pypitest }}', 'true')
