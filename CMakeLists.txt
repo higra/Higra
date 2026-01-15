@@ -84,10 +84,15 @@ if(CCACHE_FOUND)
 endif(CCACHE_FOUND)
 
 set(CMAKE_CXX_STANDARD 17)
-add_compile_options(-Wno-error=changes-meaning) # to avoid error with recent gcc versions and TBB, to be removed when TBB is updated
 
 if ((CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT (CMAKE_CXX_SIMULATE_ID MATCHES "MSVC") ) OR CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-local-typedefs")# -Wno-unused-but-set-variable -Wno-missing-braces -Wno-mismatched-tags -Wno-unneeded-internal-declaration")
+
+    # to avoid error with recent gcc versions and TBB, to be removed when TBB is updated
+    CHECK_CXX_COMPILER_FLAG("-Wno-error=changes-meaning" COMPILER_HAS_CHANGES_MEANING_FLAG)
+    if(COMPILER_HAS_CHANGES_MEANING_FLAG)
+        add_compile_options(-Wno-error=changes-meaning)
+    endif()
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-braces")
