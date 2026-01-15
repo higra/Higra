@@ -15,7 +15,7 @@
 #include "../algo/tree.hpp"
 #include "../algo/rag.hpp"
 #include "../algo/horizontal_cuts.hpp"
-#include <xtensor/xsort.hpp>
+#include <xtensor/misc/xsort.hpp>
 
 namespace hg {
 

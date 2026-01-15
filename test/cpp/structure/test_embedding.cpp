@@ -10,10 +10,10 @@
 
 #include "../test_utils.hpp"
 #include "higra/structure/embedding.hpp"
-#include "xtensor/xview.hpp"
-#include "xtensor/xgenerator.hpp"
-#include "xtensor/xinfo.hpp"
-#include "xtensor/xeval.hpp"
+#include "xtensor/views/xview.hpp"
+#include "xtensor/generators/xgenerator.hpp"
+#include "xtensor/io/xinfo.hpp"
+#include "xtensor/core/xeval.hpp"
 
 namespace embedding {
 

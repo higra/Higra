@@ -11,7 +11,7 @@
 #pragma once
 
 #include "../utils.hpp"
-#include "xtensor/xfixed.hpp"
+#include "xtensor/containers/xfixed.hpp"
 
 namespace hg {
     template<typename value_t, unsigned int dim>

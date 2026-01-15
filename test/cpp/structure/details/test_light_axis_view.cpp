@@ -10,8 +10,8 @@
 
 #include "higra/structure/details/light_axis_view.hpp"
 #include "higra/structure/array.hpp"
-#include "xtensor/xview.hpp"
-#include "xtensor/xstrided_view.hpp"
+#include "xtensor/views/xview.hpp"
+#include "xtensor/views/xstrided_view.hpp"
 #include "../../test_utils.hpp"
 
 namespace light_axis_view {

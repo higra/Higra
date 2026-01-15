@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 #include "higra/structure/array.hpp"
-#include "xtensor/xscalar.hpp"
+#include "xtensor/containers/xscalar.hpp"
 
 
 namespace hg {

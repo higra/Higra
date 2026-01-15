@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "xtensor/xsort.hpp"
+#include "xtensor/misc/xsort.hpp"
 
 #include "../graph.hpp"
 #include "../accumulator/at_accumulator.hpp"

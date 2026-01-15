@@ -12,7 +12,7 @@
 
 #include "../structure/array.hpp"
 #include <vector>
-#include <xtensor/xview.hpp>
+#include <xtensor/views/xview.hpp>
 
 namespace hg {
 

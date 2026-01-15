@@ -12,7 +12,7 @@
 
 #include "../graph.hpp"
 #include "../attribute/tree_attribute.hpp"
-#include <xtensor/xnoalias.hpp>
+#include <xtensor/core/xnoalias.hpp>
 #include <vector>
 #include <stack>
 

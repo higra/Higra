@@ -3,5 +3,5 @@ includedir=${prefix}/include
 
 Name: xtensor
 Description: xtensor is a C++ library meant for numerical analysis with multi-dimensional array expressions.
-Version: 0.25.0
+Version: 0.26.0
 Cflags: -I${includedir}

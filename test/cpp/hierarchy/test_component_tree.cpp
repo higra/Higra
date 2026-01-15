@@ -13,7 +13,7 @@
 #include "higra/attribute/tree_attribute.hpp"
 #include "higra/image/graph_image.hpp"
 #include "higra/algo/tree.hpp"
-#include "xtensor/xadapt.hpp"
+#include "xtensor/containers/xadapt.hpp"
 
 using namespace hg;
 using namespace std;

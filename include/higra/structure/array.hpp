@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include "xtensor/xarray.hpp"
-#include "xtensor/xtensor.hpp"
-#include "xtensor/xgenerator.hpp"
-#include "xtensor/xeval.hpp"
+#include "xtensor/containers/xarray.hpp"
+#include "xtensor/containers/xtensor.hpp"
+#include "xtensor/generators/xgenerator.hpp"
+#include "xtensor/core/xeval.hpp"
 
 #include "point.hpp"
 

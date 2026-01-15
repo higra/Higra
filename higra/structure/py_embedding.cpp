@@ -14,7 +14,7 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 #include "higra/structure/embedding.hpp"
-#include "xtensor/xeval.hpp"
+#include "xtensor/core/xeval.hpp"
 #include <string>
 
 namespace py_embedding {

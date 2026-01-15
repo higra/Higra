@@ -14,8 +14,8 @@
 #include "../graph.hpp"
 #include "hierarchy_core.hpp"
 #include "../structure/fibonacci_heap.hpp"
-#include "xtensor/xview.hpp"
-#include "xtensor/xnoalias.hpp"
+#include "xtensor/views/xview.hpp"
+#include "xtensor/core/xnoalias.hpp"
 #include <string>
 
 namespace hg {

@@ -12,8 +12,8 @@
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/algo/tree.hpp"
 #include "../test_utils.hpp"
-#include "xtensor/xindex_view.hpp"
-#include "xtensor/xrandom.hpp"
+#include "xtensor/views/xindex_view.hpp"
+#include "xtensor/generators/xrandom.hpp"
 
 namespace hierarchy_core {
 

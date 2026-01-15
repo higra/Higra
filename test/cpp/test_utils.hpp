@@ -13,11 +13,11 @@
 
 
 #include "higra/structure/array.hpp"
-#include "xtensor/xgenerator.hpp"
-#include "xtensor/xio.hpp"
-#include "xtensor/xstrided_view.hpp"
-#include "xtensor/xview.hpp"
-#include "xtensor/xmath.hpp"
+#include "xtensor/generators/xgenerator.hpp"
+#include "xtensor/io/xio.hpp"
+#include "xtensor/views/xstrided_view.hpp"
+#include "xtensor/views/xview.hpp"
+#include "xtensor/core/xmath.hpp"
 #include "higra/utils.hpp"
 
 #include <vector>

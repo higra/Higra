@@ -14,7 +14,7 @@
 #include "higra/structure/unionfind.hpp"
 #include "higra/graph.hpp"
 #include "higra/sorting.hpp"
-#include "xtensor/xadapt.hpp"
+#include "xtensor/containers/xadapt.hpp"
 
 namespace hg {
     namespace component_tree_internal {

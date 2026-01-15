@@ -12,7 +12,7 @@
 #include <sstream>
 #include <string>
 #include "../test_utils.hpp"
-#include "xtensor/xgenerator.hpp"
+#include "xtensor/generators/xgenerator.hpp"
 
 namespace pink_graph_io {
     

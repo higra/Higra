@@ -13,7 +13,7 @@
 #include "rag.hpp"
 #include "tree.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
-#include "xtensor/xsort.hpp"
+#include "xtensor/misc/xsort.hpp"
 
 namespace hg {
 
