@@ -30,10 +30,8 @@ pip install higra
 
 Supported systems: 
 
- - Python 3.9, 3.10, 3.11, 3.12, 3.13 (amd64)
- - Linux 64 bits, macOS, Windows 64 bits (requires [Visual C++ Redistributable for Visual Studio 2015](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads))
-
-macOS ARM64 is currently only supported through conda ``conda install higra -c conda-forge``
+ - Python 3.10, 3.11, 3.12, 3.13, 3.14 
+ - Linux 64 bits (x86_64), macOS (x86_64 & ARM), Windows 64 bits (x86_64) (requires [Visual C++ Redistributable for Visual Studio 2015](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads))
 
 ## Documentation
 

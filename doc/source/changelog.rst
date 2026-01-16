@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.6.13
+------
+
+- Add support for Python 3.14 and remove Python 3.9 `#292 <https://github.com/higra/Higra/pull/292>`_
+- Add wheels for Mac ARM  `#292 <https://github.com/higra/Higra/pull/292>`_
+- Add option to change the reference node in  :func:`~higra.attribute_height`  `#289 <https://github.com/higra/Higra/pull/289>`_
+- Add new example in the doc:  `*Attribute Maps - Component Tree Attribute as Image* <https://github.com/higra/Higra-Notebooks/blob/master/Component%20Tree%20Attribute%20as%20Image.ipynb>`_
+
 0.6.12
 ------
 
