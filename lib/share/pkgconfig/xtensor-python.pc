@@ -1,0 +1,7 @@
+prefix=/home/perretb/Higra/lib
+includedir=${prefix}/include
+
+Name: xtensor-python
+Description: An extension to the xtensor library, offering Python bindings with enhanced NumPy support.
+Version: 0.28.0
+Cflags: -I${includedir}

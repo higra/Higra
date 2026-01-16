@@ -13,9 +13,9 @@
 #include <deque>
 #include <limits>
 #include <algorithm>
-#include "xtensor/xindex_view.hpp"
-#include "xtensor/xview.hpp"
-#include "xtensor/xnoalias.hpp"
+#include "xtensor/views/xindex_view.hpp"
+#include "xtensor/views/xview.hpp"
+#include "xtensor/core/xnoalias.hpp"
 #include "higra/accumulator/accumulator.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 #include "higra/graph.hpp"

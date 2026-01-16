@@ -13,7 +13,7 @@
 #include "../graph.hpp"
 #include "../algo/graph_weights.hpp"
 #include "higra/structure/unionfind.hpp"
-#include "xtensor/xview.hpp"
+#include "xtensor/views/xview.hpp"
 #include "higra/sorting.hpp"
 
 namespace hg {

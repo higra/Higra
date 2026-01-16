@@ -11,8 +11,8 @@
 #include "higra/image/tree_of_shapes.hpp"
 #include "higra/image/graph_image.hpp"
 #include "higra/algo/tree.hpp"
-#include "xtensor/xstrided_view.hpp"
-#include "xtensor/xrandom.hpp"
+#include "xtensor/views/xstrided_view.hpp"
+#include "xtensor/generators/xrandom.hpp"
 #include "../test_utils.hpp"
 #include <set>
 

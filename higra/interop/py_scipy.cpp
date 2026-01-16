@@ -13,7 +13,7 @@
 #include "higra/image/graph_image.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
-#include "xtensor/xview.hpp"
+#include "xtensor/views/xview.hpp"
 namespace py_scipy {
     template<typename T>
     using pyarray = xt::pyarray<T>;

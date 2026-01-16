@@ -11,7 +11,7 @@
 #include "higra/algo/bipartite_graph.hpp"
 #include "../test_utils.hpp"
 #include <set>
-#include "xtensor/xrandom.hpp"
+#include "xtensor/generators/xrandom.hpp"
 
 using namespace hg;
 

@@ -17,7 +17,7 @@
 #include <vector>
 #include <utility>
 
-#include "xtensor/xarray.hpp"
+#include "xtensor/containers/xarray.hpp"
 #include "embedding.hpp"
 
 namespace hg {

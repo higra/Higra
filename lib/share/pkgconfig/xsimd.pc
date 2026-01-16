@@ -4,5 +4,5 @@ includedir=/home/perretb/Higra/lib/include
 
 Name: xsimd
 Description: xsimd provides a unified means for using SIMD features for library authors..
-Version: 13.1.0
+Version: 13.2.0
 Cflags: -I${includedir}

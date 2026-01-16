@@ -144,6 +144,44 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
+def rename_dll(inputdll, outputdll):
+    import subprocess
+    import re
+    from shutil import copyfile
+    import os.path as path
+
+    if not path.exists(inputdll):
+        raise ValueError("File not found " + inputdll)
+
+    # dump the dll exports using dumpbin
+    process = subprocess.Popen(['dumpbin', '/EXPORTS', inputdll], stdout=subprocess.PIPE)
+    out, err = process.communicate()
+
+    # get all the function definitions
+    lines = out.splitlines(keepends=False)
+    pattern = r'^\s*(\d+)\s+[A-Z0-9]+\s+[A-Z0-9]{8}\s+([^ ]+)'
+
+    library_output = 'EXPORTS \n'
+
+    for line in lines:
+        matches = re.search(pattern, line.decode('ascii'))
+
+        if matches is not None:
+            # ordinal = matches.group(1)
+            function_name = matches.group(2)
+            library_output = library_output + function_name + '\n'
+
+    # write the def file
+    deffile_name = outputdll[:-4] + '.def'
+    libfile_name = outputdll[:-4] + '.lib'
+    with open(deffile_name, 'w') as f:
+        f.write(library_output)
+
+    process = subprocess.Popen(['lib', '/MACHINE:X64', '/DEF:' + deffile_name], )
+    out, err = process.communicate()
+
+    # copy the dll over
+    copyfile(inputdll, outputdll)
 
 # copy tbb dlls under unique name to mimic unix wheel delocate...
 def prepare_dll_windows():
@@ -155,9 +193,8 @@ def prepare_dll_windows():
     from shutil import copyfile
     copyfile(tbb_dll, "higra\\tbb.dll")
 
-    from tools import renameDLL
     os.chdir("./higra")
-    renameDLL.rename_dll("tbb.dll", "tbb_higra.dll")
+    rename_dll("tbb.dll", "tbb_higra.dll")
     if os.path.exists("tbb.lib"):
         os.remove("tbb.lib")
     os.rename("tbb_higra.lib", "tbb.lib")
@@ -173,6 +210,7 @@ try:
         11:['numpy>=1.23.5'],
         12:['numpy>=1.26.0'],
         13:['numpy>=2.1.3'],
+        14:['numpy>=2.3.2'],
     }
     if use_tbb and platform.system() == "Windows":
         prepare_dll_windows()

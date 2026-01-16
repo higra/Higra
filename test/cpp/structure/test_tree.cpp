@@ -8,7 +8,7 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "xtensor/xio.hpp"
+#include "xtensor/io/xio.hpp"
 #include "higra/graph.hpp"
 #include "../test_utils.hpp"
 #include <functional>

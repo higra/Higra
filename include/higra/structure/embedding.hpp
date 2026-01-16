@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include "xtensor/xexpression.hpp"
-#include "xtensor/xreducer.hpp"
-#include "xtensor/xgenerator.hpp"
-#include "xtensor/xstrided_view.hpp"
+#include "xtensor/core/xexpression.hpp"
+#include "xtensor/reducers/xreducer.hpp"
+#include "xtensor/generators/xgenerator.hpp"
+#include "xtensor/views/xstrided_view.hpp"
 #include "array.hpp"
 #include "point.hpp"
 #include "../utils.hpp"

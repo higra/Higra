@@ -8,8 +8,8 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "xtensor/xio.hpp"
-#include "xtensor/xrandom.hpp"
+#include "xtensor/io/xio.hpp"
+#include "xtensor/generators/xrandom.hpp"
 #include "higra/graph.hpp"
 #include "higra/image/graph_image.hpp"
 #include "higra/structure/lca_fast.hpp"

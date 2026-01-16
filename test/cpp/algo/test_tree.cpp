@@ -12,7 +12,7 @@
 #include "higra/graph.hpp"
 #include "higra/algo/tree.hpp"
 #include "higra/structure/array.hpp"
-#include <xtensor/xindex_view.hpp>
+#include <xtensor/views/xindex_view.hpp>
 
 using namespace hg;
 

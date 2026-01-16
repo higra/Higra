@@ -8,7 +8,7 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(higra)
 
 ##########################
@@ -45,11 +45,11 @@ include(higraTools)
 # new build type coverage
 message("* Adding build types...")
 SET(CMAKE_CXX_FLAGS_COVERAGE
-        "${GCC_DEBUG_FLAGS} -fprofile-arcs -ftest-coverage"
+        "${GCC_DEBUG_FLAGS} -fprofile-arcs -ftest-coverage -fprofile-update=atomic"
         CACHE STRING "Flags used by the C++ compiler during coverage builds."
         FORCE )
 SET(CMAKE_C_FLAGS_COVERAGE
-        "${GCC_DEBUG_FLAGS} -fprofile-arcs -ftest-coverage"
+        "${GCC_DEBUG_FLAGS} -fprofile-arcs -ftest-coverage -fprofile-update=atomic"
         CACHE STRING "Flags used by the C compiler during coverage builds."
         FORCE )
 SET(CMAKE_EXE_LINKER_FLAGS_COVERAGE
@@ -83,19 +83,26 @@ if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
 endif(CCACHE_FOUND)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
+
 if ((CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT (CMAKE_CXX_SIMULATE_ID MATCHES "MSVC") ) OR CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-local-typedefs")# -Wno-unused-but-set-variable -Wno-missing-braces -Wno-mismatched-tags -Wno-unneeded-internal-declaration")
+
+    # to avoid error with recent gcc versions and TBB, to be removed when TBB is updated
+    CHECK_CXX_COMPILER_FLAG("-Wno-error=changes-meaning" COMPILER_HAS_CHANGES_MEANING_FLAG)
+    if(COMPILER_HAS_CHANGES_MEANING_FLAG)
+        add_compile_options(-Wno-error=changes-meaning)
+    endif()
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-braces")
     endif()
 
-    CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
-    if(COMPILER_SUPPORTS_CXX14)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+    CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
+    if(COMPILER_SUPPORTS_CXX17)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
     else()
-        message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
+        message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
     endif()
 
     # Not debug => optim flag
@@ -117,11 +124,11 @@ if ((CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT (CMAKE_CXX_SIMULATE_ID MATCHE
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC")) 
     # @todo Clang as MVSC:more works needed for flags 
     # using Visual Studio C++
-    CHECK_CXX_COMPILER_FLAG("/std:c++14" COMPILER_SUPPORTS_CXX14)
-    if(COMPILER_SUPPORTS_CXX14)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14")
+    CHECK_CXX_COMPILER_FLAG("/std:c++17" COMPILER_SUPPORTS_CXX17)
+    if(COMPILER_SUPPORTS_CXX17)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
     else()
-        message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
+        message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
     endif()
 
     add_definitions("-DNOMINMAX")

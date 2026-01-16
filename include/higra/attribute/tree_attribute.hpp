@@ -12,9 +12,9 @@
 
 #include "../graph.hpp"
 #include "../accumulator/tree_accumulator.hpp"
-#include "xtensor/xview.hpp"
-#include "xtensor/xindex_view.hpp"
-#include "xtensor/xnoalias.hpp"
+#include "xtensor/views/xview.hpp"
+#include "xtensor/views/xindex_view.hpp"
+#include "xtensor/core/xnoalias.hpp"
 
 namespace hg {
 

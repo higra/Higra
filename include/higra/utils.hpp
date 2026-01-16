@@ -15,8 +15,8 @@
 #include <string>
 #include <iostream>
 #include <stack>
-#include "xtensor/xstrided_view.hpp"
-#include "xtensor/xadapt.hpp"
+#include "xtensor/views/xstrided_view.hpp"
+#include "xtensor/containers/xadapt.hpp"
 //#include "xtensor/xio.hpp"
 #include "detail/log.hpp"
 

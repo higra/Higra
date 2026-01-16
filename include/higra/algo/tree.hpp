@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include "xtensor/xgenerator.hpp"
-#include "xtensor/xeval.hpp"
-#include "xtensor/xindex_view.hpp"
-#include "xtensor/xview.hpp"
+#include "xtensor/generators/xgenerator.hpp"
+#include "xtensor/core/xeval.hpp"
+#include "xtensor/views/xindex_view.hpp"
+#include "xtensor/views/xview.hpp"
 #include "../structure/tree_graph.hpp"
 #include "../accumulator/tree_accumulator.hpp"
 #include "../hierarchy/common.hpp"

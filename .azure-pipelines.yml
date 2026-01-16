@@ -7,3 +7,4 @@ jobs:
   - template: ./tools/azure-pipelines-mac.yml
   - template: ./tools/azure-pipelines-linux-buildwheel.yml
   - template: ./tools/azure-pipelines-mac-buildwheel.yml
+  - template: ./tools/azure-pipelines-mac-ARM-buildwheel.yml

@@ -11,7 +11,7 @@
 #pragma once
 
 #include "../graph.hpp"
-#include "xtensor/xexpression.hpp"
+#include "xtensor/core/xexpression.hpp"
 #include "../structure/details/light_axis_view.hpp"
 
 namespace hg {
