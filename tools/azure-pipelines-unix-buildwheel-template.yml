@@ -19,9 +19,7 @@ jobs:
       CIBW_BUILD_VERBOSITY: '1'
       CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_28"
       CIBW_BEFORE_BUILD_LINUX: source tools/cibuildwheel_manylinux.sh
-      CIBW_BEFORE_BUILD_MACOS: source tools/cibuildwheel_osx.sh
       CIBW_ENVIRONMENT_LINUX: 'HG_USE_TBB=1 MFLAG="-m64"  CXXFLAGS="${MFLAG}" TBB_INCLUDE_DIR="/tbb/include/" TBB_LIBRARY="/tbb/lib/" NUMPY_VERSION="${{ parameters.NUMPY_VERSION }}"'
-      CIBW_ENVIRONMENT_MACOS: 'HG_USE_TBB=1 TBB_INCLUDE_DIR="${HOME}/tbb/include/" TBB_LIBRARY="${HOME}/tbb/lib/"  NUMPY_VERSION="${{ parameters.NUMPY_VERSION }}"'
       CIBW_TEST_COMMAND: python -m pip install scikit-learn && python -c "import unittest;result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)"
 
     timeoutInMinutes: 60
