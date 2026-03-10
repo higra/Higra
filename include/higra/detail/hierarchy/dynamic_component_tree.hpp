@@ -14,11 +14,11 @@
 #include <iterator>
 #include <vector>
 
-#include "higra/hierarchy/component_tree.hpp"
 #include "higra/structure/array.hpp"
+#include "higra/structure/tree_graph.hpp"
 #include "higra/utils.hpp"
 
-namespace hg {
+namespace hg::detail::hierarchy {
 
     /**
      * @brief Dynamic representation of a component tree with separated internal-node and proper-part storage.
@@ -47,7 +47,7 @@ namespace hg {
      *
      * Local-slot policy:
      *  - mutable internal hierarchy arrays (`firstChild`, `lastChild`, `nextSibling`,
-     *    `prevSibling`, `numChildrenByNode`, `nodeParent`, `nodeAltitude`) are indexed by
+     *    `prevSibling`, `numChildrenByNode`, `nodeParent`) are indexed by
      *    and store local node-slot ids when applicable;
      *  - proper-part ownership arrays are indexed by global proper-part ids `[0, L)`;
      *  - public APIs still expose global ids to stay consistent with Higra conventions.
@@ -66,10 +66,7 @@ namespace hg {
      *
      * Traversal ranges are lazy: creation is O(1); full iteration cost is linear in the
      * number of returned elements.
-     *
-     * @tparam altitude_t Scalar altitude type.
      */
-    template<typename altitude_t>
     class DynamicComponentTree {
     private:
         // ---------------------------------------------------------------------
@@ -87,7 +84,6 @@ namespace hg {
         // Internal-node arrays, indexed by local node-slot id [0, I).
         // Values are global internal ids [L, N) or invalid_index when appropriate.
         std::vector<index_t> nodeParent;
-        std::vector<altitude_t> nodeAltitude;
 
         // Proper-part ownership, indexed by proper-part global id [0, L).
         // Values are global internal ids [L, N).
@@ -225,7 +221,6 @@ namespace hg {
             properTail[(size_t) localId] = invalid_index;
             numProperPartsByNode[(size_t) localId] = 0;
             nodeParent[(size_t) localId] = invalid_index;
-            nodeAltitude[(size_t) localId] = altitude_t{};
             freeNodeSlots.push_back(localId);
         }
 
@@ -266,7 +261,6 @@ namespace hg {
 
             freeNodeSlots.clear();
             nodeParent.resize((size_t) numInternalNodeSlots_);
-            nodeAltitude.resize((size_t) numInternalNodeSlots_);
             properPartOwner.resize((size_t) numTotalProperParts_);
 
             properHead.assign((size_t) numInternalNodeSlots_, invalid_index);
@@ -285,21 +279,17 @@ namespace hg {
         }
 
         /**
-         * @brief Builds the dynamic tree from Higra parent/altitude arrays.
+         * @brief Builds the dynamic tree from Higra parent arrays.
          * @complexity Time O(N), Space O(N).
          */
-        template<typename T1, typename T2>
-        void buildFromParentAltitude(const xt::xexpression<T1> &xparent, const xt::xexpression<T2> &xaltitude, index_t numProperParts) {
+        template<typename T1>
+        void buildFromParent(const xt::xexpression<T1> &xparent, index_t numProperParts) {
             auto &sourceParent = xparent.derived_cast();
-            auto &sourceAltitude = xaltitude.derived_cast();
 
             hg_assert_1d_array(sourceParent);
-            hg_assert_1d_array(sourceAltitude);
             hg_assert_integral_value_type(sourceParent);
-            hg_assert_same_shape(sourceParent, sourceAltitude);
 
             const auto parent = xt::cast<index_t>(sourceParent);
-            const auto altitude = xt::cast<altitude_t>(sourceAltitude);
             const index_t n = (index_t) parent.size();
 
             hg_assert(n > 0, "DynamicComponentTree cannot be empty.");
@@ -311,7 +301,6 @@ namespace hg {
             for (index_t nodeId = numTotalProperParts_; nodeId < n; ++nodeId) {
                 const auto localId = localOf(nodeId);
                 nodeParent[(size_t) localId] = parent(nodeId);
-                nodeAltitude[(size_t) localId] = altitude(nodeId);
                 if (parent(nodeId) == invalid_index) {
                     freeNodeSlots.push_back(localId);
                 }
@@ -337,6 +326,12 @@ namespace hg {
                 }
                 linkChildBack(parent(nodeId), nodeId);
             }
+        }
+
+        template<typename T>
+        index_t inferNumProperParts(const xt::xexpression<T> &xparent) const {
+            const tree inferredTree(xparent);
+            return (index_t) inferredTree.num_leaves();
         }
 
         /**
@@ -378,31 +373,41 @@ namespace hg {
         DynamicComponentTree() = default;
 
         /**
-         * @brief Constructs a dynamic tree from parent/altitude arrays.
+         * @brief Constructs a dynamic tree from parent arrays using Higra tree conventions.
+         * @warning The parent array is expected to follow the Higra tree convention, with proper parts
+         *          occupying the prefix `[0, L)`.
          * @complexity Time O(N), Space O(N).
          */
-        template<typename T1, typename T2>
-        DynamicComponentTree(const xt::xexpression<T1> &xparent, const xt::xexpression<T2> &xaltitude, index_t numProperParts) {
-            buildFromParentAltitude(xparent, xaltitude, numProperParts);
+        template<typename T1>
+        explicit DynamicComponentTree(const xt::xexpression<T1> &xparent) {
+            buildFromParent(xparent, inferNumProperParts(xparent));
         }
 
         /**
-         * @brief Builds a max-tree or min-tree from a graph and image.
-         * @complexity Time O(C_component_tree + N), Space O(N).
+         * @brief Constructs a dynamic tree from a Higra tree.
+         * @complexity Time O(N), Space O(N).
          */
-        template<typename graph_t, typename T>
-        DynamicComponentTree(const graph_t &graph, const xt::xexpression<T> &ximage, bool isMaxTree) {
-            auto res =  isMaxTree? component_tree_max_tree(graph, ximage) : component_tree_min_tree(graph, ximage);
-            buildFromParentAltitude(res.tree.parents(), res.altitudes, (index_t) res.tree.num_leaves());
+        explicit DynamicComponentTree(const tree &inputTree) {
+            buildFromParent(inputTree.parents(), (index_t) inputTree.num_leaves());
         }
 
         /**
-         * @brief Resets this dynamic tree from parent/altitude arrays.
+         * @brief Resets this dynamic tree from parent arrays using Higra tree conventions.
+         * @warning The parent array is expected to follow the Higra tree convention, with proper parts
+         *          occupying the prefix `[0, L)`.
          * @complexity Time O(N), Space O(N).
          */
-        template<typename T1, typename T2>
-        void reset(const xt::xexpression<T1> &xparent, const xt::xexpression<T2> &xaltitude, index_t numProperParts) {
-            buildFromParentAltitude(xparent, xaltitude, numProperParts);
+        template<typename T1>
+        void reset(const xt::xexpression<T1> &xparent) {
+            buildFromParent(xparent, inferNumProperParts(xparent));
+        }
+
+        /**
+         * @brief Resets this dynamic tree from a Higra tree.
+         * @complexity Time O(N), Space O(N).
+         */
+        void reset(const tree &inputTree) {
+            buildFromParent(inputTree.parents(), (index_t) inputTree.num_leaves());
         }
 
         /**
@@ -530,81 +535,61 @@ namespace hg {
          * @brief Returns all alive internal nodes.
          * @complexity Range creation O(1); full iteration O(I).
          */
-        AliveNodeRange getAliveNodeIds() const { 
-            return AliveNodeRange(this, getNumTotalProperParts(), getGlobalIdSpaceSize()); 
-        }
+        AliveNodeRange getAliveNodeIds() const;
 
         /**
          * @brief Returns direct internal children of a node.
          * @complexity Range creation O(1); full iteration O(#children).
          */
-        ChildrenRange getChildren(index_t nodeId) const { 
-            return ChildrenRange(this, firstChild[(size_t) localOf(nodeId)]); 
-        }
+        ChildrenRange getChildren(index_t nodeId) const;
 
         /**
          * @brief Returns direct proper parts owned by a node.
          * @complexity Range creation O(1); full iteration O(#proper parts).
          */
-        ProperPartsRange getProperParts(index_t nodeId) const { 
-            return ProperPartsRange(this, properHead[(size_t) localOf(nodeId)]); 
-        }
+        ProperPartsRange getProperParts(index_t nodeId) const;
 
         /**
          * @brief Returns a post-order traversal from the current root.
          * @complexity Range creation O(1); full iteration O(#returned nodes).
          */
-        PostOrderNodeRange getPostOrderNodes() const { 
-            return PostOrderNodeRange(this, getRoot()); 
-        }
+        PostOrderNodeRange getPostOrderNodes() const;
 
         /**
          * @brief Returns a post-order traversal rooted at rootNodeId.
          * @complexity Range creation O(1); full iteration O(#returned nodes).
          */
-        PostOrderNodeRange getPostOrderNodes(index_t rootNodeId) const { 
-            return PostOrderNodeRange(this, rootNodeId); 
-        }
+        PostOrderNodeRange getPostOrderNodes(index_t rootNodeId) const;
 
         /**
          * @brief Returns a breadth-first traversal from the current root.
          * @complexity Range creation O(1); full iteration O(#returned nodes).
          */
-        BreadthFirstNodeRange getBreadthFirstNodes() const { 
-            return BreadthFirstNodeRange(this, getRoot()); 
-        }
+        BreadthFirstNodeRange getBreadthFirstNodes() const;
 
         /**
          * @brief Returns a breadth-first traversal rooted at rootNodeId.
          * @complexity Range creation O(1); full iteration O(#returned nodes).
          */
-        BreadthFirstNodeRange getBreadthFirstNodes(index_t rootNodeId) const { 
-            return BreadthFirstNodeRange(this, rootNodeId); 
-        }
+        BreadthFirstNodeRange getBreadthFirstNodes(index_t rootNodeId) const;
 
         /**
          * @brief Returns the path from nodeId to the root, both endpoints included.
          * @complexity Range creation O(1); full iteration O(path length).
          */
-        PathToRootRange getPathToRootNodes(index_t nodeId) const { 
-            return PathToRootRange(this, nodeId); 
-        }
+        PathToRootRange getPathToRootNodes(index_t nodeId) const;
 
         /**
          * @brief Returns the rooted subtree of nodeId in pre-order.
          * @complexity Range creation O(1); full iteration O(#returned nodes).
          */
-        SubtreeNodeRange getNodeSubtree(index_t nodeId) const { 
-            return SubtreeNodeRange(this, nodeId); 
-        }
+        SubtreeNodeRange getNodeSubtree(index_t nodeId) const;
 
         /**
          * @brief Returns descendants of nodeId in pre-order, excluding nodeId.
          * @complexity Range creation O(1); full iteration O(#returned nodes).
          */
-        DescendantNodeRange getDescendants(index_t nodeId) const { 
-            return DescendantNodeRange(this, nodeId); 
-        }
+        DescendantNodeRange getDescendants(index_t nodeId) const;
 
         /**
          * @brief Returns the parent of an internal node.
@@ -613,15 +598,6 @@ namespace hg {
          */
         index_t getNodeParent(index_t nodeId) const {
             return nodeParent[(size_t) localOf(nodeId)];
-        }
-
-        /**
-         * @brief Returns the altitude of an internal node.
-         * @warning nodeId must be an internal node.
-         * @complexity Time O(1), Space O(1).
-         */
-        altitude_t getNodeAltitude(index_t nodeId) const {
-            return nodeAltitude[(size_t) localOf(nodeId)];
         }
 
         /**
@@ -733,7 +709,6 @@ namespace hg {
             if (oldRoot != invalid_index && oldRoot != nodeId && isNode(oldRoot) && isAlive(oldRoot)) {
                 const auto oldRootLocalId = localOf(oldRoot);
                 nodeParent[(size_t) oldRootLocalId] = getNodeParent(oldRoot);
-                nodeAltitude[(size_t) oldRootLocalId] = getNodeAltitude(oldRoot);
             }
             rootNodeId = nodeId;
             const auto localId = localOf(nodeId);
@@ -746,7 +721,7 @@ namespace hg {
          * @return Global internal id, or invalid_index if there is no free slot.
          * @complexity Time O(1), Space O(1).
          */
-        index_t allocateNode(altitude_t altitudeValue) {
+        index_t allocateNode() {
             if (freeNodeSlots.empty()) {
                 return invalid_index;
             }
@@ -755,7 +730,6 @@ namespace hg {
             const auto nodeId = globalOf(localId);
             if (nodeId != invalid_index) {
                 nodeParent[(size_t) localId] = nodeId;
-                nodeAltitude[(size_t) localId] = altitudeValue;
                 firstChild[(size_t) localId] = invalid_index;
                 lastChild[(size_t) localId] = invalid_index;
                 nextSibling[(size_t) localId] = invalid_index;
@@ -789,7 +763,6 @@ namespace hg {
             properTail[(size_t) localId] = invalid_index;
             numProperPartsByNode[(size_t) localId] = 0;
             nodeParent[(size_t) localId] = invalid_index;
-            nodeAltitude[(size_t) localId] = altitude_t{};
             freeNodeSlots.push_back(localId);
             nodeStructureVersion++;
         }
@@ -808,7 +781,6 @@ namespace hg {
             const auto childLocalId = localOf(childId);
             if (releaseNodeFlag) {
                 nodeParent[(size_t) childLocalId] = invalid_index;
-                nodeAltitude[(size_t) childLocalId] = altitude_t{};
                 freeNodeSlots.push_back(childLocalId);
                 nodeStructureVersion++;
             } else {
@@ -966,8 +938,7 @@ namespace hg {
     /**
      * @brief Iterator over the direct internal children of a node.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::ChildrenIterator {
+    class DynamicComponentTree::ChildrenIterator {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t currentLocal_ = invalid_index;
@@ -1011,8 +982,7 @@ namespace hg {
      * @complexity Time O(1) to create, O(k) to iterate, Space O(1), where k is the number of children.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::ChildrenRange {
+    class DynamicComponentTree::ChildrenRange {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t firstLocal_ = invalid_index;
@@ -1031,8 +1001,7 @@ namespace hg {
     /**
      * @brief Iterator over alive internal-node global ids.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::AliveNodeIterator {
+    class DynamicComponentTree::AliveNodeIterator {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t current_ = invalid_index;
@@ -1088,8 +1057,7 @@ namespace hg {
      * @complexity Time O(1) to create, O(I) to iterate, Space O(1), where I is the number of node slots.
      * @warning Lazy range. Invalidated if the node set changes during iteration.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::AliveNodeRange {
+    class DynamicComponentTree::AliveNodeRange {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t begin_ = 0;
@@ -1109,8 +1077,7 @@ namespace hg {
     /**
      * @brief Iterator over an internal rooted subtree in post-order.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::PostOrderNodeIterator {
+    class DynamicComponentTree::PostOrderNodeIterator {
     private:
         struct Item {
             index_t nodeId = invalid_index;
@@ -1184,8 +1151,7 @@ namespace hg {
      * @complexity Time O(1) to create, O(S) to iterate, Space O(h), where S is subtree size and h its height.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::PostOrderNodeRange {
+    class DynamicComponentTree::PostOrderNodeRange {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t rootNodeId_ = invalid_index;
@@ -1204,8 +1170,7 @@ namespace hg {
     /**
      * @brief Iterator over the path from a node to the root.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::PathToRootIterator {
+    class DynamicComponentTree::PathToRootIterator {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t currentId_ = invalid_index;
@@ -1249,8 +1214,7 @@ namespace hg {
      * @complexity Time O(1) to create, O(h) to iterate, Space O(1), where h is path length.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::PathToRootRange {
+    class DynamicComponentTree::PathToRootRange {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t startId_ = invalid_index;
@@ -1275,8 +1239,7 @@ namespace hg {
     /**
      * @brief Iterator over an internal rooted subtree in pre-order.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::SubtreeNodeIterator {
+    class DynamicComponentTree::SubtreeNodeIterator {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         std::vector<index_t> stack_;
@@ -1336,8 +1299,7 @@ namespace hg {
      * @complexity Time O(1) to create, O(S) to iterate, Space O(h), where S is subtree size and h its height.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::SubtreeNodeRange {
+    class DynamicComponentTree::SubtreeNodeRange {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t rootNodeId_ = invalid_index;
@@ -1359,8 +1321,7 @@ namespace hg {
      * @complexity Time O(1) to create, O(S) to iterate, Space O(h), where S is subtree size and h its height.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::DescendantNodeRange {
+    class DynamicComponentTree::DescendantNodeRange {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t rootNodeId_ = invalid_index;
@@ -1385,8 +1346,7 @@ namespace hg {
     /**
      * @brief Iterator over the proper parts directly owned by a node.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::ProperPartsIterator {
+    class DynamicComponentTree::ProperPartsIterator {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t current_ = invalid_index;
@@ -1430,8 +1390,7 @@ namespace hg {
      * @complexity Time O(1) to create, O(k) to iterate, Space O(1), where k is the number of proper parts.
      * @warning Lazy range. Invalidated if proper-part ownership changes during iteration.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::ProperPartsRange {
+    class DynamicComponentTree::ProperPartsRange {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t first_ = invalid_index;
@@ -1450,8 +1409,7 @@ namespace hg {
     /**
      * @brief Iterator over an internal rooted subtree in breadth-first order.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::BreadthFirstNodeIterator {
+    class DynamicComponentTree::BreadthFirstNodeIterator {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         std::vector<index_t> queue_;
@@ -1507,8 +1465,7 @@ namespace hg {
      * @complexity Time O(1) to create, O(S) to iterate, Space O(w), where S is subtree size and w the frontier width.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
-    template<typename altitude_t>
-    class DynamicComponentTree<altitude_t>::BreadthFirstNodeRange {
+    class DynamicComponentTree::BreadthFirstNodeRange {
     private:
         const DynamicComponentTree *tree_ = nullptr;
         index_t rootNodeId_ = invalid_index;
@@ -1524,4 +1481,44 @@ namespace hg {
         BreadthFirstNodeIterator end() const { return BreadthFirstNodeIterator(); }
     };
 
-} // namespace hg
+    inline DynamicComponentTree::AliveNodeRange DynamicComponentTree::getAliveNodeIds() const {
+        return AliveNodeRange(this, getNumTotalProperParts(), getGlobalIdSpaceSize());
+    }
+
+    inline DynamicComponentTree::ChildrenRange DynamicComponentTree::getChildren(index_t nodeId) const {
+        return ChildrenRange(this, firstChild[(size_t) localOf(nodeId)]);
+    }
+
+    inline DynamicComponentTree::ProperPartsRange DynamicComponentTree::getProperParts(index_t nodeId) const {
+        return ProperPartsRange(this, properHead[(size_t) localOf(nodeId)]);
+    }
+
+    inline DynamicComponentTree::PostOrderNodeRange DynamicComponentTree::getPostOrderNodes() const {
+        return PostOrderNodeRange(this, getRoot());
+    }
+
+    inline DynamicComponentTree::PostOrderNodeRange DynamicComponentTree::getPostOrderNodes(index_t rootNodeId) const {
+        return PostOrderNodeRange(this, rootNodeId);
+    }
+
+    inline DynamicComponentTree::BreadthFirstNodeRange DynamicComponentTree::getBreadthFirstNodes() const {
+        return BreadthFirstNodeRange(this, getRoot());
+    }
+
+    inline DynamicComponentTree::BreadthFirstNodeRange DynamicComponentTree::getBreadthFirstNodes(index_t rootNodeId) const {
+        return BreadthFirstNodeRange(this, rootNodeId);
+    }
+
+    inline DynamicComponentTree::PathToRootRange DynamicComponentTree::getPathToRootNodes(index_t nodeId) const {
+        return PathToRootRange(this, nodeId);
+    }
+
+    inline DynamicComponentTree::SubtreeNodeRange DynamicComponentTree::getNodeSubtree(index_t nodeId) const {
+        return SubtreeNodeRange(this, nodeId);
+    }
+
+    inline DynamicComponentTree::DescendantNodeRange DynamicComponentTree::getDescendants(index_t nodeId) const {
+        return DescendantNodeRange(this, nodeId);
+    }
+
+} // namespace hg::detail::hierarchy

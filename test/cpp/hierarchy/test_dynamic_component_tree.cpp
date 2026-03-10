@@ -9,7 +9,10 @@
 ****************************************************************************/
 
 #include "../test_utils.hpp"
+#include "higra/algo/tree.hpp"
 #include "higra/detail/hierarchy/dynamic_component_tree.hpp"
+#include "higra/hierarchy/common.hpp"
+#include "higra/hierarchy/component_tree.hpp"
 #include "higra/image/graph_image.hpp"
 
 
@@ -61,7 +64,7 @@ namespace dynamic_component_tree {
     namespace {
 
 
-        using tree_t = DynamicComponentTree<uint8_t>;
+        using tree_t = detail::hierarchy::DynamicComponentTree;
 
         constexpr bool fail_fast_enabled =
 #ifndef NDEBUG
@@ -93,6 +96,26 @@ namespace dynamic_component_tree {
             return image;
         }
 
+
+
+        template<typename graph_t>
+        tree_t make_component_tree_from_image(const graph_t &graph, const array_1d<uint8_t> &image, bool isMaxTree) {
+            const auto staticTree = isMaxTree ? component_tree_max_tree(graph, image) : component_tree_min_tree(graph, image);
+            tree_t tree;
+            tree.reset(staticTree.tree);
+            return tree;
+        }
+
+        template<typename graph_t>
+        std::pair<tree_t, std::vector<uint8_t>> make_component_tree_with_altitude(const graph_t &graph,
+                                                                                  const array_1d<uint8_t> &image,
+                                                                                  bool isMaxTree) {
+            // Builds the static component tree first, then mirrors its topology and altitudes into the dynamic setup.
+            const auto staticTree = isMaxTree ? component_tree_max_tree(graph, image) : component_tree_min_tree(graph, image);
+            tree_t tree;
+            tree.reset(staticTree.tree);
+            return {std::move(tree), std::vector<uint8_t>(staticTree.altitudes.begin(), staticTree.altitudes.end())};
+        }
 
         template<typename range_t>
         std::vector<index_t> collect_range(const range_t &range) {
@@ -142,8 +165,8 @@ namespace dynamic_component_tree {
             return false;
         }
 
-        template<typename tree_t>
-        void require_tree_consistency(const tree_t &tree) {
+        template<typename tree_t, typename altitude_t>
+        void require_tree_consistency(const tree_t &tree, const std::vector<altitude_t> &altitude) {
             // Checks global invariants: root reachability, parent/child symmetry, and proper-part partition.
             REQUIRE(tree.getRoot() != invalid_index);
             REQUIRE(tree.isAlive(tree.getRoot()));
@@ -170,7 +193,7 @@ namespace dynamic_component_tree {
                 for (auto p: tree.getProperParts(nodeId)) {
                     REQUIRE(tree.isProperPart(p));
                     REQUIRE(tree.getSmallestComponent(p) == nodeId);
-                    REQUIRE(tree.getNodeAltitude(tree.getSmallestComponent(p)) == tree.getNodeAltitude(nodeId));
+                    REQUIRE(altitude[(size_t) tree.getSmallestComponent(p)] == altitude[(size_t) nodeId]);
                     REQUIRE(!seenProperParts[(size_t) p]);
                     seenProperParts[(size_t) p] = true;
                     countedProperParts++;
@@ -190,13 +213,13 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
+            auto [tree, altitude] = make_component_tree_with_altitude(graph, image, true);
     
             REQUIRE(tree.getNumTotalProperParts() == 144);
             REQUIRE(tree.getGlobalIdSpaceSize() == 159);
             REQUIRE(tree.getNumNodes() == 15);
             REQUIRE(tree.getRoot() == 158);
-            REQUIRE(tree.getNodeAltitude(tree.getRoot()) == 1);
+            REQUIRE(altitude[(size_t) tree.getRoot()] == 1);
             REQUIRE(tree.getSmallestComponent(32) == 152);
             REQUIRE(tree.getSmallestComponent(44) == 150);
             REQUIRE(tree.getSmallestComponent(109) == 155);
@@ -204,7 +227,7 @@ namespace dynamic_component_tree {
             REQUIRE(vectorEqual(collect_range(tree.getChildren(156)), std::vector<index_t>{151, 153}));
             REQUIRE(vectorSame(collect_proper_parts(tree, 152), std::vector<index_t>{32, 56}));
             REQUIRE(vectorSame(collect_proper_parts(tree, 150), std::vector<index_t>{44}));
-            require_tree_consistency(tree);
+            require_tree_consistency(tree, altitude);
         }
     }
 
@@ -213,8 +236,8 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
-            require_tree_consistency(tree);
+            auto [tree, altitude] = make_component_tree_with_altitude(graph, image, true);
+            require_tree_consistency(tree, altitude);
     
             tree.detachNode(151);
             REQUIRE(tree.getNodeParent(151) == 151);
@@ -239,7 +262,7 @@ namespace dynamic_component_tree {
             tree.attachNode(156, 151);
             REQUIRE(tree.getNodeParent(151) == 156);
             REQUIRE(vectorEqual(collect_range(tree.getChildren(156)), std::vector<index_t>{151}));
-            require_tree_consistency(tree);
+            require_tree_consistency(tree, altitude);
         }
     }
 
@@ -248,8 +271,8 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
-            require_tree_consistency(tree);
+            auto [tree, altitude] = make_component_tree_with_altitude(graph, image, true);
+            require_tree_consistency(tree, altitude);
     
             const index_t sourceNode = tree.getSmallestComponent(32); //nodeId=152
             const index_t targetNode = tree.getSmallestComponent(44); //nodeId=150
@@ -264,12 +287,12 @@ namespace dynamic_component_tree {
             tree.moveProperPart(targetNode, sourceNode, 32);
     
             REQUIRE(tree.getSmallestComponent(32) == targetNode);
-            REQUIRE(tree.getNodeAltitude(tree.getSmallestComponent(32)) == tree.getNodeAltitude(targetNode));
+            REQUIRE(altitude[(size_t) tree.getSmallestComponent(32)] == altitude[(size_t) targetNode]);
             REQUIRE(tree.getNumProperParts(sourceNode) == 1);
             REQUIRE(tree.getNumProperParts(targetNode) == 2);
             REQUIRE(vectorSame(collect_proper_parts(tree, sourceNode), std::vector<index_t>{56}));
             REQUIRE(vectorSame(collect_proper_parts(tree, targetNode), std::vector<index_t>{44, 32}));
-            require_tree_consistency(tree);
+            require_tree_consistency(tree, altitude);
         }
     }
 
@@ -278,8 +301,8 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
-            require_tree_consistency(tree);
+            auto [tree, altitude] = make_component_tree_with_altitude(graph, image, true);
+            require_tree_consistency(tree, altitude);
     
             const index_t sourceNode = 152;
             const index_t targetNode = 150;
@@ -291,9 +314,9 @@ namespace dynamic_component_tree {
             REQUIRE(vectorSame(collect_proper_parts(tree, targetNode), std::vector<index_t>{44, 32, 56}));
             REQUIRE(tree.getSmallestComponent(32) == targetNode);
             REQUIRE(tree.getSmallestComponent(56) == targetNode);
-            REQUIRE(tree.getNodeAltitude(tree.getSmallestComponent(32)) == tree.getNodeAltitude(targetNode));
-            REQUIRE(tree.getNodeAltitude(tree.getSmallestComponent(56)) == tree.getNodeAltitude(targetNode));
-            require_tree_consistency(tree);
+            REQUIRE(altitude[(size_t) tree.getSmallestComponent(32)] == altitude[(size_t) targetNode]);
+            REQUIRE(altitude[(size_t) tree.getSmallestComponent(56)] == altitude[(size_t) targetNode]);
+            require_tree_consistency(tree, altitude);
         }
     }
 
@@ -302,8 +325,8 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
-            require_tree_consistency(tree);
+            auto [tree, altitude] = make_component_tree_with_altitude(graph, image, true);
+            require_tree_consistency(tree, altitude);
     
             const index_t sourceNode = 156;
             const index_t targetNode = 155;
@@ -317,7 +340,50 @@ namespace dynamic_component_tree {
             REQUIRE(vectorEqual(collect_range(tree.getChildren(targetNode)), std::vector<index_t>{154, 151, 153}));
             REQUIRE(tree.getNodeParent(151) == targetNode);
             REQUIRE(tree.getNodeParent(153) == targetNode);
-            require_tree_consistency(tree);
+            require_tree_consistency(tree, altitude);
+        }
+    }
+
+    TEST_CASE("dynamic component tree keeps surviving node ids stable under pure topology updates", "[dynamic_component_tree]") {
+        // Detach/attach/move operations must not renumber or replace surviving internal nodes.
+        auto graph = get_4_adjacency_implicit_graph({12, 12});
+        auto image = make_demo_image();
+        {
+            auto [tree, altitude] = make_component_tree_with_altitude(graph, image, true);
+            require_tree_consistency(tree, altitude);
+
+            const std::vector<index_t> trackedNodes{148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158};
+            std::vector<std::vector<index_t>> trackedProperParts;
+            trackedProperParts.reserve(trackedNodes.size());
+            for (auto nodeId: trackedNodes) {
+                REQUIRE(tree.isAlive(nodeId));
+                trackedProperParts.push_back(collect_proper_parts(tree, nodeId));
+            }
+
+            tree.detachNode(151);
+            tree.attachNode(155, 151);
+            tree.moveNode(153, 155);
+            tree.moveChildren(155, 156);
+
+            for (size_t i = 0; i < trackedNodes.size(); ++i) {
+                const auto nodeId = trackedNodes[i];
+                REQUIRE(tree.isAlive(nodeId));
+                REQUIRE(vectorSame(collect_proper_parts(tree, nodeId), trackedProperParts[i]));
+                for (auto p: trackedProperParts[i]) {
+                    REQUIRE(tree.getSmallestComponent(p) == nodeId);
+                }
+            }
+
+            REQUIRE(tree.getRoot() == 158);
+            REQUIRE(tree.getNodeParent(152) == 157);
+            REQUIRE(tree.getNodeParent(155) == 157);
+            REQUIRE(tree.getNodeParent(156) == 157);
+            REQUIRE(tree.getNodeParent(151) == 155);
+            REQUIRE(tree.getNodeParent(153) == 155);
+            REQUIRE(tree.getNodeParent(149) == 151);
+            REQUIRE(tree.getNodeParent(154) == 155);
+            REQUIRE(tree.getNodeParent(148) == 154);
+            require_tree_consistency(tree, altitude);
         }
     }
 
@@ -326,8 +392,8 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
-            require_tree_consistency(tree);
+            auto [tree, altitude] = make_component_tree_with_altitude(graph, image, true);
+            require_tree_consistency(tree, altitude);
     
             tree.moveChildren(155, 156);
     
@@ -336,7 +402,7 @@ namespace dynamic_component_tree {
             REQUIRE(vectorEqual(collect_nodes(tree.getDescendants(155)), std::vector<index_t>{154, 148, 147, 144, 151, 149, 153, 145, 146}));
             REQUIRE(vectorEqual(collect_nodes(tree.getPathToRootNodes(149)), std::vector<index_t>{149, 151, 155, 157, 158}));
             REQUIRE(vectorEqual(collect_nodes(tree.getPostOrderNodes(155)), std::vector<index_t>{144, 147, 148, 154, 149, 151, 145, 146, 153, 155}));
-            require_tree_consistency(tree);
+            require_tree_consistency(tree, altitude);
         }
     }
 
@@ -345,8 +411,8 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
-            require_tree_consistency(tree);
+            auto [tree, altitude] = make_component_tree_with_altitude(graph, image, true);
+            require_tree_consistency(tree, altitude);
     
             const index_t mergedNode = 151;
             const index_t parentNode = tree.getNodeParent(mergedNode);
@@ -362,7 +428,7 @@ namespace dynamic_component_tree {
             REQUIRE(tree.getNodeParent(149) == parentNode);
             REQUIRE(tree.getSmallestComponent(13) == parentNode);
             REQUIRE(tree.getSmallestComponent(63) == parentNode);
-            require_tree_consistency(tree);
+            require_tree_consistency(tree, altitude);
         }
     }
 
@@ -371,8 +437,8 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
-            require_tree_consistency(tree);
+            auto [tree, altitude] = make_component_tree_with_altitude(graph, image, true);
+            require_tree_consistency(tree, altitude);
     
             const index_t prunedNode = 151;
             const index_t parentNode = tree.getNodeParent(prunedNode);
@@ -388,7 +454,7 @@ namespace dynamic_component_tree {
             REQUIRE(tree.getSmallestComponent(13) == parentNode);
             REQUIRE(tree.getSmallestComponent(44) == 150);
             REQUIRE(tree.getSmallestComponent(26) == parentNode);
-            require_tree_consistency(tree);
+            require_tree_consistency(tree, altitude);
         }
     }
 
@@ -397,7 +463,7 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
+            tree_t tree = make_component_tree_from_image(graph, image, true);
     
             const index_t oldRoot = tree.getRoot();
             const index_t newRoot = 157;
@@ -419,8 +485,8 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
-            require_tree_consistency(tree);
+            auto [tree, altitude] = make_component_tree_with_altitude(graph, image, true);
+            require_tree_consistency(tree, altitude);
     
             const index_t reusableNode = 150;
             const index_t parentNode = tree.getNodeParent(reusableNode);
@@ -436,17 +502,16 @@ namespace dynamic_component_tree {
             REQUIRE(vectorEqual(collect_range(tree.getChildren(parentNode)), std::vector<index_t>{}));
             REQUIRE(vectorSame(collect_proper_parts(tree, siblingOwner), std::vector<index_t>{32, 56, 44}));
     
-            const index_t newNode = tree.allocateNode(9);
+            const index_t newNode = tree.allocateNode();
             REQUIRE(newNode == reusableNode);
             REQUIRE(tree.isAlive(newNode));
             REQUIRE(tree.getNodeParent(newNode) == newNode);
-            REQUIRE(tree.getNodeAltitude(newNode) == 9);
             REQUIRE(tree.getNumChildren(newNode) == 0);
             REQUIRE(tree.getNumProperParts(newNode) == 0);
             tree.attachNode(parentNode, newNode);
             REQUIRE(tree.getNodeParent(newNode) == parentNode);
             REQUIRE(tree.hasChild(parentNode, newNode));
-            require_tree_consistency(tree);
+            require_tree_consistency(tree, altitude);
         }
     }
 
@@ -455,8 +520,8 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
-            require_tree_consistency(tree);
+            auto [tree, altitude] = make_component_tree_with_altitude(graph, image, true);
+            require_tree_consistency(tree, altitude);
     
             const index_t parentNode = 152;
             const index_t releasedNode = 150;
@@ -471,7 +536,7 @@ namespace dynamic_component_tree {
             REQUIRE(tree.getNumFreeNodeSlots() == oldFreeIds + 1);
             REQUIRE(vectorEqual(collect_range(tree.getChildren(parentNode)), std::vector<index_t>{}));
             REQUIRE(vectorSame(collect_proper_parts(tree, parentNode), std::vector<index_t>{32, 56, 44}));
-            require_tree_consistency(tree);
+            require_tree_consistency(tree, altitude);
         }
     }
 
@@ -480,7 +545,7 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
+            tree_t tree = make_component_tree_from_image(graph, image, true);
     
             auto nodes = tree.getAliveNodeIds();
             auto it = nodes.begin();
@@ -503,7 +568,7 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
+            tree_t tree = make_component_tree_from_image(graph, image, true);
     
             auto children = tree.getChildren(156);
             auto childIt = children.begin();
@@ -542,7 +607,7 @@ namespace dynamic_component_tree {
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
-            tree_t tree(graph, image, true);
+            tree_t tree = make_component_tree_from_image(graph, image, true);
 
             auto parts = tree.getProperParts(152);
             auto partIt = parts.begin();
