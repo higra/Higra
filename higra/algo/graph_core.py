@@ -354,6 +354,64 @@ def subgraph(graph, edge_indices, spanning=True, return_vertex_map=False):
         return subgraph
 
 
+def vertex_induced_subgraph(graph, vertex_indices, return_vertex_map=False):
+    """
+    Extract a subgraph of the input graph induced by a subset of vertices. Let :math:`G=(V,E)` be the graph
+    :attr:`graph` and let :math:`V^*` be a subset of :math:`V`. The subgraph of :math:`G` induced by :math:`V^*`
+    is equal to :math:`(V^*, E^*)` where :math:`E^*` is the set of edges of :math:`G` whose both extremities
+    belong to :math:`V^*`.
+
+    The array :attr:`vertex_indices` contains the indices of the vertices in the set :math:`V^*`.
+    The subgraph contains less vertices than the input graph in general. The optional array result
+    :math:`vertex\_map` (returned if :attr:`return_vertex_map` is ``True``) indicates for each vertex :math:`i`
+    of the subgraph, its corresponding index in the input graph.
+
+    :Example:
+
+        >>> # linear graph with 5 vertices: 0-1-2-3-4
+        >>> graph = hg.UndirectedGraph(5)
+        >>> graph.add_edges(np.arange(4), np.arange(1, 5))
+        >>>
+        >>> # select vertices {0, 1, 3, 4}, vertex 2 is excluded
+        >>> # retained edges: (0,1) and (3,4), edge (1,2) and (2,3) are excluded
+        >>> subgraph, vertex_map = hg.vertex_induced_subgraph(graph, np.array([0, 1, 3, 4]), return_vertex_map=True)
+        >>>
+        >>> subgraph.num_vertices()
+        4
+        >>> vertex_map
+        [0 1 3 4]
+        >>> subgraph.edge_list()
+        ([0 2], [1 3])
+
+    :param graph: input graph.
+    :param vertex_indices: an array of vertex indices of the input graph.
+    :param return_vertex_map: if ``True``, also returns an array mapping each vertex of the subgraph to its
+           corresponding vertex in the input graph.
+    :return: a subgraph and, if :attr:`return_vertex_map` is ``True``, a vertex map
+    """
+    vertex_indices = np.asarray(vertex_indices)
+
+    # Boolean mask over all vertices: True if the vertex is in V*
+    vertex_mask = np.zeros(graph.num_vertices(), dtype=bool)
+    vertex_mask[vertex_indices] = True
+
+    # Retain only edges whose both extremities are in V*
+    sources, targets = graph.edge_list()
+    edge_indices = np.where(vertex_mask[sources] & vertex_mask[targets])[0]
+
+    # When there are no edges, subgraph(spanning=False) cannot infer the vertex set,
+    # so we build the subgraph explicitly to preserve the requested vertices.
+    if len(edge_indices) == 0:
+        sub = hg.UndirectedGraph(len(vertex_indices))
+        # sort vertex_indices to get a canonical vertex_map
+        sorted_indices = np.sort(vertex_indices)
+        if return_vertex_map:
+            return sub, sorted_indices
+        return sub
+
+    return subgraph(graph, edge_indices, spanning=False, return_vertex_map=return_vertex_map)
+
+
 def line_graph(graph):
     """
     Compute the line graph of an undirected graph.

@@ -306,6 +306,46 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         self.assertTrue(np.all(vertex_map[sources] == (4, 0, 3)))
         self.assertTrue(np.all(vertex_map[targets] == (5, 1, 4)))
 
+    def test_vertex_induced_subgraph(self):
+        # Basic test: path graph 0-1-2-3-4, keep vertices {0, 1, 3, 4}
+        graph = hg.UndirectedGraph(5)
+        graph.add_edges(np.arange(4), np.arange(1, 5))
+        # edges: (0,1), (1,2), (2,3), (3,4)
+        # keeping vertices {0,1,3,4}: edge (1,2) and (2,3) are excluded
+        # only edge (0,1) and (3,4) remain
+        vertices = np.asarray((0, 1, 3, 4))
+        sub, vmap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True)
+
+        self.assertTrue(sub.num_vertices() == 4)
+        self.assertTrue(sub.num_edges() == 2)
+        self.assertTrue(np.all(np.sort(vmap) == np.asarray((0, 1, 3, 4))))
+        sources, targets = sub.edge_list()
+        # map back to original vertices
+        self.assertTrue(np.all(vmap[sources] == (0, 3)))
+        self.assertTrue(np.all(vmap[targets] == (1, 4)))
+
+    def test_vertex_induced_subgraph_all_vertices(self):
+        # Keeping all vertices should return the same graph
+        graph = hg.UndirectedGraph(4)
+        graph.add_edges(np.asarray((0, 1, 2)), np.asarray((1, 2, 3)))
+        vertices = np.asarray((0, 1, 2, 3))
+        sub, vmap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True)
+
+        self.assertTrue(sub.num_vertices() == graph.num_vertices())
+        self.assertTrue(sub.num_edges() == graph.num_edges())
+
+    def test_vertex_induced_subgraph_no_edges(self):
+        # Keeping vertices that share no edges
+        graph = hg.UndirectedGraph(4)
+        graph.add_edges(np.asarray((0, 1)), np.asarray((1, 2)))
+        # vertices {0, 3}: no edge between them
+        vertices = np.asarray((0, 3))
+        sub, vmap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True)
+
+        self.assertTrue(sub.num_vertices() == 2)
+        self.assertTrue(sub.num_edges() == 0)
+        self.assertTrue(np.all(np.sort(vmap) == np.asarray((0, 3))))
+
     def test_line_graph_ugraph(self):
         graph = hg.get_8_adjacency_graph((2, 2))
 
