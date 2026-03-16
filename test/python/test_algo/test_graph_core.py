@@ -346,6 +346,16 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         self.assertTrue(sub.num_edges() == 0)
         self.assertTrue(np.all(np.sort(vmap) == np.asarray((0, 3))))
 
+    def test_vertex_induced_subgraph_with_isolated_vertex(self):
+        graph = hg.UndirectedGraph(5)
+        graph.add_edges([0, 1, 0, 3], [1, 2, 2, 4])
+        # Induced by {0, 1, 3}: edge (0,1) kept, vertex 3 is isolated
+        vertices = np.asarray((0, 1, 3))
+        sub, vmap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True)
+        self.assertTrue(sub.num_vertices() == 3)
+        self.assertTrue(sub.num_edges() == 1)
+        self.assertTrue(np.all(vmap == np.asarray((0, 1, 3))))
+
     def test_line_graph_ugraph(self):
         graph = hg.get_8_adjacency_graph((2, 2))
 

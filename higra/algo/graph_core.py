@@ -391,25 +391,30 @@ def vertex_induced_subgraph(graph, vertex_indices, return_vertex_map=False):
     """
     vertex_indices = np.asarray(vertex_indices)
 
-    # Boolean mask over all vertices: True if the vertex is in V*
+    sources, targets = graph.edge_list()
+
     vertex_mask = np.zeros(graph.num_vertices(), dtype=bool)
     vertex_mask[vertex_indices] = True
 
-    # Retain only edges whose both extremities are in V*
-    sources, targets = graph.edge_list()
-    edge_indices = np.where(vertex_mask[sources] & vertex_mask[targets])[0]
+    edge_mask = vertex_mask[sources] & vertex_mask[targets]
 
-    # When there are no edges, subgraph(spanning=False) cannot infer the vertex set,
-    # so we build the subgraph explicitly to preserve the requested vertices.
-    if len(edge_indices) == 0:
-        sub = hg.UndirectedGraph(len(vertex_indices))
-        # sort vertex_indices to get a canonical vertex_map
-        sorted_indices = np.sort(vertex_indices)
-        if return_vertex_map:
-            return sub, sorted_indices
-        return sub
+    kept_sources = sources[edge_mask]
+    kept_targets = targets[edge_mask]
 
-    return subgraph(graph, edge_indices, spanning=False, return_vertex_map=return_vertex_map)
+    # mapping old vertex -> new vertex
+    old_to_new = -np.ones(graph.num_vertices(), dtype=np.int64)
+    old_to_new[vertex_indices] = np.arange(len(vertex_indices))
+
+    new_sources = old_to_new[kept_sources]
+    new_targets = old_to_new[kept_targets]
+
+    sub = hg.UndirectedGraph(len(vertex_indices))
+    sub.add_edges(new_sources, new_targets)
+
+    if return_vertex_map:
+        return sub, vertex_indices
+
+    return sub
 
 
 def line_graph(graph):
