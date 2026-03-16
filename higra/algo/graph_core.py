@@ -354,67 +354,65 @@ def subgraph(graph, edge_indices, spanning=True, return_vertex_map=False):
         return subgraph
 
 
-def vertex_induced_subgraph(graph, vertex_indices, return_vertex_map=False):
+def vertex_induced_subgraph(graph, vertex_indices, return_vertex_map=False, return_edge_map=False):
+    r"""
+    Extract a subgraph of the input graph induced by a subset of vertices. 
+    Let :math:`G=(V,E)` be the graph :attr:`graph` and let :math:`V^*` be a subset of :math:`V`. 
+    The subgraph of :math:`G` induced by :math:`V^*` is equal to :math:`(V^*, E^*)` 
+    where :math:`E^*` is the set of edges of :math:`G` whose both extremities belong to :math:`V^*`.
+
+    The array :attr:`vertex_indices` contains the indices of the vertices in the set :math:`V^*`. 
+    The subgraph contains exactly ``len(vertex_indices)`` vertices. 
+    The vertices in the subgraph are indexed from 0 to ``len(vertex_indices) - 1`` following 
+    the order of :attr:`vertex_indices`.
+
+    The optional array result :math:`vertex\_map` (returned if :attr:`return_vertex_map` is ``True``) 
+    indicates for each vertex :math:`i` of the subgraph, its corresponding index in the input graph. 
+    This is exactly the input :attr:`vertex_indices`.
+
+    The optional array result :math:`edge\_map` (returned if :attr:`return_edge_map` is ``True``) 
+    indicates for each edge :math:`j` of the subgraph, its corresponding index in the input graph.
+
+    :param graph: input graph
+    :param vertex_indices: indices of vertices to keep (must be unique)
+    :param return_vertex_map: if True, returns the mapping of vertices
+    :param return_edge_map: if True, returns the mapping of edges
+    :return: subgraph or (subgraph, [vertex_map], [edge_map])
     """
-    Extract a subgraph of the input graph induced by a subset of vertices. Let :math:`G=(V,E)` be the graph
-    :attr:`graph` and let :math:`V^*` be a subset of :math:`V`. The subgraph of :math:`G` induced by :math:`V^*`
-    is equal to :math:`(V^*, E^*)` where :math:`E^*` is the set of edges of :math:`G` whose both extremities
-    belong to :math:`V^*`.
+    vertex_indices = np.asarray(vertex_indices, dtype=np.int64)
+    num_v_sub = len(vertex_indices)
 
-    The array :attr:`vertex_indices` contains the indices of the vertices in the set :math:`V^*`.
-    The subgraph contains less vertices than the input graph in general. The optional array result
-    :math:`vertex\_map` (returned if :attr:`return_vertex_map` is ``True``) indicates for each vertex :math:`i`
-    of the subgraph, its corresponding index in the input graph.
+    if np.any(vertex_indices < 0) or np.any(vertex_indices >= graph.num_vertices()):
+        raise ValueError("vertex_indices contains invalid vertex ids.")
+    
+    keep_mask = np.zeros(graph.num_vertices(), dtype=bool)
+    keep_mask[vertex_indices] = True
 
-    :Example:
-
-        >>> # linear graph with 5 vertices: 0-1-2-3-4
-        >>> graph = hg.UndirectedGraph(5)
-        >>> graph.add_edges(np.arange(4), np.arange(1, 5))
-        >>>
-        >>> # select vertices {0, 1, 3, 4}, vertex 2 is excluded
-        >>> # retained edges: (0,1) and (3,4), edge (1,2) and (2,3) are excluded
-        >>> subgraph, vertex_map = hg.vertex_induced_subgraph(graph, np.array([0, 1, 3, 4]), return_vertex_map=True)
-        >>>
-        >>> subgraph.num_vertices()
-        4
-        >>> vertex_map
-        [0 1 3 4]
-        >>> subgraph.edge_list()
-        ([0 2], [1 3])
-
-    :param graph: input graph.
-    :param vertex_indices: an array of vertex indices of the input graph.
-    :param return_vertex_map: if ``True``, also returns an array mapping each vertex of the subgraph to its
-           corresponding vertex in the input graph.
-    :return: a subgraph and, if :attr:`return_vertex_map` is ``True``, a vertex map
-    """
-    vertex_indices = np.asarray(vertex_indices)
+    if np.sum(keep_mask) != num_v_sub:
+        raise ValueError("vertex_indices must contain unique vertex ids.")
 
     sources, targets = graph.edge_list()
+    valid_edges_mask = np.logical_and(keep_mask[sources], keep_mask[targets])
+    edge_indices = np.where(valid_edges_mask)[0]
 
-    vertex_mask = np.zeros(graph.num_vertices(), dtype=bool)
-    vertex_mask[vertex_indices] = True
+    sub = hg.UndirectedGraph(num_v_sub)
 
-    edge_mask = vertex_mask[sources] & vertex_mask[targets]
-
-    kept_sources = sources[edge_mask]
-    kept_targets = targets[edge_mask]
-
-    # mapping old vertex -> new vertex
     old_to_new = -np.ones(graph.num_vertices(), dtype=np.int64)
-    old_to_new[vertex_indices] = np.arange(len(vertex_indices))
+    old_to_new[vertex_indices] = np.arange(num_v_sub)
 
-    new_sources = old_to_new[kept_sources]
-    new_targets = old_to_new[kept_targets]
-
-    sub = hg.UndirectedGraph(len(vertex_indices))
+    new_sources = old_to_new[sources[edge_indices]]
+    new_targets = old_to_new[targets[edge_indices]]
     sub.add_edges(new_sources, new_targets)
 
+    res = [sub]
     if return_vertex_map:
-        return sub, vertex_indices
+        res.append(vertex_indices)
+    if return_edge_map:
+        res.append(edge_indices)
 
-    return sub
+    if len(res) == 1:
+        return sub
+    return tuple(res)
 
 
 def line_graph(graph):

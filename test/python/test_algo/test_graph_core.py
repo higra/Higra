@@ -314,15 +314,15 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         # keeping vertices {0,1,3,4}: edge (1,2) and (2,3) are excluded
         # only edge (0,1) and (3,4) remain
         vertices = np.asarray((0, 1, 3, 4))
-        sub, vmap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True)
+        sub, vmap, emap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True, return_edge_map=True)
 
         self.assertTrue(sub.num_vertices() == 4)
         self.assertTrue(sub.num_edges() == 2)
         self.assertTrue(np.all(np.sort(vmap) == np.asarray((0, 1, 3, 4))))
         sources, targets = sub.edge_list()
         # map back to original vertices
-        self.assertTrue(np.all(vmap[sources] == (0, 3)))
-        self.assertTrue(np.all(vmap[targets] == (1, 4)))
+        self.assertTrue(np.all(vmap[sources] == np.asarray((0, 3))))
+        self.assertTrue(np.all(vmap[targets] == np.asarray((1, 4))))
 
     def test_vertex_induced_subgraph_all_vertices(self):
         # Keeping all vertices should return the same graph
@@ -347,6 +347,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         self.assertTrue(np.all(np.sort(vmap) == np.asarray((0, 3))))
 
     def test_vertex_induced_subgraph_with_isolated_vertex(self):
+        # Removing an edge that disconnects a vertex should return an isolated vertex in the subgraph
         graph = hg.UndirectedGraph(5)
         graph.add_edges([0, 1, 0, 3], [1, 2, 2, 4])
         # Induced by {0, 1, 3}: edge (0,1) kept, vertex 3 is isolated
@@ -355,6 +356,27 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         self.assertTrue(sub.num_vertices() == 3)
         self.assertTrue(sub.num_edges() == 1)
         self.assertTrue(np.all(vmap == np.asarray((0, 1, 3))))
+
+    def test_vertex_induced_subgraph_unsorted_vertices(self):
+        # Path graph 0-1-2-3-4, choose vertices in unsorted order
+        graph = hg.UndirectedGraph(5)
+        graph.add_edges(np.arange(4), np.arange(1, 5))
+        # edges: (0,1), (1,2), (2,3), (3,4)
+        # keep vertices in unsorted order: {3, 0, 4, 1}
+        vertices = np.asarray((3, 0, 4, 1))
+        sub, vmap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True)
+        self.assertTrue(sub.num_vertices() == len(vertices))
+        self.assertTrue(sub.num_edges() == 2)
+        self.assertTrue(np.all(vmap == vertices))
+
+        sources, targets = sub.edge_list()
+        # map back to original vertices: should be (3,4) and (0,1) in some order
+        mapped_sources = vmap[sources]
+        mapped_targets = vmap[targets]
+        # check that the two kept original edges are present
+        edges_set = {tuple(x) for x in np.vstack((mapped_sources, mapped_targets)).T}
+        self.assertTrue((3, 4) in edges_set)
+        self.assertTrue((0, 1) in edges_set)
 
     def test_line_graph_ugraph(self):
         graph = hg.get_8_adjacency_graph((2, 2))
