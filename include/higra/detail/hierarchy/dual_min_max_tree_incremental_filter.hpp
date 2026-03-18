@@ -24,12 +24,16 @@
 #include "higra/detail/hierarchy/dynamic_component_tree.hpp"
 #include "higra/utils.hpp"
 
+#ifndef HG_COMPONENT_TREE_ADJUSTMENT_DENSE_MAX_BITS
+#define HG_COMPONENT_TREE_ADJUSTMENT_DENSE_MAX_BITS 8
+#endif
+
 namespace hg::detail::hierarchy {
 
     namespace testing {
         // Test-only gateway used to keep the primitive update step private in production code
         // while preserving direct coverage of the core adjustment routine in unit tests.
-        struct ComponentTreeAdjustmentTestAccess;
+        struct DualMinMaxTreeIncrementalFilterTestAccess;
     }
 
     /**
@@ -61,7 +65,8 @@ namespace hg::detail::hierarchy {
      *    complementary hierarchy.
      *
      * Backend selection for `mergeNodesByLevel`:
-     *  - dense array-based buckets for small integral altitude domains (8 bits),
+     *  - dense array-based buckets for small integral altitude domains
+     *    (up to `HG_COMPONENT_TREE_ADJUSTMENT_DENSE_MAX_BITS` bits),
      *    using an order-preserving dense index for signed types;
      *  - sparse ordered-map buckets for larger integral domains and floating-point altitudes.
      *
@@ -83,12 +88,12 @@ namespace hg::detail::hierarchy {
      * rebuild." Journal of Mathematical Imaging and Vision, 2026.
      */
     template<typename altitude_t, typename graph_t>
-    class ComponentTreeAdjustment {
+    class DualMinMaxTreeIncrementalFilter {
     private:
         using tree_t = DynamicComponentTree;
         // Friend access is restricted to the test helper so wrappers remain the only
         // production entry points while unit tests can still exercise updateTree directly.
-        friend struct testing::ComponentTreeAdjustmentTestAccess;
+        friend struct testing::DualMinMaxTreeIncrementalFilterTestAccess;
 
         /**
          * @brief O(1)-reset mark set based on generation stamps.
@@ -160,7 +165,7 @@ namespace hg::detail::hierarchy {
             if constexpr (std::is_integral_v<altitude_t>) {
                 // Only integral altitude types have a finite bit-width usable for dense buckets.
                 using unsigned_altitude_t = std::make_unsigned_t<altitude_t>;
-                return std::numeric_limits<unsigned_altitude_t>::digits <= 8;
+                return std::numeric_limits<unsigned_altitude_t>::digits <= HG_COMPONENT_TREE_ADJUSTMENT_DENSE_MAX_BITS;
             } else {
                 return false;
             }
@@ -597,7 +602,7 @@ namespace hg::detail::hierarchy {
          * 4. merges nodes level by level;
          * 5. reconnects the final union node in the updated hierarchy.
          *
-         * Test-only access is provided through `testing::ComponentTreeAdjustmentTestAccess`.
+         * Test-only access is provided through `testing::DualMinMaxTreeIncrementalFilterTestAccess`.
          *
          * @param tree Target hierarchy updated in place.
          * @param rootIdSubtree Root node of the subtree already removed in the complementary hierarchy.
@@ -792,12 +797,27 @@ namespace hg::detail::hierarchy {
 
     public:
         /**
+         * @brief Returns `true` iff this instantiation uses the dense altitude-bucket backend.
+         * @details Exposed mainly so tests and local benchmarks can report which backend is active.
+         */
+        static constexpr bool usesDenseLevelBackend() {
+            return use_dense_levels;
+        }
+
+        /**
+         * @brief Returns the compile-time bit-width threshold used to enable the dense backend.
+         */
+        static constexpr int denseLevelBackendMaxBits() {
+            return HG_COMPONENT_TREE_ADJUSTMENT_DENSE_MAX_BITS;
+        }
+
+        /**
          * @brief Creates an adjustment helper from paired dynamic min/max trees.
          * @param mintree Dynamic min-tree.
          * @param maxtree Dynamic max-tree.
          * @param graph Underlying graph shared by both hierarchies.
          */
-        ComponentTreeAdjustment(tree_t *mintree, tree_t *maxtree, const graph_t &graph): mintree_(mintree), maxtree_(maxtree), graph_(&graph), mergeNodesByLevel_(std::max(mintree ? mintree->getGlobalIdSpaceSize() : 0, maxtree ? maxtree->getGlobalIdSpaceSize() : 0)), removedMarks_(std::max(mintree ? mintree->getGlobalIdSpaceSize() : 0, maxtree ? maxtree->getGlobalIdSpaceSize() : 0)) {
+        DualMinMaxTreeIncrementalFilter(tree_t *mintree, tree_t *maxtree, const graph_t &graph): mintree_(mintree), maxtree_(maxtree), graph_(&graph), mergeNodesByLevel_(std::max(mintree ? mintree->getGlobalIdSpaceSize() : 0, maxtree ? maxtree->getGlobalIdSpaceSize() : 0)), removedMarks_(std::max(mintree ? mintree->getGlobalIdSpaceSize() : 0, maxtree ? maxtree->getGlobalIdSpaceSize() : 0)) {
             hg_assert(mintree_ != nullptr, "mintree must not be null.");
             hg_assert(maxtree_ != nullptr, "maxtree must not be null.");
             hg_assert(graph_ != nullptr, "graph must not be null.");
@@ -806,7 +826,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Defaulted destructor.
          */
-        virtual ~ComponentTreeAdjustment() = default;
+        virtual ~DualMinMaxTreeIncrementalFilter() = default;
 
         /**
          * @brief Registers the incremental attribute computer and its two output buffers.
@@ -865,9 +885,9 @@ namespace hg::detail::hierarchy {
     };
 
     namespace testing {
-        struct ComponentTreeAdjustmentTestAccess {
+        struct DualMinMaxTreeIncrementalFilterTestAccess {
             template<typename altitude_t, typename graph_t>
-            static void updateTree(ComponentTreeAdjustment<altitude_t, graph_t> &adjust, DynamicComponentTree *tree, index_t rootIdSubtree) {
+            static void updateTree(DualMinMaxTreeIncrementalFilter<altitude_t, graph_t> &adjust, DynamicComponentTree *tree, index_t rootIdSubtree) {
                 adjust.updateTree(tree, rootIdSubtree);
             }
         };

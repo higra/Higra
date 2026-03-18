@@ -9,7 +9,7 @@
 ****************************************************************************/
 
 #include "../test_utils.hpp"
-#include "higra/detail/hierarchy/component_tree_adjustment.hpp"
+#include "higra/detail/hierarchy/dual_min_max_tree_incremental_filter.hpp"
 #include "higra/detail/hierarchy/dynamic_component_tree.hpp"
 #include "higra/detail/hierarchy/dynamic_component_tree_attribute_computers.hpp"
 #include "higra/hierarchy/component_tree.hpp"
@@ -18,9 +18,9 @@
 
 using namespace hg;
 
-namespace component_tree_adjustment {
+namespace dual_min_max_tree_incremental_filter {
 
-using detail::hierarchy::testing::ComponentTreeAdjustmentTestAccess;
+using detail::hierarchy::testing::DualMinMaxTreeIncrementalFilterTestAccess;
 
 namespace {
 
@@ -241,49 +241,49 @@ namespace {
 
     } // namespace
 
-    TEST_CASE("component tree adjustment maxtree update matches the rebuild image baseline after mintree pruning", "[component_tree_adjustment]") {
+    TEST_CASE("dual min max tree incremental filter maxtree update matches the rebuild image baseline after mintree pruning", "[dual_min_max_tree_incremental_filter]") {
             // The updated maxtree must represent the same filtered image as a prune-then-rebuild baseline.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
             auto [maxtree, maxAltitude] = make_component_tree_with_altitude(graph, image, true);
             auto [mintree, minAltitude] = make_component_tree_with_altitude(graph, image, false);
-            detail::hierarchy::ComponentTreeAdjustment<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
+            detail::hierarchy::DualMinMaxTreeIncrementalFilter<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
             adjust.setAltitudeBuffers(minAltitude, maxAltitude);
 
             const index_t rootNodeC = mintree.getSmallestComponent(32);
             REQUIRE(rootNodeC == 150);
 
-            ComponentTreeAdjustmentTestAccess::updateTree(adjust, &maxtree, rootNodeC);
+            DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &maxtree, rootNodeC);
             mintree.pruneNode(rootNodeC);
 
             require_tree_matches_rebuilt_image_baseline(maxtree, maxAltitude, mintree, minAltitude);
     }
 
-    TEST_CASE("component tree adjustment mintree update matches the rebuild image baseline after maxtree pruning", "[component_tree_adjustment]") {
+    TEST_CASE("dual min max tree incremental filter mintree update matches the rebuild image baseline after maxtree pruning", "[dual_min_max_tree_incremental_filter]") {
             // The symmetric update must represent the same filtered image as a prune-then-rebuild baseline.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
             auto [maxtree, maxAltitude] = make_component_tree_with_altitude(graph, image, true);
             auto [mintree, minAltitude] = make_component_tree_with_altitude(graph, image, false);
-            detail::hierarchy::ComponentTreeAdjustment<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
+            detail::hierarchy::DualMinMaxTreeIncrementalFilter<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
             adjust.setAltitudeBuffers(minAltitude, maxAltitude);
 
             const index_t rootNodeC = maxtree.getSmallestComponent(44);
             REQUIRE(rootNodeC == 150);
 
-            ComponentTreeAdjustmentTestAccess::updateTree(adjust, &mintree, rootNodeC);
+            DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &mintree, rootNodeC);
             maxtree.pruneNode(rootNodeC);
 
             require_tree_matches_rebuilt_image_baseline(mintree, minAltitude, maxtree, maxAltitude);
     }
 
-    TEST_CASE("component tree adjustment matches the rebuild image baseline across sequential mintree prunes", "[component_tree_adjustment]") {
+    TEST_CASE("dual min max tree incremental filter matches the rebuild image baseline across sequential mintree prunes", "[dual_min_max_tree_incremental_filter]") {
             // Reusing the same adjustment helper across multiple rounds must stay equivalent to repeated prune-then-rebuild baselines.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
             auto [maxtree, maxAltitude] = make_component_tree_with_altitude(graph, image, true);
             auto [mintree, minAltitude] = make_component_tree_with_altitude(graph, image, false);
-            detail::hierarchy::ComponentTreeAdjustment<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
+            detail::hierarchy::DualMinMaxTreeIncrementalFilter<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
             adjust.setAltitudeBuffers(minAltitude, maxAltitude);
 
             for (const index_t pixelId: std::vector<index_t>{32, 82}) {
@@ -293,14 +293,14 @@ namespace {
                 REQUIRE(mintree.isAlive(rootNodeC));
                 REQUIRE(!mintree.isRoot(rootNodeC));
 
-                ComponentTreeAdjustmentTestAccess::updateTree(adjust, &maxtree, rootNodeC);
+                DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &maxtree, rootNodeC);
                 mintree.pruneNode(rootNodeC);
 
                 require_tree_matches_rebuilt_image_baseline(maxtree, maxAltitude, mintree, minAltitude);
             }
     }
 
-    TEST_CASE("component tree adjustment sparse backend matches the rebuild image baseline on non-integral float altitudes", "[component_tree_adjustment]") {
+    TEST_CASE("dual min max tree incremental filter sparse backend matches the rebuild image baseline on non-integral float altitudes", "[dual_min_max_tree_incremental_filter]") {
             // The sparse backend must represent the same filtered image as a prune-then-rebuild baseline on non-integral levels.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image_non_integral_float();
@@ -314,19 +314,19 @@ namespace {
             std::vector<float> maxAltitude(staticMaxTree.altitudes.begin(), staticMaxTree.altitudes.end());
             std::vector<float> minAltitude(staticMinTree.altitudes.begin(), staticMinTree.altitudes.end());
 
-            detail::hierarchy::ComponentTreeAdjustment<float, decltype(graph)> adjust(&mintree, &maxtree, graph);
+            detail::hierarchy::DualMinMaxTreeIncrementalFilter<float, decltype(graph)> adjust(&mintree, &maxtree, graph);
             adjust.setAltitudeBuffers(minAltitude, maxAltitude);
 
             const index_t rootNodeC = mintree.getSmallestComponent(32);
             REQUIRE(rootNodeC == 150);
 
-            ComponentTreeAdjustmentTestAccess::updateTree(adjust, &maxtree, rootNodeC);
+            DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &maxtree, rootNodeC);
             mintree.pruneNode(rootNodeC);
 
             require_tree_matches_rebuilt_image_baseline(maxtree, maxAltitude, mintree, minAltitude);
     }
 
-    TEST_CASE("component tree adjustment keeps final tree connected and area-consistent", "[component_tree_adjustment]") {
+    TEST_CASE("dual min max tree incremental filter keeps final tree connected and area-consistent", "[dual_min_max_tree_incremental_filter]") {
             // The subtree adjustment must preserve a valid maxtree and keep incremental area exact.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
@@ -335,7 +335,7 @@ namespace {
             for (auto pixelId: referencePixels) {
                 auto [maxtree, maxAltitude] = make_component_tree_with_altitude(graph, image, true);
                 auto [mintree, minAltitude] = make_component_tree_with_altitude(graph, image, false);
-                detail::hierarchy::ComponentTreeAdjustment<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
+                detail::hierarchy::DualMinMaxTreeIncrementalFilter<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
                 adjust.setAltitudeBuffers(minAltitude, maxAltitude);
     
                 detail::hierarchy::DynamicComponentTreeAreaAttributeComputer<> areaComputer;
@@ -349,7 +349,7 @@ namespace {
                 REQUIRE(rootNodeC == 150);
                 const index_t oldNumNodes = maxtree.getNumNodes();
 
-                ComponentTreeAdjustmentTestAccess::updateTree(adjust, &maxtree, rootNodeC);
+                DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &maxtree, rootNodeC);
     
                 std::vector<double> fullArea;
                 areaComputer.computeAttribute(maxtree, fullArea);
@@ -372,14 +372,14 @@ namespace {
             }
     }
 
-    TEST_CASE("component tree adjustment also preserves the symmetric maxtree-to-mintree case", "[component_tree_adjustment]") {
+    TEST_CASE("dual min max tree incremental filter also preserves the symmetric maxtree-to-mintree case", "[dual_min_max_tree_incremental_filter]") {
             // The symmetric adjustment must reconnect the final node union under nodeCa when nodeCa survives.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
     
             auto [maxtree, maxAltitude] = make_component_tree_with_altitude(graph, image, true);
             auto [mintree, minAltitude] = make_component_tree_with_altitude(graph, image, false);
-            detail::hierarchy::ComponentTreeAdjustment<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
+            detail::hierarchy::DualMinMaxTreeIncrementalFilter<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
             adjust.setAltitudeBuffers(minAltitude, maxAltitude);
     
             detail::hierarchy::DynamicComponentTreeAreaAttributeComputer<> areaComputer;
@@ -392,7 +392,7 @@ namespace {
             const index_t rootNodeC = maxtree.getSmallestComponent(44);
             REQUIRE(rootNodeC == 150);
 
-            ComponentTreeAdjustmentTestAccess::updateTree(adjust, &mintree, rootNodeC);
+            DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &mintree, rootNodeC);
     
             std::vector<double> fullArea;
             areaComputer.computeAttribute(mintree, fullArea);
@@ -421,7 +421,7 @@ namespace {
             require_tree_consistency(mintree);
     }
 
-    TEST_CASE("component tree adjustment remains structurally valid on all shared mintree subtree roots", "[component_tree_adjustment]") {
+    TEST_CASE("dual min max tree incremental filter remains structurally valid on all shared mintree subtree roots", "[dual_min_max_tree_incremental_filter]") {
             // Every shared non-root mintree subtree root should keep the adjusted maxtree connected and area-consistent.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
@@ -430,7 +430,7 @@ namespace {
             for (auto rootNodeC: sharedMintRoots) {
                 auto [maxtree, maxAltitude] = make_component_tree_with_altitude(graph, image, true);
                 auto [mintree, minAltitude] = make_component_tree_with_altitude(graph, image, false);
-                detail::hierarchy::ComponentTreeAdjustment<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
+                detail::hierarchy::DualMinMaxTreeIncrementalFilter<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
                 adjust.setAltitudeBuffers(minAltitude, maxAltitude);
     
                 detail::hierarchy::DynamicComponentTreeAreaAttributeComputer<> areaComputer;
@@ -445,7 +445,7 @@ namespace {
                 REQUIRE(maxtree.isAlive(rootNodeC));
                 REQUIRE(!mintree.isRoot(rootNodeC));
     
-                ComponentTreeAdjustmentTestAccess::updateTree(adjust, &maxtree, rootNodeC);
+                DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &maxtree, rootNodeC);
 
                 require_area_consistency(maxtree, areaBufferMax, areaComputer);
                 require_tree_consistency(maxtree);
@@ -453,7 +453,7 @@ namespace {
             }
     }
 
-    TEST_CASE("component tree adjustment remains structurally valid on all shared maxtree subtree roots", "[component_tree_adjustment]") {
+    TEST_CASE("dual min max tree incremental filter remains structurally valid on all shared maxtree subtree roots", "[dual_min_max_tree_incremental_filter]") {
             // Every shared non-root maxtree subtree root should keep the adjusted mintree connected and area-consistent.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
@@ -462,7 +462,7 @@ namespace {
             for (auto rootNodeC: sharedMaxRoots) {
                 auto [maxtree, maxAltitude] = make_component_tree_with_altitude(graph, image, true);
                 auto [mintree, minAltitude] = make_component_tree_with_altitude(graph, image, false);
-                detail::hierarchy::ComponentTreeAdjustment<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
+                detail::hierarchy::DualMinMaxTreeIncrementalFilter<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
                 adjust.setAltitudeBuffers(minAltitude, maxAltitude);
     
                 detail::hierarchy::DynamicComponentTreeAreaAttributeComputer<> areaComputer;
@@ -477,7 +477,7 @@ namespace {
                 REQUIRE(mintree.isAlive(rootNodeC));
                 REQUIRE(!maxtree.isRoot(rootNodeC));
     
-                ComponentTreeAdjustmentTestAccess::updateTree(adjust, &mintree, rootNodeC);
+                DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &mintree, rootNodeC);
 
                 require_area_consistency(mintree, areaBufferMin, areaComputer);
                 require_tree_consistency(mintree);
@@ -485,20 +485,20 @@ namespace {
             }
     }
 
-    TEST_CASE("component tree adjustment rejects subtree roots that are outside complementary-tree bounds", "[component_tree_adjustment]") {
+    TEST_CASE("dual min max tree incremental filter rejects subtree roots that are outside complementary-tree bounds", "[dual_min_max_tree_incremental_filter]") {
             // The subtree root id belongs to the source/complementary tree, so its bounds are checked there.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
     
             auto [maxtree, maxAltitude] = make_component_tree_with_altitude(graph, image, true);
             auto [mintree, minAltitude] = make_component_tree_with_altitude(graph, image, false);
-            detail::hierarchy::ComponentTreeAdjustment<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
+            detail::hierarchy::DualMinMaxTreeIncrementalFilter<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
             adjust.setAltitudeBuffers(minAltitude, maxAltitude);
     
             const index_t outOfBounds = maxtree.getGlobalIdSpaceSize();
             bool threw = false;
             try {
-                ComponentTreeAdjustmentTestAccess::updateTree(adjust, &mintree, outOfBounds);
+                DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &mintree, outOfBounds);
             } catch (const std::runtime_error &e) {
                 threw = true;
                 REQUIRE(std::string(e.what()).find("complementary-tree bounds") != std::string::npos);
@@ -506,14 +506,14 @@ namespace {
             REQUIRE(threw);
     }
 
-    TEST_CASE("component tree adjustment rejects subtree roots that are not alive in the complementary tree", "[component_tree_adjustment]") {
+    TEST_CASE("dual min max tree incremental filter rejects subtree roots that are not alive in the complementary tree", "[dual_min_max_tree_incremental_filter]") {
             // A source-tree node id may still map to a dead slot in the complementary tree; this must fail explicitly.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
     
             auto [maxtree, maxAltitude] = make_component_tree_with_altitude(graph, image, true);
             auto [mintree, minAltitude] = make_component_tree_with_altitude(graph, image, false);
-            detail::hierarchy::ComponentTreeAdjustment<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
+            detail::hierarchy::DualMinMaxTreeIncrementalFilter<uint8_t, decltype(graph)> adjust(&mintree, &maxtree, graph);
             adjust.setAltitudeBuffers(minAltitude, maxAltitude);
     
             REQUIRE(maxtree.isAlive(144));
@@ -523,7 +523,7 @@ namespace {
     
             bool threw = false;
             try {
-                ComponentTreeAdjustmentTestAccess::updateTree(adjust, &maxtree, 144);
+                DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &maxtree, 144);
             } catch (const std::runtime_error &e) {
                 threw = true;
                 REQUIRE(std::string(e.what()).find("valid/alive in complementary tree") != std::string::npos);
@@ -531,4 +531,4 @@ namespace {
             REQUIRE(threw);
     }
 
-} // namespace component_tree_adjustment
+} // namespace dual_min_max_tree_incremental_filter
