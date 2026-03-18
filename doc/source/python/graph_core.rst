@@ -32,6 +32,8 @@ Algorithms for graphs
 
 .. autofunction:: higra.subgraph
 
+.. autofunction:: higra.vertex_induced_subgraph
+
 .. autofunction:: higra.undirected_graph_2_adjacency_matrix
 
 .. autofunction:: higra.ultrametric_open
