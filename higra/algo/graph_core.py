@@ -354,7 +354,7 @@ def subgraph(graph, edge_indices, spanning=True, return_vertex_map=False):
         return subgraph
 
 
-def vertex_induced_subgraph(graph, vertex_indices, return_vertex_map=False, return_edge_map=False):
+def vertex_induced_subgraph(graph, vertex_indices, return_edge_map=False):
     r"""
     Extract a subgraph of the input graph induced by a subset of vertices. 
     Let :math:`G=(V,E)` be the graph :attr:`graph` and let :math:`V^*` be a subset of :math:`V`. 
@@ -366,18 +366,13 @@ def vertex_induced_subgraph(graph, vertex_indices, return_vertex_map=False, retu
     The vertices in the subgraph are indexed from 0 to ``len(vertex_indices) - 1`` following 
     the order of :attr:`vertex_indices`.
 
-    The optional array result :math:`vertex\_map` (returned if :attr:`return_vertex_map` is ``True``) 
-    indicates for each vertex :math:`i` of the subgraph, its corresponding index in the input graph. 
-    This is exactly the input :attr:`vertex_indices`.
-
     The optional array result :math:`edge\_map` (returned if :attr:`return_edge_map` is ``True``) 
     indicates for each edge :math:`j` of the subgraph, its corresponding index in the input graph.
 
     :param graph: input graph
     :param vertex_indices: indices of vertices to keep (must be unique)
-    :param return_vertex_map: if True, returns the mapping of vertices
     :param return_edge_map: if True, returns the mapping of edges
-    :return: subgraph or (subgraph, [vertex_map], [edge_map])
+    :return: subgraph or (subgraph, edge_map)
     """
     vertex_indices = np.asarray(vertex_indices, dtype=np.int64)
     num_v_sub = len(vertex_indices)
@@ -397,22 +392,16 @@ def vertex_induced_subgraph(graph, vertex_indices, return_vertex_map=False, retu
 
     sub = hg.UndirectedGraph(num_v_sub)
 
-    old_to_new = -np.ones(graph.num_vertices(), dtype=np.int64)
+    old_to_new = np.empty(graph.num_vertices(), dtype=np.int64)
     old_to_new[vertex_indices] = np.arange(num_v_sub)
 
     new_sources = old_to_new[sources[edge_indices]]
     new_targets = old_to_new[targets[edge_indices]]
     sub.add_edges(new_sources, new_targets)
 
-    res = [sub]
-    if return_vertex_map:
-        res.append(vertex_indices)
     if return_edge_map:
-        res.append(edge_indices)
-
-    if len(res) == 1:
-        return sub
-    return tuple(res)
+        return sub, edge_indices
+    return sub
 
 
 def line_graph(graph):

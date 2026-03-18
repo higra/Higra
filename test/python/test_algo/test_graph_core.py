@@ -314,22 +314,21 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         # keeping vertices {0,1,3,4}: edge (1,2) and (2,3) are excluded
         # only edge (0,1) and (3,4) remain
         vertices = np.asarray((0, 1, 3, 4))
-        sub, vmap, emap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True, return_edge_map=True)
+        sub, emap = hg.vertex_induced_subgraph(graph, vertices, return_edge_map=True)
 
         self.assertTrue(sub.num_vertices() == 4)
         self.assertTrue(sub.num_edges() == 2)
-        self.assertTrue(np.all(np.sort(vmap) == np.asarray((0, 1, 3, 4))))
         sources, targets = sub.edge_list()
         # map back to original vertices
-        self.assertTrue(np.all(vmap[sources] == np.asarray((0, 3))))
-        self.assertTrue(np.all(vmap[targets] == np.asarray((1, 4))))
+        self.assertTrue(np.all(vertices[sources] == np.asarray((0, 3))))
+        self.assertTrue(np.all(vertices[targets] == np.asarray((1, 4))))
 
     def test_vertex_induced_subgraph_all_vertices(self):
         # Keeping all vertices should return the same graph
         graph = hg.UndirectedGraph(4)
         graph.add_edges(np.asarray((0, 1, 2)), np.asarray((1, 2, 3)))
         vertices = np.asarray((0, 1, 2, 3))
-        sub, vmap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True)
+        sub = hg.vertex_induced_subgraph(graph, vertices)
 
         self.assertTrue(sub.num_vertices() == graph.num_vertices())
         self.assertTrue(sub.num_edges() == graph.num_edges())
@@ -340,11 +339,10 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph.add_edges(np.asarray((0, 1)), np.asarray((1, 2)))
         # vertices {0, 3}: no edge between them
         vertices = np.asarray((0, 3))
-        sub, vmap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True)
+        sub = hg.vertex_induced_subgraph(graph, vertices)
 
         self.assertTrue(sub.num_vertices() == 2)
         self.assertTrue(sub.num_edges() == 0)
-        self.assertTrue(np.all(np.sort(vmap) == np.asarray((0, 3))))
 
     def test_vertex_induced_subgraph_with_isolated_vertex(self):
         # Removing an edge that disconnects a vertex should return an isolated vertex in the subgraph
@@ -352,10 +350,9 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         graph.add_edges([0, 1, 0, 3], [1, 2, 2, 4])
         # Induced by {0, 1, 3}: edge (0,1) kept, vertex 3 is isolated
         vertices = np.asarray((0, 1, 3))
-        sub, vmap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True)
+        sub = hg.vertex_induced_subgraph(graph, vertices)
         self.assertTrue(sub.num_vertices() == 3)
         self.assertTrue(sub.num_edges() == 1)
-        self.assertTrue(np.all(vmap == np.asarray((0, 1, 3))))
 
     def test_vertex_induced_subgraph_unsorted_vertices(self):
         # Path graph 0-1-2-3-4, choose vertices in unsorted order
@@ -364,17 +361,16 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         # edges: (0,1), (1,2), (2,3), (3,4)
         # keep vertices in unsorted order: {3, 0, 4, 1}
         vertices = np.asarray((3, 0, 4, 1))
-        sub, vmap = hg.vertex_induced_subgraph(graph, vertices, return_vertex_map=True)
+        sub = hg.vertex_induced_subgraph(graph, vertices)
         self.assertTrue(sub.num_vertices() == len(vertices))
         self.assertTrue(sub.num_edges() == 2)
-        self.assertTrue(np.all(vmap == vertices))
 
         sources, targets = sub.edge_list()
         # map back to original vertices: should be (3,4) and (0,1) in some order
-        mapped_sources = vmap[sources]
-        mapped_targets = vmap[targets]
+        mapped_sources = vertices[sources]
+        mapped_targets = vertices[targets]
         # check that the two kept original edges are present
-        edges_set = {tuple(x) for x in np.vstack((mapped_sources, mapped_targets)).T}
+        edges_set = {tuple(sorted((s, t))) for s, t in zip(mapped_sources, mapped_targets)}
         self.assertTrue((3, 4) in edges_set)
         self.assertTrue((0, 1) in edges_set)
 
