@@ -358,17 +358,27 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         # Path graph 0-1-2-3-4, choose vertices in unsorted order
         graph = hg.UndirectedGraph(5)
         graph.add_edges(np.arange(4), np.arange(1, 5))
-        # edges: (0,1), (1,2), (2,3), (3,4)
+        # original edges indices: 
+        # 0: (0,1), 1: (1,2), 2: (2,3), 3: (3,4)
+        
         # keep vertices in unsorted order: {3, 0, 4, 1}
         vertices = np.asarray((3, 0, 4, 1))
-        sub = hg.vertex_induced_subgraph(graph, vertices)
+        
+        # We also test return_edge_map=True
+        sub, edge_map = hg.vertex_induced_subgraph(graph, vertices, return_edge_map=True)
+        
         self.assertTrue(sub.num_vertices() == len(vertices))
         self.assertTrue(sub.num_edges() == 2)
 
+        # The kept edges should be (0,1) and (3,4), which correspond to 
+        # indices 0 and 3 in the original graph.
+        self.assertTrue(set(edge_map) == {0, 3})
+
         sources, targets = sub.edge_list()
-        # map back to original vertices: should be (3,4) and (0,1) in some order
+        # map back to original vertices: should be (3,4) and (0,1)
         mapped_sources = vertices[sources]
         mapped_targets = vertices[targets]
+        
         # check that the two kept original edges are present
         edges_set = {tuple(sorted((s, t))) for s, t in zip(mapped_sources, mapped_targets)}
         self.assertTrue((3, 4) in edges_set)

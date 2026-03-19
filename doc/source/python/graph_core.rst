@@ -14,6 +14,7 @@ Algorithms for graphs
     make_graph_from_points
     minimum_spanning_tree
     subgraph
+    vertex_induced_subgraph
     ultrametric_open
     undirected_graph_2_adjacency_matrix
 
