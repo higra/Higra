@@ -354,6 +354,56 @@ def subgraph(graph, edge_indices, spanning=True, return_vertex_map=False):
         return subgraph
 
 
+def vertex_induced_subgraph(graph, vertex_indices, return_edge_map=False):
+    r"""
+    Extract a subgraph of the input graph induced by a subset of vertices. 
+    Let :math:`G=(V,E)` be the graph :attr:`graph` and let :math:`V^*` be a subset of :math:`V`. 
+    The subgraph of :math:`G` induced by :math:`V^*` is equal to :math:`(V^*, E^*)` 
+    where :math:`E^*` is the set of edges of :math:`G` whose both extremities belong to :math:`V^*`.
+
+    The array :attr:`vertex_indices` contains the indices of the vertices in the set :math:`V^*`. 
+    The subgraph contains exactly ``len(vertex_indices)`` vertices. 
+    The vertices in the subgraph are indexed from 0 to ``len(vertex_indices) - 1`` following 
+    the order of :attr:`vertex_indices`.
+
+    The optional array result :math:`edge\_map` (returned if :attr:`return_edge_map` is ``True``) 
+    indicates for each edge :math:`j` of the subgraph, its corresponding index in the input graph.
+
+    :param graph: input graph
+    :param vertex_indices: indices of vertices to keep (must be unique)
+    :param return_edge_map: if True, returns the mapping of edges
+    :return: subgraph or (subgraph, edge_map)
+    """
+    vertex_indices = np.asarray(vertex_indices, dtype=np.int64)
+    num_v_sub = len(vertex_indices)
+
+    if np.any(vertex_indices < 0) or np.any(vertex_indices >= graph.num_vertices()):
+        raise ValueError("vertex_indices contains invalid vertex ids.")
+    
+    keep_mask = np.zeros(graph.num_vertices(), dtype=bool)
+    keep_mask[vertex_indices] = True
+
+    if np.sum(keep_mask) != num_v_sub:
+        raise ValueError("vertex_indices must contain unique vertex ids.")
+
+    sources, targets = graph.edge_list()
+    valid_edges_mask = np.logical_and(keep_mask[sources], keep_mask[targets])
+    edge_indices = np.where(valid_edges_mask)[0]
+
+    sub = hg.UndirectedGraph(num_v_sub)
+
+    old_to_new = np.empty(graph.num_vertices(), dtype=np.int64)
+    old_to_new[vertex_indices] = np.arange(num_v_sub)
+
+    new_sources = old_to_new[sources[edge_indices]]
+    new_targets = old_to_new[targets[edge_indices]]
+    sub.add_edges(new_sources, new_targets)
+
+    if return_edge_map:
+        return sub, edge_indices
+    return sub
+
+
 def line_graph(graph):
     """
     Compute the line graph of an undirected graph.
