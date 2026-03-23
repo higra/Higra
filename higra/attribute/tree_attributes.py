@@ -46,10 +46,14 @@ def attribute_volume(tree, altitudes, area=None, leaf_volume=None):
 
         V(n) = area(n) * | altitude(n) - altitude(parent(n)) | +  \sum_{c \in children(n)} V(c)
 
+    The leaves are initialized with ``leaf_volume``. If ``leaf_volume`` is ``None``,
+    leaf volumes are set to 0.
+
     :param tree: input tree
     :param altitudes: node altitudes of the input tree
     :param area: area of the nodes of the input hierarchy (provided by :func:`~higra.attribute_area` on `tree`)
-    :param leaf_volume: initial volume of the leaves of the tree (default is 0 for all leaves)
+    :param leaf_volume: initial volume of the leaves of the tree (default is 0 for all leaves);
+        useful when leaves represent pre-existing regions, for example in region adjacency graph based hierarchies
     :return: a 1d array
     """
     if area is None:

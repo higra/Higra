@@ -120,6 +120,25 @@ class TestAttributes(unittest.TestCase):
 
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
+    def test_attribute_volume_with_rag_leaf_volume(self):
+        base_graph = hg.get_4_adjacency_graph((2, 2))
+        vertex_labels = np.asarray((0, 0, 1, 1))
+        rag = hg.make_region_adjacency_graph_from_labelisation(base_graph, vertex_labels)
+
+        tree = hg.Tree((2, 2, 3, 3))
+        altitudes = np.asarray((2, 2, 5, 5.))
+
+        base_vertex_area = np.ones(base_graph.num_vertices(), dtype=np.int64)
+        rag_vertex_area = hg.rag_accumulate_on_vertices(rag, hg.Accumulators.sum, base_vertex_area)
+        area = hg.attribute_area(tree, vertex_area=rag_vertex_area, leaf_graph=rag)
+
+        leaf_volume = np.asarray((3, 4.))
+
+        ref_attribute = [3, 4, 7, 7]
+        attribute = hg.attribute_volume(tree, altitudes, area=area, leaf_volume=leaf_volume)
+
+        self.assertEqual(len(leaf_volume), tree.num_leaves())
+        self.assertTrue(np.allclose(ref_attribute, attribute))
 
     def test_lca_map(self):
         tree, altitudes = TestAttributes.get_test_tree()
