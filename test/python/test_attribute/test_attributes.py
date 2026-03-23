@@ -109,6 +109,18 @@ class TestAttributes(unittest.TestCase):
 
         self.assertTrue(np.allclose(ref_attribute, attribute))
 
+    def test_attribute_volume_with_leaf_volume(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 2, 1, 4.))
+        area = np.asarray((2, 1, 1, 3, 2, 3, 6, 9))
+        leaf_volume = np.asarray((1, 2, 3, 4, 5.))
+
+        ref_attribute = [1, 2, 3, 4, 5, 9, 30, 39]
+        attribute = hg.attribute_volume(tree, altitudes, area=area, leaf_volume=leaf_volume)
+
+        self.assertTrue(np.allclose(ref_attribute, attribute))
+
+
     def test_lca_map(self):
         tree, altitudes = TestAttributes.get_test_tree()
 

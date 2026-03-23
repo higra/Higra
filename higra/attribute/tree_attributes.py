@@ -37,7 +37,7 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
 
 
 @hg.auto_cache
-def attribute_volume(tree, altitudes, area=None):
+def attribute_volume(tree, altitudes, area=None, leaf_volume=None):
     """
     Volume of each node the given tree.
     The volume :math:`V(n)` of a node :math:`n` is defined recursively as:
@@ -49,6 +49,7 @@ def attribute_volume(tree, altitudes, area=None):
     :param tree: input tree
     :param altitudes: node altitudes of the input tree
     :param area: area of the nodes of the input hierarchy (provided by :func:`~higra.attribute_area` on `tree`)
+    :param leaf_volume: initial volume of the leaves of the tree (default is 0 for all leaves)
     :return: a 1d array
     """
     if area is None:
@@ -56,8 +57,11 @@ def attribute_volume(tree, altitudes, area=None):
 
     height = np.abs(altitudes[tree.parents()] - altitudes)
     height = height * area
-    volume_leaves = np.zeros(tree.num_leaves(), dtype=np.float64)
-    return hg.accumulate_and_add_sequential(tree, height, volume_leaves, hg.Accumulators.sum)
+
+    if leaf_volume is None:
+        leaf_volume = np.zeros(tree.num_leaves(), dtype=np.float64)
+
+    return hg.accumulate_and_add_sequential(tree, height, leaf_volume, hg.Accumulators.sum)
 
 
 @hg.argument_helper(hg.CptHierarchy)
