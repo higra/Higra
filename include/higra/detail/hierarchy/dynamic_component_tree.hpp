@@ -508,6 +508,26 @@ namespace hg::detail::hierarchy {
         }
 
         /**
+         * @brief Returns the first direct child of an internal node.
+         * @return Global child id, or `invalid_index` when `nodeId` has no child.
+         * @complexity Time O(1), Space O(1).
+         */
+        index_t getFirstChild(index_t nodeId) const {
+            const auto childLocalId = firstChild[(size_t) localOf(nodeId)];
+            return childLocalId == invalid_index ? invalid_index : globalOf(childLocalId);
+        }
+
+        /**
+         * @brief Returns the next sibling of an internal node.
+         * @return Global sibling id, or `invalid_index` when `nodeId` is the last sibling.
+         * @complexity Time O(1), Space O(1).
+         */
+        index_t getNextSibling(index_t nodeId) const {
+            const auto siblingLocalId = nextSibling[(size_t) localOf(nodeId)];
+            return siblingLocalId == invalid_index ? invalid_index : globalOf(siblingLocalId);
+        }
+
+        /**
          * @brief Tests whether an internal node has no internal children.
          * @complexity Time O(1), Space O(1).
          */

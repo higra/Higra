@@ -198,6 +198,8 @@ namespace {
                     REQUIRE(tree.hasChild(nodeId, childId));
                 }
 
+                REQUIRE(tree.getNumProperParts(nodeId) > 0);
+
                 index_t countedProperParts = 0;
                 for (auto p: tree.getProperParts(nodeId)) {
                     REQUIRE(tree.isProperPart(p));
@@ -356,7 +358,7 @@ namespace {
     
                 INFO("pixelId=" << pixelId);
                 REQUIRE(maxtree.getNumNodes() < oldNumNodes);
-                REQUIRE(maxtree.getNumNodes() == 6);
+                REQUIRE(maxtree.getNumNodes() == 7);
                 REQUIRE(maxtree.getRoot() == 155);
                 REQUIRE(maxAltitude[(size_t) maxtree.getRoot()] == 3);
                 REQUIRE(area_buffers_equal(maxtree, areaBufferMax, fullArea));
@@ -364,9 +366,9 @@ namespace {
                 REQUIRE(areaBufferMax[(size_t) maxtree.getRoot()] == 144.0);
                 REQUIRE(maxtree.getNumChildren(155) == 1);
                 REQUIRE(maxtree.getNumChildren(154) == 1);
-                REQUIRE(maxtree.getNumChildren(149) == 2);
+                REQUIRE(maxtree.getNumChildren(149) == 3);
                 REQUIRE(maxtree.getNumProperParts(149) == 137);
-                REQUIRE(collect_alive_nodes_by_level(maxtree, maxAltitude) == std::map<int, index_t>{{3, 1}, {4, 1}, {6, 1}, {7, 1}, {8, 2}});
+                REQUIRE(collect_alive_nodes_by_level(maxtree, maxAltitude) == std::map<int, index_t>{{3, 1}, {4, 1}, {6, 1}, {7, 1}, {8, 3}});
                 require_tree_consistency(maxtree);
     
             }
@@ -485,8 +487,8 @@ namespace {
             }
     }
 
-    TEST_CASE("dual min max tree incremental filter rejects subtree roots that are outside complementary-tree bounds", "[dual_min_max_tree_incremental_filter]") {
-            // The subtree root id belongs to the source/complementary tree, so its bounds are checked there.
+    TEST_CASE("dual min max tree incremental filter rejects subtree roots that are outside primal-tree bounds", "[dual_min_max_tree_incremental_filter]") {
+            // The subtree root id belongs to the source/primal tree, so its bounds are checked there.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
     
@@ -501,13 +503,13 @@ namespace {
                 DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &mintree, outOfBounds);
             } catch (const std::runtime_error &e) {
                 threw = true;
-                REQUIRE(std::string(e.what()).find("complementary-tree bounds") != std::string::npos);
+                REQUIRE(std::string(e.what()).find("primal-tree bounds") != std::string::npos);
             }
             REQUIRE(threw);
     }
 
-    TEST_CASE("dual min max tree incremental filter rejects subtree roots that are not alive in the complementary tree", "[dual_min_max_tree_incremental_filter]") {
-            // A source-tree node id may still map to a dead slot in the complementary tree; this must fail explicitly.
+    TEST_CASE("dual min max tree incremental filter rejects subtree roots that are not alive in the primal tree", "[dual_min_max_tree_incremental_filter]") {
+            // A source-tree node id may still map to a dead slot in the primal tree; this must fail explicitly.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
     
@@ -526,7 +528,7 @@ namespace {
                 DualMinMaxTreeIncrementalFilterTestAccess::updateTree(adjust, &maxtree, 144);
             } catch (const std::runtime_error &e) {
                 threw = true;
-                REQUIRE(std::string(e.what()).find("valid/alive in complementary tree") != std::string::npos);
+                REQUIRE(std::string(e.what()).find("valid/alive in primal tree") != std::string::npos);
             }
             REQUIRE(threw);
     }
