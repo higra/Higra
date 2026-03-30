@@ -53,7 +53,7 @@ namespace hg {
      * Internal state owned by this class:
      *  - the mutable dynamic min-tree and max-tree;
      *  - the node-altitude buffers associated with both trees;
-     *  - the incremental attribute computer and its output buffers;
+     *  - one incremental attribute computer per dynamic tree and their output buffers;
      *  - the dual-tree adjustment helper used to propagate subtree pruning from
      *    one tree to the other;
      *  - temporary buffers reused to select maximal pruning candidates.
@@ -107,7 +107,8 @@ namespace hg {
         tree_t mintree_;
         tree_t maxtree_;
         std::unique_ptr<detail::hierarchy::DualMinMaxTreeIncrementalFilter<altitude_t, graph_t>> adjust_;
-        std::unique_ptr<attribute_computer_t> attributeComputer_;
+        std::unique_ptr<attribute_computer_t> attributeComputerMin_;
+        std::unique_ptr<attribute_computer_t> attributeComputerMax_;
         std::vector<double> attributeBufferMin_;
         std::vector<double> attributeBufferMax_;
         array_1d<altitude_t> altitudeBufferMin_;
@@ -321,19 +322,20 @@ namespace hg {
          * @param attribute Increasing attribute used to select pruning candidates.
          */
         ComponentTreeCasf(const graph_t &graph, const array_1d<altitude_t> &image, ComponentTreeCasfAttribute attribute = ComponentTreeCasfAttribute::area)
-                : graph_(&graph), attributeComputer_(nullptr), attribute_(attribute) {
+                : graph_(&graph), attributeComputerMin_(nullptr), attributeComputerMax_(nullptr), attribute_(attribute) {
             const auto minStatic = component_tree_min_tree(*graph_, image);
             const auto maxStatic = component_tree_max_tree(*graph_, image);
             altitudeBufferMin_ = std::move(minStatic.altitudes);
             altitudeBufferMax_ = std::move(maxStatic.altitudes);
             mintree_.reset(minStatic.tree);
             maxtree_.reset(maxStatic.tree);
-            attributeComputer_ = makeAttributeComputer(*graph_, attribute_);
+            attributeComputerMin_ = makeAttributeComputer(*graph_, attribute_);
+            attributeComputerMax_ = makeAttributeComputer(*graph_, attribute_);
             adjust_ = std::make_unique<detail::hierarchy::DualMinMaxTreeIncrementalFilter<altitude_t, graph_t>>(&mintree_, &maxtree_, *graph_);
-            adjust_->setAttributeComputer(*attributeComputer_, attributeBufferMin_, attributeBufferMax_);
+            adjust_->setAttributeComputer(*attributeComputerMin_, *attributeComputerMax_, attributeBufferMin_, attributeBufferMax_);
             adjust_->setAltitudeBuffers(altitudeBufferMin_, altitudeBufferMax_);
-            attributeComputer_->computeAttribute(mintree_, attributeBufferMin_);
-            attributeComputer_->computeAttribute(maxtree_, attributeBufferMax_);
+            attributeComputerMin_->computeAttribute(mintree_, attributeBufferMin_);
+            attributeComputerMax_->computeAttribute(maxtree_, attributeBufferMax_);
             const auto maxNodes = (std::size_t) std::max(mintree_.getNumNodes(), maxtree_.getNumNodes());
             pruneCandidateQueue_.reserve(maxNodes);
             selectedPruneCandidates_.reserve(maxNodes);

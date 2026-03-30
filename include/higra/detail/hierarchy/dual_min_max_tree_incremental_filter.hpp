@@ -162,6 +162,15 @@ namespace hg::detail::hierarchy {
             }
 
             /**
+             * @brief Removes one mark from the current generation.
+             */
+            void unmark(size_t idx) noexcept {
+                if (stamp[idx] == cur) {
+                    stamp[idx] = 0;
+                }
+            }
+
+            /**
              * @brief Clears the set in O(1) amortized time.
              * @details The method advances the active generation. If the
              * generation counter overflows, the underlying storage is physically
@@ -415,12 +424,15 @@ namespace hg::detail::hierarchy {
         GenerationStampSet removedMarks_;
         GenerationStampSet pixelsInCMarks_;
         GenerationStampSet climbedNodeMarks_;
+        GenerationStampSet attributeUpdateMarks_;
         std::vector<index_t> properPartSetC_;
         std::vector<index_t> nodesPendingRemoval_;
         std::vector<index_t> removedNodesPendingAbsorption_;
+        altitude_t altitudeCa_ = altitude_t{};
 
         // Incremental attribute computation and external altitude buffers.
-        const DynamicComponentTreeAttributeComputer<double> *attributeComputer_ = nullptr;
+        const DynamicComponentTreeAttributeComputer<double> *attributeComputerMin_ = nullptr;
+        const DynamicComponentTreeAttributeComputer<double> *attributeComputerMax_ = nullptr;
         std::vector<double> *attributeBufferMin_ = nullptr;
         std::vector<double> *attributeBufferMax_ = nullptr;
         const altitude_t *altitudeBufferMinData_ = nullptr;
@@ -443,6 +455,9 @@ namespace hg::detail::hierarchy {
                 return;
             }
             tree->removeChild(parentId, nodeId, releaseNode);
+            if (releaseNode) {
+                notifyNodeRemoved(tree, nodeId);
+            }
         }
 
         /**
@@ -450,10 +465,53 @@ namespace hg::detail::hierarchy {
          * @return `nullptr` when no incremental attribute computer is configured.
          */
         std::vector<double> *getAttributeBuffer(tree_t *tree) const {
-            if (attributeComputer_ == nullptr) {
+            const auto *computer = tree == maxtree_ ? attributeComputerMax_ : attributeComputerMin_;
+            if (computer == nullptr) {
                 return nullptr;
             }
             return tree == maxtree_ ? attributeBufferMax_ : attributeBufferMin_;
+        }
+
+        /**
+         * @brief Returns the attribute computer associated with one tree.
+         */
+        const DynamicComponentTreeAttributeComputer<double> *getAttributeComputer(tree_t *tree) const {
+            if (tree == nullptr) {
+                return nullptr;
+            }
+            return tree == maxtree_ ? attributeComputerMax_ : attributeComputerMin_;
+        }
+
+        /**
+         * @brief Forwards a node-removal event to the incremental attribute computer of `tree`.
+         * @details The notification is skipped when no computer is configured or when the
+         * removed node id is invalid.
+         */
+        void notifyNodeRemoved(tree_t *tree, index_t nodeId) const {
+            const auto *computer = getAttributeComputer(tree);
+            if (computer != nullptr && tree != nullptr && nodeId != invalid_index) {
+                computer->onNodeRemoved(nodeId, *tree);
+            }
+        }
+
+        /**
+         * @brief Forwards a bulk proper-part transfer to the incremental attribute computer of `tree`.
+         */
+        void notifyMoveProperParts(tree_t *tree, index_t targetNodeId, index_t sourceNodeId) const {
+            const auto *computer = getAttributeComputer(tree);
+            if (computer != nullptr && tree != nullptr) {
+                computer->onMoveProperParts(targetNodeId, sourceNodeId, *tree);
+            }
+        }
+
+        /**
+         * @brief Forwards a single proper-part transfer to the incremental attribute computer of `tree`.
+         */
+        void notifyMoveProperPart(tree_t *tree, index_t targetNodeId, index_t sourceNodeId, index_t pixelId) const {
+            const auto *computer = getAttributeComputer(tree);
+            if (computer != nullptr && tree != nullptr) {
+                computer->onMoveProperPart(targetNodeId, sourceNodeId, pixelId, *tree);
+            }
         }
 
         /**
@@ -495,12 +553,44 @@ namespace hg::detail::hierarchy {
          * updates the buffer associated with the edited tree in place.
          */
         void computeAttributeOnTreeNode(tree_t *tree, index_t nodeId) {
-            if (attributeComputer_ == nullptr || tree == nullptr || nodeId == invalid_index || !tree->isAlive(nodeId)) {
+            const auto *computer = getAttributeComputer(tree);
+            if (computer == nullptr || tree == nullptr || nodeId == invalid_index ||
+                !tree->isNode(nodeId) || !tree->isAlive(nodeId)) {
                 return;
             }
             auto *buffer = getAttributeBuffer(tree);
             hg_assert(buffer != nullptr, "Attribute computer configured without a valid buffer.");
-            attributeComputer_->computeAttributeOnNode(*tree, nodeId, *buffer);
+            if (!attributeUpdateMarks_.isMarked((std::size_t) nodeId)) {
+                return;
+            }
+            const auto level = nodeAltitude(tree, nodeId);
+            if ((tree == maxtree_ && level < altitudeCa_) || (tree == mintree_ && level > altitudeCa_)) {
+                attributeUpdateMarks_.unmark((std::size_t) nodeId);
+                return;
+            }
+            computer->computeAttributeOnNode(*tree, nodeId, *buffer);
+            attributeUpdateMarks_.unmark((std::size_t) nodeId);
+        }
+
+        /**
+         * @brief Clears pending attribute-update marks for the current step.
+         */
+        void resetAttributeUpdateMarks() {
+            attributeUpdateMarks_.resetAll();
+            altitudeCa_ = altitude_t{};
+        }
+
+        /**
+         * @brief Marks one live node whose attribute must be recomputed.
+         */
+        void markAttributeUpdate(tree_t *tree, index_t nodeId) {
+            if (getAttributeComputer(tree) == nullptr || tree == nullptr || nodeId == invalid_index) {
+                return;
+            }
+            if (!tree->isNode(nodeId) || !tree->isAlive(nodeId)) {
+                return;
+            }
+            attributeUpdateMarks_.mark((std::size_t) nodeId);
         }
 
         /**
@@ -515,6 +605,7 @@ namespace hg::detail::hierarchy {
                     continue;
                 }
 
+                notifyMoveProperPart(dualTree, unionNode, ownerId, pixelId);
                 dualTree->moveProperPart(unionNode, ownerId, pixelId);
 
                 if (dualTree->isAlive(ownerId) && dualTree->getNumProperParts(ownerId) == 0 && ownerId != unionNode && !removedMarks_.isMarked(ownerId)) {
@@ -548,9 +639,14 @@ namespace hg::detail::hierarchy {
                 return invalid_index;
             }
 
+            const bool parentChanged = dualTree->getFirstChild(removedNodeId) != invalid_index;
             dualTree->moveChildren(parentId, removedNodeId);
+            notifyMoveProperParts(dualTree, parentId, removedNodeId);
             dualTree->moveProperParts(parentId, removedNodeId);
             disconnect(dualTree, removedNodeId, true);
+            if (parentChanged) {
+                markAttributeUpdate(dualTree, parentId);
+            }
             computeAttributeOnTreeNode(dualTree, parentId);
 
             if (dualTree->isAlive(parentId) && dualTree->getNumProperParts(parentId) == 0) {
@@ -581,17 +677,23 @@ namespace hg::detail::hierarchy {
                 }
             }
 
+            bool rootChanged = false;
             for (auto childId = firstChild; childId != invalid_index;) {
                 const index_t next = dualTree->getNextSibling(childId);
                 if (childId != newRoot && !dualTree->hasChild(newRoot, childId)) {
                     dualTree->detachNode(childId);
                     dualTree->attachNode(newRoot, childId);
+                    rootChanged = true;
                 }
                 childId = next;
             }
 
             dualTree->setRoot(newRoot);
             dualTree->releaseNode(removedNodeId);
+            notifyNodeRemoved(dualTree, removedNodeId);
+            if (rootChanged) {
+                markAttributeUpdate(dualTree, newRoot);
+            }
             computeAttributeOnTreeNode(dualTree, newRoot);
         }
 
@@ -692,6 +794,7 @@ namespace hg::detail::hierarchy {
                 }
 
                 disconnect(dualTree, current, true);
+                markAttributeUpdate(dualTree, promoted);
                 computeAttributeOnTreeNode(dualTree, promoted);
                 current = promoted;
             }
@@ -718,6 +821,7 @@ namespace hg::detail::hierarchy {
                     // topological position in the updated hierarchy.
                     if (!dualTree->isRoot(nodeCa)) {
                         const index_t nodeCaParentId = dualTree->getNodeParent(nodeCa);
+                        bool finalUnionNodeChanged = false;
 
                         if (!dualTree->isRoot(finalUnionNode)) {
                             this->disconnect(dualTree, finalUnionNode, false);
@@ -731,11 +835,16 @@ namespace hg::detail::hierarchy {
                                     this->disconnect(dualTree, childId, false);
                                 }
                                 dualTree->attachNode(finalUnionNode, childId);
+                                finalUnionNodeChanged = true;
                             }
                             childId = next;
                         }
 
                         this->disconnect(dualTree, nodeCa, true);
+                        if (finalUnionNodeChanged) {
+                            markAttributeUpdate(dualTree, finalUnionNode);
+                        }
+                        markAttributeUpdate(dualTree, nodeCaParentId);
                         computeAttributeOnTreeNode(dualTree, finalUnionNode);
                         computeAttributeOnTreeNode(dualTree, nodeCaParentId);
                     } else {
@@ -761,11 +870,13 @@ namespace hg::detail::hierarchy {
                             }
                         }
 
+                        bool candidateRootChanged = false;
                         if (candidateRootId != survivingFinalUnionNode) {
                             if (!dualTree->isRoot(survivingFinalUnionNode)) {
                                 this->disconnect(dualTree, survivingFinalUnionNode, false);
                             }
                             dualTree->attachNode(candidateRootId, survivingFinalUnionNode);
+                            candidateRootChanged = true;
                         }
 
                         for (auto childId = dualTree->getFirstChild(nodeCa); childId != invalid_index;) {
@@ -775,12 +886,16 @@ namespace hg::detail::hierarchy {
                                     this->disconnect(dualTree, childId, false);
                                 }
                                 dualTree->attachNode(candidateRootId, childId);
+                                candidateRootChanged = true;
                             }
                             childId = next;
                         }
 
                         dualTree->setRoot(candidateRootId);
                         dualTree->releaseNode(nodeCa);
+                        if (candidateRootChanged) {
+                            markAttributeUpdate(dualTree, candidateRootId);
+                        }
                         computeAttributeOnTreeNode(dualTree, candidateRootId);
                     }
                 } else {
@@ -789,6 +904,7 @@ namespace hg::detail::hierarchy {
                         this->disconnect(dualTree, finalUnionNode, false);
                     }
                     dualTree->attachNode(nodeCa, finalUnionNode);
+                    markAttributeUpdate(dualTree, nodeCa);
                     computeAttributeOnTreeNode(dualTree, nodeCa);
                 }
             }
@@ -912,6 +1028,7 @@ namespace hg::detail::hierarchy {
         void updateTree(tree_t *dualTree, index_t subtreeRoot) {
             hg_assert(dualTree != nullptr, "updateTree: dualTree must not be null.");
             hg_assert(subtreeRoot != invalid_index, "updateTree: subtreeRoot is invalid.");
+            resetAttributeUpdateMarks();
 
             const bool isMaxtree = dualTree == maxtree_;
             tree_t *primalTree = getPrimalTree(isMaxtree);
@@ -925,7 +1042,7 @@ namespace hg::detail::hierarchy {
             const altitude_t b = nodeAltitude(primalTree, subtreeParentId);
 
             index_t nodeCa = invalid_index;
-            altitude_t altitudeCa = altitude_t{};
+            altitudeCa_ = altitude_t{};
 
             // Phase 1: collect the set `C` in the primal tree and locate `nodeCa`
             // as the extreme representative of `C` in the updated tree.
@@ -942,8 +1059,8 @@ namespace hg::detail::hierarchy {
                         continue; // Proper parts without a live dual component do not contribute to `nodeCa`.
                     }
                     const altitude_t altitudeP = nodeAltitude(dualTree, nodeP);
-                    if (nodeCa == invalid_index || ((isMaxtree && altitudeP < altitudeCa) || (!isMaxtree && altitudeP > altitudeCa))) {
-                        altitudeCa = altitudeP;
+                    if (nodeCa == invalid_index || ((isMaxtree && altitudeP < altitudeCa_) || (!isMaxtree && altitudeP > altitudeCa_))) {
+                        altitudeCa_ = altitudeP;
                         nodeCa = nodeP;
                     }
                 }
@@ -953,7 +1070,7 @@ namespace hg::detail::hierarchy {
             }
             hg_assert(nodeCa != invalid_index, "updateTree: invalid C_a representative.");
             hg_assert(!properPartSetC_.empty(), "updateTree: expected non-empty proper parts in removed subtree.");
-
+            
             
             const auto *targetAltitude = getAltitudeBufferData(dualTree);
             hg_assert(targetAltitude != nullptr, "updateTree: altitude buffer must be configured for target tree.");
@@ -969,7 +1086,7 @@ namespace hg::detail::hierarchy {
             removedMarks_.resetAll();
             removedNodesPendingAbsorption_.clear();
             nodesPendingRemoval_.reserve(mergeNodesByLevel_.getMaxBucketSize());
-            while (mergeNodesByLevel_.hasMergeLevel() && ((isMaxtree && currentMergeLevel > altitudeCa) || (!isMaxtree && currentMergeLevel < altitudeCa))) {
+            while (mergeNodesByLevel_.hasMergeLevel() && ((isMaxtree && currentMergeLevel > altitudeCa_) || (!isMaxtree && currentMergeLevel < altitudeCa_))) {
                 auto &nodesAtCurrentLevel = mergeNodesByLevel_.getMergedNodes(currentMergeLevel);
                 currentUnionNode = invalid_index;
                 nodesPendingRemoval_.clear();
@@ -996,6 +1113,7 @@ namespace hg::detail::hierarchy {
                         // the first effective union node that survives the sweep.
                         for (auto pendingNodeId: nodesPendingRemoval_) {
                             this->reattachOutsideIntervalChildren(dualTree, currentUnionNode, pendingNodeId);
+                            notifyMoveProperParts(dualTree, currentUnionNode, pendingNodeId);
                             dualTree->moveProperParts(currentUnionNode, pendingNodeId);
                             this->disconnect(dualTree, pendingNodeId, true);
                         }
@@ -1004,6 +1122,7 @@ namespace hg::detail::hierarchy {
                     }
 
                     this->reattachOutsideIntervalChildren(dualTree, currentUnionNode, nodeId);
+                    notifyMoveProperParts(dualTree, currentUnionNode, nodeId);
                     dualTree->moveProperParts(currentUnionNode, nodeId);
                     this->disconnect(dualTree, nodeId, true);
                 }
@@ -1017,6 +1136,7 @@ namespace hg::detail::hierarchy {
                         }
                         const auto parentId = dualTree->getNodeParent(nodeId);
                         dualTree->moveChildren(parentId, nodeId);
+                        notifyMoveProperParts(dualTree, parentId, nodeId);
                         dualTree->moveProperParts(parentId, nodeId);
                         this->disconnect(dualTree, nodeId, true);
                     }
@@ -1046,6 +1166,7 @@ namespace hg::detail::hierarchy {
                     }
                 }
 
+                markAttributeUpdate(dualTree, currentUnionNode);
                 computeAttributeOnTreeNode(dualTree, currentUnionNode);
 
                 previousLevelUnionNode = currentUnionNode;
@@ -1092,7 +1213,8 @@ namespace hg::detail::hierarchy {
                                                                                                   mergeNodesByLevel_(std::max(mintree ? mintree->getGlobalIdSpaceSize() : 0, maxtree ? maxtree->getGlobalIdSpaceSize() : 0)),
                                                                                                   removedMarks_(std::max(mintree ? mintree->getGlobalIdSpaceSize() : 0, maxtree ? maxtree->getGlobalIdSpaceSize() : 0)),
                                                                                                   pixelsInCMarks_(std::max(mintree ? mintree->getNumTotalProperParts() : 0, maxtree ? maxtree->getNumTotalProperParts() : 0)),
-                                                                                                  climbedNodeMarks_(std::max(mintree ? mintree->getGlobalIdSpaceSize() : 0, maxtree ? maxtree->getGlobalIdSpaceSize() : 0)) {
+                                                                                                  climbedNodeMarks_(std::max(mintree ? mintree->getGlobalIdSpaceSize() : 0, maxtree ? maxtree->getGlobalIdSpaceSize() : 0)),
+                                                                                                  attributeUpdateMarks_(std::max(mintree ? mintree->getGlobalIdSpaceSize() : 0, maxtree ? maxtree->getGlobalIdSpaceSize() : 0)) {
             hg_assert(mintree_ != nullptr, "mintree must not be null.");
             hg_assert(maxtree_ != nullptr, "maxtree must not be null.");
             hg_assert(graph_ != nullptr, "graph must not be null.");
@@ -1109,14 +1231,25 @@ namespace hg::detail::hierarchy {
          * Each buffer must cover the global id space of the corresponding tree.
          * Once configured, local structural edits performed by the incremental
          * update refresh the touched node attributes through this computer.
-         * @param computer Incremental attribute computer shared by both trees.
+         * @param computerMin Incremental attribute computer associated with the min-tree.
+         * @param computerMax Incremental attribute computer associated with the max-tree.
          * @param bufferMin Output buffer associated with the min-tree.
          * @param bufferMax Output buffer associated with the max-tree.
          */
-        void setAttributeComputer(const DynamicComponentTreeAttributeComputer<double> &computer, std::vector<double> &bufferMin, std::vector<double> &bufferMax) {
-            attributeComputer_ = &computer;
+        void setAttributeComputer(const DynamicComponentTreeAttributeComputer<double> &computerMin,
+                                  const DynamicComponentTreeAttributeComputer<double> &computerMax,
+                                  std::vector<double> &bufferMin,
+                                  std::vector<double> &bufferMax) {
+            attributeComputerMin_ = &computerMin;
+            attributeComputerMax_ = &computerMax;
             attributeBufferMin_ = &bufferMin;
             attributeBufferMax_ = &bufferMax;
+        }
+
+        void setAttributeComputer(const DynamicComponentTreeAttributeComputer<double> &computer,
+                                  std::vector<double> &bufferMin,
+                                  std::vector<double> &bufferMax) {
+            setAttributeComputer(computer, computer, bufferMin, bufferMax);
         }
 
         /**
