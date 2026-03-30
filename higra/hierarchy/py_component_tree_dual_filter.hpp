@@ -1,7 +1,7 @@
 /***************************************************************************
 * Copyright ESIEE Paris (2018)                                             *
 *                                                                          *
-* Contributor(s) : Benjamin Perret                                         *
+* Contributor(s) : Wonder Alexandre Luz Alves                              *
 *                                                                          *
 * Distributed under the terms of the CECILL-B License.                     *
 *                                                                          *
@@ -10,9 +10,8 @@
 
 #pragma once
 
-#include "py_binary_partition_tree.hpp"
-#include "py_common.hpp"
-#include "py_component_tree.hpp"
-#include "py_component_tree_dual_filter.hpp"
-#include "py_hierarchy_core.hpp"
-#include "py_watershed_hierarchy.hpp"
+#include "pybind11/pybind11.h"
+
+namespace py_component_tree_dual_filter {
+    void py_init_component_tree_dual_filter(pybind11::module &m);
+}
