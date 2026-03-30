@@ -45,6 +45,7 @@ PYBIND11_MODULE(higram, m) {
     py_bipartite_graph::py_init_bipartite_graph(m);
     py_common_hierarchy::py_init_common_hierarchy(m);
     py_component_tree::py_init_component_tree(m);
+    py_component_tree_dual_filter::py_init_component_tree_dual_filter(m);
     py_contour_2d::py_init_contour_2d(m);
     py_embedding::py_init_embedding(m);
     py_graph_accumulator::py_init_graph_accumulator(m);
