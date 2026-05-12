@@ -300,6 +300,79 @@ class TestIncrementalWatershed(unittest.TestCase):
         # Exactly 4 distinct labels
         self.assertEqual(len(np.unique(labels)), 4)
 
+    def test_batch_remove_equals_sequential(self):
+        g = hg.get_4_adjacency_graph((4, 4))
+        edge_weights = np.asarray((1, 2, 5, 5, 4, 8, 1, 4, 3, 4, 4, 1,
+                                   5, 2, 6, 2, 5, 2, 0, 7, 0, 3, 4, 0))
+        sv = np.array([0, 1, 4, 14, 15])
+        sl = np.array([1, 1, 1, 2, 2])
+
+        a = hg.IncrementalWatershedCut(g, edge_weights)
+        a.add_seeds(sv, sl)
+        a.remove_seeds(np.array([1, 14]))
+
+        b = hg.IncrementalWatershedCut(g, edge_weights)
+        b.add_seeds(sv, sl)
+        b.remove_seeds(np.array([1]))
+        b.remove_seeds(np.array([14]))
+
+        self.assertTrue(np.all(a.get_labeling() == b.get_labeling()))
+
+    def test_batch_remove_both_sides_of_edge(self):
+        g = hg.get_4_adjacency_graph((2, 2))
+        edge_weights = np.asarray((1, 2, 3, 4))
+        iws = hg.IncrementalWatershedCut(g, edge_weights)
+        iws.add_seeds(np.array([0, 3]), np.array([1, 2]))
+        iws.remove_seeds(np.array([0, 3]))
+        self.assertTrue(np.all(iws.get_labeling().ravel() == 0))
+
+    def test_interactive_churn(self):
+        """
+        Regression test for scenario 07: interactive single seed churn with label changes.
+        Adds 10 seeds on a 100x100 grid, then alternately removes and re-adds 5 of them
+        with changed labels, verifying consistency with labelisation_seeded_watershed
+        at each step.
+        """
+        g = hg.get_4_adjacency_graph((100, 100))
+        rng = np.random.RandomState(42)
+        edge_weights = rng.rand(g.num_edges()).astype(np.float64)
+
+        # Deterministic vertices matching scenario 07
+        sv = np.array([4098, 8671, 7466, 737, 5621,
+                       5954, 3197, 7184, 7657, 3043], dtype=np.int64)
+        initial_labels = np.arange(1, 11, dtype=np.int64)
+        changed_label = 99
+
+        iws = hg.IncrementalWatershedCut(g, edge_weights)
+
+        # Add all 10 seeds
+        iws.add_seeds(sv, initial_labels)
+        labels = iws.get_labeling().ravel()
+
+        # Baseline via full seeded watershed
+        seeds = np.zeros(g.num_vertices(), dtype=np.int64)
+        seeds[sv] = initial_labels
+        baseline = hg.labelisation_seeded_watershed(g, edge_weights, seeds.reshape(100, 100))
+        self.assertTrue(np.all(labels == baseline.ravel()))
+
+        # Churn: remove and re-add first 5 seeds with label 99
+        for v in sv[:5]:
+            # Remove
+            iws.remove_seeds(np.array([v]))
+            seeds[v] = 0
+            labels = iws.get_labeling().ravel()
+            baseline = hg.labelisation_seeded_watershed(
+                g, edge_weights, seeds.reshape(100, 100))
+            self.assertTrue(np.all(labels == baseline.ravel()))
+
+            # Re-add with changed label
+            iws.add_seeds(np.array([v]), np.array([changed_label]))
+            seeds[v] = changed_label
+            labels = iws.get_labeling().ravel()
+            baseline = hg.labelisation_seeded_watershed(
+                g, edge_weights, seeds.reshape(100, 100))
+            self.assertTrue(np.all(labels == baseline.ravel()))
+
 
 if __name__ == '__main__':
     unittest.main()

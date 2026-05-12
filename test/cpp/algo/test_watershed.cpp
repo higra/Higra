@@ -244,4 +244,100 @@ namespace test_watershed {
         }
     }
 
+    TEST_CASE("incremental watershed cut batch remove equals sequential",
+              "[incremental_watershed_cut]") {
+        auto g = hg::get_4_adjacency_graph({4, 4});
+        array_1d<int> edge_weights{1, 2, 5, 5, 4, 8, 1, 4, 3, 4, 4, 1,
+                                   5, 2, 6, 2, 5, 2, 0, 7, 0, 3, 4, 0};
+
+        array_1d<index_t> sv{0, 1, 4, 14, 15};
+        array_1d<index_t> sl{1, 1, 1, 2, 2};
+
+        auto a = hg::make_incremental_watershed_cut(g, edge_weights);
+        a.add_seeds(sv, sl);
+        array_1d<index_t> rm{1, 14};
+        a.remove_seeds(rm);
+
+        auto b = hg::make_incremental_watershed_cut(g, edge_weights);
+        b.add_seeds(sv, sl);
+        array_1d<index_t> rm1{1};
+        array_1d<index_t> rm2{14};
+        b.remove_seeds(rm1);
+        b.remove_seeds(rm2);
+
+        REQUIRE((a.get_labeling() == b.get_labeling()));
+    }
+
+    TEST_CASE("incremental watershed cut batch remove both sides of edge",
+              "[incremental_watershed_cut]") {
+        // Two seeds -> exactly one cut edge; remove both at once -> background everywhere.
+        auto g = hg::get_4_adjacency_graph({2, 2});
+        array_1d<int> edge_weights{1, 2, 3, 4};
+
+        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
+        array_1d<index_t> sv{0, 3};
+        array_1d<index_t> sl{1, 2};
+        iws.add_seeds(sv, sl);
+        iws.remove_seeds(sv);
+
+        const auto &labels = iws.get_labeling();
+        for (index_t i = 0; i < 4; i++) {
+            REQUIRE(labels(i) == 0);
+        }
+    }
+
+    TEST_CASE("incremental watershed cut interactive churn",
+              "[incremental_watershed_cut]") {
+        // Regression test for scenario 07: interactive single seed churn with label changes.
+        auto g = hg::get_4_adjacency_graph({100, 100});
+        const index_t n_edges = g.num_edges();
+        array_1d<double> edge_weights = xt::empty<double>({n_edges});
+        for (index_t i = 0; i < n_edges; ++i) {
+            // Deterministic pseudo-random in [0, 1)
+            edge_weights(i) = static_cast<double>(i % 997) / 997.0;
+        }
+
+        // Deterministic vertices matching scenario 07
+        array_1d<index_t> sv{4098, 8671, 7466, 737, 5621,
+                             5954, 3197, 7184, 7657, 3043};
+        array_1d<index_t> initial_labels{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        const index_t changed_label = 99;
+
+        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
+
+        // Add all 10 seeds
+        iws.add_seeds(sv, initial_labels);
+        auto labels = iws.get_labeling();
+
+        // Baseline via full seeded watershed
+        array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+        for (index_t i = 0; i < 10; ++i) {
+            seeds(sv(i)) = initial_labels(i);
+        }
+        auto baseline = hg::labelisation_seeded_watershed(g, edge_weights, seeds);
+        REQUIRE((labels == baseline));
+
+        // Churn first 5 seeds: remove then re-add with changed label
+        for (index_t i = 0; i < 5; ++i) {
+            index_t v = sv(i);
+            array_1d<index_t> rm{v};
+            array_1d<index_t> add_v{v};
+            array_1d<index_t> add_l{changed_label};
+
+            // Remove
+            iws.remove_seeds(rm);
+            seeds(v) = 0;
+            labels = iws.get_labeling();
+            baseline = hg::labelisation_seeded_watershed(g, edge_weights, seeds);
+            REQUIRE((labels == baseline));
+
+            // Re-add with changed label
+            iws.add_seeds(add_v, add_l);
+            seeds(v) = changed_label;
+            labels = iws.get_labeling();
+            baseline = hg::labelisation_seeded_watershed(g, edge_weights, seeds);
+            REQUIRE((labels == baseline));
+        }
+    }
+
 }

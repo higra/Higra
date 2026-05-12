@@ -191,6 +191,14 @@ namespace hg {
      * Quentin Lebon, Josselin Lefevre, Jean Cousty, Benjamin Perret.
      * Interactive Segmentation With Incremental Watershed Cuts.
      * CIARP 2023.
+     *
+     * Example:
+     *   auto iws = hg::make_incremental_watershed_cut(graph, edge_weights);
+     *   hg::array_1d<hg::index_t> sv{0, 5};
+     *   hg::array_1d<hg::index_t> sl{1, 2};
+     *   iws.add_seeds(sv, sl);
+     *   auto labels = iws.get_labeling();
+     *   iws.remove_seeds(sv);
      */
     class incremental_watershed_cut {
 
@@ -215,7 +223,8 @@ namespace hg {
                 m_root((index_t)hg::num_vertices(m_bpt) - 1),
                 m_visit_count(hg::num_vertices(m_bpt), 0),
                 m_is_cut(m_num_leaves - 1, false),
-                m_labels(xt::zeros<index_t>({(size_t)m_num_leaves})) {
+                m_labels(xt::zeros<index_t>({(size_t)m_num_leaves})),
+                m_visited(m_num_leaves, 0) {
             HG_TRACE();
             hg_assert((index_t)num_vertices(m_mst) == m_num_leaves,
                       "MST must have the same number of vertices as leaves in the BPT.");
@@ -247,6 +256,7 @@ namespace hg {
             hg_assert(seed_vertices.size() == seed_labels.size(),
                       "seed_vertices and seed_labels must have the same size.");
 
+            // Pass 1: register seeds and update BPT cut state (Algorithm 1, Lebon et al.).
             for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
                 auto v = (index_t)seed_vertices(i);
                 auto l = (index_t)seed_labels(i);
@@ -257,7 +267,6 @@ namespace hg {
 
                 m_seed_labels[v] = l;
 
-                // Algorithm 1 (Lebon et al.): walk up BPT, increment visitCount
                 index_t n = v;
                 while (n != m_root && m_visit_count[n] != 2) {
                     n = m_bpt.parent(n);
@@ -266,8 +275,11 @@ namespace hg {
                         m_is_cut[n - m_num_leaves] = true;
                     }
                 }
-
-                // Local relabeling: BFS from v in its component
+            }
+            // Pass 2: relabel each seed's component once all cuts of the batch are stable.
+            for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
+                auto v = (index_t)seed_vertices(i);
+                auto l = (index_t)seed_labels(i);
                 relabel_component_from_seed(v, l);
             }
         }
@@ -284,6 +296,15 @@ namespace hg {
             auto &seed_vertices = xseed_vertices.derived_cast();
             hg_assert_1d_array(seed_vertices);
 
+            std::vector<index_t> decut_edges;   // MST edge indices that just got un-cut
+            std::vector<index_t> lone_seeds;    // seeds whose walk-up reached the root without a 2->1 transition
+
+            // Pass 1: walk up the BPT for each removed seed, decrement visitCount,
+            // collect the de-cut MST edge indices in walk-up order. The cut state
+            // m_is_cut is NOT updated here; the update is deferred to Pass 2 so
+            // that each de-cut can be processed in isolation (the BFS for de-cut k
+            // sees only the de-cuts processed before k, which bounds the relabeling
+            // to the freshly merged region).
             for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
                 auto v = (index_t)seed_vertices(i);
                 hg_assert(v >= 0 && v < m_num_leaves, "Seed vertex out of range.");
@@ -292,18 +313,70 @@ namespace hg {
 
                 m_seed_labels.erase(v);
 
-                // Algorithm 2 (Lebon et al.): walk up BPT, decrement visitCount
                 index_t n = v;
-                while (n != m_root && m_visit_count[n] != 1) {
+                bool produced_decut = false;
+                while (n != m_root) {
                     n = m_bpt.parent(n);
                     m_visit_count[n] -= 1;
                     if (m_visit_count[n] == 1) {
-                        m_is_cut[n - m_num_leaves] = false;
+                        decut_edges.push_back(n - m_num_leaves);
+                        produced_decut = true;
+                        break;
                     }
                 }
+                if (!produced_decut) {
+                    lone_seeds.push_back(v);
+                }
+            }
 
-                // Local relabeling: find merged component and relabel from remaining seeds
-                relabel_merged_component(v);
+            // Pass 2a: for each de-cut MST edge (in collection order), reactivate
+            // the edge in the forest and propagate the surviving label across the
+            // newly merged region. The surviving side is identified from seed
+            // presence in each side component (before edge reactivation), not from
+            // endpoint label values alone.
+            for (auto k : decut_edges) {
+                const auto &e = edge_from_index(k, m_mst);
+                auto u = source(e, m_mst);
+                auto w = target(e, m_mst);
+
+                auto lu_seed = component_seed_label(u);
+                auto lw_seed = component_seed_label(w);
+
+                m_is_cut[k] = false;
+
+                index_t target_label;
+                index_t start_vertex;
+                if (lu_seed != 0 && lw_seed == 0) {
+                    target_label = lu_seed;
+                    start_vertex = w;
+                } else if (lw_seed != 0 && lu_seed == 0) {
+                    target_label = lw_seed;
+                    start_vertex = u;
+                } else if (lu_seed == 0 && lw_seed == 0) {
+                    target_label = 0;
+                    start_vertex = u;
+                } else if (lu_seed == lw_seed) {
+                    target_label = lu_seed;
+                    start_vertex = w;
+                } else {
+                    // Both sides have surviving seeds with different labels.
+                    // This should not happen: a de-cut at BPT node n means visitCount
+                    // transitioned from 2→1, so only one child subtree still has a seed.
+                    // After previous de-cuts in this batch, component_seed_label may find
+                    // seeds from merged regions, but they should have the same label.
+                    hg_assert(false, "Both sides of de-cut edge have different seed labels");
+                    target_label = 0;
+                    start_vertex = u;
+                }
+                relabel_component_from_seed(start_vertex, target_label);
+            }
+
+            // Pass 2b: a lone seed had no 2->1 transition during its walk-up,
+            // meaning it was the only seed contributing to visitCount along its
+            // entire path to the root. Its component therefore had no other seed
+            // and must now revert to background (0).
+            for (auto v : lone_seeds) {
+                relabel_component_from_seed(v, 0);
             }
         }
 
@@ -320,6 +393,37 @@ namespace hg {
         }
 
     private:
+
+        /**
+         * Return a seed label present in the connected component of start,
+         * considering current cut state. Returns 0 if no seed is found.
+         */
+        index_t component_seed_label(index_t start) {
+            m_visited_generation++;
+            std::queue<index_t> queue;
+            queue.push(start);
+            m_visited[(size_t)start] = m_visited_generation;
+
+            while (!queue.empty()) {
+                auto u = queue.front();
+                queue.pop();
+
+                auto it = m_seed_labels.find(u);
+                if (it != m_seed_labels.end()) {
+                    return it->second;
+                }
+
+                for (auto e : out_edge_iterator(u, m_mst)) {
+                    auto neighbor = target(e, m_mst);
+                    auto edge_idx = index(e, m_mst);
+                    if (!m_is_cut[edge_idx] && m_visited[(size_t)neighbor] != m_visited_generation) {
+                        m_visited[(size_t)neighbor] = m_visited_generation;
+                        queue.push(neighbor);
+                    }
+                }
+            }
+            return 0;
+        }
 
         /**
          * BFS from seed vertex v, labeling all reachable vertices (not crossing
@@ -347,64 +451,6 @@ namespace hg {
             }
         }
 
-        /**
-         * After removing a seed at vertex v: find the merged component
-         * (BFS from v respecting current cuts), reset labels to 0, then
-         * relabel from all remaining seeds in the component.
-         */
-        void relabel_merged_component(index_t v) {
-            // Step 1: BFS from v to find the merged component and collect seeds
-            std::queue<index_t> queue;
-            std::vector<index_t> component;
-            std::vector<std::pair<index_t, index_t>> seeds_in_component;
-
-            m_labels(v) = -1; // temporary marker
-            queue.push(v);
-            while (!queue.empty()) {
-                auto u = queue.front();
-                queue.pop();
-                component.push_back(u);
-                auto it = m_seed_labels.find(u);
-                if (it != m_seed_labels.end()) {
-                    seeds_in_component.push_back({u, it->second});
-                }
-                for (auto e : out_edge_iterator(u, m_mst)) {
-                    auto neighbor = target(e, m_mst);
-                    auto edge_idx = index(e, m_mst);
-                    if (!m_is_cut[edge_idx] && m_labels(neighbor) != -1) {
-                        m_labels(neighbor) = -1; // temporary marker
-                        queue.push(neighbor);
-                    }
-                }
-            }
-
-            // Step 2: reset component labels to 0
-            for (auto u : component) {
-                m_labels(u) = 0;
-            }
-
-            // Step 3: relabel from remaining seeds in the component
-            for (const auto &seed : seeds_in_component) {
-                auto sv = seed.first;
-                auto sl = seed.second;
-                if (m_labels(sv) != 0) continue;
-                m_labels(sv) = sl;
-                queue.push(sv);
-                while (!queue.empty()) {
-                    auto u = queue.front();
-                    queue.pop();
-                    for (auto e : out_edge_iterator(u, m_mst)) {
-                        auto neighbor = target(e, m_mst);
-                        auto edge_idx = index(e, m_mst);
-                        if (!m_is_cut[edge_idx] && m_labels(neighbor) == 0) {
-                            m_labels(neighbor) = sl;
-                            queue.push(neighbor);
-                        }
-                    }
-                }
-            }
-        }
-
         tree m_bpt;
         ugraph m_mst;
         index_t m_num_leaves;
@@ -421,6 +467,10 @@ namespace hg {
 
         // cached vertex labeling, updated locally by add_seeds/remove_seeds
         array_1d<index_t> m_labels;
+
+        // BFS visited buffer with generation counter (zero-cost reset pattern)
+        index_t m_visited_generation = 0;
+        std::vector<index_t> m_visited;
     };
 
     /**
