@@ -21,6 +21,7 @@
 #include <stack>
 #include <queue>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace hg {
 
@@ -274,6 +275,20 @@ namespace hg {
             hg_assert(seed_vertices.size() == seed_labels.size(),
                       "seed_vertices and seed_labels must have the same size.");
 
+            // Pass 0: pre-validation -- reject entire batch if any element is invalid.
+            {
+                std::unordered_set<index_t> batch_vertices;
+                for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
+                    auto v = (index_t)seed_vertices(i);
+                    auto l = (index_t)seed_labels(i);
+                    hg_assert(v >= 0 && v < m_num_leaves, "Seed vertex out of range.");
+                    hg_assert(l != 0, "Seed label must be non-zero (0 is reserved for background).");
+                    hg_assert(batch_vertices.find(v) == batch_vertices.end(), "Duplicate vertex in batch.");
+                    batch_vertices.insert(v);
+                    hg_assert(m_seed_labels.find(v) == m_seed_labels.end(), "Vertex is already a seed.");
+                }
+            }
+
             // Pass 1: register seeds and update BPT cut state (Algorithm 1, Lebon et al.).
             for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
                 auto v = (index_t)seed_vertices(i);
@@ -313,6 +328,18 @@ namespace hg {
             HG_TRACE();
             auto &seed_vertices = xseed_vertices.derived_cast();
             hg_assert_1d_array(seed_vertices);
+
+            // Pass 0: pre-validation -- reject entire batch if any element is invalid.
+            {
+                std::unordered_set<index_t> batch_vertices;
+                for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
+                    auto v = (index_t)seed_vertices(i);
+                    hg_assert(v >= 0 && v < m_num_leaves, "Seed vertex out of range.");
+                    hg_assert(batch_vertices.find(v) == batch_vertices.end(), "Duplicate vertex in batch.");
+                    batch_vertices.insert(v);
+                    hg_assert(m_seed_labels.find(v) != m_seed_labels.end(), "Vertex is not a seed.");
+                }
+            }
 
             std::vector<index_t> decut_edges;   // MST edge indices that just got un-cut
             std::vector<index_t> lone_seeds;    // seeds whose walk-up reached the root without a 2->1 transition
