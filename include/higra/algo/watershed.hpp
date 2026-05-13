@@ -187,6 +187,24 @@ namespace hg {
      * watershed edges without recomputing from scratch at each interaction.
      * The labeling is cached and updated locally when seeds change.
      *
+     * Complexity:
+     *   Construction:    O(n log n) with n the number of edges in the input
+     *                    graph (dominated by the sort in bpt_canonical).
+     *   add_seeds(K):    O(K * d + S) where d is the height of the BPT
+     *                    (O(log N) for balanced trees, O(N) worst case, with
+     *                    N the number of vertices) and S is the total size of
+     *                    the K MST-forest components relabeled in pass 2.
+     *                    By the visit_count==2 invariant these K components
+     *                    are pairwise disjoint, hence S <= N.
+     *   remove_seeds(K): O(K * d + S') where d is as above and S' is the
+     *                    total work performed by the BFS calls of pass 2a
+     *                    and 2b. When the de-cuts of the batch touch mostly
+     *                    disjoint regions, S' <= N; in the worst case of
+     *                    cascading merges within the same batch (each removal
+     *                    extends a growing super-component), S' can grow to
+     *                    O(K * N).
+     *   get_labeling:    O(1) (the labeling is maintained incrementally).
+     *
      * Reference:
      * Quentin Lebon, Josselin Lefevre, Jean Cousty, Benjamin Perret.
      * Interactive Segmentation With Incremental Watershed Cuts.
@@ -300,11 +318,15 @@ namespace hg {
             std::vector<index_t> lone_seeds;    // seeds whose walk-up reached the root without a 2->1 transition
 
             // Pass 1: walk up the BPT for each removed seed, decrement visitCount,
-            // collect the de-cut MST edge indices in walk-up order. The cut state
-            // m_is_cut is NOT updated here; the update is deferred to Pass 2 so
-            // that each de-cut can be processed in isolation (the BFS for de-cut k
-            // sees only the de-cuts processed before k, which bounds the relabeling
-            // to the freshly merged region).
+            // collect the de-cut MST edge indices in batch insertion order (i.e.
+            // the order seeds appear in the input array; each seed produces at
+            // most one de-cut, at the first 2->1 transition along its walk-up).
+            // The cut state m_is_cut is NOT updated here; the update is deferred
+            // to Pass 2 so that each de-cut can be processed in isolation (the
+            // BFS for de-cut k sees only the de-cuts processed before k, which
+            // bounds the relabeling to the freshly merged region). The
+            // correctness of the resulting labeling does not depend on the
+            // relative BPT depth of the de-cuts within the batch.
             for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
                 auto v = (index_t)seed_vertices(i);
                 hg_assert(v >= 0 && v < m_num_leaves, "Seed vertex out of range.");
@@ -360,10 +382,16 @@ namespace hg {
                     start_vertex = w;
                 } else {
                     // Both sides have surviving seeds with different labels.
-                    // This should not happen: a de-cut at BPT node n means visitCount
-                    // transitioned from 2→1, so only one child subtree still has a seed.
-                    // After previous de-cuts in this batch, component_seed_label may find
-                    // seeds from merged regions, but they should have the same label.
+                    // This branch is unreachable: a de-cut at BPT node n corresponds
+                    // to a visitCount(n): 2 -> 1 transition, so exactly one of the
+                    // two BPT subtrees of n lost its last active seed; the other
+                    // still has at least one. Earlier de-cuts in this batch can
+                    // extend a side's MST-forest component beyond a single BPT
+                    // subtree, but every active seed reachable from a given side
+                    // of edge k shares one label by induction on the 2->1
+                    // invariant (Lebon et al., Algorithm 2). The release-mode
+                    // fallback below avoids leaving the labeling in an
+                    // inconsistent state if the invariant ever breaks.
                     hg_assert(false, "Both sides of de-cut edge have different seed labels");
                     target_label = 0;
                     start_vertex = u;

@@ -373,6 +373,52 @@ class TestIncrementalWatershed(unittest.TestCase):
                 g, edge_weights, seeds.reshape(100, 100))
             self.assertTrue(np.all(labels == baseline.ravel()))
 
+    def test_decuts_ancestor_descendant(self):
+        """
+        Batch remove producing two de-cuts where one BPT node is the ancestor
+        of the other. Exercises Pass 2a across BPT levels.
+
+        Path graph 1x8 with edge weights chosen so the canonical BPT is the
+        balanced binary tree (e_01, e_23, e_45, e_67 fuse first; then e_12,
+        e_56; then e_34 at the root). Seeds at 0, 1, 3, 4 create cuts at
+        p_01 (depth 2), p_0123 (depth 1) and root (depth 1 of right side).
+        Removing 0 and 3 in one batch triggers de-cuts at p_01 and p_0123,
+        with p_01 a descendant of p_0123 in the BPT.
+        """
+        g = hg.get_4_adjacency_graph((1, 8))
+        edge_weights = np.asarray([1, 5, 2, 7, 3, 6, 4], dtype=np.float64)
+
+        sv = np.array([0, 1, 3, 4], dtype=np.int64)
+        sl = np.array([10, 20, 30, 40], dtype=np.int64)
+
+        iws = hg.IncrementalWatershedCut(g, edge_weights)
+        iws.add_seeds(sv, sl)
+        iws.remove_seeds(np.array([0, 3], dtype=np.int64))
+
+        seeds = np.zeros(g.num_vertices(), dtype=np.int64)
+        seeds[1] = 20
+        seeds[4] = 40
+        expected = hg.labelisation_seeded_watershed(
+            g, edge_weights, seeds.reshape(1, 8))
+        self.assertTrue(np.all(iws.get_labeling() == expected))
+
+    def test_add_seed_already_exists_raises(self):
+        g = hg.get_4_adjacency_graph((2, 2))
+        edge_weights = np.asarray((1, 2, 3, 4))
+
+        iws = hg.IncrementalWatershedCut(g, edge_weights)
+        iws.add_seeds(np.array([0]), np.array([1]))
+        with self.assertRaises(Exception):
+            iws.add_seeds(np.array([0]), np.array([2]))
+
+    def test_add_seed_label_zero_raises(self):
+        g = hg.get_4_adjacency_graph((2, 2))
+        edge_weights = np.asarray((1, 2, 3, 4))
+
+        iws = hg.IncrementalWatershedCut(g, edge_weights)
+        with self.assertRaises(Exception):
+            iws.add_seeds(np.array([0]), np.array([0]))
+
 
 if __name__ == '__main__':
     unittest.main()

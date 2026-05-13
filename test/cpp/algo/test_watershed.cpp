@@ -340,4 +340,54 @@ namespace test_watershed {
         }
     }
 
+    TEST_CASE("incremental watershed cut decuts ancestor descendant",
+              "[incremental_watershed_cut]") {
+        // Path graph 1x8 with weights producing a balanced canonical BPT.
+        // Seeds at 0, 1, 3, 4 then batch remove of 0, 3 produces two de-cuts
+        // where one BPT node is a descendant of the other. Compare to the
+        // full seeded watershed to verify Pass 2a handles cross-level de-cuts.
+        auto g = hg::get_4_adjacency_graph({1, 8});
+        array_1d<double> edge_weights{1, 5, 2, 7, 3, 6, 4};
+
+        array_1d<index_t> sv{0, 1, 3, 4};
+        array_1d<index_t> sl{10, 20, 30, 40};
+
+        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
+        iws.add_seeds(sv, sl);
+        array_1d<index_t> rm{0, 3};
+        iws.remove_seeds(rm);
+
+        array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+        seeds(1) = 20;
+        seeds(4) = 40;
+        auto expected = hg::labelisation_seeded_watershed(g, edge_weights, seeds);
+        REQUIRE((iws.get_labeling() == expected));
+    }
+
+    TEST_CASE("incremental watershed cut add duplicate seed throws",
+              "[incremental_watershed_cut]") {
+        auto g = hg::get_4_adjacency_graph({2, 2});
+        array_1d<int> edge_weights{1, 2, 3, 4};
+
+        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
+        array_1d<index_t> sv{0};
+        array_1d<index_t> sl{1};
+        iws.add_seeds(sv, sl);
+
+        array_1d<index_t> sv2{0};
+        array_1d<index_t> sl2{2};
+        REQUIRE_THROWS(iws.add_seeds(sv2, sl2));
+    }
+
+    TEST_CASE("incremental watershed cut add seed label zero throws",
+              "[incremental_watershed_cut]") {
+        auto g = hg::get_4_adjacency_graph({2, 2});
+        array_1d<int> edge_weights{1, 2, 3, 4};
+
+        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
+        array_1d<index_t> sv{0};
+        array_1d<index_t> sl{0};
+        REQUIRE_THROWS(iws.add_seeds(sv, sl));
+    }
+
 }
