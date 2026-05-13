@@ -419,6 +419,109 @@ class TestIncrementalWatershed(unittest.TestCase):
         with self.assertRaises(Exception):
             iws.add_seeds(np.array([0]), np.array([0]))
 
+    def test_add_seeds_batch_duplicate_no_partial_mutation(self):
+        """
+        RED regression test: batch add with duplicate vertex [0, 0].
+        Verifies no partial mutation occurs when an exception is raised
+        mid-batch. After the exception, adding seed 0 with label 1 again
+        must succeed, proving vertex 0 was not pre-registered.
+        """
+        g = hg.get_4_adjacency_graph((2, 2))
+        edge_weights = np.asarray((1, 2, 3, 4))
+
+        iws = hg.IncrementalWatershedCut(g, edge_weights)
+
+        # Batch contains duplicate vertex 0 - must raise
+        with self.assertRaises(Exception):
+            iws.add_seeds(np.array([0, 0]), np.array([1, 2]))
+
+        # After exception, seed 0 with label 1 must be addable (no partial mutation)
+        iws.add_seeds(np.array([0]), np.array([1]))
+        labels = iws.get_labeling()
+        self.assertEqual(labels.flat[0], 1)
+
+    def test_add_seeds_cross_batch_duplicate_no_partial_mutation(self):
+        """
+        RED regression test: cross-batch duplicate detection.
+        First adds seed 0 with label 1, then tries to add [0, 3] with labels [2, 2].
+        The duplicate on vertex 0 must raise without affecting:
+        - seed 0 retaining label 1 (verified via get_labeling)
+        - vertex 3 not being pre-registered (verified by successful re-add)
+        """
+        g = hg.get_4_adjacency_graph((2, 2))
+        edge_weights = np.asarray((1, 2, 3, 4))
+
+        iws = hg.IncrementalWatershedCut(g, edge_weights)
+
+        # Seed vertex 0 with label 1
+        iws.add_seeds(np.array([0]), np.array([1]))
+        self.assertEqual(iws.get_labeling().flat[0], 1)
+
+        # Batch contains vertex 0 again (duplicate) - must raise
+        with self.assertRaises(Exception):
+            iws.add_seeds(np.array([0, 3]), np.array([2, 2]))
+
+        # After exception, vertex 0 must still have label 1 (no partial mutation)
+        self.assertEqual(iws.get_labeling().flat[0], 1)
+
+        # Vertex 3 must not be pre-registered, so adding it with label 2 must succeed
+        iws.add_seeds(np.array([3]), np.array([2]))
+        labels = iws.get_labeling()
+        self.assertEqual(labels.flat[3], 2)
+
+    def test_remove_seeds_batch_duplicate_no_partial_mutation(self):
+        """
+        RED regression test: batch remove with duplicate vertex [0, 0].
+        Verifies no partial mutation occurs when an exception is raised
+        mid-batch. After the exception, seed 0 and seed 3 must retain their labels.
+        """
+        g = hg.get_4_adjacency_graph((2, 2))
+        edge_weights = np.asarray((1, 2, 3, 4))
+
+        iws = hg.IncrementalWatershedCut(g, edge_weights)
+
+        # Seed vertices 0 and 3 with labels 1 and 2
+        iws.add_seeds(np.array([0, 3]), np.array([1, 2]))
+        self.assertEqual(iws.get_labeling().flat[0], 1)
+        self.assertEqual(iws.get_labeling().flat[3], 2)
+
+        # Batch contains duplicate vertex 0 - must raise
+        with self.assertRaises(Exception):
+            iws.remove_seeds(np.array([0, 0]))
+
+        # After exception, seed 0 and seed 3 must retain their labels (no partial mutation)
+        self.assertEqual(iws.get_labeling().flat[0], 1)
+        self.assertEqual(iws.get_labeling().flat[3], 2)
+
+    def test_remove_seeds_cross_batch_duplicate_no_partial_mutation(self):
+        """
+        RED regression test: cross-batch duplicate detection.
+        First adds seeds [0, 3] with labels [1, 2], then tries to remove [0, 1]
+        where 1 is not a seed. The duplicate on vertex 1 (not a seed) must raise
+        without affecting seed 0 (label 1) or seed 3 (label 2).
+        """
+        g = hg.get_4_adjacency_graph((2, 2))
+        edge_weights = np.asarray((1, 2, 3, 4))
+
+        iws = hg.IncrementalWatershedCut(g, edge_weights)
+
+        # Seed vertices 0 and 3 with labels 1 and 2
+        iws.add_seeds(np.array([0, 3]), np.array([1, 2]))
+        self.assertEqual(iws.get_labeling().flat[0], 1)
+        self.assertEqual(iws.get_labeling().flat[3], 2)
+
+        # Batch contains vertex 1 which is not a seed - must raise
+        with self.assertRaises(Exception):
+            iws.remove_seeds(np.array([0, 1]))
+
+        # After exception, seed 0 and seed 3 must retain their labels (no partial mutation)
+        self.assertEqual(iws.get_labeling().flat[0], 1)
+        self.assertEqual(iws.get_labeling().flat[3], 2)
+
+        # Removing just seed 0 must succeed
+        iws.remove_seeds(np.array([0]))
+        self.assertEqual(iws.get_labeling().flat[3], 2)
+
 
 if __name__ == '__main__':
     unittest.main()
