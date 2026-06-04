@@ -97,17 +97,10 @@ class IncrementalWatershedCut:
     :math:`\\mathcal{O}(K \\cdot d + S)` where :math:`d` is the height of the
     BPT (:math:`\\mathcal{O}(\\log N)` for balanced trees, :math:`\\mathcal{O}(N)`
     worst case, with :math:`N` the number of vertices) and :math:`S` is the
-    total size of the :math:`K` MST-forest components relabeled in the second
-    pass. By the :math:`\\text{visit\\_count} == 2` invariant these :math:`K`
-    components are pairwise disjoint, hence :math:`S \\leq N`.
+    total size of the relabeled components.
 
     :func:`remove_seeds` on a batch of :math:`K` seeds runs in
-    :math:`\\mathcal{O}(K \\cdot d + S')` where :math:`d` is as above and
-    :math:`S'` is the total work performed by the BFS calls during the de-cut
-    and relabel phase. When the de-cuts of the batch touch mostly disjoint
-    regions, :math:`S' \\leq N`; in the worst case of cascading merges within
-    the same batch (each removal extends a growing super-component),
-    :math:`S'` can grow to :math:`\\mathcal{O}(K \\cdot N)`.
+    :math:`\\mathcal{O}(K \\cdot d + S)` same as :func:`add_seeds`.
 
     :func:`get_labeling` is :math:`\\mathcal{O}(1)` (the labeling is
     maintained incrementally).
@@ -137,11 +130,6 @@ class IncrementalWatershedCut:
         in the output labeling). Labels must be non-zero (0 is reserved for
         unlabeled/background vertices).
 
-        Re-adding a seed on a vertex that is already a seed (regardless of the
-        label) raises an exception. To change the label of an existing seed,
-        call :func:`remove_seeds` first and then :func:`add_seeds` with the new
-        label.
-
         :param seed_vertices: 1d array of seed vertex indices
         :param seed_labels: 1d array of seed labels (same size as seed_vertices)
         """
@@ -149,6 +137,15 @@ class IncrementalWatershedCut:
         seed_labels = np.asarray(seed_labels, dtype=np.int64).ravel()
         if seed_vertices.size != seed_labels.size:
             raise ValueError("seed_vertices and seed_labels must have the same size.")
+        
+        # assert that seed labels are non-zero
+        if np.any(seed_labels == 0):
+            raise ValueError("seed_labels must be non-zero (0 is reserved for background).")
+        
+        # assert that seed vertices are valid indices
+        if np.any(seed_vertices < 0) or np.any(seed_vertices >= self._graph.num_vertices()):
+            raise ValueError("seed_vertices must be valid vertex indices in the graph.")
+        
         self._impl._add_seeds(seed_vertices, seed_labels)
 
     def remove_seeds(self, seed_vertices):
@@ -160,6 +157,11 @@ class IncrementalWatershedCut:
         seed_vertices = np.asarray(seed_vertices, dtype=np.int64).ravel()
         if seed_vertices.size == 0:
             return
+        
+        # assert that seed vertices are valid indices
+        if np.any(seed_vertices < 0) or np.any(seed_vertices >= self._graph.num_vertices()):
+            raise ValueError("seed_vertices must be valid vertex indices in the graph.")
+
         self._impl._remove_seeds(seed_vertices)
 
     def get_labeling(self):

@@ -10,7 +10,11 @@
 
 #include "../test_utils.hpp"
 #include "higra/algo/watershed.hpp"
+#include "higra/algo/graph_weights.hpp"
 #include "higra/image/graph_image.hpp"
+#include <random>
+#include <unordered_map>
+#include <algorithm>
 
 using namespace hg;
 
@@ -364,7 +368,7 @@ namespace test_watershed {
         REQUIRE((iws.get_labeling() == expected));
     }
 
-    TEST_CASE("incremental watershed cut add duplicate seed throws",
+    TEST_CASE("incremental watershed cut change seed label",
               "[incremental_watershed_cut]") {
         auto g = hg::get_4_adjacency_graph({2, 2});
         array_1d<int> edge_weights{1, 2, 3, 4};
@@ -373,102 +377,119 @@ namespace test_watershed {
         array_1d<index_t> sv{0};
         array_1d<index_t> sl{1};
         iws.add_seeds(sv, sl);
+        array_1d<index_t> expected_1{1, 1, 1, 1};
+        REQUIRE((iws.get_labeling() == expected_1));
 
         array_1d<index_t> sv2{0};
         array_1d<index_t> sl2{2};
-        REQUIRE_THROWS(iws.add_seeds(sv2, sl2));
-    }
-
-    TEST_CASE("incremental watershed cut add seed label zero throws",
-              "[incremental_watershed_cut]") {
-        auto g = hg::get_4_adjacency_graph({2, 2});
-        array_1d<int> edge_weights{1, 2, 3, 4};
-
-        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
-        array_1d<index_t> sv{0};
-        array_1d<index_t> sl{0};
-        REQUIRE_THROWS(iws.add_seeds(sv, sl));
-    }
-
-    TEST_CASE("incremental watershed cut add seeds batch duplicate throws",
-              "[incremental_watershed_cut]") {
-        // add_seeds with duplicate vertices in batch must throw without partial mutation.
-        auto g = hg::get_4_adjacency_graph({2, 2});
-        array_1d<int> edge_weights{1, 2, 3, 4};
-
-        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
-        array_1d<index_t> sv1{0, 0};
-        array_1d<index_t> sl1{1, 2};
-        REQUIRE_THROWS(iws.add_seeds(sv1, sl1));
-
-        // Post-exception: object must be in valid state; adding seed 0 with label 1 must succeed.
-        array_1d<index_t> sv2{0};
-        array_1d<index_t> sl2{1};
         iws.add_seeds(sv2, sl2);
-        REQUIRE(iws.get_labeling()(0) == 1);
+        array_1d<index_t> expected_2{2, 2, 2, 2};
+        REQUIRE((iws.get_labeling() == expected_2));
     }
 
-    TEST_CASE("incremental watershed cut add seeds cross batch duplicate throws",
-              "[incremental_watershed_cut]") {
-        // add_seeds duplicate of a previously added seed must throw without partial mutation.
-        auto g = hg::get_4_adjacency_graph({2, 2});
-        array_1d<int> edge_weights{1, 2, 3, 4};
+    TEST_CASE("incremental watershed cut randomized hardened", "[incremental_watershed_cut]") {
+        const index_t size = 50;
+        const int num_seed_removed = 4;
+        const int marker_radius = 1;
+        const index_t num_vertices_total = size * size;
 
-        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
-        // Add seed 0 with label 1
-        array_1d<index_t> sv1{0};
-        array_1d<index_t> sl1{1};
-        iws.add_seeds(sv1, sl1);
+        std::mt19937 rng(0);
+        std::uniform_real_distribution<double> dist_real(0.0, 1.0);
+        std::uniform_int_distribution<int> dist_label(1, 9);
+        std::uniform_int_distribution<int> dist_pos(0, (int)size - 1);
 
-        // Attempt to add seed 0 again with different label in batch {0, 3} -> must throw.
-        array_1d<index_t> sv2{0, 3};
-        array_1d<index_t> sl2{2, 2};
-        REQUIRE_THROWS(iws.add_seeds(sv2, sl2));
+        auto g = hg::get_4_adjacency_graph({size, size});
 
-        // Post-exception: seed 0 must still have label 1 (no partial mutation).
-        REQUIRE(iws.get_labeling()(0) == 1);
-    }
+        for (int img_idx = 0; img_idx < 10; ++img_idx) {
+            // Generate a random flat image (size*size pixel values in [0,1))
+            array_1d<double> image = xt::empty<double>({(size_t)num_vertices_total});
+            for (index_t k = 0; k < num_vertices_total; ++k)
+                image(k) = dist_real(rng);
 
-    TEST_CASE("incremental watershed cut remove seeds batch duplicate throws",
-              "[incremental_watershed_cut]") {
-        // remove_seeds with duplicate vertices in batch must throw without partial mutation.
-        auto g = hg::get_4_adjacency_graph({2, 2});
-        array_1d<int> edge_weights{1, 2, 3, 4};
+            auto edge_weights = hg::weight_graph(g, image, hg::weight_functions::L1);
 
-        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
-        array_1d<index_t> add_sv{0, 3};
-        array_1d<index_t> add_sl{1, 2};
-        iws.add_seeds(add_sv, add_sl);
+            // seeds array (flat, 0 = background)
+            array_1d<index_t> seeds = xt::zeros<index_t>({(size_t)num_vertices_total});
 
-        // Attempt batch remove with duplicate {0, 0} -> must throw.
-        array_1d<index_t> rm{0, 0};
-        REQUIRE_THROWS(iws.remove_seeds(rm));
+            std::unordered_map<index_t, index_t> seed_dic;
 
-        // Post-exception: seed 0 must still exist; removing it singly must succeed.
-        REQUIRE(iws.get_labeling()(0) == 1);
-        array_1d<index_t> rm2{0};
-        iws.remove_seeds(rm2);
-        // After removing seed 0, vertex 0 merges into seed 3's component (label 2).
-        REQUIRE(iws.get_labeling()(0) == 2);
-    }
+            auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
 
-    TEST_CASE("incremental watershed cut remove seeds non existent in batch throws",
-              "[incremental_watershed_cut]") {
-        // remove_seeds where some vertices are not seeds must throw without partial mutation.
-        auto g = hg::get_4_adjacency_graph({2, 2});
-        array_1d<int> edge_weights{1, 2, 3, 4};
+            for (int step = 0; step < 40; ++step) {
+                bool maybe_add = (seed_dic.size() == 0) || (dist_real(rng) >= 0.3);
 
-        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
-        array_1d<index_t> add_sv{0};
-        array_1d<index_t> add_sl{1};
-        iws.add_seeds(add_sv, add_sl);
+                if (maybe_add) {
+                    index_t label = (index_t)dist_label(rng);
+                    int x = dist_pos(rng);
+                    int y = dist_pos(rng);
 
-        // Attempt to remove {3, 0} where 3 is not a seed -> must throw.
-        array_1d<index_t> rm{3, 0};
-        REQUIRE_THROWS(iws.remove_seeds(rm));
+                    std::vector<index_t> new_seed_positions;
+                    std::vector<index_t> new_seed_labels;
 
-        // Post-exception: seed 0 must still be present and labeled correctly.
-        REQUIRE(iws.get_labeling()(0) == 1);
+                    for (int dy = -marker_radius; dy <= marker_radius; ++dy) {
+                        for (int dx = -marker_radius; dx <= marker_radius; ++dx) {
+                            int nx = x + dx;
+                            int ny = y + dy;
+                            if (nx >= 0 && nx < (int)size && ny >= 0 && ny < (int)size) {
+                                index_t v = (index_t)(ny * size + nx);
+                                if (seed_dic.find(v) == seed_dic.end()) {
+                                    seeds(v) = label;
+                                    seed_dic[v] = label;
+                                    new_seed_positions.push_back(v);
+                                    new_seed_labels.push_back(label);
+                                }
+                            }
+                        }
+                    }
+
+                    if (!new_seed_positions.empty()) {
+                        array_1d<index_t> sv = array_1d<index_t>::from_shape({new_seed_positions.size()});
+                        array_1d<index_t> sl = array_1d<index_t>::from_shape({new_seed_labels.size()});
+                        for (size_t k = 0; k < new_seed_positions.size(); ++k) {
+                            sv(k) = new_seed_positions[k];
+                            sl(k) = new_seed_labels[k];
+                        }
+                        iws.add_seeds(sv, sl);
+                        auto ref = hg::labelisation_seeded_watershed(g, edge_weights, seeds);
+                        REQUIRE((iws.get_labeling() == ref));
+                    }
+                } else {
+                    bool nuke = (dist_real(rng) >= 0.8);
+                    std::vector<index_t> removed_seeds;
+                    if (nuke)
+                    {
+                        // remove all
+                        for (auto &kv : seed_dic) {
+                            seeds(kv.first) = 0;
+                            removed_seeds.push_back(kv.first);
+                        }
+                        seed_dic.clear();
+                    } else
+                    {
+                        // Shuffle the current seed vertices and remove up to num_seed_removed of them
+                        std::vector<index_t> keys;
+                        keys.reserve(seed_dic.size());
+                        for (auto &kv : seed_dic) keys.push_back(kv.first);
+                        std::shuffle(keys.begin(), keys.end(), rng);
+                        int n_remove = std::min((int)keys.size(), num_seed_removed);
+                        keys.resize(n_remove);
+
+                        for (auto v : keys) {
+                            seeds(v) = 0;
+                            seed_dic.erase(v);
+                            removed_seeds.push_back(v);
+                        }
+                    }
+
+                    array_1d<index_t> sv = array_1d<index_t>::from_shape({removed_seeds.size()});
+                    for (size_t k = 0; k < removed_seeds.size(); ++k)
+                        sv(k) = removed_seeds[k];
+                    iws.remove_seeds(sv);
+                    auto ref = hg::labelisation_seeded_watershed(g, edge_weights, seeds);
+                    REQUIRE((iws.get_labeling() == ref));
+                }
+            }
+        }
     }
 
 }

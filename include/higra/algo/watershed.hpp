@@ -189,21 +189,12 @@ namespace hg {
      * The labeling is cached and updated locally when seeds change.
      *
      * Complexity:
-     *   Construction:    O(n log n) with n the number of edges in the input
-     *                    graph (dominated by the sort in bpt_canonical).
+     *   Construction:    O(n) with n the number of elements in the BPT
      *   add_seeds(K):    O(K * d + S) where d is the height of the BPT
      *                    (O(log N) for balanced trees, O(N) worst case, with
      *                    N the number of vertices) and S is the total size of
-     *                    the K MST-forest components relabeled in pass 2.
-     *                    By the visit_count==2 invariant these K components
-     *                    are pairwise disjoint, hence S <= N.
-     *   remove_seeds(K): O(K * d + S') where d is as above and S' is the
-     *                    total work performed by the BFS calls of pass 2a
-     *                    and 2b. When the de-cuts of the batch touch mostly
-     *                    disjoint regions, S' <= N; in the worst case of
-     *                    cascading merges within the same batch (each removal
-     *                    extends a growing super-component), S' can grow to
-     *                    O(K * N).
+     *                    the regions relabeled.
+     *   remove_seeds(K): O(K * d + S) same as add_seeds.
      *   get_labeling:    O(1) (the labeling is maintained incrementally).
      *
      * Reference:
@@ -229,8 +220,7 @@ namespace hg {
          *
          * The MST edges must be ordered consistently with the BPT internal
          * nodes: MST edge i corresponds to BPT internal node (num_leaves + i).
-         * This ordering is guaranteed when the MST is built from bpt_canonical
-         * via subgraph_spanning.
+         * This ordering is guaranteed when the MST is built from bpt_canonical.
          *
          * @param bpt canonical binary partition tree
          * @param mst minimum spanning tree of the original graph (as ugraph)
@@ -240,15 +230,17 @@ namespace hg {
                 m_mst(std::move(mst)),
                 m_num_leaves((index_t)num_leaves(m_bpt)),
                 m_root((index_t)hg::num_vertices(m_bpt) - 1),
-                m_visit_count(hg::num_vertices(m_bpt), 0),
+                m_seed_count(hg::num_vertices(m_bpt), 0),
                 m_is_cut(m_num_leaves - 1, false),
-                m_labels(xt::zeros<index_t>({(size_t)m_num_leaves})),
                 m_visited(m_num_leaves, 0) {
             HG_TRACE();
             hg_assert((index_t)num_vertices(m_mst) == m_num_leaves,
                       "MST must have the same number of vertices as leaves in the BPT.");
             hg_assert((index_t)num_edges(m_mst) == m_num_leaves - 1,
                       "MST must have exactly num_leaves - 1 edges.");
+            m_labels = xt::zeros<index_t>({(size_t)m_num_leaves});
+            m_seed_map = array_1d<index_t>::from_shape({(size_t)m_num_leaves});
+            m_seed_map.fill(-1);
         }
 
         /**
@@ -275,45 +267,32 @@ namespace hg {
             hg_assert(seed_vertices.size() == seed_labels.size(),
                       "seed_vertices and seed_labels must have the same size.");
 
-            // Pass 0: pre-validation -- reject entire batch if any element is invalid.
-            {
-                std::unordered_set<index_t> batch_vertices;
-                for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
-                    auto v = (index_t)seed_vertices(i);
-                    auto l = (index_t)seed_labels(i);
-                    hg_assert(v >= 0 && v < m_num_leaves, "Seed vertex out of range.");
-                    hg_assert(l != 0, "Seed label must be non-zero (0 is reserved for background).");
-                    hg_assert(batch_vertices.find(v) == batch_vertices.end(), "Duplicate vertex in batch.");
-                    batch_vertices.insert(v);
-                    hg_assert(m_seed_labels.find(v) == m_seed_labels.end(), "Vertex is already a seed.");
-                }
-            }
+            m_visited_generation++;
 
-            // Pass 1: register seeds and update BPT cut state (Algorithm 1, Lebon et al.).
             for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
                 auto v = (index_t)seed_vertices(i);
-                auto l = (index_t)seed_labels(i);
-                hg_assert(v >= 0 && v < m_num_leaves, "Seed vertex out of range.");
-                hg_assert(l != 0, "Seed label must be non-zero (0 is reserved for background).");
-                hg_assert(m_seed_labels.find(v) == m_seed_labels.end(),
-                          "Vertex is already a seed.");
 
-                m_seed_labels[v] = l;
+                if(m_seed_map[v] == v) // v is already a seed
+                    continue;
 
                 index_t n = v;
-                while (n != m_root && m_visit_count[n] != 2) {
+                while (n != m_root && m_seed_count[n] != 2) {
                     n = m_bpt.parent(n);
-                    m_visit_count[n] += 1;
-                    if (m_visit_count[n] == 2) {
+                    m_seed_count[n] += 1;
+                    if (m_seed_count[n] == 2) {
                         m_is_cut[n - m_num_leaves] = true;
                     }
                 }
             }
-            // Pass 2: relabel each seed's component once all cuts of the batch are stable.
+
             for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
                 auto v = (index_t)seed_vertices(i);
                 auto l = (index_t)seed_labels(i);
-                relabel_component_from_seed(v, l);
+
+                if(m_seed_map[v] == v  && m_labels[v] == l) // v is already a seed with the same label, no need to relabel its component
+                    continue;
+
+                relabel_component_from_seed(v, l, v);
             }
         }
 
@@ -325,114 +304,82 @@ namespace hg {
          */
         template<typename T1>
         void remove_seeds(const xt::xexpression<T1> &xseed_vertices) {
+            m_visited_generation++;
             HG_TRACE();
             auto &seed_vertices = xseed_vertices.derived_cast();
             hg_assert_1d_array(seed_vertices);
 
-            // Pass 0: pre-validation -- reject entire batch if any element is invalid.
-            {
-                std::unordered_set<index_t> batch_vertices;
-                for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
-                    auto v = (index_t)seed_vertices(i);
-                    hg_assert(v >= 0 && v < m_num_leaves, "Seed vertex out of range.");
-                    hg_assert(batch_vertices.find(v) == batch_vertices.end(), "Duplicate vertex in batch.");
-                    batch_vertices.insert(v);
-                    hg_assert(m_seed_labels.find(v) != m_seed_labels.end(), "Vertex is not a seed.");
-                }
-            }
-
             std::vector<index_t> decut_edges;   // MST edge indices that just got un-cut
-            std::vector<index_t> lone_seeds;    // seeds whose walk-up reached the root without a 2->1 transition
+            std::vector<index_t> start_vertices; // vertices from which to start BFS
+            std::vector<index_t> labels_to_propagate; // labels to propagate
+            std::vector<index_t> reference_seeds; // seeds that define the labels to propagate
+            std::vector<index_t> removed_ws_cut_edges; // MST edge indices of the watershed edges to remove
 
-            // Pass 1: walk up the BPT for each removed seed, decrement visitCount,
-            // collect the de-cut MST edge indices in batch insertion order (i.e.
-            // the order seeds appear in the input array; each seed produces at
-            // most one de-cut, at the first 2->1 transition along its walk-up).
-            // The cut state m_is_cut is NOT updated here; the update is deferred
-            // to Pass 2 so that each de-cut can be processed in isolation (the
-            // BFS for de-cut k sees only the de-cuts processed before k, which
-            // bounds the relabeling to the freshly merged region). The
-            // correctness of the resulting labeling does not depend on the
-            // relative BPT depth of the de-cuts within the batch.
             for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
                 auto v = (index_t)seed_vertices(i);
-                hg_assert(v >= 0 && v < m_num_leaves, "Seed vertex out of range.");
-                hg_assert(m_seed_labels.find(v) != m_seed_labels.end(),
-                          "Vertex is not a seed.");
 
-                m_seed_labels.erase(v);
+                if(m_seed_map[v] != v) // this vertex is not a seed...
+                    continue;
+
+                m_seed_map[v] = -1; // mark seed as undefined for the moment
 
                 index_t n = v;
-                bool produced_decut = false;
                 while (n != m_root) {
                     n = m_bpt.parent(n);
-                    m_visit_count[n] -= 1;
-                    if (m_visit_count[n] == 1) {
+                    m_seed_count[n] -= 1;
+                    if (m_seed_count[n] == 1) {
                         decut_edges.push_back(n - m_num_leaves);
-                        produced_decut = true;
                         break;
                     }
                 }
-                if (!produced_decut) {
-                    lone_seeds.push_back(v);
-                }
+
             }
 
-            // Pass 2a: for each de-cut MST edge (in collection order), reactivate
-            // the edge in the forest and propagate the surviving label across the
-            // newly merged region. The surviving side is identified from seed
-            // presence in each side component (before edge reactivation), not from
-            // endpoint label values alone.
             for (auto k : decut_edges) {
                 const auto &e = edge_from_index(k, m_mst);
                 auto u = source(e, m_mst);
                 auto w = target(e, m_mst);
 
-                auto lu_seed = component_seed_label(u);
-                auto lw_seed = component_seed_label(w);
+                auto u_seed = m_seed_map[u];
+                if (u_seed !=-1 ) u_seed = m_seed_map[u_seed]; // if u was not a seed itself, follow the seed map to find the seed of its component
+                auto w_seed = m_seed_map[w];
+                if (w_seed != -1) w_seed = m_seed_map[w_seed]; // if w was not a seed itself, follow the seed map to find the seed of its component
 
-                m_is_cut[k] = false;
+                bool u_removed = (u_seed == -1);
+                bool w_removed = (w_seed == -1);
 
-                index_t target_label;
-                index_t start_vertex;
-                if (lu_seed != 0 && lw_seed == 0) {
-                    target_label = lu_seed;
-                    start_vertex = w;
-                } else if (lw_seed != 0 && lu_seed == 0) {
-                    target_label = lw_seed;
-                    start_vertex = u;
-                } else if (lu_seed == 0 && lw_seed == 0) {
-                    target_label = 0;
-                    start_vertex = u;
-                } else if (lu_seed == lw_seed) {
-                    target_label = lu_seed;
-                    start_vertex = w;
-                } else {
-                    // Both sides have surviving seeds with different labels.
-                    // This branch is unreachable: a de-cut at BPT node n corresponds
-                    // to a visitCount(n): 2 -> 1 transition, so exactly one of the
-                    // two BPT subtrees of n lost its last active seed; the other
-                    // still has at least one. Earlier de-cuts in this batch can
-                    // extend a side's MST-forest component beyond a single BPT
-                    // subtree, but every active seed reachable from a given side
-                    // of edge k shares one label by induction on the 2->1
-                    // invariant (Lebon et al., Algorithm 2). The release-mode
-                    // fallback below avoids leaving the labeling in an
-                    // inconsistent state if the invariant ever breaks.
-                    hg_assert(false, "Both sides of de-cut edge have different seed labels");
-                    target_label = 0;
-                    start_vertex = u;
+                if (u_removed && w_removed) { // no seed on either side of the de-cut edge
+                    m_is_cut[k] = false; // remove the cut immediately, relabeling will come from somewhere else
+                } else if (w_removed) { // relabel starting from w with u data
+                    removed_ws_cut_edges.push_back(k);
+                    start_vertices.push_back(w);
+                    labels_to_propagate.push_back(m_labels(u_seed));
+                    reference_seeds.push_back(u_seed);
+                } else if (u_removed) { // relabel starting from u with w data
+                    removed_ws_cut_edges.push_back(k);
+                    start_vertices.push_back(u);
+                    labels_to_propagate.push_back(m_labels(w_seed));
+                    reference_seeds.push_back(w_seed);
+                } else { // should not be possible
+                    throw std::logic_error("Invariant violation: at least one of u_seed or w_seed should be != -1");
                 }
-                relabel_component_from_seed(start_vertex, target_label);
             }
 
-            // Pass 2b: a lone seed had no 2->1 transition during its walk-up,
-            // meaning it was the only seed contributing to visitCount along its
-            // entire path to the root. Its component therefore had no other seed
-            // and must now revert to background (0).
-            for (auto v : lone_seeds) {
-                relabel_component_from_seed(v, 0);
+            if (start_vertices.empty()){ // no seed left, reset everything
+                m_labels.fill(0);
+                m_seed_map.fill(-1);
+                return;
             }
+
+            for (index_t i = 0; i < (index_t)start_vertices.size(); i++) {
+                auto start = start_vertices[i];
+                auto label = labels_to_propagate[i];
+                auto reference_seed = reference_seeds[i];
+                relabel_component_from_seed(start, label, reference_seed);
+            }
+
+            for (auto k : removed_ws_cut_edges)
+                m_is_cut[k] = false;
         }
 
         /**
@@ -449,58 +396,28 @@ namespace hg {
 
     private:
 
+
+
         /**
-         * Return a seed label present in the connected component of start,
-         * considering current cut state. Returns 0 if no seed is found.
+         * BFS from seed vertex start, labeling all reachable vertices (not crossing
+         * cut edges) with the given label and seed, and updating the seed_map accordingly.
          */
-        index_t component_seed_label(index_t start) {
-            m_visited_generation++;
-            std::queue<index_t> queue;
-            queue.push(start);
-            m_visited[(size_t)start] = m_visited_generation;
-
-            while (!queue.empty()) {
-                auto u = queue.front();
-                queue.pop();
-
-                auto it = m_seed_labels.find(u);
-                if (it != m_seed_labels.end()) {
-                    return it->second;
-                }
-
+        void relabel_component_from_seed(index_t start, index_t label, index_t seed) {
+            m_labels[start] = label;
+            m_seed_map[start] = seed;
+            m_visited[start] = m_visited_generation;
+            m_queue.push(start);
+            while (!m_queue.empty()) {
+                auto u = m_queue.front();
+                m_queue.pop();
                 for (auto e : out_edge_iterator(u, m_mst)) {
                     auto neighbor = target(e, m_mst);
                     auto edge_idx = index(e, m_mst);
-                    if (!m_is_cut[edge_idx] && m_visited[(size_t)neighbor] != m_visited_generation) {
-                        m_visited[(size_t)neighbor] = m_visited_generation;
-                        queue.push(neighbor);
-                    }
-                }
-            }
-            return 0;
-        }
-
-        /**
-         * BFS from seed vertex v, labeling all reachable vertices (not crossing
-         * cut edges) with the given label.
-         *
-         * After add_seeds creates new cuts, v's component is guaranteed to
-         * contain no other seed (the binary tree structure of the BPT ensures
-         * that visitCount == 2 at the LCA of v and any existing seed).
-         */
-        void relabel_component_from_seed(index_t v, index_t label) {
-            std::queue<index_t> queue;
-            m_labels(v) = label;
-            queue.push(v);
-            while (!queue.empty()) {
-                auto u = queue.front();
-                queue.pop();
-                for (auto e : out_edge_iterator(u, m_mst)) {
-                    auto neighbor = target(e, m_mst);
-                    auto edge_idx = index(e, m_mst);
-                    if (!m_is_cut[edge_idx] && m_labels(neighbor) != label) {
-                        m_labels(neighbor) = label;
-                        queue.push(neighbor);
+                    if (!m_is_cut[edge_idx] && m_visited[neighbor] != m_visited_generation) {
+                        m_visited[neighbor] = m_visited_generation;
+                        m_labels[neighbor] = label;
+                        m_seed_map[neighbor] = seed;
+                        m_queue.push(neighbor);
                     }
                 }
             }
@@ -512,16 +429,18 @@ namespace hg {
         index_t m_root;
 
         // visitCount array on BPT nodes (Algorithm 1 & 2)
-        std::vector<index_t> m_visit_count;
+        std::vector<index_t> m_seed_count;
 
         // cut state of each MST edge
         std::vector<bool> m_is_cut;
 
-        // current seeds: vertex -> label
-        std::unordered_map<index_t, index_t> m_seed_labels;
+        // cached queue for BFS calls in relabel_component_from_seed (pass 2a) to avoid repeated allocations
+        std::queue<index_t> m_queue;
 
         // cached vertex labeling, updated locally by add_seeds/remove_seeds
         array_1d<index_t> m_labels;
+        // seed that originated the label of each vertex (-1 if no seed, i.e. background)
+        array_1d<index_t> m_seed_map;
 
         // BFS visited buffer with generation counter (zero-cost reset pattern)
         index_t m_visited_generation = 0;
