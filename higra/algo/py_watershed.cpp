@@ -62,6 +62,38 @@ namespace py_watershed {
 
         add_type_overloads<def_labelisation_watershed<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
         add_type_overloads<def_labelisation_seeded_watershed<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
+
+        auto cls = py::class_<hg::incremental_watershed_cut>(m, "IncrementalWatershedCut",
+                "Incremental seeded watershed cut based on the binary partition tree.\n\n"
+                "Provides efficient computation of seeded watershed cuts in an interactive "
+                "segmentation setting, where seeds are added and removed incrementally.");
+
+        cls.def(py::init<const hg::tree &, const hg::ugraph &>(),
+                py::arg("bpt"),
+                py::arg("mst"),
+                "Create an incremental watershed cut object from a binary partition tree and its MST.");
+
+        cls.def("_add_seeds",
+                [](hg::incremental_watershed_cut &self,
+                   const pyarray<hg::index_t> &seed_vertices,
+                   const pyarray<hg::index_t> &seed_labels) {
+                    self.add_seeds(seed_vertices, seed_labels);
+                },
+                "Add seeds with given labels.",
+                py::arg("seed_vertices"),
+                py::arg("seed_labels"));
+
+        cls.def("_remove_seeds",
+                [](hg::incremental_watershed_cut &self,
+                   const pyarray<hg::index_t> &seed_vertices) {
+                    self.remove_seeds(seed_vertices);
+                },
+                "Remove seeds.",
+                py::arg("seed_vertices"));
+
+        cls.def("_get_labeling",
+                &hg::incremental_watershed_cut::get_labeling,
+                "Compute and return the current vertex labeling.");
     }
 }
 

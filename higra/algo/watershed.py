@@ -73,3 +73,105 @@ def labelisation_seeded_watershed(graph, edge_weights, vertex_seeds, background_
 
     labels = hg.delinearize_vertex_weights(labels, graph)
     return labels
+
+
+class IncrementalWatershedCut:
+    """
+    Incremental seeded watershed cut based on the binary partition tree.
+
+    This class provides an efficient way to compute seeded watershed cuts
+    in an interactive segmentation setting, where seeds are added and removed
+    incrementally. Instead of recomputing the full watershed from scratch at
+    each interaction, only the affected regions are updated.
+
+    The algorithm maintains a canonical BPT and a visitCount array to identify
+    watershed edges. The labeling is obtained by BFS on the MST forest.
+
+    :Complexity:
+
+    Construction is dominated by the canonical BPT and MST construction in
+    :math:`\\mathcal{O}(n \\log n)` with :math:`n` the number of edges in the
+    input graph (dominated by the edge sort).
+
+    :func:`add_seeds` on a batch of :math:`K` seeds runs in
+    :math:`\\mathcal{O}(K \\cdot d + S)` where :math:`d` is the height of the
+    BPT (:math:`\\mathcal{O}(\\log N)` for balanced trees, :math:`\\mathcal{O}(N)`
+    worst case, with :math:`N` the number of vertices) and :math:`S` is the
+    total size of the relabeled components.
+
+    :func:`remove_seeds` on a batch of :math:`K` seeds runs in
+    :math:`\\mathcal{O}(K \\cdot d + S)` same as :func:`add_seeds`.
+
+    :func:`get_labeling` is :math:`\\mathcal{O}(1)` (the labeling is
+    maintained incrementally).
+
+    Reference:
+
+        Q. Lebon, J. Lefevre, J. Cousty, B. Perret.
+        `Interactive Segmentation With Incremental Watershed Cuts <https://hal.science/hal-04069187v1>`_.
+        CIARP 2023.
+
+    :param graph: input graph (must be connected)
+    :param edge_weights: Weights on the edges of the graph
+    """
+
+    def __init__(self, graph, edge_weights):
+        tree, _ = hg.bpt_canonical(graph, edge_weights, compute_mst=True)
+        mst = hg.CptBinaryHierarchy.get_mst(tree)
+        self._impl = hg.cpp.IncrementalWatershedCut(tree, mst)
+        self._graph = graph
+
+    def add_seeds(self, seed_vertices, seed_labels):
+        """
+        Add seeds to the current watershed cut.
+
+        Each seed is defined by a vertex index and a label. Two seeds cannot share
+        the same vertex but can share the same label (resulting in merged regions
+        in the output labeling). Labels must be non-zero (0 is reserved for
+        unlabeled/background vertices).
+
+        :param seed_vertices: 1d array of seed vertex indices
+        :param seed_labels: 1d array of seed labels (same size as seed_vertices)
+        """
+        seed_vertices = np.asarray(seed_vertices, dtype=np.int64).ravel()
+        seed_labels = np.asarray(seed_labels, dtype=np.int64).ravel()
+        if seed_vertices.size != seed_labels.size:
+            raise ValueError("seed_vertices and seed_labels must have the same size.")
+        
+        # assert that seed labels are non-zero
+        if np.any(seed_labels == 0):
+            raise ValueError("seed_labels must be non-zero (0 is reserved for background).")
+        
+        # assert that seed vertices are valid indices
+        if np.any(seed_vertices < 0) or np.any(seed_vertices >= self._graph.num_vertices()):
+            raise ValueError("seed_vertices must be valid vertex indices in the graph.")
+        
+        self._impl._add_seeds(seed_vertices, seed_labels)
+
+    def remove_seeds(self, seed_vertices):
+        """
+        Remove seeds from the current watershed cut.
+
+        :param seed_vertices: 1d array of seed vertex indices to remove
+        """
+        seed_vertices = np.asarray(seed_vertices, dtype=np.int64).ravel()
+        if seed_vertices.size == 0:
+            return
+        
+        # assert that seed vertices are valid indices
+        if np.any(seed_vertices < 0) or np.any(seed_vertices >= self._graph.num_vertices()):
+            raise ValueError("seed_vertices must be valid vertex indices in the graph.")
+
+        self._impl._remove_seeds(seed_vertices)
+
+    def get_labeling(self):
+        """
+        Compute and return the current vertex labeling.
+
+        Vertices with no seed in their component are labeled 0 (background).
+
+        :return: A labeling of the graph vertices
+        """
+        labels = self._impl._get_labeling()
+        labels = hg.delinearize_vertex_weights(labels, self._graph)
+        return labels
