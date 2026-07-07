@@ -144,22 +144,34 @@ namespace hg {
         union_find uf(num_nodes);
 
         array_1d<label_type> labels = vertex_seeds;
-
-        for (index_t i = 0; i < num_edges; i++) {
-            auto ei = sorted_edges_indices[i];
-            auto e = edge_from_index(ei, graph);
-            auto c1 = uf.find(source(e, graph));
-            auto c2 = uf.find(target(e, graph));
-
-            if (c1 != c2 && (labels(c1) == background_label || labels(c2) == background_label)) {
-                if (labels(c1) == background_label) {
-                    labels(c1) = labels(c2);
-                } else {
-                    labels(c2) = labels(c1);
-                }
-                uf.link(c1, c2);
+        index_t num_background_components = 0;
+        for (index_t i = 0; i < num_nodes; i++) {
+            if (labels(i) == background_label) {
+                num_background_components++;
             }
+        }
 
+        if (num_background_components > 0) {
+            for (index_t i = 0; i < num_edges; i++) {
+                auto ei = sorted_edges_indices[i];
+                auto e = edge_from_index(ei, graph);
+                auto c1 = uf.find(source(e, graph));
+                auto c2 = uf.find(target(e, graph));
+
+                if (c1 != c2 && (labels(c1) == background_label || labels(c2) == background_label)) {
+                    if (labels(c1) == background_label) {
+                        labels(c1) = labels(c2);
+                    } else {
+                        labels(c2) = labels(c1);
+                    }
+                    uf.link(c1, c2);
+
+                    num_background_components--;
+                    if (num_background_components == 0) {
+                        break;
+                    }
+                }
+            }
         }
 
         for (index_t i = 0; i < num_nodes; i++) {
