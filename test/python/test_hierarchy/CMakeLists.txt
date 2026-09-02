@@ -13,6 +13,7 @@ set(PY_FILES
         test_binary_partition_tree.py
         test_constrained_connectivity_hierarchy.py
         test_component_tree.py
+        test_component_tree_dual_filter.py
         test_hierarchy_core.py
         test_random_hierarchy.py
         test_watershed_hierarchy.py)

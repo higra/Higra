@@ -11,8 +11,10 @@
 set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/test_binary_partition_tree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_component_tree.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_component_tree_casf.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_hierarchy_core.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_watershed_hierarchy.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_dynamic_component_tree.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_dynamic_component_tree_attribute_computers.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_dual_min_max_tree_incremental_filter.cpp
         PARENT_SCOPE)
-
-
