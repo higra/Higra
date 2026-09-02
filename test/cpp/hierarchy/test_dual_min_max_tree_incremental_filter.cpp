@@ -94,9 +94,9 @@ namespace {
         }
 
         /*
-         * Reference maxtree and mintree for the 12x12 demo image.
+         * Reference max-tree and min-tree for the 12x12 demo image.
          *
-         * == Dynamic maxtree ==
+         * == Dynamic max-tree ==
          * └──ID: 158, Parent: 158, Altitude: 1, NumChildren: 1,
          *    ProperParts: [6, 7, 8, 9, 10, 11, 23, 35, 47, 59, 71, 83, 95, 107, 119, 131, 138, 139, 140, 141, 142, 143],
          *    ProperPartCount: 22
@@ -122,7 +122,7 @@ namespace {
          *             ├──ID: 145, Parent: 153, Altitude: 8, NumChildren: 0, ProperParts: [117], ProperPartCount: 1
          *             └──ID: 146, Parent: 153, Altitude: 8, NumChildren: 0, ProperParts: [115], ProperPartCount: 1
          *
-         * == Dynamic mintree ==
+         * == Dynamic min-tree ==
          * └──ID: 153, Parent: 153, Altitude: 8, NumChildren: 1, ProperParts: [115, 117, 121], ProperPartCount: 3
          *    └──ID: 152, Parent: 153, Altitude: 7, NumChildren: 1, ProperParts: [108, 120], ProperPartCount: 2
          *       └──ID: 151, Parent: 152, Altitude: 6, NumChildren: 3,
@@ -244,7 +244,7 @@ namespace {
     } // namespace
 
     TEST_CASE("dual min max tree incremental filter maxtree update matches the rebuild image baseline after mintree pruning", "[dual_min_max_tree_incremental_filter]") {
-            // The updated maxtree must represent the same filtered image as a prune-then-rebuild baseline.
+            // The updated max-tree must represent the same filtered image as a prune-then-rebuild baseline.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
             auto [maxtree, maxAltitude] = make_component_tree_with_altitude(graph, image, true);
@@ -329,7 +329,7 @@ namespace {
     }
 
     TEST_CASE("dual min max tree incremental filter keeps final tree connected and area-consistent", "[dual_min_max_tree_incremental_filter]") {
-            // The subtree adjustment must preserve a valid maxtree and keep incremental area exact.
+            // The subtree adjustment must preserve a valid max-tree and keep incremental area exact.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
     
@@ -375,7 +375,7 @@ namespace {
     }
 
     TEST_CASE("dual min max tree incremental filter also preserves the symmetric maxtree-to-mintree case", "[dual_min_max_tree_incremental_filter]") {
-            // The symmetric adjustment must reconnect the final node union under nodeCa when nodeCa survives.
+            // The symmetric adjustment must reconnect the final merged node under nodeCa when nodeCa survives.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
     
@@ -424,7 +424,8 @@ namespace {
     }
 
     TEST_CASE("dual min max tree incremental filter remains structurally valid on all shared mintree subtree roots", "[dual_min_max_tree_incremental_filter]") {
-            // Every shared non-root mintree subtree root should keep the adjusted maxtree connected and area-consistent.
+            // Every shared non-root min-tree subtree root should keep the adjusted
+            // max-tree connected and area-consistent.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
     
@@ -456,7 +457,8 @@ namespace {
     }
 
     TEST_CASE("dual min max tree incremental filter remains structurally valid on all shared maxtree subtree roots", "[dual_min_max_tree_incremental_filter]") {
-            // Every shared non-root maxtree subtree root should keep the adjusted mintree connected and area-consistent.
+            // Every shared non-root max-tree subtree root should keep the adjusted
+            // min-tree connected and area-consistent.
             auto graph = get_4_adjacency_implicit_graph({12, 12});
             auto image = make_demo_image();
     

@@ -83,7 +83,7 @@ namespace hg::detail::hierarchy {
 
     /**
      * @brief Incremental area computer for the internal dynamic component tree.
-     * @details Computes the canonical increasing area attribute by counting the
+     * @details Computes the increasing area attribute by counting the
      * proper parts directly owned by each node and accumulating child areas. The
      * single-node refresh contract is therefore straightforward: once child areas are
      * current, recomputing a parent requires only its direct proper-part count and the
@@ -118,12 +118,12 @@ namespace hg::detail::hierarchy {
 
     /**
      * @brief Incremental bounding-box attribute computer for dynamic component trees.
-     * @details The constructor receives a pixel-to-point functor so the tree backend
-     * stays independent from any specific image embedding. The resulting scalar can
+     * @details The constructor receives a mapping from proper-part ids to points so the tree
+     * backend stays independent of any specific graph embedding. The resulting scalar can
      * be the box width, height, or diagonal length.
      *
      * The computer keeps per-node mutable auxiliary buffers: `local_` stores the box of
-     * direct proper parts together with extremum multiplicities, while `subtree_` stores
+     * direct proper parts together with counts for each box extremum, while `subtree_` stores
      * the accumulated box after child merges. Consequently, a single-node refresh with
      * `computeAttributeOnNode(...)` is valid only when applied bottom-up on the affected
      * path, after all edited children have themselves been refreshed.
@@ -169,7 +169,7 @@ namespace hg::detail::hierarchy {
         mutable std::vector<DynamicComponentTreeBoundingBoxState> subtree_;
 
         /**
-         * @brief Restores an empty local box and clears all extremum multiplicities.
+         * @brief Restores an empty local box and clears all bounding-box extremum counts.
          */
         void resetLocalBox(DynamicComponentTreeBoundingBoxLocalSummary &local) const {
             local.xmin = 0;
@@ -293,7 +293,7 @@ namespace hg::detail::hierarchy {
         }
 
         /**
-         * @brief Unions a child subtree box into an accumulated parent subtree box.
+         * @brief Merges a child subtree bounding box into the accumulated parent bounding box.
          */
         void mergeSubtreeStates(DynamicComponentTreeBoundingBoxState &target, const DynamicComponentTreeBoundingBoxState &source) const {
             if (source.empty) {
@@ -426,8 +426,8 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Updates local caches after moving a single proper part between two nodes.
          * @details The target cache is updated eagerly. The source cache stays exact as long as
-         * the removed pixel does not exhaust one extremum; otherwise it is marked dirty and
-         * rebuilt lazily on the next access.
+         * the removed proper part is not the last one attaining any bounding-box extremum;
+         * otherwise it is marked dirty and rebuilt lazily on the next access.
          */
         void onMoveProperPart(index_t targetId, index_t sourceId, index_t pixelId, const tree_type &tree) const override {
             ensureLocalSummary(targetId, tree);

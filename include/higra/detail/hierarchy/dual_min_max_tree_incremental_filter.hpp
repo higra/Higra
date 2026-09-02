@@ -37,7 +37,7 @@ namespace hg::detail::hierarchy {
     }
 
     /**
-     * @brief Incremental updater for paired dynamic min-tree / max-tree hierarchies.
+     * @brief Incremental updater for paired dynamic min-tree and max-tree hierarchies.
      * 
      * This class implements the update-rather-than-rebuild strategy introduced
      * in [1,2] and used for efficient connected alternating sequential filters.
@@ -47,13 +47,13 @@ namespace hg::detail::hierarchy {
      *
      * More precisely, when a rooted subtree is removed from one hierarchy, this
      * helper updates the dual hierarchy in place so that both trees remain
-     * consistent with the same filtered image. The update is performed by
-     * collecting valid adjacent seeds around the induced proper-part set `C`,
+     * consistent with the same filtered vertex weights. The update is performed by
+     * collecting valid adjacent candidate nodes around the induced proper-part set `C`,
      * climbing each relevant ancestor chain once, and merging nodes level by
      * level instead of rebuilding the whole dual tree from scratch.
      *
      * Public usage model:
-     *  - construct the helper from a dynamic min-tree / max-tree pair and the
+     *  - construct the helper from a dynamic min-tree and max-tree pair and the
      *    shared adjacency graph;
      *  - optionally register an incremental attribute computer and the
      *    attribute buffers to be refreshed after local edits;
@@ -185,7 +185,7 @@ namespace hg::detail::hierarchy {
         };
 
         /**
-         * @brief Returns `true` iff the altitude type should use dense buckets.
+         * @brief Returns `true` if and only if the altitude type should use dense buckets.
          * @details Dense buckets are enabled only for small integral altitude
          * domains. Larger integral domains and floating-point types use the
          * sparse backend.
@@ -201,7 +201,7 @@ namespace hg::detail::hierarchy {
         }
 
         /**
-         * @brief True iff `mergeNodesByLevel` uses the dense bucket backend.
+         * @brief `true` if and only if `mergeNodesByLevel` uses the dense bucket backend.
          */
         static constexpr bool use_dense_levels = usesDenseLevels();
 
@@ -302,7 +302,7 @@ namespace hg::detail::hierarchy {
             /**
              * @brief Returns the frontier roots collected above `b`.
              * @details Each stored node is the root of the first branch that
-             * leaves the merge interval while climbing from a valid adjacent seed.
+             * leaves the merge interval while climbing from a valid adjacent candidate node.
              */
             std::vector<index_t> &getFrontierNodesAboveB() {
                 return frontierNodesAboveB_;
@@ -317,8 +317,8 @@ namespace hg::detail::hierarchy {
             }
 
             /**
-             * @brief Marks one adjacent seed at most once in the current step.
-             * @return `true` if the seed was accepted now, `false` if it had already been seen.
+             * @brief Marks one adjacent candidate node at most once in the current step.
+             * @return `true` if the candidate was accepted now, `false` if it had already been seen.
              */
             bool markAdjacentSeed(index_t nodeId) {
                 if (adjacentSeedMarks_.isMarked(nodeId)) {
@@ -594,7 +594,7 @@ namespace hg::detail::hierarchy {
         }
 
         /**
-         * @brief Moves the removed proper-part set onto the current union node.
+         * @brief Moves the removed proper-part set onto the current merged node.
          * @details Any node left without direct proper parts is marked in
          * `removedMarks_` so it can be contracted later in the step.
          */
@@ -701,7 +701,7 @@ namespace hg::detail::hierarchy {
          * @brief Contracts, in post-order, nodes that remained alive but empty.
          * @details This pass runs after the level sweep, when the local topology
          * is already stable. The explicit stack visits only nodes that are still
-         * marked and still empty, skipping obsolete seeds.
+         * marked and still empty, skipping obsolete entries.
          */
         void absorbRemovedNodes(tree_t *dualTree, const std::vector<index_t> &removedNodeIds) {
             struct Frame {
@@ -804,7 +804,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Finalizes the reconnection between `nodeCa`, `finalUnionNode`, and removed nodes.
-         * @details First resolves the final topological position of the union node
+         * @details First resolves the final topological position of the merged node
          * produced by the level sweep. Then contracts, in post-order, the nodes
          * that remained alive but empty until the end of the step.
          */
@@ -817,7 +817,7 @@ namespace hg::detail::hierarchy {
 
             if (finalUnionNode != invalid_index && dualTree->isAlive(finalUnionNode)) {
                 if (removedMarks_.isMarked(nodeCa)) {
-                    // If `nodeCa` was emptied, the final union node must occupy its
+                    // If `nodeCa` was emptied, the final merged node must occupy its
                     // topological position in the updated hierarchy.
                     if (!dualTree->isRoot(nodeCa)) {
                         const index_t nodeCaParentId = dualTree->getNodeParent(nodeCa);
@@ -899,7 +899,7 @@ namespace hg::detail::hierarchy {
                         computeAttributeOnTreeNode(dualTree, candidateRootId);
                     }
                 } else {
-                    // If `nodeCa` survived, the final union node becomes its child.
+                    // If `nodeCa` survived, the final merged node becomes its child.
                     if (!dualTree->isRoot(finalUnionNode)) {
                         this->disconnect(dualTree, finalUnionNode, false);
                     }
@@ -913,15 +913,16 @@ namespace hg::detail::hierarchy {
         }
 
         /**
-         * @brief Returns the primal hierarchy for one update direction.
+         * @brief Returns the primal tree for one update direction.
          */
         tree_t *getPrimalTree(bool isMaxtree) {
             return isMaxtree ? mintree_ : maxtree_;
         }
 
         /**
-         * @brief Reattaches under `targetNodeId` only the direct children of `sourceNodeId` outside `Γ[a,b]`.
-         * @details Children still marked as belonging to the merge interval are
+         * @brief Reattaches selected direct children of `sourceNodeId` under `targetNodeId`.
+         * @details Only children outside the merge interval `[a, b]` are reattached.
+         * Children still marked as belonging to the merge interval are
          * detached and left isolated until their own sweep level is processed.
          */
         void reattachOutsideIntervalChildren(tree_t *tree, index_t targetNodeId, index_t sourceNodeId) {
@@ -951,7 +952,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Builds `mergeNodesByLevel_` and `frontierNodesAboveB_` for one adjustment step.
          * @details The method scans graph neighbors of the proper-part set `C`,
-         * filters valid adjacent seeds, and climbs each relevant ancestor chain
+         * filters valid adjacent candidate nodes, and climbs each relevant ancestor chain
          * at most once. Each visited node is inserted either in the bucket of its
          * own level or, when above `b`, in `frontierNodesAboveB_`.
          */
@@ -961,23 +962,23 @@ namespace hg::detail::hierarchy {
             climbedNodeMarks_.resetAll();
             const altitude_t altitudeCa = altitude[nodeCa];
 
-            // For each proper part of `C`, collect valid adjacent seeds and climb
+            // For each proper part of `C`, collect valid adjacent candidate nodes and climb
             // only once through each relevant ancestor chain.
             for (auto p: properPartSetC) {
                 for (auto q: adjacent_vertex_iterator(p, *graph_)) {
                     if (pixelsInCMarks_.isMarked(q)) {
-                        continue; // Neighbors internal to `C` do not generate adjacent seeds.
+                        continue; // Neighbors internal to `C` do not generate adjacent candidates.
                     }
 
                     const index_t nodeQ = tree.getSmallestComponent(q);
                     if (nodeQ == invalid_index) {
-                        continue; // Pixels without a live component do not enter the collection.
+                        continue; // Proper parts without a live component do not enter the collection.
                     }
 
                     const altitude_t altitudeQ = altitude[nodeQ];
                     const bool validSeed = (isMaxtree && altitudeQ >= altitudeCa) || (!isMaxtree && altitudeQ <= altitudeCa);
                     if (!validSeed) {
-                        continue; // Seeds outside the valid interval do not participate in the merge.
+                        continue; // Candidates outside the valid interval do not participate in the merge.
                     }
 
                     if (mergeNodesByLevel_.markAdjacentSeed(nodeQ)) {
@@ -1006,7 +1007,7 @@ namespace hg::detail::hierarchy {
 
                             const auto parentId = tree.getNodeParent(n);
                             if (parentId == n) {
-                                break; // Reached the structural top of this path.
+                                break; // Reached the root of the current ancestor path.
                             }
                             n = parentId;
                         }
@@ -1023,7 +1024,7 @@ namespace hg::detail::hierarchy {
          * 2. finds the representative of `C_a^-` and the altitude interval to sweep;
          * 3. builds the merge collections;
          * 4. merges nodes level by level;
-         * 5. reconnects the final union node in the updated hierarchy.
+         * 5. reconnects the final merged node in the updated hierarchy.
          */
         void updateTree(tree_t *dualTree, index_t subtreeRoot) {
             hg_assert(dualTree != nullptr, "updateTree: dualTree must not be null.");
@@ -1079,7 +1080,7 @@ namespace hg::detail::hierarchy {
             buildMergedAndNestedCollections(*dualTree, targetAltitude, properPartSetC_, nodeCa, b, isMaxtree);
 
             // Phase 3: sweep the active levels between `b` and `a`, merging the
-            // buckets and propagating the union node created at each level.
+            // buckets and propagating the merged node created at each level.
             altitude_t currentMergeLevel = mergeNodesByLevel_.firstMergeLevel();
             index_t currentUnionNode;
             index_t previousLevelUnionNode = invalid_index;
@@ -1100,17 +1101,17 @@ namespace hg::detail::hierarchy {
                         if (removedMarks_.isMarked(nodeId)) {
                             // If the first candidate at this level was already emptied
                             // when moving proper parts, keep it pending until an actual
-                            // union node appears at this level.
+                            // merged node appears at this level.
                             nodesPendingRemoval_.push_back(nodeId);
                             continue;
                         }
-                        // The first surviving node of the level becomes the current union node.
+                        // The first surviving node of the level becomes the current merged node.
                         currentUnionNode = nodeId;
                         this->disconnect(dualTree, currentUnionNode, false);
                         this->reattachOutsideIntervalChildren(dualTree, currentUnionNode, currentUnionNode);
 
                         // Nodes that were already empty at this level are absorbed into
-                        // the first effective union node that survives the sweep.
+                        // the first effective merged node that survives the sweep.
                         for (auto pendingNodeId: nodesPendingRemoval_) {
                             this->reattachOutsideIntervalChildren(dualTree, currentUnionNode, pendingNodeId);
                             notifyMoveProperParts(dualTree, currentUnionNode, pendingNodeId);
@@ -1128,7 +1129,7 @@ namespace hg::detail::hierarchy {
                 }
 
                 if (currentUnionNode == invalid_index) {
-                    // If no union node survived at this level, finish collapsing the
+                    // If no merged node survived at this level, finish collapsing the
                     // pending empty nodes into their current parents and move on.
                     for (auto nodeId: nodesPendingRemoval_) {
                         if (!dualTree->isAlive(nodeId) || dualTree->isRoot(nodeId)) {
@@ -1147,7 +1148,7 @@ namespace hg::detail::hierarchy {
 
                 if (currentMergeLevel == b) {
                     // When the sweep reaches `b`, move the set `C` onto the current
-                    // union node and reconnect the frontier branches above `b`.
+                    // merged node and reconnect the frontier branches above `b`.
                     this->moveSelectedProperPartsToNode(dualTree, currentUnionNode, properPartSetC_);
                     for (auto nodeId: mergeNodesByLevel_.getFrontierNodesAboveB()) {
                         this->disconnect(dualTree, nodeId, false);
@@ -1156,8 +1157,8 @@ namespace hg::detail::hierarchy {
                 }
 
                 if (previousLevelUnionNode != invalid_index) {
-                    // The union node produced at the previous level becomes a child of
-                    // the current level union node when both still survive.
+                    // The merged node produced at the previous level becomes a child of
+                    // the current level merged node when both still survive.
                     if (dualTree->isAlive(previousLevelUnionNode) && !dualTree->hasChild(currentUnionNode, previousLevelUnionNode)) {
                         if (!dualTree->isRoot(previousLevelUnionNode)) {
                             this->disconnect(dualTree, previousLevelUnionNode, false);
@@ -1179,7 +1180,7 @@ namespace hg::detail::hierarchy {
 
     public:
         /**
-         * @brief Returns `true` iff this instantiation uses the dense level backend.
+         * @brief Returns `true` if and only if this instantiation uses the dense level backend.
          * @details Exposed mainly so tests and local benchmarks can report which backend is active.
          * @return `true` when altitude buckets are stored in a compile-time dense
          * array, `false` when an ordered sparse map is used instead.
@@ -1198,14 +1199,14 @@ namespace hg::detail::hierarchy {
         }
 
         /**
-         * @brief Creates the adjustment helper from a dynamic min-tree / max-tree pair.
+         * @brief Creates the adjustment helper from a dynamic min-tree and max-tree pair.
          * @param mintree Dynamic min-tree.
          * @param maxtree Dynamic max-tree.
          * @param graph Graph shared by both hierarchies.
          * @pre `mintree`, `maxtree`, and `graph` must remain valid for the whole
          * lifetime of this object.
-         * @pre Both trees must represent the same image domain and be consistent
-         * with the same adjacency graph.
+         * @pre Both trees must represent the same input vertex set and be
+         * consistent with the same adjacency graph.
          */
         DualMinMaxTreeIncrementalFilter(tree_t *mintree, tree_t *maxtree, const graph_t &graph): mintree_(mintree),
                                                                                                   maxtree_(maxtree),

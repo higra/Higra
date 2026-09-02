@@ -17,7 +17,7 @@
 
 
 /*
-* Reference dynamic maxtree:
+* Reference dynamic max-tree:
 *      
 *               2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1,
 *               2, 5, 5, 5, 3, 3, 3, 2, 2, 2, 3, 1,
@@ -32,7 +32,7 @@
 *               7, 8, 6, 6, 6, 2, 4, 4, 4, 4, 4, 1,
 *               2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1
 * 
-* Dynamic maxtree:
+* Dynamic max-tree:
 * └──ID: 158, Parent: 158, Altitude: 1, NumChildren: 1,
 *    ProperParts: [6, 7, 8, 9, 10, 11, 23, 35, 47, 59, 71, 83, 95, 107, 119, 131, 138, 139, 140, 141, 142, 143], ProperPartCount: 22
 *    └──ID: 157, Parent: 158, Altitude: 2, NumChildren: 3,
@@ -209,7 +209,7 @@ namespace dynamic_component_tree {
     } // namespace
 
     TEST_CASE("dynamic component tree initial maxtree matches expected structural facts", "[dynamic_component_tree]") {
-        // The demo image should build the reference maxtree documented in the file header.
+        // The demo image should build the reference max-tree documented in the file header.
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {
@@ -267,7 +267,7 @@ namespace dynamic_component_tree {
     }
 
     TEST_CASE("dynamic component tree moveProperPart keeps both mappings consistent", "[dynamic_component_tree]") {
-        // Moving one proper part must update both the pixel owner and the node proper-part lists.
+        // Moving one proper part must update both its owner and the node proper-part lists.
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         {

@@ -33,7 +33,7 @@ namespace {
  * -----------------------
  *
  * This benchmark compares the CASF implementation with the naive alternating
- * max-tree/min-tree-by-area reference on synthetic grayscale images.
+ * area-based max-tree/min-tree reference on synthetic grayscale images.
  *
  * Default synthetic mode
  * - One benchmark case corresponds to one generated grayscale image, identified
@@ -68,19 +68,10 @@ namespace {
  *     --benchmark_filter='BM_component_tree_casf_area/.*' \
  *     --benchmark_counters_tabular=true
  *
- * Representative results on Apple Silicon (640x480, 10 seeds, 1 repetition)
- * - natural_like:
- *   thresholds=2  -> about 58-69 ms, speedup about 1.50-1.73
- *   thresholds=4  -> about 61-72 ms, speedup about 2.78-3.18
- *   thresholds=8  -> about 64-74 ms, speedup about 5.29-6.07
- *   thresholds=16 -> about 70-78 ms, speedup about 9.95-11.30
- *   thresholds=32 -> about 78-84 ms, speedup about 15.94-20.16
- * - piecewise_scene:
- *   thresholds=2  -> about 44-48 ms, speedup about 1.89-1.96
- *   thresholds=4  -> about 45-48 ms, speedup about 3.32-3.87
- *   thresholds=8  -> about 45-51 ms, speedup about 7.21-8.00
- *   thresholds=16 -> about 45-48 ms, speedup about 14.20-15.29
- *   thresholds=32 -> about 46-50 ms, speedup about 28.29-31.45
+ * Reporting results
+ * - Timings and speed-ups depend on the hardware, compiler, build flags, and
+ *   current implementation. Record that environment, the commit, and the exact
+ *   invocation whenever benchmark results are reported.
  *
  */
 
@@ -452,7 +443,7 @@ bool same_image(const array_t &lhs, const array_t &rhs) {
 }
 
 template<typename image_t, typename graph_t>
-// One step of the naive alternating max-tree/min-tree-by-area reference.
+// One step of the naive alternating area-based max-tree/min-tree reference.
 image_t apply_naive_threshold_by_area(const graph_t &graph, const image_t &image, double threshold) {
     auto maxTree = component_tree_max_tree(graph, image);
     auto maxArea = attribute_area(maxTree.tree);
@@ -516,7 +507,7 @@ std::vector<std::array<int64_t, 4>> make_benchmark_argument_sets() {
     return args;
 }
 
-// Registers all synthetic argument tuples on a google-benchmark instance.
+// Registers all synthetic argument tuples on a Google Benchmark instance.
 void apply_small_benchmark_arguments(benchmark::Benchmark *b) {
     std::vector<std::vector<int64_t>> args;
     const auto cases = make_benchmark_argument_sets();
@@ -577,7 +568,7 @@ BenchmarkSample make_benchmark_sample(BenchmarkImageModel model, index_t numRows
     };
 }
 
-// Applies the default execution policy shared by all CASF google-benchmark entries.
+// Applies the default execution policy shared by all CASF Google Benchmark entries.
 void configure_benchmark_statistics(benchmark::Benchmark *b) {
     b->Iterations(1)->Repetitions(kBenchmarkRepetitions)->MinWarmUpTime(kBenchmarkWarmupSeconds)->ReportAggregatesOnly();
 }

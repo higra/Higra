@@ -142,7 +142,7 @@ namespace component_tree_casf {
         }
 
         template<typename altitude_t, typename graph_t>
-        // Exported trees must match a fresh static component-tree rebuild from the filtered image.
+        // Exported trees must match a fresh static component tree rebuild from the filtered image.
         void require_export_matches_component_tree(const typename ComponentTreeCasf<altitude_t, graph_t>::ExportedTree &exported,
                                                    const graph_t &graph,
                                                    const array_1d<altitude_t> &filteredImage,
@@ -419,7 +419,8 @@ namespace component_tree_casf {
     }
 
     TEST_CASE("component tree CASF area-based selection matches the reference maxtree thresholds", "[component_tree_casf]") {
-        // The BFS threshold selection must follow the same pruning-root semantics used in MorphoTreeAdjust.
+        // The breadth-first threshold selection must return maximal non-root
+        // candidates, as in MorphoTreeAdjust.
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         auto maxtree = make_dynamic_tree_from_image(graph, image, true);
@@ -442,7 +443,7 @@ namespace component_tree_casf {
     }
 
     TEST_CASE("component tree CASF area-based selection matches the reference mintree thresholds", "[component_tree_casf]") {
-        // The same threshold rule must work symmetrically on the mintree.
+        // The same threshold rule must work symmetrically on the min-tree.
         auto graph = get_4_adjacency_implicit_graph({12, 12});
         auto image = make_demo_image();
         auto mintree = make_dynamic_tree_from_image(graph, image, false);

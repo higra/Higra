@@ -15,7 +15,7 @@
 #include "higra/image/graph_image.hpp"
 
 /*
-* Reference dynamic maxtree:
+* Reference dynamic max-tree:
 *      
 *               2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1,
 *               2, 5, 5, 5, 3, 3, 3, 2, 2, 2, 3, 1,
@@ -30,7 +30,7 @@
 *               7, 8, 6, 6, 6, 2, 4, 4, 4, 4, 4, 1,
 *               2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1
 * 
-* Dynamic maxtree:
+* Dynamic max-tree:
 * └──ID: 158, Parent: 158, Altitude: 1, NumChildren: 1,
 *    ProperParts: [6, 7, 8, 9, 10, 11, 23, 35, 47, 59, 71, 83, 95, 107, 119, 131, 138, 139, 140, 141, 142, 143], ProperPartCount: 22
 *    └──ID: 157, Parent: 158, Altitude: 2, NumChildren: 3,
@@ -97,7 +97,7 @@ namespace dynamic_component_tree_attribute_computers {
 
     TEST_CASE("dynamic component tree scalar attribute computers") {
         // Full bottom-up recomputation must recover the expected area and bounding-box measures on the
-        // untouched reference maxtree.
+        // untouched reference max-tree.
         embedding_grid_2d embedding({12, 12});
         auto graph = get_4_adjacency_graph(embedding);
         auto image = make_demo_image();

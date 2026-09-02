@@ -21,7 +21,7 @@ namespace hg {
     }
 
     /**
-     * @brief Increasing attributes currently supported by the component-tree CASF.
+     * @brief Increasing attributes currently supported by the component tree CASF.
      */
     enum class ComponentTreeCasfAttribute {
         area,
@@ -31,24 +31,23 @@ namespace hg {
     };
 
     /**
-     * @brief Connected alternating sequential filter driven by paired dynamic min-tree / max-tree updates.
+     * @brief Connected alternating sequential filter driven by paired dynamic min-tree and max-tree updates.
      *
      * This class implements a connected alternating sequential filter
-     * (CASF) on a fixed image-domain graph. Instead of rebuilding both trees
-     * after each threshold step, it maintains a mutable min-tree / max-tree pair
+     * (CASF) on a fixed input graph. Instead of rebuilding both trees after
+     * each threshold step, it maintains a mutable min-tree and max-tree pair
      * and updates one tree incrementally when rooted subtrees are pruned from the
-     * dual one.
+     * corresponding dual tree.
      *
      * Supported workflow:
-     *  - build the initial dynamic min-tree and max-tree from an input image;
+     *  - build the initial dynamic min-tree and max-tree from input vertex weights;
      *  - choose one increasing attribute used to select pruning candidates
      *    (`area`, `bounding_box_width`, `bounding_box_height`, or
      *    `bounding_box_diagonal`);
      *  - run `filter(thresholds)` on one or several threshold sequences applied
      *    successively to the current state;
-     *  - export the current dynamic state back to Higra's static
-     *    `tree + altitudes` representation with `exportMaxTree()` and
-     *    `exportMinTree()`.
+     *  - export the current dynamic state back to Higra's static tree and
+     *    altitude arrays with `exportMaxTree()` and `exportMinTree()`.
      *
      * Internal state owned by this class:
      *  - the mutable dynamic min-tree and max-tree;
@@ -66,8 +65,8 @@ namespace hg {
      *
      * Graph requirements:
      *  - the graph must remain valid for the whole lifetime of the object;
-     *  - `area` is supported on any graph type accepted by the component-tree
-     *    builders;
+     *  - `area` is supported on any graph type accepted by the component tree
+     *    construction functions;
      *  - bounding-box attributes additionally require a graph exposing a 2D
      *    `embedding()`.
      */
@@ -78,8 +77,8 @@ namespace hg {
         using attribute_computer_t = detail::hierarchy::DynamicComponentTreeAttributeComputer<double>;
 
         /**
-         * @brief Static export of one current component-tree state.
-         * @details `tree` and `altitudes` follow Higra's usual static component-tree conventions.
+         * @brief Static export of one current component tree state.
+         * @details `tree` and `altitudes` follow Higra's usual static component tree conventions.
          */
         struct ExportedTree {
             tree tree;
@@ -119,7 +118,7 @@ namespace hg {
         static constexpr bool graph_has_embedding = has_embedding_impl<graph_t>::value;
 
         /**
-         * @brief Returns `true` iff the selected CASF attribute is bounding-box-based.
+         * @brief Returns `true` if and only if the selected CASF attribute is bounding-box-based.
          */
         static bool usesBoundingBoxAttribute(ComponentTreeCasfAttribute attribute) {
             return attribute == ComponentTreeCasfAttribute::bounding_box_width ||
@@ -169,8 +168,8 @@ namespace hg {
         }
 
         /**
-         * @brief Reconstructs the current filtered image from the dynamic tree and its node altitudes.
-         * @details Each pixel is assigned the altitude of its current smallest surviving component.
+         * @brief Reconstructs the current filtered vertex weights from the dynamic tree and its node altitudes.
+         * @details Each input vertex is assigned the altitude of its current smallest surviving component.
          */
         template<typename altitude_buffer_t>
         static array_1d<altitude_t> reconstructImage(const tree_t &tree, const altitude_buffer_t &altitude) {
@@ -227,8 +226,8 @@ namespace hg {
 
         /**
          * @brief Applies one threshold step of the CASF on the current dynamic state.
-         * @details The step first applies the extensive half-step (max-tree pruning, min-tree update), then the
-         * anti-extensive half-step (min-tree pruning, max-tree update).
+         * @details The step first applies the anti-extensive attribute opening (max-tree pruning, min-tree update),
+         * then the extensive attribute closing (min-tree pruning, max-tree update).
          */
         void applyFilterStep(double threshold) {
             const auto candidates1 = selectPruneCandidates(maxtree_, attributeBufferMax_, threshold);
@@ -239,7 +238,7 @@ namespace hg {
         }
 
         /**
-         * @brief Exports one dynamic tree state to Higra's static `tree + altitudes` representation.
+         * @brief Exports one dynamic tree state to Higra's static tree and altitude arrays.
          * @details Alive dynamic nodes are reindexed after the leaves while preserving the monotone topological
          * ordering expected by Higra's static `tree` structure.
          */
@@ -316,9 +315,9 @@ namespace hg {
 
     public:
         /**
-         * @brief Initializes the CASF state from the input image and the chosen increasing attribute.
-         * @param graph Adjacency graph of the image domain.
-         * @param image Input image values on the graph vertices.
+         * @brief Initializes the CASF state from input vertex weights and the chosen increasing attribute.
+         * @param graph Input adjacency graph.
+         * @param image Input vertex weights.
          * @param attribute Increasing attribute used to select pruning candidates.
          */
         ComponentTreeCasf(const graph_t &graph, const array_1d<altitude_t> &image, ComponentTreeCasfAttribute attribute = ComponentTreeCasfAttribute::area)
@@ -342,7 +341,7 @@ namespace hg {
         }
 
         /**
-         * @brief Runs the CASF on the threshold sequence and returns the filtered image.
+         * @brief Runs the CASF on the threshold sequence and returns the filtered vertex weights.
          * @details Thresholds are applied to the current internal state. This object is therefore stateful:
          * successive non-empty calls continue filtering the result of the previous ones.
          */

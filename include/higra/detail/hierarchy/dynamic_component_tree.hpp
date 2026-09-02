@@ -25,11 +25,11 @@ namespace hg::detail::hierarchy {
      *
      * The structure stores:
      *  - a mutable internal hierarchy restricted to internal nodes, and
-     *  - a distinct proper-part ownership structure for pixels/leaves.
+     *  - a distinct ownership structure for proper parts, each corresponding to an input graph vertex.
      *
      * Notation used in this class:
      *  - `N`: size of the global id space (`N = getGlobalIdSpaceSize()`).
-     *  - `L`: number of proper parts / pixels (`L = getNumTotalProperParts()`).
+     *  - `L`: number of proper parts (`L = getNumTotalProperParts()`).
      *  - `I`: number of node slots (`I = getNumInternalNodeSlots()`).
      *  - `C_component_tree`: cost of building a component tree with Higra
      *    (`component_tree_max_tree` or `component_tree_min_tree`), including sorting
@@ -55,7 +55,7 @@ namespace hg::detail::hierarchy {
      * Iterators/ranges provided by this class:
      *  - `getAliveNodeIds()`: linear range over all alive internal global ids `[L, N)`.
      *  - `getChildren(nodeId)`: direct internal children of `nodeId`.
-     *  - `getProperParts(nodeId)`: proper-part pixels directly owned by `nodeId`.
+     *  - `getProperParts(nodeId)`: proper parts directly owned by `nodeId`.
      *  - `getPostOrderNodes()`, `getPostOrderNodes(rootNodeId)`:
      *    internal hierarchy in post-order.
      *  - `getBreadthFirstNodes()`, `getBreadthFirstNodes(rootNodeId)`:
@@ -117,7 +117,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Appends a detached child at the back of a parent's child list.
          * @warning Caller must ensure detached child and valid relation.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         void linkChildBack(index_t parentId, index_t childId) {
             const auto parentLocalId = localOf(parentId);
@@ -137,7 +137,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Unlinks an attached child from its parent child list.
          * @warning Caller must ensure attached state and non-root use.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         void unlinkChild(index_t childId) {
             const auto childLocalId = localOf(childId);
@@ -166,7 +166,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Moves all proper parts owned by nodeB to nodeA.
          * @warning This is a low-level helper that assumes both nodes are valid and alive.
-         * @complexity Time O(k), Space O(1), where k is the number of moved proper parts.
+         * :Complexity: Time O(k), Space O(1), where k is the number of moved proper parts.
          */
         void moveProperPartsInBackend(index_t nodeA, index_t nodeB) {
             const auto localA = localOf(nodeA);
@@ -197,7 +197,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Detaches an internal node from its parent in the backend state.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         void detachNodeInBackend(index_t nodeId) {
             unlinkChild(nodeId);
@@ -208,7 +208,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Releases an internal node slot in the backend state.
          * @warning Node must already be detached and contain no children/proper parts.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         void releaseNodeSlot(index_t nodeId) {
             const auto localId = localOf(nodeId);
@@ -250,7 +250,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Initializes storage for a dynamic tree with the given number of leaves and node slots.
-         * @complexity Time O(L + I), Space O(L + I).
+         * :Complexity: Time O(L + I), Space O(L + I).
          */
         void initializeStorage(index_t numProperParts, index_t numInternalNodeSlots) {
             hg_assert(numProperParts > 0, "DynamicComponentTree must contain at least one proper part.");
@@ -280,7 +280,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Builds the dynamic tree from Higra parent arrays.
-         * @complexity Time O(N), Space O(N).
+         * :Complexity: Time O(N), Space O(N).
          */
         template<typename T1>
         void buildFromParent(const xt::xexpression<T1> &xparent, index_t numProperParts) {
@@ -336,7 +336,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Maps a global internal id to a local internal id.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t localOf(index_t nodeId) const {
             hg_assert(nodeId >= numTotalProperParts_ && nodeId < getGlobalIdSpaceSize(), "Node is not an internal node.");
@@ -345,7 +345,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Maps a local internal id to a global internal id.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t globalOf(index_t localId) const { 
             return localId + numTotalProperParts_; 
@@ -376,7 +376,7 @@ namespace hg::detail::hierarchy {
          * @brief Constructs a dynamic tree from parent arrays using Higra tree conventions.
          * @warning The parent array is expected to follow the Higra tree convention, with proper parts
          *          occupying the prefix `[0, L)`.
-         * @complexity Time O(N), Space O(N).
+         * :Complexity: Time O(N), Space O(N).
          */
         template<typename T1>
         explicit DynamicComponentTree(const xt::xexpression<T1> &xparent) {
@@ -385,7 +385,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Constructs a dynamic tree from a Higra tree.
-         * @complexity Time O(N), Space O(N).
+         * :Complexity: Time O(N), Space O(N).
          */
         explicit DynamicComponentTree(const tree &inputTree) {
             buildFromParent(inputTree.parents(), (index_t) inputTree.num_leaves());
@@ -395,7 +395,7 @@ namespace hg::detail::hierarchy {
          * @brief Resets this dynamic tree from parent arrays using Higra tree conventions.
          * @warning The parent array is expected to follow the Higra tree convention, with proper parts
          *          occupying the prefix `[0, L)`.
-         * @complexity Time O(N), Space O(N).
+         * :Complexity: Time O(N), Space O(N).
          */
         template<typename T1>
         void reset(const xt::xexpression<T1> &xparent) {
@@ -404,7 +404,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Resets this dynamic tree from a Higra tree.
-         * @complexity Time O(N), Space O(N).
+         * :Complexity: Time O(N), Space O(N).
          */
         void reset(const tree &inputTree) {
             buildFromParent(inputTree.parents(), (index_t) inputTree.num_leaves());
@@ -412,7 +412,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Returns the number of internal-node slots, alive or free.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getNumInternalNodeSlots() const { 
             return numInternalNodeSlots_; 
@@ -420,7 +420,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Returns the size of the global id space `[0, L + I)`.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getGlobalIdSpaceSize() const { 
             return numTotalProperParts_ + numInternalNodeSlots_; 
@@ -428,7 +428,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Counts alive leaf nodes in the internal hierarchy.
-         * @complexity Time O(I), Space O(1).
+         * :Complexity: Time O(I), Space O(1).
          */
         index_t getNumLeafNodes() const {
             index_t count = 0;
@@ -444,8 +444,8 @@ namespace hg::detail::hierarchy {
         }
 
         /**
-         * @brief Returns the total number of proper parts (pixels) in the image domain.
-         * @complexity Time O(1), Space O(1).
+         * @brief Returns the total number of proper parts, one for each input graph vertex.
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getNumTotalProperParts() const { 
             return numTotalProperParts_; 
@@ -453,7 +453,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Returns the number of alive internal nodes.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getNumNodes() const { 
             return numInternalNodeSlots_ - (index_t) freeNodeSlots.size(); 
@@ -461,15 +461,15 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Tests whether a global id refers to an internal node slot.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         bool isNode(index_t nodeId) const { 
             return nodeId >= numTotalProperParts_ && nodeId < getGlobalIdSpaceSize(); 
         }
 
         /**
-         * @brief Tests whether a global id refers to a proper part / pixel.
-         * @complexity Time O(1), Space O(1).
+         * @brief Tests whether a global id refers to a proper part.
+         * :Complexity: Time O(1), Space O(1).
          */
         bool isProperPart(index_t nodeId) const { 
             return nodeId >= 0 && nodeId < numTotalProperParts_; 
@@ -477,7 +477,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Returns the current root id.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getRoot() const { 
             return rootNodeId; 
@@ -485,7 +485,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Tests whether a node is the current root.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         bool isRoot(index_t nodeId) const { 
             return nodeId == rootNodeId; 
@@ -493,7 +493,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Returns the number of free internal-node slots currently available for reuse.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getNumFreeNodeSlots() const { 
             return (index_t) freeNodeSlots.size(); 
@@ -501,7 +501,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Returns the number of direct children of an internal node.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getNumChildren(index_t nodeId) const { 
             return numChildrenByNode[(size_t) localOf(nodeId)];
@@ -510,7 +510,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Returns the first direct child of an internal node.
          * @return Global child id, or `invalid_index` when `nodeId` has no child.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getFirstChild(index_t nodeId) const {
             const auto childLocalId = firstChild[(size_t) localOf(nodeId)];
@@ -520,7 +520,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Returns the next sibling of an internal node.
          * @return Global sibling id, or `invalid_index` when `nodeId` is the last sibling.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getNextSibling(index_t nodeId) const {
             const auto siblingLocalId = nextSibling[(size_t) localOf(nodeId)];
@@ -529,7 +529,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Tests whether an internal node has no internal children.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         bool isLeaf(index_t nodeId) const { 
             return firstChild[(size_t) localOf(nodeId)] == invalid_index; 
@@ -537,7 +537,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Returns the number of direct proper parts currently owned by a given node.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getNumProperParts(index_t nodeId) const { 
             return numProperPartsByNode[(size_t) localOf(nodeId)];
@@ -545,7 +545,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Tests whether childId is currently a direct child of parentId.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         bool hasChild(index_t parentId, index_t childId) const { 
             return getNodeParent(childId) == parentId;
@@ -553,68 +553,68 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Returns all alive internal nodes.
-         * @complexity Range creation O(1); full iteration O(I).
+         * :Complexity: Range creation O(1); full iteration O(I).
          */
         AliveNodeRange getAliveNodeIds() const;
 
         /**
          * @brief Returns direct internal children of a node.
-         * @complexity Range creation O(1); full iteration O(#children).
+         * :Complexity: Range creation O(1); full iteration O(#children).
          */
         ChildrenRange getChildren(index_t nodeId) const;
 
         /**
          * @brief Returns direct proper parts owned by a node.
-         * @complexity Range creation O(1); full iteration O(#proper parts).
+         * :Complexity: Range creation O(1); full iteration O(#proper parts).
          */
         ProperPartsRange getProperParts(index_t nodeId) const;
 
         /**
          * @brief Returns a post-order traversal from the current root.
-         * @complexity Range creation O(1); full iteration O(#returned nodes).
+         * :Complexity: Range creation O(1); full iteration O(#returned nodes).
          */
         PostOrderNodeRange getPostOrderNodes() const;
 
         /**
          * @brief Returns a post-order traversal rooted at rootNodeId.
-         * @complexity Range creation O(1); full iteration O(#returned nodes).
+         * :Complexity: Range creation O(1); full iteration O(#returned nodes).
          */
         PostOrderNodeRange getPostOrderNodes(index_t rootNodeId) const;
 
         /**
          * @brief Returns a breadth-first traversal from the current root.
-         * @complexity Range creation O(1); full iteration O(#returned nodes).
+         * :Complexity: Range creation O(1); full iteration O(#returned nodes).
          */
         BreadthFirstNodeRange getBreadthFirstNodes() const;
 
         /**
          * @brief Returns a breadth-first traversal rooted at rootNodeId.
-         * @complexity Range creation O(1); full iteration O(#returned nodes).
+         * :Complexity: Range creation O(1); full iteration O(#returned nodes).
          */
         BreadthFirstNodeRange getBreadthFirstNodes(index_t rootNodeId) const;
 
         /**
          * @brief Returns the path from nodeId to the root, both endpoints included.
-         * @complexity Range creation O(1); full iteration O(path length).
+         * :Complexity: Range creation O(1); full iteration O(path length).
          */
         PathToRootRange getPathToRootNodes(index_t nodeId) const;
 
         /**
          * @brief Returns the rooted subtree of nodeId in pre-order.
-         * @complexity Range creation O(1); full iteration O(#returned nodes).
+         * :Complexity: Range creation O(1); full iteration O(#returned nodes).
          */
         SubtreeNodeRange getNodeSubtree(index_t nodeId) const;
 
         /**
          * @brief Returns descendants of nodeId in pre-order, excluding nodeId.
-         * @complexity Range creation O(1); full iteration O(#returned nodes).
+         * :Complexity: Range creation O(1); full iteration O(#returned nodes).
          */
         DescendantNodeRange getDescendants(index_t nodeId) const;
 
         /**
          * @brief Returns the parent of an internal node.
          * @warning nodeId must be an internal node.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getNodeParent(index_t nodeId) const {
             return nodeParent[(size_t) localOf(nodeId)];
@@ -622,7 +622,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Returns the current owner / smallest component of a proper part.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t getSmallestComponent(index_t pixelId) const {
             if (pixelId >= 0 && pixelId < this->getNumTotalProperParts()) {
@@ -633,7 +633,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Tests whether an internal node slot is alive.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         bool isAlive(index_t nodeId) const {
             if (!isNode(nodeId)) {
@@ -644,7 +644,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Moves one direct proper part from sourceNodeId to targetNodeId.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         void moveProperPart(index_t targetNodeId, index_t sourceNodeId, index_t pixelId) {
             const auto targetLocalId = localOf(targetNodeId);
@@ -684,7 +684,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Moves all direct proper parts of nodeB to nodeA.
-         * @complexity Time O(k), Space O(1), where k is the number of moved proper parts.
+         * :Complexity: Time O(k), Space O(1), where k is the number of moved proper parts.
          */
         void moveProperParts(index_t nodeA, index_t nodeB) {
             const auto localA = localOf(nodeA);
@@ -718,7 +718,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Sets nodeId as the tree root.
          * @warning If nodeId is attached, it is detached first.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         void setRoot(index_t nodeId) {
             const auto oldRoot = getRoot();
@@ -739,7 +739,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Allocates a released internal-node slot (LIFO free list).
          * @return Global internal id, or invalid_index if there is no free slot.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         index_t allocateNode() {
             if (freeNodeSlots.empty()) {
@@ -766,7 +766,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Releases an internal-node slot back to the free list.
          * @warning Node must be detached and empty.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         void releaseNode(index_t nodeId) {
             hg_assert(isAlive(nodeId), "releaseNode expects an alive internal node.");
@@ -789,7 +789,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Removes a direct child from a parent, optionally releasing the child slot.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         void removeChild(index_t parentId, index_t childId, bool releaseNodeFlag) {
             const auto childWasAlive = isNode(childId) && isAlive(childId);
@@ -811,7 +811,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Attaches a detached node as the last child of parentId.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         void attachNode(index_t parentId, index_t nodeId) {
             linkChildBack(parentId, nodeId);
@@ -822,7 +822,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Detaches an attached node from its parent.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         void detachNode(index_t nodeId) {
             unlinkChild(nodeId);
@@ -833,7 +833,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Moves an attached node under a new parent.
-         * @complexity Time O(1), Space O(1).
+         * :Complexity: Time O(1), Space O(1).
          */
         void moveNode(index_t nodeId, index_t newParentId) {
             const auto oldParentId = getNodeParent(nodeId);
@@ -848,7 +848,7 @@ namespace hg::detail::hierarchy {
 
         /**
          * @brief Moves all direct children of sourceId under parentId.
-         * @complexity Time O(k), Space O(1), where k is the number of moved children.
+         * :Complexity: Time O(k), Space O(1), where k is the number of moved children.
          */
         void moveChildren(index_t parentId, index_t sourceId) {
             const auto parentLocalId = localOf(parentId);
@@ -886,7 +886,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Removes a subtree and absorbs its direct proper parts into the parent.
          * @warning nodeId must be a non-root alive internal node.
-         * @complexity Time O(s + p), Space O(1), where s is the number of nodes in the
+         * :Complexity: Time O(s + p), Space O(1), where s is the number of nodes in the
          *             subtree and p the number of proper parts owned by those nodes.
          */
         void pruneNode(index_t nodeId) {
@@ -930,7 +930,7 @@ namespace hg::detail::hierarchy {
         /**
          * @brief Merges a node into its parent, reattaching direct children and proper parts.
          * @warning nodeId must be a non-root alive internal node.
-         * @complexity Time O(c + p), Space O(1), where c is the number of direct children and
+         * :Complexity: Time O(c + p), Space O(1), where c is the number of direct children and
          *             p the number of direct proper parts of nodeId.
          */
         void mergeNodeIntoParent(index_t nodeId) {
@@ -998,8 +998,8 @@ namespace hg::detail::hierarchy {
 
     /**
      * @brief Range over the direct internal children of a node.
-     * @usage `for (auto n : tree.getChildren(nodeId)) { ... }`
-     * @complexity Time O(1) to create, O(k) to iterate, Space O(1), where k is the number of children.
+     * :Example: `for (auto n : tree.getChildren(nodeId)) { ... }`
+     * :Complexity: Time O(1) to create, O(k) to iterate, Space O(1), where k is the number of children.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
     class DynamicComponentTree::ChildrenRange {
@@ -1073,8 +1073,8 @@ namespace hg::detail::hierarchy {
 
     /**
      * @brief Range over alive internal-node global ids.
-     * @usage `for (auto n : tree.getAliveNodeIds()) { ... }`
-     * @complexity Time O(1) to create, O(I) to iterate, Space O(1), where I is the number of node slots.
+     * :Example: `for (auto n : tree.getAliveNodeIds()) { ... }`
+     * :Complexity: Time O(1) to create, O(I) to iterate, Space O(1), where I is the number of node slots.
      * @warning Lazy range. Invalidated if the node set changes during iteration.
      */
     class DynamicComponentTree::AliveNodeRange {
@@ -1167,8 +1167,8 @@ namespace hg::detail::hierarchy {
 
     /**
      * @brief Range over an internal rooted subtree in post-order.
-     * @usage `for (auto n : tree.getPostOrderNodes()) { ... }`
-     * @complexity Time O(1) to create, O(S) to iterate, Space O(h), where S is subtree size and h its height.
+     * :Example: `for (auto n : tree.getPostOrderNodes()) { ... }`
+     * :Complexity: Time O(1) to create, O(S) to iterate, Space O(h), where S is subtree size and h its height.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
     class DynamicComponentTree::PostOrderNodeRange {
@@ -1230,8 +1230,8 @@ namespace hg::detail::hierarchy {
 
     /**
      * @brief Range over the path from a node to the root.
-     * @usage `for (auto n : tree.getPathToRootNodes(nodeId)) { ... }`
-     * @complexity Time O(1) to create, O(h) to iterate, Space O(1), where h is path length.
+     * :Example: `for (auto n : tree.getPathToRootNodes(nodeId)) { ... }`
+     * :Complexity: Time O(1) to create, O(h) to iterate, Space O(1), where h is path length.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
     class DynamicComponentTree::PathToRootRange {
@@ -1315,8 +1315,8 @@ namespace hg::detail::hierarchy {
 
     /**
      * @brief Range over an internal rooted subtree in pre-order.
-     * @usage `for (auto n : tree.getNodeSubtree(nodeId)) { ... }`
-     * @complexity Time O(1) to create, O(S) to iterate, Space O(h), where S is subtree size and h its height.
+     * :Example: `for (auto n : tree.getNodeSubtree(nodeId)) { ... }`
+     * :Complexity: Time O(1) to create, O(S) to iterate, Space O(h), where S is subtree size and h its height.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
     class DynamicComponentTree::SubtreeNodeRange {
@@ -1337,8 +1337,8 @@ namespace hg::detail::hierarchy {
 
     /**
      * @brief Range over the descendants of a node, excluding the node itself.
-     * @usage `for (auto n : tree.getDescendants(nodeId)) { ... }`
-     * @complexity Time O(1) to create, O(S) to iterate, Space O(h), where S is subtree size and h its height.
+     * :Example: `for (auto n : tree.getDescendants(nodeId)) { ... }`
+     * :Complexity: Time O(1) to create, O(S) to iterate, Space O(h), where S is subtree size and h its height.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
     class DynamicComponentTree::DescendantNodeRange {
@@ -1406,8 +1406,8 @@ namespace hg::detail::hierarchy {
 
     /**
      * @brief Range over the proper parts directly owned by a node.
-     * @usage `for (auto p : tree.getProperParts(nodeId)) { ... }`
-     * @complexity Time O(1) to create, O(k) to iterate, Space O(1), where k is the number of proper parts.
+     * :Example: `for (auto p : tree.getProperParts(nodeId)) { ... }`
+     * :Complexity: Time O(1) to create, O(k) to iterate, Space O(1), where k is the number of proper parts.
      * @warning Lazy range. Invalidated if proper-part ownership changes during iteration.
      */
     class DynamicComponentTree::ProperPartsRange {
@@ -1481,8 +1481,8 @@ namespace hg::detail::hierarchy {
 
     /**
      * @brief Range over an internal rooted subtree in breadth-first order.
-     * @usage `for (auto n : tree.getBreadthFirstNodes()) { ... }`
-     * @complexity Time O(1) to create, O(S) to iterate, Space O(w), where S is subtree size and w the frontier width.
+     * :Example: `for (auto n : tree.getBreadthFirstNodes()) { ... }`
+     * :Complexity: Time O(1) to create, O(S) to iterate, Space O(w), where S is subtree size and w the frontier width.
      * @warning Lazy range. Invalidated if the tree topology changes during iteration.
      */
     class DynamicComponentTree::BreadthFirstNodeRange {
