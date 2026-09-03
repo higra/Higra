@@ -354,7 +354,6 @@ def attribute_vertex_list(tree):
 
     return result
 
-
 @hg.argument_helper(hg.CptHierarchy)
 @hg.auto_cache
 def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=None):
@@ -774,3 +773,155 @@ def attribute_moment_of_inertia(tree, leaf_graph):
     I_1 = (miu_20 + miu_02) / (M_00 ** 2)
 
     return I_1
+
+@hg.argument_helper(hg.CptHierarchy)
+@hg.auto_cache
+def attribute_node_bounding_box(tree, leaf_graph):
+    """
+    Compute the axis-aligned bounding box of every node of a tree.
+
+    Let ``G`` be the leaf graph of ``tree``. The graph is assumed to be a grid
+    graph of spatial dimension :math:`d`, with:
+
+    .. math::
+
+        d \\in \\mathbb{N}^*
+
+    Each vertex ``v`` of ``G`` is associated with a coordinate vector:
+
+    .. math::
+
+        p(v) =
+        \\left(
+            p_0(v), p_1(v), \\ldots, p_{d-1}(v)
+        \\right)
+
+    For a node ``n`` of the tree, let ``V(n)`` denote the set of leaf graph
+    vertices contained in the subtree rooted at ``n``.
+
+    For every spatial dimension ``k``, the minimum and maximum coordinates of
+    ``n`` are computed independently:
+
+    .. math::
+
+        \\operatorname{min\\_coordinates}(n, k)
+        =
+        \\min_{v \\in V(n)} p_k(v)
+
+    .. math::
+
+        \\operatorname{max\\_coordinates}(n, k)
+        =
+        \\max_{v \\in V(n)} p_k(v)
+
+    The axis-aligned bounding box of node ``n`` is therefore the Cartesian
+    product of the intervals defined along every spatial dimension:
+
+    .. math::
+
+        B(n)
+        =
+        \\prod_{k=0}^{d-1}
+        \\left[
+            \\operatorname{min\\_coordinates}(n, k),
+            \\operatorname{max\\_coordinates}(n, k)
+        \\right]
+
+    The result is a NumPy array with shape ``(N, d, 2)``, where:
+
+    - ``N`` is the number of nodes in ``tree``;
+    - ``d`` is the spatial dimension of ``leaf_graph``.
+
+    The axes of the result are organized as follows:
+
+    .. code-block:: text
+
+        axis 0: tree node
+        axis 1: spatial coordinate
+        axis 2: minimum or maximum
+
+    Example
+    =======
+
+    Consider the following 3 x 3 grid graph:
+
+    .. code-block:: text
+
+        (0)-- 0 --(1)-- 2 --(2)
+        |         |         |
+        6         6         0
+        |         |         |
+        (3)-- 0 --(4)-- 4 --(5)
+        |         |         |
+        5         5         3
+        |         |         |
+        (6)-- 0 --(7)-- 1 --(8)
+
+    and the tree:
+
+    .. code-block:: python
+
+        4                 +-------16------+
+                          |               |
+        3         +-------15-----+        |
+                  |              |        |
+        2     +---14--+          |        |
+              |       |          |        |
+        1     |       |       +--13-+     |
+              |       |       |     |     |
+        0   +-9-+   +-10+   +-12+   |   +-11+
+            +   +   +   +   +   +   +   +   +
+            0   1   2   5   6   7   8   3   4
+
+    .. code-block:: python
+
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+
+        tree, _ = hg.bpt_canonical(graph, edge_weights)
+        result = hg.attribute_node_bounding_box(tree)
+
+    The bounding box of the root node 6 is:
+    
+        .. code-block:: python
+    
+            result[6] == [[2, 2],[0, 0]]    
+
+    Its minimum and maximum corners are respectively:
+
+    .. code-block:: python
+
+        minimum_corner = result[6, :, 0]  # [2, 0]
+        maximum_corner = result[6, :, 1]  # [2, 0]
+
+    The bounding box of node 13 is:
+
+    .. code-block:: python
+
+        result[13] == [[2, 2],[0, 2]]
+
+    This means that:
+
+    .. math::
+
+        x \\in [2, 2]
+        \\qquad\\text{and}\\qquad
+        y \\in [0, 2]
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param leaf_graph: leaf graph associated with ``tree`` (Concept :class:`~higra.CptGridGraph`).
+        Its vertices must provide coordinates in a grid of dimension :math:`d`,
+        with :math:`d \\in \\mathbb{N}^*`.
+    :return: a NumPy array of shape ``(N, d, 2)`` containing the minimum and
+        maximum coordinates of every tree node.
+"""
+    
+    coordinates = hg.attribute_vertex_coordinates(leaf_graph)
+    coordinates = np.reshape(coordinates, (coordinates.shape[0] * coordinates.shape[1], coordinates.shape[2]))
+
+    min_coordinates = hg.accumulate_sequential(tree, coordinates, hg.Accumulators.min, leaf_graph)
+    max_coordinates = hg.accumulate_sequential(tree, coordinates, hg.Accumulators.max, leaf_graph)
+
+    min_max_coordinates = np.stack((min_coordinates, max_coordinates), axis=-1)
+
+    return min_max_coordinates
