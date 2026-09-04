@@ -8,6 +8,7 @@ Tree attributes
 .. autosummary::
 
     attribute_area
+    attribute_children_pair_sum_product
     attribute_child_number
     attribute_contour_length
     attribute_contour_strength
@@ -23,7 +24,7 @@ Tree attributes
     attribute_lca_map
     attribute_mean_vertex_weights
     attribute_moment_of_inertia
-    attribute_children_pair_sum_product
+    attribute_node_bounding_box
     attribute_piecewise_constant_Mumford_Shah_energy
     attribute_regular_altitudes
     attribute_sibling
@@ -32,6 +33,8 @@ Tree attributes
     attribute_volume
 
 .. autofunction:: higra.attribute_area
+
+.. autofunction:: higra.attribute_children_pair_sum_product
 
 .. autofunction:: higra.attribute_child_number
 
@@ -63,7 +66,7 @@ Tree attributes
 
 .. autofunction:: higra.attribute_moment_of_inertia
 
-.. autofunction:: higra.attribute_children_pair_sum_product
+.. autofunction:: higra.attribute_node_bounding_box
 
 .. autofunction:: higra.attribute_piecewise_constant_Mumford_Shah_energy
 

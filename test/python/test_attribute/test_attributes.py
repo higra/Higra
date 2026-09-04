@@ -757,6 +757,19 @@ class TestAttributes(unittest.TestCase):
                0.1481, 0.2222, 0.16, 0.2222, 0.2756)
         self.assertTrue(np.allclose(res,ref,atol=0.0001))
 
+    def test_attribute_node_bounding_box(self):
+        tree, _ = TestAttributes.get_test_tree()
+
+        bounding_box = hg.attribute_node_bounding_box(tree)
+
+        ref = np.array([[[0,0],[0,0]],[[0,0],[1,1]],[[0,0],[2,2]],[[1,1],[0,0]],
+                        [[1,1],[1,1]],[[1,1],[2,2]],[[2,2],[0,0]],[[2,2],[1,1]],
+                        [[2,2],[2,2]],[[0,0],[0,1]],[[0,1],[2,2]],[[1,1],[0,1]],
+                        [[2,2],[0,1]],[[2,2],[0,2]],[[0,1],[0,2]],[[0,2],[0,2]],[[0,2],[0,2]]])
+
+        self.assertTrue(np.all(ref == bounding_box))
+        self.assertTrue(np.all(ref[:,:,0] == bounding_box[:,:,0]))
+        self.assertTrue(np.all(ref[:,:,1] == bounding_box[:,:,1]))
 
 if __name__ == '__main__':
     unittest.main()
