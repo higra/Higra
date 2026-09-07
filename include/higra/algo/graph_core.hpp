@@ -15,6 +15,10 @@
 #include "higra/structure/unionfind.hpp"
 #include "xtensor/views/xview.hpp"
 #include "higra/sorting.hpp"
+#include <optional>
+#include <vector>
+#include <random>
+#include <algorithm>
 
 namespace hg {
 
@@ -263,5 +267,112 @@ namespace hg {
             }
         }
         return lg;
+    }
+
+    /**
+     * Computes the connected components of an undirected graph and returns a labeling of the vertices.
+     * 
+     * It is a special use of the function :func:`graph_cut_2_labelisation` where the graph cut is the empty set (no edge in the cut). 
+     * 
+     * The result is an array of size :math:`|V|` where :math:`V` is the vertex set of the input graph. The value at index
+     * :math:`i` is equal to the label of the connected component containing vertex :math:`i`. Labels are in the range
+     * :math:`[1, n]` where :math:`n` is the number of connected components in the graph.
+     * 
+     * Complexity: :math:`\mathcal{O}(|V| + |E|)` with :math:`|V|` and :math:`|E|` respectively the number of vertices and edges in the input graph.
+     * 
+     * :Example:
+     * 
+     * >>> graph = hg.UndirectedGraph(6)
+     * >>> graph.add_edges((0, 1, 3), (1, 2, 4))
+     * >>> hg.connected_components_labeling(graph)
+     * array([1, 1, 1, 2, 2, 3])
+     * 
+     * @param graph: input graph
+     * @return: an array of size :math:`|V|` containing the connected component labels of each vertex
+     */
+    template<typename graph_t>
+    auto connected_components_labeling(const graph_t &graph) {
+        return graph_cut_2_labelisation(graph, xt::zeros<char>({num_edges(graph)}));
+    }
+
+    /**
+     * Creates a random undirected graph with a given number of vertices and a given mean number of edges per vertex. 
+     * The function uses the model of random graphs proposed by Erdős and Rényi. The resulting graph is a simple graph (no self-loops, no multiple edges).
+     * 
+     * First, a graph is generated with :math:`n` vertices.
+     * Then, we compute the probability :math:`p` of having an edge between two vertices with:
+     * 
+     * .. math::
+     * 
+     *        p = \frac{d_{mean}}{n-1}
+     * 
+     * Afterwards, for each pair of vertices, an edge is created with probability :math:`p`.
+     * 
+     * By default, the generated graph is not guaranteed to be connected. If :attr:`allow_non_connected` is ``False``, the function will add edges to ensure that the graph is connected.
+     * 
+     * To do so, the function computes the connected components of the graph and linearly connects consecutive components 
+     * (by adding an edge between a randomly chosen vertex of component :math:`i-1` and component :math:`i`, for :math:`i \in [1, k-1]` where :math:`k` is the number of connected components).
+     * 
+     * Complexity: :math:`\mathcal{O}(n^2)` with :math:`n` the number of vertices in the graph.
+     * 
+     * :Example:
+     * >>> graph_no n_connected = hg.random_undirected_graph_erdos_renyi(100, 1.8, True, seed=42)
+     * >>> hg.connected_components_labeling(graph_non_connected)
+     * array([ 1,  1,  2,  1,  1,  3,  1,  4,  1,  1,  3,  1,  5,  3,  1,  3,  6,
+     *     1,  7,  1,  1,  1,  3,  1,  1,  1,  1,  4,  7,  3,  1,  1,  1,  4,
+     *     8,  1,  1,  1,  1,  4,  1,  1,  1,  1,  1,  3,  9,  1,  1,  1, 10,
+     *     1, 11, 12,  6,  1,  1, 13,  1,  1,  1, 14, 12,  1,  1,  1,  1,  1,
+     *    13,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, 15,  3, 15,  1,
+     *     7,  1,  1,  1,  1,  1,  4, 16,  1,  1,  1,  1,  1,  3,  1])
+     * >>> graph_connected = hg.random_undirected_graph_erdos_renyi(100, 1.8, False, seed=42)
+     * >>> hg.connected_components_labeling(graph_connected)
+     * array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     *    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     *    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     *    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     *    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+
+     * @param num_vertices number of vertices in the graph
+     * @param mean_degree mean number of edges per vertex in the graph
+     * @param allow_non_connected if true, the generated graph may be non-connected. Otherwise, the generated graph is guaranteed to be connected.
+     * @param seed seed for the random number generator (optional). If not provided, the random number generator will be seeded with the current time.
+     * @return The generated undirected graph
+     */
+    inline
+    auto random_undirected_graph_erdos_renyi(const int num_vertices, const double mean_degree, const bool allow_non_connected = true, const std::optional<unsigned int> seed = std::nullopt) {
+        hg_assert(num_vertices > 0, "Number of vertices must be positive.");
+        hg_assert(mean_degree >= 0, "Mean number of edges per vertex must be non-negative.");
+        hg_assert(num_vertices == 1 || mean_degree <= num_vertices-1, "Mean number of edges per vertex must be less than or equal to the maximum number of edges in a simple undirected graph.");
+
+        ugraph g(num_vertices);
+
+        double p = (num_vertices > 1) ? (mean_degree / (num_vertices-1)) : 0.0;
+
+        std::mt19937 gen(seed.has_value() ? seed.value() : std::random_device{}());
+        std::bernoulli_distribution dist(p);
+
+        for (index_t i = 0; i < num_vertices; ++i) {
+            for (index_t j = i + 1; j < num_vertices; ++j) {
+                if (dist(gen)) {
+                    g.add_edge(i, j);
+                }
+            }
+        }
+
+        if (!allow_non_connected) {
+            array_1d<index_t> labels = connected_components_labeling(g);
+            size_t num_components = *std::max_element(labels.begin(), labels.end());
+            std::vector<std::vector<index_t>> components(num_components);
+            for (index_t i = 0; i < num_vertices; ++i) {
+                components[labels(i)-1].push_back(i);
+            }
+            for (index_t i = 1; i < num_components; ++i) {
+                std::uniform_int_distribution<size_t> dist_prev(0, components[i - 1].size() - 1);
+                std::uniform_int_distribution<size_t> dist_curr(0, components[i].size() - 1);
+                g.add_edge(components[i-1][dist_prev(gen)], components[i][dist_curr(gen)]);
+            }
+        }
+
+        return g;
     }
 }

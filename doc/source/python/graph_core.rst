@@ -8,11 +8,13 @@ Algorithms for graphs
 .. autosummary::
 
     adjacency_matrix_2_undirected_graph
+    connected_components_labeling
     graph_cut_2_labelisation
     labelisation_2_graph_cut
     line_graph
     make_graph_from_points
     minimum_spanning_tree
+    random_undirected_graph_erdos_renyi
     subgraph
     vertex_induced_subgraph
     ultrametric_open
@@ -20,6 +22,8 @@ Algorithms for graphs
 
 
 .. autofunction:: higra.adjacency_matrix_2_undirected_graph
+
+.. autofunction:: higra.connected_components_labeling
 
 .. autofunction:: higra.graph_cut_2_labelisation
 
@@ -30,6 +34,8 @@ Algorithms for graphs
 .. autofunction:: higra.make_graph_from_points
 
 .. autofunction:: higra.minimum_spanning_tree
+
+.. autofunction:: higra.random_undirected_graph_erdos_renyi
 
 .. autofunction:: higra.subgraph
 

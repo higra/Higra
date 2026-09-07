@@ -66,6 +66,18 @@ namespace py_graph_core {
                   py::arg("edge_weights"));
         }
     };
+    
+    template<typename graph_t>
+    struct def_connected_components_labeling {
+        static
+        void def(pybind11::module &m, const char *doc) {
+            m.def("_connected_components_labeling", [](const graph_t &graph) {
+                      return hg::connected_components_labeling(graph);
+                  },
+                  doc,
+                  py::arg("graph"));
+        }
+    };
 
     void py_init_algo_graph_core(pybind11::module &m) {
         //xt::import_numpy();
@@ -105,5 +117,16 @@ namespace py_graph_core {
               },
               "",
               py::arg("tree"));
+
+        def_connected_components_labeling<hg::ugraph>::def(m, "");
+
+        m.def("_random_undirected_graph_erdos_renyi", [](const int num_vertices, const double mean_degree, const bool allow_non_connected, const std::optional<unsigned int> seed) {
+                  return hg::random_undirected_graph_erdos_renyi(num_vertices, mean_degree, allow_non_connected, seed);
+              },
+              "",
+              py::arg("num_vertices"),
+              py::arg("mean_degree"),
+              py::arg("allow_non_connected") = true,
+              py::arg("seed") = std::nullopt);
     }
 }
