@@ -56,7 +56,7 @@ Pushing a new version
   - push new version to master/origin
   - Add tag `x.y.z` to master
   - push tag to master/origin
-  - (linux/mac/windows Pypi wheels generated automatically with `Travis Ci <https://travis-ci.com/>`_ and `Appveyor <https://www.appveyor.com/>`_)
+  - (linux/mac/windows PyPI wheels generated automatically with `Azure Pipelines <https://azure.microsoft.com/services/devops/pipelines/>`_)
   - regenerate docs when Pypi is up-to-date `readthedocs <https://readthedocs.org/projects/higra/>`) 
 
 

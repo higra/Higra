@@ -4,6 +4,7 @@ import sys
 import platform
 import subprocess
 import os.path
+import shutil
 
 from setuptools import setup, Extension, find_namespace_packages
 from setuptools.command.build_ext import build_ext
@@ -202,6 +203,8 @@ def prepare_dll_windows():
     os.chdir("..")
 
 
+temporary_package_dirs = []
+
 try:
     python_version = sys.version_info[1] # TODO: python 3 assumed...
     requires_list = {
@@ -217,8 +220,11 @@ try:
 
     # hack because setuptools wont install files which are not inside a python package
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    os.symlink(os.path.join(cur_dir, 'include'), 'higra/include')
-    os.symlink(os.path.join(cur_dir, 'lib'), 'higra/lib')
+    for directory in ('include', 'lib'):
+        source = os.path.join(cur_dir, directory)
+        destination = os.path.join(cur_dir, 'higra', directory)
+        shutil.copytree(source, destination)
+        temporary_package_dirs.append(destination)
     packages = find_namespace_packages(include=["higra", "higra.*"])
     print("Setup.py: packages: ", packages)
     setup(
@@ -239,5 +245,5 @@ try:
         license='CeCILL-B',
     )
 finally:
-    os.unlink('higra/include')
-    os.unlink('higra/lib')
+    for directory in temporary_package_dirs:
+        shutil.rmtree(directory, ignore_errors=True)
