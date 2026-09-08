@@ -223,4 +223,60 @@ namespace test_graph_core {
             REQUIRE(res == ref[v]);
         }
     }
+
+    TEST_CASE("connected components labeling", "[graph_algorithm]") {
+        ugraph graph(10);
+        
+        add_edge(0, 1, graph);
+        add_edge(1, 2, graph);
+        add_edge(2, 3, graph);
+        add_edge(3, 4, graph);
+        add_edge(4, 9, graph);
+
+        add_edge(5, 6, graph);
+        add_edge(6, 8, graph);
+
+        auto labels = connected_components_labeling(graph);
+
+        array_1d<index_t> ref_labels = {1, 1, 1, 1, 1, 2, 2, 3, 2, 1};
+        REQUIRE(is_in_bijection(labels, ref_labels));
+    }
+
+    TEST_CASE("random undirected graph erdos renyi", "[graph_algorithm]") {
+        
+        //basic properties of the random undirected graph generator
+        auto g_basic = random_undirected_graph_erdos_renyi(10, 2);
+        REQUIRE(num_vertices(g_basic) == 10);
+
+        std::map<std::pair<index_t, index_t>, int> edge_counts;
+        for (auto v : vertex_iterator(g_basic)) {
+            for (auto e : out_edge_iterator(v, g_basic)) {
+                auto s = source(e, g_basic);
+                auto t = target(e, g_basic);
+                REQUIRE(s != t);
+                auto key = std::make_pair(std::min(s, t), std::max(s, t));
+                edge_counts[key]++;
+            }
+        }
+
+        for (const auto &[key, count] : edge_counts) {
+            REQUIRE(count == 2);
+        }
+
+        //reproducibility of the random undirected graph generator with seed
+        auto g1 = random_undirected_graph_erdos_renyi(20, 3, true, 42);
+        auto g2 = random_undirected_graph_erdos_renyi(20, 3, true, 42);
+
+        REQUIRE(num_edges(g1) == num_edges(g2));
+        for (index_t i = 0; i < (index_t) num_edges(g1); ++i) {
+            REQUIRE(edge_from_index(i, g1) == edge_from_index(i, g2));
+        }
+
+        //forced connectedness of the random undirected graph generator
+        auto g_connected = random_undirected_graph_erdos_renyi(15, 1, false);
+
+        auto labels = connected_components_labeling(g_connected);
+        auto num_components = *std::max_element(labels.begin(), labels.end());
+        REQUIRE(num_components == 1);
+    }
 }
