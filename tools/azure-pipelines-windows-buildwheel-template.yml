@@ -1,0 +1,80 @@
+parameters:
+  name: ''
+  CIBW_BUILD: ''
+  NUMPY_VERSION: ''
+  vmImage: ''
+  force: false
+  pypitest: false
+
+jobs:
+  - job: 'Wheel_${{ parameters.name }}'
+    condition: or( eq( '${{ parameters.force }}', 'true'), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    pool:
+      vmImage: ${{ parameters.vmImage }}
+    variables:
+      TWINE_TOKEN: $(PIPY_TOKEN)
+      TWINE_TOKEN_TEST: $(PIPY_TEST_TOKEN)
+      CIBW_BUILD: ${{ parameters.CIBW_BUILD }}
+      NUMPY_VERSION: ${{ parameters.NUMPY_VERSION }}
+      CIBW_SKIP: '*win32'
+      CIBW_BUILD_VERBOSITY: '1'
+      CIBW_TEST_COMMAND: python -m pip install scipy scikit-learn && python -c "import unittest;result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover(r'{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)"
+
+    timeoutInMinutes: 60
+    steps:
+
+      - powershell: |
+          $condaCandidates = @(
+            $env:CONDA,
+            'C:\Miniconda',
+            'C:\Miniconda3',
+            'C:\ProgramData\Miniconda3'
+          )
+          $conda = $condaCandidates |
+            Where-Object { $_ -and (Test-Path "$_\Scripts\conda.exe") } |
+            Select-Object -First 1
+          if (-not $conda) {
+            throw "The Azure agent does not provide a usable Conda installation."
+          }
+
+          & "$conda\Scripts\conda.exe" config --set always_yes yes --set changeps1 no
+          & "$conda\Scripts\conda.exe" install --channel conda-forge tbb-devel=2019.0
+
+          $condaUnixPath = $conda.Replace('\', '/')
+          $cibwEnvironment = "HG_USE_TBB=1 TBB_DLL=$condaUnixPath/Library/bin/tbb.dll TBB_INCLUDE_DIR=$condaUnixPath/Library/include TBB_LIBRARY=$condaUnixPath/Library/lib NUMPY_VERSION=${{ parameters.NUMPY_VERSION }}"
+          Write-Host "##vso[task.setvariable variable=CIBW_ENVIRONMENT_WINDOWS]$cibwEnvironment"
+        displayName: Use preinstalled Conda and install TBB
+
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.14'
+          addToPath: true
+
+      - script: |
+          python --version
+          python -m pip install cibuildwheel==3.3.1
+        displayName: Install python packages
+
+      - script: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSINSTALLPATH=%%i"
+          if not defined VSINSTALLPATH exit /b 1
+          call "%VSINSTALLPATH%\Common7\Tools\VsDevCmd.bat" -arch=amd64
+          where dumpbin
+          where lib
+          cibuildwheel --output-dir wheelhouse
+        displayName: Build
+        workingDirectory: $(Build.SourcesDirectory)
+
+      - script: |
+          python -m pip install twine
+          python -m twine upload -u __token__ -p $(TWINE_TOKEN) wheelhouse/*.whl
+        displayName: Upload wheel
+        workingDirectory: $(Build.SourcesDirectory)
+        condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/')
+
+      - script: |
+          python -m pip install twine
+          python -m twine upload -r testpypi -u __token__ -p $(TWINE_TOKEN_TEST) wheelhouse/*.whl
+        displayName: Test upload wheel
+        workingDirectory: $(Build.SourcesDirectory)
+        condition: eq('${{ parameters.pypitest }}', 'true')
