@@ -1,4 +1,4 @@
-prefix=/home/perretb/Higra/lib
+prefix=/Users/sullyvancoulon/Desktop/Higra_workspace/Higra/lib
 includedir=${prefix}/include
 
 Name: xtensor

@@ -11,8 +11,8 @@
 #include <benchmark/benchmark.h>
 
 #include "higra/graph.hpp"
-#include "xtensor/xview.hpp"
-#include "xtensor/xrandom.hpp"
+#include "xtensor/views/xview.hpp"
+#include "xtensor/generators/xrandom.hpp"
 #include <algorithm>
 #include "tbb/parallel_sort.h"
 #include "tbb-ssort/parallel_stable_sort.h"

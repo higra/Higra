@@ -13,7 +13,7 @@
 #include "utils.h"
 #include "higra/structure/array.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
-#include "xtensor/xrandom.hpp"
+#include "xtensor/generators/xrandom.hpp"
 
 using namespace xt;
 using namespace hg;

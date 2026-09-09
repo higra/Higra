@@ -13,11 +13,11 @@
 #include "utils.h"
 #include "higra/graph.hpp"
 
-#include "xtensor/xrandom.hpp"
+#include "xtensor/generators/xrandom.hpp"
 #include "higra/image/graph_image.hpp"
 
 #include <iostream>
-#include "xtensor/xio.hpp"
+#include "xtensor/io/xio.hpp"
 using namespace xt;
 using namespace hg;
 

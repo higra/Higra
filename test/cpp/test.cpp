@@ -10,9 +10,6 @@
 
 #define HG_DEBUG
 
-#define CATCH_CONFIG_MAIN
-
-
 #include "test_utils.hpp"
 
 #include <array>

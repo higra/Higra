@@ -9,14 +9,17 @@
 ############################################################################
 
 
-include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${Python_INCLUDE_DIRS} ${Python_NumPy_INCLUDE_DIRS})
 
 set(HIGRA_TESTS_PYTHON_SRC
         main.cpp)
 
 add_executable(test_python_exe ${HIGRA_TESTS_PYTHON_SRC})
 
-target_link_libraries(test_python_exe pybind11::embed)
+target_link_libraries(test_python_exe
+        PRIVATE
+        pybind11::embed
+        Catch2::Catch2WithMain)
 
 
 add_test(NAME Test_python_cpp COMMAND test_python_exe)
