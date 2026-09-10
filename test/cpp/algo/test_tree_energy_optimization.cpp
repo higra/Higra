@@ -176,7 +176,7 @@ namespace test_linear_energy_function_optimization {
 
             lef_t r({{0,      0,      5},
                      {1. / 3, 5. / 3, 2}});
-            REQUIRE(f.infimum(p) == Approx(1.0 / 3));
+            REQUIRE(f.infimum(p) == Catch::Approx(1.0 / 3));
             REQUIRE(f == r);
         }
     }

@@ -61,6 +61,7 @@ jobs:
             lcov --directory . --capture --gcov-tool gcov-14 --rc geninfo_unexecuted_blocks=1 --ignore-errors mismatch --output-file coverage.info && # capture coverage info
             lcov --remove coverage.info '*lib/include*' --output-file coverage.info && # filter out system
             lcov --remove coverage.info '/usr*' --output-file coverage.info && # filter out system
+            lcov --remove coverage.info '*_deps/*' --output-file coverage.info && # filter out system
             lcov --list coverage.info #debug info
           else
             ctest -V

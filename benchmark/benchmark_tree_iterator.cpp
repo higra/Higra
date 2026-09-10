@@ -13,11 +13,11 @@
 
 #include "higra/graph.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
-#include "xtensor/xarray.hpp"
-#include "xtensor/xtensor.hpp"
-#include "xtensor/xview.hpp"
-#include "xtensor/xgenerator.hpp"
-#include "xtensor/xrandom.hpp"
+#include "xtensor/containers/xarray.hpp"
+#include "xtensor/containers/xtensor.hpp"
+#include "xtensor/views/xview.hpp"
+#include "xtensor/generators/xgenerator.hpp"
+#include "xtensor/generators/xrandom.hpp"
 #include "xtensor/xstrided_view.hpp"
 #include "xtensor/xeval.hpp"
 

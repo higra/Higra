@@ -1,6 +1,6 @@
-prefix=/home/perretb/Higra/lib
-libdir=/home/perretb/Higra/lib/lib
-includedir=/home/perretb/Higra/lib/include
+prefix=/Users/sullyvancoulon/Desktop/Higra_workspace/Higra/lib
+libdir=/Users/sullyvancoulon/Desktop/Higra_workspace/Higra/lib/lib
+includedir=/Users/sullyvancoulon/Desktop/Higra_workspace/Higra/lib/include
 
 Name: xsimd
 Description: xsimd provides a unified means for using SIMD features for library authors..

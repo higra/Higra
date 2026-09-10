@@ -15,7 +15,7 @@
 #include "higra/image/graph_image.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/hierarchy/watershed_hierarchy.hpp"
-#include "xtensor/xrandom.hpp"
+#include "xtensor/generators/xrandom.hpp"
 #include "higra/structure/lca_fast.hpp"
 
 using namespace xt;

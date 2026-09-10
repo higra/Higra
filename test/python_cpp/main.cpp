@@ -8,14 +8,12 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#define CATCH_CONFIG_MAIN
-
 //#include "xtl/xmeta_utils.hpp"
 #define FORCE_IMPORT_ARRAY
 
-#include "catch2/catch.hpp"
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xarray.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <xtensor/containers/xtensor.hpp>
+#include <xtensor/containers/xarray.hpp>
 #include <xtensor-python/pyarray.hpp>
 #include <xtensor-python/pytensor.hpp>
 #include <pybind11/embed.h> // everything needed for embedding

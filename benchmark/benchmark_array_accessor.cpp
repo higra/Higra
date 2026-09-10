@@ -11,8 +11,8 @@
 #include <benchmark/benchmark.h>
 
 #include "higra/graph.hpp"
-#include "xtensor/xview.hpp"
-#include "xtensor/xrandom.hpp"
+#include "xtensor/views/xview.hpp"
+#include "xtensor/generators/xrandom.hpp"
 
 using namespace xt;
 using namespace hg;

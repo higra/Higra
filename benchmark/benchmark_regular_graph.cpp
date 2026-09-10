@@ -12,7 +12,7 @@
 #include <benchmark/benchmark.h>
 #include "utils.h"
 #include "higra/graph.hpp"
-#include "xtensor/xrandom.hpp"
+#include "xtensor/generators/xrandom.hpp"
 #include "higra/image/graph_image.hpp"
 
 using namespace xt;

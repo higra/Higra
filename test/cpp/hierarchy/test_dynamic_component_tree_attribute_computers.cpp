@@ -89,7 +89,7 @@ namespace dynamic_component_tree_attribute_computers {
             // usable for width/height and diagonal-length checks with the same code path.
             REQUIRE(lhs.size() == rhs.size());
             for (size_t i = 0; i < lhs.size(); ++i) {
-                REQUIRE(lhs[i] == Approx(rhs[i]));
+                REQUIRE(lhs[i] == Catch::Approx(rhs[i]));
             }
         }
 
@@ -134,11 +134,11 @@ namespace dynamic_component_tree_attribute_computers {
 
         REQUIRE(width[(size_t) maxtree.getRoot()] == 12.0);
         REQUIRE(height[(size_t) maxtree.getRoot()] == 12.0);
-        REQUIRE(diagonal[(size_t) maxtree.getRoot()] == Approx(std::sqrt(288.0)));
+        REQUIRE(diagonal[(size_t) maxtree.getRoot()] == Catch::Approx(std::sqrt(288.0)));
 
         REQUIRE(width[(size_t) 152] == 1.0);
         REQUIRE(height[(size_t) 152] == 3.0);
-        REQUIRE(diagonal[(size_t) 152] == Approx(std::sqrt(10.0)));
+        REQUIRE(diagonal[(size_t) 152] == Catch::Approx(std::sqrt(10.0)));
     }
 
     TEST_CASE("dynamic component tree bounding-box computer matches full recomputation after a local edit") {
@@ -194,7 +194,7 @@ namespace dynamic_component_tree_attribute_computers {
 
         REQUIRE(widthIncremental[(size_t) 152] == 1.0);
         REQUIRE(heightIncremental[(size_t) 152] == 2.0);
-        REQUIRE(diagonalIncremental[(size_t) 152] == Approx(std::sqrt(5.0)));
+        REQUIRE(diagonalIncremental[(size_t) 152] == Catch::Approx(std::sqrt(5.0)));
         REQUIRE(widthIncremental[(size_t) 157] == 11.0);
         REQUIRE(heightIncremental[(size_t) 157] == 12.0);
     }

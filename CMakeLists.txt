@@ -148,7 +148,20 @@ endif()
 #  Options
 ##########################
 
-find_package(Catch2 REQUIRED)
+include(FetchContent)
+FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.16.0
+        GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(Catch2)
+
+foreach(catch2_target IN ITEMS Catch2 Catch2WithMain)
+    if (TARGET ${catch2_target})
+        target_compile_options(${catch2_target} PRIVATE -fno-profile-arcs -fno-test-coverage)
+    endif ()
+endforeach ()
+
 option(DO_CPP_TEST
         "Build c++ test suit." ON)
 
