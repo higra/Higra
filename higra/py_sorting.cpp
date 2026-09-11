@@ -13,7 +13,11 @@
 #include "higra/sorting.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
-
+#ifdef HG_USE_TBB
+    #include <memory>
+    #include <oneapi/tbb/global_control.h>
+    #include <oneapi/tbb/info.h>
+#endif
 namespace py_sorting {
 
     template<typename T>
@@ -70,8 +74,8 @@ namespace py_sorting {
     };
 
 #ifdef HG_USE_TBB
-    static size_t max_threads = tbb::task_scheduler_init::default_num_threads();
-    static tbb::task_scheduler_init tbb_scheduler(tbb::task_scheduler_init::default_num_threads());
+    static size_t max_threads = oneapi::tbb::info::default_concurrency();
+    static std::unique_ptr<oneapi::tbb::global_control> tbb_thread_limit;
 #endif
 
     void py_init_sorting(pybind11::module &m) {
@@ -81,10 +85,7 @@ namespace py_sorting {
                   if (num_threads == 0) {
                       num_threads = max_threads;
                   }
-                  if (tbb_scheduler.is_active()) {
-                      tbb_scheduler.terminate();
-                  }
-                  tbb_scheduler.initialize(num_threads);
+                  tbb_thread_limit = std::make_unique<oneapi::tbb::global_control>(oneapi::tbb::global_control::max_allowed_parallelism, static_cast<int>(num_threads));
 #else
                   HG_LOG_WARNING("Warning: trying to set maximum number of threads but Higra was compiled without multi-threading!");
 #endif
