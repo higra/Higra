@@ -25,29 +25,19 @@ force_debug = get_option("--force_debug", "HG_DEBUG")
 use_tbb = get_option("--use_tbb", "HG_USE_TBB")
 
 
-def get_tbb_dirs():
-    link_dir = os.getenv("TBB_LIBRARY")
-    include_dir = os.getenv("TBB_INCLUDE_DIR")
+def get_tbb_dir():
+    tbb_dir = os.getenv("TBB_DIR")
 
-    if bool(link_dir) != bool(include_dir):
-        print('You must either provide none or BOTH environment variables "TBB_INCLUDE" and "TBB_LINK"')
-        exit(1)
-
-    # if env not set, we assume that tbb is installed with python distro...
-    if link_dir is None:
+    if tbb_dir is None:
         from sysconfig import get_paths
-        info = get_paths()
-        python_path = info['data']
+        tbb_dir = os.path.join(get_paths()['data'], "lib", "cmake", "TBB")
 
-        include_dir = os.path.join(python_path, "include")
-        link_dir = os.path.join(python_path, "lib")
-
-    if not (os.path.isfile(os.path.join(include_dir, "tbb", "tbb.h"))):
-        print('Cannot find "tbb.h" please provide tbb location with environment variables "TBB_INCLUDE" and "TBB_LINK"')
+    if not os.path.isfile(os.path.join(tbb_dir, "TBBConfig.cmake")):
+        print('Cannot find TBBConfig.cmake; set TBB_DIR to oneTBB\'s CMake package directory.')
         exit(1)
 
-    print("TBB dirs: ", include_dir, link_dir)
-    return include_dir, link_dir
+    print("TBB CMake package directory: ", tbb_dir)
+    return tbb_dir
 
 
 def get_version():
@@ -112,13 +102,14 @@ class CMakeBuild(build_ext):
                       '-DDO_CPP_TEST=Off']
 
         if use_tbb:
-            tbb_include, tbb_link = get_tbb_dirs()
+            tbb_dir = get_tbb_dir()
             cmake_args = cmake_args + [
                 '-DHG_USE_TBB=On',
-                '-DTBB_INCLUDE_DIR=' + tbb_include,
-                '-DTBB_LIBRARY=' + tbb_link,
+                '-DTBB_DIR=' + tbb_dir,
                 '-DHG_UNITY_BUILD=On',
                 '-DHG_UNITY_BUILD_BATCH_SIZE=4']
+            if tbb_renamed_library is not None:
+                cmake_args += ['-DTBB_RENAMED_LIBRARY=' + tbb_renamed_library]
 
         cfg = 'Debug' if force_debug or self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -201,9 +192,11 @@ def prepare_dll_windows():
     os.rename("tbb_higra.lib", "tbb.lib")
     os.remove("tbb.dll")
     os.chdir("..")
+    return os.path.abspath(os.path.join("higra", "tbb.lib"))
 
 
 temporary_package_dirs = []
+tbb_renamed_library = None
 
 try:
     python_version = sys.version_info[1] # TODO: python 3 assumed...
@@ -216,7 +209,7 @@ try:
         14:['numpy>=2.3.2'],
     }
     if use_tbb and platform.system() == "Windows":
-        prepare_dll_windows()
+        tbb_renamed_library = prepare_dll_windows()
 
     # hack because setuptools wont install files which are not inside a python package
     cur_dir = os.path.dirname(os.path.abspath(__file__))

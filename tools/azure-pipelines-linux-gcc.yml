@@ -34,15 +34,18 @@ jobs:
       - script: |
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
-          conda install tbb-devel==2019.9 scikit-learn -c conda-forge
+          conda install scikit-learn -c conda-forge
         displayName: Install python packages
+
+      - script: |
+          bash $(Build.SourcesDirectory)/tools/cibuildwheel_osx.sh
+        displayName: Build oneTBB from source
 
       - script: |
           set -e
           mkdir build
           cd build
-          CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DPython_EXECUTABLE=$CONDA/bin/python -DTBB_INCLUDE_DIR=$CONDA/include -DTBB_LIBRARY=$CONDA/lib -DHG_USE_TBB=$HG_USE_TBB -DHG_UNITY_BUILD=ON -DHG_UNITY_BUILD_BATCH_SIZE=4";
-          MAKE_TARGETS="test_exe"
+          CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DPython_EXECUTABLE=$CONDA/bin/python -DTBB_DIR=$HOME/tbb/lib/cmake/TBB -DHG_USE_TBB=$HG_USE_TBB -DHG_UNITY_BUILD=ON -DHG_UNITY_BUILD_BATCH_SIZE=4";          MAKE_TARGETS="test_exe"
           if [[ -n "$COVERAGE" ]]; then
             CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_BUILD_TYPE=Coverage"
           else

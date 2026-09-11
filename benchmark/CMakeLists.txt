@@ -62,18 +62,18 @@ endif ()
 
 find_package(benchmark REQUIRED)
 
-include_directories(${PROJECT_SOURCE_DIR}/lib/include ${PROJECT_SOURCE_DIR}/include ${TBB_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR}/lib/include ${PROJECT_SOURCE_DIR}/include)
 include_directories(${GBENCHMARK_INCLUDE_DIRS})
 
 set(FILES_BENCHMARK
         main.cpp
         utils.cpp
-        benchmark_lca.cpp
+        #benchmark_lca.cpp
         #        benchmark_component_tree_casf.cpp
         #benchmark_undirected_graph.cpp
         #benchmark_regular_graph.cpp
         #benchmark_accumulator.cpp
-        #benchmark_parallel_sort.cpp
+        benchmark_parallel_sort.cpp
         #benchmark_tree_iterator.cpp
         #benchmark_array_accessor.cpp
         #benchmark_views.cpp
@@ -83,7 +83,7 @@ set(FILES_BENCHMARK
 set(BENCHMARK_TARGET benchmark_higra)
 add_executable(${BENCHMARK_TARGET} ${FILES_BENCHMARK})
 target_compile_definitions(${BENCHMARK_TARGET} PRIVATE HG_USE_TBB)
-target_link_libraries(${BENCHMARK_TARGET} benchmark -lpthread ${TBB_LIBRARIES})
+target_link_libraries(${BENCHMARK_TARGET} benchmark::benchmark TBB::tbb)
 
 
 add_custom_target(benchmark_exe
