@@ -194,9 +194,8 @@ option(HG_USE_TBB
         "Enable Intel TBB support." OFF)
 
 if (HG_USE_TBB)
-    find_package(TBB REQUIRED)
-    message(STATUS "Found intel TBB: ${TBB_INCLUDE_DIRS}")
-    add_definitions("-DTBB_SUPPRESS_DEPRECATED_MESSAGES")
+    find_package(TBB CONFIG REQUIRED)
+    message(STATUS "Found oneTBB ${TBB_VERSION}")
 endif ()
 
 option(HG_BUILD_WHEEL

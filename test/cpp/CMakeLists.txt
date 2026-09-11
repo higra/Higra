@@ -32,10 +32,8 @@ if (DO_CPP_TEST)
     target_link_libraries(test_exe PRIVATE Catch2::Catch2WithMain)
 
     if (HG_USE_TBB)
-        add_definitions("-DXTENSOR_USE_TBB")
-        target_compile_definitions(test_exe PRIVATE HG_USE_TBB)
-        target_include_directories(test_exe PRIVATE ${TBB_INCLUDE_DIRS})
-        target_link_libraries(test_exe PRIVATE ${TBB_LIBRARIES})
+        target_compile_definitions(test_exe PRIVATE HG_USE_TBB XTENSOR_USE_TBB)
+        target_link_libraries(test_exe PRIVATE TBB::tbb)
     endif ()
 
     add_test(NAME Test_cpp COMMAND test_exe)

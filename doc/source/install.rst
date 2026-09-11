@@ -67,10 +67,9 @@ Cmake options:
 - ``HG_USE_TBB`` (boolean, default ``OFF``): Use Intel Threading Building Blocks (TBB)
 
 If ``HG_USE_TBB`` is equal to ``ON``, cmake will try to locate TBB automatically.
-TBB path can however be specified manually  with the following parameters:
+oneTBB can be located by setting the following CMake parameter:
 
-- ``TBB_INCLUDE_DIR`` (path): path to TBB include (path containing a folder called `tbb` that contains TBB header files)
-- ``TBB_LIBRARY`` (path): path to TBB library (path containing `tbb.so` on Unix or `tbb.lib` on Windows)
+- ``TBB_DIR`` (path): path containing ``TBBConfig.cmake`` (typically ``<prefix>/lib/cmake/TBB``)
 
 With setuptools
 ***************
@@ -90,7 +89,6 @@ The following commands will download the library, create a binary wheel and inst
 In order to activate TBB, one must define the following environment variable before calling ``setup.py``
 
 - ``HG_USE_TBB`` (any value):  will activate use of TBB
-- ``TBB_INCLUDE_DIR`` (optional, path): path to TBB include (path containing a folder called `tbb` that contains TBB header files)
-- ``TBB_LIBRARY`` (optional, path): path to TBB library (path containing `tbb.so` on Unix or `tbb.lib` on Windows)
+- ``TBB_DIR`` (path): path containing ``TBBConfig.cmake`` (typically ``<prefix>/lib/cmake/TBB``)
 - ``TBB_DLL`` (mandatory on Windows, filepath): path to TBB DLL
 

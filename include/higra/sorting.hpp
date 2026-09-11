@@ -14,12 +14,12 @@
 
 #ifdef HG_USE_TBB
 
-#include "tbb/parallel_sort.h"
-#include "tbb-ssort/parallel_stable_sort.h"
+    #include <oneapi/tbb/parallel_sort.h>
+    #include "tbb-ssort/parallel_stable_sort.h"
 
 #else
 
-#include <algorithm>
+    #include <algorithm>
 
 #endif
 
@@ -39,7 +39,7 @@ namespace hg {
     template<typename RandomAccessIterator, typename Compare>
     void sort(RandomAccessIterator xs, RandomAccessIterator xe, Compare comp) {
 #ifdef HG_USE_TBB
-        tbb::parallel_sort(xs, xe, comp);
+        oneapi::tbb::parallel_sort(xs, xe, comp);
 #else
         std::sort(xs, xe, comp);
 #endif

@@ -31,121 +31,85 @@
 */
 #include <iterator>
 #include <algorithm>
-#include <tbb/task.h>
-
-#include "pss_common.h"
+#include <memory>
+#include <new>
+#include <oneapi/tbb/parallel_invoke.h>
 
 namespace pss {
 
     namespace internal {
 
-        template<typename RandomAccessIterator1, typename RandomAccessIterator2, typename RandomAccessIterator3, typename Compare>
-        class merge_task : public tbb::task {
-            tbb::task *execute();
+    template<typename RandomAccessIterator1, typename RandomAccessIterator2, typename T, typename Compare>
+    void merge_task(RandomAccessIterator1 xs, RandomAccessIterator1 xe,
+              RandomAccessIterator2 ys, RandomAccessIterator2 ye,
+          T *zs, Compare comp) {
+      const auto merge_cut_off = typename std::iterator_traits<RandomAccessIterator1>::difference_type(2048);
+      const auto size = (xe - xs) + (ye - ys);
 
-            RandomAccessIterator1 xs, xe;
-            RandomAccessIterator2 ys, ye;
-            RandomAccessIterator3 zs;
-            Compare comp;
-            bool destroy;
-        public:
-            merge_task(RandomAccessIterator1 xs_, RandomAccessIterator1 xe_, RandomAccessIterator2 ys_,
-                       RandomAccessIterator2 ye_, RandomAccessIterator3 zs_, bool destroy_, Compare comp_) :
-                    xs(xs_), xe(xe_), ys(ys_), ye(ye_), zs(zs_), comp(comp_), destroy(destroy_) {}
-        };
-
-        template<typename RandomAccessIterator1, typename RandomAccessIterator2, typename RandomAccessIterator3, typename Compare>
-        tbb::task *merge_task<RandomAccessIterator1, RandomAccessIterator2, RandomAccessIterator3, Compare>::execute() {
-            const size_t MERGE_CUT_OFF = 2000;
-            auto n = (xe - xs) + (ye - ys);
-            if ((size_t) n <= MERGE_CUT_OFF) {
-                serial_move_merge(xs, xe, ys, ye, zs, comp);
-                if (destroy) {
-                    serial_destroy(xs, xe);
-                    serial_destroy(ys, ye);
-                }
-                return NULL;
-            } else {
-                RandomAccessIterator1 xm;
-                RandomAccessIterator2 ym;
-                if (xe - xs < ye - ys) {
-                    ym = ys + (ye - ys) / 2;
-                    xm = std::upper_bound(xs, xe, *ym, comp);
-                } else {
-                    xm = xs + (xe - xs) / 2;
-                    ym = std::lower_bound(ys, ye, *xm, comp);
-                }
-                RandomAccessIterator3 zm = zs + ((xm - xs) + (ym - ys));
-                tbb::task *right = new(allocate_additional_child_of(*parent())) merge_task(xm, xe, ym, ye, zm, destroy,
-                                                                                           comp);
-                spawn(*right);
-                recycle_as_continuation();
-                xe = xm;
-                ye = ym;
-                return this;
-            }
+      if (size <= merge_cut_off) {
+        while (xs != xe && ys != ye) {
+          if (comp(*ys, *xs)) {
+            new (zs++) T(std::move(*ys++));
+          } else {
+            new (zs++) T(std::move(*xs++));
+          }
         }
+        while (xs != xe) {
+          new (zs++) T(std::move(*xs++));
+        }
+        while (ys != ye) {
+          new (zs++) T(std::move(*ys++));
+        }
+        return;
+      }
 
-        template<typename RandomAccessIterator1, typename RandomAccessIterator2, typename Compare>
-        class stable_sort_task : public tbb::task {
-            tbb::task *execute();
+      RandomAccessIterator1 xm;
+      RandomAccessIterator2 ym;
+      if (xe - xs >= ye - ys) {
+        xm = xs + (xe - xs) / 2;
+        ym = std::lower_bound(ys, ye, *xm, comp);
+      } else {
+        ym = ys + (ye - ys) / 2;
+        xm = std::upper_bound(xs, xe, *ym, comp);
+      }
 
-            RandomAccessIterator1 xs, xe;
-            RandomAccessIterator2 zs;
-            Compare comp;
-            signed char inplace;
-        public:
-            stable_sort_task(RandomAccessIterator1 xs_, RandomAccessIterator1 xe_, RandomAccessIterator2 zs_,
-                             int inplace_, Compare comp_) :
-                    xs(xs_), xe(xe_), zs(zs_), comp(comp_), inplace(inplace_) {}
-        };
+      const auto zm = zs + (xm - xs) + (ym - ys);
+      oneapi::tbb::parallel_invoke(
+          [&] { merge_task(xs, xm, ys, ym, zs, comp); },
+          [&] { merge_task(xm, xe, ym, ye, zm, comp); });
+    }
 
-        template<typename RandomAccessIterator1, typename RandomAccessIterator2, typename Compare>
-        tbb::task *stable_sort_task<RandomAccessIterator1, RandomAccessIterator2, Compare>::execute() {
-            const size_t SORT_CUT_OFF = 500;
-            if ((size_t) (xe - xs) <= SORT_CUT_OFF) {
-                stable_sort_base_case(xs, xe, zs, inplace, comp);
-                return NULL;
-            } else {
-                RandomAccessIterator1 xm = xs + (xe - xs) / 2;
-                RandomAccessIterator2 zm = zs + (xm - xs);
-                RandomAccessIterator2 ze = zs + (xe - xs);
-                task *m;
-                if (inplace)
-                    m = new(allocate_continuation()) merge_task<RandomAccessIterator2, RandomAccessIterator2, RandomAccessIterator1, Compare>(
-                            zs, zm, zm, ze, xs, inplace == 2, comp);
-                else
-                    m = new(allocate_continuation()) merge_task<RandomAccessIterator1, RandomAccessIterator1, RandomAccessIterator2, Compare>(
-                            xs, xm, xm, xe, zs, false, comp);
-                m->set_ref_count(2);
-                task *right = new(m->allocate_child()) stable_sort_task(xm, xe, zm, !inplace, comp);
-                spawn(*right);
-                recycle_as_child_of(*m);
-                xe = xm;
-                inplace = !inplace;
-                return this;
+        template<typename RandomAccessIterator, typename Compare>
+        void stable_sort_task(RandomAccessIterator xs, RandomAccessIterator xe, Compare comp) {
+            const auto sort_cut_off = typename std::iterator_traits<RandomAccessIterator>::difference_type(4096);
+            const auto size = xe - xs;
+
+            if (size <= sort_cut_off) {
+                std::stable_sort(xs, xe, comp);
+                return;
             }
+
+            const auto xm = xs + size / 2;
+            oneapi::tbb::parallel_invoke(
+                    [&] { stable_sort_task(xs, xm, comp); },
+                    [&] { stable_sort_task(xm, xe, comp); });
+
+                typedef typename std::iterator_traits<RandomAccessIterator>::value_type value_type;
+                std::allocator<value_type> allocator;
+                value_type *buffer = allocator.allocate(size);
+                merge_task(xs, xm, xm, xe, buffer, comp);
+                std::move(buffer, buffer + size, xs);
+                for (auto index = size; index != 0; --index) {
+                  buffer[index - 1].~value_type();
+                }
+                allocator.deallocate(buffer, size);
         }
 
     } // namespace internal
 
     template<typename RandomAccessIterator, typename Compare>
     void parallel_stable_sort(RandomAccessIterator xs, RandomAccessIterator xe, Compare comp) {
-        typedef typename std::iterator_traits<RandomAccessIterator>::value_type T;
-        if (internal::raw_buffer z = internal::raw_buffer(sizeof(T) * (xe - xs))) {
-            using tbb::task;
-            typedef typename std::iterator_traits<RandomAccessIterator>::value_type T;
-            internal::raw_buffer buf(sizeof(T) * (xe - xs));
-            task::spawn_root_and_wait(
-                    *new(task::allocate_root()) internal::stable_sort_task<RandomAccessIterator, T *, Compare>(
-                            xs,
-                            xe,
-                            (T *) buf.get(),
-                            2,
-                            comp));
-        } else
-            // Not enough memory available - fall back on serial sort
-            std::stable_sort(xs, xe, comp);
+        internal::stable_sort_task(xs, xe, comp);
     }
 
     template<typename RandomAccessIterator>
