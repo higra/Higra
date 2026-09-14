@@ -40,12 +40,24 @@ def align_hierarchies(graph, vertex_labels, other_hierarchies):
 
     where :math:`lca_T(x, y)` is the lowest common ancestor of nodes :math:`x` and :math:`y` in :math:`T`.
 
-    :param graph: the domain graph
-    :param vertex_labels: 1d array of positive integers, labeling of the graph vertices into super-vertices
-    :param other_hierarchies: a hierarchy or a list of hierarchies: hierarchies can be given either as valued trees
+    Complexity: :math:`O(|V| + |E| + |T|)` where :math:`|T|` is the number of nodes in the tree :math:`T`.
+
+    :Example:
+
+    >>> graph = hg.get_4_adjacency_graph((3, 3))
+    >>> vertex_labels = np.array([0, 0, 1, 0, 0, 1, 2, 2, 2])
+    >>> edge_weights = np.array([0, 0, 1, 0, 0, 1, 2, 2, 2, 0, 0, 1])
+    >>> tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+    >>> saliency_map = hg.align_hierarchies(graph, vertex_labels, (tree, altitudes))
+    >>> saliency_map
+    array([0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0])
+
+    :param graph: (type: hg.UndirectedGraph) the domain graph
+    :param vertex_labels: (type: np.ndarray, dimension: 1) 1d array of positive integers, labeling of the graph vertices into super-vertices
+    :param other_hierarchies: (type: tuple or list, dimension: 1) a hierarchy or a list of hierarchies: hierarchies can be given either as valued trees
         (pairs (tree, altitudes) ) or as saliency maps (pairs (graph, edge_weights)), defined on the pixel graph or
         on a region adjacency graph (Concept :class:`~higra.CptRegionAdjacencyGraph`).
-    :return: a hierarchy or a list of hierarchies as saliency maps
+    :return: (type: np.ndarray, dimension: 1) a hierarchy or a list of hierarchies as saliency maps
     """
     result = []
     list_input = True
