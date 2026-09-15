@@ -10,10 +10,27 @@
 
 #include "higra/sorting.hpp"
 #include "test_utils.hpp"
+#include <utility>
+#include <vector>
+
+#ifdef HG_USE_TBB
+    #include <oneapi/tbb/task_arena.h>
+#endif
 
 namespace test_sorting {
 
     using namespace hg;
+
+    struct move_only_value {
+        int key;
+        index_t index;
+
+        move_only_value(int key_, index_t index_) : key(key_), index(index_) {}
+        move_only_value(const move_only_value &) = delete;
+        move_only_value &operator=(const move_only_value &) = delete;
+        move_only_value(move_only_value &&) = default;
+        move_only_value &operator=(move_only_value &&) = default;
+    };
 
     TEST_CASE("sort array scalar", "[sorting]") {
         array_1d<int> a1 = {5, 2, 1, 4, 9};
@@ -71,5 +88,35 @@ namespace test_sorting {
         auto i2 = hg::arg_sort(xt::transpose(a1), std::greater<int>());
         array_1d<int> ref2 = {4, 0, 1, 2, 3};
         REQUIRE((i2 == ref2));
+    }
+
+    TEST_CASE("stable arg sort large array scalar", "[sorting]") {
+        constexpr index_t size = 8192;
+        array_1d<int> a = xt::arange<int>(size) % 23;
+        auto indices = hg::stable_arg_sort(a);
+
+        for (index_t i = 1; i < size; ++i) {
+            REQUIRE(a(indices(i - 1)) <= a(indices(i)));
+            if (a(indices(i - 1)) == a(indices(i))) {
+                REQUIRE(indices(i - 1) < indices(i));
+            }
+        }
+    }
+
+    TEST_CASE("stable sort move-only values", "[sorting]") {
+        std::vector<move_only_value> values;
+        for (index_t index = 0; index < 8192; ++index) {
+            values.emplace_back(index % 23, index);
+        }
+
+        hg::stable_sort(values.begin(), values.end(),
+                [](const auto &left, const auto &right) { return left.key < right.key; });
+
+        for (index_t index = 1; index < values.size(); ++index) {
+            REQUIRE(values[index - 1].key <= values[index].key);
+            if (values[index - 1].key == values[index].key) {
+                REQUIRE(values[index - 1].index < values[index].index);
+            }
+        }
     }
 }

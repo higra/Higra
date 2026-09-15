@@ -14,7 +14,7 @@
 #include "xtensor/views/xview.hpp"
 #include "xtensor/generators/xrandom.hpp"
 #include <algorithm>
-#include "tbb/parallel_sort.h"
+#include <oneapi/tbb/parallel_sort.h>
 #include "tbb-ssort/parallel_stable_sort.h"
 
 using namespace xt;
@@ -63,7 +63,7 @@ static void BM_tbb_parallel_sort(benchmark::State &state) {
         size_t size = state.range(0);
         array_1d<float> a = xt::random::rand<float>({size});
         state.ResumeTiming();
-        tbb::parallel_sort(a.begin(), a.end());
+        oneapi::tbb::parallel_sort(a.begin(), a.end());
         bool flag;
         benchmark::DoNotOptimize(flag = (a.size() == size));
     }

@@ -24,26 +24,22 @@ jobs:
     steps:
 
       - powershell: |
-          $condaCandidates = @(
-            $env:CONDA,
-            'C:\Miniconda',
-            'C:\Miniconda3',
-            'C:\ProgramData\Miniconda3'
-          )
-          $conda = $condaCandidates |
-            Where-Object { $_ -and (Test-Path "$_\Scripts\conda.exe") } |
+          & "$(Build.SourcesDirectory)\tools\build_tbb_windows.ps1"
+
+          $TBB_INSTALL_PREFIX = "C:\tbb"
+          $tbbDll = Get-ChildItem "$TBB_INSTALL_PREFIX\bin\tbb*.dll" |
+            Where-Object { $_.Name -match '^tbb\d*\.dll$' } |
             Select-Object -First 1
-          if (-not $conda) {
-            throw "The Azure agent does not provide a usable Conda installation."
+          if (-not $tbbDll) {
+            throw "Cannot find the oneTBB runtime DLL in $TBB_INSTALL_PREFIX\bin."
           }
 
-          & "$conda\Scripts\conda.exe" config --set always_yes yes --set changeps1 no
-          & "$conda\Scripts\conda.exe" install --channel conda-forge tbb-devel=2019.0
-
-          $condaUnixPath = $conda.Replace('\', '/')
-          $cibwEnvironment = "HG_USE_TBB=1 TBB_DLL=$condaUnixPath/Library/bin/tbb.dll TBB_INCLUDE_DIR=$condaUnixPath/Library/include TBB_LIBRARY=$condaUnixPath/Library/lib NUMPY_VERSION=${{ parameters.NUMPY_VERSION }}"
+          $tbbInstallUnixPath = $TBB_INSTALL_PREFIX.Replace('\', '/')
+          $tbbDllUnixPath = $tbbDll.FullName.Replace('\', '/')
+          $cibwEnvironment = "HG_USE_TBB=1 TBB_DLL=$tbbDllUnixPath TBB_DIR=$tbbInstallUnixPath/lib/cmake/TBB NUMPY_VERSION=${{ parameters.NUMPY_VERSION }}"
           Write-Host "##vso[task.setvariable variable=CIBW_ENVIRONMENT_WINDOWS]$cibwEnvironment"
-        displayName: Use preinstalled Conda and install TBB
+          Write-Host "##vso[task.setvariable variable=TBB_LIB_DIR]$TBB_INSTALL_PREFIX\lib"
+        displayName: Build oneTBB from source
 
       - task: UsePythonVersion@0
         inputs:
@@ -59,6 +55,7 @@ jobs:
           for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSINSTALLPATH=%%i"
           if not defined VSINSTALLPATH exit /b 1
           call "%VSINSTALLPATH%\Common7\Tools\VsDevCmd.bat" -arch=amd64
+          set "LIB=%TBB_LIB_DIR%;%LIB%"
           where dumpbin
           where lib
           cibuildwheel --output-dir wheelhouse

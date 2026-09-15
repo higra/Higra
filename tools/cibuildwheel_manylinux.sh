@@ -7,27 +7,21 @@ cur_dir=`pwd`
 
 export MFLAG="-m64"
 export CXXFLAGS=" ${MFLAG} -fabi-version=8 -Wno-error=changes-meaning"
-export TBB_URL="https://github.com/intel/tbb/archive/2019_U9.zip"
+export TBB_VERSION="2023.1.0"
+export TBB_URL="https://github.com/uxlfoundation/oneTBB/archive/refs/tags/v${TBB_VERSION}.tar.gz"
 
 curl -L "${TBB_URL}" -o archive.tgz
-unzip archive.tgz
-mv oneTBB* tbb
-cd tbb
-tbb_dir=`pwd`
+tar -xzf archive.tgz
+mv oneTBB-* tbb
 
-make -j tbb
+cmake -S tbb -B tbb/build \
+  -DTBB_TEST=OFF \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_LIBDIR=lib \
+  -DCMAKE_INSTALL_PREFIX=/tbb
 
-cd build
-cd *release
-tbb_link=`pwd`
-
-mkdir -p /tbb/lib/
-mv ${tbb_link}/* /tbb/lib/
-mv ${tbb_dir}/include /tbb/
-ls /tbb/lib/*
-ls /tbb/include/*
-cd ${cur_dir}
-
+cmake --build tbb/build --parallel
+cmake --install tbb/build
 
 
 
