@@ -34,15 +34,19 @@ jobs:
       - script: |
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
-          conda install cmake tbb-devel==2019.9 scikit-learn -c conda-forge
+          conda install cmake scikit-learn -c conda-forge
         displayName: Install python packages
+
+      - script: |
+          bash $(Build.SourcesDirectory)/tools/cibuildwheel_osx.sh
+        displayName: Build oneTBB from source
 
       - script: |
           set -e
           mkdir build
           cd build
           MAKE_TARGETS="test_exe higram"
-          CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DPython_EXECUTABLE=$HOME/miniconda/bin/python -DTBB_INCLUDE_DIR=$HOME/miniconda/bin/include -DTBB_LIBRARY=$HOME/miniconda/bin/lib -DHG_USE_TBB=$HG_USE_TBB -DHG_UNITY_BUILD=ON -DHG_UNITY_BUILD_BATCH_SIZE=4";
+          CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DPython_EXECUTABLE=$HOME/miniconda/bin/python -DTBB_DIR=$HOME/tbb/lib/cmake/TBB -DHG_USE_TBB=$HG_USE_TBB -DHG_UNITY_BUILD=ON -DHG_UNITY_BUILD_BATCH_SIZE=4";
           CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_BUILD_TYPE=Debug"
           cmake $CMAKE_EXTRA_ARGS $(Build.SourcesDirectory)
           make -j2 $MAKE_TARGETS
