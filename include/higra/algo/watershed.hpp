@@ -22,6 +22,9 @@
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
+#ifdef HG_USE_TBB
+#include <oneapi/tbb/task_arena.h>
+#endif
 
 namespace hg {
 
@@ -224,24 +227,40 @@ namespace hg {
          *
          * @param bpt canonical binary partition tree
          * @param mst minimum spanning tree of the original graph (as ugraph)
+         * @param MIN_BREADTH minimum breadth for the parallel algorithm
+         * @param PAR_DEPTH parallel depth for the parallel algorithm
+         * @param number_processors number of processors to use
          */
-        incremental_watershed_cut(tree bpt, ugraph mst) :
-                m_bpt(std::move(bpt)),
-                m_mst(std::move(mst)),
-                m_num_leaves((index_t)num_leaves(m_bpt)),
-                m_root((index_t)hg::num_vertices(m_bpt) - 1),
-                m_seed_count(hg::num_vertices(m_bpt), 0),
-                m_is_cut(m_num_leaves - 1, false),
-                m_visited(m_num_leaves, 0) {
-            HG_TRACE();
-            hg_assert((index_t)num_vertices(m_mst) == m_num_leaves,
-                      "MST must have the same number of vertices as leaves in the BPT.");
-            hg_assert((index_t)num_edges(m_mst) == m_num_leaves - 1,
-                      "MST must have exactly num_leaves - 1 edges.");
-            m_labels = xt::zeros<index_t>({(size_t)m_num_leaves});
-            m_seed_map = array_1d<index_t>::from_shape({(size_t)m_num_leaves});
-            m_seed_map.fill(-1);
-        }
+        incremental_watershed_cut(
+                                tree bpt, 
+                                ugraph mst
+                                #ifdef HG_USE_TBB
+                                , index_t MIN_BREADTH=165, 
+                                index_t PAR_DEPTH=3, 
+                                index_t number_processors=oneapi::tbb::info::default_concurrency()
+                                #endif
+                            ) :
+            m_bpt(std::move(bpt)),
+            m_mst(std::move(mst)),
+            m_num_leaves((index_t)num_leaves(m_bpt)),
+            m_root((index_t)hg::num_vertices(m_bpt) - 1),
+            m_seed_count(hg::num_vertices(m_bpt), 0),
+            m_is_cut(m_num_leaves - 1, false),
+            #ifdef HG_USE_TBB
+            m_MIN_BREADTH(MIN_BREADTH),
+            m_PAR_DEPTH(PAR_DEPTH),
+            m_number_processors(number_processors),
+            #endif
+            m_visited(m_num_leaves, 0) {
+                HG_TRACE();
+                hg_assert((index_t)num_vertices(m_mst) == m_num_leaves,
+                        "MST must have the same number of vertices as leaves in the BPT.");
+                hg_assert((index_t)num_edges(m_mst) == m_num_leaves - 1,
+                        "MST must have exactly num_leaves - 1 edges.");
+                m_labels = xt::zeros<index_t>({(size_t)m_num_leaves});
+                m_seed_map = array_1d<index_t>::from_shape({(size_t)m_num_leaves});
+                m_seed_map.fill(-1);
+            }
 
         /**
          * Add seeds to the current watershed cut.
@@ -285,6 +304,24 @@ namespace hg {
                 }
             }
 
+            #ifdef HG_USE_TBB
+            std::vector<index_t> roots;
+            std::vector<index_t> root_labels;
+            std::vector<index_t> root_seeds;
+
+            for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
+                auto v = (index_t)seed_vertices(i);
+                auto l = (index_t)seed_labels(i);
+
+                if(m_seed_map[v] == v && m_labels[v] == l) // v is already a seed
+                    continue;
+
+                roots.push_back(v);
+                root_labels.push_back(l);
+                root_seeds.push_back(v);
+            }
+            relabel_component_from_forest(roots, root_labels, root_seeds);
+            #else
             for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
                 auto v = (index_t)seed_vertices(i);
                 auto l = (index_t)seed_labels(i);
@@ -294,6 +331,7 @@ namespace hg {
 
                 relabel_component_from_seed(v, l, v);
             }
+            #endif
         }
 
         /**
@@ -370,13 +408,17 @@ namespace hg {
                 m_seed_map.fill(-1);
                 return;
             }
-
+            
+            #ifdef HG_USE_TBB
+            relabel_component_from_forest(start_vertices, labels_to_propagate, reference_seeds);
+            #else
             for (index_t i = 0; i < (index_t)start_vertices.size(); i++) {
                 auto start = start_vertices[i];
                 auto label = labels_to_propagate[i];
                 auto reference_seed = reference_seeds[i];
                 relabel_component_from_seed(start, label, reference_seed);
             }
+            #endif
 
             for (auto k : removed_ws_cut_edges)
                 m_is_cut[k] = false;
@@ -396,7 +438,23 @@ namespace hg {
 
     private:
 
+        std::vector<std::vector<index_t>> partition(const std::vector<index_t>& values, index_t p) {
+            std::vector<std::vector<index_t>> parts(p);
 
+            const index_t n = values.size();
+            const index_t q = n / p;
+            const index_t r = n % p;
+
+            index_t begin = 0;
+            for (index_t i = 0; i < p; ++i) {
+                const index_t size = q + (i < r ? 1 : 0);
+                parts[i].insert(parts[i].end(),
+                                values.begin() + begin,
+                                values.begin() + begin + size);
+                begin += size;
+            }
+            return parts;
+        }
 
         /**
          * BFS from seed vertex start, labeling all reachable vertices (not crossing
@@ -423,6 +481,68 @@ namespace hg {
             }
         }
 
+        #ifdef HG_USE_TBB
+        /**
+         * BFS from seed vertex start, labeling all reachable vertices (not crossing
+         * cut edges) with the given label and seed, and updating the seed_map accordingly.
+         */
+        void relabel_component_from_forest(std::vector<index_t>& roots, std::vector<index_t>& root_labels, std::vector<index_t>& root_seeds) {
+            hg_assert(roots.size() == root_labels.size(), "Each root must have a label.");
+            hg_assert(roots.size() == root_seeds.size(), "Each root must have an origin seed.");
+            
+            std::vector<index_t> E = roots;
+
+            for (size_t i = 0; i < roots.size(); ++i) {
+                auto r = roots[i];
+                m_labels(r) = root_labels[i];
+                m_seed_map(r) = root_seeds[i];
+                m_visited[r] = m_visited_generation;
+            }
+
+            while (!E.empty()) {
+                if (E.size() > m_MIN_BREADTH) {
+                    auto E_i = partition(E, m_number_processors);
+                    std::vector<std::vector<index_t>> S_parts(m_number_processors);
+                    tbb::task_arena arena(static_cast<int>(m_number_processors));
+                    arena.execute([&]{
+                        hg::parfor(0, m_number_processors, [&](index_t i) {
+                            auto S_i = successor_labeling(E_i[i]);
+                            for (index_t l = 0; l < m_PAR_DEPTH; l++) {
+                                S_i = successor_labeling(S_i);
+                            }
+                            S_parts[i] = std::move(S_i);
+                        });
+                    });
+                    std::vector<index_t> next_E;
+                    for (const auto& S_i : S_parts) {
+                        next_E.insert(next_E.end(), S_i.begin(), S_i.end());
+                    }
+                    E = std::move(next_E);
+                }
+                else {
+                    E = successor_labeling(E);
+                }
+           }
+        }
+
+        std::vector<index_t> successor_labeling(std::vector<index_t> E) {
+            std::vector<index_t> S;
+            for (auto v : E) {
+                for (auto w : out_edge_iterator(v, m_mst)) {
+                    auto neighbor = target(w, m_mst);
+                    auto edge_idx = index(w, m_mst);
+                    if (!m_is_cut[edge_idx] && m_visited[neighbor] != m_visited_generation) {
+                        m_visited[neighbor] = m_visited_generation;
+                        m_labels(neighbor) = m_labels(v);
+                        m_seed_map(neighbor) = m_seed_map(v);
+                        S.push_back(neighbor);
+                    }
+                }
+            }
+            return S;
+        }
+        #endif
+        
         tree m_bpt;
         ugraph m_mst;
         index_t m_num_leaves;
@@ -445,6 +565,10 @@ namespace hg {
         // BFS visited buffer with generation counter (zero-cost reset pattern)
         index_t m_visited_generation = 0;
         std::vector<index_t> m_visited;
+
+        index_t m_MIN_BREADTH;
+        index_t m_PAR_DEPTH;
+        index_t m_number_processors;
     };
 
     /**
@@ -471,5 +595,4 @@ namespace hg {
         auto mst = subgraph_spanning(graph, bpt_res.mst_edge_map);
         return incremental_watershed_cut(std::move(bpt_res.tree), std::move(mst));
     }
-
 }

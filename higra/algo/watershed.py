@@ -113,12 +113,30 @@ class IncrementalWatershedCut:
 
     :param graph: input graph (must be connected)
     :param edge_weights: Weights on the edges of the graph
+    :param MIN_BREADTH: minimum breadth for the parallel algorithm
+    :param PAR_DEPTH: parallel depth for the parallel algorithm
+    :param number_processors: number of processors to use
     """
 
-    def __init__(self, graph, edge_weights):
+    def __init__(self, graph, edge_weights, MIN_BREADTH=None, PAR_DEPTH=None, number_processors=None):
+
+        tbb_enabled = hg.cpp._incremental_watershed_tbb_enabled
+        if not tbb_enabled and any(
+            value is not None
+            for value in (MIN_BREADTH, PAR_DEPTH, number_processors)
+        ):
+            raise ValueError(
+                "MIN_BREADTH, PAR_DEPTH et number_processors nécessitent "
+                "une compilation de Higra avec HG_USE_TBB."
+            )
+        
         tree, _ = hg.bpt_canonical(graph, edge_weights, compute_mst=True)
         mst = hg.CptBinaryHierarchy.get_mst(tree)
-        self._impl = hg.cpp.IncrementalWatershedCut(tree, mst)
+
+        if tbb_enabled:
+            self._impl = hg.cpp.IncrementalWatershedCut(tree, mst, MIN_BREADTH, PAR_DEPTH, number_processors)
+        else:
+            self._impl = hg.cpp.IncrementalWatershedCut(tree, mst)
         self._graph = graph
 
     def add_seeds(self, seed_vertices, seed_labels):

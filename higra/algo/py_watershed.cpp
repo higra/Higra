@@ -13,6 +13,8 @@
 #include "../py_common.hpp"
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
+#include <optional>
+#include <pybind11/stl.h>
 
 namespace py_watershed {
 
@@ -68,10 +70,37 @@ namespace py_watershed {
                 "Provides efficient computation of seeded watershed cuts in an interactive "
                 "segmentation setting, where seeds are added and removed incrementally.");
 
+        #ifdef HG_USE_TBB
+        m.attr("_incremental_watershed_tbb_enabled") = true;
+        cls.def(
+            py::init([](
+                const hg::tree &bpt,
+                const hg::ugraph &mst,
+                std::optional<hg::index_t> MIN_BREADTH,
+                std::optional<hg::index_t> PAR_DEPTH,
+                std::optional<hg::index_t> number_processors) {
+                    return hg::incremental_watershed_cut(
+                        bpt,
+                        mst,
+                        MIN_BREADTH.value_or(165),
+                        PAR_DEPTH.value_or(3),
+                        number_processors.value_or(
+                            oneapi::tbb::info::default_concurrency()));
+                }),
+            py::arg("bpt"),
+            py::arg("mst"),
+            py::arg("MIN_BREADTH") = std::nullopt,
+            py::arg("PAR_DEPTH") = std::nullopt,
+            py::arg("number_processors") = std::nullopt,
+            "Create an incremental watershed cut object from a BPT and its MST."
+        );
+        #else
+        m.attr("_incremental_watershed_tbb_enabled") = false;
         cls.def(py::init<const hg::tree &, const hg::ugraph &>(),
-                py::arg("bpt"),
-                py::arg("mst"),
-                "Create an incremental watershed cut object from a binary partition tree and its MST.");
+            py::arg("bpt"),
+            py::arg("mst"),
+            "Create an incremental watershed cut object from a binary partition tree and its MST.");
+        #endif
 
         cls.def("_add_seeds",
                 [](hg::incremental_watershed_cut &self,
@@ -96,6 +125,5 @@ namespace py_watershed {
                 "Compute and return the current vertex labeling.");
     }
 }
-
 
 
