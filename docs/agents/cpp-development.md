@@ -87,7 +87,14 @@ construction and lifetime rather than inferring ownership from `auto`.
 
 `HG_ADAPT_STRUCT_ARRAY` adapts fields of an array of structs using
 `xt::no_ownership()`. Explicit-graph endpoint arrays use this machinery and are
-strided. Their storage belongs to the graph's vector and can move on insertion.
+strided, const, borrowed adapters. Mutation, assignment, moving from the graph,
+or destruction invalidates them; reacquire after edits. Explicit graphs own a
+shared edge-storage generation. Python endpoint arrays retain a const storage
+handle and graph reference. Insertion with insufficient capacity copies a shared
+generation into a larger vector before switching; an unshared vector can grow
+normally. In-place set/remove operations do not detach. Native adapters do not
+retain storage, and an exported allocation does not extend their validity.
+Graph copies deep-copy storage and adjacency to preserve independent values.
 
 `make_node_weighted_tree` and `make_remapped_tree` use forwarding references and
 deduce member types. Passing lvalues can produce reference members. Review

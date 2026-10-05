@@ -400,4 +400,149 @@ namespace test_undirected_graph {
 
         }
     }
+
+    TEMPLATE_TEST_CASE("endpoint storage generations", "[undirected_graph]",
+                       hg::ugraph, hg::undirected_graph<hg::hash_setS>) {
+        TestType g(4, 4, 2);
+        REQUIRE(g.sources().size() == 0);
+        REQUIRE(g.targets().size() == 0);
+        g.add_edge(0, 1);
+        // Native adapters remain borrowed and do not acquire storage ownership.
+        {
+            auto storage = g.endpoint_storage();
+            const auto owners = storage.use_count();
+            auto s = g.sources();
+            auto t = g.targets();
+            REQUIRE(storage.use_count() == owners);
+            REQUIRE(s(0) == 0);
+            REQUIRE(t(0) == 1);
+            REQUIRE(s.data() == &storage->edges.front().source);
+            REQUIRE(t.data() == &storage->edges.front().target);
+            static_assert(std::is_const<std::remove_pointer_t<decltype(s.data())>>::value,
+                          "Native endpoints must remain const");
+        }
+
+        auto first = g.endpoint_storage();
+        const auto *allocation = first->edges.data();
+        const auto capacity = first->edges.capacity();
+        g.add_vertex();
+        g.set_edge(0, 2, 3);
+        REQUIRE(g.endpoint_storage() == first);
+        REQUIRE(first->edges[0].source == 2);
+        REQUIRE(first->edges[0].target == 3);
+        while (g.num_edges() < capacity) {
+            g.add_edge(0, 0); // no relocation despite the exported generation
+        }
+        REQUIRE(g.endpoint_storage() == first);
+        REQUIRE(first->edges.data() == allocation);
+        g.add_edge(0, 1);
+        REQUIRE(g.endpoint_storage() != first);
+        REQUIRE(first->edges.size() == capacity);
+        REQUIRE(first->edges.data() == allocation);
+        REQUIRE(g.endpoint_storage()->edges.capacity() >= capacity * 2);
+        g.set_edge(0, 0, 1);
+        REQUIRE(first->edges[0].source == 2);
+        REQUIRE(first->edges[0].target == 3);
+
+        std::vector<typename TestType::edge_storage_handle> generations{first};
+        while (g.num_edges() < 2048) {
+            auto retained = g.endpoint_storage();
+            const auto size = retained->edges.size();
+            const auto cap = retained->edges.capacity();
+            while (g.num_edges() <= cap) {
+                g.add_edge(1, 2);
+            }
+            REQUIRE(retained->edges.size() == cap);
+            REQUIRE(retained->edges[size - 1].index == static_cast<index_t>(size - 1));
+            generations.push_back(std::move(retained));
+        }
+        auto current = g.endpoint_storage();
+        g.remove_edge(0);
+        REQUIRE(current == g.endpoint_storage());
+        REQUIRE(current->edges[0].source == invalid_index);
+        REQUIRE(current->edges[0].target == invalid_index);
+        REQUIRE(first->edges[0].source == 2);
+        // Reacquire borrowed adapters after mutation; never read invalidated ones.
+        REQUIRE(g.sources()(0) == invalid_index);
+        REQUIRE(g.targets()(0) == invalid_index);
+        REQUIRE(g.degree(0) == capacity); // remaining self-loops plus edge at capacity
+
+        std::weak_ptr<const typename TestType::edge_storage> retired = first;
+        first.reset();
+        REQUIRE_FALSE(retired.expired());
+        generations.clear();
+        REQUIRE(retired.expired());
+
+        // Without external owners, ordinary vector growth keeps the storage object.
+        current.reset();
+        std::weak_ptr<const typename TestType::edge_storage> unexported = g.endpoint_storage();
+        auto before = unexported.lock().get();
+        const auto cap = g.endpoint_storage()->edges.capacity();
+        while (g.num_edges() <= cap) {
+            g.add_edge(2, 3);
+        }
+        REQUIRE(g.endpoint_storage().get() == before);
+        g = TestType();
+        REQUIRE(unexported.expired());
+    }
+
+    TEMPLATE_TEST_CASE("endpoint storage graph value semantics", "[undirected_graph]",
+                       hg::ugraph, hg::undirected_graph<hg::hash_setS>) {
+        auto original = data<TestType>::g();
+        auto exported = original.endpoint_storage();
+        TestType copied(original);
+        REQUIRE(copied.endpoint_storage() != exported);
+        copied.set_edge(0, 2, 3);
+        REQUIRE(original.sources()(0) == 0);
+        REQUIRE(original.targets()(0) == 1);
+        REQUIRE(original.degree(0) == 2);
+        REQUIRE(copied.degree(0) == 1);
+        copied.remove_edge(1);
+        REQUIRE(original.targets()(1) == 2);
+        auto generic_copy = hg::copy_graph<TestType>(original);
+        generic_copy.set_edge(0, 1, 3);
+        REQUIRE(original.targets()(0) == 1);
+
+        TestType assigned(2);
+        assigned.add_edge(0, 1);
+        auto previous = assigned.endpoint_storage();
+        assigned = original;
+        REQUIRE(assigned.endpoint_storage() != exported);
+        REQUIRE(previous->edges[0].target == 1);
+        assigned.set_edge(0, 2, 3);
+        REQUIRE(exported->edges[0].source == 0);
+        auto self = assigned.endpoint_storage();
+        assigned = assigned;
+        REQUIRE(assigned.endpoint_storage() == self);
+        assigned = std::move(assigned);
+        REQUIRE(assigned.endpoint_storage() == self);
+
+        TestType moved(std::move(original));
+        REQUIRE(moved.endpoint_storage() == exported);
+        REQUIRE(moved.num_vertices() == 4);
+        REQUIRE(moved.degree(0) == 2);
+        REQUIRE(original.num_vertices() == 0);
+        REQUIRE(original.num_edges() == 0);
+        REQUIRE(original.sources().size() == 0);
+        REQUIRE(original.targets().size() == 0);
+        original.add_vertices(2);
+        original.add_edge(0, 1);
+        REQUIRE(original.targets()(0) == 1);
+
+        auto displaced = assigned.endpoint_storage();
+        assigned = std::move(moved);
+        REQUIRE(assigned.endpoint_storage() == exported);
+        REQUIRE(assigned.degree(0) == 2);
+        REQUIRE(displaced->edges[0].source == 2);
+        REQUIRE(moved.num_vertices() == 0);
+        moved.add_vertex();
+        moved.add_edge(0, 0);
+        REQUIRE(moved.targets()(0) == 0);
+        std::weak_ptr<const typename TestType::edge_storage> lifetime = exported;
+        assigned = TestType();
+        REQUIRE_FALSE(lifetime.expired());
+        exported.reset();
+        REQUIRE(lifetime.expired());
+    }
+
 }

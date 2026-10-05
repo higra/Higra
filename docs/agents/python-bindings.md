@@ -75,13 +75,18 @@ object. Const references produce non-writeable arrays in this path.
 | `Tree.children(node)` | Allocates and returns a copy of the child IDs |
 | `Tree.sources()` | Python creates a new `np.arange` array |
 | `Tree.targets()` | Python slices `parents()`, retaining its backing reference |
-| `UndirectedGraph.sources()/targets()` | Strided adapters over the graph's edge vector; bindings retain the graph using `keep_alive<0,1>` |
+| `UndirectedGraph.sources()/targets()` | Zero-copy, read-only strided ndarrays; private base owners retain the storage generation and graph |
 | `SimplifiedTree.tree()/node_map()` | Internal references tied to the result object |
 
-The graph endpoint arrays can be writable with the current adapter/caster path.
-Writing them bypasses adjacency maintenance; do not use that as a graph mutation
-API. `add_edge`/`add_edges` can reallocate backing storage even while the Python
-array retains the graph. Obtain a copy if values must survive structural edits.
+Explicit-graph endpoint arrays retain their creation-time length and storage
+allocation, including through derived views. In-place edits can change their
+values; growth detaches shared storage only before relocation, so older arrays
+may become stale. They are not immutable creation-time snapshots. Obtain a new
+array for current topology or copy before mutation for stable values. NumPy
+cannot enable writeability through the private capsule base. Both explicit graph
+variants use this binding contract; the optimized-delete variant retains its
+underscored accessor API. Native endpoint adapters remain borrowed and invalid
+after graph mutation, assignment/move, or destruction.
 
 Returning an adapter by value does not make its pointed-to storage owned. For a
 new borrowed result, explicitly review the backing owner and invalidation rules.
