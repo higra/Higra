@@ -2,6 +2,9 @@ jobs:
   - job: 'Linux_gcc'
     strategy:
       matrix:
+        gcc_11_regression:
+          gcc_version: '11'
+          HG_USE_TBB: 'Off'
         gcc_14:
           gcc_version: '14'
           HG_USE_TBB: 'Off'
@@ -22,8 +25,12 @@ jobs:
     steps:
 
       - script: |
-          if [[ $(COVERAGE) -eq 1 ]]; then
-            sudo apt-get update
+          set -e
+          sudo apt-get update
+          sudo apt-get --no-install-suggests --no-install-recommends install gcc-$(gcc_version) g++-$(gcc_version)
+          gcc-$(gcc_version) --version
+          g++-$(gcc_version) --version
+          if [[ -n "$COVERAGE" ]]; then
             sudo apt-get --no-install-suggests --no-install-recommends install lcov
           fi
         displayName: Install build toolchain
@@ -43,6 +50,8 @@ jobs:
 
       - script: |
           set -e
+          unset CFLAGS CXXFLAGS CPPFLAGS
+          printf '#include "higra/hierarchy/component_tree_casf.hpp"\n' | "$CXX" -std=c++17 -I"$(Build.SourcesDirectory)/include" -I"$(Build.SourcesDirectory)/lib/include" -x c++ -fsyntax-only -
           mkdir build
           cd build
           CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DPython_EXECUTABLE=$CONDA/bin/python -DTBB_DIR=$HOME/tbb/lib/cmake/TBB -DHG_USE_TBB=$HG_USE_TBB -DHG_UNITY_BUILD=ON -DHG_UNITY_BUILD_BATCH_SIZE=4";          MAKE_TARGETS="test_exe"

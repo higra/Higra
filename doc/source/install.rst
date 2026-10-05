@@ -28,9 +28,14 @@ a wrapper `setuptools <https://setuptools.readthedocs.io/en/latest/>`_
 
 Building Higra from source requires:
 
-    * a c++ 17 compiler (tested with GCC, Clang, Visual Studio 2019)
+    * a C++17 compiler (GCC, Clang, or Visual Studio 2019)
     * cmake
     * Python 3 with Numpy
+
+No compiler-version minimum is specified. GCC 11 is covered by a regression
+CI job for CASF header compatibility, alongside the current GCC and Clang jobs;
+it is not a declared oldest supported compiler. Builds do not require
+``-fpermissive`` or suppression of the ``changes-meaning`` diagnostic.
 
 With cmake
 **********
