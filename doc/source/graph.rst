@@ -211,6 +211,19 @@ All operations are done in constant time.
         - void
         - ``ugraph``, ``tree``
 
+Python ``UndirectedGraph.sources()``, ``targets()``, and the arrays returned by
+``edge_list()`` are zero-copy, read-only NumPy views.
+It is not guaranteed that the view will remain valid after graph mutations (e.g., adding or removing edges).
+It is recommended to copy the viewif you need to preserve its values across graph mutations.
+It is recommended to get a new view after graph mutations to ensure you have the current topology.
+The same contract applies to ``UndirectedGraphOptimizedDelete._sources()`` and
+``_targets()``.
+
+In C++, ``sources()``, ``targets()`` and ``edge_list()``  remain borrowed, const
+adapters. Graph mutation, assignment, moving from the graph, or destruction
+invalidates those adapters: reacquire after mutation and do not read old
+adapters.
+
 Note that python's edges are simply tuples whose first value is the source vertex, second value is the target vertex,
 and third (optional) value is the index.
 

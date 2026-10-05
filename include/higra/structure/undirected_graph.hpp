@@ -15,6 +15,8 @@
 #include "details/indexed_edge.hpp"
 #include "higra/structure/details/iterators.hpp"
 #include <vector>
+#include <memory>
+#include <stdexcept>
 #include <list>
 #include <unordered_set>
 
@@ -89,6 +91,12 @@ namespace hg {
             using edge_parallel_category = graph::allow_parallel_edge_tag;
             using traversal_category = undirected_graph_traversal_category;
 
+            // Indirect edge storage to allow for zero-copy, read-only views of edge endpoints.
+            struct edge_storage {
+                std::vector<edge_descriptor> edges;
+            };
+            using edge_storage_handle = std::shared_ptr<const edge_storage>;
+
             // VertexListGraph associated types
             using vertex_iterator = counting_iterator<vertex_descriptor>;
             using vertices_size_type = size_t;
@@ -122,9 +130,10 @@ namespace hg {
             undirected_graph(const size_t num_vertices = 0,
                              const size_t reserved_edges = 0,
                              const size_t reserved_edge_per_vertex = 0) :
-                    _num_vertices(num_vertices), out_edges(num_vertices) {
+                    _num_vertices(num_vertices), _edge_storage(std::make_shared<edge_storage>()),
+                    out_edges(num_vertices) {
                 if (reserved_edges > 0) {
-                    edges.reserve(reserved_edges);
+                    _edge_storage->edges.reserve(reserved_edges);
                 }
                 if (reserved_edge_per_vertex > 0) {
                     for (index_t i = 0; i < (index_t) num_vertices; ++i) {
@@ -133,12 +142,39 @@ namespace hg {
                 }
             };
 
+            undirected_graph(const undirected_graph &other) :
+                    _num_vertices(other._num_vertices),
+                    _edge_storage(std::make_shared<edge_storage>(*other._edge_storage)),
+                    out_edges(other.out_edges) {
+            }
+
+            undirected_graph &operator=(const undirected_graph &other) {
+                if (this != &other) {
+                    undirected_graph replacement(other);
+                    swap(replacement);
+                }
+                return *this;
+            }
+
+            // Allocate the empty moved-from state before transferring any graph state.
+            undirected_graph(undirected_graph &&other) : undirected_graph() {
+                swap(other);
+            }
+
+            undirected_graph &operator=(undirected_graph &&other) {
+                if (this != &other) {
+                    undirected_graph replacement(std::move(other));
+                    swap(replacement);
+                }
+                return *this;
+            }
+
             vertices_size_type num_vertices() const {
                 return _num_vertices;
             }
 
             edges_size_type num_edges() const {
-                return edges.size();
+                return _edge_storage->edges.size();
             }
 
             degree_size_type degree(vertex_descriptor v) const {
@@ -160,13 +196,13 @@ namespace hg {
             }
 
             void remove_edge(edge_index_t ei) {
-                auto &source = edges[ei].source;
-                auto &target = edges[ei].target;
+                auto &source = _edge_storage->edges[ei].source;
+                auto &target = _edge_storage->edges[ei].target;
                 remove_from_container(out_edges[source], ei);
                 if (source != target)
                     remove_from_container(out_edges[target], ei);
-                edges[ei].source = invalid_index;
-                edges[ei].target = invalid_index;
+                _edge_storage->edges[ei].source = invalid_index;
+                _edge_storage->edges[ei].target = invalid_index;
             }
 
             void set_edge(edge_index_t ei, vertex_descriptor v1, vertex_descriptor v2) {
@@ -179,20 +215,20 @@ namespace hg {
                 add_to_container(out_edges[v1], ei);
                 if (v1 != v2)
                     add_to_container(out_edges[v2], ei);
-                edges[ei].source = v1;
-                edges[ei].target = v2;
+                _edge_storage->edges[ei].source = v1;
+                _edge_storage->edges[ei].target = v2;
             }
 
             const auto &edge_from_index(index_t v) const {
-                return edges[v];
+                return _edge_storage->edges[v];
             }
 
             auto edges_cbegin() const {
-                return edges.cbegin();
+                return _edge_storage->edges.cbegin();
             }
 
             auto edges_cend() const {
-                return edges.cend();
+                return _edge_storage->edges.cend();
             }
 
             auto out_edges_cbegin(vertex_descriptor v) const {
@@ -208,14 +244,15 @@ namespace hg {
                     std::swap(v1, v2);
                 }
 
-                vertex_descriptor index = edges.size();
-                edges.emplace_back(v1, v2, index);
+                prepare_edge_insertion();
+                vertex_descriptor index = _edge_storage->edges.size();
+                _edge_storage->edges.emplace_back(v1, v2, index);
 
                 add_to_container(out_edges[v1], index);
                 if (v1 != v2)
                     add_to_container(out_edges[v2], index);
 
-                return edges[index];
+                return _edge_storage->edges[index];
             }
 
             template<typename T>
@@ -223,18 +260,65 @@ namespace hg {
                 return add_edge(e.first, e.second);
             }
 
+            /**
+             * Array of edge sources, zero-copy, read-only views.
+             * Mutation, assignment, moving from or
+             * destroying the graph invalidates the views. 
+             * Reacquire after edits.
+             */
             auto sources() const {
-                return HG_ADAPT_STRUCT_ARRAY(edges.data(), source, num_edges());
+                return HG_ADAPT_STRUCT_ARRAY(edge_data(), source, num_edges());
             }
 
+            /**
+             * Array of edge targets, zero-copy, read-only views.
+             * Mutation, assignment, moving from or
+             * destroying the graph invalidates the views. 
+             * Reacquire after edits.
+             */
             auto targets() const {
-                return HG_ADAPT_STRUCT_ARRAY(edges.data(), target, num_edges());
+                return HG_ADAPT_STRUCT_ARRAY(edge_data(), target, num_edges());
+            }
+
+            /** Retain the current generation without copying endpoints. */
+            edge_storage_handle endpoint_storage() const {
+                return _edge_storage;
             }
 
         private:
 
+            const edge_descriptor *edge_data() const {
+                // Avoid field-offset arithmetic on a null pointer for empty adapters.
+                static const edge_descriptor empty_edge(0, 0, 0);
+                return _edge_storage->edges.empty() ? &empty_edge : _edge_storage->edges.data();
+            }
+
+            void swap(undirected_graph &other) noexcept {
+                std::swap(_num_vertices, other._num_vertices);
+                _edge_storage.swap(other._edge_storage);
+                out_edges.swap(other.out_edges);
+            }
+
+            void prepare_edge_insertion() {
+                const auto &current = _edge_storage->edges;
+                if (current.size() < current.capacity() || _edge_storage.use_count() == 1) {
+                    return;
+                }
+                const auto limit = current.max_size();
+                if (current.size() == limit) {
+                    throw std::length_error("Undirected graph edge storage is full");
+                }
+                // Copy before committing; a retained generation must never relocate.
+                auto replacement = std::make_shared<edge_storage>();
+                const auto capacity = current.capacity();
+                const auto grown = capacity > limit / 2 ? limit : capacity * 2;
+                replacement->edges.reserve(std::max(current.size() + 1, grown));
+                replacement->edges.insert(replacement->edges.end(), current.begin(), current.end());
+                _edge_storage = std::move(replacement);
+            }
+
             size_t _num_vertices;
-            std::vector<edge_descriptor> edges;
+            std::shared_ptr<edge_storage> _edge_storage;
             std::vector<out_edge_container_type> out_edges; // same as in_edges...
 
         };

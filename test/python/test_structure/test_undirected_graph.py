@@ -8,6 +8,8 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
+import gc
+import weakref
 import unittest
 import higra as hg
 import numpy as np
@@ -215,6 +217,169 @@ class TestUndirectedGraph(unittest.TestCase):
                 test[v].append(e[2])
 
         self.assertTrue(test == ref)
+
+    def assert_topology_consistent(self, graph):
+        sources, targets = graph._sources(), graph._targets()
+        self.assertEqual(list(graph.edges()),
+                         [(int(s), int(t), i) for i, (s, t) in enumerate(zip(sources, targets))])
+        for vertex in graph.vertices():
+            incident = [i for i, (s, t) in enumerate(zip(sources, targets))
+                        if s == vertex or t == vertex]
+            adjacent = [int(t if s == vertex else s)
+                        for s, t in zip(sources, targets) if s == vertex or t == vertex]
+            self.assertEqual(sorted(e[2] for e in graph.out_edges(vertex)), incident)
+            self.assertEqual(sorted(e[2] for e in graph.in_edges(vertex)), incident)
+            self.assertEqual(sorted(graph.adjacent_vertices(vertex)), sorted(adjacent))
+            self.assertEqual(graph.degree(vertex), len(incident))
+
+    def assert_readonly(self, array):
+        self.assertIs(type(array), np.ndarray)
+        self.assertFalse(array.flags.owndata)
+        self.assertFalse(array.flags.writeable)
+        self.assertIsNotNone(array.base)
+        with self.assertRaises(ValueError):
+            array.setflags(write=True)
+        with self.assertRaises(ValueError):
+            array.flags.writeable = True
+        with self.assertRaises(ValueError):
+            array.flags['WRITEABLE'] = True
+        if array.size:
+            with self.assertRaises(ValueError):
+                array[0] = 2
+        self.assertTrue(memoryview(array).readonly)
+        # Exercise a consumer explicitly asking NumPy for a writable buffer.
+        import ctypes
+        get_buffer = ctypes.pythonapi.PyObject_GetBuffer
+        get_buffer.argtypes = (ctypes.py_object, ctypes.c_void_p, ctypes.c_int)
+        get_buffer.restype = ctypes.c_int
+        buffer = ctypes.create_string_buffer(128)  # larger than Py_buffer
+        with self.assertRaises((ValueError, BufferError)):
+            get_buffer(array, buffer, 0x0019)  # PyBUF_STRIDES | PyBUF_WRITABLE
+
+    def test_endpoint_array_contract(self):
+        for graph_type in (hg.UndirectedGraph, hg.UndirectedGraphOptimizedDelete):
+            for empty in (True, False):
+                with self.subTest(graph_type=graph_type, empty=empty):
+                    g = graph_type(4, 16, 2)
+                    if not empty:
+                        g.add_edges((0, 1, 0, 2), (1, 2, 1, 2))
+                    accessors = [g._sources, g._targets]
+                    if graph_type is hg.UndirectedGraph:
+                        accessors += [g.sources, g.targets]
+                        self.assertIs(type(g.edge_list()), tuple)
+                        for a in g.edge_list():
+                            self.assert_readonly(a)
+                    for accessor in accessors:
+                        a = accessor()
+                        self.assertEqual(a.dtype, np.dtype(np.int64))
+                        self.assertEqual(a.shape, (g.num_edges(),))
+                        self.assertEqual(a.strides, (3 * a.itemsize,))
+                        self.assert_readonly(a)
+                        for view in (a[:], a[::-1], a[::2], np.asarray(memoryview(a))):
+                            self.assert_readonly(view)
+                        if not empty:
+                            self.assertTrue(np.shares_memory(a, accessor()))
+                    self.assert_topology_consistent(g)
+
+    def test_endpoint_generations_and_inplace_edits(self):
+        for graph_type in (hg.UndirectedGraph, hg.UndirectedGraphOptimizedDelete):
+            for reservation in (0, 16):
+                with self.subTest(graph_type=graph_type, reservation=reservation):
+                    g = graph_type(4, reservation)
+                    g.add_edge(0, 1)
+                    early = g._sources(), g._targets()
+                    g.set_edge(0, 2, 3)
+                    self.assertEqual((early[0][0], early[1][0]), (2, 3))
+                    g.add_vertex()
+                    self.assertTrue(np.shares_memory(early[0], g._sources()))
+                    generations = [(early, tuple(a.copy() for a in early))]
+                    for count in (32, 128, 512, 2048):
+                        while g.num_edges() < count:
+                            g.add_edge(0, g.num_edges() % 5)
+                        current = g._sources(), g._targets()
+                        for a in current:
+                            self.assert_readonly(a)
+                        self.assertTrue(np.shares_memory(current[0], g._sources()))
+                        self.assertTrue(np.shares_memory(current[1], g._targets()))
+                        generations.append((current, tuple(a.copy() for a in current)))
+                    self.assertFalse(np.shares_memory(early[0], g._sources()))
+                    g.set_edge(0, 0, 1)
+                    self.assertEqual((current[0][0], current[1][0]), (0, 1))
+                    g.remove_edge(0)
+                    self.assertEqual((current[0][0], current[1][0]), (-1, -1))
+                    for arrays, expected in generations[:-1]:
+                        for a, e in zip(arrays, expected):
+                            np.testing.assert_array_equal(a, e)
+                            self.assertEqual(a.shape, e.shape)
+                    self.assert_topology_consistent(g)
+
+    def test_endpoint_owners_and_derived_views(self):
+        for graph_type in (hg.UndirectedGraph, hg.UndirectedGraphOptimizedDelete):
+            for empty in (True, False):
+                with self.subTest(graph_type=graph_type, empty=empty):
+                    g = graph_type(4, 4)
+                    if not empty:
+                        g.add_edges((0, 1, 2, 0), (1, 2, 3, 3))
+                    try:
+                        graph_ref = weakref.ref(g)
+                    except TypeError:
+                        graph_ref = None  # this variant need not support Python weakrefs
+                    sources, targets = g._sources(), g._targets()
+                    expected = sources.copy(), targets.copy()
+                    views = (sources[::2], sources[::-1], targets[1:], targets[::-2])
+                    expected_views = tuple(a.copy() for a in views)
+                    buffers = memoryview(sources), memoryview(targets)
+                    for _ in range(256):
+                        g.add_edge(0, 3)
+                    del sources, targets, g
+                    gc.collect()
+                    if graph_ref is not None:
+                        self.assertIsNotNone(graph_ref())
+                    for i in range(2):
+                        np.testing.assert_array_equal(buffers[i], expected[i])
+                    for i in range(len(views)):
+                        np.testing.assert_array_equal(views[i], expected_views[i])
+                        self.assert_readonly(views[i])
+                    del views, buffers
+                    gc.collect()
+                    if graph_ref is not None:
+                        self.assertIsNone(graph_ref())
+
+    def test_endpoint_self_append_inputs_and_consumers(self):
+        for graph_type in (hg.UndirectedGraph, hg.UndirectedGraphOptimizedDelete):
+            for dtype in (np.int32, np.uint32, np.int64, np.uint64):
+                with self.subTest(graph_type=graph_type, dtype=dtype):
+                    g = graph_type(4)
+                    g.add_edges(np.array([0, 1, 2, 0], dtype=dtype),
+                                np.array([1, 2, 2, 1], dtype=dtype))
+                    if graph_type is hg.UndirectedGraph:
+                        s, t = g.edge_list()
+                        g.add_edges(*g.edge_list())
+                    else:
+                        s, t = g._sources(), g._targets()
+                        g.add_edges(s, t)
+                    np.testing.assert_array_equal(g._sources(), np.tile(s, 2))
+                    np.testing.assert_array_equal(g._targets(), np.tile(t, 2))
+                    self.assert_topology_consistent(g)
+                    before = tuple(g.edges())
+                    for action in (lambda: g.add_edge(-1, 1),
+                                   lambda: g.add_edges(np.array([0, 4]), np.array([1, 2])),
+                                   lambda: g.add_edges(np.array([0, 1]), np.array([1])),
+                                   lambda: g.set_edge(0, 0, 4),
+                                   lambda: g.set_edge(100, 0, 1),
+                                   lambda: g.remove_edge(100)):
+                        with self.assertRaises(RuntimeError):
+                            action()
+                        self.assertEqual(tuple(g.edges()), before)
+                        self.assert_topology_consistent(g)
+                    np.testing.assert_array_equal(s[[3, 1]], [0, 1])
+        g = self.test_graph()
+        sparse = hg.undirected_graph_2_adjacency_matrix(g)
+        dense = hg.undirected_graph_2_adjacency_matrix(g, sparse=False)
+        np.testing.assert_array_equal(sparse.toarray(), dense)
+        subgraph = hg.subgraph(g, np.array([2, 0]))
+        np.testing.assert_array_equal(subgraph.sources(), g.sources()[[2, 0]])
+        np.testing.assert_array_equal(subgraph.targets(), g.targets()[[2, 0]])
 
     def test_pickle(self):
         import pickle

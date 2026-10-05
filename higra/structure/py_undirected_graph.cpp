@@ -10,10 +10,42 @@
 
 #include "py_undirected_graph.hpp"
 #include "py_common_graph.hpp"
+#include <pybind11/numpy.h>
+#include <memory>
 
 namespace py_undirected_graph {
     using namespace py_common_graph;
     namespace py = pybind11;
+
+    // Only the capsule owns Python references; native storage cannot form a cycle.
+    template<typename graph_t>
+    struct endpoint_array_owner {
+        typename graph_t::edge_storage_handle storage;
+        py::object graph;
+        const hg::index_t empty_endpoint = 0;
+    };
+
+    template<typename graph_t>
+    py::array endpoint_array(py::object graph, bool source) {
+        const auto &g = graph.cast<const graph_t &>();
+        auto owner = std::make_unique<endpoint_array_owner<graph_t>>();
+        owner->storage = g.endpoint_storage();
+        owner->graph = std::move(graph);
+        const auto &edges = owner->storage->edges;
+        const auto *data = edges.empty() ? &owner->empty_endpoint :
+                           (source ? &edges.front().source : &edges.front().target);
+        const auto size = static_cast<py::ssize_t>(edges.size());
+        py::capsule base(owner.get(), [](void *p) {
+            delete static_cast<endpoint_array_owner<graph_t> *>(p);
+        });
+        owner.release();
+        py::array result(py::dtype::of<hg::index_t>(), {size},
+                         {static_cast<py::ssize_t>(sizeof(typename graph_t::edge_descriptor))},
+                         data, base);
+        // The private capsule exposes no writable buffer, so NumPy cannot re-enable it.
+        result.attr("setflags")(py::arg("write") = false);
+        return result;
+    }
 
     template<typename graph_t>
     struct def_add_edges {
@@ -60,8 +92,14 @@ namespace py_undirected_graph {
         add_edge_list_graph_concept<graph_t, decltype(c)>(c);
         add_edge_index_graph_concept<graph_t, decltype(c)>(c);
 
-        c.def("_sources", [](const graph_t &g) { return hg::sources(g); }, py::keep_alive<0, 1>());
-        c.def("_targets", [](const graph_t &g) { return hg::targets(g); }, py::keep_alive<0, 1>());
+        const char *endpoint_doc =
+                "Zero-copy, read-only endpoint ndarray retaining its storage generation and graph. "
+                "Length is fixed at creation; values may change in place or become stale after mutation. "
+                "Obtain a new array for current topology, or copy before mutation for a snapshot.";
+        c.def("_sources", [](py::object self) { return endpoint_array<graph_t>(std::move(self), true); },
+              endpoint_doc);
+        c.def("_targets", [](py::object self) { return endpoint_array<graph_t>(std::move(self), false); },
+              endpoint_doc);
 
         c.def("add_edge", [](graph_t &g,
                              const vertex_t source,

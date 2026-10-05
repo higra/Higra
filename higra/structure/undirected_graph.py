@@ -27,6 +27,11 @@ def __sources(self):
     """
     Source vertex of every edge of the graph.
 
+    Returns a zero-copy, read-only NumPy view of edge sources.
+    It is not guaranteed that the view will remain valid after graph mutations (e.g., adding or removing edges).
+    It is recommended to copy the array if you need to preserve its values across graph mutations.
+    It is recommended to get a new view after graph mutations to ensure you have the current topology.
+
     :Example:
 
     >>> g = UndirectedGraph(3)
@@ -44,6 +49,11 @@ def __targets(self):
     """
     Target vertex of every edge of the graph.
 
+    Returns a zero-copy, read-only NumPy view of edge targets.
+    It is not guaranteed that the view will remain valid after graph mutations (e.g., adding or removing edges).
+    It is recommended to copy the array if you need to preserve its values across graph mutations.
+    It is recommended to get a new view after graph mutations to ensure you have the current topology.
+
     :Example:
 
     >>> g = UndirectedGraph(3)
@@ -59,7 +69,11 @@ def __targets(self):
 @hg.extend_class(hg.UndirectedGraph, method_name="edge_list")
 def __edge_list(self):
     """
-    Returns a tuple of two arrays (sources, targets) defining all the edges of the graph.
+    Returns a tuple of two zero-copy, read-only NumPy views (sources, targets).
+
+    It is not guaranteed that the view will remain valid after graph mutations (e.g., adding or removing edges).
+    It is recommended to copy the array if you need to preserve its values across graph mutations.
+    It is recommended to get a new view after graph mutations to ensure you have the current topology.
 
     :Example:
 
