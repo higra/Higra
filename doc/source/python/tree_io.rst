@@ -5,6 +5,9 @@ Tree IO
 
 Tree IO allows de/serialization of a tree and associated attributes in a custom simple format.
 
+For Python pickle serialization, including category preservation and the
+compatibility rules for older category-less pickles, see :ref:`TreeGraph`.
+
 .. currentmodule:: higra
 
 .. autosummary::

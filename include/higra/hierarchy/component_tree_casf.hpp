@@ -78,7 +78,9 @@ namespace hg {
 
         /**
          * @brief Static export of one current component tree state.
-         * @details `tree` and `altitudes` follow Higra's usual static component tree conventions.
+         * @details `tree` has category `hg::tree_category::component_tree`; `tree` and `altitudes`
+         * follow Higra's usual static component tree conventions. Leaves retain input vertex IDs,
+         * alive internal nodes are reindexed after leaves, and the root is last and its own parent.
          */
         struct ExportedTree {
             hg::tree tree;
@@ -309,7 +311,7 @@ namespace hg {
                 parents(newNodeId) = oldParentId == oldNodeId ? newNodeId : oldToNew[(size_t) oldParentId];
             }
 
-            auto exportedTree = hg::tree(parents);
+            auto exportedTree = hg::tree(parents, hg::tree_category::component_tree);
             return ExportedTree{std::move(exportedTree), std::move(exportedAltitude)};
         }
 
@@ -354,6 +356,7 @@ namespace hg {
 
         /**
          * @brief Exports the current max-tree state to Higra's static representation.
+         * @details The exported tree has component-tree category, before and after filtering.
          */
         ExportedTree exportMaxTree() const {
             return exportTreeState(maxtree_, altitudeBufferMax_);
@@ -361,6 +364,7 @@ namespace hg {
 
         /**
          * @brief Exports the current min-tree state to Higra's static representation.
+         * @details The exported tree has component-tree category, before and after filtering.
          */
         ExportedTree exportMinTree() const {
             return exportTreeState(mintree_, altitudeBufferMin_);

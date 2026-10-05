@@ -150,6 +150,8 @@ namespace component_tree_casf {
             const auto expected = isMaxTree ? component_tree_max_tree(graph, filteredImage)
                                             : component_tree_min_tree(graph, filteredImage);
             require_higra_topological_order(exported.tree, exported.altitudes);
+            REQUIRE(exported.tree.category() == tree_category::component_tree);
+            REQUIRE(exported.tree.category() == expected.tree.category());
             REQUIRE((exported.tree.parents() == expected.tree.parents()));
             REQUIRE((exported.altitudes == expected.altitudes));
         }
@@ -307,7 +309,6 @@ namespace component_tree_casf {
     TEST_CASE("component tree CASF export remains valid for all supported attribute choices", "[component_tree_casf]") {
         // Changing the selection attribute must not break the structural validity of the exported trees.
         auto graph = get_4_adjacency_implicit_graph({12, 12});
-        auto image = make_demo_image();
         const std::vector<double> thresholds{3.0, 5.0};
 
         for (auto attribute: {ComponentTreeCasfAttribute::area,
@@ -315,13 +316,46 @@ namespace component_tree_casf {
                               ComponentTreeCasfAttribute::bounding_box_height,
                               ComponentTreeCasfAttribute::bounding_box_diagonal}) {
             INFO("attribute=" << (int) attribute);
-            ComponentTreeCasf<uint8_t, decltype(graph)> casf(graph, image, attribute);
-            const auto filtered = casf.filter(thresholds);
-            const auto exportedMax = casf.exportMaxTree();
-            const auto exportedMin = casf.exportMinTree();
+            const auto checkExports = [&](const auto &image) {
+                using altitude_t = typename std::decay_t<decltype(image)>::value_type;
+                ComponentTreeCasf<altitude_t, decltype(graph)> casf(graph, image, attribute);
+                require_export_matches_component_tree<altitude_t>(casf.exportMaxTree(), graph, image, true);
+                require_export_matches_component_tree<altitude_t>(casf.exportMinTree(), graph, image, false);
+                const auto unchanged = casf.filter({});
+                REQUIRE((unchanged == image));
+                require_export_matches_component_tree<altitude_t>(casf.exportMaxTree(), graph, unchanged, true);
+                require_export_matches_component_tree<altitude_t>(casf.exportMinTree(), graph, unchanged, false);
+                const auto filtered = casf.filter(thresholds);
+                require_export_matches_component_tree<altitude_t>(casf.exportMaxTree(), graph, filtered, true);
+                require_export_matches_component_tree<altitude_t>(casf.exportMinTree(), graph, filtered, false);
+                const auto afterEmpty = casf.filter({});
+                REQUIRE((afterEmpty == filtered));
+                require_export_matches_component_tree<altitude_t>(casf.exportMaxTree(), graph, afterEmpty, true);
+                require_export_matches_component_tree<altitude_t>(casf.exportMinTree(), graph, afterEmpty, false);
+            };
+            checkExports(make_demo_image());
+            checkExports(make_demo_image_as<float>());
+        }
+    }
 
-            require_export_matches_component_tree<uint8_t>(exportedMax, graph, filtered, true);
-            require_export_matches_component_tree<uint8_t>(exportedMin, graph, filtered, false);
+    TEST_CASE("component tree CASF exports support category-sensitive contour attributes", "[component_tree_casf]") {
+        // Contour length requires an indexed graph and validates component-tree category.
+        auto graph = get_4_adjacency_graph({12, 12});
+        const auto image = make_demo_image();
+        ComponentTreeCasf<uint8_t, decltype(graph)> casf(graph, image);
+        array_1d<double> vertexPerimeters = xt::ones<double>({(size_t) num_vertices(graph)});
+        array_1d<double> edgeLengths = xt::ones<double>({(size_t) num_edges(graph)});
+        for (const auto &thresholds: {std::vector<double>{}, std::vector<double>{15.0, 100.0}}) {
+            const auto filtered = casf.filter(thresholds);
+            for (bool isMaxTree: {true, false}) {
+                const auto exported = isMaxTree ? casf.exportMaxTree() : casf.exportMinTree();
+                const auto expected = isMaxTree ? component_tree_max_tree(graph, filtered)
+                                                : component_tree_min_tree(graph, filtered);
+                require_export_matches_component_tree<uint8_t>(exported, graph, filtered, isMaxTree);
+                const auto actualContour = attribute_contour_length_component_tree(exported.tree, graph, vertexPerimeters, edgeLengths);
+                const auto expectedContour = attribute_contour_length_component_tree(expected.tree, graph, vertexPerimeters, edgeLengths);
+                REQUIRE((actualContour == expectedContour));
+            }
         }
     }
 
@@ -363,6 +397,10 @@ namespace component_tree_casf {
         const auto afterMax = casf.exportMaxTree();
         const auto afterMin = casf.exportMinTree();
 
+        require_export_matches_component_tree<uint8_t>(beforeMax, graph, before, true);
+        require_export_matches_component_tree<uint8_t>(beforeMin, graph, before, false);
+        require_export_matches_component_tree<uint8_t>(afterMax, graph, after, true);
+        require_export_matches_component_tree<uint8_t>(afterMin, graph, after, false);
         REQUIRE((after == before));
         REQUIRE((beforeMax.tree.parents() == afterMax.tree.parents()));
         REQUIRE((beforeMax.altitudes == afterMax.altitudes));

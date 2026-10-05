@@ -9,8 +9,23 @@
 ############################################################################
 
 import unittest
+import pickle
 import numpy as np
 import higra as hg
+
+
+class ExtendedTree(hg.Tree):
+    pass
+
+
+class LegacyTreePickle:
+    """Produce the historical reduction tuple without invoking Tree.__reduce__."""
+
+    def __init__(self, tree):
+        self.tree = tree
+
+    def __reduce__(self):
+        return hg.Tree, (self.tree.parents(),), self.tree.__dict__
 
 
 class TestTree(unittest.TestCase):
@@ -302,22 +317,90 @@ class TestTree(unittest.TestCase):
         self.assertTrue(np.all(res == ref))
 
     def test_pickle(self):
-        import pickle
-        t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
-        hg.set_attribute(t, "test", (1, 2, 3))
-        hg.add_tag(t, "foo")
+        for category in (hg.TreeCategory.PartitionTree, hg.TreeCategory.ComponentTree):
+            for tree_class in (hg.Tree, ExtendedTree):
+                for protocol in (2, 4, pickle.HIGHEST_PROTOCOL):
+                    with self.subTest(category=category, tree_class=tree_class, protocol=protocol):
+                        t = tree_class((5, 5, 6, 6, 6, 7, 7, 7), category)
+                        hg.set_attribute(t, "test", (1, 2, 3))
+                        hg.add_tag(t, "foo")
+                        # Exercise serialization after lazy child computation too.
+                        t.children(t.root())
+                        t2 = pickle.loads(pickle.dumps(t, protocol=protocol))
 
-        data = pickle.dumps(t)
-        t2 = pickle.loads(data)
+                        self.assertIs(type(t2), tree_class)
+                        self.assertEqual(t2.category(), category)
+                        np.testing.assert_array_equal(t.parents(), t2.parents())
+                        for v in t.vertices():
+                            np.testing.assert_array_equal(t.children(v), t2.children(v))
+                        self.assertEqual(hg.get_attribute(t2, "test"), (1, 2, 3))
+                        self.assertEqual(t2.test, t.test)
+                        self.assertTrue(hg.has_tag(t2, "foo"))
 
-        self.assertTrue(np.all(t.parents() == t2.parents()))
+    def test_pickle_hierarchy_reconstruction(self):
+        graph = hg.get_4_adjacency_graph((1, 5))
+        for category in (hg.TreeCategory.PartitionTree, hg.TreeCategory.ComponentTree):
+            for dtype in (np.int32, np.float64):
+                for vector in (False, True):
+                    with self.subTest(category=category, dtype=dtype, vector=vector):
+                        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7), category)
+                        hg.CptHierarchy.link(tree, graph)
+                        restored = pickle.loads(pickle.dumps(tree))
+                        restored_graph = hg.CptHierarchy.get_leaf_graph(restored)
+                        self.assertTrue(hg.CptHierarchy.validate(restored))
+                        self.assertTrue(hg.CptGridGraph.validate(restored_graph))
+                        self.assertEqual(hg.CptGridGraph.get_shape(restored_graph), (1, 5))
+                        np.testing.assert_array_equal(restored_graph.sources(), graph.sources())
+                        np.testing.assert_array_equal(restored_graph.targets(), graph.targets())
 
-        for v in t.vertices():
-            self.assertTrue(np.all(t.children(v) == t2.children(v)))
+                        altitudes = np.arange(16 if vector else 8, dtype=dtype)
+                        if vector:
+                            altitudes = altitudes.reshape((8, 2))
+                        leaf_nodes = np.arange(tree.num_leaves())
+                        if category == hg.TreeCategory.ComponentTree:
+                            leaf_nodes = tree.parents()[leaf_nodes]
+                        expected = altitudes[leaf_nodes].reshape((1, 5, 2) if vector else (1, 5))
+                        for deleted in (None, np.zeros(tree.num_vertices(), dtype=bool)):
+                            actual = hg.reconstruct_leaf_data(restored, altitudes, deleted)
+                            np.testing.assert_array_equal(actual, expected)
+                            np.testing.assert_array_equal(actual, hg.reconstruct_leaf_data(tree, altitudes, deleted))
+                            self.assertEqual(actual.dtype, altitudes.dtype)
 
-        self.assertTrue(hg.get_attribute(t, "test") == hg.get_attribute(t2, "test"))
-        self.assertTrue(t.test == t2.test)
-        self.assertTrue(hg.has_tag(t2, "foo"))
+    def test_pickle_binary_hierarchy_maps(self):
+        graph = hg.get_4_adjacency_graph((2, 3))
+        tree, _ = hg.bpt_canonical(graph, np.arange(graph.num_edges(), dtype=np.float64))
+        restored = pickle.loads(pickle.dumps(tree))
+        self.assertEqual(restored.category(), tree.category())
+        np.testing.assert_array_equal(restored.parents(), tree.parents())
+        self.assertTrue(hg.CptBinaryHierarchy.validate(restored))
+        original = hg.CptBinaryHierarchy.construct(tree)
+        result = hg.CptBinaryHierarchy.construct(restored)
+        np.testing.assert_array_equal(result["mst_edge_map"], original["mst_edge_map"])
+        np.testing.assert_array_equal(result["mst"].sources(), original["mst"].sources())
+        np.testing.assert_array_equal(result["mst"].targets(), original["mst"].targets())
+        self.assertEqual(hg.CptGridGraph.get_shape(result["leaf_graph"]), (2, 3))
+        self.assertTrue(hg.CptMinimumSpanningTree.validate(result["mst"]))
+        self.assertIs(hg.CptMinimumSpanningTree.get_base_graph(result["mst"]), result["leaf_graph"])
+        np.testing.assert_array_equal(hg.CptMinimumSpanningTree.get_edge_map(result["mst"]), result["mst_edge_map"])
+
+    def test_pickle_legacy_category_default(self):
+        for category in (hg.TreeCategory.PartitionTree, hg.TreeCategory.ComponentTree):
+            for protocol in (2, 4, pickle.HIGHEST_PROTOCOL):
+                with self.subTest(category=category, protocol=protocol):
+                    tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7), category)
+                    hg.set_attribute(tree, "test", (1, 2, 3))
+                    hg.add_tag(tree, "foo")
+                    hg.CptHierarchy.link(tree, hg.get_4_adjacency_graph((1, 5)))
+                    # Trusted, controlled old-format pickle: category was never stored.
+                    restored = pickle.loads(pickle.dumps(LegacyTreePickle(tree), protocol=protocol))
+                    self.assertEqual(restored.category(), hg.TreeCategory.PartitionTree)
+                    np.testing.assert_array_equal(restored.parents(), tree.parents())
+                    for v in tree.vertices():
+                        np.testing.assert_array_equal(restored.children(v), tree.children(v))
+                    self.assertEqual(restored.test, (1, 2, 3))
+                    self.assertTrue(hg.has_tag(restored, "foo"))
+                    self.assertTrue(hg.CptHierarchy.validate(restored))
+                    self.assertEqual(hg.CptGridGraph.get_shape(hg.CptHierarchy.get_leaf_graph(restored)), (1, 5))
 
     def test_sub_tree(self):
         tree = hg.Tree(np.asarray((8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14)))

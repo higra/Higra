@@ -36,7 +36,11 @@ is represented by the following parent array:
 Constructor
 -----------
 
-The ``tree`` class has a single constructor that takes a single parameter: the parent array.
+The ``tree`` constructor takes the parent array and an optional category, which
+defaults to ``TreeCategory.PartitionTree`` in Python and
+``hg::tree_category::partition_tree`` in C++. Specify
+``TreeCategory.ComponentTree`` or ``hg::tree_category::component_tree`` when
+constructing a component tree manually.
 
 Example:
 

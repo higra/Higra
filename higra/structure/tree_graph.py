@@ -85,7 +85,12 @@ def __num_children(self, vertex=None):
 
 @hg.extend_class(hg.Tree, method_name="__reduce__")
 def ____reduce__(self):
-    return self.__class__, (self.parents(),), self.__dict__
+    """Preserve parents, category, and Python state when pickling a tree.
+
+    Older pickles that omitted category remain readable with the historical
+    partition-tree default; their original category cannot be recovered.
+    """
+    return self.__class__, (self.parents(), self.category()), self.__dict__
 
 
 @hg.extend_class(hg.Tree, method_name="lowest_common_ancestor_preprocess")

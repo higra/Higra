@@ -102,10 +102,9 @@ or enum attributes and restores input image shape.
 
 `exportMaxTree`/`exportMinTree` reindex alive internal nodes after leaves and
 reconstruct leaf altitudes from their current owner. Exported static IDs are not
-the dynamic IDs. The current exporter constructs `hg::tree(parents)` with the
-default partition-tree category; do not assume exported category is component
-tree merely from the method name/comment. Treat category changes as a separately
-reviewed behavior change.
+the dynamic IDs. Both exports explicitly use `hg::tree_category::component_tree`,
+before and after filtering. Compare category as well as parents and altitudes
+against a fresh static rebuild when checking exports.
 
 ## Existing validation workflows
 
