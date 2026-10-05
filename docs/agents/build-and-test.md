@@ -11,7 +11,10 @@ Use the same interpreter for configuration and manual Python test runs.
 ## Prerequisites and dependency sources
 
 Provide a C++17 compiler, CMake, Git, and Python with NumPy and development
-headers. The full Python suite additionally uses SciPy and scikit-learn:
+headers. The project does not set a compiler-version minimum. GCC 11 is a
+regression CI target for the CASF exported-tree declaration, alongside current
+GCC and Clang jobs; it does not define the oldest supported compiler. The full
+Python suite additionally uses SciPy and scikit-learn:
 
 ```bash
 python -m pip install numpy scipy scikit-learn
@@ -237,11 +240,13 @@ actual compile commands before treating it as a representative measurement.
 
 | Job group | Configured coverage |
 | --- | --- |
-| Linux core | Ubuntu 24.04, GCC 14, Debug with TBB on/off; GCC Coverage with TBB |
+| Linux core | Ubuntu 24.04, GCC 11 regression Debug with TBB off; GCC 14 Debug with TBB on/off; GCC 14 Coverage with TBB |
 | macOS core | macOS 15, Clang, Debug with TBB on/off |
 | Wheels | CPython 3.10–3.14; Linux x86_64 manylinux_2_28, macOS x86_64/ARM64, Windows x86_64 |
 
-Core jobs use unity batch size four. Coverage runs C++ tests only. Wheel jobs use
+Linux GCC jobs also compile the CASF header with ordinary C++17 flags before
+building. They clear inherited C/C++ flags and print compiler versions. Core
+jobs use unity batch size four. Coverage runs C++ tests only. Wheel jobs use
 cibuildwheel 3.3.1, enable TBB, and run the Python suite against installed wheels.
 Unix excludes 32-bit manylinux and musllinux; Windows excludes win32. Most wheel
 jobs are tag-triggered, with the current Python 3.14 entries forced on ordinary

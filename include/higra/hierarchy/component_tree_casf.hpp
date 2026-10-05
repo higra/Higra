@@ -81,7 +81,7 @@ namespace hg {
          * @details `tree` and `altitudes` follow Higra's usual static component tree conventions.
          */
         struct ExportedTree {
-            tree tree;
+            hg::tree tree;
             array_1d<altitude_t> altitudes;
         };
 
