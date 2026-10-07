@@ -67,16 +67,19 @@ a corresponding release before hosted autodoc can find it.
 | Build-tree `higra/**/*.py` and `test/python/**/*.py` | Module CMake lists and `REGISTER_PYTHON_MODULE_FILES` | Edit the source and reconfigure/build |
 | Extension `.so`/`.pyd`, executables, CMake caches, unity sources, `_deps` | CMake/compiler | Rebuild; do not patch generated output |
 | Build-tree `setup.py`, `README.md`, test resources | Root/resource `configure_file` calls | Edit original files |
-| `higra/include/`, `higra/lib/` | setup.py temporary copies of `include/`, `lib/` | Do not edit, commit, or create them as permanent source directories |
+| Build-output `higra/include/`, `higra/lib/` | setup.py `BuildPy` stages root headers/vendor resources into `build_lib` | Do not edit generated copies or create them as permanent source directories |
 | `dist/`, `build/`, egg-info, repaired wheels and DLL/link artifacts | setuptools and packaging scripts | Treat as packaging output |
 | `doc/xml/`, `doc/build/`, autosummary output | Doxygen/Sphinx | Edit comments, docstrings, or source pages |
 | Installed vendor headers/CMake files in `lib/` | `lib/update_lib.sh` and upstream releases | Modify only as explicit dependency work |
 
-setup.py creates the temporary header directories even for metadata processing
-and cleans up directories it successfully registered in its `finally` block.
-Pre-existing copies can make `copytree` fail. Diagnose the origin of such paths
-before cleanup; do not remove unrelated content by assumption. `MANIFEST.in`
-describes packaged header/vendor files and the renamed Windows TBB runtime.
+setup.py stages installed headers, vendor headers, CMake resources, and vendor
+licenses only in setuptools build output. Metadata processing does not copy or
+clean source-package directories. Pre-existing source `higra/include/` and
+`higra/lib/` content is preserved and excluded from package discovery and the
+source archive. `MANIFEST.in` includes the root CMake, binding, header/vendor,
+and test-resource inputs required to rebuild an extracted sdist. Windows TBB
+builds prepare the renamed DLL/import library in build temporary output and
+copy the runtime DLL into the wheel package output.
 
 Installed packages expose `get_include`, `get_lib_include`, and `get_lib_cmake`
 for external C++ extensions. An ordinary CMake build tree lacks the packaging

@@ -1,6 +1,11 @@
-recursive-include higra/include *.hpp
-recursive-include higra/lib *.hpp *.h *.cmake
-recursive-include higra/lib/license *
-include higra/tbb_higra.dll
-
-
+include CMakeLists.txt README.md LICENSE pyproject.toml
+include tools/higraTools.cmake
+recursive-include include *.hpp *.h
+recursive-include lib *.hpp *.h *.cmake
+recursive-include lib/license *
+recursive-include higra *.py *.cpp *.hpp *.h CMakeLists.txt
+recursive-include test *.py *.cpp *.hpp *.h CMakeLists.txt *.graph
+recursive-include benchmark *.cpp *.h CMakeLists.txt
+prune higra/include
+prune higra/lib
+global-exclude __pycache__ *.py[cod] *.so *.pyd
