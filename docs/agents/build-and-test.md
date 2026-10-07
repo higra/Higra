@@ -215,6 +215,18 @@ and CMake 3.30.5; runtime NumPy minimums are separate in `setup.py`. The Python 
 runtime entry has no matching current README/CI support or isolated NumPy pin;
 do not promise 3.9 support from that entry alone.
 
+Validate source packaging in an isolated tracked-source checkout, applying any
+candidate tracked-file patch before building. Generate an sdist with both
+`python setup.py sdist` and `python -m build --sdist`, extract it, and run the
+wheel command above from the extracted source. Metadata commands must work
+there, and installed wheels must retain `get_include()`, `get_lib_include()`,
+`get_lib_cmake()`, and vendor licenses. The standalone regression check
+`python tools/check_packaging.py /absolute/isolated/source [wheel.whl]` verifies
+metadata, repeated header staging, archive extraction, resource hashes, and
+preservation of pre-existing source-package content. It requires the active
+interpreter's setuptools and NumPy; it does not compile the extension or replace
+the installed-wheel Python suite.
+
 setup.py sets `HG_BUILD_WHEEL=ON`, disables C++ tests, and normally builds Release.
 `HG_DEBUG` and `HG_USE_TBB` are activated by environment-variable **presence**:
 setting either to `0` or `OFF` still enables it. Omit/unset the variable to disable

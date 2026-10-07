@@ -5,9 +5,11 @@ import platform
 import subprocess
 import os.path
 import shutil
+from pathlib import Path
 
 from setuptools import setup, Extension, find_namespace_packages
 from setuptools.command.build_ext import build_ext
+from setuptools.command.build_py import build_py
 from distutils.version import LooseVersion
 
 
@@ -65,6 +67,29 @@ class CMakeExtension(Extension):
         self.sourcedir = os.path.abspath(sourcedir)
 
 
+class BuildPy(build_py):
+    """Stage installed C++ resources in build_lib, never in the source package."""
+
+    def resource_files(self):
+        source_root = Path(__file__).resolve().parent
+        for directory in ('include', 'lib'):
+            for source in sorted((source_root / directory).rglob('*')):
+                relative = source.relative_to(source_root)
+                if source.is_file() and (source.suffix in ('.hpp', '.h', '.cmake')
+                                         or relative.parts[:2] == ('lib', 'license')):
+                    yield source, Path(self.build_lib) / 'higra' / relative
+
+    def run(self):
+        super().run()
+        for source, destination in self.resource_files():
+            self.mkpath(str(destination.parent))
+            self.copy_file(str(source), str(destination))
+
+    def get_outputs(self, include_bytecode=1):
+        return super().get_outputs(include_bytecode) + [
+            str(destination) for _, destination in self.resource_files()]
+
+
 class CMakeBuild(build_ext):
     def run(self):
         try:
@@ -82,7 +107,6 @@ class CMakeBuild(build_ext):
             self.build_extension(ext)
 
     def build_extension(self, ext):
-        global force_debug
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         extdir = os.path.join(extdir, "higra")
 
@@ -108,7 +132,12 @@ class CMakeBuild(build_ext):
                 '-DTBB_DIR=' + tbb_dir,
                 '-DHG_UNITY_BUILD=On',
                 '-DHG_UNITY_BUILD_BATCH_SIZE=4']
-            if tbb_renamed_library is not None:
+            if platform.system() == "Windows":
+                tbb_output = os.path.abspath(os.path.join(self.build_temp, 'tbb'))
+                tbb_renamed_library = prepare_dll_windows(tbb_output)
+                os.makedirs(extdir, exist_ok=True)
+                shutil.copyfile(os.path.join(tbb_output, 'tbb_higra.dll'),
+                                os.path.join(extdir, 'tbb_higra.dll'))
                 cmake_args += ['-DTBB_RENAMED_LIBRARY=' + tbb_renamed_library]
 
         cfg = 'Debug' if force_debug or self.debug else 'Release'
@@ -169,74 +198,52 @@ def rename_dll(inputdll, outputdll):
     with open(deffile_name, 'w') as f:
         f.write(library_output)
 
-    process = subprocess.Popen(['lib', '/MACHINE:X64', '/DEF:' + deffile_name], )
+    process = subprocess.Popen(['lib', '/MACHINE:X64', '/DEF:' + deffile_name, '/OUT:' + libfile_name], )
     out, err = process.communicate()
 
     # copy the dll over
     copyfile(inputdll, outputdll)
 
 # copy tbb dlls under unique name to mimic unix wheel delocate...
-def prepare_dll_windows():
+def prepare_dll_windows(output_dir):
     tbb_dll = os.getenv("TBB_DLL")
     if tbb_dll is None:
         print("On windows, you must set the environment variable providing the path to TBB DLL.")
         exit(1)
 
-    from shutil import copyfile
-    copyfile(tbb_dll, "higra\\tbb.dll")
-
-    os.chdir("./higra")
-    rename_dll("tbb.dll", "tbb_higra.dll")
-    if os.path.exists("tbb.lib"):
-        os.remove("tbb.lib")
-    os.rename("tbb_higra.lib", "tbb.lib")
-    os.remove("tbb.dll")
-    os.chdir("..")
-    return os.path.abspath(os.path.join("higra", "tbb.lib"))
+    os.makedirs(output_dir, exist_ok=True)
+    renamed_dll = os.path.join(output_dir, 'tbb_higra.dll')
+    rename_dll(os.path.abspath(tbb_dll), renamed_dll)
+    return os.path.join(output_dir, 'tbb_higra.lib')
 
 
-temporary_package_dirs = []
-tbb_renamed_library = None
-
-try:
-    python_version = sys.version_info[1] # TODO: python 3 assumed...
-    requires_list = {
-        9:['numpy>=1.19.5'],
-        10:['numpy>=1.21.4'],
-        11:['numpy>=1.23.5'],
-        12:['numpy>=1.26.0'],
-        13:['numpy>=2.1.3'],
-        14:['numpy>=2.3.2'],
-    }
-    if use_tbb and platform.system() == "Windows":
-        tbb_renamed_library = prepare_dll_windows()
-
-    # hack because setuptools wont install files which are not inside a python package
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    for directory in ('include', 'lib'):
-        source = os.path.join(cur_dir, directory)
-        destination = os.path.join(cur_dir, 'higra', directory)
-        shutil.copytree(source, destination)
-        temporary_package_dirs.append(destination)
-    packages = find_namespace_packages(include=["higra", "higra.*"])
-    print("Setup.py: packages: ", packages)
-    setup(
-        name='higra',
-        version=get_version(),
-        author='Benjamin Perret',
-        author_email='benjamin.perret@esiee.fr',
-        description='Hierarchical Graph Analysis',
-        url='https://github.com/higra/Higra',
-        long_description=open('README.md').read(),
-        long_description_content_type="text/markdown",
-        packages=packages,
-        ext_modules=[CMakeExtension('higram')],
-        cmdclass=dict(build_ext=CMakeBuild),
-        include_package_data=True,
-        install_requires=requires_list[python_version],
-        zip_safe=False,
-        license='CeCILL-B',
-    )
-finally:
-    for directory in temporary_package_dirs:
-        shutil.rmtree(directory, ignore_errors=True)
+python_version = sys.version_info[1] # TODO: python 3 assumed...
+requires_list = {
+    9:['numpy>=1.19.5'],
+    10:['numpy>=1.21.4'],
+    11:['numpy>=1.23.5'],
+    12:['numpy>=1.26.0'],
+    13:['numpy>=2.1.3'],
+    14:['numpy>=2.3.2'],
+}
+# Installed headers are staged by BuildPy rather than discovered as namespaces.
+packages = find_namespace_packages(include=["higra", "higra.*"],
+                                   exclude=["higra.include", "higra.include.*",
+                                            "higra.lib", "higra.lib.*"])
+setup(
+    name='higra',
+    version=get_version(),
+    author='Benjamin Perret',
+    author_email='benjamin.perret@esiee.fr',
+    description='Hierarchical Graph Analysis',
+    url='https://github.com/higra/Higra',
+    long_description=open('README.md').read(),
+    long_description_content_type="text/markdown",
+    packages=packages,
+    ext_modules=[CMakeExtension('higram')],
+    cmdclass=dict(build_ext=CMakeBuild, build_py=BuildPy),
+    include_package_data=False,
+    install_requires=requires_list[python_version],
+    zip_safe=False,
+    license='CeCILL-B',
+)
