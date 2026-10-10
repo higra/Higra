@@ -4,6 +4,7 @@ cmake-build*
 dependencies
 .idea
 Testing
+higra-workspace
 
 out/
 
