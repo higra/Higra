@@ -5,6 +5,24 @@ processing. Its C++ algorithms are largely header-based templates; Python calls
 them through a single pybind11 extension, `higra.higram`, and adds shape handling,
 metadata, caching, and composed algorithms.
 
+## Private working context
+
+`higra-workspace/` is a separate private Git repository for agents' working
+context, version history, and synchronization. Keep review reports, follow-up
+trackers, handoff notes, plans, and task-specific evidence there. 
+
+Keep source code, tests, public documentation, and reusable contributor guidance
+in the Higra repository. `higra-workspace/` must remain ignored by Higra's
+`.gitignore`; do not add its contents to public commits or package artifacts.
+
+Run source/build/test commands from the Higra root. In private documents, keep
+links to other context files within the private checkout and adjust relative
+links to public files to reach the enclosing Higra checkout. Manage the two Git
+repositories separately: inspect private changes with
+`git -C higra-workspace status`, and use `git -C higra-workspace ...` for context
+commits and synchronization. Check each repository's status and diff separately
+before committing, and preserve unrelated changes in both.
+
 ## Find the right layer
 
 | Task | Source | Tests |
