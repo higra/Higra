@@ -291,6 +291,112 @@ namespace component_tree_casf {
 
     } // namespace
 
+    TEST_CASE("component tree CASF moves preserve current state and reconnect all borrowers", "[component_tree_casf][casf_move]") {
+        auto graph = get_4_adjacency_implicit_graph({12, 12});
+        for (auto attribute: {ComponentTreeCasfAttribute::area,
+                              ComponentTreeCasfAttribute::bounding_box_width,
+                              ComponentTreeCasfAttribute::bounding_box_height,
+                              ComponentTreeCasfAttribute::bounding_box_diagonal}) {
+            for (bool prefilter: {false, true}) {
+                INFO("attribute=" << (int) attribute << ", prefilter=" << prefilter);
+                const auto checkMoves = [&](const auto &image) {
+                    using altitude_t = typename std::decay_t<decltype(image)>::value_type;
+                    using casf_t = ComponentTreeCasf<altitude_t, decltype(graph)>;
+                    static_assert(!std::is_copy_constructible_v<casf_t>);
+                    static_assert(!std::is_copy_assignable_v<casf_t>);
+                    static_assert(std::is_nothrow_move_constructible_v<casf_t>);
+                    static_assert(std::is_nothrow_move_assignable_v<casf_t>);
+                    const auto naive = [&](const auto &current, const std::vector<double> &thresholds) {
+                        if (attribute == ComponentTreeCasfAttribute::area) {
+                            return run_naive_area_sequence(graph, current, thresholds);
+                        }
+                        using measure_t = detail::hierarchy::DynamicComponentTreeBoundingBoxMeasure;
+                        const auto measure = attribute == ComponentTreeCasfAttribute::bounding_box_width ? measure_t::width :
+                                             attribute == ComponentTreeCasfAttribute::bounding_box_height ? measure_t::height :
+                                             measure_t::diagonal_length;
+                        return run_naive_bounding_box_sequence(graph, current, thresholds, measure);
+                    };
+                    const auto verify = [&](casf_t &casf, const auto &expected) {
+                        REQUIRE((casf.filter({}) == expected));
+                        require_export_matches_component_tree<altitude_t>(casf.exportMaxTree(), graph, expected, true);
+                        require_export_matches_component_tree<altitude_t>(casf.exportMinTree(), graph, expected, false);
+                    };
+                    const std::vector<double> first = prefilter ? std::vector<double>{2.0} : std::vector<double>{};
+                    auto expected = naive(image, first);
+                    auto source = std::make_unique<casf_t>(graph, image, attribute);
+                    REQUIRE((source->filter(first) == expected));
+                    casf_t constructed(std::move(*source));
+                    REQUIRE_THROWS(source->filter({}));
+                    REQUIRE_THROWS(source->filter({3.0}));
+                    REQUIRE_THROWS(source->exportMaxTree());
+                    REQUIRE_THROWS(source->exportMinTree());
+                    // Moving an already moved-from state stays safely empty.
+                    casf_t empty(std::move(*source));
+                    REQUIRE_THROWS(empty.filter({}));
+                    // Moved-from objects can receive a fresh state and be used again.
+                    *source = casf_t(graph, image, attribute);
+                    verify(*source, image);
+                    source.reset();
+                    verify(constructed, expected);
+                    expected = naive(expected, {3.0});
+                    REQUIRE((constructed.filter({3.0}) == expected));
+                    verify(constructed, expected);
+
+                    // Replace a filtered destination using a different borrowed graph and attribute.
+                    auto oldGraph = get_4_adjacency_implicit_graph({2, 3});
+                    array_1d<altitude_t> oldImage = {0, 3, 1, 4, 2, 0};
+                    casf_t assigned(oldGraph, oldImage);
+                    assigned.filter({1.0});
+                    auto assignmentSource = std::make_unique<casf_t>(std::move(constructed));
+                    assigned = std::move(*assignmentSource);
+                    REQUIRE_THROWS(assignmentSource->exportMinTree());
+                    assignmentSource.reset();
+                    REQUIRE_THROWS(constructed.exportMinTree());
+                    verify(assigned, expected);
+                    assigned = std::move(assigned);
+                    verify(assigned, expected);
+                    // Construction and assignment from an empty source are both defined.
+                    empty = std::move(constructed);
+                    REQUIRE_THROWS(empty.exportMaxTree());
+
+                    std::vector<casf_t> relocated;
+                    relocated.reserve(1);
+                    relocated.push_back(std::move(assigned));
+                    const auto *oldAddress = relocated.data();
+                    relocated.emplace_back(graph, image, attribute);
+                    REQUIRE(relocated.data() != oldAddress);
+                    verify(relocated.front(), expected);
+                    verify(relocated.back(), image);
+                    for (double threshold: {4.0, 6.0}) {
+                        expected = naive(expected, {threshold});
+                        REQUIRE((relocated.front().filter({threshold}) == expected));
+                        verify(relocated.front(), expected);
+                    }
+                };
+                checkMoves(make_demo_image());
+                checkMoves(make_demo_image_as<float>());
+            }
+        }
+    }
+
+    TEST_CASE("component tree CASF area moves retain an explicit graph", "[component_tree_casf][casf_move]") {
+        auto graph = get_4_adjacency_graph({12, 12});
+        const auto checkMoves = [&](const auto &image) {
+            using altitude_t = typename std::decay_t<decltype(image)>::value_type;
+            using casf_t = ComponentTreeCasf<altitude_t, decltype(graph)>;
+            auto source = std::make_unique<casf_t>(graph, image);
+            source->filter({2.0});
+            casf_t destination(std::move(*source));
+            source.reset();
+            const auto expected = run_naive_area_sequence(graph, image, {2.0, 4.0, 6.0});
+            REQUIRE((destination.filter({4.0, 6.0}) == expected));
+            require_export_matches_component_tree<altitude_t>(destination.exportMaxTree(), graph, expected, true);
+            require_export_matches_component_tree<altitude_t>(destination.exportMinTree(), graph, expected, false);
+        };
+        checkMoves(make_demo_image());
+        checkMoves(make_demo_image_as<float>());
+    }
+
     TEST_CASE("component tree CASF filter exports max-tree and min-tree in Higra static form", "[component_tree_casf]") {
         // Export must coincide with rebuilding the static min-tree and max-tree from the filtered image.
         auto graph = get_4_adjacency_implicit_graph({12, 12});

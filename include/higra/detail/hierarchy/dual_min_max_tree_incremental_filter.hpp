@@ -28,6 +28,11 @@
 #define HG_COMPONENT_TREE_ADJUSTMENT_DENSE_MAX_BITS 8
 #endif
 
+namespace hg {
+    template<typename altitude_t, typename graph_t>
+    class ComponentTreeCasf;
+}
+
 namespace hg::detail::hierarchy {
 
     namespace testing {
@@ -111,9 +116,10 @@ namespace hg::detail::hierarchy {
     class DualMinMaxTreeIncrementalFilter {
     private:
         using tree_t = DynamicComponentTree;
-        // Friend access is restricted to the test helper so wrappers remain the only
-        // production entry points while unit tests can still exercise updateTree directly.
+        // The test helper exercises updateTree directly; CASF only reconnects registrations.
         friend struct testing::DualMinMaxTreeIncrementalFilterTestAccess;
+        // CASF reconnects its borrowed registrations after moving the owned state.
+        friend class hg::ComponentTreeCasf<altitude_t, graph_t>;
 
         /**
          * @brief O(1)-reset mark set based on generation stamps.

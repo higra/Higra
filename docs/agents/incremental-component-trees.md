@@ -82,8 +82,13 @@ float levels to integer buckets or use raw signed values as dense indices.
 
 `hg::ComponentTreeCasf` owns the mutable trees, altitude/attribute buffers,
 attribute computers, updater, and reusable candidate buffers. It borrows the
-graph. Its helper references member objects, so audit those references before
-moving the enclosing state or changing buffer allocation.
+graph and its embedding at stable addresses. Copying is disabled. Non-throwing
+move construction/assignment transfers the current filtering state and reconnects
+all updater registrations without recomputing attributes or resetting history.
+Self move-assignment is a no-op. A moved-from object supports destruction and
+further moves/assignment; filtering and exports throw until assigned a valid
+state. The original graph must outlive the destination, including after container
+relocation. Audit registrations when changing owned storage or buffer allocation.
 
 Each threshold applies max-tree pruning/attribute opening first, then min-tree
 pruning/attribute closing. Candidate selection uses `attribute <= threshold`,

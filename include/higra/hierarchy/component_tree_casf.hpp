@@ -63,6 +63,17 @@ namespace hg {
      *  - later `filter(...)` calls continue from the current filtered state;
      *  - an empty threshold sequence leaves the current state unchanged.
      *
+     * Ownership and moves:
+     *  - copying is disabled; move construction and assignment preserve the current
+     *    filtered state, including incremental attribute summaries;
+     *  - moves are non-throwing and reconnect the updater to the destination;
+     *  - a moved-from object may be destroyed, moved again, or assigned a new state;
+     *    filtering and exports throw until it receives a valid state;
+     *  - self move-assignment leaves the current state unchanged;
+     *  - moves borrow the same graph and embedding: these must stay alive at stable
+     *    addresses through the lifetime of the destination. Moving CASF does not
+     *    extend their lifetime or permit graph mutation.
+     *
      * Graph requirements:
      *  - the graph must remain valid for the whole lifetime of the object;
      *  - `area` is supported on any graph type accepted by the component tree
@@ -118,6 +129,24 @@ namespace hg {
         std::vector<index_t> selectedPruneCandidates_;
         ComponentTreeCasfAttribute attribute_;
         static constexpr bool graph_has_embedding = has_embedding_impl<graph_t>::value;
+
+        // Moves must not allocate or rebuild trees from the original image.
+        static_assert(std::is_nothrow_move_constructible_v<tree_t> &&
+                      std::is_nothrow_move_assignable_v<tree_t> &&
+                      std::is_nothrow_move_constructible_v<array_1d<altitude_t>> &&
+                      std::is_nothrow_move_assignable_v<array_1d<altitude_t>>,
+                      "CASF requires non-throwing moves of its owned trees and altitude arrays.");
+
+        void reconnectUpdater() noexcept {
+            if (!adjust_) {
+                return;
+            }
+            adjust_->mintree_ = &mintree_;
+            adjust_->maxtree_ = &maxtree_;
+            adjust_->graph_ = graph_;
+            adjust_->setAttributeComputer(*attributeComputerMin_, *attributeComputerMax_, attributeBufferMin_, attributeBufferMax_);
+            adjust_->setAltitudeBuffers(altitudeBufferMin_, altitudeBufferMax_);
+        }
 
         /**
          * @brief Returns `true` if and only if the selected CASF attribute is bounding-box-based.
@@ -333,13 +362,56 @@ namespace hg {
             attributeComputerMin_ = makeAttributeComputer(*graph_, attribute_);
             attributeComputerMax_ = makeAttributeComputer(*graph_, attribute_);
             adjust_ = std::make_unique<detail::hierarchy::DualMinMaxTreeIncrementalFilter<altitude_t, graph_t>>(&mintree_, &maxtree_, *graph_);
-            adjust_->setAttributeComputer(*attributeComputerMin_, *attributeComputerMax_, attributeBufferMin_, attributeBufferMax_);
-            adjust_->setAltitudeBuffers(altitudeBufferMin_, altitudeBufferMax_);
+            reconnectUpdater();
             attributeComputerMin_->computeAttribute(mintree_, attributeBufferMin_);
             attributeComputerMax_->computeAttribute(maxtree_, attributeBufferMax_);
             const auto maxNodes = (std::size_t) std::max(mintree_.getNumNodes(), maxtree_.getNumNodes());
             pruneCandidateQueue_.reserve(maxNodes);
             selectedPruneCandidates_.reserve(maxNodes);
+        }
+
+        ComponentTreeCasf(const ComponentTreeCasf &) = delete;
+        ComponentTreeCasf &operator=(const ComponentTreeCasf &) = delete;
+
+        /** @brief Transfers the current filtering state, retaining the borrowed graph. */
+        ComponentTreeCasf(ComponentTreeCasf &&other) noexcept
+                : graph_(std::exchange(other.graph_, nullptr)),
+                  mintree_(std::move(other.mintree_)), maxtree_(std::move(other.maxtree_)),
+                  adjust_(std::move(other.adjust_)),
+                  attributeComputerMin_(std::move(other.attributeComputerMin_)),
+                  attributeComputerMax_(std::move(other.attributeComputerMax_)),
+                  attributeBufferMin_(std::move(other.attributeBufferMin_)),
+                  attributeBufferMax_(std::move(other.attributeBufferMax_)),
+                  altitudeBufferMin_(std::move(other.altitudeBufferMin_)),
+                  altitudeBufferMax_(std::move(other.altitudeBufferMax_)),
+                  pruneCandidateQueue_(std::move(other.pruneCandidateQueue_)),
+                  selectedPruneCandidates_(std::move(other.selectedPruneCandidates_)),
+                  attribute_(other.attribute_) {
+            reconnectUpdater();
+        }
+
+        /** @brief Replaces the current state by the source state; self-assignment is a no-op. */
+        ComponentTreeCasf &operator=(ComponentTreeCasf &&other) noexcept {
+            if (this == &other) {
+                return *this;
+            }
+            // Tear down the old borrower before replacing any of its referents.
+            adjust_.reset();
+            graph_ = std::exchange(other.graph_, nullptr);
+            mintree_ = std::move(other.mintree_);
+            maxtree_ = std::move(other.maxtree_);
+            attributeComputerMin_ = std::move(other.attributeComputerMin_);
+            attributeComputerMax_ = std::move(other.attributeComputerMax_);
+            attributeBufferMin_ = std::move(other.attributeBufferMin_);
+            attributeBufferMax_ = std::move(other.attributeBufferMax_);
+            altitudeBufferMin_ = std::move(other.altitudeBufferMin_);
+            altitudeBufferMax_ = std::move(other.altitudeBufferMax_);
+            pruneCandidateQueue_ = std::move(other.pruneCandidateQueue_);
+            selectedPruneCandidates_ = std::move(other.selectedPruneCandidates_);
+            attribute_ = other.attribute_;
+            adjust_ = std::move(other.adjust_);
+            reconnectUpdater();
+            return *this;
         }
 
         /**
@@ -348,6 +420,7 @@ namespace hg {
          * successive non-empty calls continue filtering the result of the previous ones.
          */
         array_1d<altitude_t> filter(const std::vector<double> &thresholds) {
+            hg_assert(adjust_ != nullptr, "Cannot filter a moved-from CASF object.");
             for (auto threshold: thresholds) {
                 applyFilterStep(threshold);
             }
@@ -359,6 +432,7 @@ namespace hg {
          * @details The exported tree has component-tree category, before and after filtering.
          */
         ExportedTree exportMaxTree() const {
+            hg_assert(adjust_ != nullptr, "Cannot export a moved-from CASF object.");
             return exportTreeState(maxtree_, altitudeBufferMax_);
         }
 
@@ -367,6 +441,7 @@ namespace hg {
          * @details The exported tree has component-tree category, before and after filtering.
          */
         ExportedTree exportMinTree() const {
+            hg_assert(adjust_ != nullptr, "Cannot export a moved-from CASF object.");
             return exportTreeState(mintree_, altitudeBufferMin_);
         }
     };
