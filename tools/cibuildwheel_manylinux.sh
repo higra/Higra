@@ -6,7 +6,7 @@ set -e -x
 cur_dir=`pwd`
 
 export MFLAG="-m64"
-export CXXFLAGS=" ${MFLAG} -fabi-version=8 -Wno-error=changes-meaning"
+export CXXFLAGS=" ${MFLAG} -Wno-error=changes-meaning"
 export TBB_VERSION="2023.1.0"
 export TBB_URL="https://github.com/uxlfoundation/oneTBB/archive/refs/tags/v${TBB_VERSION}.tar.gz"
 

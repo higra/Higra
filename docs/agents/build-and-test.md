@@ -52,6 +52,13 @@ artifact. Use `--cxx` to select a downstream compiler; the probe exercises Tree
 and UndirectedGraph inputs, owned returns, mutation and lifetimes in both import
 orders. This does not replace checking runtime portability or C++ ABI policy.
 
+Linux wheels and their TBB dependency use default compiler ABI flags. Downstream
+GCC and Clang modules must use libstdc++ with `_GLIBCXX_USE_CXX11_ABI=1` and the
+installed wheel's exported headers. libc++, ABI 0, debug containers and
+nondefault compiler ABI modes are outside this interoperability contract. Do
+not forge pybind11 identifiers. See the [public extension guide](../../doc/source/extensions.rst)
+for a CMake example and the mandatory rebuild after the pybind11 3 migration.
+
 The root always configures Python and fetches Catch2, even with `DO_CPP_TEST=OFF`.
 There is no root switch for a standalone C++-only configuration. `find_package`
 uses the vendored prefix for pybind11. TBB uses `find_package(TBB CONFIG REQUIRED)`;
@@ -274,11 +281,19 @@ Linux GCC jobs also compile the CASF header with ordinary C++17 flags before
 building. They clear inherited C/C++ flags and print compiler versions. Core
 jobs use unity batch size four. Coverage runs C++ tests only. Wheel jobs use
 cibuildwheel 3.3.1, enable TBB, and run the Python suite against installed wheels.
-Unix excludes 32-bit manylinux and musllinux; Windows excludes win32. Most wheel
-jobs are tag-triggered, with the current Python 3.14 entries forced on ordinary
-builds too. Tag jobs can upload to PyPI; they are release operations, not local
+Unix excludes 32-bit manylinux and musllinux; Windows excludes win32. All Linux
+Python 3.10–3.14 wheel jobs run on ordinary builds. Other wheel jobs are mostly
+tag-triggered, with Python 3.14 entries forced on ordinary builds too.
+Tag jobs can upload to PyPI; they are release operations, not local
 validation commands.
 
 These are checked-in configurations, not confirmation of successful live CI.
+
+Linux wheel CI retains its artifacts. The `Linux_wheel_extensions` job installs
+the repaired CPython 3.14 wheel on Ubuntu 22.04 and compiles downstream modules
+with distribution GCC 11 and Clang/libstdc++ at `-O2`, then runs the full Python
+suite. This deliberately differs from the manylinux build toolchain. Artifact
+hashes, compiler versions and auditwheel output are logged; the manylinux
+repair and container test remain separate portability checks.
 Report what was actually configured, built, and tested; existing artifacts alone
 do not verify a clean build or every supported platform.

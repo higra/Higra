@@ -154,8 +154,8 @@ class CMakeBuild(build_ext):
 
         env = os.environ.copy()
         cxx_flags = env.get('CXXFLAGS', '')
-        if platform.system() == "Linux":
-            cxx_flags = cxx_flags + " -fabi-version=8 "
+        # Use the compiler's default C++ ABI. Cooperating extensions must use
+        # this wheel's exported headers and matching standard-library ABI.
         cxx_flags = cxx_flags + ' -DVERSION_INFO=\\"{}\\"'.format(self.distribution.get_version())
 
         env['CXXFLAGS'] = cxx_flags

@@ -2,6 +2,7 @@ parameters:
   CIBW_BUILD: ''
   NUMPY_VERSION: ''
   vmImage: ''
+  pythonArchitecture: 'x64'
   force: false
   pypitest: false
 
@@ -30,6 +31,7 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: '3.14'
+          architecture: ${{ parameters.pythonArchitecture }}
           addToPath: true
 
       - script: |
@@ -41,6 +43,13 @@ jobs:
           cibuildwheel --output-dir wheelhouse;
         displayName: Build
         workingDirectory: $(Build.SourcesDirectory)
+
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)/wheelhouse'
+          artifact: 'wheel_${{ parameters.name }}'
+        displayName: Retain Linux wheels for downstream compiler checks
+        condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'))
 
       - script: |
           python -m pip install twine;

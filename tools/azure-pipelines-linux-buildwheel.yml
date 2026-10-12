@@ -35,3 +35,41 @@ jobs:
       CIBW_BUILD: 'cp314-*'
       NUMPY_VERSION: '2.3.2'
       force: true
+
+  # Test the repaired wheel with distribution compilers outside manylinux's
+  # build toolchain. A matching registry ID alone is not a type-exchange test.
+  - job: Linux_wheel_extensions
+    dependsOn: Wheel_linux_py314
+    pool:
+      vmImage: ubuntu-22.04
+    timeoutInMinutes: 30
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.14'
+          addToPath: true
+
+      - script: |
+          set -e
+          sudo apt-get update
+          sudo apt-get --no-install-recommends install g++-11 clang
+          g++-11 --version
+          clang++ --version
+        displayName: Install downstream compilers
+
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          artifact: wheel_linux_py314
+          path: '$(Pipeline.Workspace)/abi-wheels'
+
+      - script: |
+          set -e
+          unset CFLAGS CXXFLAGS CPPFLAGS PYTHONPATH
+          python -m pip install "$(Pipeline.Workspace)"/abi-wheels/*.whl scipy scikit-learn auditwheel
+          sha256sum "$(Pipeline.Workspace)"/abi-wheels/*.whl
+          python -m auditwheel show "$(Pipeline.Workspace)"/abi-wheels/*.whl
+          python "$(Build.SourcesDirectory)/tools/check_extension_abi.py" --cxx g++-11 --extra-flag=-O2
+          python "$(Build.SourcesDirectory)/tools/check_extension_abi.py" --cxx clang++ --extra-flag=-O2
+          python -c "import unittest; result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('$(Build.SourcesDirectory)/test/python/')); exit(0 if result.wasSuccessful() else 1)"
+        workingDirectory: '$(Pipeline.Workspace)'
+        displayName: Exchange wheel trees and graphs with GCC 11 and Clang
