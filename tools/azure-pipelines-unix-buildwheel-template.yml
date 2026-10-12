@@ -22,7 +22,7 @@ jobs:
       CIBW_ENVIRONMENT_LINUX: 'HG_USE_TBB=1 MFLAG="-m64"  CXXFLAGS="${MFLAG}" TBB_DIR="/tbb/lib/cmake/TBB" NUMPY_VERSION="${{ parameters.NUMPY_VERSION }}"'
       CIBW_BEFORE_BUILD_MACOS: source tools/cibuildwheel_osx.sh
       CIBW_ENVIRONMENT_MACOS: 'HG_USE_TBB=1 TBB_DIR="$HOME/tbb/lib/cmake/TBB" NUMPY_VERSION="${{ parameters.NUMPY_VERSION }}"'
-      CIBW_TEST_COMMAND: python -m pip install scikit-learn && python -c "import unittest;result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)"
+      CIBW_TEST_COMMAND: python -m pip install scikit-learn && python -c "import unittest;result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)" && python {project}/tools/check_extension_abi.py
 
     timeoutInMinutes: 60
     steps:

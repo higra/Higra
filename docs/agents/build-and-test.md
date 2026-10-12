@@ -25,7 +25,7 @@ substitute for building and importing the checkout.
 
 | Dependency | Source in this repository |
 | --- | --- |
-| pybind11 2.13.6 | Vendored headers and CMake config under `lib/` |
+| pybind11 3.1.0 | Vendored headers and CMake config under `lib/` |
 | xtensor 0.26.0, xtl 0.8.0 | Vendored headers under `lib/include/` |
 | xtensor-python 0.28.0, xsimd 13.2.0 | Vendored headers under `lib/include/` |
 | Catch2 3.16.0 | Root `FetchContent`, downloaded at configure time |
@@ -33,10 +33,24 @@ substitute for building and importing the checkout.
 | oneTBB | External CMake package; CI builds version 2023.1.0 |
 | Google Benchmark | External package, only with `DO_BENCHMARK=ON` |
 
-The root declares CMake 3.10, but fetched Catch2 declares 3.16, and current
-packaging pins CMake 3.30.5. Use a modern CMake; do not interpret the root minimum
-as a verified 3.10-compatible build. `HG_UNITY_BUILD` also relies on newer CMake
-unity support. README/CI target Python 3.10 through 3.14.
+The root requires CMake 3.18 or newer; current packaging pins CMake 3.30.5.
+Python discovery uses FindPython with `Development.Module`, and additionally
+`Development.Embed` when embedded tests are enabled. README/CI target Python
+3.10 through 3.14. pybind11 3.1.0 requires Python 3.9 or newer and drops MSVC
+2017 support; use MSVC 2019 or newer on Windows.
+
+xtensor-python 0.28.0 carries a narrow pybind11 3 compatibility patch for
+compound assignments, retained by `lib/update_lib.sh`; see
+[vendor patch notes](../../lib/patches/README.md). Downstream extensions using
+Higra C++ objects must be rebuilt against the new wheel's exported pybind11
+headers after this upgrade from 2.13.6.
+
+The optional embedded tests cover the NumPy bridge's compound assignments and
+run in non-coverage Linux compiler CI. Unix wheel CI also runs
+`python tools/check_extension_abi.py` outside the checkout against the installed
+artifact. Use `--cxx` to select a downstream compiler; the probe exercises Tree
+and UndirectedGraph inputs, owned returns, mutation and lifetimes in both import
+orders. This does not replace checking runtime portability or C++ ABI policy.
 
 The root always configures Python and fetches Catch2, even with `DO_CPP_TEST=OFF`.
 There is no root switch for a standalone C++-only configuration. `find_package`

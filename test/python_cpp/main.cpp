@@ -37,6 +37,15 @@ PYBIND11_EMBEDDED_MODULE(dummy, m
     ) {
         return 43;
     });
+
+    m.def("increment_array", [](xt::pyarray<double>& array) {
+        array += 1.0;
+        return array;
+    });
+    m.def("increment_tensor", [](xt::pytensor<double, 1>& array) {
+        array += 1.0;
+        return array;
+    });
 }
 
 
@@ -51,6 +60,17 @@ TEST_CASE("basic python embedded interpreter", "[embedded]") {
             result = 42
         )", py::globals(), locals);
             BOOST_CHECK(locals["result"].cast<int>() == 42);*/
+    }
+    SECTION("xtensor compound assignments and NumPy casts") {
+        py::exec(R"(
+import numpy as np
+import dummy
+for increment in (dummy.increment_array, dummy.increment_tensor):
+    values = np.array([1., 2., 3.])
+    result = increment(values)
+    np.testing.assert_array_equal(values, [2., 3., 4.])
+    np.testing.assert_array_equal(result, values)
+)");
     }
     SECTION("failed overload") {
         py::module sys = py::module::import("sys");

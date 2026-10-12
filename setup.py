@@ -100,8 +100,8 @@ class CMakeBuild(build_ext):
 
         if platform.system() == "Windows":
             cmake_version = LooseVersion(re.search(r'version\s*([\d.]+)', out.decode()).group(1))
-            if cmake_version < '3.1.0':
-                raise RuntimeError("CMake >= 3.1.0 is required on Windows")
+            if cmake_version < '3.18.0':
+                raise RuntimeError("CMake >= 3.18.0 is required on Windows")
 
         for ext in self.extensions:
             self.build_extension(ext)
