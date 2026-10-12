@@ -29,7 +29,7 @@ a wrapper `setuptools <https://setuptools.readthedocs.io/en/latest/>`_
 Building Higra from source requires:
 
     * a C++17 compiler (GCC, Clang, or Visual Studio 2019)
-    * cmake
+    * cmake 3.18+
     * Python 3 with Numpy
 
 No compiler-version minimum is specified. GCC 11 is covered by a regression

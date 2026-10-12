@@ -4,11 +4,12 @@ cmake-build*
 dependencies
 .idea
 Testing
-higra-workspace
+higra-workspace/
 
 out/
 
 .vs/
+.vscode/
 
 build
 __pycache__

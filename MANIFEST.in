@@ -1,7 +1,9 @@
 include CMakeLists.txt README.md LICENSE pyproject.toml
 include tools/higraTools.cmake
+include tools/check_extension_abi.py
 recursive-include include *.hpp *.h
 recursive-include lib *.hpp *.h *.cmake
+include lib/patches/*.patch lib/patches/*.md
 recursive-include lib/license *
 recursive-include higra *.py *.cpp *.hpp *.h CMakeLists.txt
 recursive-include test *.py *.cpp *.hpp *.h CMakeLists.txt *.graph

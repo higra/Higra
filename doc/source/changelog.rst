@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- Upgrade bundled pybind11 to 3.1.0; C++ extensions must be rebuilt
+  against the installed wheel's exported headers. 
+
 0.6.13
 ------
 

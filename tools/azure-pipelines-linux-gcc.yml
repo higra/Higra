@@ -58,8 +58,8 @@ jobs:
           if [[ -n "$COVERAGE" ]]; then
             CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_BUILD_TYPE=Coverage"
           else
-            MAKE_TARGETS="$MAKE_TARGETS higram"
-            CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_BUILD_TYPE=Debug"
+            MAKE_TARGETS="$MAKE_TARGETS higram test_python_exe"
+            CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_BUILD_TYPE=Debug -DDO_EMBEDDED_PYTHON_CPP_TEST=ON"
           fi
           cmake $CMAKE_EXTRA_ARGS $(Build.SourcesDirectory)
           make -j2 $MAKE_TARGETS

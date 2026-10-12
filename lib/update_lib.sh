@@ -15,12 +15,13 @@ xtl_target_version="0.8.0"
 xtensor_target_version="0.26.0"
 xsimd_target_version="13.2.0"
 xtensor_python_target_version="0.28.0"
-pybind11_target_version="2.13.6"
+pybind11_target_version="3.1.0"
 
 #exit on any failure !
 set -e
 
 install_prefix=`pwd`
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 printf "Cleaning previous library versions..."
 rm -rf lib
@@ -125,6 +126,7 @@ cd ../..
 
 printf "\n\nCleaning temporary..."
 cd ..
+patch -p1 -d "${install_prefix}" < "${script_dir}/patches/xtensor-python-pybind11-3.patch"
 rm -rf tmp
 
 printf "\nAll done!\n"
