@@ -23,7 +23,8 @@ namespace py_tree_io {
         //xt::import_numpy();
 
         m.def("_read_tree", [](const std::string &filename) {
-                  std::ifstream file(filename);
+                  std::ifstream file(filename, std::ios::binary);
+                  hg_assert(file.is_open(), "Cannot open tree file for reading: " + filename);
                   return hg::read_tree(file);
               },
               "Read tree from mixed ascii/binary format. Return a pair with the tree and a map of attributes (tree, dict[string => 1d array[double] ])",
@@ -31,14 +32,20 @@ namespace py_tree_io {
 
         m.def("save_tree", [](const std::string &filename, const hg::tree &tree,
                               const std::map<std::string, pyarray<double>> &attributes) {
-                  std::ofstream file(filename);
+                  std::ofstream file(filename, std::ios::binary);
+                  hg_assert(file.is_open(), "Cannot open tree file for writing: " + filename);
                   auto s = hg::save_tree(file, tree);
                   for (auto e: attributes) {
                       s.add_attribute(e.first, e.second);
                   }
                   s.finalize();
+                  file.close();
+                  hg_assert(file, "Failed to close tree file: " + filename);
               },
-              "Save a tree and scalar attributes to mixed ascii/binary format. "
+              "Save a tree and scalar attributes to a version 1 tree file. "
+              "The tree category is preserved, including for empty trees. Parents use native int representation and attributes use native double "
+              "representation and byte order, so files should be exchanged between compatible platforms. "
+              "Open, write and finalization failures raise an exception. "
               "Attributes must be numpy 1d arrays stored in a dictionary with string keys (attribute names).",
               pybind11::arg("filename"),
               pybind11::arg("tree"),

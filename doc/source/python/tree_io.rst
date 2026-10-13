@@ -3,10 +3,12 @@
 Tree IO
 =======
 
-Tree IO allows de/serialization of a tree and associated attributes in a custom simple format.
+Tree IO saves trees and scalar node attributes. 
+Reading returns ``(tree, attribute_map)`` and registers each attribute on
+the returned tree. Attributes are stored and read as one-dimensional arrays of
+double precision values. 
 
-For Python pickle serialization, including category preservation and the
-compatibility rules for older category-less pickles, see :ref:`TreeGraph`.
+For Python pickle serialization, see :ref:`TreeGraph`.
 
 .. currentmodule:: higra
 
