@@ -141,6 +141,111 @@ class TestHGUtils(unittest.TestCase):
         r = hg.delinearize_vertex_weights(np.ones((4, 5, 2)), shape=np.array((4, 5), dtype=np.int32))
         self.assertTrue(r.shape == (4, 5, 2))
 
+    def test_shape_only_vertex_weights(self):
+        shapes = ((2, 3), [2, 3], np.array((2, 3), dtype=np.int32),
+                  (np.int64(2), np.uint64(3)))
+        for dtype in (np.int16, np.uint64, np.float32, np.complex128, np.bool_):
+            for shape in shapes:
+                for trailing in ((), (4,), (2, 4)):
+                    with self.subTest(dtype=dtype, shape=shape, trailing=trailing):
+                        image = np.arange(6 * int(np.prod(trailing))).astype(dtype).reshape((2, 3) + trailing)
+                        linear = hg.linearize_vertex_weights(image, shape=shape)
+                        self.assertEqual(linear.shape, (6,) + trailing)
+                        self.assertEqual(linear.dtype, image.dtype)
+                        self.assertTrue(np.shares_memory(linear, image))
+                        np.testing.assert_array_equal(linear, image.reshape((6,) + trailing))
+                        restored = hg.delinearize_vertex_weights(linear, shape=shape)
+                        self.assertEqual(restored.dtype, image.dtype)
+                        np.testing.assert_array_equal(restored, image)
+                        self.assertIs(hg.linearize_vertex_weights(linear, shape=shape), linear)
+                        self.assertIs(hg.delinearize_vertex_weights(image, shape=shape), image)
+
+    def test_vertex_weights_noncontiguous(self):
+        base = np.arange(48, dtype=np.int16).reshape(4, 3, 4)
+        for image in (base[::2, :, ::-1], base.transpose(1, 0, 2), np.asfortranarray(base)):
+            shape = image.shape[:2]
+            with self.subTest(strides=image.strides):
+                linear = hg.linearize_vertex_weights(image, shape=shape)
+                np.testing.assert_array_equal(linear, image.reshape((-1, 4)))
+                self.assertEqual(linear.dtype, image.dtype)
+                np.testing.assert_array_equal(hg.delinearize_vertex_weights(linear, shape=shape), image)
+        linear = np.arange(48).reshape(6, 8)[:, ::2]
+        self.assertIs(hg.linearize_vertex_weights(linear, shape=(2, 3)), linear)
+        np.testing.assert_array_equal(hg.delinearize_vertex_weights(linear, shape=(2, 3)),
+                                      linear.reshape(2, 3, 4))
+
+    def test_vertex_weights_graph_shape_consistency(self):
+        for graph in (hg.UndirectedGraph(6), hg.get_4_adjacency_graph((2, 3)),
+                      hg.get_4_adjacency_implicit_graph((2, 3))):
+            image = np.arange(24).reshape(2, 3, 4)
+            linear = hg.linearize_vertex_weights(image, graph, (2, 3))
+            np.testing.assert_array_equal(linear, image.reshape(6, 4))
+            np.testing.assert_array_equal(hg.delinearize_vertex_weights(linear, graph, (2, 3)), image)
+            alternate = image.reshape(3, 2, 4)
+            np.testing.assert_array_equal(hg.linearize_vertex_weights(alternate, graph, (3, 2)), linear)
+            np.testing.assert_array_equal(hg.delinearize_vertex_weights(linear, graph, (3, 2)), alternate)
+            if hg.CptGridGraph.validate(graph):
+                np.testing.assert_array_equal(hg.linearize_vertex_weights(image, graph), linear)
+                np.testing.assert_array_equal(hg.delinearize_vertex_weights(linear, graph), image)
+            for fun in (hg.linearize_vertex_weights, hg.delinearize_vertex_weights):
+                for weights in (np.ones((2, 4, 3)), np.ones((8, 3))):
+                    with self.subTest(fun=fun.__name__, graph=type(graph), weights=weights.shape):
+                        with self.assertRaisesRegex(ValueError, "Graph vertex count 6"):
+                            fun(weights, graph, (2, 4))
+        graph = hg.UndirectedGraph(6)
+        hg.CptGridGraph.link(graph, (2, 4))
+        for fun in (hg.linearize_vertex_weights, hg.delinearize_vertex_weights):
+            with self.assertRaisesRegex(ValueError, "Graph vertex count 6"):
+                fun(np.ones((2, 4)), graph)
+
+    def test_vertex_weights_prefix_precedence(self):
+        for shape in ((4, 1), (1, 4), (1, 1), (4,)):
+            image = np.arange(int(np.prod(shape)) * 6).reshape(shape + (2, 3))
+            linear = hg.linearize_vertex_weights(image, shape=shape)
+            np.testing.assert_array_equal(linear, image.reshape((int(np.prod(shape)), 2, 3)))
+            self.assertIs(hg.delinearize_vertex_weights(image, shape=shape), image)
+        linear = np.arange(144).reshape(6, 2, 3, 4)
+        self.assertIs(hg.linearize_vertex_weights(linear, shape=(2, 3)), linear)
+        np.testing.assert_array_equal(hg.delinearize_vertex_weights(linear, shape=(2, 3)),
+                                      linear.reshape(2, 3, 2, 3, 4))
+
+    def test_vertex_weights_passthrough_and_degenerate_shapes(self):
+        for weights in (np.array(5), np.ones((2, 3)), object()):
+            for fun in (hg.linearize_vertex_weights, hg.delinearize_vertex_weights):
+                self.assertIs(fun(weights), weights)
+                self.assertIs(fun(weights, hg.UndirectedGraph(7)), weights)
+        for graph in (None, hg.UndirectedGraph(1)):
+            scalar = np.array(5, dtype=np.int16)
+            np.testing.assert_array_equal(hg.linearize_vertex_weights(scalar, graph, ()), [5])
+            self.assertIs(hg.delinearize_vertex_weights(scalar, graph, ()), scalar)
+        for shape in ((0, 3), (2, 0)):
+            for graph in (None, hg.UndirectedGraph(0)):
+                image = np.empty(shape + (4,), dtype=np.int16)
+                linear = hg.linearize_vertex_weights(image, graph, shape)
+                self.assertEqual(linear.shape, (0, 4))
+                restored = hg.delinearize_vertex_weights(linear, graph, shape)
+                self.assertEqual(restored.shape, image.shape)
+                self.assertEqual(restored.dtype, image.dtype)
+
+    def test_vertex_weights_invalid_inputs(self):
+        for fun in (hg.linearize_vertex_weights, hg.delinearize_vertex_weights):
+            for weights in (np.array(5), np.ones(7), np.ones((3, 2)), np.ones((2,))):
+                with self.subTest(fun=fun.__name__, weights=weights.shape):
+                    with self.assertRaisesRegex(ValueError, "Vertex weights shape"):
+                        fun(weights, shape=(2, 3))
+            for shape in ((-2, -3), (2, -1)):
+                with self.assertRaisesRegex(ValueError, "non-negative"):
+                    fun(np.ones(6), shape=shape)
+            for shape in (3, (2.0, 3), ("2", 3), ((2, 3),), np.array([[2, 3]])):
+                with self.subTest(fun=fun.__name__, shape=shape):
+                    with self.assertRaises(TypeError):
+                        fun(np.ones(6), shape=shape)
+            # The product is 2**64, rather than zero through fixed-width overflow.
+            with self.assertRaisesRegex(ValueError, "Vertex weights shape"):
+                fun(np.empty(0), shape=(np.int64(2**32), np.int64(2**32)))
+        with self.assertRaisesRegex(ValueError, "6 vertices"):
+            hg.delinearize_vertex_weights(np.ones(7), shape=(2, 3))
+
     def test_common_type(self):
         a_bool = np.zeros((1, 1), dtype=np.bool_)
         a_uint16 = np.zeros((1, 1), dtype=np.uint16)
