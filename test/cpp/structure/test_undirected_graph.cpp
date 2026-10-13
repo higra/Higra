@@ -401,6 +401,107 @@ namespace test_undirected_graph {
         }
     }
 
+    TEMPLATE_TEST_CASE("repeated edge deletion and slot revival", "[undirected_graph]",
+                       hg::ugraph, hg::undirected_graph<hg::hash_setS>) {
+        TestType g(4, 4);
+        g.add_edge(0, 1);
+        g.add_edge(0, 1); // parallel, unrelated slot
+        g.add_edge(2, 2); // self-loop
+        std::vector<pair<index_t, index_t>> expected{{0, 1}, {0, 1}, {2, 2}};
+        const array_2d<int> weights{{10, 11}, {20, 21}, {30, 31}};
+        auto retained = g.endpoint_storage();
+        auto check = [&]() {
+            REQUIRE(g.num_edges() == expected.size());
+            REQUIRE(g.endpoint_storage() == retained);
+            index_t ei = 0;
+            for (auto e: hg::edge_iterator(g)) {
+                REQUIRE(e.index == ei);
+                REQUIRE(e.source == expected[ei].first);
+                REQUIRE(e.target == expected[ei].second);
+                REQUIRE(g.sources()(ei) == e.source); // reacquire native adapters
+                REQUIRE(g.targets()(ei) == e.target);
+                REQUIRE(retained->edges[ei].source == e.source);
+                REQUIRE(retained->edges[ei].target == e.target);
+                REQUIRE(weights(e.index, 0) == (ei + 1) * 10);
+                REQUIRE(weights(e.index, 1) == (ei + 1) * 10 + 1);
+                ++ei;
+            }
+            for (index_t v = 0; v < 4; ++v) {
+                vector<index_t> incident, adjacent, outgoing, incoming, actual_adjacent;
+                for (index_t i = 0; i < static_cast<index_t>(expected.size()); ++i) {
+                    auto [s, t] = expected[i];
+                    if (s == v || t == v) {
+                        incident.push_back(i);
+                        adjacent.push_back(s == v ? t : s);
+                    }
+                }
+                for (auto e: hg::out_edge_iterator(v, g)) {
+                    REQUIRE(e.source == v);
+                    outgoing.push_back(e.index);
+                }
+                for (auto e: hg::in_edge_iterator(v, g)) {
+                    REQUIRE(e.target == v);
+                    incoming.push_back(e.index);
+                }
+                for (auto a: hg::adjacent_vertex_iterator(v, g)) actual_adjacent.push_back(a);
+                REQUIRE(vectorSame(incident, outgoing));
+                REQUIRE(vectorSame(incident, incoming));
+                REQUIRE(vectorSame(adjacent, actual_adjacent));
+                REQUIRE(g.degree(v) == incident.size());
+            }
+        };
+        check();
+        for (index_t slot: {0, 2}) { // ordinary edge and self-loop
+            for (int repeat = 0; repeat < 3; ++repeat) {
+                hg::remove_edge(slot, g);
+                expected[slot] = {invalid_index, invalid_index};
+                check();
+            }
+            for (auto endpoints: vector<pair<index_t, index_t>>{{3, 1}, {3, 1}, {1, 1}, {1, 1}, {2, 0}}) {
+                hg::set_edge(slot, endpoints.first, endpoints.second, g);
+                expected[slot] = {std::min(endpoints.first, endpoints.second),
+                                  std::max(endpoints.first, endpoints.second)};
+                check();
+            }
+            g.remove_edge(slot);
+            expected[slot] = {invalid_index, invalid_index};
+            check();
+        }
+        // Native members and free adapters reject invalid input before changing topology.
+        for (index_t slot: {-1, 3}) {
+            REQUIRE_THROWS(g.remove_edge(slot));
+            REQUIRE_THROWS(hg::remove_edge(slot, g));
+            REQUIRE_THROWS(g.set_edge(slot, 0, 1));
+            REQUIRE_THROWS(hg::set_edge(slot, 0, 1, g));
+            check();
+        }
+        for (index_t slot: {0, 1, 2}) { // live and tombstoned slots
+            for (index_t vertex: {-1, 4}) {
+                REQUIRE_THROWS(g.set_edge(slot, vertex, 1));
+                REQUIRE_THROWS(g.set_edge(slot, 1, vertex));
+                REQUIRE_THROWS(hg::set_edge(slot, vertex, 1, g));
+                REQUIRE_THROWS(hg::set_edge(slot, 1, vertex, g));
+                check();
+            }
+        }
+        REQUIRE(g.add_edge(3, 0).index == 3); // insertion never reuses a tombstone
+        REQUIRE(g.num_edges() == 4);
+        REQUIRE(g.edge_from_index(0).source == invalid_index);
+        while (g.num_edges() <= retained->edges.capacity()) g.add_edge(0, 1);
+        REQUIRE(g.endpoint_storage() != retained);
+        g.set_edge(0, 3, 2);
+        g.remove_edge(0);
+        g.remove_edge(0);
+        g.set_edge(0, 1, 1);
+        REQUIRE(retained->edges[0].source == invalid_index);
+        REQUIRE(retained->edges[0].target == invalid_index);
+        REQUIRE(g.sources()(0) == 1);
+        REQUIRE(g.targets()(0) == 1);
+        TestType empty;
+        REQUIRE_THROWS(empty.remove_edge(0));
+        REQUIRE_THROWS(empty.set_edge(0, 0, 0));
+    }
+
     TEMPLATE_TEST_CASE("endpoint storage generations", "[undirected_graph]",
                        hg::ugraph, hg::undirected_graph<hg::hash_setS>) {
         TestType g(4, 4, 2);

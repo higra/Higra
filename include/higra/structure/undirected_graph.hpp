@@ -195,9 +195,23 @@ namespace hg {
                 }
             }
 
+            /**
+             * Delete an existing edge slot without changing its ID or num_edges().
+             * Both endpoints become invalid_index; adjacency omits the tombstone.
+             * Repeated deletion is harmless. Global edge iteration retains the slot.
+             */
             void remove_edge(edge_index_t ei) {
+                hg_assert(ei >= 0 && ei < static_cast<index_t>(num_edges()),
+                          "Edge index must identify an existing slot.");
                 auto &source = _edge_storage->edges[ei].source;
                 auto &target = _edge_storage->edges[ei].target;
+                if (source == invalid_index && target == invalid_index) {
+                    return;
+                }
+                // Reject inconsistent internal endpoints before any adjacency access.
+                hg_assert(source >= 0 && source < static_cast<index_t>(num_vertices()) &&
+                          target >= 0 && target < static_cast<index_t>(num_vertices()),
+                          "Edge endpoints must both be valid or both mark a deleted slot.");
                 remove_from_container(out_edges[source], ei);
                 if (source != target)
                     remove_from_container(out_edges[target], ei);
@@ -205,11 +219,20 @@ namespace hg {
                 _edge_storage->edges[ei].target = invalid_index;
             }
 
+            /**
+             * Replace endpoints, or revive a tombstone using its existing ID.
+             * Validate before mutation; weights remain indexed by the same slots.
+             * A self-loop has one adjacency entry and contributes one to degree.
+             */
             void set_edge(edge_index_t ei, vertex_descriptor v1, vertex_descriptor v2) {
+                hg_assert(ei >= 0 && ei < static_cast<index_t>(num_edges()),
+                          "Edge index must identify an existing slot.");
+                hg_assert(v1 >= 0 && v1 < static_cast<index_t>(num_vertices()) &&
+                          v2 >= 0 && v2 < static_cast<index_t>(num_vertices()),
+                          "Vertex indices must identify existing vertices.");
                 if (v1 > v2) {
                     std::swap(v1, v2);
                 }
-                // TODO optimize cases !
                 remove_edge(ei);
 
                 add_to_container(out_edges[v1], ei);

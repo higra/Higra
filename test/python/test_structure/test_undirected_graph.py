@@ -381,6 +381,96 @@ class TestUndirectedGraph(unittest.TestCase):
         np.testing.assert_array_equal(subgraph.sources(), g.sources()[[2, 0]])
         np.testing.assert_array_equal(subgraph.targets(), g.targets()[[2, 0]])
 
+    def test_repeated_deletion_and_revival(self):
+        for graph_type in (hg.UndirectedGraph, hg.UndirectedGraphOptimizedDelete):
+            with self.subTest(graph_type=graph_type):
+                g = graph_type(4, 4)
+                g.add_edges((0, 0, 2), (1, 1, 2))
+                expected = [(0, 1, 0), (0, 1, 1), (2, 2, 2)]
+                weights = np.array([[10, 11], [20, 21], [30, 31]])
+                original_weights = weights.copy()
+                arrays = g.edge_list() if graph_type is hg.UndirectedGraph else (g._sources(), g._targets())
+                views = tuple(a[::-1] for a in arrays)
+
+                def check():
+                    self.assertEqual(g.num_edges(), len(expected))
+                    self.assertEqual(list(g.edges()), expected)
+                    self.assert_topology_consistent(g)
+                    np.testing.assert_array_equal(arrays[0], [e[0] for e in expected])
+                    np.testing.assert_array_equal(arrays[1], [e[1] for e in expected])
+                    for a, view in zip(arrays, views):
+                        self.assert_readonly(a)
+                        np.testing.assert_array_equal(view, a[::-1])
+                    self.assertTrue(np.shares_memory(arrays[0], g._sources()))
+                    np.testing.assert_array_equal(weights, original_weights)
+                    for e in g.edges():
+                        np.testing.assert_array_equal(weights[e[2]], original_weights[e[2]])
+
+                check()
+                for slot in (0, 2):
+                    for _ in range(3):
+                        g.remove_edge(slot)
+                        expected[slot] = (-1, -1, slot)
+                        check()
+                    for s, t in ((3, 1), (3, 1), (1, 1), (1, 1), (2, 0)):
+                        g.set_edge(slot, s, t)
+                        expected[slot] = (min(s, t), max(s, t), slot)
+                        check()
+                    g.remove_edge(slot)
+                    expected[slot] = (-1, -1, slot)
+                    check()
+
+                for slot in (-1, g.num_edges()):
+                    for action in (lambda: g.remove_edge(slot), lambda: g.set_edge(slot, 0, 1)):
+                        with self.assertRaises(RuntimeError):
+                            action()
+                        check()
+                for slot in (0, 1, 2):
+                    for vertex in (-1, g.num_vertices()):
+                        for s, t in ((vertex, 1), (1, vertex)):
+                            with self.assertRaises(RuntimeError):
+                                g.set_edge(slot, s, t)
+                            check()
+                self.assertEqual(g.add_edge(3, 0), (0, 3, 3))
+                weights = np.vstack((weights, [40, 41]))
+                self.assertEqual(list(g.edges()), expected + [(0, 3, 3)])
+                # Build an algorithm input using only live slots; preserve scalar/vector weights.
+                live_ids = np.array([e[2] for e in g.edges() if e[0] >= 0], dtype=np.int64)
+                live = hg.UndirectedGraph(g.num_vertices())
+                live.add_edges(g._sources()[live_ids], g._targets()[live_ids])
+                self.assertEqual(list(live.edges()), [(0, 1, 0), (0, 3, 1)])
+                for data in (weights[:, 0], weights):
+                    np.testing.assert_array_equal(data[live_ids], data[[1, 3]])
+                matrix = hg.undirected_graph_2_adjacency_matrix(live, weights[live_ids, 0], sparse=False)
+                np.testing.assert_array_equal(matrix, [[0, 20, 0, 40], [20, 0, 0, 0],
+                                                      [0, 0, 0, 0], [40, 0, 0, 0]])
+                if graph_type is hg.UndirectedGraph:
+                    selected = hg.subgraph(g, live_ids)
+                    self.assertEqual(list(selected.edges()), list(live.edges()))
+                retired = tuple(a.copy() for a in arrays)
+                while g.num_edges() < 128:
+                    g.add_edge(0, 1)
+                current = g._sources(), g._targets()
+                self.assertFalse(np.shares_memory(arrays[0], current[0]))
+                g.set_edge(0, 3, 2)
+                self.assertEqual((current[0][0], current[1][0]), (2, 3))
+                g.remove_edge(0)
+                g.remove_edge(0)
+                self.assertEqual((current[0][0], current[1][0]), (-1, -1))
+                g.set_edge(0, 1, 1)
+                self.assertEqual((current[0][0], current[1][0]), (1, 1))
+                self.assert_topology_consistent(g)
+                del g, current
+                gc.collect()
+                for a, ref in zip(arrays, retired):
+                    np.testing.assert_array_equal(a, ref)
+                    self.assert_readonly(a)
+                empty = graph_type()
+                with self.assertRaises(RuntimeError):
+                    empty.remove_edge(0)
+                with self.assertRaises(RuntimeError):
+                    empty.set_edge(0, 0, 0)
+
     def test_pickle(self):
         import pickle
         g = TestUndirectedGraph.test_graph()
