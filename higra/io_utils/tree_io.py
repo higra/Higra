@@ -14,9 +14,10 @@ import numpy as np
 
 def read_tree(filename):
     """
-    Read a tree stored in mixed ascii/binary format.
+    Read a tree and scalar attributes.
 
-    Attributes are also registered as tree object attributes.
+    Attributes are returned as one-dimensional float64 arrays and are also
+    registered as tree object attributes. 
 
     :param filename: path to the tree file
     :return: a pair (tree, attribute_map)
