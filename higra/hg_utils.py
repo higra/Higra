@@ -10,6 +10,7 @@
 
 import higra as hg
 import numpy as np
+from operator import index as _shape_index
 
 
 def is_iterable(obj):
@@ -77,14 +78,32 @@ def normalize_shape(shape):
     return tuple(int(i) for i in shape)
 
 
+def _vertex_weights_shape_size(shape, graph):
+    shape = tuple(_shape_index(i) for i in shape)
+    num_elements = 1
+    for i in shape:
+        if i < 0:
+            raise ValueError("Shape dimensions must be non-negative.")
+        num_elements *= i
+    if graph is not None and graph.num_vertices() != num_elements:
+        raise ValueError("Graph vertex count " + str(graph.num_vertices()) +
+                         " is not compatible with shape " + str(shape) +
+                         " (" + str(num_elements) + " vertices).")
+    return shape, num_elements
+
+
 @hg.argument_helper(("graph", hg.CptGridGraph))
 def linearize_vertex_weights(vertex_weights, graph=None, shape=None):
     """
     Linearize the given ndarray according to the given shape.
 
-    If ``shape`` is ``None``, the input array is returned.
+    The shape can be supplied without a graph. If omitted, it is inferred from
+    ``graph`` when the graph satisfies :class:`~higra.CptGridGraph`.
+    If no shape is available, the input array is returned unchanged.
+    When both a graph and a shape are available, the graph's vertex count must
+    equal the product of the shape dimensions.
 
-    Else if ``shape`` is a prefix of ``vertex_weights.shape`` then the ``len(shape)`` first dimensions of ``vertex_weights`` are
+    If ``shape`` is a prefix of ``vertex_weights.shape`` then the ``len(shape)`` first dimensions of ``vertex_weights`` are
     collapsed (linearized).
 
     Else if ``vertex_weights.shape[0]`` is equal to the product of the elements in ``shape`` then the input array is
@@ -92,7 +111,7 @@ def linearize_vertex_weights(vertex_weights, graph=None, shape=None):
 
     Else: an exception is raised.
 
-    Note that this function tries its best to guess what should be done but some ambiguity might always exist.
+    A matching spatial prefix takes precedence over a matching first axis.
 
     :Examples:
 
@@ -113,19 +132,23 @@ def linearize_vertex_weights(vertex_weights, graph=None, shape=None):
         (20, 4, 5, 2, 3)
 
     Raises:
-        ValueError: if ``vertex_weights.shape`` and ``shape`` are incompatible.
+        ValueError: if ``vertex_weights.shape`` and ``shape`` are incompatible,
+            a shape dimension is negative, or the graph's vertex count differs
+            from the product of the shape dimensions.
+        TypeError: if ``shape`` is not a sequence of integers.
 
     :See:
         :func:`~higra.delinearize_vertex_weights`
 
     :param vertex_weights: an ndarray representing vertex weights on a square nd-grid
     :param graph: a graph (optional, Concept :class:`~higra.CptGridGraph`)
-    :param shape: a list of integers (optional, deduced from Concept :class:`~higra.CptGridGraph`)
+    :param shape: a sequence of non-negative integers (optional, deduced from Concept :class:`~higra.CptGridGraph`)
     :return: maybe reshaped vertex_weights
     """
     if shape is None:
         return vertex_weights
 
+    shape, num_elements = _vertex_weights_shape_size(shape, graph)
     v_shape = vertex_weights.shape
     shape_prefix_of_v_shape = True
     if len(v_shape) >= len(shape):
@@ -137,13 +160,9 @@ def linearize_vertex_weights(vertex_weights, graph=None, shape=None):
         shape_prefix_of_v_shape = False
 
     if shape_prefix_of_v_shape:
-        return vertex_weights.reshape([graph.num_vertices()] + list(v_shape[len(shape):]))
+        return vertex_weights.reshape([num_elements] + list(v_shape[len(shape):]))
 
-    num_elements = 1
-    for i in shape:
-        num_elements *= i
-
-    if num_elements == vertex_weights.shape[0]:
+    if v_shape and num_elements == v_shape[0]:
         return vertex_weights
 
     raise ValueError("Vertex weights shape " + str(v_shape) +
@@ -155,16 +174,20 @@ def delinearize_vertex_weights(vertex_weights, graph=None, shape=None):
     """
     De-Linearize the given ndarray according to the given shape.
 
-    If ``shape`` is ``None``, the input array is returned.
+    The shape can be supplied without a graph. If omitted, it is inferred from
+    ``graph`` when the graph satisfies :class:`~higra.CptGridGraph`.
+    If no shape is available, the input array is returned unchanged.
+    When both a graph and a shape are available, the graph's vertex count must
+    equal the product of the shape dimensions.
 
-    Else if ``shape`` is a prefix of ``vertex_weights.shape`` then the input array is returned.
+    If ``shape`` is a prefix of ``vertex_weights.shape`` then the input array is returned.
 
     Else if ``vertex_weights.shape[0]`` is equal to the product of the elements in ``shape`` then the first dimension of
     ``vertex_weights`` is expanded (delinearized) into the sequence of dimensions given by ``shape``
 
     Else: an exception is raised.
 
-    Note that this function tries its best to guess what should be done but some ambiguity might always exist.
+    A matching spatial prefix takes precedence over a matching first axis.
 
     :Examples:
 
@@ -185,32 +208,33 @@ def delinearize_vertex_weights(vertex_weights, graph=None, shape=None):
         (4, 5, 10, 12)
 
     Raises:
-        ValueError: if ``vertex_weights.shape`` and ``shape`` are incompatible.
+        ValueError: if ``vertex_weights.shape`` and ``shape`` are incompatible,
+            a shape dimension is negative, or the graph's vertex count differs
+            from the product of the shape dimensions.
+        TypeError: if ``shape`` is not a sequence of integers.
 
     :See:
         :func:`~higra.linearize_vertex_weights`
 
     :param vertex_weights: an ndarray representing vertex weights on a square nd-grid
     :param graph: a graph (optional, Concept :class:`~higra.CptGridGraph`)
-    :param shape: a list of integers (optional, deduced from Concept :class:`~higra.CptGridGraph`)
+    :param shape: a sequence of non-negative integers (optional, deduced from Concept :class:`~higra.CptGridGraph`)
     :return: maybe reshaped vertex_weights
     """
     if shape is None:
         return vertex_weights
 
+    shape, num_elements = _vertex_weights_shape_size(shape, graph)
     v_shape = vertex_weights.shape
 
     if len(v_shape) >= len(shape):
         if np.array_equal(shape, v_shape[:len(shape)]):
             return vertex_weights
 
-    num_elements = 1
-    for i in shape:
-        num_elements *= i
-
-    if v_shape[0] != num_elements:
+    if not v_shape or v_shape[0] != num_elements:
         raise ValueError("Vertex weights shape " + str(v_shape) +
-                         " is not compatible with graph size " + str(graph.num_vertices()) + ".")
+                         " is not compatible with shape " + str(shape) +
+                         " (" + str(num_elements) + " vertices).")
 
     return vertex_weights.reshape(list(shape) + list(v_shape[1:]))
 
