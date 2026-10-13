@@ -70,20 +70,6 @@ namespace py_tree_graph {
     };
 
     template<typename graph_t>
-    struct def_tree_ctr {
-        template<typename type, typename C>
-        static
-        void def(C &c, const char *doc) {
-            c.def(py::init(
-                          [](const pyarray<type> &parent, hg::tree_category category) { return graph_t(parent, category); }),
-                  doc,
-                  py::arg("parent_relation"),
-                  py::arg("category") = hg::tree_category::partition_tree
-            );
-        }
-    };
-
-    template<typename graph_t>
     struct def_is_leaf {
         template<typename type, typename C>
         static
@@ -201,8 +187,21 @@ namespace py_tree_graph {
                                      "An optimized static tree structure with nodes stored linearly in topological order (from leaves to root).",
                                      py::dynamic_attr());
 
-        add_type_overloads<def_tree_ctr<graph_t>, HG_TEMPLATE_INTEGRAL_TYPES>
-                (c, "Create a tree from the given parent relation.");
+        c.def(py::init([](const pyarray<hg::index_t> &parents, hg::tree_category category) {
+                  return graph_t(parents, category);
+              }),
+              "Create a tree from a 1d parent relation. Every parent must be in [0, N), "
+              "the last node must be its own parent, other parents must follow their children, "
+              "and leaves must precede internal nodes. Invalid indices or array rank raise RuntimeError. "
+              "An empty relation has root -1; [0] is a singleton. The default category is PartitionTree.",
+              py::arg("parent_relation"),
+              py::arg("category") = hg::tree_category::partition_tree);
+        // Smaller integral types promote losslessly to index_t. Keep uint64 arrays
+        // in their source type so the native constructor checks before narrowing.
+        c.def(py::init([](const pyarray<uint64_t> &parents, hg::tree_category category) {
+                  return graph_t(parents, category);
+              }), py::arg("parent_relation").noconvert(),
+              py::arg("category") = hg::tree_category::partition_tree);
         add_edge_accessor_graph_concept<graph_t, decltype(c)>(c);
 
         ///////////////////////////////////

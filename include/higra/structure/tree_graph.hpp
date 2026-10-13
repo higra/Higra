@@ -11,6 +11,7 @@
 #pragma once
 
 #include <functional>
+#include <limits>
 #include "details/indexed_edge.hpp"
 #include "details/graph_concepts.hpp"
 #include "higra/structure/details/iterators.hpp"
@@ -108,10 +109,16 @@ namespace hg {
 
             }
 
+            /**
+             * Construct from a 1d parent expression. Parent values are checked before
+             * conversion to index_t: 0 <= parent < size, root last and self-parented,
+             * other parents after children, and leaves before internal nodes.
+             * Empty input has root invalid_index; {0} is a singleton tree.
+             */
             template<typename T>
             tree(const xt::xexpression<T> &parents = xt::xarray<vertex_descriptor>({0}),
                  tree_category category = tree_category::partition_tree) :
-                    _parents(parents),
+                    _parents(_validated_parents(parents.derived_cast())),
                     _children_computed(false),
                     _children(0),
                     _category(category) {
@@ -122,7 +129,7 @@ namespace hg {
             template<typename T>
             tree(xt::xexpression<T> &&parents = xt::xarray<vertex_descriptor>({0}),
                  tree_category category = tree_category::partition_tree) :
-                    _parents(std::move(parents.derived_cast())),
+                    _parents(_validated_parents(std::move(parents.derived_cast()))),
                     _children_computed(false),
                     _children(0),
                     _category(category) {
@@ -253,6 +260,20 @@ namespace hg {
 
 
         private:
+
+            template<typename T>
+            static decltype(auto) _validated_parents(T &&parents) {
+                hg_assert(parents.dimension() == 1, "parents must be a linear (1d) array");
+                hg_assert(parents.size() <= static_cast<size_t>((std::numeric_limits<index_t>::max)()),
+                          "too many tree nodes for index_t");
+                for (const auto parent : parents) {
+                    // Compare in the source type, before unsigned or wider values can narrow.
+                    using comparison_t = std::common_type_t<decltype(parent), size_t>;
+                    hg_assert(parent >= 0 && static_cast<comparison_t>(parent) < parents.size(),
+                              "parent index must be nonnegative and smaller than the number of nodes");
+                }
+                return std::forward<T>(parents);
+            }
 
             void _init() {
                 if (_parents.size() == 0) {

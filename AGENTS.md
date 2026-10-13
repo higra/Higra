@@ -118,6 +118,11 @@ requirements, which include a released Higra package.
    diff and whitespace. Documentation-only changes need link/command review;
    do not rebuild the entire library solely for prose edits.
 
+## Public documentation guidance
+
+After implementing/modifying a feature, review all public documentation changes independently, adopting the perspective of a user who has not seen the implementation or the development discussion. Rewrite any text that assumes implementation knowledge, explains internal engineering decisions, or narrates the changes made during the task. Refer to the [public documentation guide](docs/agents/public-documentation.md) for detailed guidance on writing user-facing documentation.
+
+
 ## Detailed guidance
 
 - [Architecture and API paths](docs/agents/architecture.md)
@@ -126,3 +131,4 @@ requirements, which include a released Higra package.
 - [Python bindings and frontend conventions](docs/agents/python-bindings.md)
 - [Incremental component trees](docs/agents/incremental-component-trees.md)
 - [Documentation, generated files, and maintenance](docs/agents/documentation-and-maintenance.md)
+- [Public documentation guidance](docs/agents/public-documentation.md)

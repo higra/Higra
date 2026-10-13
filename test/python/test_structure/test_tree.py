@@ -64,6 +64,69 @@ class TestTree(unittest.TestCase):
         self.assertTrue(t.num_edges() == 0)
         self.assertTrue(t.num_leaves() == 0)
 
+    def test_parent_bounds_all_integral_dtypes(self):
+        for dtype in (np.int8, np.uint8, np.int16, np.uint16,
+                      np.int32, np.uint32, np.int64, np.uint64):
+            info = np.iinfo(dtype)
+            invalid = [3, 10, info.max]
+            if info.min < 0:
+                invalid += [-1, info.min]
+            for bad in invalid:
+                with self.subTest(dtype=dtype, bad=bad):
+                    parents = np.array([bad, 2, 2], dtype=dtype)
+                    original = parents.copy()
+                    with self.assertRaisesRegex(RuntimeError, "parent index"):
+                        hg.Tree(parents)
+                    np.testing.assert_array_equal(parents, original)
+            for values in ([2, 2, 3], [10]):
+                with self.assertRaisesRegex(RuntimeError, "parent index"):
+                    hg.Tree(np.array(values, dtype=dtype))
+            # Logical iteration must also validate strided arrays.
+            with self.assertRaisesRegex(RuntimeError, "parent index"):
+                hg.Tree(np.array([10, 0, 2, 0, 2, 0], dtype=dtype)[::2])
+            for category in (hg.TreeCategory.PartitionTree, hg.TreeCategory.ComponentTree):
+                for values, leaves in (([], 0), ([0], 1), ([2, 2, 2], 2)):
+                    with self.subTest(dtype=dtype, category=category, values=values):
+                        parents = np.array(values, dtype=dtype)
+                        tree = hg.Tree(parents, category)
+                        self.assertEqual(tree.category(), category)
+                        self.assertEqual(tree.root(), len(values) - 1)
+                        self.assertEqual(tree.num_vertices(), len(values))
+                        self.assertEqual(tree.num_leaves(), leaves)
+                        np.testing.assert_array_equal(tree.parents(), values)
+                        np.testing.assert_array_equal(parents, values)
+                        self.assertEqual(list(tree.leaves_to_root_iterator()), list(range(len(values))))
+                        self.assertEqual(list(tree.root_to_leaves_iterator()), list(reversed(range(len(values)))))
+                        if len(values) == 3:
+                            np.testing.assert_array_equal(tree.children(2), [0, 1])
+
+    def test_parent_sequences_before_narrowing(self):
+        for values in ([3, 2, 2], [10, 2, 2], [258, 258, 258],
+                       [2 ** 32 + 2] * 3, [-1, 2, 2], [2 ** 63 - 1, 2, 2]):
+            for sequence in (list(values), tuple(values)):
+                with self.subTest(sequence=sequence):
+                    with self.assertRaisesRegex(RuntimeError, "parent index"):
+                        hg.Tree(sequence)
+        for values in ([2 ** 63 + 2] * 3, [2 ** 64 + 2] * 3, [2 ** 64 - 1, 2, 2]):
+            for sequence in (list(values), tuple(values), np.array(values, dtype=object)):
+                with self.subTest(sequence=sequence):
+                    with self.assertRaises(TypeError):
+                        hg.Tree(sequence)
+        for values in ([], [0], [2, 2, 2], [128] * 129):
+            for sequence in (list(values), tuple(values)):
+                np.testing.assert_array_equal(hg.Tree(sequence).parents(), values)
+
+    def test_parent_rank_and_topology(self):
+        for parents in (np.array(0), np.array([[0]]), np.empty((0, 2), dtype=np.int64),
+                        np.empty((2, 0), dtype=np.uint64), [[2, 2, 2]]):
+            with self.subTest(shape=np.shape(parents)):
+                with self.assertRaisesRegex(RuntimeError, "1d"):
+                    hg.Tree(parents)
+        for parents in ([2, 2, 0], [0, 2, 2], [2, 0, 2], [1, 3, 3, 3]):
+            with self.subTest(parents=parents):
+                with self.assertRaises(RuntimeError):
+                    hg.Tree(parents)
+
     def test_dynamic_attributes(self):
         t = TestTree.get_tree()
         t.new_attribute = 42

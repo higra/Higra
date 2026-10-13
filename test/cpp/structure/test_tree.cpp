@@ -12,6 +12,8 @@
 #include "higra/graph.hpp"
 #include "../test_utils.hpp"
 #include <functional>
+#include <limits>
+#include "catch2/matchers/catch_matchers_string.hpp"
 
 namespace tree {
 
@@ -45,6 +47,75 @@ namespace tree {
         hg::tree t3(std::move(p3));
         REQUIRE(hg::num_vertices(t2) == 8);
         REQUIRE(p3.size() == 0);
+    }
+
+    TEMPLATE_TEST_CASE("tree parent validation before conversion", "[tree]",
+                       int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t) {
+        using limits = std::numeric_limits<TestType>;
+        for (TestType bad : {TestType(3), TestType(10), (limits::max)()}) {
+            array_1d<TestType> parents{bad, 2, 2};
+            auto original = parents;
+            REQUIRE_THROWS_WITH(hg::tree(parents), Catch::Matchers::ContainsSubstring("parent index"));
+            REQUIRE(parents == original);
+            REQUIRE_THROWS_AS(hg::tree(array_1d<TestType>{bad, 2, 2}), std::runtime_error);
+            REQUIRE_THROWS_AS(hg::tree(parents + TestType(0)), std::runtime_error);
+            REQUIRE_THROWS_AS(hg::tree(array_1d<TestType>{2, 2, bad}), std::runtime_error);
+            REQUIRE_THROWS_AS(hg::tree(array_1d<TestType>{bad}), std::runtime_error);
+        }
+        if constexpr (limits::is_signed) {
+            for (TestType bad : {TestType(-1), (limits::min)()}) {
+                array_1d<TestType> parents{bad, 2, 2};
+                REQUIRE_THROWS_AS(hg::tree(parents), std::runtime_error);
+                REQUIRE_THROWS_AS(hg::tree(std::move(parents)), std::runtime_error);
+            }
+        }
+        for (auto category : {tree_category::partition_tree, tree_category::component_tree}) {
+            for (array_1d<TestType> parents : {array_1d<TestType>{}, array_1d<TestType>{0},
+                                             array_1d<TestType>{2, 2, 2}}) {
+                auto original = parents;
+                hg::tree t(parents, category);
+                REQUIRE(parents == original);
+                REQUIRE(t.category() == category);
+                REQUIRE(t.root() == (parents.size() == 0 ? invalid_index : index_t(parents.size() - 1)));
+                REQUIRE(t.num_vertices() == parents.size());
+                REQUIRE(t.num_leaves() == (parents.size() == 0 ? 0 : parents.size() == 1 ? 1 : 2));
+                REQUIRE(t.parents() == parents);
+                t.compute_children();
+                REQUIRE(std::vector<index_t>(t.leaves_to_root_iterator().begin(),
+                                            t.leaves_to_root_iterator().end()).size() == parents.size());
+                if (parents.size() == 3) {
+                    REQUIRE(t.children(2) == std::vector<index_t>{0, 1});
+                }
+                hg::tree moved(std::move(parents), category);
+                REQUIRE(moved.parents() == t.parents());
+                REQUIRE(moved.category() == category);
+            }
+        }
+    }
+
+#ifdef __SIZEOF_INT128__
+    TEST_CASE("tree wider parents cannot wrap to valid indices", "[tree]") {
+        using wide_t = unsigned __int128;
+        const wide_t bad = (wide_t(1) << 64) + 2;
+        array_1d<wide_t> parents{bad, bad, bad};
+        REQUIRE_THROWS_WITH(hg::tree(parents), Catch::Matchers::ContainsSubstring("parent index"));
+        REQUIRE_THROWS_AS(hg::tree(std::move(parents)), std::runtime_error);
+    }
+#endif
+
+    TEST_CASE("tree invalid topology and rank", "[tree]") {
+        for (array_1d<index_t> parents : {array_1d<index_t>{2, 2, 0}, array_1d<index_t>{0, 2, 2},
+                                        array_1d<index_t>{2, 0, 2}, array_1d<index_t>{1, 3, 3, 3}}) {
+            REQUIRE_THROWS_AS(hg::tree(parents), std::runtime_error);
+            REQUIRE_THROWS_AS(hg::tree(std::move(parents)), std::runtime_error);
+        }
+        for (auto shape : {std::vector<size_t>{}, std::vector<size_t>{1, 1},
+                           std::vector<size_t>{0, 2}, std::vector<size_t>{2, 0}}) {
+            auto parents = xt::xarray<index_t>::from_shape(shape);
+            parents.fill(0);
+            REQUIRE_THROWS_WITH(hg::tree(parents), Catch::Matchers::ContainsSubstring("1d"));
+            REQUIRE_THROWS_AS(hg::tree(std::move(parents)), std::runtime_error);
+        }
     }
 
     TEST_CASE("tree children", "[tree]") {
