@@ -42,6 +42,11 @@ defaults to ``TreeCategory.PartitionTree`` in Python and
 ``TreeCategory.ComponentTree`` or ``hg::tree_category::component_tree`` when
 constructing a component tree manually.
 
+The parent relation must be one-dimensional. For ``N`` nodes, every parent
+must lie in ``[0, N)``; the root is node ``N - 1`` and its own parent. Every
+other parent must have a larger index than its child, and all leaves must
+precede internal nodes.
+
 Example:
 
 .. tabs::
