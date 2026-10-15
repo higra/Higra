@@ -13,10 +13,11 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
+import sys
 import os
+
+sys.path.insert(0, os.path.abspath('_exts'))
+
 import subprocess
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
@@ -56,6 +57,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
     'sphinx_tabs.tabs',
+    'display_graph',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

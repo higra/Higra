@@ -10,6 +10,7 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
+import networkx as nx
 import numpy as np
 import colorsys
 
@@ -47,3 +48,18 @@ def lighten_color(color_list, amount=0.25):
         lc = colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
         out.append(lc)
     return out
+
+def higra_graph_to_networkx(graph):
+    """
+    Compute and return the Networkx translation of the Higra.UndirectedGraph
+
+    :param graph: (type: Higra.UndirectedGraph) the original graph
+    :return: (type: networkx.Graph) the translated graph
+    """
+    sources, targets = graph.edge_list()
+
+    nxGraph = nx.Graph()
+    nxGraph.add_nodes_from(range(graph.num_vertices()))
+    nxGraph.add_edges_from(zip(sources, targets))
+
+    return nxGraph

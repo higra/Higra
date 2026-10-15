@@ -982,17 +982,13 @@ def attribute_node_bounding_box(tree, leaf_graph):
 
     Consider the following 3 x 3 grid graph, whose edges are labelled with their weights:
 
-    .. code-block:: text
+    .. display_graph:: 
 
-        (0)-- 0 --(1)-- 2 --(2)
-        |         |         |
-        6         6         0
-        |         |         |
-        (3)-- 0 --(4)-- 4 --(5)
-        |         |         |
-        5         5         3
-        |         |         |
-        (6)-- 0 --(7)-- 1 --(8)
+    GRAPH_4_ADJACENCY
+    shape = (3, 3)
+    vertex_positions = np.asarray([(0, 2), (1, 2), (2, 2), (0, 1), (1, 1), (2, 1), (0, 0), (1, 0), (2, 0)])
+    edge_weights = [0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1]
+    display_edge_weights = True
 
     and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
 
