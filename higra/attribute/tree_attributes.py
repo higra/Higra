@@ -17,13 +17,64 @@ import higra as hg
 @hg.auto_cache
 def attribute_area(tree, vertex_area=None, leaf_graph=None):
     """
-    Area of each node the given tree.
-    The area of a node is equal to the sum of the area of the leaves of the subtree rooted in the node.
+    Compute the area of each node of the given tree.
+
+    Each leaf of the tree corresponds to a vertex of the leaf graph (for example a pixel) and has an area :math:`a(v)`.
+    The area :math:`A(n)` of a node :math:`n` is the total area of the region it represents, i.e. the sum of the
+    areas of the leaves of the subtree rooted in :math:`n`:
+
+    .. math::
+
+        A(n) = \sum_{v \in leaves(n)} a(v)
+
+    Equivalently, the area of a leaf is its own area, and the area of an internal node is the sum of the areas of
+    its children:
+
+    .. math::
+
+        A(n) = \\begin{cases}
+            a(n) & \\textrm{if } n \\textrm{ is a leaf}\\\\
+            \sum_{c \in children(n)} A(c) & \\textrm{otherwise}
+        \\end{cases}
+
+    The area of the root is thus the total area of all the leaves.
+
+    The leaf areas are determined as follows:
+
+    - if :attr:`vertex_area` is provided, it gives the area of each leaf: a 1d array with one element per leaf or,
+      if the leaf graph is a grid graph (e.g. an image), an array whose first dimensions follow the shape of the grid;
+    - otherwise, if the tree has a leaf graph, the area of each leaf is given by :func:`~higra.attribute_vertex_area`
+      (1 for each vertex, except for a region adjacency graph where it is the number of pixels in the region);
+    - otherwise, the area of each leaf is 1, and the area of a node is then its number of leaves.
+
+    :Complexity:
+
+    The runtime complexity is :math:`\mathcal{O}(N)` with :math:`N` the number of nodes in the tree.
+
+    :Example:
+    =======
+
+    Let :math:`T` be a binary tree with 5 leaves (nodes 0 to 4): node 5 is the parent of the leaves 0 and 1,
+    node 6 is the parent of the leaves 2 and 3, node 7 is the parent of the nodes 5 and 6, and the root
+    node 8 is the parent of the leaf 4 and of the node 7:
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        hg.attribute_area(tree)
+        # array([1., 1., 1., 1., 1., 2., 2., 4., 5.])
+
+    With custom leaf areas:
+
+    .. code-block:: python
+
+        hg.attribute_area(tree, vertex_area=np.asarray((1, 2, 3, 4, 5)))
+        # array([ 1,  2,  3,  4,  5,  3,  7, 10, 15])
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param vertex_area: area of the vertices of the leaf graph of the tree (provided by :func:`~higra.attribute_vertex_area` on `leaf_graph` )
     :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
-    :return: a 1d array
+    :return: a 1d array representing the area of each node of the tree
     """
     if vertex_area is None:
         if leaf_graph is not None:
@@ -39,22 +90,53 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
 @hg.auto_cache
 def attribute_volume(tree, altitudes, area=None, leaf_volume=None):
     """
-    Volume of each node the given tree.
+    Compute the volume under the curve of each node the given tree.
     The volume :math:`V(n)` of a node :math:`n` is defined recursively as:
 
     .. math::
 
         V(n) = area(n) * | altitude(n) - altitude(parent(n)) | +  \sum_{c \in children(n)} V(c)
 
-    The leaves are initialized with ``leaf_volume``. If ``leaf_volume`` is ``None``,
+    The recursive formula applies to the non-leaf nodes. The volume of a leaf is not computed with this formula:
+    it is simply equal to the corresponding value of ``leaf_volume``. If ``leaf_volume`` is ``None``,
     leaf volumes are set to 0.
 
-    :param tree: input tree
-    :param altitudes: node altitudes of the input tree
+    The root of the tree is its own parent: its altitude difference with its parent is null, hence the root does not
+    add any volume of its own and its volume is the sum of the volumes of its children.
+
+    If the area of the nodes is not provided, it is computed with :func:`~higra.attribute_area` on the input tree.
+
+    :Complexity:
+
+    The runtime complexity is :math:`\mathcal{O}(N)` with :math:`N` the number of nodes in the tree.
+
+    :Example:
+    =======
+    
+    Let :math:`T` be a binary tree with 5 leaves (nodes 0 to 4): node 5 is the parent of the leaves 0 and 1,
+    node 6 is the parent of the leaves 2 and 3, node 7 is the parent of the nodes 5 and 6, and the root
+    node 8 is the parent of the leaf 4 and of the node 7:
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 4, 5))
+        hg.attribute_volume(tree, altitudes)
+        # array([ 0.,  0.,  0.,  0.,  0.,  6.,  4., 14., 14.])
+
+    With a non-zero initial volume for the leaves:
+
+    .. code-block:: python
+
+        hg.attribute_volume(tree, altitudes, leaf_volume=np.asarray((1, 1, 1, 1, 1)))
+        # array([ 1.,  1.,  1.,  1.,  1.,  8.,  6., 18., 19.])
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param altitudes: node altitudes of the input tree (Numpy array of shape (tree.num_vertices(),))
     :param area: area of the nodes of the input hierarchy (provided by :func:`~higra.attribute_area` on `tree`)
-    :param leaf_volume: initial volume of the leaves of the tree (default is 0 for all leaves);
+    :param leaf_volume: initial volume of the leaves of the tree (default is 0 for all leaves) (Numpy array of shape (tree.num_leaves(),));
         useful when leaves represent pre-existing regions, for example in region adjacency graph based hierarchies
-    :return: a 1d array
+    :return: a 1d array representing the volume of each node of the tree
     """
     if area is None:
         area = hg.attribute_area(tree)
@@ -72,14 +154,65 @@ def attribute_volume(tree, altitudes, area=None, leaf_volume=None):
 @hg.auto_cache
 def attribute_lca_map(tree, leaf_graph):
     """
-    Lowest common ancestor of `i` and `j` for each edge :math:`(i, j)` of the leaf graph of the given tree.
+    Compute the lowest common ancestor of `i` and `j` for each edge :math:`(i, j)` of the leaf graph of the given tree.
 
-    Complexity: :math:`\mathcal{O}(n\log(n)) + \mathcal{O}(m)` where :math:`n` is the number of nodes in `tree` and
+    Complexity: 
+    
+    The runtime complexity is :math:`\mathcal{O}(n\log(n)) + \mathcal{O}(m)` where :math:`n` is the number of nodes in `tree` and
     :math:`m` is the number of edges in :attr:`leaf_graph`.
+
+    :Example:
+    =======
+
+    Consider the following 3 x 3 grid graph, whose edges are labelled with their weights:
+
+    .. code-block:: text
+
+        (0)-- 0 --(1)-- 2 --(2)
+        |         |         |
+        6         6         0
+        |         |         |
+        (3)-- 0 --(4)-- 4 --(5)
+        |         |         |
+        5         5         3
+        |         |         |
+        (6)-- 0 --(7)-- 1 --(8)
+
+    and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
+
+    .. code-block:: text
+
+        4                 +-------16------+
+                          |               |
+        3         +-------15-----+        |
+                  |              |        |
+        2     +---14--+          |        |
+              |       |          |        |
+        1     |       |       +--13-+     |
+              |       |       |     |     |
+        0   +-9-+   +-10+   +-12+   |   +-11+
+            +   +   +   +   +   +   +   +   +
+            0   1   2   5   6   7   8   3   4
+
+    .. code-block:: python
+
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        hg.attribute_lca_map(tree)
+        # array([ 9, 16, 14, 16, 10, 11, 16, 16, 16, 15, 12, 13])
+
+    The result contains one value per edge of the graph, in the order of the edges of `graph`.
+    For example:
+
+    - the edge :math:`\{0, 1\}` (first edge): the leaves 0 and 1 are merged in the node 9;
+    - the edge :math:`\{1, 2\}` (third edge): the leaf 1 is in the node 9 and the leaf 2 in the node 10, which are merged in the node 14;
+    - the edge :math:`\{0, 3\}` (second edge): the leaves 0 and 3 are only merged in the root, the node 16.
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy` on `tree`)
-    :return: a 1d array
+    :return: a 1d array representing the lowest common ancestor of the two leaves of each edge of `leaf_graph`
     """
     lca = tree.lowest_common_ancestor_preprocess()
     res = lca.lca(leaf_graph)
@@ -840,10 +973,10 @@ def attribute_node_bounding_box(tree, leaf_graph):
         axis 1: spatial coordinate
         axis 2: minimum or maximum
 
-    Example
+    :Example:
     =======
 
-    Consider the following 3 x 3 grid graph:
+    Consider the following 3 x 3 grid graph, whose edges are labelled with their weights:
 
     .. code-block:: text
 
@@ -857,7 +990,7 @@ def attribute_node_bounding_box(tree, leaf_graph):
         |         |         |
         (6)-- 0 --(7)-- 1 --(8)
 
-    and the tree:
+    and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
 
     .. code-block:: python
 
@@ -881,7 +1014,7 @@ def attribute_node_bounding_box(tree, leaf_graph):
         tree, _ = hg.bpt_canonical(graph, edge_weights)
         result = hg.attribute_node_bounding_box(tree)
 
-    The bounding box of the root node 6 is:
+    The bounding box of the leaf node 6 is:
     
         .. code-block:: python
     
