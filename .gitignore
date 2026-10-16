@@ -17,3 +17,4 @@ higra.egg-info
 dist
 
 *.so
+.DS_Store
