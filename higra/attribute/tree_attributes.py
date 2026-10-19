@@ -49,7 +49,10 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
 
     :Complexity:
 
-    The runtime complexity is :math:`\mathcal{O}(N)` with :math:`N` the number of nodes in the tree.
+    The tree accumulation takes :math:`\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
+    If ``vertex_area`` is omitted and a leaf graph is available, add the cost of
+    :func:`~higra.attribute_vertex_area`. For a region adjacency graph, uncached area computation also
+    accumulates over the vertices of its underlying graph(s).
 
     :Example:
     =======
@@ -108,7 +111,9 @@ def attribute_volume(tree, altitudes, area=None, leaf_volume=None):
 
     :Complexity:
 
-    The runtime complexity is :math:`\mathcal{O}(N)` with :math:`N` the number of nodes in the tree.
+    The volume accumulation takes :math:`\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
+    If ``area`` is omitted, add the cost of :func:`~higra.attribute_area`, including any uncached
+    leaf-area computation for the underlying graph(s) of a region adjacency graph.
 
     :Example:
     =======
@@ -158,8 +163,7 @@ def attribute_lca_map(tree, leaf_graph):
 
     Complexity: 
     
-    The runtime complexity is :math:`\mathcal{O}(n\log(n)) + \mathcal{O}(m)` where :math:`n` is the number of nodes in `tree` and
-    :math:`m` is the number of edges in :attr:`leaf_graph`.
+    The runtime complexity is `\mathcal{O}(m)` where :math:`m` is the number of edges in :attr:`leaf_graph` plus :math:`\mathcal{O}(n\log(n))` on the first call (pre-processing) where :math:`n` is the number of nodes in `tree`.
 
     :Example:
     =======
