@@ -228,19 +228,99 @@ def attribute_lca_map(tree, leaf_graph):
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_frontier_length(tree, edge_length=None, leaf_graph=None):
     """
-    Length of the frontier represented by each node the given partition tree.
+    Compute the length of the frontier represented by each node of the given partition tree.
 
     In a partition tree, each node represent the merging of 2 or more regions.
     The frontier of a node is then defined as the common contour between the merged regions.
     This function compute the length of these common contours as the sum of the length of edges going from one of the
-    merged region to the other one.
+    merged region to the other one
+
+    The lowest common ancestor of the two extremities of each edge of the leaf graph is computed
+    (see :func:`~higra.attribute_lca_map`), then the length of each edge is added to the value of its lowest common
+    ancestor:
+
+    .. math::
+
+        F(n) = \\sum_{e = \\{i, j\\} \\in E,\\ lca(i, j) = n} l(e)
+
+    where :math:`l(e)` is the length of the edge :math:`e`. As a leaf is never the lowest common ancestor of an edge,
+    its value is 0.
+
+    The edge lengths are determined as follows:
+
+    - if :attr:`edge_length` is provided, it gives the length of each edge of the leaf graph (a 1d array with one
+      element per edge);
+    - otherwise, the length of each edge is given by :func:`~higra.attribute_edge_length` on the leaf graph.
 
     The result has the same dtype as the edge_length array.
 
-    :param tree: input tree
+    :Complexity:
+
+    The runtime complexity is :math:`\\mathcal{O}(N\\log(N) + M)` where :math:`N` is the number of nodes in the tree and
+    :math:`M` is the number of edges in the leaf graph (computation of the lowest common ancestors followed by one
+    accumulation over the edges).
+
+    :Example:
+    =======
+    
+    Consider the following 3 x 3 grid graph, whose edges are labelled with their weights:
+
+    .. code-block:: text
+
+        (0)-- 0 --(1)-- 2 --(2)
+        |         |         |
+        6         6         0
+        |         |         |
+        (3)-- 0 --(4)-- 4 --(5)
+        |         |         |
+        5         5         3
+        |         |         |
+        (6)-- 0 --(7)-- 1 --(8)
+
+    and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
+
+    .. code-block:: text
+
+        4                 +-------16------+
+                          |               |
+        3         +-------15-----+        |
+                  |              |        |
+        2     +---14--+          |        |
+              |       |          |        |
+        1     |       |       +--13-+     |
+              |       |       |     |     |
+        0   +-9-+   +-10+   +-12+   |   +-11+
+            +   +   +   +   +   +   +   +   +
+            0   1   2   5   6   7   8   3   4
+
+    .. code-block:: python
+
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        hg.attribute_frontier_length(tree)
+        # array([0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., 1., 1., 1., 1., 1., 5.])
+
+    The node 9 merges the leaves 0 and 1: its frontier is the edge :math:`\\{0, 1\\}`, hence a length of 1.
+    The root merges :math:`\\{0, 1, 2, 5, 6, 7, 8\\}` and :math:`\\{3, 4\\}`: its frontier is made of the edges
+    :math:`\\{0, 3\\}`, :math:`\\{1, 4\\}`, :math:`\\{3, 6\\}`, :math:`\\{4, 5\\}` and :math:`\\{4, 7\\}`, hence a length of 5.
+
+    With custom edge lengths, here the edge :math:`e_k` has length :math:`k+1`:
+
+    .. code-block:: python
+
+        edge_length = np.arange(1, 13)
+        hg.attribute_frontier_length(tree, edge_length=edge_length)
+        # array([ 0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  5,  6, 11, 12,  3, 10, 30])
+
+    The frontier of the root is now the sum of the lengths of the edges :math:`e_1, e_3, e_6, e_7, e_8`, that is
+    :math:`2 + 4 + 7 + 8 + 9 = 30`.
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param edge_length: length of the edges of the leaf graph (provided by :func:`~higra.attribute_edge_length` on `leaf_graph`)
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
-    :return: a 1d array
+    :return: a 1d array representing the length of the frontier of each node of the tree
     """
 
     if edge_length is None:
@@ -257,19 +337,92 @@ def attribute_frontier_length(tree, edge_length=None, leaf_graph=None):
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     """
-    Mean edge weight along the frontier represented by each node the given partition tree.
+    Compute the mean edge weight along the frontier represented by each node of the given partition tree.
 
     In a partition tree, each node represent the merging of 2 or more regions.
     The frontier of a node is then defined as the common contour between the merged regions.
     This function compute the strength of a common contour as the sum of the weights of edges going from one of the
     merged region to the other one divided by the length of the contour.
 
-    The result has the same dtype as the edge_weights array.
+    The strength of a frontier is the sum of its edge weights divided by its
+    length. The weights are accumulated on the edges of the leaf graph when
+    they are provided on the underlying graph of a region adjacency graph.
+    The frontier length is computed using the default edge lengths of the
+    leaf graph (see :func:`~higra.attribute_frontier_length`).
 
-    :param tree: input tree
-    :param edge_weights: weight of the edges of the leaf graph (if leaf_graph is a region adjacency graph, edge_weights might be weights on the edges of the pre-graph of the rag).
+    Let :math:`E` be the edge set of the leaf graph, and let
+    :math:`E_n = \{e = \{i,j\} \in E \mid lca(i,j)=n\}`. Then:
+
+    .. math::
+
+        S(n) = \frac{\sum_{e \in E_n} w(e)}{\sum_{e \in E_n} l(e)}
+
+    where :math:`w(e)` is the edge weight, after any required accumulation
+    from the underlying graph, and :math:`l(e)` is the default edge length
+    used by :func:`~higra.attribute_frontier_length`. For an ordinary graph
+    with unit edge lengths, the denominator is the number of frontier edges.
+    For a region adjacency graph, it is the total length of the frontier.
+    The value of a leaf is 0.
+
+    If the leaf graph is a region adjacency graph and `edge_weights` has one value per edge of its underlying graph,
+    the weights are first summed on the edges of the region adjacency graph (see :func:`~higra.rag_accumulate_on_edges`).
+
+    The result has the same dtype as the edge_weights array: with integer weights, the mean is truncated.
+
+    :Complexity:
+
+    The runtime complexity is :math:`\\mathcal{O}(N\\log(N) + M)` where :math:`N` is the number of nodes in the tree and
+    :math:`M` is the number of edges in the leaf graph.
+
+    :Example:
+    =======
+
+    Consider the 3 x 3 grid graph and the binary partition tree of :func:`~higra.attribute_frontier_length`:
+
+    .. code-block:: text
+
+        (0)-- 0 --(1)-- 2 --(2)
+        |         |         |
+        6         6         0
+        |         |         |
+        (3)-- 0 --(4)-- 4 --(5)
+        |         |         |
+        5         5         3
+        |         |         |
+        (6)-- 0 --(7)-- 1 --(8)
+
+        4                 +-------16------+
+                          |               |
+        3         +-------15-----+        |
+                  |              |        |
+        2     +---14--+          |        |
+              |       |          |        |
+        1     |       |       +--13-+     |
+              |       |       |     |     |
+        0   +-9-+   +-10+   +-12+   |   +-11+
+            +   +   +   +   +   +   +   +   +
+            0   1   2   5   6   7   8   3   4
+
+    .. code-block:: python
+
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0., 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        hg.attribute_frontier_strength(tree, edge_weights)
+        # array([0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 1. , 2. , 3. , 5.2])
+
+    The frontier of the node 14 is the edge :math:`\\{1, 2\\}` of weight 2, the one of the node 15 is the edge
+    :math:`\\{5, 8\\}` of weight 3. The frontier of the root is made of the edges :math:`\\{0, 3\\}`,
+    :math:`\\{1, 4\\}`, :math:`\\{3, 6\\}`, :math:`\\{4, 5\\}` and :math:`\\{4, 7\\}` of weights 6, 6, 5, 4 and 5:
+    its strength is :math:`(6 + 6 + 5 + 4 + 5) / 5 = 5.2`.
+
+    With integer weights, the result is also an integer array and the strength of the root is truncated to 5.
+
+    :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
+    :param edge_weights: weight of the edges of the leaf graph (if leaf_graph is a region adjacency graph, edge_weights might be weights on the edges of the pre-graph of the rag). (provided by :func:`~higra.rag_accumulate_on_edges` on `leaf_graph`)
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
-    :return: a 1d array
+    :return: a 1d array representing the mean edge weight along the frontier of each node of the tree
     """
     # this is a rag like graph
     if hg.CptRegionAdjacencyGraph.validate(leaf_graph) and edge_weights.shape[0] != leaf_graph.num_edges():
