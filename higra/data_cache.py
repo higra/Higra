@@ -12,6 +12,7 @@ import weakref
 import functools
 import sys
 import inspect
+import warnings as _warnings
 import higra as hg
 
 
@@ -295,271 +296,66 @@ def __add_default_parameter(signature, args, kwargs):
 ###########################################################
 
 def set_auto_cache_state(boolean):
+    """Deprecated no-op; automatic result caching is disabled.
+
+    Emits ``FutureWarning`` and will be removed in the next release.
+    :param boolean: ignored bool; other types still raise ``TypeError``
     """
-    Globally activates or deactivates the caching of :func:`~higra.auto_cache` decorated functions.
-
-    If set to ``True`` (default), an auto cached function will save its results in the object cache of its first argument.
-    Any other call to this function with the same arguments will return the result stored in the cache
-    instead of recomputing a new result (except if this behaviour is locally overridden with the name arguments
-    "force_recompute=True" or "no_cache=True").
-
-    If set to ``False``, auto-cached functions will behave as normal function: they won't try to cache results.
-
-    :See:
-
-    :func:`~higra.get_auto_cache_state`: get current state of the automatic caching.
-
-    :param boolean: ``True`` to globally activate caching, ``False`` to deactivate it
-    :return: nothing
-    """
-    if not isinstance(boolean, type(True)):
+    _warnings.warn("Automatic caching is deprecated and disabled. set_auto_cache_state is now a no-op and will be removed in the next release",
+                  FutureWarning, stacklevel=2)
+    if not isinstance(boolean, bool):
         raise TypeError("Parameter must be a bool.")
-    hg.__auto_caching = boolean
 
 
 def get_auto_cache_state():
-    """
-    Returns the current state of the caching policy for of :func:`~higra.auto_cache` decorated functions.
-
-    :See:
-
-    :func:`~higra.set_auto_cache_state`: modify the state of the automatic caching.
-
-    :return: True if auto-caching is globally active, False otherwise
-    """
-    return hg.__auto_caching
-
-
-# keyword used to store auto cached results in reference object data cache
-_auto_cache_keyword = "data_auto_cache"
+    """Emit ``FutureWarning`` and return ``False``; removed in the next release."""
+    _warnings.warn("Automatic caching is deprecated and disabled. get_auto_cache_state is now a no-op and will be removed in the next release",
+                  FutureWarning, stacklevel=2)
+    return False
 
 
 def clear_auto_cache(*, function=None, reference_object=None, data_cache=None):
+    """Deprecated no-op; emit ``FutureWarning`` without modifying any data.
+
+    All parameters are ignored. Will be removed in the next release.
+    Attributes, tags, concept links and explicit preprocessing are preserved.
     """
-    Cleanup the result cache for the specified elements
-
-    :param function: function or name of a :func:`~higra.auto_cache` decorated function to clear (if ``None`` all functions
-        are cleared)
-    :param reference_object: reference object whose cached data have to be cleared (if ``None`` cache data
-        of all objects are cleared)
-    :param data_cache: data cache to work on (will default to the global Higra cache)
-    :return: nothing
-    """
-    if data_cache is None:
-        data_cache = hg.__higra_global_cache
-
-    if function is None:
-        function_name = None
-    else:
-        if isinstance(function, str):
-            function_name = function
-        else:
-            if hasattr(function, "__name__"):
-                function_name = function.__name__
-            else:
-                raise TypeError("Cannot determine name of " + str(function))
-
-    if function_name is None and reference_object is None:
-        for obj, cache in data_cache:
-            if _auto_cache_keyword in cache:
-                del cache[_auto_cache_keyword]
-
-    elif reference_object is not None and function_name is None:
-        cache = data_cache.get_data(reference_object)
-        if _auto_cache_keyword in cache:
-            del cache[_auto_cache_keyword]
-
-    elif reference_object is None and function_name is not None:
-        for obj, cache in data_cache:
-            if _auto_cache_keyword in cache:
-                cache = cache[_auto_cache_keyword]
-                if function_name in cache:
-                    del cache[function_name]
-
-    else:
-        cache = data_cache.get_data(reference_object)
-        if _auto_cache_keyword in cache:
-            cache = cache[_auto_cache_keyword]
-            if function_name in cache:
-                del cache[function_name]
+    _warnings.warn("Automatic caching is deprecated and disabled.clear_auto_cache is now a no-op and will be removed in the next release",
+                  FutureWarning, stacklevel=2)
 
 
-def __hash_combine(h1, h2):
-    """
-    Combine two hash values to create a new hash value
-    :param h1: int
-    :param h2: int
-    :return: int
-    """
-    h1 = h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h2 >> 2))
-    return h1
-
-
-def __has_method(o, m):
-    """
-    Test if a given object has a given method
-    :param o: object
-    :param m: method name
-    :return: True or False
-    """
-    mm = getattr(o, m, None)
-    return callable(mm)
-
-
-def __make_key(o):
-    """
-    Computes a hash of the given object
-    :param o:
-    :return:
-    """
-    if isinstance(o, int):
-        # because for an int x hash(x) == x which is not very usefull
-        return hash(str(o))
-    elif isinstance(o, (set, tuple, list)):
-        if len(o) != 0:
-            return functools.reduce(__hash_combine, [__make_key(e) for e in o])
-        else:
-            return 0x9e3775b2
-    elif isinstance(o, dict):
-        # not ideal but we use sum to be commutative, i.e. robust to arbitrary ordering of dictionary elements
-        keys = sum([__make_key(k) for k in o.keys()])
-        values = sum([__make_key(v) for v in o.values()])
-        return __hash_combine(keys, values)
-    elif __has_method(o, "__hash__"):
-        try:
-            return hash(o)
-        except TypeError:
-            pass
-
-    return hash(str(id(o)))
-
-
-def __make_hash(*args, **kwargs):
-    return __hash_combine(__make_key(args), __make_key(kwargs))
-
-
-def auto_cache(fun):
-    """
-    Function decorator that provides automatic caching of function results.
-
-    The basic idea is that two successive calls with the same arguments to an *auto_cache* decorated function
-    will indeed produce a single function call. The second time, the result of the first call will be returned.
-
-    Auto cache is useful for expensive functions that might be called in unrelated locations (where manual reuse
-    of function result would be difficult).
-
-    Auto cache can only decorates functions with only positional and named arguments. The first argument of the function
-    must support weak references.
-
-    :Special parameters:
-
-    All functions decorated by ``auto-cache`` support the following named arguments:
-
-        - :attr:`no_cache` (boolean value). If ``True``, auto caching is disabled for this function call: no cached data
-          will be used or stored.
-        - :attr:`force_recompute` (boolean value). If ``True``, no cache result will be used for this function call but
-          the result of the function call will be cached for future use.
-
-    :Caveats:
-
-    A function call is identified by a hash of its arguments. This hash is computed in such a way that non hashable
-    objects (except from dictionaries) are indeed identified by their unique object identifier. This means that calling the same auto-cached function with
-    the same mutated arguments can potentially lead to unexpected results.
-
-    >>> @hg.auto_cache
-    >>> def cached_sum(a):
-    >>>     return sum(a)
-    >>>
-    >>> a = numpy.zeros(10)
-    >>> cached_sum(a)
-    0
-    >>> a[0] = 1 # mutate a
-    >>> cached_sum(a) # auto cache cannot detect mutation of a and returns the cached result
-    0
-
-    This problem can be solved by using :attr:`no_cache`, :attr:`force_recompute` (see above) or by globally disabling
-    function caching (see :func:`~set_auto_cache_state`).
-
-    >>> cached_sum(a, no_cache=True) # or force_recompute=True
-    1
-
-    If you are really unlucky, it might also appends that two unrelated set of arguments get the same hash. In such case
-    the auto cache decorator will consider that they are the same. This is however extremely unlikely to happen.
-
-    :Life Time:
-
-    The data stored in the cache are associated to the first argument of the function called the *reference object*.
-    All data related to a reference object is cleared when it gets garbage collected.
-
-    The cache data associated to a particular function or object can be manually cleared with
-    :func:`~higra.clear_auto_cache`.
-
-    :Global setting:
-
-    Auto caching can be globally disabled, see:
-
-        - :func:`~set_auto_cache_state`
-        - :func:`~get_auto_cache_state`
-
-    :return:
-    """
-
-    original_fun = fun
-    while hasattr(original_fun, 'original'):
-        original_fun = original_fun.original
-
-    signature = inspect.signature(original_fun)
-    __check_valid_signature(signature)
+def _legacy_cache_keywords(fun):
+    """Accept obsolete controls without caching; keep this outside argument_helper."""
+    parameters = inspect.signature(fun).parameters
+    controls = {"no_cache", "force_recompute", "attribute_name", "data_cache"} - parameters.keys()
 
     @functools.wraps(fun)
     def wrapper(*args, **kwargs):
-        data_name = kwargs.pop("attribute_name", fun.__name__)
-        force_recompute = kwargs.pop("force_recompute", False)
-        data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
-        no_cache = kwargs.pop("no_cache", False)
-
-        if no_cache or not hg.__auto_caching:
-            return fun(*args, **kwargs)
-
-        try:
-            obj = None
-            if len(args) > 0:
-                obj = args[0]
-            elif len(kwargs) > 0:
-                first_param_name = signature.parameters.values().__iter__().__next__().name
-                if first_param_name in kwargs:
-                    obj = kwargs[first_param_name]
-
-            if obj is None:
-                raise TypeError("cannot find first parameter")
-
-            cache = data_cache.get_data(obj)
-            cache = cache.setdefault(_auto_cache_keyword, {})
-            cache = cache.setdefault(data_name, {})
-
-            args = __transfer_to_kw_arguments(signature, args, kwargs)
-            __add_default_parameter(signature, args, kwargs)
-            if len(args) > 0:
-                import warnings
-                warnings.warn('Auto cache: all positional parameters could not be transformed into '
-                              'named parameters.')
-
-            h = __make_hash(*args, **kwargs)
-
-            if force_recompute or h not in cache:
-                cache[h] = fun(*args, **kwargs)
-
-            return cache[h]
-        except TypeError as e:
-            # cannot cache obj...
-            return fun(*args, **kwargs)
+        supplied = controls.intersection(kwargs)
+        if supplied:
+            _warnings.warn("Automatic caching is deprecated and disabled. The automatic caching controls " + ", ".join(sorted(supplied)) +
+                          " are ignored and will be removed in the next release",
+                          FutureWarning, stacklevel=2)
+            for name in supplied:
+                del kwargs[name]
+        return fun(*args, **kwargs)
 
     wrapper.original = fun
-    if wrapper.__doc__ is not None:
-        wrapper.__doc__ = wrapper.__doc__ + \
-                          "\n\n    **Auto-cache**: This function is decorated with the :func:`~higra.auto_cache` decorator."
-
+    wrapper._legacy_cache_keywords = True
     return wrapper
+
+
+def auto_cache(fun):
+    """Automatic caching is deprecated and disabled. Deprecated no-op decorator.
+
+    Emits ``FutureWarning`` at decoration, with no warning on ordinary calls.
+    The decorator will be removed in the next release. Implicit ``no_cache``,
+    ``force_recompute``, ``attribute_name`` and ``data_cache`` keywords are
+    accepted but ignored with ``FutureWarning`` when supplied.
+    """
+    _warnings.warn("Automatic caching is deprecated and disabled. auto_cache is now a no-op and will be removed in the next release",
+                  FutureWarning, stacklevel=2)
+    return _legacy_cache_keywords(fun)
 
 ###########################################################
 #                                                         #
@@ -647,7 +443,8 @@ def argument_helper(*concepts):
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
             args = __transfer_to_kw_arguments(signature, args, kwargs)
-            data_cache = kwargs.pop("data_cache", hg.__higra_global_cache)
+            data_cache = (kwargs.get("data_cache") if "data_cache" in all_parameters_name
+                          else kwargs.pop("data_cache", hg.__higra_global_cache))
             all_data_found = dict(kwargs)
             for concept_elem in concepts:
 
@@ -660,13 +457,14 @@ def argument_helper(*concepts):
                 __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache)
 
             if len(args) > 0:
-                import warnings
-                warnings.warn('Argument helper: all positional parameters could not be transformed into '
+                _warnings.warn('Argument helper: all positional parameters could not be transformed into '
                               'named parameters.')
             return fun(*args, **kwargs)
 
         wrapper.original = fun
 
+        if getattr(fun, "_legacy_cache_keywords", False):
+            return _legacy_cache_keywords(wrapper)
         return wrapper
 
     return decorator

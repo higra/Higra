@@ -11,10 +11,11 @@
 
 import numpy as np
 import higra as hg
+from ..data_cache import _legacy_cache_keywords
 
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptHierarchy)
-@hg.auto_cache
 def attribute_area(tree, vertex_area=None, leaf_graph=None):
     """
     Compute the area of each node of the given tree.
@@ -51,7 +52,7 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
 
     The tree accumulation takes :math:`\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
     If ``vertex_area`` is omitted and a leaf graph is available, add the cost of
-    :func:`~higra.attribute_vertex_area`. For a region adjacency graph, uncached area computation also
+    :func:`~higra.attribute_vertex_area`. For a region adjacency graph, area computation also
     accumulates over the vertices of its underlying graph(s).
 
     :Example:
@@ -90,7 +91,7 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
     return hg.accumulate_sequential(tree, vertex_area, hg.Accumulators.sum)
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_volume(tree, altitudes, area=None, leaf_volume=None):
     """
     Compute the volume under the curve of each node the given tree.
@@ -112,7 +113,7 @@ def attribute_volume(tree, altitudes, area=None, leaf_volume=None):
     :Complexity:
 
     The volume accumulation takes :math:`\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
-    If ``area`` is omitted, add the cost of :func:`~higra.attribute_area`, including any uncached
+    If ``area`` is omitted, add the cost of :func:`~higra.attribute_area`, including any
     leaf-area computation for the underlying graph(s) of a region adjacency graph.
 
     :Example:
@@ -155,8 +156,8 @@ def attribute_volume(tree, altitudes, area=None, leaf_volume=None):
     return hg.accumulate_and_add_sequential(tree, height, leaf_volume, hg.Accumulators.sum)
 
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptHierarchy)
-@hg.auto_cache
 def attribute_lca_map(tree, leaf_graph):
     """
     Compute the lowest common ancestor of `i` and `j` for each edge :math:`(i, j)` of the leaf graph of the given tree.
@@ -223,8 +224,8 @@ def attribute_lca_map(tree, leaf_graph):
     return res
 
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptHierarchy)
-@hg.auto_cache
 def attribute_frontier_length(tree, edge_length=None, leaf_graph=None):
     """
     Length of the frontier represented by each node the given partition tree.
@@ -252,8 +253,8 @@ def attribute_frontier_length(tree, edge_length=None, leaf_graph=None):
     return frontier_length
 
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptHierarchy)
-@hg.auto_cache
 def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     """
     Mean edge weight along the frontier represented by each node the given partition tree.
@@ -280,8 +281,8 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     return frontier_strength
 
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptHierarchy)
-@hg.auto_cache
 def attribute_contour_length(tree, vertex_perimeter=None, edge_length=None, leaf_graph=None):
     """
     Length of the contour (perimeter) of each node of the given tree.
@@ -321,8 +322,8 @@ def attribute_contour_length(tree, vertex_perimeter=None, edge_length=None, leaf
     return perimeter
 
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptHierarchy)
-@hg.auto_cache
 def attribute_contour_strength(tree, edge_weights, vertex_perimeter=None, edge_length=None, leaf_graph=None):
     """
     Strength of the contour of each node of the given tree. The strength of the contour of a node is defined as the
@@ -357,8 +358,8 @@ def attribute_contour_strength(tree, edge_weights, vertex_perimeter=None, edge_l
     return edge_weights_sum / perimeter
 
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptHierarchy)
-@hg.auto_cache
 def attribute_compactness(tree, area=None, contour_length=None, normalize=True, leaf_graph=None):
     """
     The compactness of a node is defined as its area divided by the square of its perimeter length.
@@ -384,8 +385,8 @@ def attribute_compactness(tree, area=None, contour_length=None, normalize=True, 
     return compactness
 
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptHierarchy)
-@hg.auto_cache
 def attribute_mean_vertex_weights(tree, vertex_weights, area=None, leaf_graph=None):
     """
     Mean vertex weights of the leaf graph vertices inside each node of the given tree.
@@ -415,7 +416,7 @@ def attribute_mean_vertex_weights(tree, vertex_weights, area=None, leaf_graph=No
     return attribute
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_sibling(tree, skip=1):
     """
     Sibling index of each node of the given tree.
@@ -437,7 +438,7 @@ def attribute_sibling(tree, skip=1):
     return attribute
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_depth(tree):
     """
     The depth of a node :math:`n` of the tree :math:`T` is equal to the number of ancestors of :math:`n` in :math:`T`.
@@ -451,7 +452,7 @@ def attribute_depth(tree):
     return attribute
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_regular_altitudes(tree, depth=None):
     """
     Regular altitudes is comprised between 0 and 1 and is inversely proportional to the depth of a node
@@ -469,7 +470,7 @@ def attribute_regular_altitudes(tree, depth=None):
     return altitudes
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_vertex_list(tree):
     """
     List of leaf nodes inside the sub-tree rooted in a node.
@@ -491,8 +492,8 @@ def attribute_vertex_list(tree):
 
     return result
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptHierarchy)
-@hg.auto_cache
 def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=None):
     """
     Estimates a gaussian model (mean, (co-)variance) for leaf weights inside a node.
@@ -538,7 +539,7 @@ def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=Non
     return mean, variance
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_extrema(tree, altitudes):
     """
     Identify nodes in a hierarchy that represent extrema (minima or maxima).
@@ -629,7 +630,7 @@ def attribute_extinction_value(tree, altitudes, attribute, increasing_altitudes=
     return res
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_height(tree, altitudes, increasing_altitudes="auto", reference_altitude="parent"):
     """
     In a tree :math:`T`, given that the altitudes of the nodes vary monotically from the leaves to the root,
@@ -676,7 +677,7 @@ def attribute_height(tree, altitudes, increasing_altitudes="auto", reference_alt
     return res
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_dynamics(tree, altitudes, increasing_altitudes="auto"):
     """
     Given a node :math:`n` of the tree :math:`T`, the dynamics of :math:`n` is the difference between
@@ -711,7 +712,7 @@ def attribute_dynamics(tree, altitudes, increasing_altitudes="auto"):
     return hg.attribute_extinction_value(tree, altitudes, height, inc)
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_child_number(tree):
     """
     Given a node :math:`n` whose parent is :math:`p`, the attribute value of :math:`n` is the rank of :math:`n`
@@ -820,7 +821,7 @@ def attribute_tree_sampling_probability(tree, leaf_graph, leaf_graph_edge_weight
         return hg.attribute_children_pair_sum_product(tree, tree_node_weights)
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_topological_height(tree):
     """
     Given a node :math:`n` of :attr:`tree`, the topological height of :math:`n` is the number of edges on the longest
@@ -840,8 +841,8 @@ def attribute_topological_height(tree):
     return res
 
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptHierarchy)
-@hg.auto_cache
 def attribute_moment_of_inertia(tree, leaf_graph):
     """
     Moment of inertia (first Hu moment) of each node of the given tree.
@@ -911,8 +912,8 @@ def attribute_moment_of_inertia(tree, leaf_graph):
 
     return I_1
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptHierarchy)
-@hg.auto_cache
 def attribute_node_bounding_box(tree, leaf_graph):
     """
     Compute the axis-aligned bounding box of every node of a tree.

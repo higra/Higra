@@ -63,7 +63,7 @@ universal rule.
 [higra/__init__.py](../../higra/__init__.py) loads:
 
 1. The extension, also aliased as `cpp`.
-2. `data_cache`, `concept`, and `hg_utils`, including cache initialization.
+2. `data_cache`, `concept`, and `hg_utils`, including metadata-store initialization.
 3. Algorithm, attribute, hierarchy, image, interop, plotting, and structure
    modules through their package exports.
 
@@ -83,7 +83,7 @@ sorts vertices stably, uses union-find, canonizes components, and produces a
 static tree and altitudes.
 
 **Tree area:** `higra/attribute/tree_attributes.py::attribute_area` uses
-`argument_helper` to infer the leaf graph and `auto_cache` to reuse results. It
+`argument_helper` to infer the leaf graph. It
 selects leaf areas and calls `accumulate_sequential`. The binding dispatches an
 accumulator enum to a C++ accumulator type. This API has no single C++ function
 with exactly the same full wrapper behavior.
@@ -102,9 +102,12 @@ and attributes, not C++ inheritance. `argument_helper` reads these associations
 to fill missing parameters.
 
 `data_cache.py` stores attributes on objects with dynamic attributes and uses a
-weak-reference store as a fallback. The `auto_cache` result cache separately
-associates results with a reference object. Do not assume all metadata is in the
-global cache or that one clearing function resets every kind of state.
+weak-reference store as a fallback. Automatic result caching is retired; its
+public decorator/state/clear APIs are warning-emitting no-ops until the next
+release. Formerly cached attributes use `_legacy_cache_keywords` outside
+`argument_helper` to warn and discard obsolete implicit controls before concept
+resolution. Keep metadata storage and explicit LCA preprocessing functional.
+Do not assume one clearing function resets every kind of state.
 
 NumPy is required. SciPy and scikit-learn support selected graph APIs and are
 needed by the full Python tests. Plotting checks for optional SciPy/Matplotlib

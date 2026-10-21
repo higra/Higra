@@ -114,16 +114,18 @@ Without those links, the low-level result may look correct while higher-level
 functions cannot resolve optional arguments.
 
 `@hg.argument_helper(...)` fills missing or `None` parameters using concepts.
-`@hg.auto_cache` adds result reuse and control keywords. Follow adjacent decorator
-ordering and signatures: both inspect the underlying function through its
-`original` attribute. A documented optional parameter can therefore be supplied
-implicitly rather than by a conventional default alone.
+It inspects the underlying function through its `original` attribute; preserve
+that chain and introspection when composing wrappers.
 
-Auto-cache keys can identify arrays by object identity. Mutating the same input
-array or a returned cached result is not tracked. Use `no_cache=True`,
-`force_recompute=True`, `clear_auto_cache`, or the global cache-state switch as
-appropriate. Metadata lives partly on dynamic attributes, so global result-cache
-clearing is not a general reset of graph associations or LCA preprocessing.
+Attribute computations recompute on every call. Do not introduce `auto_cache`
+uses: its public decorator and state/clear APIs are deprecated warning-emitting
+no-ops. For one release, formerly cached functions use `_legacy_cache_keywords`
+as the outer decorator to discard implicit `no_cache`, `force_recompute`,
+`attribute_name` and `data_cache` controls with `FutureWarning`. Ordinary calls
+stay quiet. Declared parameters with those names retain their meaning. Keep
+explicit `Concept.construct(data_cache=...)`, metadata, tags, graph associations
+and LCA preprocessing separate from this retired result-cache compatibility.
+Callers can retain computed results explicitly and recompute after input changes.
 
 Class behavior is augmented through `@hg.extend_class` in `higra/structure/`.
 Inspect both binding and Python methods, including `__new__`, `__init__`, and

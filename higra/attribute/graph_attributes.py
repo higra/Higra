@@ -11,9 +11,10 @@
 
 import numpy as np
 import higra as hg
+from ..data_cache import _legacy_cache_keywords
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_vertex_area(graph):
     """
     Vertex area of the given graph.
@@ -34,7 +35,7 @@ def attribute_vertex_area(graph):
     return res
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_edge_length(graph):
     """
     Edge length of the given graph.
@@ -54,7 +55,7 @@ def attribute_edge_length(graph):
     return res
 
 
-@hg.auto_cache
+@_legacy_cache_keywords
 def attribute_vertex_perimeter(graph, edge_length=None):
     """
     Vertex perimeter of the given graph.
@@ -83,8 +84,8 @@ def attribute_vertex_perimeter(graph, edge_length=None):
     return res
 
 
+@_legacy_cache_keywords
 @hg.argument_helper(hg.CptGridGraph)
-@hg.auto_cache
 def attribute_vertex_coordinates(graph, shape):
     """
     Coordinates of the vertices of the given grid graph.
