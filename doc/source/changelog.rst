@@ -4,6 +4,12 @@ Changelog
 Unreleased
 ----------
 
+- Remove automatic result caching: attribute functions recompute on every call,
+  including after input or output mutation. ``auto_cache`` and its state/clear
+  APIs remain warning-emitting no-ops until the next release. Former implicit
+  caching keywords are accepted but ignored with ``FutureWarning`` for one release.
+  Keep results explicitly when reuse is needed; recompute them after input changes.
+
 - Upgrade bundled pybind11 to 3.1.0; C++ extensions must be rebuilt
   against the installed wheel's exported headers. 
 

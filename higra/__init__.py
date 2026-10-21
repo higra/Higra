@@ -10,7 +10,6 @@
 
 # pre-declaration of globals
 globals()["__higra_global_cache"] = None
-globals()["__auto_caching"] = True
 
 # extension module
 from .higram import *

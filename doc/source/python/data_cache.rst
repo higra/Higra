@@ -1,6 +1,23 @@
 Data cache
 ==========
 
+Higra attributes and concepts store metadata associated with graphs, trees and
+arrays.
+
+Automatic caching compatibility
+-------------------------------
+
+``auto_cache``, ``set_auto_cache_state``, ``get_auto_cache_state`` and
+``clear_auto_cache`` are deprecated no-ops and will be removed in the next
+release. They emit ``FutureWarning``; the decorator warns at decoration, while
+the state and clear functions warn when called. Automatic caching stays disabled
+and ``get_auto_cache_state()`` returns ``False``. The setter still requires a
+bool. Clearing the retired result cache leaves metadata and explicit LCA
+preprocessing intact.
+Related ``no_cache``, ``force_recompute``, ``attribute_name`` and ``data_cache``
+keywords are ignored and also emit ``FutureWarning`` whenever
+supplied, even with false or default values.
+
 .. currentmodule:: higra
 
 .. autosummary::

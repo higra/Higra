@@ -3,7 +3,7 @@
 Higra is a C++17/Python library for hierarchical graph analysis and image
 processing. Its C++ algorithms are largely header-based templates; Python calls
 them through a single pybind11 extension, `higra.higram`, and adds shape handling,
-metadata, caching, and composed algorithms.
+metadata and composed algorithms.
 
 ## Private working context
 
@@ -90,8 +90,9 @@ requirements, which include a released Higra package.
 - Do not return lazy xtensor expressions or borrowed views of destroyed locals.
   Review NumPy return policies, backing storage, mutation, and iterator lifetimes.
   A `keep_alive` policy does not prevent vector reallocation.
-- Account for identity-based caching of mutable inputs. Use existing cache
-  controls when recomputation is needed; do not assume mutations invalidate it.
+- Attribute functions recompute on every call. Do not add automatic result caching.
+  Retired cache APIs and implicit controls are warning-emitting compatibility no-ops;
+  preserve metadata storage and explicit LCA preprocessing.
 - Preserve validation and exception behavior. `hg_assert` throws in Release too;
   it is not the standard debug-only `assert`.
 - Preserve stable-sort semantics and dependencies in tree traversals. A function
