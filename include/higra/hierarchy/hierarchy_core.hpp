@@ -191,9 +191,9 @@ namespace hg {
         hg_assert(src.size() == edge_weights.size(), "Endpoint and weight counts must match.");
         auto result = hierarchy_core_internal::bpt_boruvka_from_edge_order(src, dst, n, less);
         array_1d<value_type> levels = xt::zeros<value_type>({result.first.size()});
-        for (index_t i = 0; i < n - 1; ++i) {
+        parfor(0, n - 1, [&](index_t i) {
             levels(n + i) = edge_weights(result.second(i));
-        }
+        });
         return make_node_weighted_tree_and_mst(tree(std::move(result.first)),
                                               std::move(levels), std::move(result.second));
     }

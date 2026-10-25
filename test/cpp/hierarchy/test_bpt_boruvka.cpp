@@ -11,6 +11,10 @@
 
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/image/graph_image.hpp"
+#include "higra/structure/unionfind.hpp"
+#ifdef HG_USE_TBB
+#include <tbb/global_control.h>
+#endif
 #include "../test_utils.hpp"
 #include <limits>
 #include <numeric>
@@ -640,4 +644,255 @@ namespace bpt_boruvka_tests {
             REQUIRE(storage == copy);
         }
     }
+    // Independent serial forest oracle. No union-find instance is shared with
+    // the implementation or accessed concurrently, and assertions stay here.
+    template<typename weights_t>
+    void check_successor_rounds(const ugraph &graph, const weights_t &weights) {
+        const index_t n = num_vertices(graph), m = num_edges(graph);
+        auto src = sources(graph), dst = targets(graph);
+        array_1d<index_t> labels = xt::arange<index_t>(n);
+        auto count = n;
+        while (count > 1) {
+            auto saddle = internal::bpt_boruvka_invalid_indices(count);
+            for (index_t e = 0; e < m; ++e) {
+                const auto a = labels(src(e)), b = labels(dst(e));
+                if (a == b) {
+                    continue;
+                }
+                for (auto c: {a, b}) {
+                    if (saddle(c) == invalid_index || internal::bpt_boruvka_scalar_less(weights, e, saddle(c))) {
+                        saddle(c) = e;
+                    }
+                }
+            }
+            union_find forest(count);
+            for (auto e: saddle) {
+                REQUIRE(e != invalid_index);
+                auto a = forest.find(labels(src(e))), b = forest.find(labels(dst(e)));
+                if (a != b) {
+                    forest.link(a, b);
+                }
+            }
+            auto labeling = internal::bpt_boruvka_label_components(src, dst, labels, saddle);
+            REQUIRE(labeling.second <= count / 2);
+            auto forest_to_new = internal::bpt_boruvka_invalid_indices(count);
+            auto new_to_forest = internal::bpt_boruvka_invalid_indices(labeling.second);
+            for (index_t c = 0; c < count; ++c) {
+                auto root = forest.find(c), label = labeling.first(c);
+                REQUIRE(label >= 0);
+                REQUIRE(label < labeling.second);
+                if (forest_to_new(root) == invalid_index) {
+                    forest_to_new(root) = label;
+                }
+                if (new_to_forest(label) == invalid_index) {
+                    new_to_forest(label) = root;
+                }
+                REQUIRE(forest_to_new(root) == label);
+                REQUIRE(new_to_forest(label) == root);
+            }
+            for (auto root: new_to_forest) {
+                REQUIRE(root != invalid_index);
+            }
+            for (auto &label: labels) {
+                label = labeling.first(label);
+            }
+            count = labeling.second;
+        }
+    }
+
+    TEST_CASE("Boruvka block compaction reserves disjoint stable ranges",
+              "[hierarchy_core][bpt_boruvka][bpt_boruvka_parallel]") {
+        for (index_t size: {0, 1, 1023, 1024, 1025, 4099, 66000}) {
+            internal::bpt_boruvka_scratch scratch(2, size);
+            std::vector<index_t> active(size), retained(size), selected(size), ref_keep, ref_select;
+            std::iota(active.begin(), active.end(), 0);
+            auto classify = [](index_t e) -> uint8_t { return (e * 7 + e / 5) % 3; };
+            for (auto e: active) {
+                if (classify(e) == 1) {
+                    ref_keep.push_back(e);
+                } else if (classify(e) == 2) {
+                    ref_select.push_back(e);
+                }
+            }
+            auto counts = internal::bpt_boruvka_compact(active, scratch, size, classify,
+                [&](index_t e, uint8_t kind, index_t destination) {
+                    (kind == 1 ? retained : selected)[destination] = e;
+                });
+            retained.resize(counts.retained);
+            selected.resize(counts.selected);
+            REQUIRE(retained == ref_keep);
+            REQUIRE(selected == ref_select);
+            if (!ref_select.empty()) {
+                // Capacity is checked after counting, before any output write.
+                std::atomic<bool> scattered{false};
+                REQUIRE_THROWS(internal::bpt_boruvka_compact(active, scratch, ref_select.size() - 1, classify,
+                    [&](index_t, uint8_t, index_t) { scattered.store(true); }));
+                REQUIRE_FALSE(scattered.load());
+            }
+        }
+    }
+
+    TEST_CASE("Boruvka successor labeling matches serial forest connectivity",
+              "[hierarchy_core][bpt_boruvka][bpt_boruvka_parallel]") {
+        const index_t n = 4096;
+        auto chain = path(n);
+        check_successor_rounds(chain, xt::eval(xt::arange<index_t>(n - 1)));
+        array_1d<int> levels = xt::empty<int>({n - 1});
+        for (index_t v = 1; v < n; ++v) {
+            levels(v - 1) = 0;
+            for (auto j = v; j % 2 == 0; j /= 2) {
+                ++levels(v - 1);
+            }
+        }
+        check_successor_rounds(chain, levels);
+        ugraph star(n);
+        for (index_t v = 1; v < n; ++v) {
+            add_edge(0, v, star);
+        }
+        check_successor_rounds(star, xt::eval(xt::zeros<int>({n - 1})));
+        std::mt19937 random(0x03B0A017u);
+        auto irregular = path(1024);
+        for (index_t e = 0; e < 4096; ++e) {
+            add_edge(random() % 1024, random() % 1024, irregular);
+        }
+        array_1d<int> weights = xt::empty<int>({num_edges(irregular)});
+        for (auto &w: weights) {
+            w = random() % 13;
+        }
+        check_successor_rounds(irregular, weights);
+        // Nontrivial old labels: three original vertices per old component,
+        // permuted so the mutual pair's smaller endpoint is not its first leaf.
+        array_1d<index_t> labels{3, 1, 0, 2, 3, 1, 0, 2, 3, 1, 0, 2};
+        array_1d<index_t> src{2, 1, 3}, dst{1, 3, 0}, saddle{0, 1, 1, 2};
+        auto result = internal::bpt_boruvka_label_components(src, dst, labels, saddle);
+        REQUIRE(result.second == 1);
+        REQUIRE(result.first == array_1d<index_t>{0, 0, 0, 0});
+        // Each pair roots at its smaller endpoint; dense IDs scan these roots
+        // in order, even when the pairs' endpoints interleave.
+        labels = xt::arange<index_t>(6);
+        src = {0, 1, 2};
+        dst = {5, 4, 3};
+        saddle = {0, 1, 2, 2, 1, 0};
+        result = internal::bpt_boruvka_label_components(src, dst, labels, saddle);
+        REQUIRE(result.second == 3);
+        REQUIRE(result.first == array_1d<index_t>{0, 1, 2, 2, 1, 0});
+    }
+
+    // Linear-space validation for graphs large enough to exercise block scans,
+    // parallel sorting and long jump chains without the small oracle's n^2 data.
+    template<typename output_t, typename reference_t>
+    void check_large_relaxed(const output_t &output, const reference_t &reference, index_t n, index_t m) {
+        auto edge_to_exact = internal::bpt_boruvka_invalid_indices(m);
+        for (index_t i = 0; i < n - 1; ++i) {
+            edge_to_exact(reference.mst_edge_map(i)) = n + i;
+        }
+        array_1d<index_t> to_exact = xt::arange<index_t>(2 * n - 1);
+        for (index_t i = 0; i < n - 1; ++i) {
+            auto e = output.second(i);
+            REQUIRE(e >= 0);
+            REQUIRE(e < m);
+            REQUIRE(edge_to_exact(e) != invalid_index);
+            to_exact(n + i) = edge_to_exact(e);
+        }
+        std::vector<index_t> children(2 * n - 1, 0);
+        for (index_t v = 0; v < 2 * n - 1; ++v) {
+            auto p = output.first(v);
+            REQUIRE(p >= 0);
+            REQUIRE(p < 2 * n - 1);
+            REQUIRE(to_exact(p) == reference.tree.parents()(to_exact(v)));
+            if (v != 2 * n - 2) {
+                REQUIRE(p > v);
+                ++children[p];
+            } else {
+                REQUIRE(p == v);
+            }
+        }
+        for (index_t v = 0; v < 2 * n - 1; ++v) {
+            REQUIRE(children[v] == (v < n ? 0 : 2));
+        }
+    }
+
+    TEST_CASE("Boruvka caller controlled concurrency preserves exact and relaxed output",
+              "[hierarchy_core][bpt_boruvka][bpt_boruvka_parallel]") {
+        const index_t n = 4096;
+        std::mt19937 random(0x03C0FFEEu);
+        for (index_t family = 0; family < 5; ++family) {
+            auto graph = family == 1 ? ugraph(n) : path(n);
+            if (family == 1) {
+                for (index_t v = 1; v < n; ++v) {
+                    add_edge(0, v, graph);
+                    add_edge(0, v, graph);
+                }
+            } else if (family == 4) {
+                for (index_t e = 0; e < 5 * n; ++e) {
+                    add_edge(random() % n, random() % n, graph);
+                }
+            }
+            array_1d<double> weights = xt::empty<double>({num_edges(graph)});
+            for (index_t e = 0; e < (index_t)num_edges(graph); ++e) {
+                weights(e) = family == 0 ? double(e) : family == 1 ? 0. : double(random() % 9);
+                if (family == 2) {
+                    weights(e) = 0;
+                    for (auto v = e + 1; v % 2 == 0; v /= 2) {
+                        ++weights(e);
+                    }
+                } else if (family == 3) {
+                    weights(e) = e % 3 == 0 ? std::numeric_limits<double>::infinity() :
+                                 e % 3 == 1 ? -std::numeric_limits<double>::infinity() : 0.;
+                }
+            }
+            // Both references are constructed under caller-owned concurrency 1.
+#ifdef HG_USE_TBB
+            auto serial_limit = std::make_unique<tbb::global_control>(tbb::global_control::max_allowed_parallelism, 1);
+#endif
+            auto reference = bpt_canonical(graph, weights);
+            auto baseline = bpt_canonical_boruvka(graph, weights);
+#ifdef HG_USE_TBB
+            serial_limit.reset();
+#endif
+            REQUIRE(baseline.tree.parents() == reference.tree.parents());
+            REQUIRE(baseline.mst_edge_map == reference.mst_edge_map);
+            for (int limit: {1, 2, 4}) {
+#ifdef HG_USE_TBB
+                tbb::global_control control(tbb::global_control::max_allowed_parallelism, limit);
+#endif
+                for (int repeat = 0; repeat < 3; ++repeat) {
+                    INFO("family=" << family << " limit=" << limit << " repeat=" << repeat);
+                    auto result = bpt_canonical_boruvka(graph, weights);
+                    REQUIRE(result.tree.parents() == reference.tree.parents());
+                    REQUIRE(result.mst_edge_map == reference.mst_edge_map);
+                    REQUIRE(result.altitudes == reference.altitudes);
+                    auto less = [&](index_t a, index_t b) { return internal::bpt_boruvka_scalar_less(weights, a, b); };
+                    auto relaxed = internal::bpt_boruvka_from_edge_order(sources(graph), targets(graph), n, less,
+                                                                         internal::bpt_boruvka_numbering::basin);
+                    check_large_relaxed(relaxed, reference, n, num_edges(graph));
+                    // Alternate total tie order: compare edge-labeled trees to
+                    // Kruskal under exactly that order at every tested limit.
+                    auto reverse = [&](index_t a, index_t b) {
+                        return internal::bpt_boruvka_scalar_less(weights, a, b,
+                                                               internal::bpt_boruvka_tie_order::reverse_edge_id);
+                    };
+                    array_1d<index_t> order = xt::arange<index_t>(num_edges(graph));
+                    std::sort(order.begin(), order.end(), reverse);
+                    auto reversed_ref = internal::bpt_canonical_from_sorted_edges(sources(graph), targets(graph), order, n);
+                    auto reversed = internal::bpt_boruvka_from_edge_order(sources(graph), targets(graph), n, reverse,
+                                                                          internal::bpt_boruvka_numbering::basin);
+                    auto ref_tree = make_node_weighted_tree_and_mst(tree(std::move(reversed_ref.first)),
+                                                                    array_1d<double>{}, std::move(reversed_ref.second));
+                    check_large_relaxed(reversed, ref_tree, n, num_edges(graph));
+                }
+            }
+        }
+        // Independent threshold partition oracle also runs under every limit.
+        auto small = path(9);
+        add_edge(0, 8, small);
+        for (int limit: {1, 2, 4}) {
+#ifdef HG_USE_TBB
+            tbb::global_control control(tbb::global_control::max_allowed_parallelism, limit);
+#endif
+            (void)limit;
+            check_tie_refinements(small, array_1d<int>{2, 0, 1, 0, 2, 0, 1, 0, 2});
+        }
+    }
+
 }
