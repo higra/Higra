@@ -9,6 +9,7 @@
 ############################################################################
 
 import higra as hg
+from higra.data_cache import _get_attribute
 import numpy as np
 
 
@@ -97,8 +98,8 @@ def project_fine_to_coarse_rag(fine_rag, coarse_rag):
     :return: a 1d array of size ``fine_rag.num_vertices()``
     """
     return hg.project_fine_to_coarse_labelisation(
-        hg.get_attribute(fine_rag, "vertex_map"),
-        hg.get_attribute(coarse_rag, "vertex_map"),
+        _get_attribute(fine_rag, "vertex_map"),
+        _get_attribute(coarse_rag, "vertex_map"),
         fine_rag.num_vertices(),
         coarse_rag.num_vertices())
 

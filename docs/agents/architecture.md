@@ -9,7 +9,7 @@ implementation details belong in the C++ and binding guides.
 ```mermaid
 flowchart TD
     API[Public higra namespace] --> PY[Python wrappers and class extensions]
-    PY --> META[Concepts, attributes, caches, shape and dtype helpers]
+    PY --> META[Concepts, metadata, shape and dtype helpers]
     PY --> BIND[higra.higram / hg.cpp]
     BIND --> CORE[Header-based hg namespace]
     CORE --> GRAPH[Graph concepts and structures]
@@ -63,7 +63,7 @@ universal rule.
 [higra/__init__.py](../../higra/__init__.py) loads:
 
 1. The extension, also aliased as `cpp`.
-2. `data_cache`, `concept`, and `hg_utils`, including metadata-store initialization.
+2. `data_cache`, `concept`, and `hg_utils`, without global metadata-store initialization.
 3. Algorithm, attribute, hierarchy, image, interop, plotting, and structure
    modules through their package exports.
 
@@ -101,13 +101,27 @@ region-adjacency maps, and a binary hierarchy's MST and edge map. They are tags
 and attributes, not C++ inheritance. `argument_helper` reads these associations
 to fill missing parameters.
 
-`data_cache.py` stores attributes on objects with dynamic attributes and uses a
-weak-reference store as a fallback. Automatic result caching is retired; its
-public decorator/state/clear APIs are warning-emitting no-ops until the next
-release. Formerly cached attributes use `_legacy_cache_keywords` outside
-`argument_helper` to warn and discard obsolete implicit controls before concept
-resolution. Keep metadata storage and explicit LCA preprocessing functional.
-Do not assume one clearing function resets every kind of state.
+Metadata uses ordinary dynamic instance fields and the object-owned
+`__higra_tags__` set. Private helpers in `data_cache.py` read instance dictionaries
+so inherited native methods (notably regular-grid `shape()`) are not metadata.
+There is no global fallback, registry, mirror dictionary or weak-reference
+requirement. Do not reintroduce `__higra_attributes__`. Unsupported owners,
+including plain ndarrays, cannot receive metadata; array-valued fields work.
+Custom Concepts use `Concept.tag` and ordinary assignments. Import and normal
+workflows must emit no deprecation warnings or construct deprecated stores.
+
+Standalone `DataCache`/`WeakKeyDictionary` constructors warn and remain functional
+until removal next release. Only explicit `Concept.construct(data_cache=...)`
+may use a supplied custom store, with a warning. Public attribute/tag helpers
+warn and become private next release; use private helpers internally. Attribute
+clearing APIs warn and do nothing, including to preprocessing and custom stores.
+Automatic result caching is retired; its public decorator/state/clear APIs are
+warning-emitting no-ops until next release. Formerly cached attributes keep
+`_legacy_cache_keywords` outside `argument_helper` to warn and discard obsolete
+controls. Plain `argument_helper` has no implicit `data_cache` keyword; declared
+parameters retain their meaning. Explicit LCA preprocessing and lazy MST
+construction remain object-owned. Pickles support current-version round trips;
+do not add legacy metadata migration.
 
 NumPy is required. SciPy and scikit-learn support selected graph APIs and are
 needed by the full Python tests. Plotting checks for optional SciPy/Matplotlib

@@ -11,6 +11,8 @@
 import higra as hg
 import inspect
 import functools
+import warnings as _warnings
+from .data_cache import _get_attribute, _set_attribute, _get_tags, _has_tag
 
 
 def auto_concept_docstring(cls):
@@ -53,7 +55,16 @@ class Concept(object):
         """
         if canonical_element is None:
             return False
-        return hg.has_tag(canonical_element, cls)
+        return _has_tag(canonical_element, cls)
+
+    @classmethod
+    def tag(cls, canonical_element):
+        """Tag a dynamic object as satisfying this Concept, without tagging parents.
+
+        Custom ``link`` methods can call this hook and assign fields normally.
+        Owners without dynamic attributes raise ``TypeError``.
+        """
+        _get_tags(canonical_element).add(cls)
 
     @classmethod
     def construct(cls, canonical_element, strict=True, data_cache=None):
@@ -62,9 +73,12 @@ class Concept(object):
 
         :param canonical_element: an object
         :param strict: if `True` an exception is raised if all the data elements of the Concept cannot be recovered from the given canonical element, otherwise the missing data element is simply not included in the result.
-        :param data_cache: specify a data cache where to search for data elements. If `None`, the default Higra global data cache is used.
+        :param data_cache: deprecated explicit custom store override. Emits ``FutureWarning``; this parameter will be removed in the next release. By default, ordinary instance fields supply the data.
         :return: a dictionary
         """
+        if data_cache is not None:
+            _warnings.warn("Concept.construct data_cache is deprecated and will be removed in the next release",
+                           FutureWarning, stacklevel=2)
         if canonical_element is None:
             return {}
         if strict and not cls.validate(canonical_element):
@@ -87,7 +101,7 @@ class Concept(object):
                     for data_name, data_description in c._data_elements.items():
                         if data_description[1] is not None:
                             if data_cache is None:
-                                elem = hg.get_attribute(ce, data_description[1])
+                                elem = _get_attribute(ce, data_description[1])
                             else:
                                 elem = data_cache.get_data(ce).get(data_description[1], None)
                             if elem is None:
@@ -148,8 +162,8 @@ class CptGridGraph(Concept):
 
     @staticmethod
     def link(graph, shape):
-        hg.add_tag(graph, CptGridGraph)
-        hg.set_attribute(graph, "shape", shape)
+        CptGridGraph.tag(graph)
+        _set_attribute(graph, "shape", shape)
 
     @staticmethod
     def get_shape(graph):
@@ -159,7 +173,7 @@ class CptGridGraph(Concept):
         :param graph:
         :return:
         """
-        return hg.get_attribute(graph, "shape")
+        return _get_attribute(graph, "shape")
 
 
 @auto_concept_docstring
@@ -179,10 +193,10 @@ class CptRegionAdjacencyGraph(Concept):
 
     @staticmethod
     def link(rag, pre_graph, vertex_map, edge_map):
-        hg.add_tag(rag, CptRegionAdjacencyGraph)
-        hg.set_attribute(rag, "vertex_map", vertex_map)
-        hg.set_attribute(rag, "edge_map", edge_map)
-        hg.set_attribute(rag, "pre_graph", pre_graph)
+        CptRegionAdjacencyGraph.tag(rag)
+        _set_attribute(rag, "vertex_map", vertex_map)
+        _set_attribute(rag, "edge_map", edge_map)
+        _set_attribute(rag, "pre_graph", pre_graph)
 
     @staticmethod
     def get_vertex_map(rag):
@@ -192,7 +206,7 @@ class CptRegionAdjacencyGraph(Concept):
         :param rag:
         :return:
         """
-        return hg.get_attribute(rag, "vertex_map")
+        return _get_attribute(rag, "vertex_map")
 
     @staticmethod
     def get_edge_map(rag):
@@ -202,7 +216,7 @@ class CptRegionAdjacencyGraph(Concept):
         :param rag:
         :return:
         """
-        return hg.get_attribute(rag, "edge_map")
+        return _get_attribute(rag, "edge_map")
 
     @staticmethod
     def get_pre_graph(rag):
@@ -212,7 +226,7 @@ class CptRegionAdjacencyGraph(Concept):
         :param rag:
         :return:
         """
-        return hg.get_attribute(rag, "pre_graph")
+        return _get_attribute(rag, "pre_graph")
 
 
 @auto_concept_docstring
@@ -229,8 +243,8 @@ class CptHierarchy(Concept):
 
     @staticmethod
     def link(tree, leaf_graph):
-        hg.add_tag(tree, CptHierarchy)
-        hg.set_attribute(tree, "leaf_graph", leaf_graph)
+        CptHierarchy.tag(tree)
+        _set_attribute(tree, "leaf_graph", leaf_graph)
 
     @staticmethod
     def get_leaf_graph(tree):
@@ -240,7 +254,7 @@ class CptHierarchy(Concept):
         :param tree:
         :return:
         """
-        return hg.get_attribute(tree, "leaf_graph")
+        return _get_attribute(tree, "leaf_graph")
 
 
 @auto_concept_docstring
@@ -261,9 +275,9 @@ class CptBinaryHierarchy(CptHierarchy):
 
     @staticmethod
     def link(hierarchy, mst_edge_map, mst):
-        hg.add_tag(hierarchy, CptBinaryHierarchy)
-        hg.set_attribute(hierarchy, "mst_edge_map", mst_edge_map)
-        hg.set_attribute(hierarchy, "mst", mst)
+        CptBinaryHierarchy.tag(hierarchy)
+        _set_attribute(hierarchy, "mst_edge_map", mst_edge_map)
+        _set_attribute(hierarchy, "mst", mst)
 
     @staticmethod
     def get_mst_edge_map(tree):
@@ -275,7 +289,7 @@ class CptBinaryHierarchy(CptHierarchy):
         :param tree:
         :return:
         """
-        return hg.get_attribute(tree, "mst_edge_map")
+        return _get_attribute(tree, "mst_edge_map")
 
     @staticmethod
     def get_mst(tree):
@@ -285,13 +299,13 @@ class CptBinaryHierarchy(CptHierarchy):
         :param tree:
         :return:
         """
-        mst = hg.get_attribute(tree, "mst")
+        mst = _get_attribute(tree, "mst")
         if mst is None:
             mst_edge_map = hg.CptBinaryHierarchy.get_mst_edge_map(tree)
             leaf_graph = hg.CptHierarchy.get_leaf_graph(tree)
             mst = hg.subgraph(leaf_graph, mst_edge_map, spanning=True)
             hg.CptMinimumSpanningTree.link(mst, leaf_graph, mst_edge_map)
-            hg.set_attribute(tree, "mst", mst)
+            _set_attribute(tree, "mst", mst)
         return mst
 
 
@@ -311,9 +325,9 @@ class CptMinimumSpanningTree(Concept):
 
     @staticmethod
     def link(mst, base_graph, mst_edge_map):
-        hg.add_tag(mst, CptMinimumSpanningTree)
-        hg.set_attribute(mst, "base_graph", base_graph)
-        hg.set_attribute(mst, "mst_edge_map", mst_edge_map)
+        CptMinimumSpanningTree.tag(mst)
+        _set_attribute(mst, "base_graph", base_graph)
+        _set_attribute(mst, "mst_edge_map", mst_edge_map)
 
     @staticmethod
     def get_base_graph(mst):
@@ -323,7 +337,7 @@ class CptMinimumSpanningTree(Concept):
         :param mst:
         :return:
         """
-        return hg.get_attribute(mst, "base_graph")
+        return _get_attribute(mst, "base_graph")
 
     @staticmethod
     def get_edge_map(mst):
@@ -333,4 +347,4 @@ class CptMinimumSpanningTree(Concept):
         :param mst:
         :return:
         """
-        return hg.get_attribute(mst, "mst_edge_map")
+        return _get_attribute(mst, "mst_edge_map")

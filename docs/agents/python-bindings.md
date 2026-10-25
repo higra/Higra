@@ -123,8 +123,19 @@ no-ops. For one release, formerly cached functions use `_legacy_cache_keywords`
 as the outer decorator to discard implicit `no_cache`, `force_recompute`,
 `attribute_name` and `data_cache` controls with `FutureWarning`. Ordinary calls
 stay quiet. Declared parameters with those names retain their meaning. Keep
-explicit `Concept.construct(data_cache=...)`, metadata, tags, graph associations
-and LCA preprocessing separate from this retired result-cache compatibility.
+the deprecated explicit `Concept.construct(data_cache=...)` custom-store path
+separate from this retired result-cache compatibility. It is the only Concept
+custom-store boundary. Plain `argument_helper` rejects undeclared `data_cache`;
+do not intercept a real declared parameter of that name.
+
+Metadata lives directly in dynamic instance fields; use private helpers or direct
+assignments internally and `Concept.tag` in custom Concept links. No global store,
+weak-key fallback, attribute mirror or legacy-pickle migration is permitted.
+Public metadata/tag helpers warn and become private next release. Both attribute
+clearing functions are warning-emitting no-ops scheduled for removal. Keep maps,
+shapes, Concept links and explicit LCA/lazy MST state intact. Dynamic owners need
+no weak-reference support; plain ndarrays cannot own metadata. Current-version
+pickle reducers must preserve instance state and shared associations.
 Callers can retain computed results explicitly and recompute after input changes.
 
 Class behavior is augmented through `@hg.extend_class` in `higra/structure/`.

@@ -9,6 +9,7 @@
 ############################################################################
 
 import higra as hg
+from higra.data_cache import _get_attribute, _set_attribute
 import numpy as np
 
 
@@ -46,7 +47,7 @@ def khalimsky_2_graph_4_adjacency(khalimsky, extra_border=False, graph=None):
             raise ValueError("The given graph must be a grid graph.")
         if len(graph_shape) != 2:
             raise ValueError("The given graph must be a 2d grid graph.")
-        if hg.get_attribute(graph, "no_border_vertex_out_degree") != 4:
+        if _get_attribute(graph, "no_border_vertex_out_degree") != 4:
             raise ValueError("The given graph must be a 4 adjacency graph.")
         if graph_shape != res_shape:
             raise ValueError("The given graph shape is " + str(graph_shape) + " but the expected shape is " + str(res_shape) + ".")
@@ -113,8 +114,8 @@ def get_4_adjacency_graph(shape):
     graph = graph_implicit.as_explicit_graph()
 
     hg.CptGridGraph.link(graph, hg.CptGridGraph.get_shape(graph_implicit))
-    hg.set_attribute(graph, "no_border_vertex_out_degree",
-                     hg.get_attribute(graph_implicit, "no_border_vertex_out_degree"))
+    _set_attribute(graph, "no_border_vertex_out_degree",
+                   _get_attribute(graph_implicit, "no_border_vertex_out_degree"))
 
     return graph
 
@@ -130,8 +131,8 @@ def get_8_adjacency_graph(shape):
     graph = graph_implicit.as_explicit_graph()
 
     hg.CptGridGraph.link(graph, hg.CptGridGraph.get_shape(graph_implicit))
-    hg.set_attribute(graph, "no_border_vertex_out_degree",
-                     hg.get_attribute(graph_implicit, "no_border_vertex_out_degree"))
+    _set_attribute(graph, "no_border_vertex_out_degree",
+                   _get_attribute(graph_implicit, "no_border_vertex_out_degree"))
 
     return graph
 
@@ -146,8 +147,8 @@ def get_6_adjacency_graph(shape):
     graph = graph_implicit.as_explicit_graph()
 
     hg.CptGridGraph.link(graph, hg.CptGridGraph.get_shape(graph_implicit))
-    hg.set_attribute(graph, "no_border_vertex_out_degree",
-                     hg.get_attribute(graph_implicit, "no_border_vertex_out_degree"))
+    _set_attribute(graph, "no_border_vertex_out_degree",
+                   _get_attribute(graph_implicit, "no_border_vertex_out_degree"))
 
     return graph
 
@@ -166,7 +167,7 @@ def get_4_adjacency_implicit_graph(shape):
     graph = hg.RegularGraph2d(shape, neighbours)
 
     hg.CptGridGraph.link(graph, shape)
-    hg.set_attribute(graph, "no_border_vertex_out_degree", 4)
+    _set_attribute(graph, "no_border_vertex_out_degree", 4)
 
     return graph
 
@@ -186,7 +187,7 @@ def get_8_adjacency_implicit_graph(shape):
     graph = hg.RegularGraph2d(shape, neighbours)
 
     hg.CptGridGraph.link(graph, shape)
-    hg.set_attribute(graph, "no_border_vertex_out_degree", 8)
+    _set_attribute(graph, "no_border_vertex_out_degree", 8)
 
     return graph
 
@@ -210,7 +211,7 @@ def get_6_adjacency_implicit_graph(shape):
     graph = hg.RegularGraph3d(shape, neighbours)
 
     hg.CptGridGraph.link(graph, shape)
-    hg.set_attribute(graph, "no_border_vertex_out_degree", 6)
+    _set_attribute(graph, "no_border_vertex_out_degree", 6)
 
     return graph
 
@@ -268,7 +269,7 @@ def get_nd_regular_implicit_graph(shape, neighbour_list):
         graph = hg.RegularGraph5d(shape, neighbour_list)
 
     hg.CptGridGraph.link(graph, shape)
-    hg.set_attribute(graph, "no_border_vertex_out_degree", neighbour_list.shape[0])
+    _set_attribute(graph, "no_border_vertex_out_degree", neighbour_list.shape[0])
 
     return graph
 
@@ -303,8 +304,8 @@ def get_nd_regular_graph(shape, neighbour_list):
     graph = graph_implicit.as_explicit_graph()
 
     hg.CptGridGraph.link(graph, hg.CptGridGraph.get_shape(graph_implicit))
-    hg.set_attribute(graph, "no_border_vertex_out_degree",
-                     hg.get_attribute(graph_implicit, "no_border_vertex_out_degree"))
+    _set_attribute(graph, "no_border_vertex_out_degree",
+                   _get_attribute(graph_implicit, "no_border_vertex_out_degree"))
 
     return graph
 

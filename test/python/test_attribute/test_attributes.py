@@ -63,7 +63,7 @@ class TestAttributes(unittest.TestCase):
         return hg.bpt_canonical(g, edge_weights)
 
     def setUp(self):
-        hg.clear_all_attributes()
+        None
 
     def test_area(self):
         tree, altitudes = TestAttributes.get_test_tree()
@@ -199,7 +199,7 @@ class TestAttributes(unittest.TestCase):
 
     def test_contour_length_partition_tree2(self):
         tree, altitudes = TestAttributes.get_test_tree()
-        hg.set_attribute(hg.CptHierarchy.get_leaf_graph(tree), "no_border_vertex_out_degree", None)
+        hg.CptHierarchy.get_leaf_graph(tree).no_border_vertex_out_degree = None
         ref_attribute = np.asarray([2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 0], dtype=np.float64)
         attribute = hg.attribute_contour_length(tree)
         self.assertTrue(np.allclose(ref_attribute, attribute))
@@ -275,7 +275,7 @@ class TestAttributes(unittest.TestCase):
     def test_contour_strength_partition_tree2(self):
         tree, altitudes = TestAttributes.get_test_tree()
         edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1), dtype=np.float64)
-        hg.set_attribute(hg.CptHierarchy.get_leaf_graph(tree), "no_border_vertex_out_degree", None)
+        hg.CptHierarchy.get_leaf_graph(tree).no_border_vertex_out_degree = None
         attribute = hg.attribute_contour_strength(tree, edge_weights)
 
         ref_perimeter = np.asarray([2, 3, 2, 3, 4, 3, 2, 3, 2, 3, 3, 5, 3, 3, 4, 5, 1], dtype=np.float64)
@@ -419,7 +419,7 @@ class TestAttributes(unittest.TestCase):
 
     def test_vertex_perimeter2(self):
         g = hg.get_4_adjacency_graph((2, 3))
-        hg.set_attribute(g, "no_border_vertex_out_degree", None)
+        g.no_border_vertex_out_degree = None
         ref = np.asarray(((2, 3, 2),
                           (2, 3, 2)))
         res = hg.attribute_vertex_perimeter(g)
