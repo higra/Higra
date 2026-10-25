@@ -36,6 +36,50 @@ namespace py_hierarchy_core {
         }
     };
 
+    // Validate the permutation before any indexed scatter or parallel comparison.
+    auto boruvka_inverse_order(const xt::pytensor<hg::index_t, 1> &order, size_t m) {
+        hg_assert(order.size() == m, "Edge order must contain every edge exactly once.");
+        hg::array_1d<hg::index_t> ranks = hg::array_1d<hg::index_t>::from_shape({m});
+        ranks.fill(hg::invalid_index);
+        for (size_t i = 0; i < m; ++i) {
+            auto e = order(i);
+            hg_assert(e >= 0 && static_cast<size_t>(e) < m, "Invalid edge index in edge order.");
+            hg_assert(ranks(e) == hg::invalid_index, "Edge order must be a permutation.");
+            ranks(e) = i;
+        }
+        return ranks;
+    }
+
+    struct def_bpt_boruvka {
+        template<typename T, typename C>
+        static void def(C &m, const char *doc) {
+            m.def("_bpt_canonical_boruvka", [](
+                    const xt::pytensor<hg::index_t, 1> &sources,
+                    const xt::pytensor<hg::index_t, 1> &targets,
+                    hg::index_t n, const xt::pytensor<T, 2> &weights, bool stable) {
+                hg_assert(static_cast<size_t>(weights.shape()[0]) == sources.size(), "Incorrect edge weight count.");
+                for (const auto &w: weights) {
+                    if constexpr (std::is_floating_point<T>::value) {
+                        hg_assert(!std::isnan(w), "Edge weights cannot contain NaNs.");
+                    }
+                }
+                auto less = [&weights](hg::index_t a, hg::index_t b) {
+                    for (hg::index_t k = 0; k < weights.shape()[1]; ++k) {
+                        if (weights(a, k) < weights(b, k)) return true;
+                        if (weights(b, k) < weights(a, k)) return false;
+                    }
+                    return a < b;
+                };
+                auto res = hg::hierarchy_core_internal::bpt_boruvka_from_edge_order(
+                        sources, targets, n, less,
+                        stable ? hg::hierarchy_core_internal::bpt_boruvka_numbering::exact
+                               : hg::hierarchy_core_internal::bpt_boruvka_numbering::basin);
+                return py::make_tuple(std::move(res.first), std::move(res.second));
+            }, doc, py::arg("sources"), py::arg("targets"), py::arg("num_vertices"),
+               py::arg("weights").noconvert(), py::arg("stable") = true);
+        }
+    };
+
     template<typename M>
     void add_simplified_tree(M &m) {
         using class_t = hg::remapped_tree<hg::tree, hg::array_1d<hg::index_t>>;
@@ -74,6 +118,21 @@ namespace py_hierarchy_core {
                                                                                     num_vertices);
             return py::make_tuple(std::move(res.first), std::move(res.second));
         });
+
+        add_type_overloads<def_bpt_boruvka, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
+        m.def("_bpt_canonical_boruvka_from_order", [](
+                const xt::pytensor<hg::index_t, 1> &sources,
+                const xt::pytensor<hg::index_t, 1> &targets,
+                hg::index_t n, const xt::pytensor<hg::index_t, 1> &order, bool stable) {
+            auto ranks = boruvka_inverse_order(order, sources.size());
+            auto less = [&ranks](hg::index_t a, hg::index_t b) { return ranks(a) < ranks(b); };
+            auto res = hg::hierarchy_core_internal::bpt_boruvka_from_edge_order(
+                    sources, targets, n, less,
+                    stable ? hg::hierarchy_core_internal::bpt_boruvka_numbering::exact
+                           : hg::hierarchy_core_internal::bpt_boruvka_numbering::basin);
+            return py::make_tuple(std::move(res.first), std::move(res.second));
+        }, py::arg("sources"), py::arg("targets"), py::arg("num_vertices"),
+           py::arg("sorted_edge_indices"), py::arg("stable") = true);
 
         add_simplified_tree(m);
         m.def("_simplify_tree",

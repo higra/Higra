@@ -199,6 +199,153 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
         return tree, altitudes
 
 
+def _boruvka_indices(values, name):
+    values = np.asarray(values)
+    if values.ndim != 1 or (values.size and values.dtype.kind not in "iu"):
+        raise ValueError(name + " must be a one-dimensional integer array.")
+    if values.size and (np.any(values < 0) or np.any(values > np.iinfo(np.int64).max)):
+        raise ValueError(name + " contains an invalid index.")
+    return np.asarray(values, dtype=np.int64)
+
+
+def bpt_canonical_boruvka(graph, edge_weights=None, sorted_edge_indices=None,
+                          return_altitudes=True, compute_mst=True, stable=True):
+    """
+    Construct a canonical binary partition tree using Waterfall–Boruvka.
+
+    The input must be a connected undirected graph, or a tuple
+    ``(sources, targets, num_vertices)`` with one-dimensional integer endpoint
+    arrays. Parallel edges and self-loops are allowed. Empty graphs and
+    disconnected graphs are rejected; a singleton returns one zero-altitude
+    leaf and an empty MST edge map.
+
+    Supply real numeric ``edge_weights`` of shape ``(num_edges, ...)`` or a
+    permutation ``sorted_edge_indices`` listing edge IDs in construction order.
+    Scalar weights are ordered numerically; trailing dimensions are flattened
+    in C order and compared lexicographically. Ties use increasing edge IDs.
+    A supplied permutation always takes precedence over weights. NaNs are
+    rejected in all supplied weights, even with an explicit order or when
+    altitudes are not requested. Positive and negative infinities are allowed.
+
+    With ``stable=True``, parents and the ordered MST edge map match
+    :func:`bpt_canonical` for the same edge order. ``stable=False`` is
+    experimental: it preserves the same merges, building edges and tie
+    refinement, but numbers internal nodes in a different topological order.
+    Leaves keep their original IDs, parents follow children, and the root is
+    last and its own parent. Experimental internal numbering may change.
+    Internal nodes and their building edges need not follow construction order.
+    With weight-derived ordering, internal altitudes need not be globally
+    sorted. Use the default for consumers requiring merge order by node index.
+    Saliency, LCA, reconstruction and horizontal cuts support this numbering;
+    :class:`HorizontalCutExplorer` may sort a copy and requires nonnegative
+    scalar altitudes. An arbitrary supplied order need not give monotone
+    altitudes, regardless of numbering.
+
+    Leaf altitudes are zero. Internal node ``num_vertices + i`` has weight
+    ``edge_weights[tree.mst_edge_map[i]]``, or the rank of that edge when weights
+    are omitted. Altitudes preserve the weights' dtype and trailing shape.
+    Returned parent, altitude and edge-map arrays remain valid after input
+    arrays are deleted or modified.
+
+    For graph objects, hierarchy and binary hierarchy concepts are linked as
+    in :func:`bpt_canonical`. The MST map indexes edges of the input graph.
+    For an input MST, the hierarchy links to its base graph, while edge IDs
+    still index the supplied MST.
+    ``compute_mst=False`` defers explicit MST construction until
+    :func:`CptBinaryHierarchy.get_mst` is called. Endpoint tuples have no leaf
+    graph link and do not support this lazy retrieval.
+
+    The serial work bound is :math:`O((n+m) \\log n)` for scalar weights, with :math:`O(n+m)`
+    auxiliary storage, where ``n`` and ``m`` are vertex and edge counts.
+    Lexicographic comparisons also depend on the number of features.
+    TBB-enabled builds can execute native phases in parallel; no speedup is
+    guaranteed.
+
+    :param graph: graph object or ``(sources, targets, num_vertices)`` tuple
+    :param edge_weights: real integer or float32/float64 edge array (optional)
+    :param sorted_edge_indices: permutation of all edge IDs (optional)
+    :param return_altitudes: return node altitudes alongside the tree
+    :param compute_mst: construct the explicit MST for graph objects
+    :param stable: exact output by default; ``False`` selects experimental numbering
+    :return: binary partition tree, and node altitudes if requested
+    :raises ValueError: invalid shapes, dtypes, NaNs, or integer indices
+    :raises RuntimeError: invalid permutation, endpoints, empty or disconnected graph
+    """
+    if edge_weights is None and sorted_edge_indices is None:
+        raise ValueError("edge_weights and sorted_edge_indices cannot be both equal to None.")
+    input_is_graph_object = hg.has_method(graph, "edge_list") and hg.has_method(graph, "num_vertices")
+    if input_is_graph_object:
+        sources, targets = graph.edge_list()
+        num_vertices = graph.num_vertices()
+    else:
+        try:
+            sources, targets, num_vertices = graph
+        except Exception as e:
+            raise ValueError("Invalid graph input.") from e
+    sources = _boruvka_indices(sources, "sources")
+    targets = _boruvka_indices(targets, "targets")
+    if not isinstance(num_vertices, (int, np.integer)) or isinstance(num_vertices, (bool, np.bool_)):
+        raise ValueError("num_vertices must be an integer.")
+    if edge_weights is not None:
+        edge_weights = np.asarray(edge_weights)
+        if (edge_weights.ndim < 1 or edge_weights.shape[0] != sources.size or
+                edge_weights.dtype.kind not in "iuf" or
+                edge_weights.dtype.itemsize not in (1, 2, 4, 8) or
+                (edge_weights.dtype.kind == "f" and edge_weights.dtype.itemsize not in (4, 8))):
+            raise ValueError("Expected real integer or float32/float64 weights with one entry per edge.")
+        if np.any(np.isnan(edge_weights)):
+            raise ValueError("Edge weights cannot contain NaNs.")
+    if sorted_edge_indices is not None:
+        order = _boruvka_indices(sorted_edge_indices, "sorted_edge_indices")
+        sorted_edge_indices = np.asarray(sorted_edge_indices)
+        if sorted_edge_indices.dtype.kind not in "iu":
+            sorted_edge_indices = order
+        parents, mst_edge_map = hg.cpp._bpt_canonical_boruvka_from_order(
+            sources, targets, num_vertices, order, stable)
+    else:
+        features = int(np.prod(edge_weights.shape[1:], dtype=np.intp))
+        weights = np.asarray(edge_weights, dtype=edge_weights.dtype.newbyteorder("="))
+        weights = weights.reshape((sources.size, features))
+        parents, mst_edge_map = hg.cpp._bpt_canonical_boruvka(
+            sources, targets, num_vertices, weights, stable)
+    tree = hg.Tree(parents)
+
+    if return_altitudes:
+        if edge_weights is None:
+            edge_weights = np.empty_like(sorted_edge_indices)
+            edge_weights[sorted_edge_indices] = np.arange(sorted_edge_indices.size)
+
+        if edge_weights.ndim == 1:
+            altitudes = np.zeros((tree.num_vertices(),), dtype=edge_weights.dtype)
+            altitudes[num_vertices:] = edge_weights[mst_edge_map]
+        else:
+            shape = [tree.num_vertices()] + list(edge_weights.shape[1:])
+            altitudes = np.zeros(shape, dtype=edge_weights.dtype)
+            altitudes[num_vertices:, ...] = edge_weights[mst_edge_map, ...]
+
+    if input_is_graph_object:
+        # if the base graph is itself a mst, we take the base graph of this mst as the new base graph
+        if hg.CptMinimumSpanningTree.validate(graph):
+            leaf_graph = hg.CptMinimumSpanningTree.construct(graph)["base_graph"]
+        else:
+            leaf_graph = graph
+
+        hg.CptHierarchy.link(tree, leaf_graph)
+
+    if compute_mst and input_is_graph_object:
+        mst = hg.subgraph(graph, mst_edge_map)
+        hg.CptMinimumSpanningTree.link(mst, leaf_graph, mst_edge_map)
+    else:
+        mst = None
+
+    hg.CptBinaryHierarchy.link(tree, mst_edge_map, mst)
+
+    if not return_altitudes:
+        return tree
+    else:
+        return tree, altitudes
+
+
 def quasi_flat_zone_hierarchy(graph, edge_weights):
     """
     Computes the quasi flat zone hierarchy of the given weighted graph.
