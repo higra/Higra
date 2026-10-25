@@ -22,6 +22,22 @@
 namespace hg {
     namespace hierarchy_core_internal {
 
+        // Experimental policies: numbering never changes the construction's
+        // comparator. Frontends supplying explicit ranks pass their comparator
+        // directly, bypassing scalar tie refinement altogether.
+        enum class bpt_boruvka_numbering { exact, basin };
+        enum class bpt_boruvka_tie_order { edge_id, reverse_edge_id };
+
+        // Preconditions: validated scalar weights without NaNs. Infinities and
+        // signed zeros use ordinary numeric comparison; IDs make ties total.
+        template<typename weights_t>
+        bool bpt_boruvka_scalar_less(const weights_t &weights, index_t a, index_t b,
+                                     bpt_boruvka_tie_order ties = bpt_boruvka_tie_order::edge_id) {
+            return weights(a) < weights(b) ||
+                   (!(weights(b) < weights(a)) &&
+                    (ties == bpt_boruvka_tie_order::edge_id ? a < b : a > b));
+        }
+
         inline void bpt_boruvka_check_sizes(index_t num_vertices, size_t num_edges) {
             hg_assert(num_vertices > 0, "Input graph must have at least one vertex.");
             hg_assert(num_vertices <= (std::numeric_limits<index_t>::max)() / 2 + 1,
@@ -200,7 +216,8 @@ namespace hg {
         }
 
         template<typename edge_less_t>
-        auto bpt_boruvka_export_exact(const bpt_boruvka_history &history, const edge_less_t &less) {
+        auto bpt_boruvka_export(const bpt_boruvka_history &history, const edge_less_t &less,
+                                bpt_boruvka_numbering numbering = bpt_boruvka_numbering::exact) {
             const index_t n = history.leaf_parent.size(), count = history.selected_edges.size();
             auto expanded = bpt_boruvka_expand(history, less);
             auto &edge_parent = expanded.first;
@@ -218,13 +235,24 @@ namespace hg {
                     edge_parent(a) = b;
                 }
             }
-            array_1d<index_t> global_order = xt::arange<index_t>(count);
-            hg::sort(global_order.begin(), global_order.end(), slot_less);
+            // Basin order is topological even after non-monotone relocation:
+            // every raw parent was selected in a later round, hence has a
+            // strictly larger raw basin ID. A climb ends at r with parent p;
+            // expanded_basin[u] = raw_basin[r] < raw_basin[p] <=
+            // expanded_basin[p]. Retained cross-basin parents therefore occur
+            // later. Rewired same-basin parents occur later under the same
+            // total edge order. Undefined parents all relocate to the final
+            // (largest) terminal basin; its chain has a sole, last root.
+            // Leaves precede all selected slots. No topological sort is needed.
+            array_1d<index_t> node_order = std::move(group_order);
+            if (numbering == bpt_boruvka_numbering::exact) {
+                hg::sort(node_order.begin(), node_order.end(), slot_less);
+            }
             array_1d<index_t> slot_to_node = xt::empty<index_t>({count});
             array_1d<index_t> mst_edge_map = xt::empty<index_t>({count});
             for (index_t i = 0; i < count; ++i) {
-                slot_to_node(global_order(i)) = n + i;
-                mst_edge_map(i) = history.selected_edges(global_order(i));
+                slot_to_node(node_order(i)) = n + i;
+                mst_edge_map(i) = history.selected_edges(node_order(i));
             }
             array_1d<index_t> parents = xt::empty<index_t>({n + count});
             if (n == 1) {
@@ -237,19 +265,29 @@ namespace hg {
                     auto node = slot_to_node(slot), p = edge_parent(slot);
                     hg_assert(p != invalid_index || node == n + count - 1, "Only the root can lack a parent.");
                     parents(node) = p == invalid_index ? node : slot_to_node(p);
-                    hg_assert(parents(node) > node || node == n + count - 1,
+                    hg_assert(p == invalid_index || parents(node) > node,
                               "Export must put parents after children.");
                 }
             }
             return std::make_pair(std::move(parents), std::move(mst_edge_map));
         }
 
+        // Exact-numbering convenience helper.
+        template<typename edge_less_t>
+        auto bpt_boruvka_export_exact(const bpt_boruvka_history &history, const edge_less_t &less) {
+            return bpt_boruvka_export(history, less);
+        }
+
         // Endpoint/comparator entry point shared by scalar and future frontends.
-        // Returns owning (parents, MST edge map), with exact stable-Kruskal IDs.
+        // Returns owning (parents, MST edge map), with exact stable-Kruskal IDs
+        // by default. Basin numbering preserves the edge-labeled tree and leaf
+        // IDs, but internal altitudes need not be globally sorted. The supplied
+        // comparator is authoritative in both modes, including explicit ranks.
         template<typename E1, typename E2, typename edge_less_t>
         auto bpt_boruvka_from_edge_order(const xt::xexpression<E1> &xsources,
                                         const xt::xexpression<E2> &xtargets,
-                                        index_t n, const edge_less_t &less) {
+                                        index_t n, const edge_less_t &less,
+                                        bpt_boruvka_numbering numbering = bpt_boruvka_numbering::exact) {
             const auto &sources = xsources.derived_cast();
             const auto &targets = xtargets.derived_cast();
             hg_assert_1d_array(sources);
@@ -264,7 +302,7 @@ namespace hg {
                           "Edge endpoints must be valid vertex indices.");
             }
             auto history = bpt_boruvka_waterfall(sources, targets, n, less);
-            return bpt_boruvka_export_exact(history, less);
+            return bpt_boruvka_export(history, less, numbering);
         }
     }
 }

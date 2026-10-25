@@ -184,8 +184,7 @@ namespace hg {
             hg_assert(weight == weight, "NaN edge weights are not supported.");
         }
         auto less = [&](index_t a, index_t b) {
-            return edge_weights(a) < edge_weights(b) ||
-                   (!(edge_weights(b) < edge_weights(a)) && a < b);
+            return hierarchy_core_internal::bpt_boruvka_scalar_less(edge_weights, a, b);
         };
         const auto &src = sources(graph);
         const auto &dst = targets(graph);
