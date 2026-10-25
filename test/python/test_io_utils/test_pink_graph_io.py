@@ -34,7 +34,7 @@ class TestPinkGraphIO(unittest.TestCase):
         global graph_file
         graph, vertex_weights, edge_weights = hg.read_graph_pink(graph_file)
 
-        shape = hg.get_attribute(graph, "shape")
+        shape = getattr(graph, "shape", None)
 
         edges_ref = []
         for i in range(14):

@@ -125,7 +125,7 @@ sys.exit(1)
                 for name, values in attributes.items():
                     np.testing.assert_array_equal(result[name], values)
                     self.assertEqual(result[name].dtype, np.float64)
-                    self.assertIs(hg.get_attribute(tree, name), result[name])
+                    self.assertIs(getattr(tree, name, None), result[name])
             hg.save_tree(str(path), original)
             self.assertEqual(hg.read_tree(str(path))[1], {})
 
@@ -145,7 +145,7 @@ sys.exit(1)
                     if attributes:
                         self.assertEqual(result["empty"].shape, (0,))
                         self.assertEqual(result["empty"].dtype, np.float64)
-                        self.assertIs(hg.get_attribute(tree, "empty"), result["empty"])
+                        self.assertIs(getattr(tree, "empty", None), result["empty"])
             pathlib.Path(path).write_bytes(b"NBNODES=0\nNBATTR=0\nEND\n")
             self.assertEqual(hg.read_tree(path)[0].category(), hg.TreeCategory.PartitionTree)
 

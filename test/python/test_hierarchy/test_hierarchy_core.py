@@ -43,7 +43,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         tree, altitudes = hg.bpt_canonical(graph, edge_weights)
         mst = hg.CptBinaryHierarchy.construct(tree)["mst"]
-        mst_edge_map = hg.get_attribute(mst, "mst_edge_map")
+        mst_edge_map = getattr(mst, "mst_edge_map", None)
 
         self.assertTrue(tree.num_vertices() == 11)
         self.assertTrue(tree.num_edges() == 10)
@@ -90,7 +90,7 @@ class TestHierarchyCore(unittest.TestCase):
 
         tree = hg.bpt_canonical(graph, edge_weights, return_altitudes=False, compute_mst=False)
         self.assertTrue(np.all(tree.parents() == ref_parents))
-        self.assertTrue(hg.get_attribute(tree, "mst") is None)
+        self.assertTrue(getattr(tree, "mst", None) is None)
         self.assertTrue(np.all(tree.mst_edge_map == ref_mst_edge_map))
         mst = hg.CptBinaryHierarchy.get_mst(tree)
         self.assertTrue(mst.num_vertices() == 6)

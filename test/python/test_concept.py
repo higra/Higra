@@ -35,8 +35,8 @@ class CptA(hg.Concept):
 
     @staticmethod
     def link(caA, ea1):
-        hg.add_tag(caA, CptA)
-        hg.set_attribute(caA, "ea1", ea1)
+        CptA.tag(caA)
+        caA.ea1 = ea1
 
 
 class CptB(CptA):
@@ -52,9 +52,9 @@ class CptB(CptA):
 
     @staticmethod
     def link(caB, caA, eb2):
-        hg.add_tag(caB, CptB)
-        hg.set_attribute(caB, "caA", caA)
-        hg.set_attribute(caB, "eb2", eb2)
+        CptB.tag(caB)
+        caB.caA = caA
+        caB.eb2 = eb2
 
 
 class CptC(hg.Concept):
@@ -69,8 +69,8 @@ class CptC(hg.Concept):
 
     @staticmethod
     def link(caC, ec1):
-        hg.add_tag(caC, CptC)
-        hg.set_attribute(caC, "ec1", ec1)
+        CptC.tag(caC)
+        caC.ec1 = ec1
 
 
 # simple implicit arg name
@@ -98,6 +98,87 @@ def concept_consumer4(obj, ec1):
 
 class TestConcept(unittest.TestCase):
 
+    def test_direct_fields_missing_and_none(self):
+        graph = hg.get_4_adjacency_implicit_graph((2, 3))
+        self.assertEqual(hg.CptGridGraph.construct(graph)["shape"], (2, 3))
+        graph.shape = (3, 2)
+        self.assertEqual(hg.CptGridGraph.get_shape(graph), (3, 2))
+        del graph.shape
+        self.assertTrue(callable(graph.shape))
+        self.assertIsNone(hg.CptGridGraph.get_shape(graph))
+        with self.assertRaisesRegex(Exception, "cannot find data element named 'shape'"):
+            hg.CptGridGraph.construct(graph)
+        self.assertNotIn("shape", hg.CptGridGraph.construct(graph, strict=False))
+        graph.shape = None
+        with self.assertRaisesRegex(Exception, "cannot find data element named 'shape'"):
+            hg.CptGridGraph.construct(graph)
+
+    def test_custom_hook_and_authoritative_fields(self):
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            a, b, c = Dummy(1), Dummy(2), Dummy(3)
+            self.assertFalse(CptA.validate(a))
+            self.assertEqual(vars(a), {"name": 1})
+            CptA.link(a, b)
+            CptB.link(c, a, 42)
+            self.assertTrue(CptB.validate(c))
+            self.assertFalse(CptA.validate(c))
+            self.assertEqual(concept_consumer3(c), b)
+            a.ea1 = 7
+            self.assertEqual(concept_consumer3(c), 7)
+            self.assertEqual(concept_consumer2(a, new_name=None), 7)
+            self.assertEqual(concept_consumer2(a, new_name=8), 8)
+            a.ea1 = None
+            self.assertNotIn("ea1", CptB.construct(c, strict=False))
+            with self.assertRaisesRegex(Exception, "cannot find data element"):
+                CptB.construct(c)
+            del a.ea1
+            with self.assertRaisesRegex(Exception, "cannot find data element"):
+                CptA.construct(a)
+            self.assertEqual(CptA.construct(None), {})
+
+    def test_builtin_concept_chaining_and_maps(self):
+        import numpy as np
+        graph = hg.get_4_adjacency_graph((2, 3))
+        rag = hg.UndirectedGraph(2)
+        vertex_map = np.array([0, 0, 0, 1, 1, 1])
+        edge_map = np.zeros(graph.num_edges(), dtype=np.int64)
+        hg.CptRegionAdjacencyGraph.link(rag, graph, vertex_map, edge_map)
+        tree = hg.Tree((2, 2, 2))
+        hg.CptHierarchy.link(tree, rag)
+
+        @hg.argument_helper(hg.CptHierarchy, ("leaf_graph", hg.CptRegionAdjacencyGraph),
+                            ("pre_graph", hg.CptGridGraph))
+        def consume(tree, shape=None, vertex_map=None):
+            return shape, vertex_map
+
+        shape, found_map = consume(tree)
+        self.assertEqual(shape, (2, 3))
+        self.assertIs(found_map, vertex_map)
+        replacement = vertex_map.copy()
+        rag.vertex_map = replacement
+        self.assertIs(hg.CptRegionAdjacencyGraph.get_vertex_map(rag), replacement)
+        self.assertIs(consume(tree)[1], replacement)
+        mst = hg.UndirectedGraph(2)
+        mst.add_edge(0, 1)
+        mst_edge_map = np.array([0], dtype=np.int64)
+        hg.CptMinimumSpanningTree.link(mst, rag, mst_edge_map)
+        hg.CptBinaryHierarchy.link(tree, mst_edge_map, mst)
+        for concept, owner, field in ((hg.CptHierarchy, tree, "leaf_graph"),
+                                      (hg.CptRegionAdjacencyGraph, rag, "edge_map"),
+                                      (hg.CptMinimumSpanningTree, mst, "base_graph"),
+                                      (hg.CptBinaryHierarchy, tree, "mst_edge_map")):
+            value = getattr(owner, field)
+            setattr(owner, field, None)
+            self.assertNotIn(field, concept.construct(owner, strict=False))
+            with self.assertRaisesRegex(Exception, "cannot find data element"):
+                concept.construct(owner)
+            delattr(owner, field)
+            with self.assertRaisesRegex(Exception, "cannot find data element"):
+                concept.construct(owner)
+            setattr(owner, field, value)
+
     def test_construct(self):
         o1 = Dummy(1)
         o2 = Dummy(2)
@@ -115,8 +196,6 @@ class TestConcept(unittest.TestCase):
 
         self.assertTrue(ca == ref_ca)
         self.assertTrue(cb == ref_cb)
-
-        hg.clear_all_attributes()
 
     def test_concept_consumer1(self):
         o1 = Dummy(1)
