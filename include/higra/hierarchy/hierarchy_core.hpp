@@ -10,7 +10,9 @@
 
 #pragma once
 
+#include <utility>
 #include "common.hpp"
+#include "detail/bpt_boruvka.hpp"
 #include "higra/structure/unionfind.hpp"
 #include "higra/graph.hpp"
 #include "higra/sorting.hpp"
@@ -19,7 +21,6 @@
 #include "xtensor/views/xindex_view.hpp"
 #include "xtensor/views/xview.hpp"
 #include "xtensor/core/xnoalias.hpp"
-#include <utility>
 #include <tuple>
 #include <queue>
 
@@ -149,6 +150,54 @@ namespace hg {
                 std::move(levels),
                 std::move(mst_edge_map));
     };
+
+
+    /**
+     * Compute the canonical binary partition tree with Waterfall-Boruvka.
+     *
+     * The connected undirected graph must be nonempty and have valid indexed
+     * endpoints. Edge weights must be one-dimensional real numeric values;
+     * NaNs are rejected and infinities are allowed. Self-loops are ignored and
+     * parallel edges are supported. Equal weights are ordered by original edge
+     * ID, yielding the same parents and ordered MST edge map as bpt_canonical.
+     *
+     * Returns a node_weighted_tree_and_mst with a partition tree, owning
+     * altitudes of the input value type, and an internal-node-to-original-edge
+     * map. Leaves have zero altitude. A singleton has parents [0] and no MST
+     * edges. Empty or disconnected graphs and invalid inputs throw.
+     */
+    template<typename graph_t, typename T>
+    auto bpt_canonical_boruvka(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+        HG_TRACE();
+        const auto &edge_weights = xedge_weights.derived_cast();
+        using value_type = typename T::value_type;
+        static_assert(std::is_arithmetic<value_type>::value, "Edge weights must be real numeric values.");
+        hg_assert_edge_weights(graph, edge_weights);
+        hg_assert_1d_array(edge_weights);
+        const auto vertex_count = num_vertices(graph);
+        hg_assert(vertex_count > 0 &&
+                  static_cast<uintmax_t>(vertex_count) <= static_cast<uintmax_t>((std::numeric_limits<index_t>::max)()),
+                  "Vertex count exceeds index capacity or is empty.");
+        const auto n = static_cast<index_t>(vertex_count);
+        hierarchy_core_internal::bpt_boruvka_check_sizes(n, edge_weights.size());
+        for (const auto weight: edge_weights) {
+            hg_assert(weight == weight, "NaN edge weights are not supported.");
+        }
+        auto less = [&](index_t a, index_t b) {
+            return edge_weights(a) < edge_weights(b) ||
+                   (!(edge_weights(b) < edge_weights(a)) && a < b);
+        };
+        const auto &src = sources(graph);
+        const auto &dst = targets(graph);
+        hg_assert(src.size() == edge_weights.size(), "Endpoint and weight counts must match.");
+        auto result = hierarchy_core_internal::bpt_boruvka_from_edge_order(src, dst, n, less);
+        array_1d<value_type> levels = xt::zeros<value_type>({result.first.size()});
+        for (index_t i = 0; i < n - 1; ++i) {
+            levels(n + i) = edge_weights(result.second(i));
+        }
+        return make_node_weighted_tree_and_mst(tree(std::move(result.first)),
+                                              std::move(levels), std::move(result.second));
+    }
 
 
     /**
