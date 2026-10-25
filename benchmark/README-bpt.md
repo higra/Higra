@@ -27,6 +27,9 @@ on benchmark targets. Do not inject fast math into binding builds. The two
 additional executables compile optional diagnostic hooks; the primary executable
 and Python extension contain no hooks. No scratch-reuse experiment is included.
 
+The registered `Test_bpt_canonical_runner` CTest entry checks all 83 smoke
+method/input combinations, including scalar exact against the public C++ API.
+
 ## Smoke and campaign profiles
 
 ```bash
@@ -63,7 +66,9 @@ Grid gradients use a smooth sinusoidal signal. Random graphs start with a
 spanning path and can contain parallel edges. Non-ordered cases shuffle edge
 storage. Each case includes family, regime, dtype, input kind, actual vertex
 count and seed in its name. Float and integer arrays retain their native dtype.
-Python additionally measures a two-feature vector case on the 8-neighbor grid.
+Python additionally measures a two-feature vector case `(w, w % 3)` on the
+8-neighbor grid. Its second feature is dependent on the first; it exercises
+vector comparison overhead rather than independent multichannel ordering.
 No downloaded images are required.
 
 `--profile campaign` selects 65,536 vertices by default. Use separate invocations
@@ -92,9 +97,13 @@ utilization is not sampled by this harness.
 
 ## Timed boundaries and correctness
 
-Native cases use Google Benchmark `UseRealTime()`. Each timed call includes its
-frontend validation, fresh allocations, all construction phases and required
-sorts, numbering, altitude arrays, tree construction and result destruction.
+Native cases use Google Benchmark `UseRealTime()`. Exact, basin and reverse
+scalar cases share a frontend matching the public scalar API, with compile-time
+numbering/tie policies and no method-name dispatch inside comparisons. The exact
+frontend is also checked against the public API outside timing. Each timed call
+includes its frontend validation, fresh allocations, all construction phases
+and required sorts, numbering, altitude arrays, tree construction and result
+destruction.
 The existing baseline retains its existing validation behavior. The comparator
 baseline uses `hg::sort` on unique `(weight, edge ID)` keys and the existing
 sorted-edge Kruskal core. Compare it with `kruskal` to isolate the sorting

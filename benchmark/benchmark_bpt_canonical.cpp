@@ -19,49 +19,85 @@ namespace bpt_bench {
     namespace core = hg::hierarchy_core_internal;
     const std::vector<std::string> methods{"kruskal", "kruskal_comparator", "exact", "basin", "reverse"};
 
-    template<class T> auto call(const input<T> &data, const spec &s, const std::string &method) {
-        if (method == "kruskal" && s.input != "order") return hg::bpt_canonical(data.graph, data.weights);
-        if (method == "exact" && s.input != "order") return hg::bpt_canonical_boruvka(data.graph, data.weights);
-        const auto n = hg::num_vertices(data.graph);
-        const auto &weights = data.weights;
-        hg_assert_edge_weights(data.graph, weights);
-        hg_assert_1d_array(weights);
-        for (auto w: weights) hg_assert(w == w, "NaN weight.");
-        hg::array_1d<index_t> rank;
-        if (s.input == "order" && method != "kruskal") {
-            rank = xt::empty<index_t>({weights.size()});
-            rank.fill(hg::invalid_index);
-            for (size_t i = 0; i < weights.size(); ++i) {
-                auto e = data.order(i);
-                hg_assert(e >= 0 && size_t(e) < weights.size() && rank(e) == hg::invalid_index, "Invalid permutation.");
-                rank(e) = i;
-            }
-        }
-        auto less = [&](index_t a, index_t b) {
-            return s.input == "order" ? rank(a) < rank(b) :
-                core::bpt_boruvka_scalar_less(weights, a, b, method == "reverse" ?
-                    core::bpt_boruvka_tie_order::reverse_edge_id : core::bpt_boruvka_tie_order::edge_id);
-        };
-        // Existing provided-order baseline consumes the supplied permutation
-        // directly; it does not pay inverse-rank preparation required by Boruvka.
-        auto result = [&]() {
-            if (method == "kruskal" || method == "kruskal_comparator") {
-                if (s.input == "order") return core::bpt_canonical_from_sorted_edges(
-                    hg::sources(data.graph), hg::targets(data.graph), data.order, n);
-                hg::array_1d<index_t> order = xt::arange<index_t>(weights.size());
-                hg::sort(order.begin(), order.end(), less);
-                return core::bpt_canonical_from_sorted_edges(hg::sources(data.graph), hg::targets(data.graph), order, n);
-            }
-            return core::bpt_boruvka_from_edge_order(hg::sources(data.graph), hg::targets(data.graph), n, less,
-                method == "exact" ? core::bpt_boruvka_numbering::exact : core::bpt_boruvka_numbering::basin);
-        }();
+    template<bool kruskal = false, class T, class result_t>
+    auto finalize(result_t result, const input<T> &data) {
 #ifdef HG_BPT_BENCH_DIAGNOSTICS
         core::bpt_bench_phase finalization_timer("frontend_finalization");
 #endif
+        const auto n = hg::num_vertices(data.graph);
         hg::array_1d<T> levels = xt::zeros<T>({result.first.size()});
-        hg::parfor(0, n - 1, [&](index_t i) { levels(n + i) = weights(result.second(i)); });
+        if constexpr (kruskal) {
+            xt::noalias(xt::view(levels, xt::range(n, levels.size()))) = xt::index_view(data.weights, result.second);
+        } else {
+            hg::parfor(0, n - 1, [&](index_t i) { levels(n + i) = data.weights(result.second(i)); });
+        }
         return hg::make_node_weighted_tree_and_mst(hg::tree(std::move(result.first)),
             std::move(levels), std::move(result.second));
+    }
+
+    // Match the scalar public frontend for every policy. Compile-time policies
+    // keep method-name and rank/scalar dispatch out of all edge comparisons.
+    template<core::bpt_boruvka_numbering numbering, core::bpt_boruvka_tie_order ties, class T>
+    auto scalar_boruvka(const input<T> &data) {
+        const auto &weights = data.weights;
+        hg_assert_edge_weights(data.graph, weights);
+        hg_assert_1d_array(weights);
+        const auto vertex_count = hg::num_vertices(data.graph);
+        hg_assert(vertex_count > 0 &&
+                  static_cast<uintmax_t>(vertex_count) <= static_cast<uintmax_t>((std::numeric_limits<index_t>::max)()),
+                  "Vertex count exceeds index capacity or is empty.");
+        const auto n = static_cast<index_t>(vertex_count);
+        core::bpt_boruvka_check_sizes(n, weights.size());
+        for (const auto w: weights) hg_assert(w == w, "NaN edge weights are not supported.");
+        const auto &src = hg::sources(data.graph), &dst = hg::targets(data.graph);
+        hg_assert(src.size() == weights.size(), "Endpoint and weight counts must match.");
+        auto less = [&](index_t a, index_t b) {
+            return core::bpt_boruvka_scalar_less(weights, a, b, ties);
+        };
+        return finalize(core::bpt_boruvka_from_edge_order(src, dst, n, less, numbering), data);
+    }
+
+    template<class T> auto call(const input<T> &data, const spec &s, const std::string &method) {
+        const auto n = hg::num_vertices(data.graph);
+        if (s.input != "order") {
+            if (method == "kruskal") return hg::bpt_canonical(data.graph, data.weights);
+            if (method == "exact") return scalar_boruvka<core::bpt_boruvka_numbering::exact,
+                core::bpt_boruvka_tie_order::edge_id>(data);
+            if (method == "basin") return scalar_boruvka<core::bpt_boruvka_numbering::basin,
+                core::bpt_boruvka_tie_order::edge_id>(data);
+            if (method == "reverse") return scalar_boruvka<core::bpt_boruvka_numbering::basin,
+                core::bpt_boruvka_tie_order::reverse_edge_id>(data);
+            hg_assert(method == "kruskal_comparator", "Unknown method.");
+            // Match the current baseline's validation and finalization. Only
+            // its stable index sort is replaced with a unique-key comparator sort.
+            hg_assert_edge_weights(data.graph, data.weights);
+            hg_assert_1d_array(data.weights);
+            hg::array_1d<index_t> order = xt::arange<index_t>(data.weights.size());
+            hg::sort(order.begin(), order.end(), [&](index_t a, index_t b) {
+                return core::bpt_boruvka_scalar_less(data.weights, a, b);
+            });
+            return finalize<true>(core::bpt_canonical_from_sorted_edges(
+                hg::sources(data.graph), hg::targets(data.graph), order, n), data);
+        }
+        // Supplied-order Kruskal consumes the permutation directly. Both new
+        // policies pay identical validation/inverse-rank costs inside the call.
+        if (method == "kruskal") return finalize<true>(core::bpt_canonical_from_sorted_edges(
+            hg::sources(data.graph), hg::targets(data.graph), data.order, n), data);
+        hg_assert(method == "exact" || method == "basin", "Unknown order method.");
+        hg_assert_edge_weights(data.graph, data.weights);
+        hg_assert_1d_array(data.weights);
+        for (auto w: data.weights) hg_assert(w == w, "NaN weight.");
+        hg::array_1d<index_t> rank = xt::empty<index_t>({data.weights.size()});
+        rank.fill(hg::invalid_index);
+        hg_assert(data.order.size() == rank.size(), "Invalid permutation length.");
+        for (size_t i = 0; i < data.order.size(); ++i) {
+            auto e = data.order(i);
+            hg_assert(e >= 0 && size_t(e) < rank.size() && rank(e) == hg::invalid_index, "Invalid permutation.");
+            rank(e) = i;
+        }
+        auto less = [&](index_t a, index_t b) { return rank(a) < rank(b); };
+        return finalize(core::bpt_boruvka_from_edge_order(hg::sources(data.graph), hg::targets(data.graph), n, less,
+            method == "exact" ? core::bpt_boruvka_numbering::exact : core::bpt_boruvka_numbering::basin), data);
     }
 
     template<class A, class B> void validate(const A &got, const B &ref, index_t n, bool exact) {
@@ -86,6 +122,10 @@ namespace bpt_bench {
     }
     template<class T> void check(const input<T> &data, const spec &s, const std::string &method) {
         auto got = call(data, s, method);
+        if (method == "exact" && s.input != "order") {
+            auto api = hg::bpt_canonical_boruvka(data.graph, data.weights);
+            validate(got, api, s.n, true);
+        }
         if (method != "reverse") {
             auto ref = call(data, s, "kruskal");
             validate(got, ref, s.n, method != "basin");
@@ -216,6 +256,21 @@ bool bpt_special_run() {
     std::cout << std::setprecision(17);
     const auto mode = env("BPT_RUN_MODE", "");
     if (mode.empty()) return false;
+    if (mode == "self-test") {
+        size_t checked = 0;
+        for (const auto &s: cases()) {
+            dispatch(s, [&](auto value) {
+                const auto data = generate<decltype(value)>(s);
+                for (const auto &method: methods) {
+                    if (s.input == "order" && (method == "reverse" || method == "kruskal_comparator")) continue;
+                    check(data, s, method);
+                    ++checked;
+                }
+            });
+        }
+        std::cout << "{\"self_test\":\"passed\",\"method_cases\":" << checked << "}\n";
+        return true;
+    }
     hg_assert(mode == "inputs" || mode == "validate" || mode == "memory" || mode == "diagnostics", "Unknown BPT_RUN_MODE.");
     const auto selected = env("BPT_CASE", "");
     for (const auto &s: cases()) if (s.name() == selected) {

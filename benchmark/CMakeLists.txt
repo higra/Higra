@@ -44,6 +44,10 @@ set(FILES_BENCHMARK
 
 set(BENCHMARK_TARGET benchmark_higra)
 add_executable(${BENCHMARK_TARGET} ${FILES_BENCHMARK})
+add_test(NAME Test_bpt_canonical_runner COMMAND ${CMAKE_COMMAND} -E env
+        BPT_RUN_MODE=self-test BPT_PROFILE=smoke BPT_SIZE=64 BPT_SEED=1729
+        BPT_LOAD_PREFIX= BPT_MAX_MIB=1024 TBB_NUM_THREADS=1
+        $<TARGET_FILE:${BENCHMARK_TARGET}>)
 option(HG_BPT_BENCH_DIAGNOSTICS "Build separate BPT phase and CAS diagnostic runners." OFF)
 add_executable(benchmark_bpt_grid benchmark_bpt_grid.cpp)
 add_test(NAME Test_bpt_grid_runner COMMAND benchmark_bpt_grid --self-test)
