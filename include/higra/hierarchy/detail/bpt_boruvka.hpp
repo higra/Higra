@@ -22,6 +22,12 @@
 #include <utility>
 #include <vector>
 
+// Benchmark-only instrumentation is absent from ordinary library builds.
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+#include <chrono>
+#include <string>
+#endif
+
 #ifdef HG_USE_TBB
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_reduce.h>
@@ -30,6 +36,35 @@
 
 namespace hg {
     namespace hierarchy_core_internal {
+
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+        struct bpt_boruvka_diagnostics {
+            struct round { index_t components, active, accepted, remaining, jump_passes; };
+            std::vector<round> rounds;
+            std::vector<std::pair<std::string, double>> phases;
+            std::vector<index_t> climbs;
+            size_t tracked_scratch_high_water_bytes = 0;
+            index_t jump_passes = 0;
+#ifdef HG_BPT_BENCH_CAS
+            std::atomic<size_t> cas_attempts{0}, cas_failures{0};
+#endif
+        };
+        // Set only by the single-call diagnostic executable. Parallel workers
+        // read this frozen pointer; each recorded climb has a unique writer.
+        inline bpt_boruvka_diagnostics *bpt_bench_diagnostics = nullptr;
+        struct bpt_bench_phase {
+            const char *name;
+            std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+            explicit bpt_bench_phase(const char *value) : name(value) {}
+            ~bpt_bench_phase() {
+                if (bpt_bench_diagnostics) bpt_bench_diagnostics->phases.emplace_back(name,
+                    std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count());
+            }
+        };
+#define HG_BPT_PHASE(name) bpt_bench_phase bpt_phase_timer(name)
+#else
+#define HG_BPT_PHASE(name)
+#endif
 
         // Experimental policies: numbering never changes the construction's
         // comparator. Frontends supplying explicit ranks pass their comparator
@@ -158,6 +193,7 @@ namespace hg {
                                const array_1d<index_t> &labels, index_t component_count,
                                std::vector<index_t> &active, std::vector<index_t> &next_active,
                                bpt_boruvka_scratch &scratch, const edge_less_t &less) {
+            HG_BPT_PHASE("minima_compaction");
             array_1d<index_t> saddle = xt::empty<index_t>({component_count});
             parfor(0, component_count, [&](index_t c) {
 #ifdef HG_USE_TBB
@@ -176,9 +212,15 @@ namespace hg {
                 auto &candidate = scratch.saddle_atomic[c];
                 auto current = candidate.load(std::memory_order_relaxed);
                 while (current == invalid_index || less(edge, current)) {
+#ifdef HG_BPT_BENCH_CAS
+                    if (bpt_bench_diagnostics) ++bpt_bench_diagnostics->cas_attempts;
+#endif
                     if (candidate.compare_exchange_weak(current, edge, std::memory_order_relaxed)) {
                         break;
                     }
+#ifdef HG_BPT_BENCH_CAS
+                    if (bpt_bench_diagnostics) ++bpt_bench_diagnostics->cas_failures;
+#endif
                 }
 #else
                 if (saddle(c) == invalid_index || less(edge, saddle(c))) {
@@ -218,7 +260,11 @@ namespace hg {
         auto bpt_boruvka_label_components(const E1 &sources, const E2 &targets,
                                           const array_1d<index_t> &labels,
                                           const array_1d<index_t> &saddle) {
+            HG_BPT_PHASE("labeling");
             const index_t count = saddle.size();
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+            index_t diagnostic_passes = 0;
+#endif
             array_1d<index_t> successor = xt::empty<index_t>({count});
             array_1d<index_t> jump_a = xt::empty<index_t>({count});
             array_1d<index_t> jump_b = xt::empty<index_t>({count});
@@ -235,6 +281,9 @@ namespace hg {
             });
             bool changed;
             do {
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+                ++diagnostic_passes;
+#endif
                 auto jump = [&](index_t c) {
                     jump_b(c) = jump_a(jump_a(c));
                     return jump_b(c) != jump_a(c);
@@ -256,6 +305,9 @@ namespace hg {
                 // Every writer has joined. Neither pass modifies its input.
                 std::swap(jump_a, jump_b);
             } while (changed);
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+            if (bpt_bench_diagnostics) bpt_bench_diagnostics->jump_passes = diagnostic_passes;
+#endif
             index_t new_count = 0;
 #ifdef HG_USE_TBB
             new_count = tbb::parallel_scan(tbb::blocked_range<index_t>(0, count), index_t(0),
@@ -287,6 +339,7 @@ namespace hg {
         template<typename E1, typename E2, typename edge_less_t>
         auto bpt_boruvka_waterfall(const E1 &sources, const E2 &targets,
                                   index_t n, const edge_less_t &less) {
+            HG_BPT_PHASE("waterfall_total");
             const index_t m = sources.size();
             bpt_boruvka_history history{xt::empty<index_t>({n - 1}),
                                         bpt_boruvka_invalid_indices(n),
@@ -302,8 +355,29 @@ namespace hg {
             parfor(0, m, [&](index_t edge) { active[edge] = edge; });
             index_t component_count = n, selected_count = 0, basin_offset = 0;
             auto saddle = bpt_boruvka_minima(sources, targets, labels, component_count, active, next_active, scratch, less);
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+            auto tracked_bytes = [&]() {
+                size_t bytes = sizeof(index_t) * (history.selected_edges.size() + history.leaf_parent.size() +
+                    history.raw_parent.size() + history.raw_basin.size() + edge_to_slot.size() + labels.size() +
+                    active.capacity() + next_active.capacity() + saddle.size()) + scratch.edge_class.capacity() +
+                    sizeof(bpt_boruvka_counts) * (scratch.counts.capacity() + scratch.offsets.capacity());
+#ifdef HG_USE_TBB
+                bytes += sizeof(std::atomic<index_t>) * size_t(n);
+#endif
+                return bytes;
+            };
+            auto note_scratch = [&](size_t bytes) {
+                if (bpt_bench_diagnostics) bpt_bench_diagnostics->tracked_scratch_high_water_bytes =
+                    (std::max)(bpt_bench_diagnostics->tracked_scratch_high_water_bytes, bytes);
+            };
+            note_scratch(tracked_bytes());
+#endif
             parfor(0, n, [&](index_t v) { history.leaf_parent(v) = saddle(v); });
             while (component_count > 1) {
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+                const auto diagnostic_active = active.size();
+                const auto diagnostic_start = std::chrono::steady_clock::now();
+#endif
                 const auto first_slot = selected_count;
                 next_active.resize(active.size());
                 const auto counts = bpt_boruvka_compact(active, scratch, n - 1 - first_slot,
@@ -321,28 +395,53 @@ namespace hg {
                     });
                 selected_count += counts.selected;
                 next_active.resize(counts.retained);
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+                if (bpt_bench_diagnostics) bpt_bench_diagnostics->phases.emplace_back("selection_compaction",
+                    std::chrono::duration<double>(std::chrono::steady_clock::now() - diagnostic_start).count());
+#endif
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+                // Five simultaneously live labeler arrays, including its result.
+                note_scratch(tracked_bytes() + 5 * sizeof(index_t) * size_t(component_count));
+#endif
                 auto labeling = bpt_boruvka_label_components(sources, targets, labels, saddle);
                 const auto new_count = labeling.second;
                 hg_assert(new_count <= component_count / 2, "Selected forest must halve component count.");
                 hg_assert(selected_count - first_slot == component_count - new_count,
                           "Selected edges must form a forest.");
-                parfor(0, n, [&](index_t v) {
-                    labels(v) = labeling.first(labels(v));
-                });
-                active.swap(next_active);
+                {
+                    HG_BPT_PHASE("vertex_relabeling");
+                    parfor(0, n, [&](index_t v) {
+                        labels(v) = labeling.first(labels(v));
+                    });
+                    active.swap(next_active);
+                }
                 if (new_count > 1) {
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+                    // Old saddle survives until the new return value is assigned.
+                    note_scratch(tracked_bytes() + sizeof(index_t) * (labeling.first.size() + size_t(new_count)));
+#endif
                     saddle = bpt_boruvka_minima(sources, targets, labels, new_count, active, next_active, scratch, less);
                 }
-                hg_assert(basin_offset <= n - 1 - new_count, "Basin count exceeds capacity.");
-                parfor(first_slot, selected_count, [&](index_t slot) {
-                    auto basin = labels(sources(history.selected_edges(slot)));
-                    history.raw_basin(slot) = basin_offset + basin;
-                    history.raw_parent(slot) = new_count == 1 ? invalid_index : saddle(basin);
-                });
-                basin_offset += new_count;
-                component_count = new_count;
+                {
+                    HG_BPT_PHASE("history_assignment");
+                    hg_assert(basin_offset <= n - 1 - new_count, "Basin count exceeds capacity.");
+                    parfor(first_slot, selected_count, [&](index_t slot) {
+                        auto basin = labels(sources(history.selected_edges(slot)));
+                        history.raw_basin(slot) = basin_offset + basin;
+                        history.raw_parent(slot) = new_count == 1 ? invalid_index : saddle(basin);
+                    });
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+                    if (bpt_bench_diagnostics) bpt_bench_diagnostics->rounds.push_back({component_count,
+                        static_cast<index_t>(diagnostic_active), counts.selected, new_count, bpt_bench_diagnostics->jump_passes});
+#endif
+                    basin_offset += new_count;
+                    component_count = new_count;
+                }
             }
             hg_assert(selected_count == n - 1, "Input graph must be connected.");
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+            bpt_bench_phase slot_conversion_timer("history_slot_conversion");
+#endif
             // Original-edge references are converted only after every saddle has
             // received its selected slot. No inverse edge map survives this stage.
             parfor(0, n, [&](index_t v) {
@@ -362,19 +461,32 @@ namespace hg {
 
         template<typename edge_less_t>
         auto bpt_boruvka_expand(const bpt_boruvka_history &history, const edge_less_t &less) {
+            HG_BPT_PHASE("expansion");
             const index_t count = history.selected_edges.size();
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+            if (bpt_bench_diagnostics) bpt_bench_diagnostics->climbs.resize(count);
+#endif
             array_1d<index_t> parents = xt::empty<index_t>({count});
             array_1d<index_t> basins = xt::empty<index_t>({count});
             parfor(0, count, [&](index_t slot) {
                 auto node = slot;
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+                index_t diagnostic_climbs = 0;
+#endif
                 auto ancestor = history.raw_parent(node);
                 // Read the immutable raw snapshot. Compare every ancestor with
                 // the fixed starting edge, and move its basin together with it.
                 while (ancestor != invalid_index &&
                        less(history.selected_edges(ancestor), history.selected_edges(slot))) {
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+                    ++diagnostic_climbs;
+#endif
                     node = ancestor;
                     ancestor = history.raw_parent(node);
                 }
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+                if (bpt_bench_diagnostics) bpt_bench_diagnostics->climbs[slot] = diagnostic_climbs;
+#endif
                 parents(slot) = ancestor;
                 basins(slot) = history.raw_basin(node);
             });
@@ -392,15 +504,21 @@ namespace hg {
                 return less(history.selected_edges(a), history.selected_edges(b));
             };
             array_1d<index_t> group_order = xt::arange<index_t>(count);
-            hg::sort(group_order.begin(), group_order.end(), [&](index_t a, index_t b) {
-                return basins(a) < basins(b) || (basins(a) == basins(b) && slot_less(a, b));
-            });
-            parfor(0, (std::max)(index_t(0), count - 1), [&](index_t i) {
-                auto a = group_order(i), b = group_order(i + 1);
-                if (basins(a) == basins(b)) {
-                    edge_parent(a) = b;
-                }
-            });
+            {
+                HG_BPT_PHASE("basin_sort");
+                hg::sort(group_order.begin(), group_order.end(), [&](index_t a, index_t b) {
+                    return basins(a) < basins(b) || (basins(a) == basins(b) && slot_less(a, b));
+                });
+            }
+            {
+                HG_BPT_PHASE("rewiring");
+                parfor(0, (std::max)(index_t(0), count - 1), [&](index_t i) {
+                    auto a = group_order(i), b = group_order(i + 1);
+                    if (basins(a) == basins(b)) {
+                        edge_parent(a) = b;
+                    }
+                });
+            }
             // Basin order is topological even after non-monotone relocation:
             // every raw parent was selected in a later round, hence has a
             // strictly larger raw basin ID. A climb ends at r with parent p;
@@ -412,8 +530,19 @@ namespace hg {
             // Leaves precede all selected slots. No topological sort is needed.
             array_1d<index_t> node_order = std::move(group_order);
             if (numbering == bpt_boruvka_numbering::exact) {
+                HG_BPT_PHASE("exact_numbering_sort");
                 hg::sort(node_order.begin(), node_order.end(), slot_less);
             }
+            HG_BPT_PHASE("export_mapping");
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+            if (bpt_bench_diagnostics) {
+                // History + expanded arrays + permutation + inverse node map.
+                // Final parents/MST map are outputs, not tracked scratch.
+                const size_t bytes = sizeof(index_t) * (history.leaf_parent.size() + 7 * size_t(count));
+                bpt_bench_diagnostics->tracked_scratch_high_water_bytes =
+                    (std::max)(bpt_bench_diagnostics->tracked_scratch_high_water_bytes, bytes);
+            }
+#endif
             array_1d<index_t> slot_to_node = xt::empty<index_t>({count});
             array_1d<index_t> mst_edge_map = xt::empty<index_t>({count});
             parfor(0, count, [&](index_t i) {
@@ -472,3 +601,5 @@ namespace hg {
         }
     }
 }
+
+#undef HG_BPT_PHASE

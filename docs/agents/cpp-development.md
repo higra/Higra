@@ -143,8 +143,9 @@ materialization of implicit graphs, and repeated evaluation of expressions in
 inner loops unless a change requires them. Check both TBB modes for changed
 parallel behavior; the Python bindings currently retain the GIL.
 
-`benchmark/CMakeLists.txt` is not a turnkey performance suite: most benchmark
-sources are disabled and it requires TBB. See the build guide before enabling it.
+Most older sources in `benchmark/CMakeLists.txt` are disabled. BPT benchmarks
+support TBB on/off; see the [benchmark guide](../../benchmark/README-bpt.md)
+for profiles, diagnostics and measurement boundaries.
 
 ## Tests and integration
 

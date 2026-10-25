@@ -8,47 +8,8 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-message(STATUS "Forcing tests build type to Release")
-set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-
-include(CheckCXXCompilerFlag)
-
-string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -ffast-math -Wunused-parameter -Wextra -Wreorder")
-    CHECK_CXX_COMPILER_FLAG("-std=c++14" HAS_CPP14_FLAG)
-
-    if (HAS_CPP14_FLAG)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-    else ()
-        message(FATAL_ERROR "Unsupported compiler -- xtensor requires C++14 support!")
-    endif ()
-
-    # Enable link time optimization and set the default symbol
-    # visibility to hidden (very important to obtain small binaries)
-    if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-        # Default symbol visibility
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
-
-        # Check for Link Time Optimization support
-        # (GCC/Clang)
-        # LTO had to be removed as google benchmark doesn't build with it
-        # CHECK_CXX_COMPILER_FLAG("-flto" HAS_LTO_FLAG)
-        # if (HAS_LTO_FLAG)
-        #     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
-        # endif()
-
-        # Intel equivalent to LTO is called IPO
-        if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-            CHECK_CXX_COMPILER_FLAG("-ipo" HAS_IPO_FLAG)
-            if (HAS_IPO_FLAG)
-                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ipo")
-            endif ()
-        endif ()
-    endif ()
-endif ()
-
+# Inherit the root C++17, optimization, LTO and SIMD settings for every method.
+# Floating point validation/infinities require ordinary IEEE comparisons.
 if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MP /bigobj")
     set(CMAKE_EXE_LINKER_FLAGS /MANIFEST:NO)
@@ -68,6 +29,7 @@ include_directories(${GBENCHMARK_INCLUDE_DIRS})
 set(FILES_BENCHMARK
         main.cpp
         utils.cpp
+        benchmark_bpt_canonical.cpp
         #benchmark_lca.cpp
         #        benchmark_component_tree_casf.cpp
         #benchmark_undirected_graph.cpp
@@ -82,8 +44,30 @@ set(FILES_BENCHMARK
 
 set(BENCHMARK_TARGET benchmark_higra)
 add_executable(${BENCHMARK_TARGET} ${FILES_BENCHMARK})
-target_compile_definitions(${BENCHMARK_TARGET} PRIVATE HG_USE_TBB)
-target_link_libraries(${BENCHMARK_TARGET} benchmark::benchmark TBB::tbb)
+option(HG_BPT_BENCH_DIAGNOSTICS "Build separate BPT phase and CAS diagnostic runners." OFF)
+add_executable(benchmark_bpt_grid benchmark_bpt_grid.cpp)
+add_test(NAME Test_bpt_grid_runner COMMAND benchmark_bpt_grid --self-test)
+set(BPT_BENCH_TARGETS ${BENCHMARK_TARGET} benchmark_bpt_grid)
+if (HG_BPT_BENCH_DIAGNOSTICS)
+    foreach(kind IN ITEMS diagnostics cas)
+        add_executable(benchmark_higra_${kind} ${FILES_BENCHMARK})
+        target_compile_definitions(benchmark_higra_${kind} PRIVATE HG_BPT_BENCH_DIAGNOSTICS)
+        list(APPEND BPT_BENCH_TARGETS benchmark_higra_${kind})
+    endforeach()
+    target_compile_definitions(benchmark_higra_cas PRIVATE HG_BPT_BENCH_CAS)
+endif()
+foreach(target IN LISTS BPT_BENCH_TARGETS)
+    target_link_libraries(${target} PRIVATE benchmark::benchmark)
+    if (HG_USE_TBB)
+        target_compile_definitions(${target} PRIVATE HG_USE_TBB XTENSOR_USE_TBB)
+        target_link_libraries(${target} PRIVATE TBB::tbb)
+    endif()
+    if (MSVC)
+        target_compile_options(${target} PRIVATE /fp:precise)
+    else()
+        target_compile_options(${target} PRIVATE -fno-fast-math)
+    endif()
+endforeach()
 
 
 add_custom_target(benchmark_exe

@@ -14,8 +14,13 @@
 #include <benchmark/benchmark.h>
 #include "xtensor/containers/xarray.hpp"
 #include "xtensor/containers/xtensor.hpp"
+#ifdef HG_USE_TBB
 #include <oneapi/tbb/global_control.h>
 #include <oneapi/tbb/task_arena.h>
+#include <oneapi/tbb/version.h>
+#endif
+
+bool bpt_special_run();
 
 #ifdef XTENSOR_USE_XSIMD
 #ifdef __GNUC__
@@ -45,15 +50,19 @@ void print_stats() {
 
 // Custom main function to print SIMD config and restrict TBB threads
 int main(int argc, char **argv) {
-    print_stats();
+    // Keep stdout usable as JSON for single-case memory/diagnostic runs.
+    if (!std::getenv("BPT_RUN_MODE")) print_stats();
+#ifdef HG_USE_TBB
 
     std::size_t num_threads = oneapi::tbb::this_task_arena::max_concurrency();
 
     if (const char* env_p = std::getenv("TBB_NUM_THREADS")) {
-        int parsed = std::atoi(env_p);
-        if (parsed > 0) {
-            num_threads = static_cast<std::size_t>(parsed);
+        std::size_t consumed = 0;
+        const auto parsed = std::stoull(env_p, &consumed);
+        if (consumed != std::string(env_p).size() || parsed == 0 || env_p[0] == '-') {
+            throw std::invalid_argument("TBB_NUM_THREADS must be a positive integer.");
         }
+        num_threads = parsed;
     }
 
     oneapi::tbb::global_control tbb_limit(
@@ -61,9 +70,20 @@ int main(int argc, char **argv) {
         num_threads
     );
 
-    std::cout << "TBB parallelism constrained to: " << num_threads << " thread(s)\n\n";
+    benchmark::AddCustomContext("tbb", "on");
+    benchmark::AddCustomContext("tbb_version", TBB_VERSION_STRING);
+    benchmark::AddCustomContext("tbb_interface", std::to_string(TBB_INTERFACE_VERSION));
+    benchmark::AddCustomContext("active_thread_limit", std::to_string(oneapi::tbb::global_control::active_value(
+        oneapi::tbb::global_control::max_allowed_parallelism)));
+#else
+    const std::size_t num_threads = 1;
+    benchmark::AddCustomContext("tbb", "off");
+#endif
+    benchmark::AddCustomContext("thread_limit", std::to_string(num_threads));
+    if (bpt_special_run()) return 0;
 
     benchmark::Initialize(&argc, argv);
     if (benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
     benchmark::RunSpecifiedBenchmarks();
+    benchmark::Shutdown();
 }

@@ -190,6 +190,9 @@ namespace hg {
         const auto &dst = targets(graph);
         hg_assert(src.size() == edge_weights.size(), "Endpoint and weight counts must match.");
         auto result = hierarchy_core_internal::bpt_boruvka_from_edge_order(src, dst, n, less);
+#ifdef HG_BPT_BENCH_DIAGNOSTICS
+        hierarchy_core_internal::bpt_bench_phase finalization_timer("frontend_finalization");
+#endif
         array_1d<value_type> levels = xt::zeros<value_type>({result.first.size()});
         parfor(0, n - 1, [&](index_t i) {
             levels(n + i) = edge_weights(result.second(i));

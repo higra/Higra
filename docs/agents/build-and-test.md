@@ -105,7 +105,7 @@ directory resets its dependency list.
 | `HG_UNITY_BUILD` | `OFF` | Unity builds for extension and C++ tests; module initializer is excluded |
 | `HG_UNITY_BUILD_BATCH_SIZE` | `8` | Integer; CI and TBB packaging use `4` |
 | `HG_BUILD_WHEEL` | `OFF` | Packaging-specific behavior, including Windows TBB linkage |
-| `DO_BENCHMARK` | `OFF` | Google Benchmark; rejects Debug and additionally requires TBB |
+| `DO_BENCHMARK` | `OFF` | Google Benchmark; rejects Debug, supports TBB on/off |
 
 Non-Debug GNU/Clang builds attempt LTO. Avoid high job counts for large template
 translation units; setup.py uses two jobs on Unix and CI commonly uses two.
@@ -262,10 +262,11 @@ Visual Studio developer environment first. Do not use the legacy
 support from the old `tools/build_manylinux.sh` script.
 
 The benchmark target is `benchmark_higra`, with a runner target `benchmark_exe`.
-Configure Release, `DO_BENCHMARK=ON`, `HG_USE_TBB=ON`, and an installed Google
-Benchmark package if working on benchmarks. Most cases in its source list are
-commented out. It also contains legacy C++14/optimization flag logic; inspect
-actual compile commands before treating it as a representative measurement.
+Configure Release, `DO_BENCHMARK=ON`, an installed Google Benchmark package,
+and either value of `HG_USE_TBB`. Most older cases in its source list are
+commented out. BPT cases, phase/CAS diagnostics, memory isolation and native/Python
+runner commands are documented in [the benchmark guide](../../benchmark/README-bpt.md).
+Inspect actual compile commands before treating a build as a representative measurement.
 
 ## CI evidence and limits
 
