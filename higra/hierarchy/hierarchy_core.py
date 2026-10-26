@@ -157,7 +157,7 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
         except Exception as e:
             raise ValueError("Invalid graph input.") from e
 
-    parents, mst_edge_map = hg.cpp._bpt_canonical(sources, targets, sorted_edge_indices, num_vertices)
+    parents, building_edge_map = hg.cpp._bpt_canonical(sources, targets, sorted_edge_indices, num_vertices)
     tree = hg.Tree(parents)
 
     if return_altitudes:
@@ -167,23 +167,26 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
 
         if edge_weights.ndim == 1:
             altitudes = np.zeros((tree.num_vertices(),), dtype=edge_weights.dtype)
-            altitudes[num_vertices:] = edge_weights[mst_edge_map]
+            altitudes[num_vertices:] = edge_weights[building_edge_map]
         else:
             shape = [tree.num_vertices()] + list(edge_weights.shape[1:])
             altitudes = np.zeros(shape, dtype=edge_weights.dtype)
-            altitudes[num_vertices:, ...] = edge_weights[mst_edge_map, ...]
+            altitudes[num_vertices:, ...] = edge_weights[building_edge_map, ...]
 
+    mst_edge_map = building_edge_map
     if input_is_graph_object:
-        # if the base graph is itself a mst, we take the base graph of this mst as the new base graph
+        # Input-MST metadata indexes its immediate base graph.
         if hg.CptMinimumSpanningTree.validate(graph):
-            leaf_graph = hg.CptMinimumSpanningTree.construct(graph)["base_graph"]
+            input_mst = hg.CptMinimumSpanningTree.construct(graph)
+            leaf_graph = input_mst["base_graph"]
+            mst_edge_map = input_mst["mst_edge_map"][building_edge_map]
         else:
             leaf_graph = graph
 
         hg.CptHierarchy.link(tree, leaf_graph)
 
     if compute_mst and input_is_graph_object:
-        mst = hg.subgraph(graph, mst_edge_map)
+        mst = hg.subgraph(graph, building_edge_map)
         hg.CptMinimumSpanningTree.link(mst, leaf_graph, mst_edge_map)
     else:
         mst = None

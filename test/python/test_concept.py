@@ -179,6 +179,29 @@ class TestConcept(unittest.TestCase):
                 concept.construct(owner)
             setattr(owner, field, value)
 
+    def test_binary_hierarchy_mst_after_input_deletion(self):
+        import gc
+        import numpy as np
+
+        for eager in (False, True):
+            with self.subTest(eager=eager):
+                graph = hg.UndirectedGraph(3)
+                graph.add_edges([0, 0, 1], [1, 2, 2])
+                input_mst = hg.minimum_spanning_tree(graph, np.array([10, 1, 2]))
+                tree = hg.bpt_canonical(input_mst, np.array([1, 2]),
+                                        return_altitudes=False, compute_mst=eager)
+                del graph, input_mst
+                gc.collect()
+                concept = hg.CptBinaryHierarchy.construct(tree, strict=False)
+                np.testing.assert_array_equal(concept["mst_edge_map"], [1, 2])
+                mst = hg.CptBinaryHierarchy.get_mst(tree)
+                self.assertIs(hg.CptBinaryHierarchy.get_mst(tree), mst)
+                self.assertIs(hg.CptBinaryHierarchy.construct(tree)["mst"], mst)
+                self.assertIs(mst.base_graph, concept["leaf_graph"])
+                np.testing.assert_array_equal(mst.mst_edge_map, [1, 2])
+                self.assertEqual(list(zip(*mst.edge_list())), [(0, 2), (1, 2)])
+                self.assertEqual(list(zip(*mst.base_graph.edge_list())), [(0, 1), (0, 2), (1, 2)])
+
     def test_construct(self):
         o1 = Dummy(1)
         o2 = Dummy(2)
