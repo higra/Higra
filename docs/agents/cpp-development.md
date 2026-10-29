@@ -145,7 +145,7 @@ parallel behavior; the Python bindings currently retain the GIL.
 
 Most older sources in `benchmark/CMakeLists.txt` are disabled. BPT benchmarks
 support TBB on/off; see the [benchmark guide](../../benchmark/README-bpt.md)
-for profiles, diagnostics and measurement boundaries.
+for the five anchor cases and measurement boundaries.
 
 ## Tests and integration
 

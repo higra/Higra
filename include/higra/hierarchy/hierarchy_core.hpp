@@ -82,20 +82,22 @@ namespace hg {
             index_t num_edge_found = 0;
             index_t i = 0;
 
-            while (num_edge_found < num_edge_mst && i < (index_t) sorted_edge_indices.size()) {
-                auto ei = sorted_edge_indices[i];
-                auto c1 = uf.find(sources(ei));
-                auto c2 = uf.find(targets(ei));
-                if (c1 != c2) {
-                    parents[roots[c1]] = num_nodes;
-                    parents[roots[c2]] = num_nodes;
-                    auto newRoot = uf.link(c1, c2);
-                    roots[newRoot] = num_nodes;
-                    mst_edge_map(num_edge_found) = ei;
-                    num_nodes++;
-                    num_edge_found++;
+            {
+                while (num_edge_found < num_edge_mst && i < (index_t) sorted_edge_indices.size()) {
+                    auto ei = sorted_edge_indices[i];
+                    auto c1 = uf.find(sources(ei));
+                    auto c2 = uf.find(targets(ei));
+                    if (c1 != c2) {
+                        parents[roots[c1]] = num_nodes;
+                        parents[roots[c2]] = num_nodes;
+                        auto newRoot = uf.link(c1, c2);
+                        roots[newRoot] = num_nodes;
+                        mst_edge_map(num_edge_found) = ei;
+                        num_nodes++;
+                        num_edge_found++;
+                    }
+                    i++;
                 }
-                i++;
             }
             hg_assert(num_edge_found == num_edge_mst, "Input graph must be connected.");
 
@@ -159,7 +161,11 @@ namespace hg {
      * endpoints. Edge weights must be one-dimensional real numeric values;
      * NaNs are rejected and infinities are allowed. Self-loops are ignored and
      * parallel edges are supported. Equal weights are ordered by original edge
-     * ID, yielding the same parents and ordered MST edge map as bpt_canonical.
+     * ID. Default exact numbering yields the same parents and ordered MST edge
+     * map as bpt_canonical. Basin numbering preserves the edge-labeled tree
+     * with different internal node IDs; its altitudes need not be sorted.
+     * Set compact_edges to true to compact the candidate edge list each round;
+     * the default scans all edge states.
      *
      * Returns a node_weighted_tree_and_mst with a partition tree, owning
      * altitudes of the input value type, and an internal-node-to-original-edge
@@ -167,7 +173,10 @@ namespace hg {
      * edges. Empty or disconnected graphs and invalid inputs throw.
      */
     template<typename graph_t, typename T>
-    auto bpt_canonical_boruvka(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+    auto bpt_canonical_boruvka(const graph_t &graph, const xt::xexpression<T> &xedge_weights,
+                              hierarchy_core_internal::bpt_boruvka_numbering numbering =
+                                  hierarchy_core_internal::bpt_boruvka_numbering::exact,
+                              bool compact_edges = false) {
         HG_TRACE();
         const auto &edge_weights = xedge_weights.derived_cast();
         using value_type = typename T::value_type;
@@ -189,10 +198,9 @@ namespace hg {
         const auto &src = sources(graph);
         const auto &dst = targets(graph);
         hg_assert(src.size() == edge_weights.size(), "Endpoint and weight counts must match.");
-        auto result = hierarchy_core_internal::bpt_boruvka_from_edge_order(src, dst, n, less);
-#ifdef HG_BPT_BENCH_DIAGNOSTICS
-        hierarchy_core_internal::bpt_bench_phase finalization_timer("frontend_finalization");
-#endif
+        auto result = hierarchy_core_internal::bpt_boruvka_from_edge_order(src, dst, n, less, numbering,
+            compact_edges ? hierarchy_core_internal::bpt_boruvka_traversal::active :
+                            hierarchy_core_internal::bpt_boruvka_traversal::full_scan);
         array_1d<value_type> levels = xt::zeros<value_type>({result.first.size()});
         parfor(0, n - 1, [&](index_t i) {
             levels(n + i) = edge_weights(result.second(i));

@@ -264,7 +264,7 @@ support from the old `tools/build_manylinux.sh` script.
 The benchmark target is `benchmark_higra`, with a runner target `benchmark_exe`.
 Configure Release, `DO_BENCHMARK=ON`, an installed Google Benchmark package,
 and either value of `HG_USE_TBB`. Most older cases in its source list are
-commented out. BPT cases, phase/CAS diagnostics, memory isolation and native/Python
+commented out. The five BPT anchor cases and fresh-process native
 runner commands are documented in [the benchmark guide](../../benchmark/README-bpt.md).
 Inspect actual compile commands before treating a build as a representative measurement.
 

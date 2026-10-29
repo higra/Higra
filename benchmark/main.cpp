@@ -20,7 +20,7 @@
 #include <oneapi/tbb/version.h>
 #endif
 
-bool bpt_special_run();
+bool bpt_single_run(int argc, char **argv, std::size_t thread_limit);
 
 #ifdef XTENSOR_USE_XSIMD
 #ifdef __GNUC__
@@ -50,8 +50,9 @@ void print_stats() {
 
 // Custom main function to print SIMD config and restrict TBB threads
 int main(int argc, char **argv) {
-    // Keep stdout usable as JSON for single-case memory/diagnostic runs.
-    if (!std::getenv("BPT_RUN_MODE")) print_stats();
+    // Single-call output is machine-readable.
+    const bool bpt_command = argc > 1 && std::string(argv[1]).rfind("--bpt-", 0) == 0;
+    if (!bpt_command) print_stats();
 #ifdef HG_USE_TBB
 
     std::size_t num_threads = oneapi::tbb::this_task_arena::max_concurrency();
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
     benchmark::AddCustomContext("tbb", "off");
 #endif
     benchmark::AddCustomContext("thread_limit", std::to_string(num_threads));
-    if (bpt_special_run()) return 0;
+    if (bpt_single_run(argc, argv, num_threads)) return 0;
 
     benchmark::Initialize(&argc, argv);
     if (benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;

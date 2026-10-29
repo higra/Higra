@@ -13,6 +13,29 @@ import numpy as np
 from operator import index as _shape_index
 
 
+def _as_index_array(values, name):
+    """Validate nonnegative indices representable as int64 and return a 1D array."""
+    values = np.asarray(values)
+    if values.ndim != 1 or (values.size and values.dtype.kind not in "iu"):
+        raise ValueError(name + " must be a one-dimensional integer array.")
+    if values.size and (np.any(values < 0) or np.any(values > np.iinfo(np.int64).max)):
+        raise ValueError(name + " contains an invalid index.")
+    return np.asarray(values, dtype=np.int64)
+
+
+def _validate_edge_weights(edge_weights, num_edges):
+    """Return real numeric edge weights with a matching first axis and no NaNs."""
+    edge_weights = np.asarray(edge_weights)
+    if (edge_weights.ndim < 1 or edge_weights.shape[0] != num_edges or
+            edge_weights.dtype.kind not in "iuf" or
+            edge_weights.dtype.itemsize not in (1, 2, 4, 8) or
+            (edge_weights.dtype.kind == "f" and edge_weights.dtype.itemsize not in (4, 8))):
+        raise ValueError("Expected real integer or float32/float64 weights with one entry per edge.")
+    if np.any(np.isnan(edge_weights)):
+        raise ValueError("Edge weights cannot contain NaNs.")
+    return edge_weights
+
+
 def is_iterable(obj):
     """
     Test if the given object is iterable

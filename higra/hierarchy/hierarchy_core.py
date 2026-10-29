@@ -10,9 +10,11 @@
 
 import higra as hg
 import numpy as np
+from ..hg_utils import _as_index_array, _validate_edge_weights
 
 
-def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_altitudes=True, compute_mst=True):
+def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_altitudes=True, compute_mst=True,
+                  *, method="kruskal", **kwargs):
     """
     Computes the *canonical binary partition tree*, also called *binary partition tree by altitude ordering* or
     *connectivity constrained single min/linkage clustering* of the given graph.
@@ -53,7 +55,7 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
 
     The ordering :math:`\\prec` can be specified explicitly by providing the array of indices :attr:`sorted_edge_indices`
     that sort the edges, or implicitly by providing the array of edge weights :attr:`edge_weights`. In this case,
-    :attr:`sorted_edge_indices` is set equal to ``hg.arg_sort(edge_weights, stable=True)``. If :attr:`edge_weights`
+    the edge order is equivalent to ``hg.arg_sort(edge_weights, stable=True)``. If :attr:`edge_weights`
     is an array with more than 1 dimension, a lexicographic ordering is used.
 
     If requested, altitudes associated to the nodes of the canonical binary partition tree are computed as follows:
@@ -107,19 +109,14 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
         array([2, 0, 6, 3])
 
 
-    :Complexity:
+    
+    Two construction algorithms are available: Kruskal's algorithm and Waterfall–Boruvka. See the references below for details on the algorithms and specific parameters.
 
-    The algorithm used is based on Kruskal's minimum spanning tree algorithm and is described in:
+    - Kruskal's algorithm is the default, it is based on the classical Kruskal's minimum spanning tree algorithm. It is based on the classical Kruskal's minimum spanning tree, see :func:`bpt_canonical_kruskal` for details.
+    - Waterfall–Boruvka is based on the Boruvka minimum spanning tree algorithm algorithm, see :func:`bpt_canonical_boruvka` for details.
+    
+    Waterfall–Boruvka is better suited for massively parallel execution, and can be faster than Kruskal's algorithm for large graphs. 
 
-        Laurent Najman, Jean Cousty, Benjamin Perret.
-        `Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs
-        <https://hal.archives-ouvertes.fr/file/index/docid/798621/filename/ismm2013-algo.pdf>`_.
-        ISMM 2013: 135-146.
-
-    If :attr:`sorted_edge_indices` is provided the algorithm runs in quasi linear :math:`\mathcal{O}(n \\alpha(n))`,
-    with :math:`n` the number of elements in the graph and with :math`\\alpha` the inverse of the Ackermann function.
-    Otherwise, the computation time is dominated by the sorting of the edge weights which is performed in linearithmic
-    :math:`\mathcal{O}(n \log(n))` time.
 
     :param graph: input graph or triplet of two arrays and an integer (sources, targets, num_vertices)
            defining all the edges of the graph and its number of vertices.
@@ -131,19 +128,16 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
     :param compute_mst: if ``True`` and if the input is a graph object computes an explicit undirected graph
            representing the minimum spanning tree associated to the hierarchy, accessible through the
            :class:`~higra.CptBinaryHierarchy` Concept (e.g. with ``tree.mst``). (default: ``True``).
+    :param method: ``"kruskal"`` or ``"boruvka"``
+    :param kwargs: keyword arguments for the selected algorithm
     :return: a tree (Concept :class:`~higra.CptBinaryHierarchy` if the input is a graph object),
              and, if :attr:`return_altitudes` is ``True``, its node altitudes
     """
 
+    if not isinstance(method, str) or method not in ("kruskal", "boruvka"):
+        raise ValueError('method must be "kruskal" or "boruvka".')
     if edge_weights is None and sorted_edge_indices is None:
         raise ValueError("edge_weights and sorted_edge_indices cannot be both equal to None.")
-
-    if sorted_edge_indices is None:
-        if edge_weights.ndim > 2:
-            tmp_edge_weights = edge_weights.reshape((edge_weights.shape[0], -1))
-        else:
-            tmp_edge_weights = edge_weights
-        sorted_edge_indices = hg.arg_sort(tmp_edge_weights, stable=True)
 
     input_is_graph_object = False
 
@@ -157,7 +151,27 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
         except Exception as e:
             raise ValueError("Invalid graph input.") from e
 
-    parents, building_edge_map = hg.cpp._bpt_canonical(sources, targets, sorted_edge_indices, num_vertices)
+    sources = _as_index_array(sources, "sources")
+    targets = _as_index_array(targets, "targets")
+    if not isinstance(num_vertices, (int, np.integer)) or isinstance(num_vertices, (bool, np.bool_)):
+        raise ValueError("num_vertices must be an integer.")
+
+    weights = None
+    if edge_weights is not None:
+        edge_weights = _validate_edge_weights(edge_weights, sources.size)
+        features = int(np.prod(edge_weights.shape[1:], dtype=np.intp))
+        weights = np.asarray(edge_weights, dtype=edge_weights.dtype.newbyteorder("="))
+        weights = weights.reshape((sources.size, features))
+
+    order = None
+    if sorted_edge_indices is not None:
+        order = _as_index_array(sorted_edge_indices, "sorted_edge_indices")
+        sorted_edge_indices = np.asarray(sorted_edge_indices)
+        if sorted_edge_indices.dtype.kind not in "iu":
+            sorted_edge_indices = order
+
+    algorithm = _bpt_canonical_kruskal if method == "kruskal" else _bpt_canonical_boruvka
+    parents, building_edge_map = algorithm(sources, targets, num_vertices, weights, order, **kwargs)
     tree = hg.Tree(parents)
 
     if return_altitudes:
@@ -199,151 +213,102 @@ def bpt_canonical(graph, edge_weights=None, sorted_edge_indices=None, return_alt
         return tree, altitudes
 
 
-def _boruvka_indices(values, name):
-    values = np.asarray(values)
-    if values.ndim != 1 or (values.size and values.dtype.kind not in "iu"):
-        raise ValueError(name + " must be a one-dimensional integer array.")
-    if values.size and (np.any(values < 0) or np.any(values > np.iinfo(np.int64).max)):
-        raise ValueError(name + " contains an invalid index.")
-    return np.asarray(values, dtype=np.int64)
+def bpt_canonical_kruskal(graph, edge_weights=None, sorted_edge_indices=None,
+                          return_altitudes=True, compute_mst=True):
+    """
+    Construct a canonical binary partition tree using Kruskal's algorithm.
+
+    See :func:`bpt_canonical` for the hierarchy definition, input forms, edge
+    ordering, altitudes and MST metadata. Equal weights are ordered by increasing
+    edge ID unless ``sorted_edge_indices`` supplies an explicit order.
+
+    :Complexity:
+
+    The algorithm used is based on Kruskal's minimum spanning tree algorithm and is described in:
+
+        Laurent Najman, Jean Cousty, Benjamin Perret.
+        `Playing with Kruskal: Algorithms for Morphological Trees in Edge-Weighted Graphs
+        <https://hal.archives-ouvertes.fr/file/index/docid/798621/filename/ismm2013-algo.pdf>`_.
+        ISMM 2013: 135-146.
+
+    If :attr:`sorted_edge_indices` is provided the algorithm runs in quasi linear :math:`\mathcal{O}(n \\alpha(n))`,
+    with :math:`n` the number of elements in the graph and with :math:`\\alpha` the inverse of the Ackermann function.
+    Otherwise, the computation time is dominated by the sorting of the edge weights which is performed in linearithmic
+    :math:`\mathcal{O}(n \log(n))` time.
+
+    :param graph: graph object or ``(sources, targets, num_vertices)`` tuple
+    :param edge_weights: edge weights, with optional trailing feature dimensions
+    :param sorted_edge_indices: edge IDs in construction order (optional)
+    :param return_altitudes: return node altitudes alongside the tree
+    :param compute_mst: construct the explicit MST for graph objects
+    :return: binary partition tree, and node altitudes if requested
+    """
+    return bpt_canonical(graph, edge_weights, sorted_edge_indices, return_altitudes, compute_mst,
+                         method="kruskal")
 
 
 def bpt_canonical_boruvka(graph, edge_weights=None, sorted_edge_indices=None,
-                          return_altitudes=True, compute_mst=True, stable=True):
+                          return_altitudes=True, compute_mst=True, stable=True,
+                          *, compact_edges=False):
     """
     Construct a canonical binary partition tree using Waterfall–Boruvka.
 
-    The input must be a connected undirected graph, or a tuple
-    ``(sources, targets, num_vertices)`` with one-dimensional integer endpoint
-    arrays. Parallel edges and self-loops are allowed. Empty graphs and
-    disconnected graphs are rejected; a singleton returns one zero-altitude
-    leaf and an empty MST edge map.
+    See :func:`bpt_canonical` for the hierarchy definition, input forms, edge
+    ordering, altitudes and MST metadata. Equal weights are ordered by increasing
+    edge ID unless ``sorted_edge_indices`` supplies an explicit order.
 
-    Supply real numeric ``edge_weights`` of shape ``(num_edges, ...)`` or a
-    permutation ``sorted_edge_indices`` listing edge IDs in construction order.
-    Scalar weights are ordered numerically; trailing dimensions are flattened
-    in C order and compared lexicographically. Ties use increasing edge IDs.
-    A supplied permutation always takes precedence over weights. NaNs are
-    rejected in all supplied weights, even with an explicit order or when
-    altitudes are not requested. Positive and negative infinities are allowed.
+    The algorithm is based on Boruvka's minimum spanning tree algorithm and is described in:
+
+        Quentin Lebon, Jean Cousty, Thierry Grandpierre, Benjamin Perret
+        `Waterfall-Borvka-Based Algorithm for Binary Partition Tree. 
+        <https://hal.science/hal-05059071v1/file/Waterfall_Boruvka_based_algorithm_for_binary_partiton_tree.pdf>`_.
+        DGMM 2025: 328-340.
+
 
     With ``stable=True``, parents and the ordered MST edge map match
-    :func:`bpt_canonical` for the same edge order. ``stable=False`` is
-    experimental: it preserves the same merges, building edges and tie
-    refinement, but numbers internal nodes in a different topological order.
-    Leaves keep their original IDs, parents follow children, and the root is
-    last and its own parent. Experimental internal numbering may change.
-    Internal nodes and their building edges need not follow construction order.
-    With weight-derived ordering, internal altitudes need not be globally
-    sorted. Use the default for consumers requiring merge order by node index.
-    Saliency, LCA, reconstruction and horizontal cuts support this numbering;
-    :class:`HorizontalCutExplorer` may sort a copy and requires nonnegative
-    scalar altitudes. An arbitrary supplied order need not give monotone
-    altitudes, regardless of numbering.
+    :func:`bpt_canonical_kruskal` for the same edge order: 
+    the returned node altitudes are sorted in ascending order. 
+    ``stable=False``  selects basin numbering: does not guarantee that the returned node altitudes are sorted 
+    (the nodes are still in topological order), but may be faster.
+    Note that the final tree is always isomorphic to the tree returned by :func:`bpt_canonical_kruskal`.
 
-    Leaf altitudes are zero. Internal node ``num_vertices + i`` has weight
-    ``edge_weights[tree.mst_edge_map[i]]``, or the rank of that edge when weights
-    are omitted. Altitudes preserve the weights' dtype and trailing shape.
-    Returned parent, altitude and edge-map arrays remain valid after input
-    arrays are deleted or modified.
+    Compact active edges each round instead of scanning all edges (default: ``False``) does not change the output, but may be faster.
 
-    For graph objects, hierarchy and binary hierarchy concepts are linked as
-    in :func:`bpt_canonical`. The MST map indexes edges of the input graph.
-    For an input MST, the hierarchy links to its base graph, while edge IDs
-    still index the supplied MST.
-    ``compute_mst=False`` defers explicit MST construction until
-    :func:`CptBinaryHierarchy.get_mst` is called. Endpoint tuples have no leaf
-    graph link and do not support this lazy retrieval.
+    :Complexity:
 
     The serial work bound is :math:`O((n+m) \\log n)` for scalar weights, with :math:`O(n+m)`
     auxiliary storage, where ``n`` and ``m`` are vertex and edge counts.
-    Lexicographic comparisons also depend on the number of features.
-    TBB-enabled builds can execute native phases in parallel; no speedup is
-    guaranteed.
 
     :param graph: graph object or ``(sources, targets, num_vertices)`` tuple
     :param edge_weights: real integer or float32/float64 edge array (optional)
     :param sorted_edge_indices: permutation of all edge IDs (optional)
     :param return_altitudes: return node altitudes alongside the tree
     :param compute_mst: construct the explicit MST for graph objects
-    :param stable: exact output by default; ``False`` selects experimental numbering
+    :param stable: exact numbering by default; ``False`` selects basin numbering
+    :param compact_edges: compact active edges each round instead of scanning all
+        edges (default: ``False``); does not change the output
     :return: binary partition tree, and node altitudes if requested
     :raises ValueError: invalid shapes, dtypes, NaNs, or integer indices
     :raises RuntimeError: invalid permutation, endpoints, empty or disconnected graph
     """
-    if edge_weights is None and sorted_edge_indices is None:
-        raise ValueError("edge_weights and sorted_edge_indices cannot be both equal to None.")
-    input_is_graph_object = hg.has_method(graph, "edge_list") and hg.has_method(graph, "num_vertices")
-    if input_is_graph_object:
-        sources, targets = graph.edge_list()
-        num_vertices = graph.num_vertices()
-    else:
-        try:
-            sources, targets, num_vertices = graph
-        except Exception as e:
-            raise ValueError("Invalid graph input.") from e
-    sources = _boruvka_indices(sources, "sources")
-    targets = _boruvka_indices(targets, "targets")
-    if not isinstance(num_vertices, (int, np.integer)) or isinstance(num_vertices, (bool, np.bool_)):
-        raise ValueError("num_vertices must be an integer.")
-    if edge_weights is not None:
-        edge_weights = np.asarray(edge_weights)
-        if (edge_weights.ndim < 1 or edge_weights.shape[0] != sources.size or
-                edge_weights.dtype.kind not in "iuf" or
-                edge_weights.dtype.itemsize not in (1, 2, 4, 8) or
-                (edge_weights.dtype.kind == "f" and edge_weights.dtype.itemsize not in (4, 8))):
-            raise ValueError("Expected real integer or float32/float64 weights with one entry per edge.")
-        if np.any(np.isnan(edge_weights)):
-            raise ValueError("Edge weights cannot contain NaNs.")
+    return bpt_canonical(graph, edge_weights, sorted_edge_indices, return_altitudes, compute_mst,
+                         method="boruvka", stable=stable, compact_edges=compact_edges)
+
+
+def _bpt_canonical_kruskal(sources, targets, num_vertices, edge_weights, sorted_edge_indices):
+    if sorted_edge_indices is None:
+        sort_weights = edge_weights[:, 0] if edge_weights.shape[1] == 1 else edge_weights
+        sorted_edge_indices = hg.arg_sort(sort_weights, stable=True)
+    return hg.cpp._bpt_canonical(sources, targets, sorted_edge_indices, num_vertices)
+
+
+def _bpt_canonical_boruvka(sources, targets, num_vertices, edge_weights, sorted_edge_indices,
+                           stable=True, *, compact_edges=False):
     if sorted_edge_indices is not None:
-        order = _boruvka_indices(sorted_edge_indices, "sorted_edge_indices")
-        sorted_edge_indices = np.asarray(sorted_edge_indices)
-        if sorted_edge_indices.dtype.kind not in "iu":
-            sorted_edge_indices = order
-        parents, mst_edge_map = hg.cpp._bpt_canonical_boruvka_from_order(
-            sources, targets, num_vertices, order, stable)
-    else:
-        features = int(np.prod(edge_weights.shape[1:], dtype=np.intp))
-        weights = np.asarray(edge_weights, dtype=edge_weights.dtype.newbyteorder("="))
-        weights = weights.reshape((sources.size, features))
-        parents, mst_edge_map = hg.cpp._bpt_canonical_boruvka(
-            sources, targets, num_vertices, weights, stable)
-    tree = hg.Tree(parents)
-
-    if return_altitudes:
-        if edge_weights is None:
-            edge_weights = np.empty_like(sorted_edge_indices)
-            edge_weights[sorted_edge_indices] = np.arange(sorted_edge_indices.size)
-
-        if edge_weights.ndim == 1:
-            altitudes = np.zeros((tree.num_vertices(),), dtype=edge_weights.dtype)
-            altitudes[num_vertices:] = edge_weights[mst_edge_map]
-        else:
-            shape = [tree.num_vertices()] + list(edge_weights.shape[1:])
-            altitudes = np.zeros(shape, dtype=edge_weights.dtype)
-            altitudes[num_vertices:, ...] = edge_weights[mst_edge_map, ...]
-
-    if input_is_graph_object:
-        # if the base graph is itself a mst, we take the base graph of this mst as the new base graph
-        if hg.CptMinimumSpanningTree.validate(graph):
-            leaf_graph = hg.CptMinimumSpanningTree.construct(graph)["base_graph"]
-        else:
-            leaf_graph = graph
-
-        hg.CptHierarchy.link(tree, leaf_graph)
-
-    if compute_mst and input_is_graph_object:
-        mst = hg.subgraph(graph, mst_edge_map)
-        hg.CptMinimumSpanningTree.link(mst, leaf_graph, mst_edge_map)
-    else:
-        mst = None
-
-    hg.CptBinaryHierarchy.link(tree, mst_edge_map, mst)
-
-    if not return_altitudes:
-        return tree
-    else:
-        return tree, altitudes
+        return hg.cpp._bpt_canonical_boruvka_from_order(
+            sources, targets, num_vertices, sorted_edge_indices, stable, compact_edges)
+    return hg.cpp._bpt_canonical_boruvka(
+        sources, targets, num_vertices, edge_weights, stable, compact_edges)
 
 
 def quasi_flat_zone_hierarchy(graph, edge_weights):

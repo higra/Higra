@@ -15,6 +15,32 @@ import numpy as np
 
 class TestHGUtils(unittest.TestCase):
 
+    def test_as_index_array(self):
+        from higra.hg_utils import _as_index_array
+
+        for values in ([], np.array([], dtype=float), [0, 2],
+                       np.array([0, 2], dtype=">u8"), np.arange(6)[::2]):
+            result = _as_index_array(values, "indices")
+            np.testing.assert_array_equal(result, values)
+            self.assertEqual(result.dtype, np.dtype(np.int64))
+        for values in ([-1], [1.5], [True], [[0]], np.array([2**63], dtype=np.uint64)):
+            with self.subTest(values=values), self.assertRaisesRegex(ValueError, "indices"):
+                _as_index_array(values, "indices")
+
+    def test_validate_edge_weights(self):
+        from higra.hg_utils import _validate_edge_weights
+
+        for weights in ([1, 2], np.array([np.inf, -np.inf]),
+                        np.ones((2, 3, 4), dtype=">f4"), np.empty((0, 2)),
+                        np.arange(8, dtype=np.int16)[::2]):
+            result = _validate_edge_weights(weights, len(weights))
+            np.testing.assert_array_equal(result, weights)
+            self.assertEqual(result.dtype, np.asarray(weights).dtype)
+        for weights in (1, [1], [np.nan, 0], [True, False], np.ones(2, dtype=np.float16),
+                        np.ones(2, dtype=complex), np.ones(2, dtype=object)):
+            with self.subTest(weights=weights), self.assertRaises(ValueError):
+                _validate_edge_weights(weights, 2)
+
     def test_linearize_vertex_weights(self):
         g = hg.get_4_adjacency_graph((4, 5))
 

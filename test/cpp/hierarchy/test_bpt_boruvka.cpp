@@ -26,9 +26,41 @@ namespace bpt_boruvka_tests {
     namespace internal = hg::hierarchy_core_internal;
 
     template<typename E1, typename E2, typename edge_less_t>
+    void check_traversal_history(const internal::bpt_boruvka_history &full,
+                                 const E1 &src, const E2 &dst, index_t n, const edge_less_t &less) {
+        using traversal = internal::bpt_boruvka_traversal;
+        auto active = internal::bpt_boruvka_waterfall(src, dst, n, less, traversal::active);
+        REQUIRE(active.raw_parent.size() == size_t(n - 1));
+        std::vector<index_t> edge_to_slot(src.size(), invalid_index);
+        for (index_t slot = 0; slot < n - 1; ++slot) edge_to_slot[active.selected_edges(slot)] = slot;
+        auto original = [](const auto &history, index_t slot) {
+            return slot == invalid_index ? invalid_index : history.selected_edges(slot);
+        };
+        for (index_t v = 0; v < n; ++v)
+            REQUIRE(original(active, active.leaf_parent(v)) == original(full, full.leaf_parent(v)));
+        auto actual_expand = internal::bpt_boruvka_expand(active, less);
+        auto expected_expand = internal::bpt_boruvka_expand(full, less);
+        for (index_t slot = 0; slot < n - 1; ++slot) {
+            const auto a = edge_to_slot[full.selected_edges(slot)];
+            REQUIRE(a != invalid_index);
+            REQUIRE(original(active, active.raw_parent(a)) == original(full, full.raw_parent(slot)));
+            REQUIRE(active.raw_basin(a) == full.raw_basin(slot));
+            REQUIRE(original(active, actual_expand.first(a)) == original(full, expected_expand.first(slot)));
+            REQUIRE(actual_expand.second(a) == expected_expand.second(slot));
+        }
+        for (auto numbering: {internal::bpt_boruvka_numbering::exact, internal::bpt_boruvka_numbering::basin}) {
+            auto expected = internal::bpt_boruvka_export(full, less, numbering);
+            auto actual = internal::bpt_boruvka_from_edge_order(src, dst, n, less, numbering, traversal::active);
+            REQUIRE(actual.first == expected.first);
+            REQUIRE(actual.second == expected.second);
+        }
+    }
+
+    template<typename E1, typename E2, typename edge_less_t>
     auto check_numberings(const E1 &src, const E2 &dst, index_t n, const edge_less_t &less) {
         using numbering = internal::bpt_boruvka_numbering;
         auto history = internal::bpt_boruvka_waterfall(src, dst, n, less);
+        check_traversal_history(history, src, dst, n, less);
         const auto raw_parent = history.raw_parent, raw_basin = history.raw_basin;
         auto expanded = internal::bpt_boruvka_expand(history, less);
         const index_t count = history.selected_edges.size(), total = n + count;
@@ -173,10 +205,9 @@ namespace bpt_boruvka_tests {
 
     template<typename weights_t>
     void check_tie_refinements(const ugraph &graph, const weights_t &weights) {
-        for (auto ties: {internal::bpt_boruvka_tie_order::edge_id,
-                         internal::bpt_boruvka_tie_order::reverse_edge_id}) {
+        for (bool descending: {false, true}) {
             auto less = [&](index_t a, index_t b) {
-                return internal::bpt_boruvka_scalar_less(weights, a, b, ties);
+                return weights(a) < weights(b) || (!(weights(b) < weights(a)) && (descending ? a > b : a < b));
             };
             auto relaxed = check_numberings(sources(graph), targets(graph), num_vertices(graph), less);
             check_thresholds(graph, weights, relaxed);
@@ -265,8 +296,7 @@ namespace bpt_boruvka_tests {
         // Distinct weights make both tie refinements identical, but still
         // permit a numbering change between independent branches.
         auto reverse = [&](index_t a, index_t b) {
-            return internal::bpt_boruvka_scalar_less(weights, a, b,
-                                                    internal::bpt_boruvka_tie_order::reverse_edge_id);
+            return weights(a) < weights(b) || (!(weights(b) < weights(a)) && a > b);
         };
         auto other = check_numberings(sources(graph), targets(graph), 5, reverse);
         REQUIRE(other.first == relaxed.first);
@@ -288,8 +318,7 @@ namespace bpt_boruvka_tests {
         check_tie_refinements(cycle, equal);
         auto forward = [&](index_t a, index_t b) { return internal::bpt_boruvka_scalar_less(equal, a, b); };
         auto reverse = [&](index_t a, index_t b) {
-            return internal::bpt_boruvka_scalar_less(equal, a, b,
-                                                    internal::bpt_boruvka_tie_order::reverse_edge_id);
+            return a > b; // An explicitly supplied total order remains authoritative.
         };
         auto a = check_numberings(sources(cycle), targets(cycle), 4, forward);
         auto b = check_numberings(sources(cycle), targets(cycle), 4, reverse);
@@ -722,13 +751,7 @@ namespace bpt_boruvka_tests {
             selected.resize(counts.selected);
             REQUIRE(retained == ref_keep);
             REQUIRE(selected == ref_select);
-            if (!ref_select.empty()) {
-                // Capacity is checked after counting, before any output write.
-                std::atomic<bool> scattered{false};
-                REQUIRE_THROWS(internal::bpt_boruvka_compact(active, scratch, ref_select.size() - 1, classify,
-                    [&](index_t, uint8_t, index_t) { scattered.store(true); }));
-                REQUIRE_FALSE(scattered.load());
-            }
+
         }
     }
 
@@ -812,6 +835,48 @@ namespace bpt_boruvka_tests {
         }
     }
 
+    TEST_CASE("Boruvka scratch survives shrinking rounds and alternating fresh calls",
+              "[hierarchy_core][bpt_boruvka][bpt_boruvka_scratch]") {
+        array_1d<index_t> saved_parents, saved_map, expected_parents, expected_map;
+        for (index_t n: {1025, 1, 2, 65, 1025, 3}) {
+            auto graph = path(n);
+            for (index_t v = 0; v < n; ++v) {
+                add_edge(v, v, graph);
+                if (v + 1 < n) add_edge(v, v + 1, graph);
+            }
+            array_1d<int> weights = xt::empty<int>({num_edges(graph)});
+            weights.fill(100);
+            // Balanced path weights force several geometrically shrinking rounds;
+            // loops and parallel edges exercise compaction tails across block boundaries.
+            for (index_t e = 0; e < n - 1; ++e) {
+                weights(e) = 0;
+                for (auto v = e + 1; v % 2 == 0; v /= 2) ++weights(e);
+            }
+            auto reference = bpt_canonical(graph, weights);
+            auto result = bpt_canonical_boruvka(graph, weights);
+            REQUIRE(result.tree.parents() == reference.tree.parents());
+            REQUIRE(result.mst_edge_map == reference.mst_edge_map);
+            REQUIRE(result.altitudes == reference.altitudes);
+            auto less = [&](index_t a, index_t b) { return internal::bpt_boruvka_scalar_less(weights, a, b); };
+            auto relaxed = internal::bpt_boruvka_from_edge_order(sources(graph), targets(graph), n, less,
+                                                               internal::bpt_boruvka_numbering::basin);
+            check_large_relaxed(relaxed, reference, n, num_edges(graph));
+            if (saved_parents.size()) {
+                REQUIRE(saved_parents == expected_parents);
+                REQUIRE(saved_map == expected_map);
+            }
+            saved_parents = std::move(relaxed.first);
+            saved_map = std::move(relaxed.second);
+            expected_parents = saved_parents;
+            expected_map = saved_map;
+            // An exceptional call must release partial scratch and leave subsequent
+            // calls and previously returned owning outputs independent.
+            ugraph disconnected(3);
+            add_edge(0, 1, disconnected);
+            REQUIRE_THROWS(bpt_canonical_boruvka(disconnected, array_1d<int>{0}));
+        }
+    }
+
     TEST_CASE("Boruvka caller controlled concurrency preserves exact and relaxed output",
               "[hierarchy_core][bpt_boruvka][bpt_boruvka_parallel]") {
         const index_t n = 4096;
@@ -852,7 +917,7 @@ namespace bpt_boruvka_tests {
 #endif
             REQUIRE(baseline.tree.parents() == reference.tree.parents());
             REQUIRE(baseline.mst_edge_map == reference.mst_edge_map);
-            for (int limit: {1, 2, 4}) {
+            for (int limit: {1, 2, 4, 8}) {
 #ifdef HG_USE_TBB
                 tbb::global_control control(tbb::global_control::max_allowed_parallelism, limit);
 #endif
@@ -863,20 +928,25 @@ namespace bpt_boruvka_tests {
                     REQUIRE(result.mst_edge_map == reference.mst_edge_map);
                     REQUIRE(result.altitudes == reference.altitudes);
                     auto less = [&](index_t a, index_t b) { return internal::bpt_boruvka_scalar_less(weights, a, b); };
-                    auto relaxed = internal::bpt_boruvka_from_edge_order(sources(graph), targets(graph), n, less,
-                                                                         internal::bpt_boruvka_numbering::basin);
+                    auto history = internal::bpt_boruvka_waterfall(sources(graph), targets(graph), n, less);
+                    check_traversal_history(history, sources(graph), targets(graph), n, less);
+                    auto relaxed = internal::bpt_boruvka_export(history, less, internal::bpt_boruvka_numbering::basin);
                     check_large_relaxed(relaxed, reference, n, num_edges(graph));
                     // Alternate total tie order: compare edge-labeled trees to
                     // Kruskal under exactly that order at every tested limit.
                     auto reverse = [&](index_t a, index_t b) {
-                        return internal::bpt_boruvka_scalar_less(weights, a, b,
-                                                               internal::bpt_boruvka_tie_order::reverse_edge_id);
+                        return weights(a) < weights(b) || (!(weights(b) < weights(a)) && a > b);
                     };
                     array_1d<index_t> order = xt::arange<index_t>(num_edges(graph));
                     std::sort(order.begin(), order.end(), reverse);
                     auto reversed_ref = internal::bpt_canonical_from_sorted_edges(sources(graph), targets(graph), order, n);
                     auto reversed = internal::bpt_boruvka_from_edge_order(sources(graph), targets(graph), n, reverse,
                                                                           internal::bpt_boruvka_numbering::basin);
+                    auto active_reversed = internal::bpt_boruvka_from_edge_order(
+                        sources(graph), targets(graph), n, reverse, internal::bpt_boruvka_numbering::basin,
+                        internal::bpt_boruvka_traversal::active);
+                    REQUIRE(active_reversed.first == reversed.first);
+                    REQUIRE(active_reversed.second == reversed.second);
                     auto ref_tree = make_node_weighted_tree_and_mst(tree(std::move(reversed_ref.first)),
                                                                     array_1d<double>{}, std::move(reversed_ref.second));
                     check_large_relaxed(reversed, ref_tree, n, num_edges(graph));
@@ -886,7 +956,7 @@ namespace bpt_boruvka_tests {
         // Independent threshold partition oracle also runs under every limit.
         auto small = path(9);
         add_edge(0, 8, small);
-        for (int limit: {1, 2, 4}) {
+        for (int limit: {1, 2, 4, 8}) {
 #ifdef HG_USE_TBB
             tbb::global_control control(tbb::global_control::max_allowed_parallelism, limit);
 #endif
@@ -895,4 +965,279 @@ namespace bpt_boruvka_tests {
         }
     }
 
+}
+
+TEST_CASE("Stable basin grouping preserves arbitrary global edge order", "[bpt_boruvka][hierarchy_core]") {
+    using namespace hg;
+    namespace core = hg::hierarchy_core_internal;
+#ifdef HG_USE_TBB
+    for (int cap: {1, 2, 8}) {
+        tbb::global_control control(tbb::global_control::max_allowed_parallelism, cap);
+#else
+    {
+#endif
+        for (index_t count: {0, 1, 2, 255, 256, 257, 16385, 65537, 1048577}) {
+            array_1d<index_t> global = xt::arange<index_t>(count);
+            std::mt19937 rng(1729);
+            std::shuffle(global.begin(), global.end(), rng);
+            for (int pattern = 0; pattern < 5; ++pattern) {
+                array_1d<index_t> basins = xt::empty<index_t>({count});
+                for (index_t i = 0; i < count; ++i) {
+                    basins(i) = pattern == 0 ? 0 : pattern == 1 ? i :
+                        pattern == 2 ? (i % 11 == 0 ? count - 1 : 0) :
+                        pattern == 3 ? (i % 3) * ((count - 1) / 3) : rng() % count;
+                }
+                auto expected = global;
+                std::stable_sort(expected.begin(), expected.end(), [&](index_t a, index_t b) {
+                    return basins(a) < basins(b);
+                });
+                // Independent serial counting reference includes empty buckets.
+                std::vector<index_t> counts(count + 1, 0);
+                for (auto slot: global) ++counts[basins(slot) + 1];
+                std::partial_sum(counts.begin(), counts.end(), counts.begin());
+                array_1d<index_t> serial = xt::empty<index_t>({count});
+                for (auto slot: global) serial(counts[basins(slot)]++) = slot;
+                REQUIRE(serial == expected);
+                const auto saved = global;
+                for (int repeat = 0; repeat < 2; ++repeat) {
+                    REQUIRE(core::bpt_boruvka_group_basins(global, basins) == expected);
+                    REQUIRE(global == saved);
+                }
+            }
+        }
+    }
+}
+
+TEST_CASE("Saddle enumeration matches edge scans and history by original edge ID",
+          "[bpt_boruvka][hierarchy_core][bpt_boruvka_selection]") {
+    using namespace hg;
+    namespace core = hg::hierarchy_core_internal;
+    std::mt19937 rng(172903);
+    bool saw_one_sided = false, saw_mutual = false, saw_internal = false, saw_terminal_leftover = false;
+    for (int cap: {1, 2, 8}) {
+#ifdef HG_USE_TBB
+        tbb::global_control limit(tbb::global_control::max_allowed_parallelism, cap);
+#endif
+        for (int trial = 0; trial < 70; ++trial) {
+            const index_t n = trial < 3 ? trial + 2 : 3 + rng() % 100;
+            std::vector<std::pair<index_t, index_t>> edges;
+            for (index_t v = 1; v < n; ++v) edges.emplace_back(trial % 3 == 0 ? 0 : v - 1, v);
+            // Include bare trees (m=n-1), tied parallel edges, loops and cycles.
+            if (trial % 4) for (index_t i = 0; i < 3 * n; ++i) edges.emplace_back(rng() % n, rng() % n);
+            std::shuffle(edges.begin(), edges.end(), rng);
+            const index_t m = edges.size();
+            array_1d<index_t> src = xt::empty<index_t>({m});
+            array_1d<index_t> dst = xt::empty<index_t>({m}), weights = xt::empty<index_t>({m});
+            for (index_t e = 0; e < m; ++e) {
+                src(e) = edges[e].first; dst(e) = edges[e].second;
+                if (e % 2) std::swap(src(e), dst(e));
+                weights(e) = rng() % 7;
+            }
+            auto less = [&](index_t a, index_t b) { return core::bpt_boruvka_scalar_less(weights, a, b); };
+            auto got = core::bpt_boruvka_waterfall(src, dst, n, less);
+            std::vector<index_t> slots(m, invalid_index);
+            for (index_t s = 0; s < n - 1; ++s) {
+                REQUIRE(slots[got.selected_edges(s)] == invalid_index);
+                slots[got.selected_edges(s)] = s;
+            }
+            array_1d<index_t> labels = xt::arange<index_t>(n);
+            index_t c = n, offset = 0, total = 0;
+            while (c > 1) {
+                // Serial original-edge oracle: no enumeration/compaction helper.
+                auto saddle = core::bpt_boruvka_invalid_indices(c);
+                for (index_t e = 0; e < m; ++e) if (labels(src(e)) != labels(dst(e))) {
+                    for (auto a: {labels(src(e)), labels(dst(e))})
+                        if (saddle(a) == invalid_index || less(e, saddle(a))) saddle(a) = e;
+                }
+                if (c == n) for (index_t v = 0; v < n; ++v)
+                    REQUIRE(got.selected_edges(got.leaf_parent(v)) == saddle(v));
+                std::vector<index_t> expected, emitted;
+                for (index_t e = 0; e < m; ++e) {
+                    auto a = labels(src(e)), b = labels(dst(e));
+                    if (a != b && (saddle(a) == e || saddle(b) == e)) {
+                        expected.push_back(e);
+                        saw_mutual |= saddle(a) == e && saddle(b) == e;
+                        saw_one_sided |= (saddle(a) == e) != (saddle(b) == e);
+                    }
+                }
+                // Scatter slots rather than append from parallel tasks.
+                emitted.resize(expected.size());
+                core::bpt_boruvka_scratch scratch(n, m);
+                auto count = core::bpt_boruvka_enumerate_saddles(src, dst, labels, saddle, scratch,
+                    emitted.size(), [&](index_t e, index_t i) { emitted[i] = e; });
+                REQUIRE(count == static_cast<index_t>(expected.size()));
+                std::vector<index_t> component_order;
+                for (index_t v = 0; v < c; ++v) {
+                    const auto edge = saddle(v);
+                    const auto a = labels(src(edge)), b = labels(dst(edge)), d = v == a ? b : a;
+                    if (saddle(d) != edge || v < d) component_order.push_back(edge);
+                }
+                REQUIRE(emitted == component_order);
+                auto repeated = emitted;
+                REQUIRE(core::bpt_boruvka_enumerate_saddles(src, dst, labels, saddle, scratch,
+                    emitted.size(), [&](index_t e, index_t i) { repeated[i] = e; }) == count);
+                REQUIRE(repeated == emitted);
+                std::sort(emitted.begin(), emitted.end());
+                REQUIRE(emitted == expected);
+                auto labeling = core::bpt_boruvka_label_components(src, dst, labels, saddle);
+                REQUIRE(count == c - labeling.second);
+                const auto old_labels = labels;
+                for (auto &label: labels) label = labeling.first(label);
+                c = labeling.second;
+                auto next_saddle = core::bpt_boruvka_invalid_indices(c);
+                for (index_t e = 0; e < m; ++e) {
+                    auto a = labels(src(e)), b = labels(dst(e));
+                    if (a != b) {
+                        for (auto v: {a, b}) if (next_saddle(v) == invalid_index || less(e, next_saddle(v))) next_saddle(v) = e;
+                    } else if (!std::binary_search(expected.begin(), expected.end(), e) &&
+                               old_labels(src(e)) != old_labels(dst(e))) {
+                        saw_internal |= c > 1;
+                        saw_terminal_leftover |= c == 1;
+                    }
+                }
+                for (auto edge: expected) {
+                    const auto slot = slots[edge];
+                    REQUIRE(slot != invalid_index);
+                    REQUIRE(got.raw_basin(slot) == offset + labels(src(edge)));
+                    const auto p = got.raw_parent(slot);
+                    REQUIRE((p == invalid_index ? invalid_index : got.selected_edges(p)) ==
+                            (c == 1 ? invalid_index : next_saddle(labels(src(edge)))));
+                }
+                offset += c; total += count;
+            }
+            REQUIRE(total == n - 1);
+        }
+    }
+    REQUIRE(saw_one_sided); REQUIRE(saw_mutual); REQUIRE(saw_internal); REQUIRE(saw_terminal_leftover);
+}
+
+TEST_CASE("Compact history sparse IDs and error cleanup", "[bpt_boruvka][hierarchy_core]") {
+    using namespace hg;
+    namespace core = hg::hierarchy_core_internal;
+    for (auto mode: {core::bpt_boruvka_traversal::full_scan, core::bpt_boruvka_traversal::active}) {
+        array_1d<index_t> src = xt::zeros<index_t>({4099});
+        array_1d<index_t> dst = src;
+        dst(4096) = 1; src(4097) = 1; dst(4097) = 2; src(4098) = 2; dst(4098) = 3;
+        array_1d<int> weights = xt::zeros<int>({4099});
+        weights(4096) = 10; weights(4097) = 1; weights(4098) = 9;
+        auto less = [&](index_t a, index_t b) { return core::bpt_boruvka_scalar_less(weights, a, b); };
+        bpt_boruvka_tests::check_numberings(src, dst, 4, less);
+        REQUIRE_THROWS(core::bpt_boruvka_from_edge_order(src, dst, 5, less, core::bpt_boruvka_numbering::exact, mode));
+        REQUIRE_THROWS(core::bpt_boruvka_from_edge_order(src, dst, 0, less, core::bpt_boruvka_numbering::exact, mode));
+        dst(0) = 4;
+        REQUIRE_THROWS(core::bpt_boruvka_from_edge_order(src, dst, 4, less, core::bpt_boruvka_numbering::exact, mode));
+        REQUIRE_THROWS(core::bpt_boruvka_from_edge_order(src, array_1d<index_t>{}, 4, less, core::bpt_boruvka_numbering::exact, mode));
+        REQUIRE_THROWS(core::bpt_boruvka_from_edge_order(
+            array_2d<index_t>{{0,1}}, array_2d<index_t>{{1,2}}, 3, less, core::bpt_boruvka_numbering::exact, mode));
+        REQUIRE_THROWS(core::bpt_boruvka_from_edge_order(
+            array_1d<index_t>{-1}, array_1d<index_t>{0}, 1, less, core::bpt_boruvka_numbering::exact, mode));
+        auto owning = [mode] {
+            array_1d<index_t> a{0,1}, b{1,2};
+            return core::bpt_boruvka_from_edge_order(a,b,3,[](index_t x,index_t y){return x>y;}, core::bpt_boruvka_numbering::exact, mode);
+        }();
+        REQUIRE(owning.first == array_1d<index_t>{4,3,3,4,4});
+    }
+}
+
+TEST_CASE("Boruvka traversal validation and native defaults", "[hierarchy_core][bpt_boruvka]") {
+    using namespace hg;
+    namespace c = hg::hierarchy_core_internal;
+    using numbering = c::bpt_boruvka_numbering;
+    using traversal = c::bpt_boruvka_traversal;
+    array_1d<index_t> src = {0, 1, 0, 2}, dst = {1, 2, 2, 2};
+    auto less = [](index_t a, index_t b) { return a < b; };
+    auto full = c::bpt_boruvka_from_edge_order(src, dst, 3, less);
+    auto active = c::bpt_boruvka_from_edge_order(src, dst, 3, less, numbering::exact, traversal::active);
+    REQUIRE(full.first == active.first);
+    REQUIRE(full.second == active.second);
+    for (int i = 0; i < 16; ++i) {
+        auto transient = c::bpt_boruvka_from_edge_order(src, dst, 3, less);
+        transient.first.fill(77);
+    }
+    REQUIRE(full.first == active.first);
+    REQUIRE_THROWS(c::bpt_boruvka_from_edge_order(src, dst, 3, less, static_cast<numbering>(9)));
+    REQUIRE_THROWS(c::bpt_boruvka_from_edge_order(src, dst, 3, less, numbering::exact, static_cast<traversal>(9)));
+    for (auto mode: {traversal::full_scan, traversal::active}) {
+        REQUIRE_THROWS(c::bpt_boruvka_from_edge_order(src, dst, 4, less, numbering::exact, mode));
+        REQUIRE_THROWS(c::bpt_boruvka_from_edge_order(src, dst, 0, less, numbering::exact, mode));
+        // Disconnected components each have an initial saddle: failure must
+        // still be detected in the next round, before successor indexing.
+        REQUIRE_THROWS(c::bpt_boruvka_from_edge_order(array_1d<index_t>{0,2},
+            array_1d<index_t>{1,3}, 4, less, numbering::exact, mode));
+        auto singleton = c::bpt_boruvka_from_edge_order(array_1d<index_t>{},
+            array_1d<index_t>{}, 1, less, numbering::exact, mode);
+        REQUIRE(singleton.first == array_1d<index_t>{0});
+        REQUIRE(singleton.second.size() == 0);
+        dst(0) = 3;
+        REQUIRE_THROWS(c::bpt_boruvka_from_edge_order(src, dst, 3, less, numbering::exact, mode));
+        dst(0) = 1;
+    }
+    auto graph = bpt_boruvka_tests::path(7);
+    array_1d<int> weights{8,1,9,2,5,3};
+    auto default_result = bpt_canonical_boruvka(graph, weights);
+    auto kruskal = bpt_canonical(graph, weights);
+    REQUIRE(default_result.tree.parents() == kruskal.tree.parents());
+    REQUIRE(default_result.mst_edge_map == kruskal.mst_edge_map);
+    for (auto num: {numbering::exact, numbering::basin}) {
+        auto a = bpt_canonical_boruvka(graph, weights, num, false);
+        auto b = bpt_canonical_boruvka(graph, weights, num, true);
+        REQUIRE(a.tree.parents() == b.tree.parents());
+        REQUIRE(a.mst_edge_map == b.mst_edge_map);
+        REQUIRE(a.altitudes == b.altitudes);
+    }
+}
+
+TEST_CASE("Traversal phases freeze equal minima and monotone edge states", "[hierarchy_core][bpt_boruvka]") {
+    using namespace hg;
+    namespace c = hg::hierarchy_core_internal;
+    std::mt19937 rng(1729);
+    for (int cap: {1,2,8}) {
+#ifdef HG_USE_TBB
+        tbb::global_control control(tbb::global_control::max_allowed_parallelism, cap);
+#endif
+        for (int trial = 0; trial < 25; ++trial) {
+            const index_t n = 7 + trial, m = 6 * n;
+            array_1d<index_t> src = xt::empty<index_t>({m});
+            array_1d<index_t> dst = xt::empty<index_t>({m}), weights = xt::empty<index_t>({m});
+            for (index_t e = 0; e < m; ++e) {
+                src(e) = e < n - 1 ? e : rng() % n;
+                dst(e) = e < n - 1 ? e + 1 : rng() % n;
+                weights(e) = rng() % 11;
+            }
+            auto less = [&](index_t a, index_t b) { return c::bpt_boruvka_scalar_less(weights,a,b); };
+            c::bpt_boruvka_full_scan full(n,m);
+            c::bpt_boruvka_active_scan active(n,m);
+            REQUIRE(full.scratch.edge_class.size() == size_t(n));
+            REQUIRE(active.scratch.edge_class.size() == size_t(m));
+            array_1d<index_t> labels = xt::arange<index_t>(n);
+            index_t count = n;
+            std::vector<uint8_t> previous(m, c::bpt_boruvka_undecided);
+            while (count > 1) {
+                auto saddle = c::bpt_boruvka_minima(src,dst,labels,count,full,less);
+                auto other = c::bpt_boruvka_minima(src,dst,labels,count,active,less);
+                REQUIRE(saddle == other);
+                auto oracle = c::bpt_boruvka_invalid_indices(count);
+                size_t j = 0;
+                for (index_t e = 0; e < m; ++e) {
+                    auto a = labels(src(e)), b = labels(dst(e));
+                    if (a != b) for (auto v: {a,b})
+                        if (oracle(v) == invalid_index || less(e,oracle(v))) oracle(v) = e;
+                    REQUIRE((previous[e] == c::bpt_boruvka_undecided || previous[e] == full.states[e]));
+                    if (full.states[e] == c::bpt_boruvka_undecided) {
+                        REQUIRE(a != b);
+                        REQUIRE(j < active.active.size());
+                        REQUIRE(active.active[j++] == e);
+                    }
+                }
+                REQUIRE(j == active.active.size());
+                REQUIRE(saddle == oracle);
+                c::bpt_boruvka_enumerate_saddles(src,dst,labels,saddle,full.scratch,n-1,
+                    [&](index_t e,index_t) { full.selected(e); });
+                for (index_t e = 0; e < m; ++e) previous[e] = full.states[e];
+                auto labeling = c::bpt_boruvka_label_components(src,dst,labels,saddle);
+                for (auto &v: labels) v = labeling.first(v);
+                count = labeling.second;
+            }
+        }
+    }
 }
