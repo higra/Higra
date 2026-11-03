@@ -26,7 +26,7 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
 
     .. math::
 
-        A(n) = \sum_{v \in leaves(n)} a(v)
+        A(n) = \\sum_{v \\in leaves(n)} a(v)
 
     Equivalently, the area of a leaf is its own area, and the area of an internal node is the sum of the areas of
     its children:
@@ -35,7 +35,7 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
 
         A(n) = \\begin{cases}
             a(n) & \\textrm{if } n \\textrm{ is a leaf}\\\\
-            \sum_{c \in children(n)} A(c) & \\textrm{otherwise}
+            \\sum_{c \\in children(n)} A(c) & \\textrm{otherwise}
         \\end{cases}
 
     The area of the root is thus the total area of all the leaves.
@@ -50,7 +50,7 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
 
     :Complexity:
 
-    The tree accumulation takes :math:`\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
+    The tree accumulation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
     If ``vertex_area`` is omitted and a leaf graph is available, add the cost of
     :func:`~higra.attribute_vertex_area`. For a region adjacency graph, area computation also
     accumulates over the vertices of its underlying graph(s).
@@ -58,9 +58,17 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
     :Example:
     =======
 
-    Let :math:`T` be a binary tree with 5 leaves (nodes 0 to 4): node 5 is the parent of the leaves 0 and 1,
-    node 6 is the parent of the leaves 2 and 3, node 7 is the parent of the nodes 5 and 6, and the root
-    node 8 is the parent of the leaf 4 and of the node 7:
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
 
     .. code-block:: python
 
@@ -99,7 +107,7 @@ def attribute_volume(tree, altitudes, area=None, leaf_volume=None):
 
     .. math::
 
-        V(n) = area(n) * | altitude(n) - altitude(parent(n)) | +  \sum_{c \in children(n)} V(c)
+        V(n) = area(n) * | altitude(n) - altitude(parent(n)) | +  \\sum_{c \\in children(n)} V(c)
 
     The recursive formula applies to the non-leaf nodes. The volume of a leaf is not computed with this formula:
     it is simply equal to the corresponding value of ``leaf_volume``. If ``leaf_volume`` is ``None``,
@@ -112,16 +120,24 @@ def attribute_volume(tree, altitudes, area=None, leaf_volume=None):
 
     :Complexity:
 
-    The volume accumulation takes :math:`\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
+    The volume accumulation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
     If ``area`` is omitted, add the cost of :func:`~higra.attribute_area`, including any
     leaf-area computation for the underlying graph(s) of a region adjacency graph.
 
     :Example:
     =======
     
-    Let :math:`T` be a binary tree with 5 leaves (nodes 0 to 4): node 5 is the parent of the leaves 0 and 1,
-    node 6 is the parent of the leaves 2 and 3, node 7 is the parent of the nodes 5 and 6, and the root
-    node 8 is the parent of the leaf 4 and of the node 7:
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
 
     .. code-block:: python
 
@@ -164,7 +180,7 @@ def attribute_lca_map(tree, leaf_graph):
 
     Complexity: 
     
-    The runtime complexity is `\mathcal{O}(m)` where :math:`m` is the number of edges in :attr:`leaf_graph` plus :math:`\mathcal{O}(n\log(n))` on the first call (pre-processing) where :math:`n` is the number of nodes in `tree`.
+    The runtime complexity is :math:`\\mathcal{O}(m)` where :math:`m` is the number of edges in :attr:`leaf_graph` plus :math:`\\mathcal{O}(n\\log(n))` on the first call (pre-processing) where :math:`n` is the number of nodes in `tree`.
 
     :Example:
     =======
@@ -211,9 +227,9 @@ def attribute_lca_map(tree, leaf_graph):
     The result contains one value per edge of the graph, in the order of the edges of `graph`.
     For example:
 
-    - the edge :math:`\{0, 1\}` (first edge): the leaves 0 and 1 are merged in the node 9;
-    - the edge :math:`\{1, 2\}` (third edge): the leaf 1 is in the node 9 and the leaf 2 in the node 10, which are merged in the node 14;
-    - the edge :math:`\{0, 3\}` (second edge): the leaves 0 and 3 are only merged in the root, the node 16.
+    - the edge :math:`\\{0, 1\\}` (first edge): the leaves 0 and 1 are merged in the node 9;
+    - the edge :math:`\\{1, 2\\}` (third edge): the leaf 1 is in the node 9 and the leaf 2 in the node 10, which are merged in the node 14;
+    - the edge :math:`\\{0, 3\\}` (second edge): the leaves 0 and 3 are only merged in the root, the node 16.
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy` on `tree`)
@@ -351,11 +367,11 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     leaf graph (see :func:`~higra.attribute_frontier_length`).
 
     Let :math:`E` be the edge set of the leaf graph, and let
-    :math:`E_n = \{e = \{i,j\} \in E \mid lca(i,j)=n\}`. Then:
+    :math:`E_n = \\{e = \\{i,j\\} \\in E \\mid lca(i,j)=n\\}`. Then:
 
     .. math::
 
-        S(n) = \frac{\sum_{e \in E_n} w(e)}{\sum_{e \in E_n} l(e)}
+        S(n) = \\frac{\\sum_{e \\in E_n} w(e)}{\\sum_{e \\in E_n} l(e)}
 
     where :math:`w(e)` is the edge weight, after any required accumulation
     from the underlying graph, and :math:`l(e)` is the default edge length
@@ -377,7 +393,7 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
     :Example:
     =======
 
-    Consider the 3 x 3 grid graph and the binary partition tree of :func:`~higra.attribute_frontier_length`:
+    Consider the following 3 x 3 grid graph, whose edges are labelled with their weights:
 
     .. code-block:: text
 
@@ -390,6 +406,10 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
         5         5         3
         |         |         |
         (6)-- 0 --(7)-- 1 --(8)
+
+    and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
+
+    .. code-block:: text
 
         4                 +-------16------+
                           |               |
@@ -438,13 +458,98 @@ def attribute_frontier_strength(tree, edge_weights, leaf_graph):
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_contour_length(tree, vertex_perimeter=None, edge_length=None, leaf_graph=None):
     """
-    Length of the contour (perimeter) of each node of the given tree.
+    Compute the length of the contour (perimeter) of each node of the given tree.
+
+    Each leaf :math:`v` of the tree is a vertex of the leaf graph (for example a pixel) with a perimeter
+    :math:`p(v)`, and each edge :math:`e` of the leaf graph has a length :math:`l(e)`: the length of the border shared
+    by the two vertices it connects. The contour of a node :math:`n` is the boundary of the region made of the leaves
+    of the subtree rooted in :math:`n`. Summing the perimeters of its leaves counts twice every border shared by two
+    leaves of :math:`n`: these inner borders must be removed to obtain the contour. An edge whose two extremities are
+    leaves of :math:`n` has its lowest common ancestor in the subtree rooted in :math:`n`: every inner border is thus
+    part of the frontier of a node of this subtree (see :func:`~higra.attribute_frontier_length`), hence:
+
+    .. math::
+
+        C(n) = \\sum_{v \\in leaves(n)} p(v) \\; - \\; 2 \\sum_{m \\in subtree(n)} F(m)
+
+    where :math:`subtree(n)` is the set of the nodes of the subtree rooted in :math:`n` (including :math:`n` and its
+    leaves) and :math:`F(m)` is the frontier length of the node :math:`m`:
+
+    .. math::
+
+        F(m) = \\sum_{e = \\{i, j\\} \\in E,\\ lca(i, j) = m} l(e)
+
+    where :math:`E` is the edge set of the leaf graph. As a leaf is never the lowest common ancestor of an edge, its
+    frontier length is 0 and the contour of a leaf is its own perimeter.
+
+    The perimeters and lengths are determined as follows:
+
+    - if :attr:`vertex_perimeter` is provided, it gives the perimeter of each leaf: a 1d array with one element per
+      leaf or, if the leaf graph is a grid graph (e.g. an image), an array whose first dimensions follow the shape
+      of the grid; otherwise the perimeters are given by :func:`~higra.attribute_vertex_perimeter` on the leaf graph;
+    - if :attr:`edge_length` is provided, it gives the length of each edge of the leaf graph (a 1d array with one
+      element per edge); otherwise the lengths are given by :func:`~higra.attribute_edge_length` on the leaf graph.
+
+    The borders of the domain (for example the sides of the image) belong to the contour of the nodes touching them.
+
+    :Complexity:
+
+    The runtime complexity is :math:`\\mathcal{O}(N\\log(N) + M)` where :math:`N` is the number of nodes in the tree and
+    :math:`M` is the number of edges in the leaf graph (frontier lengths followed by one accumulation over the tree).
+    If :attr:`vertex_perimeter` or :attr:`edge_length` are omitted, add the cost of their computation.
+
+    :Example:
+    =======
+
+    Consider the following 3 x 3 grid graph, whose edges are labelled with their weights:
+
+    .. code-block:: text
+
+        (0)-- 0 --(1)-- 2 --(2)
+        |         |         |
+        6         6         0
+        |         |         |
+        (3)-- 0 --(4)-- 4 --(5)
+        |         |         |
+        5         5         3
+        |         |         |
+        (6)-- 0 --(7)-- 1 --(8)
+
+    and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
+
+    .. code-block:: text
+
+        4                 +-------16------+
+                          |               |
+        3         +-------15-----+        |
+                  |              |        |
+        2     +---14--+          |        |
+              |       |          |        |
+        1     |       |       +--13-+     |
+              |       |       |     |     |
+        0   +-9-+   +-10+   +-12+   |   +-11+
+            +   +   +   +   +   +   +   +   +
+            0   1   2   5   6   7   8   3   4
+
+    .. code-block:: python
+
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0., 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        hg.attribute_contour_length(tree)
+        # array([ 4.,  4.,  4.,  4.,  4.,  4.,  4.,  4.,  4.,  6.,  6.,  6.,  6.,  8., 10., 16., 12.])
+
+    Each pixel has a perimeter of 4. The node 9 is the region :math:`\\{0, 1\\}` (two adjacent pixels): its contour is
+    :math:`4 + 4 - 2 \\times 1 = 6`. The node 13 is the bottom row :math:`\\{6, 7, 8\\}`:
+    :math:`3 \\times 4 - 2 \\times 2 = 8`. The root is the whole image: :math:`9 \\times 4 - 2 \\times 12 = 12`, the
+    perimeter of the 3 x 3 square.
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param vertex_perimeter: perimeter of each vertex of the leaf graph (provided by :func:`~higra.attribute_vertex_perimeter` on `leaf_graph`)
     :param edge_length: length of each edge of the leaf graph (provided by :func:`~higra.attribute_edge_length` on `leaf_graph`)
-    :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
-    :return: a 1d array
+    :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :return: a 1d array representing the contour length of each node of the tree
     """
 
     if vertex_perimeter is None:
@@ -479,15 +584,98 @@ def attribute_contour_length(tree, vertex_perimeter=None, edge_length=None, leaf
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_contour_strength(tree, edge_weights, vertex_perimeter=None, edge_length=None, leaf_graph=None):
     """
-    Strength of the contour of each node of the given tree. The strength of the contour of a node is defined as the
-    mean edge weights on the contour.
+    Compute the strength of the contour of each node of the given tree.
+
+    The strength of the contour of a node :math:`n` is the total weight of the edges of the leaf graph crossing the
+    contour of :math:`n`, divided by the length of the contour (see :func:`~higra.attribute_contour_length`):
+
+    .. math::
+
+        S(n) = \\frac{W(n)}{C(n)}
+        \\qquad\\text{with}\\qquad
+        W(n) = \\sum_{e = \\{i, j\\} \\in E,\\ |\\{i, j\\} \\cap leaves(n)| = 1} w(e)
+
+    where :math:`E` is the edge set of the leaf graph, :math:`w(e)` is the weight of the edge :math:`e`, and
+    :math:`C(n)` is the contour length of :math:`n`. The edges considered in :math:`W(n)` are the edges having exactly
+    one extremity in :math:`leaves(n)`. Each of these edges contributes its weight :math:`w(e)` once, whatever its
+    length :math:`l(e)`. The borders of the domain (for example the sides of an image) have no weight: they only
+    contribute to :math:`C(n)`. With the default perimeters and lengths of a pixel graph (unit edge lengths),
+    :math:`S(n)` is thus the mean weight of the edges crossing the contour of :math:`n`, the borders of the domain
+    counting as weight 0.
+
+    The contour of a leaf is its own perimeter: its strength is the sum of the weights of its incident edges divided by
+    its perimeter. No edge leaves the root: its strength is always 0, even if its contour length is null.
+
+    If the leaf graph is a region adjacency graph, :attr:`edge_weights` gives one weight per edge of the underlying
+    graph of the region adjacency graph: the weight :math:`w(e)` of an edge of the region adjacency graph is then the
+    sum of the weights of the edges of the underlying graph it represents (see :func:`~higra.rag_accumulate_on_edges`).
+
+    The perimeters and lengths are determined as in :func:`~higra.attribute_contour_length`.
+
+    :Complexity:
+
+    The tree and leaf-graph computations take :math:`\\mathcal{O}(N\\log(N) + M)` time, where :math:`N` is the number
+    of nodes in the tree and :math:`M` is the number of edges in the leaf graph (two contour length computations,
+    one on the edge lengths and one on the edge weights).
+    If :attr:`vertex_perimeter` or :attr:`edge_length` are omitted, add the cost of their computation.
+    For a region adjacency graph, also add the cost of :func:`~higra.rag_accumulate_on_edges`, linear in the
+    number of edges in its underlying graph.
+
+    :Example:
+    =======
+
+    Consider the following 3 x 3 grid graph, whose edges are labelled with their weights:
+
+    .. code-block:: text
+
+        (0)-- 0 --(1)-- 2 --(2)
+        |         |         |
+        6         6         0
+        |         |         |
+        (3)-- 0 --(4)-- 4 --(5)
+        |         |         |
+        5         5         3
+        |         |         |
+        (6)-- 0 --(7)-- 1 --(8)
+
+    and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
+
+    .. code-block:: text
+
+        4                 +-------16------+
+                          |               |
+        3         +-------15-----+        |
+                  |              |        |
+        2     +---14--+          |        |
+              |       |          |        |
+        1     |       |       +--13-+     |
+              |       |       |     |     |
+        0   +-9-+   +-10+   +-12+   |   +-11+
+            +   +   +   +   +   +   +   +   +
+            0   1   2   5   6   7   8   3   4
+
+    .. code-block:: python
+
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0., 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        hg.attribute_contour_strength(tree, edge_weights)
+        # array([1.5, 2. , 0.5, 2.75, 3.75, 1.75, 1.25, 1.5, 1., 2.33333333, 1.5, 4.33333333, 1.83333333,
+        #        1.625, 1.9, 1.625, 0.])
+
+    The node 9 is the region :math:`\\{0, 1\\}`: the edges leaving it are :math:`\\{0, 3\\}`, :math:`\\{1, 4\\}` and
+    :math:`\\{1, 2\\}` of weights 6, 6 and 2, and its contour length is 6, hence a strength of
+    :math:`(6 + 6 + 2) / 6 = 2.33`. The node 13 is the bottom row :math:`\\{6, 7, 8\\}`: the leaving edges have weights
+    5, 5 and 3 and the contour length is 8, hence :math:`13 / 8 = 1.625`. The leaf 0 has two incident edges of weights
+    0 and 6 and a perimeter of 4: its strength is :math:`6 / 4 = 1.5`. The root has no leaving edge: its strength is 0.
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
-    :param edge_weights: edge_weights of the leaf graph
+    :param edge_weights: weight of the edges of the leaf graph (Numpy array of shape (leaf_graph.num_edges(),)); if `leaf_graph` is a region adjacency graph, weights of the edges of its underlying graph
     :param vertex_perimeter: perimeter of each vertex of the leaf graph (provided by :func:`~higra.attribute_vertex_perimeter` on `leaf_graph`)
     :param edge_length: length of each edge of the leaf graph (provided by :func:`~higra.attribute_edge_length` on `leaf_graph`)
-    :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
-    :return: a 1d array
+    :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :return: a 1d array of floating point values representing the strength of the contour of each node of the tree
     """
 
     if vertex_perimeter is None:
@@ -515,14 +703,98 @@ def attribute_contour_strength(tree, edge_weights, vertex_perimeter=None, edge_l
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_compactness(tree, area=None, contour_length=None, normalize=True, leaf_graph=None):
     """
-    The compactness of a node is defined as its area divided by the square of its perimeter length.
+    Compute the compactness of each node of the given tree.
+
+    The compactness of a node :math:`n` is the ratio between its area and the square of the length of its contour:
+
+    .. math::
+
+        K(n) = \\frac{A(n)}{C(n)^2}
+
+    where :math:`A(n)` is the area of :math:`n` (see :func:`~higra.attribute_area`) and :math:`C(n)` is the length of
+    its contour (see :func:`~higra.attribute_contour_length`). For a given area, the more compact the region, the
+    shorter its contour and the larger its compactness.
+
+    If :attr:`normalize` is ``True`` (default), the values are divided by the largest compactness of the tree (``NaN``
+    values being ignored), so that the most compact node of the tree has a compactness of 1:
+
+    .. math::
+
+        K_{norm}(n) = \\frac{K(n)}{\\max_{m} K(m)}
+
+    where the maximum is taken over all the nodes :math:`m` of the tree.
+
+    The area and the contour length are determined as follows:
+
+    - if :attr:`area` (resp. :attr:`contour_length`) is provided, it is used as such;
+    - otherwise, it is computed with :func:`~higra.attribute_area` (resp. :func:`~higra.attribute_contour_length`).
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
+    If :attr:`area` or :attr:`contour_length` are omitted, add the cost of :func:`~higra.attribute_area` and
+    :func:`~higra.attribute_contour_length`.
+
+    :Example:
+    =======
+
+    Consider the following 3 x 3 grid graph, whose edges are labelled with their weights:
+
+    .. code-block:: text
+
+        (0)-- 0 --(1)-- 2 --(2)
+        |         |         |
+        6         6         0
+        |         |         |
+        (3)-- 0 --(4)-- 4 --(5)
+        |         |         |
+        5         5         3
+        |         |         |
+        (6)-- 0 --(7)-- 1 --(8)
+
+    and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
+
+    .. code-block:: text
+
+        4                 +-------16------+
+                          |               |
+        3         +-------15-----+        |
+                  |              |        |
+        2     +---14--+          |        |
+              |       |          |        |
+        1     |       |       +--13-+     |
+              |       |       |     |     |
+        0   +-9-+   +-10+   +-12+   |   +-11+
+            +   +   +   +   +   +   +   +   +
+            0   1   2   5   6   7   8   3   4
+
+    .. code-block:: python
+
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0., 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        hg.attribute_compactness(tree, normalize=False)
+        # array([0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.05555556,
+        #        0.05555556, 0.05555556, 0.05555556, 0.046875, 0.04, 0.02734375, 0.0625])
+
+    A pixel has an area of 1 and a contour of 4: :math:`1 / 4^2 = 0.0625`. The node 9 has an area of 2 and a contour of 6:
+    :math:`2 / 6^2 = 0.0556`. The root has an area of 9 and a contour of 12: :math:`9 / 12^2 = 0.0625`.
+
+    With the default normalization, the largest value (0.0625, reached by the leaves and the root) becomes 1:
+
+    .. code-block:: python
+
+        hg.attribute_compactness(tree)
+        # array([1., 1., 1., 1., 1., 1., 1., 1., 1., 0.88888889, 0.88888889, 0.88888889, 0.88888889,
+        #        0.75, 0.64, 0.4375, 1.])
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
-    :param area: node area of the input tree (provided by :func:`~higra.attribute_area` on `tree`)
-    :param contour_length: node contour length of the input tree (provided by :func:`~higra.attribute_perimeter_length` on `tree`)
-    :param normalize: if True the result is divided by the maximal compactness value in the tree
-    :param leaf_graph: (deduced from :class:`~higra.CptHierarchy`)
-    :return: a 1d array
+    :param area: area of the nodes of the input tree (provided by :func:`~higra.attribute_area` on `tree`)
+    :param contour_length: contour length of the nodes of the input tree (provided by :func:`~higra.attribute_contour_length` on `tree`)
+    :param normalize: if ``True`` (default), the result is divided by the largest compactness value of the tree
+    :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :return: a 1d array of floating point values representing the compactness of each node of the tree
     """
     if area is None:
         area = hg.attribute_area(tree)
@@ -542,19 +814,98 @@ def attribute_compactness(tree, area=None, contour_length=None, normalize=True, 
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_mean_vertex_weights(tree, vertex_weights, area=None, leaf_graph=None):
     """
-    Mean vertex weights of the leaf graph vertices inside each node of the given tree.
+    Compute the mean of the vertex weights of the leaf graph vertices inside each node of the given tree.
 
-    For any node :math:`n`, the mean vertex weights :math:`a(n)` of :math:`n` is
+    Each leaf of the tree is a vertex of the leaf graph (for example a pixel) with a weight :math:`w(v)` (for example
+    its gray level, or a vector such as its color). For any node :math:`n`, the mean vertex weight :math:`M(n)` is the
+    sum of the weights of the leaves of the subtree rooted in :math:`n`, divided by the area of :math:`n`:
 
     .. math::
 
-        a(n) = \\frac{\sum_{x\in n} vertex\_weights(x)}{area(n)}
+        M(n) = \\frac{\\sum_{v \\in leaves(n)} w(v)}{A(n)}
+
+    where :math:`A(n)` is the area of :math:`n` (see :func:`~higra.attribute_area`). When every leaf has an area of 1
+    (for example the pixels of an image), :math:`A(n)` is the number of leaves of :math:`n` and :math:`M(n)` is the
+    arithmetic mean of their weights; the mean of a leaf is then its own weight.
+
+    The weights may be scalars or vectors: for vector weights of dimension :math:`d`, the mean is computed independently
+    for each component. The inputs are determined as follows:
+
+    - :attr:`vertex_weights` is an array with one element per leaf (of shape (tree.num_leaves(),) or
+      (tree.num_leaves(), d)) or, if the leaf graph is a grid graph (e.g. an image), an array whose first dimensions
+      follow the shape of the grid;
+    - the area of the nodes is :attr:`area` if provided, otherwise it is computed with :func:`~higra.attribute_area`.
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N \\times d)` time, where :math:`N` is the number of nodes in the tree and
+    :math:`d` is the dimension of the vertex weights (:math:`d = 1` for scalar weights). If :attr:`area` is omitted,
+    add the cost of :func:`~higra.attribute_area`.
+
+    :Example:
+    =======
+
+    Consider the following 3 x 3 grid graph, whose edges are labelled with their weights:
+
+    .. code-block:: text
+
+        (0)-- 0 --(1)-- 2 --(2)
+        |         |         |
+        6         6         0
+        |         |         |
+        (3)-- 0 --(4)-- 4 --(5)
+        |         |         |
+        5         5         3
+        |         |         |
+        (6)-- 0 --(7)-- 1 --(8)
+
+    and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
+
+    .. code-block:: text
+
+        4                 +-------16------+
+                          |               |
+        3         +-------15-----+        |
+                  |              |        |
+        2     +---14--+          |        |
+              |       |          |        |
+        1     |       |       +--13-+     |
+              |       |       |     |     |
+        0   +-9-+   +-10+   +-12+   |   +-11+
+            +   +   +   +   +   +   +   +   +
+            0   1   2   5   6   7   8   3   4
+
+    The vertex weights are the gray levels of the 3 x 3 image:
+
+    .. code-block:: text
+
+        1  2  3
+        4  5  6
+        7  8  9
+
+    .. code-block:: python
+
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+        vertex_weights = np.asarray(((1., 2, 3), (4, 5, 6), (7, 8, 9)))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        hg.attribute_mean_vertex_weights(tree, vertex_weights)
+        # array([1.        , 2.        , 3.        , 4.        , 5.        ,
+        #        6.        , 7.        , 8.        , 9.        , 1.5       ,
+        #        4.5       , 4.5       , 7.5       , 8.        , 3.        ,
+        #        5.14285714, 5.        ])
+
+    The node 9 contains the pixels 0 and 1: its mean is :math:`(1 + 2) / 2 = 1.5`.
+    The node 13 contains the pixels 6, 7 and 8: its mean is :math:`(7 + 8 + 9) / 3 = 8`.
+    The node 14 contains the pixels 0, 1, 2 and 5: its mean is :math:`(1 + 2 + 3 + 6) / 4 = 3`.
+    The root is the mean of all the weights: :math:`45 / 9 = 5`.
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
-    :param vertex_weights: vertex weights of the leaf graph of the input tree
-    :param area: area of the tree nodes  (provided by :func:`~higra.attribute_area`)
-    :param leaf_graph: leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
-    :return: a nd array
+    :param vertex_weights: vertex weights of the leaf graph of the input tree (scalar or vectorial)
+    :param area: area of the nodes of the input tree (provided by :func:`~higra.attribute_area` on `tree`)
+    :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :return: an array of floating point values representing the mean vertex weight of each node of the tree, of shape (tree.num_vertices(),) for scalar weights and (tree.num_vertices(), d) for vector weights of dimension :math:`d`
     """
     if area is None:
         area = hg.attribute_area(tree)
@@ -572,20 +923,64 @@ def attribute_mean_vertex_weights(tree, vertex_weights, area=None, leaf_graph=No
 @_legacy_cache_keywords
 def attribute_sibling(tree, skip=1):
     """
-    Sibling index of each node of the given tree.
+    Compute the sibling of each node of the given tree.
 
-    For each node :math:`n` which is the :math:`k`-th child of its parent node :math:`p` among :math:`N` children,
-    the attribute sibling of :math:`n` is the index of the :math:`(k + skip) % N`-th child of :math:`p`.
+    The children of a node :math:`p` are ordered. Let :math:`n` be the :math:`k`-th child of :math:`p` (starting from
+    0) among the :math:`numc(p)` children of :math:`p`. The sibling of :math:`n` is the node:
 
-    The sibling of the root node is itself.
+    .. math::
 
-    The sibling attribute enables to easily emulates a (doubly) linked list among brothers.
+        sibling(n) = child\\big((k + skip) \\bmod numc(p),\\ p\\big)
 
-    In a binary tree, the sibling attribute of a node is effectively its only brother (with `skip` equals to 1).
+    where :math:`child(i, p)` is the :math:`i`-th child of :math:`p` (starting from 0). The children of a node are thus
+    visited in a circular way: with :attr:`skip` equal to 1, the sibling of a node is the next child of its parent, and
+    the sibling of the last child is the first one; with :attr:`skip` equal to -1, the sibling of a node is the previous
+    child of its parent. The root is not the child of any node: its sibling is itself.
 
-    :param tree: Input tree
-    :param skip: Number of skipped element in the children list (including yourself)
-    :return: a nd array
+    The sibling attribute makes it possible to emulate a circular linked list among the children of a node.
+    In a binary tree, with :attr:`skip` equal to 1, the sibling of a node is its only brother.
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        hg.attribute_sibling(tree)
+        # array([1, 0, 3, 2, 7, 6, 5, 4, 8])
+
+    The sibling of each node is its only brother: the leaves 0 and 1 are siblings, as are the leaves 2 and 3, the nodes 5 and 6,
+    and the leaf 4 and the node 7. The root is its own sibling.
+
+    With :attr:`skip` equal to 2:
+
+    .. code-block:: python
+
+        hg.attribute_sibling(tree, skip=2)
+        # array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+
+    Each non-root node is one of the 2 children of its parent: moving 2 positions forward in the circular list of the
+    children brings back to the node itself.
+
+    :param tree: input tree
+    :param skip: offset, in the circular list of the children of the parent, between a node and its sibling (integer, possibly negative): 1 (default) for the next child, -1 for the previous one
+    :return: a 1d array of node indices representing the sibling of each node of the tree
     """
     attribute = hg.cpp._attribute_sibling(tree, skip)
     return attribute
@@ -594,12 +989,48 @@ def attribute_sibling(tree, skip=1):
 @_legacy_cache_keywords
 def attribute_depth(tree):
     """
-    The depth of a node :math:`n` of the tree :math:`T` is equal to the number of ancestors of :math:`n` in :math:`T`.
+    Compute the depth of each node of the given tree.
 
-    The depth of the root node is equal to 0.
+    The depth :math:`d(n)` of a node :math:`n` is the number of edges on the path from :math:`n` to the root, that is
+    the number of ancestors of :math:`n` other than :math:`n` itself:
 
-    :param tree: Input tree
-    :return: a nd array
+    .. math::
+
+        d(n) = \\begin{cases}
+            0 & \\textrm{if } n \\textrm{ is the root}\\\\
+            d(parent(n)) + 1 & \\textrm{otherwise}
+        \\end{cases}
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        hg.attribute_depth(tree)
+        # array([3, 3, 3, 3, 1, 2, 2, 1, 0])
+
+    The root has a depth of 0, the node 7 and the leaf 4 are its children (depth 1), and the leaves 0 to 3 are at
+    depth 3: their ancestors are the nodes 5 or 6, the node 7 and the root.
+
+    :param tree: input tree
+    :return: a 1d array of integers representing the depth of each node of the tree
     """
     attribute = hg.cpp._attribute_depth(tree)
     return attribute
@@ -608,11 +1039,56 @@ def attribute_depth(tree):
 @_legacy_cache_keywords
 def attribute_regular_altitudes(tree, depth=None):
     """
-    Regular altitudes is comprised between 0 and 1 and is inversely proportional to the depth of a node
+    Compute regular altitudes for the nodes of the given tree, derived from their depth.
+
+    The regular altitude :math:`alt(n)` of a non-leaf node :math:`n` decreases linearly with its depth :math:`d(n)` (see
+    :func:`~higra.attribute_depth`), from 1 for the root to 0 for a node at the largest depth of the tree, and the
+    leaves are always at altitude 0:
+
+    .. math::
+
+        alt(n) = \\begin{cases}
+            0 & \\textrm{if } n \\textrm{ is a leaf}\\\\
+            1 - \\frac{d(n)}{\\max_{m} d(m)} & \\textrm{otherwise}
+        \\end{cases}
+
+    where the maximum is taken over all the nodes :math:`m` of the tree (it is reached by a leaf). The altitudes are
+    thus comprised between 0 and 1, the non-leaf nodes have a positive altitude, and the altitudes are increasing from
+    the leaves to the root.
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
+    If :attr:`depth` is omitted, add the cost of :func:`~higra.attribute_depth`.
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        hg.attribute_regular_altitudes(tree)
+        # array([0.        , 0.        , 0.        , 0.        , 0.        , 0.33333333,
+        #        0.33333333, 0.66666667, 1.        ])
+
+    The depths of the nodes 5 to 8 are 2, 2, 1 and 0 and the largest depth is 3: the altitudes are
+    :math:`1 - 2/3`, :math:`1 - 2/3`, :math:`1 - 1/3` and :math:`1 - 0/3`.
 
     :param tree: input tree
-    :param depth: depth of the tree node (provided by :func:`~higra.attribute_depth`)
-    :return: a nd array
+    :param depth: depth of the tree nodes (provided by :func:`~higra.attribute_depth` on `tree`)
+    :return: a 1d array of floating point values representing the regular altitude of each node of the tree
     """
 
     if depth is None:
@@ -626,14 +1102,56 @@ def attribute_regular_altitudes(tree, depth=None):
 @_legacy_cache_keywords
 def attribute_vertex_list(tree):
     """
-    List of leaf nodes inside the sub-tree rooted in a node.
+    List the leaves of the subtree rooted in each node of the given tree.
 
-    **WARNING**: This function is slow and will use O(n²) space, with n the number of leaf nodes !
+    For a node :math:`n`, the result contains the list :math:`leaves(n)` of the leaves of the subtree rooted in
+    :math:`n`, defined recursively as:
 
-    **SHOULD ONLY BE USED FOR DEBUGGING AND TESTING**
+    .. math::
+
+        leaves(n) = \\begin{cases}
+            [n] & \\textrm{if } n \\textrm{ is a leaf}\\\\
+            leaves(child(0, n)) \\oplus \\cdots \\oplus leaves(child(numc(n) - 1, n)) & \\textrm{otherwise}
+        \\end{cases}
+
+    where :math:`\\oplus` denotes the concatenation of lists, :math:`numc(n)` is the number of children of :math:`n` and
+    :math:`child(i, n)` is its :math:`i`-th child (starting from 0). The list of the root thus contains all the leaves.
+
+    **WARNING**: this function is slow and its memory usage can grow quadratically with the size of the tree (see
+    below). It should only be used for debugging and testing.
+
+    :Complexity:
+
+    The runtime and memory complexity is :math:`\\mathcal{O}(\\sum_{m} |leaves(m)|)` (the total size of the lists,
+    the sum being taken over all the nodes :math:`m` of the tree), which is :math:`\\mathcal{O}(N \\times K)` in the
+    worst case, where :math:`N` is the number of nodes and :math:`K` the number of leaves of the tree.
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        hg.attribute_vertex_list(tree)
+        # [[0], [1], [2], [3], [4], [0, 1], [2, 3], [0, 1, 2, 3], [4, 0, 1, 2, 3]]
+
+    The list of the node 7 is the concatenation of the lists of the nodes 5 and 6. The first child of the root is the
+    leaf 4 and its second child is the node 7: the list of the root starts with 4.
 
     :param tree: input tree
-    :return: a list of lists
+    :return: a Python list with one element per node of the tree, each element being the list of the indices of the leaves of the subtree rooted in this node
     """
     result = [[i] for i in tree.leaves()]
 
@@ -649,19 +1167,109 @@ def attribute_vertex_list(tree):
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=None):
     """
-    Estimates a gaussian model (mean, (co-)variance) for leaf weights inside a node.
+    Estimate a gaussian model (mean and variance or covariance) of the vertex weights inside each node of the given tree.
 
-    The result is composed of two arrays:
+    Each leaf of the tree is a vertex of the leaf graph (for example a pixel) with a weight :math:`w(v)`, scalar or
+    vectorial (for example a gray level or a color). For a node :math:`n` of area :math:`A(n)` (see
+    :func:`~higra.attribute_area`, computed on the leaf graph of the tree), the model is made of:
 
-        - the first one contains the mean value inside each node, scalar if vertex weights are scalar and vectorial otherwise,
-        - the second one contains the variance of the values inside each node, scalar if vertex weights are scalar and a (biased) covariance matrix otherwise.
+    - the mean :math:`\\mu(n)` of the weights of the leaves of :math:`n`:
 
-    Vertex weights must be scalar or 1 dimensional.
+      .. math::
+
+          \\mu(n) = \\frac{1}{A(n)} \\sum_{v \\in leaves(n)} w(v)
+
+    - the (biased) variance :math:`\\sigma^2(n)` of the weights if they are scalar, or the (biased) covariance matrix
+      :math:`\\Sigma(n)` of the weights if they are vectors:
+
+      .. math::
+
+          \\sigma^2(n) = \\frac{1}{A(n)} \\sum_{v \\in leaves(n)} w(v)^2 - \\mu(n)^2
+          \\qquad\\qquad
+          \\Sigma(n) = \\frac{1}{A(n)} \\sum_{v \\in leaves(n)} w(v)\\, w(v)^{T} - \\mu(n)\\, \\mu(n)^{T}
+
+    where :math:`w(v)` is a column vector for vector weights. When every leaf has an area of 1 (for example the pixels
+    of an image), these are the usual mean and biased variance (or covariance) of the weights of the leaves of
+    :math:`n`; the mean and the variance of a leaf are then respectively its weight and 0 (a null matrix for vector
+    weights).
+
+    The vertex weights must be scalars or 1 dimensional vectors: :attr:`vertex_weights` is an array with one element
+    per leaf (of shape (tree.num_leaves(),) or (tree.num_leaves(), d)) or, if the leaf graph is a grid graph (e.g. an
+    image), an array whose first dimensions follow the shape of the grid. Otherwise a ``ValueError``
+    is raised. The computations are done in single precision if :attr:`vertex_weights` is of type ``float32``, and in
+    double precision otherwise.
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time for scalar weights and :math:`\\mathcal{O}(N \\times d^2)` time
+    for vector weights of dimension :math:`d`, where :math:`N` is the number of nodes in the tree, plus the cost of
+    :func:`~higra.attribute_area`.
+
+    :Example:
+    =======
+
+    Consider the following 3 x 3 grid graph, whose edges are labelled with their weights:
+
+    .. code-block:: text
+
+        (0)-- 0 --(1)-- 2 --(2)
+        |         |         |
+        6         6         0
+        |         |         |
+        (3)-- 0 --(4)-- 4 --(5)
+        |         |         |
+        5         5         3
+        |         |         |
+        (6)-- 0 --(7)-- 1 --(8)
+
+    and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
+
+    .. code-block:: text
+
+        4                 +-------16------+
+                          |               |
+        3         +-------15-----+        |
+                  |              |        |
+        2     +---14--+          |        |
+              |       |          |        |
+        1     |       |       +--13-+     |
+              |       |       |     |     |
+        0   +-9-+   +-10+   +-12+   |   +-11+
+            +   +   +   +   +   +   +   +   +
+            0   1   2   5   6   7   8   3   4
+
+    The vertex weights are the gray levels of the 3 x 3 image:
+
+    .. code-block:: text
+
+        1  2  3
+        4  5  6
+        7  8  9
+
+    .. code-block:: python
+
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+        vertex_weights = np.asarray(((1., 2, 3), (4, 5, 6), (7, 8, 9)))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        mean, variance = hg.attribute_gaussian_region_weights_model(tree, vertex_weights)
+        # mean:     array([1.  , 2.  , 3.  , 4.  , 5.  , 6.  , 7.  , 8.  , 9.  , 1.5 , 4.5 , 4.5 , 7.5 , 8.  , 3.  ,
+        #                  5.14285714, 5.  ])
+        # variance: array([0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.  , 0.25, 2.25, 0.25, 0.25, 0.66666667,
+        #                  3.5 , 8.40816327, 6.66666667])
+
+    The node 14 contains the pixels 0, 1, 2 and 5, whose weights are :math:`\\{1, 2, 3, 6\\}`: their mean is 3 and their variance is
+    :math:`((1 - 3)^2 + (2 - 3)^2 + (3 - 3)^2 + (6 - 3)^2) / 4 = 3.5`.
+    The node 13 contains the weights :math:`\\{7, 8, 9\\}`: their mean is 8 and their variance is :math:`2 / 3`.
+
+    With vector weights of dimension 2 (for example ``vertex_weights`` of shape ``(3, 3, 2)``), the mean has shape
+    ``(17, 2)`` and the covariance has shape ``(17, 2, 2)``.
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
-    :param vertex_weights: vertex weights of the leaf graph of the input tree
-    :param leaf_graph: leaf graph of the input tree (deduced from :class:`~higra.CptHierarchy`)
-    :return: two arrays mean and variance
+    :param vertex_weights: vertex weights of the leaf graph of the input tree (scalar or 1 dimensional vectors)
+    :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy`)
+    :return: a tuple of two arrays ``(mean, variance)`` of floating point values: the mean of each node, of shape (tree.num_vertices(),) for scalar weights and (tree.num_vertices(), d) for vector weights of dimension :math:`d`, and the variance of each node, of shape (tree.num_vertices(),) for scalar weights, or the covariance matrix of each node, of shape (tree.num_vertices(), d, d) for vector weights
     """
     if leaf_graph is not None:
         vertex_weights = hg.linearize_vertex_weights(vertex_weights, leaf_graph)
@@ -695,18 +1303,61 @@ def attribute_gaussian_region_weights_model(tree, vertex_weights, leaf_graph=Non
 @_legacy_cache_keywords
 def attribute_extrema(tree, altitudes):
     """
-    Identify nodes in a hierarchy that represent extrema (minima or maxima).
+    Identify the nodes of a hierarchy that represent extrema (minima or maxima).
 
-    An extremum (minimum or maximum) of the hierarchy :math:`T` with altitudes :math:`alt` is a node :math:`n` of :math:`T` such that the
-    altitude of any non leaf node included in :math:`n` is equal to the altitude of :math:`n` and the altitude of
-    the parent of :math:`n` is different from the altitude of :math:`n`.
+    An extremum (minimum or maximum) of the hierarchy :math:`T` with altitudes :math:`alt` is a non-leaf node :math:`n`
+    of :math:`T` such that the altitude of any non-leaf node of the subtree rooted in :math:`n` is equal to the altitude
+    of :math:`n`, and such that :math:`n` is the root or the altitude of the parent of :math:`n` is different from the
+    altitude of :math:`n`. Formally, a non-leaf node :math:`n` is an extremum if:
+
+    .. math::
+
+        \\forall m \\in subtree(n) \\setminus leaves(n),\\ alt(m) = alt(n)
+        \\qquad\\textrm{and}\\qquad
+        \\big(n = root \\ \\textrm{ or } \\ alt(parent(n)) \\neq alt(n)\\big)
+
+    where :math:`subtree(n)` is the set of the nodes of the subtree rooted in :math:`n` (including :math:`n` and its
+    leaves). In particular, the root is an extremum if and only if all the non-leaf nodes of the tree have the same
+    altitude.
 
     The result is a boolean array such that :math:`result(n)` is ``True`` if the node :math:`n` is an extremum and ``False``
-    otherwise.
+    otherwise. Leaves are never extrema, and the altitudes of the leaves are not taken into account. The function does
+    not depend on whether the altitudes are increasing or decreasing: the extrema are minima for increasing altitudes and
+    maxima for decreasing altitudes.
 
-    :param tree: Input tree
-    :param altitudes: Tree node altitudes
-    :return: a 1d boolean array
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 4, 5))
+        hg.attribute_extrema(tree, altitudes)
+        # array([False, False, False, False, False,  True,  True, False, False])
+
+    The nodes 5 and 6 are extrema: they contain no non-leaf node other than themselves and their altitudes (1 and 2)
+    differ from the altitude of their parent (4). The node 7 is not an extremum as it contains the nodes 5 and 6, whose
+    altitudes differ from its own.
+
+    :param tree: input tree
+    :param altitudes: node altitudes of the input tree (Numpy array of shape (tree.num_vertices(),))
+    :return: a 1d boolean array representing, for each node of the tree, whether it is an extremum
     """
 
     res = hg.cpp._attribute_extrema(tree, altitudes)
@@ -716,11 +1367,70 @@ def attribute_extrema(tree, altitudes):
 
 def __process_param_increasing_altitudes(tree, altitudes, increasing_altitudes):
     """
-    Assuming that altitudes are monotone for the input tree, test if they are increasing or decreasing.
+    Determine whether the altitudes of a tree are increasing or decreasing, according to the value of the parameter
+    :attr:`increasing_altitudes` of the functions :func:`~higra.attribute_extinction_value`,
+    :func:`~higra.attribute_height` and :func:`~higra.attribute_dynamics`.
 
-    :param tree:
-    :param altitudes:
-    :return:
+    The altitudes are assumed to be monotone: either increasing from the leaves to the root
+    (:math:`alt(n) \\leq alt(parent(n))` for any node :math:`n`) or decreasing
+    (:math:`alt(n) \\geq alt(parent(n))` for any node :math:`n`). If :attr:`increasing_altitudes`
+    is ``"auto"``, the monotonicity is deduced by comparing the altitude of the root with the smallest altitude among
+    the non-leaf nodes:
+
+    .. math::
+
+        increasing = \\left(alt(root) > \\min_{n \\textrm{ non-leaf node}} alt(n)\\right)
+
+    The altitudes of the leaves are not used. If all the non-leaf nodes have the same altitude, the altitudes are
+    considered decreasing.
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time with ``"auto"``, where :math:`N` is the number of nodes in the
+    tree, and :math:`\\mathcal{O}(1)` time otherwise.
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 4, 5))
+        __process_param_increasing_altitudes(tree, altitudes, "auto")
+        # True
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, -1, -2, -4, -5))
+        __process_param_increasing_altitudes(tree, altitudes, "auto")
+        # False
+
+        altitudes = np.asarray((0, 0, 0, 0, 0, 3, 3, 3, 3))
+        __process_param_increasing_altitudes(tree, altitudes, "auto")
+        # False
+
+    With the first altitudes, the root (altitude 5) is above the lowest non-leaf node (the node 5, altitude 1): the
+    altitudes are increasing. With the second ones, the root (altitude -5) is the lowest non-leaf node: the altitudes
+    are decreasing. With the third ones, all the non-leaf nodes have the same altitude: the altitudes are considered
+    decreasing.
+
+    :param tree: input tree
+    :param altitudes: node altitudes of the input tree (Numpy array of shape (tree.num_vertices(),))
+    :param increasing_altitudes: ``True`` or ``"increasing"`` if the altitudes are increasing, ``False`` or
+        ``"decreasing"`` if they are decreasing, and ``"auto"`` to deduce it from :attr:`altitudes`
+    :return: ``True`` if the altitudes are increasing, ``False`` otherwise
+    :raises ValueError: if :attr:`increasing_altitudes` is not one of the accepted values
     """
     if isinstance(increasing_altitudes, bool):
         return increasing_altitudes
@@ -740,39 +1450,92 @@ def __process_param_increasing_altitudes(tree, altitudes, increasing_altitudes):
 
 def attribute_extinction_value(tree, altitudes, attribute, increasing_altitudes="auto"):
     """
-    The extinction value of a node :math:`n` of the input tree :math:`T` with increasing altitudes :math:`alt`
-    for the increasing attribute :math:`att` is the equal to the threshold :math:`k` such that the node :math:`n`
-    is still in an minima of :math:`t` when all nodes having an attribute value smaller than :math:`k` are removed.
+    Compute the extinction value of each node of the given tree for the given attribute.
 
-    Formally, let :math:`\{M_i\}` be the set of minima of the hierarchy :math:`T` with altitudes :math:`alt`.
-    Let :math:`prec` be a total ordering of :math:`\{M_i\}` such that :math:`M_i \prec M_j \Rightarrow alt(M_i) \leq alt(M_j)`.
-    Let :math:`r(M_i)` be the smallest node of :math:`t` containing :math:`M_i` and another minima :math:`M_j` such
-    that :math:`M_j \prec M_i`. The extinction value of :math:`M_i` is then defined as :math:`alt(r(M_i)) - alt(M_i)`.
+    Consider a tree :math:`T` with increasing altitudes :math:`alt` and an increasing attribute :math:`att`
+    (:math:`att(n) \\leq att(parent(n))` for any node :math:`n`, for example the area). Intuitively, the extinction
+    value of a minimum of :math:`T` (see :func:`~higra.attribute_extrema`) measures how long it survives when the
+    nodes whose attribute is smaller than a threshold :math:`k` are removed for increasing values of :math:`k`: a minimum
+    disappears when it is merged with a deeper minimum.
 
-    Extinction values of minima are then extended to other nodes in the tree with the following rules:
+    Formally, let :math:`\\{M_i\\}` be the set of minima of the hierarchy :math:`T` with altitudes :math:`alt`.
+    Let :math:`\\prec` be a total ordering of :math:`\\{M_i\\}` such that :math:`M_i \\prec M_j \\Rightarrow alt(M_i) \\leq alt(M_j)`
+    (when several minima have the same altitude, they are ordered according to the order of the children in the tree).
+    Let :math:`r(M_i)` be the smallest node of :math:`T` containing :math:`M_i` and another minimum :math:`M_j` such
+    that :math:`M_j \\prec M_i`, and let :math:`c(M_i)` be the child of :math:`r(M_i)` containing :math:`M_i`.
+    The extinction value of :math:`M_i` is then defined as:
 
-        - the extinction value of a non-leaf node :math:`n` which is not a minimum is defined as the largest
-          extinction values among all the minima contained in :math:`n`
-          (and 0 if :math:`n` does not contain any minima); and
-        - the extinction value of a leaf node :math:`n` belonging to a minima :math:`M_i` is equal to the extinction
-          value of :math:`M_i`. I :math:`n` does not belong to any minima its extinction value is 0.
+    .. math::
+
+        ext(M_i) = \\begin{cases}
+            att(root) & \\textrm{if } M_i \\textrm{ is the first minimum for } \\prec \\textrm{ (the deepest one)}\\\\
+            att(c(M_i)) & \\textrm{otherwise}
+        \\end{cases}
+
+    Extinction values of minima are then extended to the other nodes of the tree with the following rules:
+
+    - the extinction value of a non-leaf node :math:`n` which is not included in a minimum is the largest extinction
+      value among the minima included in :math:`n` (such a node always includes at least one minimum); and
+    - the extinction value of a leaf :math:`n` included in a minimum :math:`M_i` is equal to the extinction value of
+      :math:`M_i`. If :math:`n` is not included in any minimum, its extinction value is 0.
+
+    The extinction values of the non-leaf nodes strictly included in a minimum are not covered by these rules. Such
+    nodes only exist if a non-leaf node has the same altitude as its parent: they can be removed beforehand with
+    :func:`~higra.canonize_hierarchy`.
 
     The function can also handle decreasing altitudes, in which case *minima* should be replaced by *maxima*
-    in the description above. Possible values of :attr:`increasing_altitude` are:
+    in the description above. Possible values of :attr:`increasing_altitudes` are:
 
-        - ``'auto'``: the function will automatically determine if :attr:`altitudes` are increasing or decreasing (this has
-          small computational cost but does not impact the runtime complexity).
-        - ``True`` or ``'increasing'``: this means that altitudes are increasing from the leaves to the root
-          (ie. for any node :math:`n`, :math:`altitudes(n) \leq altitudes(parent(n))`.
-        - ``False`` or ``'decreasing'``: this means that altitudes are decreasing from the leaves to the root
-          (ie. for any node :math:`n`, :math:`altitude(n) \geq altitude(parent(n))`.
+    - ``'auto'`` (default): the function determines if :attr:`altitudes` are increasing or decreasing: they are
+      considered increasing if the altitude of the root is strictly greater than the smallest altitude of the
+      non-leaf nodes, and decreasing otherwise;
+    - ``True`` or ``'increasing'``: the altitudes are increasing from the leaves to the root
+      (i.e. for any node :math:`n`, :math:`alt(n) \\leq alt(parent(n))`);
+    - ``False`` or ``'decreasing'``: the altitudes are decreasing from the leaves to the root
+      (i.e. for any node :math:`n`, :math:`alt(n) \\geq alt(parent(n))`).
 
+    Any other value raises a ``ValueError``.
 
-    :param tree: Input tree
-    :param altitudes: Tree node altitudes
-    :param attribute: Tree node attribute
-    :param increasing_altitudes: possible values 'auto', True, False, 'increasing', and 'decreasing'
-    :return: a 1d array like :attr:`attribute`
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree
+    (the automatic detection of the monotonicity of the altitudes also takes :math:`\\mathcal{O}(N)` time).
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 4, 5))
+        area = hg.attribute_area(tree)
+        hg.attribute_extinction_value(tree, altitudes, area)
+        # array([5., 5., 2., 2., 0., 5., 2., 5., 5.])
+
+    The nodes 5 (altitude 1) and 6 (altitude 2) are the two minima of the hierarchy and both have an area of 2.
+    The node 5 is the deepest one: its extinction value is the area of the root (5).
+    The smallest node containing the node 6 and the deeper minimum 5 is the node 7, and the child of the node 7
+    containing the node 6 is the node 6 itself: the extinction value of the node 6 is its own area (2).
+    The leaves 0 and 1 (resp. 2 and 3) take the value of the minimum 5 (resp. 6); the leaf 4 is not included in any
+    minimum: its value is 0. The nodes 7 and 8 contain both minima: they take the largest of the two values.
+
+    :param tree: input tree
+    :param altitudes: node altitudes of the input tree, monotonic from the leaves to the root (Numpy array of shape (tree.num_vertices(),))
+    :param attribute: node attribute of the input tree, increasing from the leaves to the root (Numpy array of shape (tree.num_vertices(),))
+    :param increasing_altitudes: ``'auto'`` (default), ``True``, ``False``, ``'increasing'`` or ``'decreasing'`` (see above)
+    :return: a 1d array representing the extinction value of each node of the tree
     """
     inc = __process_param_increasing_altitudes(tree, altitudes, increasing_altitudes)
 
@@ -833,29 +1596,82 @@ def attribute_height(tree, altitudes, increasing_altitudes="auto", reference_alt
 @_legacy_cache_keywords
 def attribute_dynamics(tree, altitudes, increasing_altitudes="auto"):
     """
-    Given a node :math:`n` of the tree :math:`T`, the dynamics of :math:`n` is the difference between
-    the altitude of the deepest minima of the subtree rooted in :math:`n` and the altitude
-    of the closest ancestor of :math:`n` that has a deeper minima in its subtree. If no such
-    ancestor exists then, the dynamics of :math:`n` is equal to the difference between the
-    altitude of the highest node of the tree (the root) and the depth of the deepest minima.
+    Compute the dynamics of each node of the given tree.
 
-    The dynamics is the *extinction values* (:func:`~higra.attribute_extinction_value`) for the attribute *height*
-    (:func:`~higra.attribute_height`).
+    The dynamics is the extinction value (see :func:`~higra.attribute_extinction_value`) for the attribute height
+    (see :func:`~higra.attribute_height`, with the parent of each node as reference).
 
-    Possible values of :attr:`increasing_altitude` are:
+    Consider a tree :math:`T` with increasing altitudes :math:`alt`. The dynamics of a minimum :math:`M` of :math:`T`
+    (see :func:`~higra.attribute_extrema`) is the difference between the altitude of the smallest node :math:`r(M)`
+    containing :math:`M` and a deeper minimum, and the altitude of :math:`M`. If no such node exists (:math:`M` is the
+    deepest minimum), the dynamics of :math:`M` is the difference between the altitude of the root and the altitude of
+    :math:`M`:
 
-        - ``'auto'``: the function will automatically determine if :attr:`altitudes` are increasing or decreasing (this has
-          small computational cost but does not impact the runtime complexity).
-        - ``True`` or ``'increasing'``: this means that altitudes are increasing from the leaves to the root
-          (ie. for any node :math:`n`, :math:`altitudes(n) \leq altitudes(parent(n))`.
-        - ``False`` or ``'decreasing'``: this means that altitudes are decreasing from the leaves to the root
-          (ie. for any node :math:`n`, :math:`altitude(n) \geq altitude(parent(n))`.
+    .. math::
 
+        dyn(M) = \\begin{cases}
+            alt(root) - alt(M) & \\textrm{if } M \\textrm{ is the deepest minimum}\\\\
+            alt(r(M)) - alt(M) & \\textrm{otherwise}
+        \\end{cases}
 
-    :param tree: Input tree
-    :param altitudes: Tree node altitudes
-    :param increasing_altitudes: possible values 'auto', True, False, 'increasing', and 'decreasing'
-    :return: a 1d array like :attr:`altitudes`
+    The order between the minima, and in particular between minima of the same altitude, is the one defined in
+    :func:`~higra.attribute_extinction_value`. The dynamics of the other nodes are obtained with the rules of
+    :func:`~higra.attribute_extinction_value`: a non-leaf node which is not included in a minimum takes the largest
+    dynamics among the minima it contains, a leaf takes the dynamics of the minimum containing it, and 0 if it is
+    not included in any minimum.
+
+    The function can also handle decreasing altitudes, in which case *minima* should be replaced by *maxima*, and the
+    differences above by :math:`alt(M) - alt(root)` and :math:`alt(M) - alt(r(M))`. Possible values of
+    :attr:`increasing_altitudes` are:
+
+    - ``'auto'`` (default): the function determines if :attr:`altitudes` are increasing or decreasing: they are
+      considered increasing if the altitude of the root is strictly greater than the smallest altitude of the
+      non-leaf nodes, and decreasing otherwise;
+    - ``True`` or ``'increasing'``: the altitudes are increasing from the leaves to the root
+      (i.e. for any node :math:`n`, :math:`alt(n) \\leq alt(parent(n))`);
+    - ``False`` or ``'decreasing'``: the altitudes are decreasing from the leaves to the root
+      (i.e. for any node :math:`n`, :math:`alt(n) \\geq alt(parent(n))`).
+
+    Any other value raises a ``ValueError``.
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree
+    (computation of :func:`~higra.attribute_height` followed by the computation of
+    :func:`~higra.attribute_extinction_value`).
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 4, 5))
+        hg.attribute_dynamics(tree, altitudes)
+        # array([4., 4., 2., 2., 0., 4., 2., 4., 4.])
+
+    The hierarchy has two minima: the nodes 5 (altitude 1) and 6 (altitude 2). The node 6 is merged with the deeper
+    minimum 5 in the node 7 (altitude 4): its dynamics is :math:`4 - 2 = 2`. The node 5 is the deepest minimum: its
+    dynamics is the difference between the altitude of the root and its own altitude, :math:`5 - 1 = 4`.
+    The leaves 0 and 1 (resp. 2 and 3) take the value of the minimum 5 (resp. 6), the leaf 4 is not included in any
+    minimum (value 0), and the nodes 7 and 8, which contain both minima, take the largest value.
+
+    :param tree: input tree
+    :param altitudes: node altitudes of the input tree, monotonic from the leaves to the root (Numpy array of shape (tree.num_vertices(),))
+    :param increasing_altitudes: ``'auto'`` (default), ``True``, ``False``, ``'increasing'`` or ``'decreasing'`` (see above)
+    :return: a 1d array representing the dynamics of each node of the tree
     """
 
     inc = __process_param_increasing_altitudes(tree, altitudes, increasing_altitudes)
@@ -868,14 +1684,48 @@ def attribute_dynamics(tree, altitudes, increasing_altitudes="auto"):
 @_legacy_cache_keywords
 def attribute_child_number(tree):
     """
-    Given a node :math:`n` whose parent is :math:`p`, the attribute value of :math:`n` is the rank of :math:`n`
-    in the list of children of :math:`p`. In other :math:`attribute(n)=i` means that :math:`n` is the :math:`i`-th
-    child of :math:`p`.
+    Compute the rank of each node in the ordered list of children of its parent.
 
-    The root of the tree, who has no parent, take the value -1.
+    Given a non-root node :math:`n` whose parent is :math:`p`, the attribute value of :math:`n` is the rank of :math:`n`
+    in the list of children of :math:`p` (starting from 0):
 
-    :param tree: Input tree
-    :return: a 1d array
+    .. math::
+
+        cn(n) = i \\iff n = child(i, p)
+
+    where :math:`child(i, p)` is the :math:`i`-th child of :math:`p` (starting from 0). The root of the tree is not the
+    child of any node: it takes the value -1.
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        hg.attribute_child_number(tree)
+        # array([ 0,  1,  0,  1,  0,  0,  1,  1, -1])
+
+    The leaves 0 and 1 are the first and the second child of the node 5. The leaf 4 is the first child of the root and the
+    node 7 is its second child. The root is not the child of any node: its value is -1.
+
+    :param tree: input tree
+    :return: a 1d array of integers representing the rank of each node of the tree among the children of its parent
     """
 
     res = hg.cpp._attribute_child_number(tree)
@@ -885,22 +1735,60 @@ def attribute_child_number(tree):
 
 def attribute_children_pair_sum_product(tree, node_weights):
     """
-    Given a tree :math:`T` with node weights :math:`w`: the children pair sum product for a node :math:`n` sums for
-    every pairs :math:`(c_i, c_j)` of children of :math:`n`, the product of the node weights of :math:`c_i` and
-    :math:`c_j`. Formally:
+    Compute, for each node, the sum of the products of the weights of every pair of its children.
+
+    Given a tree :math:`T` with node weights :math:`w`, the children pair sum product for a node :math:`n` sums, for
+    every unordered pair :math:`\\{c_i, c_j\\}` of distinct children of :math:`n`, the product of the node weights of
+    :math:`c_i` and :math:`c_j`. Formally:
 
     .. math::
 
-        res(n) = \sum_{i=0}^{i<numc(n)} \sum_{j=0}^{j<i} w(child(i, n)) * w(child(j, n))
+        res(n) = \\sum_{i=0}^{numc(n) - 1} \\sum_{j=0}^{i - 1} w(child(i, n)) \\times w(child(j, n))
 
     where :math:`numc(n)` is the number of children of :math:`n` and :math:`child(i, n)` is the :math:`i`-th child
-    of the node :math:`n`.
+    of the node :math:`n` (starting from 0). The value of a leaf, which has no child, is 0, as well as the value of a
+    node with a single child.
 
-    The result is thus an array with the same shape as :attr:`node_weights`
+    If the node weights are vectors, the computation is done independently for each component. The result is thus an
+    array with the same shape as :attr:`node_weights`.
 
-    :param tree: Input tree
-    :param node_weights: node weights of the input tree
-    :return: an array with the same shape as :attr:`node_weights`
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(\\sum_{n} numc(n)^2 \\times d)` time, the sum being taken over all the
+    nodes :math:`n` of the tree, where :math:`d` is the dimension of the node weights (:math:`d = 1` for scalar weights).
+    This is :math:`\\mathcal{O}(N \\times C \\times d)`, where :math:`N` is the number of nodes in the tree and :math:`C`
+    is the maximal number of children of a node.
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        node_weights = np.asarray((1., 2, 3, 4, 5, 3, 7, 10, 15))
+        hg.attribute_children_pair_sum_product(tree, node_weights)
+        # array([ 0.,  0.,  0.,  0.,  0.,  2., 12., 21., 50.])
+
+    Each non-leaf node of this binary tree has exactly one pair of children: the result for the node 5 is
+    :math:`1 \\times 2 = 2`, for the node 6 is :math:`3 \\times 4 = 12`, for the node 7 is
+    :math:`3 \\times 7 = 21` (weights of the nodes 5 and 6) and for the root is :math:`5 \\times 10 = 50` (weights of the
+    leaf 4 and of the node 7).
+
+    :param tree: input tree
+    :param node_weights: node weights of the input tree, scalar or vectorial (Numpy array whose first dimension is ``tree.num_vertices()``)
+    :return: an array with the same shape and dtype as :attr:`node_weights` representing the children pair sum product of each node of the tree
     """
 
     res = hg.cpp._attribute_children_pair_sum_product(tree, node_weights)
@@ -977,13 +1865,51 @@ def attribute_tree_sampling_probability(tree, leaf_graph, leaf_graph_edge_weight
 @_legacy_cache_keywords
 def attribute_topological_height(tree):
     """
-    Given a node :math:`n` of :attr:`tree`, the topological height of :math:`n` is the number of edges on the longest
-    path from the node :math:`n` to a leaf of :attr:`tree`.
+    Compute the topological height of each node of the given tree.
 
-    The topological height of the leaves is equal to 0.
+    The topological height :math:`h(n)` of a node :math:`n` is the number of edges on the longest path from :math:`n`
+    to a leaf of the subtree rooted in :math:`n`:
 
-    :param tree: Input tree
-    :return: a 1d array
+    .. math::
+
+        h(n) = \\begin{cases}
+            0 & \\textrm{if } n \\textrm{ is a leaf}\\\\
+            1 + \\max_{c \\in children(n)} h(c) & \\textrm{otherwise}
+        \\end{cases}
+
+    Unlike :func:`~higra.attribute_depth`, which is measured from the root, the topological height is measured from the
+    leaves. The height of the root is the length of the longest path from the root to a leaf.
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree.
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        hg.attribute_topological_height(tree)
+        # array([0, 0, 0, 0, 0, 1, 1, 2, 3])
+
+    The nodes 5 and 6 are one edge above their leaves, the node 7 is two edges above the leaves 0 to 3, and the root is
+    three edges above them (through the nodes 7 and 5 or 6): the leaf 4 only gives a path of length 1.
+
+    :param tree: input tree
+    :return: a 1d array of integers representing the topological height of each node of the tree
     """
 
     res = hg.accumulate_and_add_sequential(tree,
@@ -998,42 +1924,107 @@ def attribute_topological_height(tree):
 @hg.argument_helper(hg.CptHierarchy)
 def attribute_moment_of_inertia(tree, leaf_graph):
     """
-    Moment of inertia (first Hu moment) of each node of the given tree.
-    This function works only if :attr:`leaf_graph` is a 2D grid graph.
+    Compute the moment of inertia (first Hu moment) of each node of the given tree.
+
     The moment of inertia is a translation, scale and rotation invariant characterization of the shape of the nodes.
+    This function works only if :attr:`leaf_graph` is a 2D grid graph (e.g. the graph of an image): otherwise a
+    ``ValueError`` is raised.
 
-    Given a node :math:`X` of :attr:`tree`, the raw moments :math:`M_{ij}` are defined as:
-
-    .. math::
-
-        M_{ij} = \sum_{x}\sum_{y} x^i y^j
-
-    where :math:`(x,y)` are the coordinates of every vertex in :math:`X`.
-    Then, the centroid :math:`\{\overline{x},\overline{y}\}` of :math:`X` is given by
+    Given a node :math:`n` of :attr:`tree`, let :math:`X = leaves(n)` be the set of the pixels it contains (the leaves
+    of the subtree rooted in :math:`n`). The raw moments :math:`M_{ij}` of :math:`X` are defined as:
 
     .. math::
 
-         \overline{x} = \\frac{M_{10}}{M_{00}} \\textrm{ and  } \overline{y} = \\frac{M_{01}}{M_{00}}
+        M_{ij} = \\sum_{(x, y) \\in X} x^i y^j
+
+    where :math:`(x, y)` are the coordinates of every pixel of :math:`X`, :math:`x` being its row index and :math:`y`
+    its column index (see :func:`~higra.attribute_vertex_coordinates`). In particular, :math:`M_{00}` is the number of
+    pixels of :math:`X`. Then, the centroid :math:`(\\overline{x},\\overline{y})` of :math:`X` is given by
+
+    .. math::
+
+         \\overline{x} = \\frac{M_{10}}{M_{00}} \\qquad\\textrm{and}\\qquad \\overline{y} = \\frac{M_{01}}{M_{00}}
 
     Some central moments of :math:`X` are then:
 
-    - :math:`\mu_{00} = M_{00}`
-    - :math:`\mu_{20} = M_{20} - \overline{x} \\times M_{10}`
-    - :math:`\mu_{02} = M_{02} - \overline{y} \\times M_{01}`
+    - :math:`\\mu_{00} = M_{00}`
+    - :math:`\\mu_{20} = M_{20} - \\overline{x} \\times M_{10}`
+    - :math:`\\mu_{02} = M_{02} - \\overline{y} \\times M_{01}`
 
-    The moment of inertia :math:`I_1` of :math:`X` if finally defined as
+    The moment of inertia :math:`I_1(n)` of the node :math:`n` is finally defined as
 
     .. math::
 
-        I_1 = \eta_{20} + \eta_{02}
+        I_1(n) = \\eta_{20} + \\eta_{02} = \\frac{\\mu_{20} + \\mu_{02}}{\\mu_{00}^2}
 
-    where :math:`\eta_{ij}` are given by:
+    where the normalized central moments :math:`\\eta_{ij}` are given by:
 
-        :math:`\eta_{ij} = \\frac{\mu_{ij}}{\mu_{00}^{1+\\frac{i+j}{2}}}`
+    .. math::
+
+        \\eta_{ij} = \\frac{\\mu_{ij}}{\\mu_{00}^{1+\\frac{i+j}{2}}}
+
+    The moment of inertia of a leaf (a single pixel) is 0.
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree
+    (computation of the coordinates of the pixels followed by one accumulation of the moments over the tree).
+
+    :Example:
+    =======
+
+    Consider the following 3 x 3 grid graph, whose edges are labelled with their weights:
+
+    .. code-block:: text
+
+        (0)-- 0 --(1)-- 2 --(2)
+        |         |         |
+        6         6         0
+        |         |         |
+        (3)-- 0 --(4)-- 4 --(5)
+        |         |         |
+        5         5         3
+        |         |         |
+        (6)-- 0 --(7)-- 1 --(8)
+
+    and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
+
+    .. code-block:: text
+
+        4                 +-------16------+
+                          |               |
+        3         +-------15-----+        |
+                  |              |        |
+        2     +---14--+          |        |
+              |       |          |        |
+        1     |       |       +--13-+     |
+              |       |       |     |     |
+        0   +-9-+   +-10+   +-12+   |   +-11+
+            +   +   +   +   +   +   +   +   +
+            0   1   2   5   6   7   8   3   4
+
+    .. code-block:: python
+
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0., 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        result = hg.attribute_moment_of_inertia(tree)
+        # result[0]  == 0.
+        # result[9]  == 0.125
+        # result[13] == 0.22222222
+        # result[16] == 0.14814815
+
+    The node 9 is made of the two adjacent pixels :math:`(0, 0)` and :math:`(0, 1)`: :math:`\\mu_{00} = M_{00} = 2` and
+    :math:`\\mu_{20} + \\mu_{02} = 0 + 0.5`, hence :math:`I_1(9) = 0.5 / 2^2 = 0.125`.
+    The node 13 is the bottom row, made of the pixels :math:`(2, 0)`, :math:`(2, 1)` and :math:`(2, 2)`: :math:`\\mu_{20} = 0`,
+    :math:`\\mu_{02} = 2` and :math:`\\mu_{00} = 3`, hence :math:`I_1(13) = 2 / 3^2 = 0.2222`.
+    The root is the whole image: :math:`\\mu_{20} = \\mu_{02} = 6` and :math:`\\mu_{00} = 9`, hence
+    :math:`I_1(16) = 12 / 9^2 = 0.1481`.
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
-    :param leaf_graph: graph on the leaves of the input tree (deduced from :class:`~higra.CptHierarchy` on `tree`)
-    :return: a 1d array
+    :param leaf_graph: graph on the leaves of the input tree, which must be a 2D grid graph (deduced from :class:`~higra.CptHierarchy` on `tree`)
+    :return: a 1d array of floating point values representing the moment of inertia of each node of the tree
     """
 
     if (not hg.CptGridGraph.validate(leaf_graph)) or (len(hg.CptGridGraph.get_shape(leaf_graph)) != 2):
