@@ -614,10 +614,12 @@ def attribute_contour_strength(tree, edge_weights, vertex_perimeter=None, edge_l
 
     :Complexity:
 
-    The runtime complexity is :math:`\\mathcal{O}(N\\log(N) + M)` where :math:`N` is the number of nodes in the tree and
-    :math:`M` is the number of edges in the leaf graph (two contour length computations, one on the edge lengths and
-    one on the edge weights).
+    The tree and leaf-graph computations take :math:`\\mathcal{O}(N\\log(N) + M)` time, where :math:`N` is the number
+    of nodes in the tree and :math:`M` is the number of edges in the leaf graph (two contour length computations,
+    one on the edge lengths and one on the edge weights).
     If :attr:`vertex_perimeter` or :attr:`edge_length` are omitted, add the cost of their computation.
+    For a region adjacency graph, also add the cost of :func:`~higra.rag_accumulate_on_edges`, linear in the
+    number of edges in its underlying graph.
 
     :Example:
     =======
