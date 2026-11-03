@@ -474,8 +474,8 @@ class TestUndirectedGraph(unittest.TestCase):
     def test_pickle(self):
         import pickle
         g = TestUndirectedGraph.test_graph()
-        hg.set_attribute(g, "test", (1, 2, 3))
-        hg.add_tag(g, "foo")
+        g.test = (1, 2, 3)
+        g.__dict__.setdefault("__higra_tags__", set()).update({"foo"})
 
         data = pickle.dumps(g)
         g2 = pickle.loads(data)
@@ -486,9 +486,9 @@ class TestUndirectedGraph(unittest.TestCase):
         self.assertTrue(np.all(gs == g2s))
         self.assertTrue(np.all(gt == g2t))
 
-        self.assertTrue(hg.get_attribute(g, "test") == hg.get_attribute(g2, "test"))
+        self.assertTrue(getattr(g, "test", None) == getattr(g2, "test", None))
         self.assertTrue(g.test == g2.test)
-        self.assertTrue(hg.has_tag(g2, "foo"))
+        self.assertTrue("foo" in g2.__higra_tags__)
 
 
 if __name__ == '__main__':

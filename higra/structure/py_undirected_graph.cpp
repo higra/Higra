@@ -151,7 +151,7 @@ namespace py_undirected_graph {
                                                              py::dynamic_attr());
         init_graph<hg::ugraph>(c);
 
-        auto c2 = py::class_<hg::undirected_graph<hg::hash_setS>>(m, "UndirectedGraphOptimizedDelete");
+        auto c2 = py::class_<hg::undirected_graph<hg::hash_setS>>(m, "UndirectedGraphOptimizedDelete", py::dynamic_attr());
         init_graph<hg::undirected_graph<hg::hash_setS >>(c2);
     }
 

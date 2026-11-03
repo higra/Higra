@@ -11,7 +11,7 @@
 
 import numpy as np
 import higra as hg
-from ..data_cache import _legacy_cache_keywords
+from ..data_cache import _get_attribute, _legacy_cache_keywords
 
 
 @_legacy_cache_keywords
@@ -72,7 +72,7 @@ def attribute_vertex_perimeter(graph, edge_length=None):
     if edge_length is None:
         edge_length = hg.attribute_edge_length(graph)
 
-    special_case_border_graph = hg.get_attribute(graph, "no_border_vertex_out_degree")
+    special_case_border_graph = _get_attribute(graph, "no_border_vertex_out_degree")
 
     if special_case_border_graph is not None:
         res = np.full((graph.num_vertices(),), special_case_border_graph, dtype=np.float64)

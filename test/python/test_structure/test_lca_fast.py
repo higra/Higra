@@ -92,8 +92,8 @@ class TestLCAFast(unittest.TestCase):
         for lca_t in [hg.LCA_rmq_sparse_table, hg.LCA_rmq_sparse_table_block]:
             with self.subTest(lca_type=lca_t):
                 lca = lca_t(tree)
-                hg.set_attribute(lca, "test", (1, 2, 3))
-                hg.add_tag(lca, "foo")
+                lca.test = (1, 2, 3)
+                lca.__dict__.setdefault("__higra_tags__", set()).update({"foo"})
 
                 data = pickle.dumps(lca)
                 lca2 = pickle.loads(data)
@@ -101,9 +101,9 @@ class TestLCAFast(unittest.TestCase):
                 res = lca2.lca((0, 0, 1, 3), (0, 3, 0, 0))
                 self.assertTrue(np.all(res == (0, 6, 4, 6)))
 
-                self.assertTrue(hg.get_attribute(lca, "test") == hg.get_attribute(lca2, "test"))
+                self.assertTrue(getattr(lca, "test", None) == getattr(lca2, "test", None))
                 self.assertTrue(lca.test == lca2.test)
-                self.assertTrue(hg.has_tag(lca2, "foo"))
+                self.assertTrue("foo" in lca2.__higra_tags__)
 
 
 if __name__ == '__main__':

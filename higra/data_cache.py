@@ -41,10 +41,13 @@ class WeakKeyDictionary:
     """
     Useful weak key dictionary (compared to the one provided by python...)
 
-    Uses solely object id as key.
+    Uses solely object id as key. Deprecated; construction emits ``FutureWarning``.
+    Will be removed in the next release.
     """
 
     def __init__(self):
+        _warnings.warn("WeakKeyDictionary is deprecated and will be removed in the next release",
+                       FutureWarning, stacklevel=2)
         self._data = {}
 
     def __get__(self, obj, owner):
@@ -98,14 +101,18 @@ class WeakKeyDictionary:
         return _WeakKeyDictionaryIterator(self)
 
 
-def _data_cache__init():
-    hg.__higra_global_cache = DataCache()
-
-
 class DataCache:
+    """Deprecated standalone storage; removed in the next release.
+
+    Construction emits ``FutureWarning``. Not used for object metadata.
+    """
 
     def __init__(self):
-        self.__data = WeakKeyDictionary()
+        _warnings.warn("DataCache is deprecated and will be removed in the next release",
+                       FutureWarning, stacklevel=2)
+        # Construct the backing store without a second public-constructor warning.
+        self.__data = WeakKeyDictionary.__new__(WeakKeyDictionary)
+        self.__data._data = {}
 
     def get_data(self, key):
         return self.__data.setdefault(key, {})
@@ -121,119 +128,117 @@ class DataCache:
         return iter(self.__data)
 
 
-def __support_dynamic_attributes(obj):
-    return hasattr(obj, '__dict__') and isinstance(obj.__dict__, dict)
+def _instance_attributes(key):
+    data = getattr(key, "__dict__", None)
+    return data if isinstance(data, dict) else None
 
 
-def __get_attributes(key):
-    """
-    Get a dictionary associated to the object :attr:`key` to store Higra related attributes.
+def _get_attribute(key, attribute_name):
+    data = _instance_attributes(key)
+    return data.get(attribute_name) if data is not None else None
 
-    If the object support dynamic attributes, this dictionary is stored as a (new) object attribute called
-    "__higra_attributes__". Otherwise, the dictionary is stored in a global data store with weak references.
-    This last case means that such attributes are not part of the given object and won't be pickled by Python if the
-    object is stored.
 
-    :param key: an object
-    :return: a dictionary of attributes associated to the given key
-    """
-    if __support_dynamic_attributes(key):
-        data = getattr(key, "__higra_attributes__", None)
-        if data is None:
-            data = {}
-            key.__higra_attributes__ = data
-        return data
-    else:
-        return hg.__higra_global_cache.get_data(key)
+def _set_attribute(key, attribute_name, attribute):
+    if _instance_attributes(key) is None:
+        raise TypeError("Metadata owner must support dynamic attributes")
+    setattr(key, attribute_name, attribute)
+
+
+def _get_tags(key):
+    data = _instance_attributes(key)
+    if data is None:
+        raise TypeError("Metadata owner must support dynamic attributes")
+    tags = data.get("__higra_tags__")
+    if tags is None:
+        tags = set()
+        key.__higra_tags__ = tags
+    return tags
+
+
+def _has_tag(key, tag):
+    tags = _get_attribute(key, "__higra_tags__")
+    return tags is not None and tag in tags
+
+
+def _warn_private(name):
+    _warnings.warn(name + " is deprecated and will become private in the next release; "
+                   "use ordinary object fields or Concept.tag for Concept membership",
+                   FutureWarning, stacklevel=3)
 
 
 def list_attributes(key):
-    """
-    List all Higra attributes of the object :attr:`key`.
+    """Deprecated; becomes private next release. List instance dictionary keys.
 
-    See functions :func:`~higra.get_attribute` and :func:`~higra.set_attribute`.
-
-    :param key: an object
-    :return: a list of strings
+    Returns an empty list for owners without dynamic attributes. Reserved fields
+    may appear in the result. Use ``vars(obj)`` for supported objects.
     """
-    try:
-        data = __get_attributes(key)
-        return list(data.keys())
-    except TypeError:
-        return ()
+    _warn_private("list_attributes")
+    data = _instance_attributes(key)
+    return list(data) if data is not None else []
 
 
 def get_attribute(key, attribute_name):
-    """
-    Get the Higra attributes named :attr:`attribute_name` of the object :attr:`key`.
+    """Deprecated; becomes private next release. Read an ordinary instance field.
 
-    See functions :func:`~higra.list_attributes` and :func:`~higra.set_attribute`.
-
-    :param key: an object
-    :param attribute_name: a string
-    :return: the attribute value associated to the given name (``None`` if no such attribute exists)
+    Return ``None`` for absent fields or owners without dynamic attributes.
     """
-    try:
-        return __get_attributes(key).get(attribute_name, None)
-    except TypeError:
-        return None
+    _warn_private("get_attribute")
+    return _get_attribute(key, attribute_name)
 
 
 def set_attribute(key, attribute_name, attribute, insert_dynamic=True):
-    """
-    Set the Higra attributes named :attr:`attribute_name` of the object :attr:`key` to the value :attr:`attribute`.
+    """Deprecated; becomes private next release. Assign an ordinary object field.
 
-    See functions :func:`~higra.list_attributes` and :func:`~higra.get_attribute`.
-
-    :param key: an object
-    :param attribute_name: a string
-    :param attribute: a value
-    :param insert_dynamic: if ``True`` and if :attr:`key` supports dynamic attributes, a new object attribute with the
-           given name and values will be added to the given object
-    :return: None
+    ``insert_dynamic`` is ignored: both values assign the field. Owners without
+    dynamic attributes (including plain ndarrays) raise ``TypeError``.
     """
-    __get_attributes(key)[attribute_name] = attribute
-    if insert_dynamic and __support_dynamic_attributes(key):
-        setattr(key, attribute_name, attribute)
+    _warn_private("set_attribute (insert_dynamic is ignored)")
+    _set_attribute(key, attribute_name, attribute)
 
 
 def get_tags(key):
-    if __support_dynamic_attributes(key):
-        data = getattr(key, "__higra_tags__", None)
-        if data is None:
-            data = set()
-            key.__higra_tags__ = data
-        return data
-    else:
-        return hg.__higra_global_cache.get_data(key).setdefault("__tags__", set())
+    """Deprecated; becomes private next release. Return the live object-owned set.
+
+    Create the set if absent; owners without dynamic attributes raise ``TypeError``.
+    """
+    _warn_private("get_tags")
+    return _get_tags(key)
 
 
 def add_tag(key, tag):
-    tags = get_tags(key)
-    tags.add(tag)
+    """Deprecated; becomes private next release. Add a tag on a dynamic owner."""
+    _warn_private("add_tag")
+    _get_tags(key).add(tag)
 
 
 def remove_tag(key, tag):
-    tags = get_tags(key)
-    tags.remove(tag)
+    """Deprecated; becomes private next release. Remove a tag, raising KeyError if absent."""
+    _warn_private("remove_tag")
+    _get_tags(key).remove(tag)
 
 
 def has_tag(key, tag):
-    tags = get_tags(key)
-    return tag in tags
+    """Deprecated; becomes private next release. Check membership without creating state."""
+    _warn_private("has_tag")
+    return _has_tag(key, tag)
 
 
 def clear_attributes(key, *attribute_name):
-    if not attribute_name:
-        hg.__higra_global_cache.clear_data(key)
-    else:
-        obj_cache = hg.__higra_global_cache.get_data(key)
-        for k in obj_cache:
-            del obj_cache[k]
+    """Deprecated no-op; emit FutureWarning. Removed in the next release.
+
+    All fields, tags, Concept links and preprocessing are preserved.
+    """
+    _warnings.warn("clear_attributes is now a no-op and will be removed in the next release",
+                   FutureWarning, stacklevel=2)
 
 
 def clear_all_attributes():
-    hg.__higra_global_cache.clear_all_data()
+    """Deprecated no-op; emit FutureWarning. Removed in the next release.
+
+    All objects and standalone custom stores are preserved.
+    """
+    _warnings.warn("clear_all_attributes is now a no-op and will be removed in the next release",
+                   FutureWarning, stacklevel=2)
 
 
 ###########################################################
@@ -364,7 +369,7 @@ def auto_cache(fun):
 ###########################################################
 
 
-def __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache):
+def __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs):
     """
     Tries to expand the elements contained in the concept ``concept`` for the data associated to the name
     ``arg_name``.
@@ -374,7 +379,6 @@ def __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kw
     :param all_parameters_name: name of all known parameters of the function
     :param all_data_found: dictionary of all found data in the concept resolutions so far
     :param kwargs: dictionary of all known name arguments so far
-    :param data_cache:
     :return:
     """
     if not type(concept) is type:
@@ -443,8 +447,6 @@ def argument_helper(*concepts):
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
             args = __transfer_to_kw_arguments(signature, args, kwargs)
-            data_cache = (kwargs.get("data_cache") if "data_cache" in all_parameters_name
-                          else kwargs.pop("data_cache", hg.__higra_global_cache))
             all_data_found = dict(kwargs)
             for concept_elem in concepts:
 
@@ -454,7 +456,7 @@ def argument_helper(*concepts):
                     concept = concept_elem
                     arg_name = signature.parameters.values().__iter__().__next__().name
 
-                __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs, data_cache)
+                __resolve_concept(arg_name, concept, all_parameters_name, all_data_found, kwargs)
 
             if len(args) > 0:
                 _warnings.warn('Argument helper: all positional parameters could not be transformed into '

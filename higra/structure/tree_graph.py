@@ -9,6 +9,7 @@
 ############################################################################
 
 import higra as hg
+from higra.data_cache import _get_attribute, _set_attribute
 import numpy as np
 
 
@@ -116,7 +117,7 @@ def __lowest_common_ancestor_preprocess(self, algorithm="sparse_table_block", bl
            specified algorithm or algorithm parameter have changed.
     :return: An object of type :class:`~higra.hg.LCA_rmq_sparse_table_block` or :class:`~higra.hg.LCA_rmq_sparse_table`
     """
-    lca_fast = hg.get_attribute(self, "lca_fast")
+    lca_fast = _get_attribute(self, "lca_fast")
     if lca_fast is None or force_recompute:
         if algorithm == "sparse_table":
             lca_fast = hg.LCA_rmq_sparse_table(self)
@@ -128,7 +129,7 @@ def __lowest_common_ancestor_preprocess(self, algorithm="sparse_table_block", bl
             lca_fast = hg.LCA_rmq_sparse_table_block(self, block_size)
         else:
             raise ValueError("Unknown LCA algorithm: " + str(algorithm))
-        hg.set_attribute(self, "lca_fast", lca_fast)
+        _set_attribute(self, "lca_fast", lca_fast)
     return lca_fast
 
 
@@ -155,7 +156,7 @@ def __lowest_common_ancestor(self, vertices1, vertices2):
     :return: the lowest common ancestor(s) of every pair of input vertices (a single index or an array of indices)
     """
 
-    lca_fast = hg.get_attribute(self, "lca_fast")
+    lca_fast = _get_attribute(self, "lca_fast")
     if lca_fast is None:
         return self._lowest_common_ancestor(vertices1, vertices2)
     else:

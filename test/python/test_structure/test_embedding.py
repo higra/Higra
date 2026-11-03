@@ -102,17 +102,17 @@ class TestEmbedding(unittest.TestCase):
 
         for c, s in tests:
             e = c(s)
-            hg.set_attribute(e, "test", (1, 2, 3))
-            hg.add_tag(e, "foo")
+            e.test = (1, 2, 3)
+            e.__dict__.setdefault("__higra_tags__", set()).update({"foo"})
 
             data = pickle.dumps(e)
             e2 = pickle.loads(data)
 
             self.assertTrue(np.all(e.shape() == e2.shape()))
 
-            self.assertTrue(hg.get_attribute(e, "test") == hg.get_attribute(e2, "test"))
+            self.assertTrue(getattr(e, "test", None) == getattr(e2, "test", None))
             self.assertTrue(e.test == e2.test)
-            self.assertTrue(hg.has_tag(e2, "foo"))
+            self.assertTrue("foo" in e2.__higra_tags__)
 
 
 if __name__ == '__main__':

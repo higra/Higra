@@ -9,6 +9,7 @@
 ############################################################################
 
 import higra as hg
+from higra.data_cache import _set_attribute
 import numpy as np
 
 
@@ -25,7 +26,7 @@ def read_tree(filename):
     tree, attribute_map = hg.cpp._read_tree(filename)
 
     for k in attribute_map:
-        hg.set_attribute(tree, k, attribute_map[k])
+        _set_attribute(tree, k, attribute_map[k])
 
     return tree, attribute_map
 

@@ -385,8 +385,8 @@ class TestTree(unittest.TestCase):
                 for protocol in (2, 4, pickle.HIGHEST_PROTOCOL):
                     with self.subTest(category=category, tree_class=tree_class, protocol=protocol):
                         t = tree_class((5, 5, 6, 6, 6, 7, 7, 7), category)
-                        hg.set_attribute(t, "test", (1, 2, 3))
-                        hg.add_tag(t, "foo")
+                        t.test = (1, 2, 3)
+                        t.__dict__.setdefault("__higra_tags__", set()).update({"foo"})
                         # Exercise serialization after lazy child computation too.
                         t.children(t.root())
                         t2 = pickle.loads(pickle.dumps(t, protocol=protocol))
@@ -396,9 +396,9 @@ class TestTree(unittest.TestCase):
                         np.testing.assert_array_equal(t.parents(), t2.parents())
                         for v in t.vertices():
                             np.testing.assert_array_equal(t.children(v), t2.children(v))
-                        self.assertEqual(hg.get_attribute(t2, "test"), (1, 2, 3))
+                        self.assertEqual(getattr(t2, "test", None), (1, 2, 3))
                         self.assertEqual(t2.test, t.test)
-                        self.assertTrue(hg.has_tag(t2, "foo"))
+                        self.assertTrue("foo" in t2.__higra_tags__)
 
     def test_pickle_hierarchy_reconstruction(self):
         graph = hg.get_4_adjacency_graph((1, 5))
@@ -451,8 +451,8 @@ class TestTree(unittest.TestCase):
             for protocol in (2, 4, pickle.HIGHEST_PROTOCOL):
                 with self.subTest(category=category, protocol=protocol):
                     tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7), category)
-                    hg.set_attribute(tree, "test", (1, 2, 3))
-                    hg.add_tag(tree, "foo")
+                    tree.test = (1, 2, 3)
+                    tree.__dict__.setdefault("__higra_tags__", set()).update({"foo"})
                     hg.CptHierarchy.link(tree, hg.get_4_adjacency_graph((1, 5)))
                     # Trusted, controlled old-format pickle: category was never stored.
                     restored = pickle.loads(pickle.dumps(LegacyTreePickle(tree), protocol=protocol))
@@ -461,7 +461,7 @@ class TestTree(unittest.TestCase):
                     for v in tree.vertices():
                         np.testing.assert_array_equal(restored.children(v), tree.children(v))
                     self.assertEqual(restored.test, (1, 2, 3))
-                    self.assertTrue(hg.has_tag(restored, "foo"))
+                    self.assertTrue("foo" in restored.__higra_tags__)
                     self.assertTrue(hg.CptHierarchy.validate(restored))
                     self.assertEqual(hg.CptGridGraph.get_shape(hg.CptHierarchy.get_leaf_graph(restored)), (1, 5))
 

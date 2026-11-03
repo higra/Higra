@@ -8,9 +8,6 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-# pre-declaration of globals
-globals()["__higra_global_cache"] = None
-
 # extension module
 from .higram import *
 # required to access member names starting with underscore
@@ -22,8 +19,6 @@ from . import data_cache
 from .data_cache import *
 from .concept import *
 from .hg_utils import *
-
-data_cache._data_cache__init()
 
 # normal modules
 from .sorting import *
