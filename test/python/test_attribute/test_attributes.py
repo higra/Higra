@@ -612,7 +612,7 @@ class TestAttributes(unittest.TestCase):
                             [4, 4, 4, 4, 4, 4, 4, 4, 4, 4]], dtype=np.uint8)
 
         tree, altitudes = hg.component_tree_max_tree(graph, vertex_weights)
-        height = hg.attribute_height(tree, altitudes, True, "current")
+        height = hg.attribute_height(tree, altitudes, False, "current")
         map = hg.reconstruct_leaf_data(tree, height)
 
         self.assertTrue(np.allclose(ref_map, map))
@@ -641,7 +641,7 @@ class TestAttributes(unittest.TestCase):
                             [4, 4, 4, 4, 4, 4, 4, 4, 4, 4]], dtype=np.uint8)
 
         tree, altitudes = hg.component_tree_min_tree(graph, vertex_weights.max()-vertex_weights)
-        height = hg.attribute_height(tree, altitudes, False, "current")
+        height = hg.attribute_height(tree, altitudes, True, "current")
         map = hg.reconstruct_leaf_data(tree, height)
 
         self.assertTrue(np.allclose(ref_map, map))
