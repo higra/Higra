@@ -1798,32 +1798,55 @@ def attribute_children_pair_sum_product(tree, node_weights):
 
 def attribute_tree_sampling_probability(tree, leaf_graph, leaf_graph_edge_weights, model='edge'):
     """
-    Given a tree :math:`T`, estimate the probability that a node :math:`n` of the tree represents the smallest cluster
-    containing a pair of vertices :math:`\{a, b\}` of the graph :math:`G=(V, E)`
-    with edge weights :math:`w`.
+    Compute, for each node of the given tree, the probability that it is the smallest cluster containing a pair of
+    vertices sampled in the graph :math:`G=(V, E)` with edge weights :math:`w`.
 
     This method is defined in [1]_.
 
-    We define the probability :math:`P(\{a,b\})` of a pair of vertices :math:`\{a,b\}` as :math:`w(\{a,b\}) / Z`
-    with :math:`Z=\sum_{e\in E}w(E)` if :math:`\{a,b\}` is an edge of :math:`G` and 0 otherwise.
-    Then the probability :math:`P(a)` of a vertex :math:`b` is defined as :math:`\sum_{b\in V}P(\{a, b\})`
+    The probability :math:`P(\\{a,b\\})` of a pair of vertices :math:`\\{a,b\\}` is :math:`w(\\{a,b\\}) / Z`
+    with :math:`Z=\\sum_{e\\in E}w(e)` if :math:`\\{a,b\\}` is an edge of :math:`G`, and 0 otherwise.
+    The probability :math:`P(a)` of a vertex :math:`a` is the probability that :math:`a` is an extremity of an edge
+    sampled with these probabilities, each of its two extremities being chosen with probability :math:`1/2`:
+
+    .. math::
+
+        P(a) = \\frac{1}{2} \\sum_{b\\in V}P(\\{a, b\\}) = \\frac{1}{2Z} \\sum_{b \\in V,\\ \\{a, b\\} \\in E} w(\\{a, b\\})
+
+    The probabilities of the vertices thus sum to 1.
 
     Two sampling strategies are proposed for sampling pairs of vertices to compute the probability of a node of the tree:
 
-    - *edge*: the probability of sampling the pair :math:`\{a, b\}` is given by :math:`P(\{a, b\})`; and
-    - *null*: the probability of sampling the pair :math:`\{a, b\}` is given by the product of the probabilities
-      of :math:`a` and :math:`b`: :math:`P(a)*P(b)`.
+    - *edge*: the pair :math:`\\{a, b\\}` is sampled with probability :math:`P(\\{a, b\\})`; and
+    - *null*: the two vertices are sampled independently: the ordered pair :math:`(a, b)` is sampled with probability
+      :math:`P(a) \\times P(b)`.
 
-    Assuming that the edge weights on the leaf graph of a hierarchy represents similarities:
+    The probability of a non-leaf node :math:`n` is the probability that a sampled pair has :math:`n` as lowest common
+    ancestor:
+
+    .. math::
+
+        p_{edge}(n) = \\sum_{e = \\{a, b\\} \\in E,\\ lca(a, b) = n} P(e)
+        \\qquad\\qquad
+        p_{null}(n) = \\sum_{(a, b) \\in V^2,\\ lca(a, b) = n} P(a) \\times P(b)
+
+    Two distinct leaves have their lowest common ancestor in :math:`n` if and only if they belong to two distinct
+    children of :math:`n`. Hence, :math:`p_{null}(n)` is twice the sum, over every unordered pair
+    :math:`\\{c_i, c_j\\}` of distinct children of :math:`n`, of :math:`P(c_i) \\times P(c_j)`, with
+    :math:`P(c) = \\sum_{v \\in leaves(c)} P(v)` (see :func:`~higra.attribute_children_pair_sum_product`).
+    The probability of a leaf is 0 for both models: the pairs :math:`(a, a)` made of a single vertex are not taken
+    into account. The values of :math:`p_{edge}` thus sum to 1 over the non-leaf nodes, and the values of
+    :math:`p_{null}` sum to :math:`1 - \\sum_{a \\in V} P(a)^2`.
+
+    Assuming that the edge weights on the leaf graph of a hierarchy represent similarities:
 
     .. epigraph::
 
         *We expect these distributions to differ significantly if the tree indeed represents the hierarchical structure of the graph.
         Specifically, we expect [the edge distribution] to be mostly concentrated on deep nodes of the tree
-        (far from the root), as two nodes* :math:`u`, :math:`v` *connected with high weight* :math:`w(\{u, v\})` *in the graph
-        typically  belong to a small cluster, representative of the clustering structure of the graph; on the contrary,
+        (far from the root), as two nodes* :math:`u`, :math:`v` *connected with high weight* :math:`w(\\{u, v\\})` *in the graph
+        typically belong to a small cluster, representative of the clustering structure of the graph; on the contrary,
         we expect [the null distribution] to be concentrated over shallow nodes (close to the root) as two nodes*
-        :math:`w(\{u, v\})` *sampled independently at random typically belong to large clusters, less representative of the
+        :math:`u`, :math:`v` *sampled independently at random typically belong to large clusters, less representative of the
         clustering structure of the graph*. [1]_
 
 
@@ -1832,21 +1855,81 @@ def attribute_tree_sampling_probability(tree, leaf_graph, leaf_graph_edge_weight
 
     :Complexity:
 
-    The tree sampling divergence runtime complexity depends of the sampling model:
+    The runtime complexity depends on the sampling model:
 
-     - *edge*: :math:`\mathcal{O}(N\log(N) + M)` with :math:`N` the number of  nodes in the tree and :math:`M` the number of edges in the leaf graph.
-     - *null*: :math:`\mathcal{O}(N\\times C^2)` with :math:`N` the number of nodes in the tree  and :math:`C` the maximal number of children of a node in the tree.
+    - *edge*: :math:`\\mathcal{O}(N\\log(N) + M)` with :math:`N` the number of nodes in the tree and :math:`M` the number
+      of edges in the leaf graph (computation of the lowest common ancestors followed by one accumulation over the edges);
+    - *null*: :math:`\\mathcal{O}(N \\times C + M)` with :math:`N` the number of nodes in the tree, :math:`C` the maximal
+      number of children of a node in the tree, and :math:`M` the number of edges in the leaf graph.
+
+    :Example:
+    =======
+
+    Consider the following 3 x 3 grid graph, whose edges are labelled with their weights (the similarities):
+
+    .. code-block:: text
+
+        (0)-- 0 --(1)-- 2 --(2)
+        |         |         |
+        6         6         0
+        |         |         |
+        (3)-- 0 --(4)-- 4 --(5)
+        |         |         |
+        5         5         3
+        |         |         |
+        (6)-- 0 --(7)-- 1 --(8)
+
+    and the binary partition tree computed on it with :func:`~higra.bpt_canonical`:
+
+    .. code-block:: text
+
+        4                 +-------16------+
+                          |               |
+        3         +-------15-----+        |
+                  |              |        |
+        2     +---14--+          |        |
+              |       |          |        |
+        1     |       |       +--13-+     |
+              |       |       |     |     |
+        0   +-9-+   +-10+   +-12+   |   +-11+
+            +   +   +   +   +   +   +   +   +
+            0   1   2   5   6   7   8   3   4
+
+    .. code-block:: python
+
+        graph = hg.get_4_adjacency_graph((3, 3))
+        edge_weights = np.asarray((0, 6, 2, 6, 0, 0, 5, 4, 5, 3, 0, 1))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        hg.attribute_tree_sampling_probability(tree, graph, edge_weights, model='edge')
+        # array([0.     , 0.     , 0.     , 0.     , 0.     , 0.     , 0.     , 0.     , 0.     ,
+        #        0.     , 0.     , 0.     , 0.     , 0.03125, 0.0625 , 0.09375, 0.8125 ])
+
+        hg.attribute_tree_sampling_probability(tree, graph, edge_weights, model='null')
+        # array([0.        , 0.        , 0.        , 0.        , 0.        , 0.        , 0.        , 0.        ,
+        #        0.        , 0.0234375 , 0.00683594, 0.08056641, 0.01464844, 0.02148438, 0.06152344, 0.16845703,
+        #        0.48242188])
+
+    With :math:`Z = 0 + 6 + 2 + 6 + 0 + 0 + 5 + 4 + 5 + 3 + 0 + 1 = 32`, the lowest common ancestor of each edge is given by
+    :func:`~higra.attribute_lca_map`: the edge :math:`\\{7, 8\\}` (weight 1) has the node 13 as lowest common ancestor, the edge :math:`\\{1, 2\\}`
+    (weight 2) the node 14, and the edge :math:`\\{5, 8\\}` (weight 3) the node 15. Their probabilities are respectively
+    :math:`1/32`, :math:`2/32` and :math:`3/32`. The five remaining edges of non-zero weight (6, 6, 5, 4 and 5) have the root as lowest
+    common ancestor: its probability is :math:`26/32 = 0.8125`. The edges of weight 0 do not contribute.
+    With the null model, the probabilities of the vertices 0 and 1 are :math:`P(0) = (0 + 6)/64` and
+    :math:`P(1) = (0 + 2 + 6)/64` (the sums of the weights of their incident edges divided by :math:`2Z`). The node 9,
+    whose children are the leaves 0 and 1, is the lowest common ancestor of the ordered pairs :math:`(0, 1)` and
+    :math:`(1, 0)`: its probability is :math:`2 \\times P(0) \\times P(1) = 96/4096 = 0.0234375`.
 
     :see:
 
     The :func:`~higra.tree_sampling_divergence` is a non supervised hierarchical cost function defined as the
     Kullback-Leibler divergence between the edge sampling model and the independent (null) sampling model.
 
-    :param tree: Input tree
-    :param leaf_graph: Graph defined on the leaves of the input tree
-    :param leaf_graph_edge_weights: Edge weights of the leaf graphs (similarities)
-    :param model: defines the edge sampling strategy, either "edge" or "null"
-    :return: a 1d array
+    :param tree: input tree
+    :param leaf_graph: graph on the leaves of the input tree
+    :param leaf_graph_edge_weights: edge weights of the leaf graph (similarities), non-negative with a positive sum (Numpy array of shape (leaf_graph.num_edges(),))
+    :param model: sampling model, either ``'edge'`` (default) or ``'null'``; any other value raises a ``ValueError``
+    :return: a 1d array of floating point values representing, for each node of the tree, the probability that it is the lowest common ancestor of a pair of vertices sampled with the chosen model
     """
     if model not in ("edge", "null"):
         raise ValueError("Parameter 'model' must be either 'edge' or 'null'.")
@@ -1857,9 +1940,9 @@ def attribute_tree_sampling_probability(tree, leaf_graph, leaf_graph_edge_weight
         return hg.accumulate_at(lca_map, leaf_graph_edge_weights, hg.Accumulators.sum)
     else:  # model = 'null'
         leaf_graph_vertex_weights = hg.accumulate_graph_edges(leaf_graph, leaf_graph_edge_weights, hg.Accumulators.sum)
-        leaf_graph_vertex_weights = leaf_graph_vertex_weights / np.sum(leaf_graph_edge_weights)
+        leaf_graph_vertex_weights = leaf_graph_vertex_weights / (2 * np.sum(leaf_graph_edge_weights))
         tree_node_weights = hg.accumulate_sequential(tree, leaf_graph_vertex_weights, hg.Accumulators.sum)
-        return hg.attribute_children_pair_sum_product(tree, tree_node_weights)
+        return 2 * hg.attribute_children_pair_sum_product(tree, tree_node_weights)
 
 
 @_legacy_cache_keywords

@@ -710,7 +710,7 @@ class TestAttributes(unittest.TestCase):
              7 * 9 + 7 * 5 + 9 * 5,
              6 * 7 + 6 * 9 + 6 * 5 + 8 * 7 + 8 * 9 + 8 * 5 + 2 * 7 + 2 * 9 + 2 * 5 + 7 * 7 + 7 * 9 + 7 * 5,
              6 * 11 + 6 * 15 + 8 * 11 + 8 * 15 + 2 * 11 + 2 * 15 + 11 * 7 + 11 * 7 + 11 * 9 + 11 * 5 + 15 * 7 + 15 * 7 + 15 * 9 + 15 * 5)) / \
-              (Z * Z)
+              (2 * Z * Z)
         self.assertTrue(np.allclose(ref, res))
 
     def test_topological_height(self):
