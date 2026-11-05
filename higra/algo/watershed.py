@@ -116,10 +116,45 @@ class IncrementalWatershedCut:
     """
 
     def __init__(self, graph, edge_weights):
+        
         tree, _ = hg.bpt_canonical(graph, edge_weights, compute_mst=True)
         mst = hg.CptBinaryHierarchy.get_mst(tree)
+
         self._impl = hg.cpp.IncrementalWatershedCut(tree, mst)
         self._graph = graph
+
+    def set_minimum_parallel_front_size(self, minimum_parallel_front_size):
+        """
+        Set the value of m_minimum_parallel_front_size.
+
+        :param minimum_parallel_front_size minimum breadth for the parallel algorithm (index_t)
+        """
+        if minimum_parallel_front_size <= 0:
+            raise ValueError("minimum_parallel_front_size must be positive.")
+
+        self._impl._set_minimum_parallel_front_size(minimum_parallel_front_size)
+
+    def set_num_parrallel_hops(self, num_parallel_hops):
+        """
+        Set the value of m_num_parrallel_hops
+        
+        :param num_parrallel_hops parallel depth for the parallel algorithm (index_t)
+        """
+        if num_parallel_hops <= 0:
+            raise ValueError("num_parallel_hops must be positive.")
+
+        self._impl._set_num_parrallel_hops(num_parallel_hops)
+
+    def set_max_concurrency(self, maximum_concurrency):
+        """
+        Set the value of m_maximum_concurrency
+        
+        :param maximum_concurrency maximum number of processors to use (index_t)
+        """
+        if maximum_concurrency <= 0:
+            raise ValueError("maximum_concurrency must be positive.")
+
+        self._impl._set_max_concurrency(maximum_concurrency)
 
     def add_seeds(self, seed_vertices, seed_labels):
         """

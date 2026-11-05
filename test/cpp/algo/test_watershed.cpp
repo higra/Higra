@@ -15,6 +15,9 @@
 #include <random>
 #include <unordered_map>
 #include <algorithm>
+#ifdef HG_USE_TBB
+#include <oneapi/tbb/task_arena.h>
+#endif
 
 using namespace hg;
 
@@ -491,5 +494,283 @@ namespace test_watershed {
             }
         }
     }
+
+#ifdef HG_USE_TBB
+
+    template<typename graph_t, typename T>
+    auto make_parallel_iws(const graph_t &g,
+                           const T &edge_weights,
+                           index_t num_hops = 2,
+                           index_t min_front_size = 1) {
+        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
+        iws.set_max_concurrency(oneapi::tbb::info::default_concurrency()); 
+        iws.set_minimum_parallel_front_size(min_front_size);
+        iws.set_num_parrallel_hops(num_hops);
+        return iws;
+    }
+
+    TEST_CASE("incremental watershed cut parallel basic", "[incremental_watershed_cut][tbb]") {
+        auto g = hg::get_4_adjacency_graph({4, 4});
+        array_1d<int> edge_weights{1, 2, 5, 5, 4, 8, 1, 4, 3, 4, 4, 1, 5, 2, 6, 2, 5, 2, 0, 7, 0, 3, 4, 0};
+
+        auto iws = make_parallel_iws(g, edge_weights);
+
+        array_1d<index_t> seed_v1{0, 1, 4};
+        array_1d<index_t> seed_l1{1, 1, 1};
+        iws.add_seeds(seed_v1, seed_l1);
+
+        array_1d<index_t> seed_v2{12, 13};
+        array_1d<index_t> seed_l2{2, 2};
+        iws.add_seeds(seed_v2, seed_l2);
+
+        array_1d<index_t> seed_v3{14, 15};
+        array_1d<index_t> seed_l3{3, 3};
+        iws.add_seeds(seed_v3, seed_l3);
+
+        auto labels = iws.get_labeling();
+
+        REQUIRE(labels(0) == 1);
+        REQUIRE(labels(1) == 1);
+        REQUIRE(labels(4) == 1);
+        REQUIRE(labels(12) == 2);
+        REQUIRE(labels(13) == 2);
+        REQUIRE(labels(14) == 3);
+        REQUIRE(labels(15) == 3);
+
+        for (index_t i = 0; i < 16; i++) {
+            REQUIRE(labels(i) != 0);
+        }
+    }
+
+    TEST_CASE("incremental watershed cut parallel remove seed", "[incremental_watershed_cut][tbb]") {
+        auto g = hg::get_4_adjacency_graph({2, 3});
+        array_1d<int> edge_weights{1, 0, 2, 0, 0, 1, 2};
+
+        // All seeds added in one batch so that several roots are relabeled in parallel
+        auto iws = make_parallel_iws(g, edge_weights);
+        array_1d<index_t> sv{0, 2, 4};
+        array_1d<index_t> sl{1, 2, 3};
+        iws.add_seeds(sv, sl);
+
+        array_1d<index_t> seeds{1, 0, 2,
+                                0, 3, 0};
+        REQUIRE((iws.get_labeling() == hg::labelisation_seeded_watershed(g, edge_weights, seeds)));
+
+        // Remove one seed => two regions remain
+        array_1d<index_t> rm1{4};
+        iws.remove_seeds(rm1);
+        seeds(4) = 0;
+        REQUIRE((iws.get_labeling() == hg::labelisation_seeded_watershed(g, edge_weights, seeds)));
+
+        // Remove the remaining seeds in one batch => background everywhere
+        array_1d<index_t> rm2{0, 2};
+        iws.remove_seeds(rm2);
+        for (index_t i = 0; i < 6; i++) {
+            REQUIRE(iws.get_labeling()(i) == 0);
+        }
+    }
+
+    TEST_CASE("incremental watershed cut parallel decuts ancestor descendant",
+              "[incremental_watershed_cut][tbb]") {
+        auto g = hg::get_4_adjacency_graph({1, 8});
+        array_1d<double> edge_weights{1, 5, 2, 7, 3, 6, 4};
+
+        array_1d<index_t> sv{0, 1, 3, 4};
+        array_1d<index_t> sl{10, 20, 30, 40};
+
+        auto iws = make_parallel_iws(g, edge_weights);
+        iws.add_seeds(sv, sl);
+        array_1d<index_t> rm{0, 3};
+        iws.remove_seeds(rm);
+
+        array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+        seeds(1) = 20;
+        seeds(4) = 40;
+        auto expected = hg::labelisation_seeded_watershed(g, edge_weights, seeds);
+        REQUIRE((iws.get_labeling() == expected));
+    }
+
+    TEST_CASE("incremental watershed cut parallel equals sequential",
+              "[incremental_watershed_cut][tbb]") {
+        auto g = hg::get_4_adjacency_graph({4, 4});
+        array_1d<int> edge_weights{1, 2, 5, 5, 4, 8, 1, 4, 3, 4, 4, 1,
+                                   5, 2, 6, 2, 5, 2, 0, 7, 0, 3, 4, 0};
+
+        array_1d<index_t> sv{0, 1, 4, 14, 15};
+        array_1d<index_t> sl{1, 1, 1, 2, 2};
+        array_1d<index_t> rm{1, 14};
+
+        auto par = make_parallel_iws(g, edge_weights);
+        auto seq = hg::make_incremental_watershed_cut(g, edge_weights);
+        seq.set_max_concurrency(1); // force the sequential code path
+
+        par.add_seeds(sv, sl);
+        seq.add_seeds(sv, sl);
+        REQUIRE((par.get_labeling() == seq.get_labeling()));
+
+        par.remove_seeds(rm);
+        seq.remove_seeds(rm);
+        REQUIRE((par.get_labeling() == seq.get_labeling()));
+    }
+
+    TEST_CASE("incremental watershed cut parallel interactive churn",
+              "[incremental_watershed_cut][tbb]") {
+        auto g = hg::get_4_adjacency_graph({100, 100});
+        const index_t n_edges = g.num_edges();
+        array_1d<double> edge_weights = xt::empty<double>({n_edges});
+        for (index_t i = 0; i < n_edges; ++i) {
+            edge_weights(i) = static_cast<double>(i % 997) / 997.0;
+        }
+
+        array_1d<index_t> sv{4098, 8671, 7466, 737, 5621,
+                             5954, 3197, 7184, 7657, 3043};
+        array_1d<index_t> initial_labels{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        const index_t changed_label = 99;
+
+        // Different front-size thresholds: always parallel (1), switching between
+        // parallel and sequential fronts (16), and never parallel (1000).
+        for (index_t min_front : {index_t(1), index_t(16), index_t(1000)}) {
+            auto iws = make_parallel_iws(g, edge_weights, 3, min_front);
+
+            iws.add_seeds(sv, initial_labels);
+
+            array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+            for (index_t i = 0; i < 10; ++i) {
+                seeds(sv(i)) = initial_labels(i);
+            }
+            REQUIRE((iws.get_labeling() == hg::labelisation_seeded_watershed(g, edge_weights, seeds)));
+
+            for (index_t i = 0; i < 5; ++i) {
+                index_t v = sv(i);
+                array_1d<index_t> rm{v};
+                array_1d<index_t> add_v{v};
+                array_1d<index_t> add_l{changed_label};
+
+                iws.remove_seeds(rm);
+                seeds(v) = 0;
+                REQUIRE((iws.get_labeling() == hg::labelisation_seeded_watershed(g, edge_weights, seeds)));
+
+                iws.add_seeds(add_v, add_l);
+                seeds(v) = changed_label;
+                REQUIRE((iws.get_labeling() == hg::labelisation_seeded_watershed(g, edge_weights, seeds)));
+            }
+        }
+    }
+
+    TEST_CASE("incremental watershed cut parallel randomized", "[incremental_watershed_cut][tbb]") {
+        const index_t size = 40;
+        const index_t num_vertices_total = size * size;
+
+        std::mt19937 rng(1);
+        std::uniform_real_distribution<double> dist_real(0.0, 1.0);
+        std::uniform_int_distribution<int> dist_label(1, 9);
+        std::uniform_int_distribution<int> dist_vertex(0, (int) num_vertices_total - 1);
+        std::uniform_int_distribution<int> dist_batch(3, 8);
+
+        auto g = hg::get_4_adjacency_graph({size, size});
+
+        for (int img_idx = 0; img_idx < 5; ++img_idx) {
+            array_1d<double> image = xt::empty<double>({(size_t) num_vertices_total});
+            for (index_t k = 0; k < num_vertices_total; ++k)
+                image(k) = dist_real(rng);
+            auto edge_weights = hg::weight_graph(g, image, hg::weight_functions::L1);
+
+            array_1d<index_t> seeds = xt::zeros<index_t>({(size_t) num_vertices_total});
+            std::vector<index_t> current_seeds;
+
+            // vary the number of parallel hops from one image to another
+            auto iws = make_parallel_iws(g, edge_weights, (index_t) (1 + img_idx), 1);
+
+            for (int step = 0; step < 30; ++step) {
+                bool add = current_seeds.empty() || dist_real(rng) >= 0.3;
+                if (add) {
+                    std::vector<index_t> new_v, new_l;
+                    const int batch = dist_batch(rng);
+                    for (int k = 0; k < batch; ++k) {
+                        index_t v = dist_vertex(rng);
+                        if (seeds(v) != 0) continue; // already a seed
+                        index_t l = dist_label(rng);
+                        seeds(v) = l;
+                        current_seeds.push_back(v);
+                        new_v.push_back(v);
+                        new_l.push_back(l);
+                    }
+                    if (new_v.empty()) continue;
+
+                    array_1d<index_t> sv = array_1d<index_t>::from_shape({new_v.size()});
+                    array_1d<index_t> sl = array_1d<index_t>::from_shape({new_l.size()});
+                    for (size_t k = 0; k < new_v.size(); ++k) {
+                        sv(k) = new_v[k];
+                        sl(k) = new_l[k];
+                    }
+                    iws.add_seeds(sv, sl);
+                } else {
+                    std::shuffle(current_seeds.begin(), current_seeds.end(), rng);
+                    size_t n_remove = dist_real(rng) >= 0.8 ? current_seeds.size()
+                                                           : std::min<size_t>(current_seeds.size(), 4);
+                    array_1d<index_t> sv = array_1d<index_t>::from_shape({n_remove});
+                    for (size_t k = 0; k < n_remove; ++k) {
+                        sv(k) = current_seeds.back();
+                        seeds(sv(k)) = 0;
+                        current_seeds.pop_back();
+                    }
+                    iws.remove_seeds(sv);
+                }
+                auto ref = hg::labelisation_seeded_watershed(g, edge_weights, seeds);
+                REQUIRE((iws.get_labeling() == ref));
+            }
+        }
+    }
+
+    TEST_CASE("incremental watershed cut tbb build sequential path",
+              "[incremental_watershed_cut][tbb]") {
+        // In a TBB build, set_max_concurrency(1) must bring back the sequential
+        // algorithm (relabel_component_from_seed).
+        auto g = hg::get_4_adjacency_graph({4, 4});
+        array_1d<int> edge_weights{1, 2, 5, 5, 4, 8, 1, 4, 3, 4, 4, 1,
+                                   5, 2, 6, 2, 5, 2, 0, 7, 0, 3, 4, 0};
+
+        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
+        iws.set_max_concurrency(1);
+
+        array_1d<index_t> sv{0, 1, 4, 12, 13, 14, 15};
+        array_1d<index_t> sl{1, 1, 1, 2, 2, 3, 3};
+        iws.add_seeds(sv, sl);
+
+        array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+        for (index_t i = 0; i < 7; ++i) seeds(sv(i)) = sl(i);
+        REQUIRE((iws.get_labeling() == hg::labelisation_seeded_watershed(g, edge_weights, seeds)));
+
+        array_1d<index_t> rm{1, 13};
+        iws.remove_seeds(rm);
+        seeds(1) = 0;
+        seeds(13) = 0;
+        REQUIRE((iws.get_labeling() == hg::labelisation_seeded_watershed(g, edge_weights, seeds)));
+    }
+
+#else
+
+    TEST_CASE("incremental watershed cut parallel setters without tbb",
+              "[incremental_watershed_cut]") {
+        // Without TBB the parallel tuning setters only log a warning and the
+        // sequential algorithm must keep working.
+        auto g = hg::get_4_adjacency_graph({2, 3});
+        array_1d<int> edge_weights{1, 0, 2, 0, 0, 1, 2};
+
+        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
+        iws.set_minimum_parallel_front_size(1);
+        iws.set_num_parrallel_hops(2);
+        iws.set_max_concurrency(4);
+
+        array_1d<index_t> sv{0, 2, 4};
+        array_1d<index_t> sl{1, 2, 3};
+        iws.add_seeds(sv, sl);
+
+        array_1d<index_t> seeds{1, 0, 2,
+                                0, 3, 0};
+        REQUIRE((iws.get_labeling() == hg::labelisation_seeded_watershed(g, edge_weights, seeds)));
+    }
+
+#endif
 
 }

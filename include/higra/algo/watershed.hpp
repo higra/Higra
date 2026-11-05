@@ -18,10 +18,15 @@
 #include "higra/algo/graph_core.hpp"
 #include "higra/sorting.hpp"
 #include <vector>
+#include <algorithm>
 #include <stack>
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
+#include <iostream>
+#ifdef HG_USE_TBB
+#include <oneapi/tbb/task_arena.h>
+#endif
 
 namespace hg {
 
@@ -225,22 +230,69 @@ namespace hg {
          * @param bpt canonical binary partition tree
          * @param mst minimum spanning tree of the original graph (as ugraph)
          */
-        incremental_watershed_cut(tree bpt, ugraph mst) :
-                m_bpt(std::move(bpt)),
-                m_mst(std::move(mst)),
-                m_num_leaves((index_t)num_leaves(m_bpt)),
-                m_root((index_t)hg::num_vertices(m_bpt) - 1),
-                m_seed_count(hg::num_vertices(m_bpt), 0),
-                m_is_cut(m_num_leaves - 1, false),
-                m_visited(m_num_leaves, 0) {
-            HG_TRACE();
-            hg_assert((index_t)num_vertices(m_mst) == m_num_leaves,
-                      "MST must have the same number of vertices as leaves in the BPT.");
-            hg_assert((index_t)num_edges(m_mst) == m_num_leaves - 1,
-                      "MST must have exactly num_leaves - 1 edges.");
-            m_labels = xt::zeros<index_t>({(size_t)m_num_leaves});
-            m_seed_map = array_1d<index_t>::from_shape({(size_t)m_num_leaves});
-            m_seed_map.fill(-1);
+        incremental_watershed_cut(
+                                tree bpt, 
+                                ugraph mst
+                            ) :
+            m_bpt(std::move(bpt)),
+            m_mst(std::move(mst)),
+            m_num_leaves((index_t)num_leaves(m_bpt)),
+            m_root((index_t)hg::num_vertices(m_bpt) - 1),
+            m_seed_count(hg::num_vertices(m_bpt), 0),
+            m_is_cut(m_num_leaves - 1, false),
+            #ifdef HG_USE_TBB
+            m_minimum_parallel_front_size(165),
+            m_num_parrallel_hops(12),
+            m_maximum_concurrency(oneapi::tbb::info::default_concurrency()),
+            #endif
+            m_visited(m_num_leaves, 0) {
+                HG_TRACE();
+                hg_assert((index_t)num_vertices(m_mst) == m_num_leaves,
+                        "MST must have the same number of vertices as leaves in the BPT.");
+                hg_assert((index_t)num_edges(m_mst) == m_num_leaves - 1,
+                        "MST must have exactly num_leaves - 1 edges.");
+                m_labels = xt::zeros<index_t>({(size_t)m_num_leaves});
+                m_seed_map = array_1d<index_t>::from_shape({(size_t)m_num_leaves});
+                m_seed_map.fill(-1);
+            }
+
+        /**
+         * Set the value of m_minimum_parallel_front_size
+         * 
+         * @param minimum_parallel_front_size minimum breadth for the parallel algorithm (index_t)
+         */
+        void set_minimum_parallel_front_size(index_t minimum_parallel_front_size) {
+            #ifndef HG_USE_TBB
+                HG_LOG_WARNING("set_minimum_parallel_front_size has no effect because TBB is not enabled.");
+            #else
+                m_minimum_parallel_front_size = std::clamp(minimum_parallel_front_size, index_t(1), std::numeric_limits<index_t>::infinity());
+            #endif
+        }
+
+        /**
+         * Set the value of m_num_parrallel_hops
+         * 
+         * @param num_parrallel_hops parallel depth for the parallel algorithm (index_t)
+         */
+        void set_num_parrallel_hops(index_t num_parrallel_hops) {
+            #ifndef HG_USE_TBB
+                HG_LOG_WARNING("set_num_parrallel_hops has no effect because TBB is not enabled.");
+            #else
+                m_num_parrallel_hops = std::clamp(num_parrallel_hops, index_t(1), std::numeric_limits<index_t>::infinity());
+            #endif
+        }
+
+        /**
+         * Set the value of m_maximum_concurrency
+         * 
+         * @param maximum_concurrency maximum number of processors to use (index_t)
+         */
+        void set_max_concurrency(index_t maximum_concurrency) {
+            #ifndef HG_USE_TBB
+                HG_LOG_WARNING("set_max_concurrency has no effect because TBB is not enabled.");
+            #else
+                m_maximum_concurrency = std::clamp(maximum_concurrency, index_t(1), static_cast<index_t>(oneapi::tbb::info::default_concurrency()));
+            #endif
         }
 
         /**
@@ -285,14 +337,37 @@ namespace hg {
                 }
             }
 
-            for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
-                auto v = (index_t)seed_vertices(i);
-                auto l = (index_t)seed_labels(i);
+            #ifdef HG_USE_TBB
+            if (m_maximum_concurrency > 1) {
+                std::vector<index_t> roots;
+                std::vector<index_t> root_labels;
+                std::vector<index_t> root_seeds;
 
-                if(m_seed_map[v] == v  && m_labels[v] == l) // v is already a seed with the same label, no need to relabel its component
-                    continue;
+                for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
+                    auto v = (index_t)seed_vertices(i);
+                    auto l = (index_t)seed_labels(i);
 
-                relabel_component_from_seed(v, l, v);
+                    if (m_seed_map[v] == v && m_labels[v] == l)
+                        continue;
+
+                    roots.push_back(v);
+                    root_labels.push_back(l);
+                    root_seeds.push_back(v);
+                }
+
+                relabel_component_from_seeds(roots, root_labels, root_seeds);
+            } else
+            #endif
+            {
+                for (index_t i = 0; i < (index_t)seed_vertices.size(); i++) {
+                    auto v = (index_t)seed_vertices(i);
+                    auto l = (index_t)seed_labels(i);
+
+                    if (m_seed_map[v] == v && m_labels[v] == l)
+                        continue;
+
+                    relabel_component_from_seed(v, l, v);
+                }
             }
         }
 
@@ -370,12 +445,20 @@ namespace hg {
                 m_seed_map.fill(-1);
                 return;
             }
+            
+            #ifdef HG_USE_TBB
+            if (m_maximum_concurrency > 1) {
+                relabel_component_from_seeds(start_vertices, labels_to_propagate, reference_seeds);
+            } else
+            #endif
+            {
+                for (index_t i = 0; i < (index_t)start_vertices.size(); i++) {
+                    auto start = start_vertices[i];
+                    auto label = labels_to_propagate[i];
+                    auto reference_seed = reference_seeds[i];
 
-            for (index_t i = 0; i < (index_t)start_vertices.size(); i++) {
-                auto start = start_vertices[i];
-                auto label = labels_to_propagate[i];
-                auto reference_seed = reference_seeds[i];
-                relabel_component_from_seed(start, label, reference_seed);
+                    relabel_component_from_seed(start, label, reference_seed);
+                }
             }
 
             for (auto k : removed_ws_cut_edges)
@@ -395,8 +478,6 @@ namespace hg {
         }
 
     private:
-
-
 
         /**
          * BFS from seed vertex start, labeling all reachable vertices (not crossing
@@ -423,6 +504,105 @@ namespace hg {
             }
         }
 
+        #ifdef HG_USE_TBB
+
+        /**
+         * Partition a vector of values into a specified number of parts.
+         *
+         * @param values The vector of values to partition.
+         * @param nb_processor The number of parts to create.
+         * @param parts The vector to store the resulting parts.
+         */
+        void partition(const std::vector<index_t>& values, index_t nb_processor, std::vector<std::vector<index_t>>& parts) {
+
+            parts.resize(nb_processor);
+
+            const index_t nb_values = values.size();
+            const index_t quotient = nb_values / nb_processor;
+            const index_t rest = nb_values % nb_processor;
+            
+            tbb::parallel_for(index_t(0), nb_processor, index_t(1), [&](index_t i) {
+                index_t size;
+                index_t begin;
+                if (i < rest) {
+                    size = quotient + 1;
+                    begin = i * size;
+                } else {
+                    size = quotient;
+                    begin = i * size + rest;
+                }
+                parts[i].assign(values.begin() + begin,
+                                values.begin() + begin + size);
+            });
+        }
+
+        /**
+         * BFS from seed vertex start, labeling all reachable vertices (not crossing
+         * cut edges) with the given label and seed, and updating the seed_map accordingly.
+         */
+        void relabel_component_from_seeds(std::vector<index_t>& roots, std::vector<index_t>& root_labels, std::vector<index_t>& root_seeds) {
+            hg_assert(roots.size() == root_labels.size(), "Each root must have a label.");
+            hg_assert(roots.size() == root_seeds.size(), "Each root must have an origin seed.");
+            
+            std::vector<index_t> E = roots;
+
+            for (size_t i = 0; i < roots.size(); ++i) {
+                auto r = roots[i];
+                m_labels(r) = root_labels[i];
+                m_seed_map(r) = root_seeds[i];
+                m_visited[r] = m_visited_generation;
+            }
+
+            const auto thread_count = static_cast<index_t>(m_maximum_concurrency);
+            std::vector<std::vector<index_t>> S_parts(thread_count);
+            std::vector<std::vector<index_t>> E_i(thread_count);
+            std::vector<std::size_t> offsets(thread_count + 1);
+
+            tbb::task_arena arena(static_cast<int>(thread_count));
+            while (!E.empty()) {
+                if (static_cast<index_t>(E.size()) > m_minimum_parallel_front_size) {
+                    arena.execute([&]{
+                        partition(E, thread_count, E_i);
+                        tbb::parallel_for(index_t(0), thread_count, index_t(1), [&](index_t i) {
+                            for (index_t l = 0; l <= m_num_parrallel_hops; l++) {
+                                successor_labeling(E_i[i], S_parts[i]);
+                                E_i[i].swap(S_parts[i]);
+                            }
+                        });
+                        offsets[0] = 0;
+                        for (index_t i = 0; i < thread_count; i++) offsets[i + 1] = offsets[i] + E_i[i].size();
+                        E.resize(offsets[thread_count]);
+                        tbb::parallel_for(index_t(0), thread_count, index_t(1), [&](index_t i) {
+                            std::copy(E_i[i].begin(), E_i[i].end(), E.begin() + offsets[i]);
+                        });
+                    });
+                }
+                else {
+                    successor_labeling(E, S_parts[0]);
+                    E.swap(S_parts[0]);
+                }
+           }
+        }
+
+        void successor_labeling(const std::vector<index_t>& E, std::vector<index_t>& S) {
+            S.clear();
+            for (auto v : E) {
+                const auto label = m_labels(v);
+                const auto seed = m_seed_map(v);
+                for (auto w : out_edge_iterator(v, m_mst)) {
+                    auto neighbor = target(w, m_mst);
+                    auto edge_idx = index(w, m_mst);
+                    if (!m_is_cut[edge_idx] && m_visited[neighbor] != m_visited_generation) {
+                        m_visited[neighbor] = m_visited_generation;
+                        m_labels(neighbor) = label;
+                        m_seed_map(neighbor) = seed;
+                        S.push_back(neighbor);
+                    }
+                }
+            }
+        }
+        #endif
+        
         tree m_bpt;
         ugraph m_mst;
         index_t m_num_leaves;
@@ -445,6 +625,10 @@ namespace hg {
         // BFS visited buffer with generation counter (zero-cost reset pattern)
         index_t m_visited_generation = 0;
         std::vector<index_t> m_visited;
+
+        index_t m_minimum_parallel_front_size;
+        index_t m_num_parrallel_hops;
+        index_t m_maximum_concurrency;
     };
 
     /**
@@ -471,5 +655,4 @@ namespace hg {
         auto mst = subgraph_spanning(graph, bpt_res.mst_edge_map);
         return incremental_watershed_cut(std::move(bpt_res.tree), std::move(mst));
     }
-
 }
