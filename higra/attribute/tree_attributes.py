@@ -1549,46 +1549,114 @@ def attribute_extinction_value(tree, altitudes, attribute, increasing_altitudes=
 @_legacy_cache_keywords
 def attribute_height(tree, altitudes, increasing_altitudes="auto", reference_altitude="parent"):
     """
-    In a tree :math:`T`, given that the altitudes of the nodes vary monotically from the leaves to the root,
-    the height of a node :math:n of :math:T is equal to the difference between the altitude of the reference
-    node (either :math:n or the parent of :math:n) and the altitude of the deepest non-leaf node in the subtree
-    of :math:T rooted in :math:n.
+    Compute the height of each node of the given tree.
 
-    Possible values of :attr:`increasing_altitude` are:
+    In a tree :math:`T`, given that the altitudes of the nodes vary monotonically from the leaves to the root,
+    the height :math:`h(n)` of a non-leaf node :math:`n` of :math:`T` is the difference between the altitude of a
+    reference node :math:`ref(n)` and the altitude of the deepest non-leaf node of the subtree of :math:`T` rooted in
+    :math:`n`. For increasing altitudes, the deepest node is the one with the smallest altitude:
 
-        - ``'auto'``: the function will automatically determine if :attr:`altitudes` are increasing or decreasing (this has
-          small computational cost but does not impact the runtime complexity).
-        - ``True`` or ``'increasing'``: this means that altitudes are increasing from the leaves to the root
-          (ie. for any node :math:`n`, :math:`altitudes(n) \leq altitudes(parent(n))`.
-        - ``False`` or ``'decreasing'``: this means that altitudes are decreasing from the leaves to the root
-          (ie. for any node :math:`n`, :math:`altitude(n) \geq altitude(parent(n))`.
+    .. math::
 
-    Possible values of :attr:`reference_altitude` are:
+        h(n) = alt(ref(n)) - \\min_{m \\in subtree(n) \\setminus leaves(n)} alt(m)
 
-        - ``'parent'``: the reference altitude is the altitude of the parent of the current node.
-        - ``'current'``: the reference altitude is the altitude of the current node.
+    and for decreasing altitudes, it is the one with the largest altitude:
 
-    :param tree: Input tree
-    :param altitudes: Tree node altitudes
-    :param increasing_altitudes: possible values 'auto', True, False, 'increasing', and 'decreasing'
-    :param reference_altitude: possible values 'parent' and 'current'
-    :return: a 1d array like :attr:`altitudes`
+    .. math::
+
+        h(n) = \\max_{m \\in subtree(n) \\setminus leaves(n)} alt(m) - alt(ref(n))
+
+    where :math:`subtree(n)` is the set of the nodes of the subtree rooted in :math:`n` (including :math:`n` and its
+    leaves). The height is thus always non-negative. The height of a leaf is 0.
+
+    The reference node :math:`ref(n)` is chosen with :attr:`reference_altitude`:
+
+    - ``'parent'`` (default): :math:`ref(n) = parent(n)`, the parent of :math:`n` (the root being its own parent);
+    - ``'current'``: :math:`ref(n) = n`, the node :math:`n` itself. The height of :math:`n` is then also known as its
+      contrast: for a max-tree, it is the difference between the largest altitude of the pixels of :math:`n` and the
+      altitude of :math:`n`.
+
+    Any other value of :attr:`reference_altitude` raises a ``ValueError``.
+
+    Possible values of :attr:`increasing_altitudes` are:
+
+    - ``'auto'`` (default): the function determines if :attr:`altitudes` are increasing or decreasing: they are
+      considered increasing if the altitude of the root is strictly greater than the smallest altitude of the
+      non-leaf nodes, and decreasing otherwise;
+    - ``True`` or ``'increasing'``: the altitudes are increasing from the leaves to the root
+      (i.e. for any node :math:`n`, :math:`alt(n) \\leq alt(parent(n))`), as in a min-tree;
+    - ``False`` or ``'decreasing'``: the altitudes are decreasing from the leaves to the root
+      (i.e. for any node :math:`n`, :math:`alt(n) \\geq alt(parent(n))`), as in a max-tree.
+
+    Any other value raises a ``ValueError``.
+
+    :Complexity:
+
+    The computation takes :math:`\\mathcal{O}(N)` time, where :math:`N` is the number of nodes in the tree
+    (the automatic detection of the monotonicity of the altitudes also takes :math:`\\mathcal{O}(N)` time).
+
+    :Example:
+    =======
+
+    Consider the following binary tree with 5 leaves:
+
+    .. code-block:: text
+
+        3         +-----8-----+
+                  |           |
+        2     +---7---+       |
+              |       |       |
+        1   +-5-+   +-6-+     |
+            |   |   |   |     |
+        0   0   1   2   3     4
+
+    .. code-block:: python
+
+        tree = hg.Tree((5, 5, 6, 6, 8, 7, 7, 8, 8))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 1, 2, 4, 5))
+        hg.attribute_height(tree, altitudes)
+        # array([0, 0, 0, 0, 0, 3, 2, 4, 4])
+
+    The altitudes are increasing. The deepest non-leaf node of the subtree rooted in the node 5 is the node 5 itself
+    (altitude 1) and its parent, the node 7, has an altitude of 4: the height of the node 5 is :math:`4 - 1 = 3`.
+    Similarly, the height of the node 6 is :math:`4 - 2 = 2`. The deepest non-leaf node of the subtree rooted in the
+    node 7 is the node 5 (altitude 1) and the altitude of the parent of the node 7, the root, is 5: its height is
+    :math:`5 - 1 = 4`. The root is its own parent and the deepest non-leaf node of its subtree is the node 5: its height
+    is also :math:`5 - 1 = 4`.
+
+    With the node itself as reference:
+
+    .. code-block:: python
+
+        hg.attribute_height(tree, altitudes, reference_altitude="current")
+        # array([0, 0, 0, 0, 0, 0, 0, 3, 4])
+
+    The nodes 5 and 6 are the deepest non-leaf nodes of their own subtrees: their height is 0. The height of the node 7
+    is :math:`4 - 1 = 3` and the height of the root is :math:`5 - 1 = 4`.
+
+    :param tree: input tree
+    :param altitudes: node altitudes of the input tree, monotonic from the leaves to the root (Numpy array of shape (tree.num_vertices(),))
+    :param increasing_altitudes: ``'auto'`` (default), ``True``, ``False``, ``'increasing'`` or ``'decreasing'`` (see above)
+    :param reference_altitude: ``'parent'`` (default) or ``'current'`` (see above)
+    :return: a 1d array representing the height of each node of the tree
     """
     inc = __process_param_increasing_altitudes(tree, altitudes, increasing_altitudes)
 
-    if reference_altitude == "current":
-        if inc:
-            res = hg.accumulate_sequential(tree,
-                                           altitudes[:tree.num_leaves()],
-                                           hg.Accumulators.max)\
-                  - altitudes
-        else:
-            res = altitudes -\
-                  hg.accumulate_sequential(tree,
-                                           altitudes[:tree.num_leaves()],
-                                           hg.Accumulators.min)
+    match reference_altitude:
+        case "current":
+            reference = altitudes
+        case "parent":
+            reference = altitudes[tree.parents()]
+        case _:
+            raise ValueError("Unknown reference altitude '" + str(reference_altitude) + "' valid values are 'parent' and 'current'.")
+
+    num_leaves = tree.num_leaves()
+    leaf_values = altitudes[tree.parents()[:num_leaves]]
+
+    if inc:
+        res = reference - hg.accumulate_sequential(tree, leaf_values, hg.Accumulators.min)
     else:
-        res = hg.cpp._attribute_height(tree, altitudes, inc)
+        res = hg.accumulate_sequential(tree, leaf_values, hg.Accumulators.max) - reference
 
     return res
 
