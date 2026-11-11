@@ -86,6 +86,26 @@ target_compile_definitions(${BENCHMARK_TARGET} PRIVATE HG_USE_TBB)
 target_link_libraries(${BENCHMARK_TARGET} benchmark::benchmark TBB::tbb)
 
 
+# Array library (higra/structure/array/): benchmark_array with TBB (built-in loops run in
+# parallel above HG_ARRAY_PARALLEL_THRESHOLD, xtensor assignments use XTENSOR_USE_TBB) and
+# benchmark_array_seq without.
+foreach (variant IN ITEMS tbb seq)
+    if (variant STREQUAL "tbb")
+        set(ARRAY_BENCHMARK_TARGET benchmark_array)
+    else ()
+        set(ARRAY_BENCHMARK_TARGET benchmark_array_seq)
+    endif ()
+    add_executable(${ARRAY_BENCHMARK_TARGET} main.cpp benchmark_array.cpp)
+    target_link_libraries(${ARRAY_BENCHMARK_TARGET} benchmark::benchmark TBB::tbb)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        # placed after the -std=c++14 of CMAKE_CXX_FLAGS above: the array library needs C++17
+        target_compile_options(${ARRAY_BENCHMARK_TARGET} PRIVATE -std=c++17)
+    endif ()
+    if (variant STREQUAL "tbb")
+        target_compile_definitions(${ARRAY_BENCHMARK_TARGET} PRIVATE HG_USE_TBB XTENSOR_USE_TBB)
+    endif ()
+endforeach ()
+
 add_custom_target(benchmark_exe
         COMMAND benchmark_higra
         DEPENDS ${BENCHMARK_TARGET})

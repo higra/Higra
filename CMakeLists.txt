@@ -182,6 +182,8 @@ endif ()
 
 if(NOT ${U_CMAKE_BUILD_TYPE} MATCHES RELEASE)
     add_definitions("-DHG_ENABLE_TRACE")
+    # rank and bounds checks of element access in higra/structure/array/
+    add_definitions("-DHG_ARRAY_CHECKS")
 endif()
 
 option(HG_USE_TBB
