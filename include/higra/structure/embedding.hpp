@@ -11,12 +11,11 @@
 #pragma once
 
 #include "xtensor/core/xexpression.hpp"
-#include "xtensor/reducers/xreducer.hpp"
-#include "xtensor/generators/xgenerator.hpp"
-#include "xtensor/views/xstrided_view.hpp"
 #include "array.hpp"
+#include "array/xtensor_bridge.hpp"
 #include "point.hpp"
 #include "../utils.hpp"
+#include <vector>
 
 
 namespace hg {
@@ -40,8 +39,20 @@ namespace hg {
             using self_type = embedding_grid<dim, coordinates_t>;
         private:
             size_t nbElement = 0;
-            shape_type _shape; // signed for safer comparisons
-            point<size_t, dim> sum_prod;
+            shape_type _shape{}; // signed for safer comparisons
+            point<size_t, dim> sum_prod{};
+
+            /**
+             * True if 0 <= c < s (s > 0), without signed/unsigned comparison pitfalls.
+             */
+            template<typename V>
+            static bool in_range(V c, index_t s) {
+                if constexpr (std::is_signed<V>::value) {
+                    return c >= 0 && (index_t) c < s;
+                } else {
+                    return (unsigned long long) c < (unsigned long long) s;
+                }
+            }
 
             void computeSize() {
                 if (dim == 0)
@@ -82,7 +93,7 @@ namespace hg {
              */
             embedding_grid(const std::initializer_list<index_t> &shape) {
                 hg_assert(dim == shape.size(), "Shape dimension does not match embedding dimension !");
-                _shape = xt::zeros<index_t>({shape.size()});
+                _shape.fill(0);
                 index_t i = 0;
                 for (const auto c:shape){
                     _shape(i++) = c;
@@ -97,10 +108,16 @@ namespace hg {
              * @param shape array of dim positive integers
              */
             template<typename T>
-            embedding_grid(const xt::xexpression<T> &shape) : _shape(shape.derived_cast()) {
+            embedding_grid(const xt::xexpression<T> &xshape) {
                 static_assert(std::is_integral<typename T::value_type>::value,
                               "Coordinates must have integral value type.");
-                hg_assert(dim == _shape.size(), "Shape dimension does not match embedding dimension !");
+                const auto shape_holder = hg::bridge::as_view(xshape);
+                const auto &shape = shape_holder.view;
+                hg_assert(shape.dimension() == 1 && dim == shape.size(),
+                          "Shape dimension does not match embedding dimension !");
+                for (index_t i = 0; i < dim; ++i) {
+                    _shape(i) = (index_t) shape(i);
+                }
                 assert_positive_shape();
                 computeSumProd();
                 computeSize();
@@ -131,7 +148,7 @@ namespace hg {
             template<typename T>
             embedding_grid(const T &shape) {
                 hg_assert(dim == shape.size(), "Shape dimension does not match embedding dimension !");
-                _shape = xt::zeros<index_t>({shape.size()});
+                _shape.fill(0);
                 index_t i = 0;
                 for (const auto c:shape)
                     _shape(i++) = c;
@@ -199,11 +216,36 @@ namespace hg {
             auto grid2lin(const xt::xexpression<T> &xcoordinates) const {
                 static_assert(std::is_integral<typename T::value_type>::value,
                               "Coordinates must have integral value type.");
-                const auto &coordinates = xcoordinates.derived_cast();
-                //hg_assert(coordinates.shape().back() == dim, "Coordinates size does not match embedding dimension.");
+                const auto coordinates_holder = hg::bridge::as_view(xcoordinates);
+                const auto &coordinates = coordinates_holder.view;
+                hg_assert(coordinates.dimension() > 0, "Coordinates must have at least one dimension.");
+                const index_t last = coordinates.shape(coordinates.dimension() - 1);
+                // a last axis of size 1 is broadcast to every coordinate
+                hg_assert(last == dim || last == 1, "Coordinates size does not match embedding dimension.");
 
-                auto last = coordinates.dimension() - 1;
-                return xt::sum(coordinates * sum_prod, {last});
+                std::vector<size_t> result_shape(coordinates.shape().begin(), coordinates.shape().end() - 1);
+                array_nd<size_t> result = array_nd<size_t>::from_shape(result_shape);
+                const auto *c = coordinates.data();
+                const index_t n = (index_t) result.size();
+                size_t total_sum_prod = 0;
+                for (index_t i = 0; i < dim; ++i) {
+                    total_sum_prod += sum_prod(i);
+                }
+                auto *r = result.data();
+                if (last == dim) {
+                    for (index_t j = 0; j < n; ++j, c += dim) {
+                        size_t v = 0;
+                        for (index_t i = 0; i < dim; ++i) {
+                            v += (size_t) c[i] * sum_prod(i);
+                        }
+                        r[j] = v;
+                    }
+                } else {
+                    for (index_t j = 0; j < n; ++j) {
+                        r[j] = (size_t) c[j] * total_sum_prod;
+                    }
+                }
+                return result;
             }
 
             /**
@@ -257,10 +299,28 @@ namespace hg {
                 static_assert(std::is_integral<typename T::value_type>::value,
                               "Coordinates must have integral value type.");
 
-                const auto &coordinates = xcoordinates.derived_cast();
-                hg_assert(coordinates.shape().back() == dim, "Coordinates size does not match embedding dimension.");
+                const auto coordinates_holder = hg::bridge::as_view(xcoordinates);
+                const auto &coordinates = coordinates_holder.view;
+                hg_assert(coordinates.dimension() > 0 &&
+                          coordinates.shape(coordinates.dimension() - 1) == dim,
+                          "Coordinates size does not match embedding dimension.");
 
-                return xt::amin(coordinates >= 0 && coordinates < _shape, {coordinates.dimension() - 1});
+                std::vector<size_t> result_shape(coordinates.shape().begin(), coordinates.shape().end() - 1);
+                array_nd<bool> result = array_nd<bool>::from_shape(result_shape);
+                const auto *c = coordinates.data();
+                const index_t n = (index_t) result.size();
+                auto *r = result.data();
+                for (index_t j = 0; j < n; ++j, c += dim) {
+                    bool inside = true;
+                    for (index_t i = 0; i < dim; ++i) {
+                        if (!in_range(c[i], _shape(i))) {
+                            inside = false;
+                            break;
+                        }
+                    }
+                    r[j] = inside;
+                }
+                return result;
             }
 
             /**
@@ -307,28 +367,26 @@ namespace hg {
             xt::xarray<coordinates_t> lin2grid(const xt::xexpression<T> &xindices) const {
                 static_assert(std::is_integral<typename T::value_type>::value,
                               "Indices must have integral value type.");
-                const auto &indices = xindices.derived_cast();
+                const auto indices_holder = hg::bridge::as_view(xindices);
+                const auto &indices = indices_holder.view;
 
-                index_t size = (index_t) indices.size();
-                auto shapeO = indices.shape();
-                std::vector<size_t> shape(shapeO.begin(), shapeO.end());
+                const index_t size = indices.size();
+                std::vector<size_t> shape(indices.shape().begin(), indices.shape().end());
                 shape.push_back(dim);
 
-                array_nd<coordinates_t> result = array_nd<coordinates_t>::from_shape({(size_t) size, (size_t) dim});
+                array_nd<coordinates_t> result = array_nd<coordinates_t>::from_shape(shape);
+                const auto *indices_data = indices.data();
+                auto *r = result.data();
 
-
-                const auto indicesLin = xt::flatten(indices);
-
-                for (index_t j = 0; j < size; ++j) {
-                    auto index = indicesLin(j);
+                for (index_t j = 0; j < size; ++j, r += dim) {
+                    auto index = indices_data[j];
                     for (index_t i = 0; i < dim - 1; ++i) {
 
-                        result(j, i) = index / sum_prod[i];
+                        r[i] = index / sum_prod[i];
                         index = index % sum_prod[i];
                     }
-                    result(j, dim - 1) = index / sum_prod[dim - 1];
+                    r[dim - 1] = index / sum_prod[dim - 1];
                 }
-                result.reshape(shape);
                 return result;
             }
         };

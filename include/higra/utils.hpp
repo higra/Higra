@@ -16,7 +16,6 @@
 #include <iostream>
 #include <stack>
 #include "xtensor/views/xstrided_view.hpp"
-#include "xtensor/containers/xadapt.hpp"
 //#include "xtensor/xio.hpp"
 #include "detail/log.hpp"
 
@@ -63,28 +62,28 @@ namespace hg {
 #define hg_assert_edge_weights(graph, edge_weights) do { \
     hg_assert(edge_weights.dimension() > 0, \
               "The dimension of the array '" #edge_weights "', representing edge data of the graph '" #graph "' must be at least 1.");\
-    hg_assert(num_edges(graph) == edge_weights.shape()[0], "The dimension of the provided edge data array '" #edge_weights "' does "\
+    hg_assert((hg::index_t)num_edges(graph) == (hg::index_t)edge_weights.shape()[0], "The dimension of the provided edge data array '" #edge_weights "' does "\
                                                            "not match the number of edges in the provided graph '" #graph "'.");\
     } while (0)
 
 #define hg_assert_vertex_weights(graph, vertex_weights) do { \
     hg_assert(vertex_weights.dimension() > 0, \
               "The dimension of the array '" #vertex_weights "', representing vertex data of the graph '" #graph "' must be at least 1.");\
-    hg_assert(num_vertices(graph) == vertex_weights.shape()[0], "The dimension of the provided vertex data array '" #vertex_weights "' does "\
+    hg_assert((hg::index_t)num_vertices(graph) == (hg::index_t)vertex_weights.shape()[0], "The dimension of the provided vertex data array '" #vertex_weights "' does "\
                                                            "not match the number of vertices in the provided graph '" #graph "'.");\
     } while (0)
 
 #define hg_assert_node_weights(tree, node_weights) do { \
     hg_assert(node_weights.dimension() > 0, \
               "The dimension of the array '" #node_weights "', representing node data of the tree '" #tree "' must be at least 1.");\
-    hg_assert(num_vertices(tree) == node_weights.shape()[0], "The dimension of the provided node data array '" #node_weights "' does "\
+    hg_assert((hg::index_t)num_vertices(tree) == (hg::index_t)node_weights.shape()[0], "The dimension of the provided node data array '" #node_weights "' does "\
                                                            "not match the number of nodes in the provided tree '" #tree "'.");\
     } while (0)
 
 #define hg_assert_leaf_weights(tree, leaf_weights) do { \
     hg_assert(leaf_weights.dimension() > 0, \
               "The dimension of the array '" #leaf_weights "', representing leaves data of the tree '" #tree "' must be at least 1.");\
-    hg_assert(num_leaves(tree) == leaf_weights.shape()[0], "The dimension of the provided leaf data array '" #leaf_weights "' does "\
+    hg_assert((hg::index_t)num_leaves(tree) == (hg::index_t)leaf_weights.shape()[0], "The dimension of the provided leaf data array '" #leaf_weights "' does "\
                                                            "not match the number of leaves in the provided tree '" #tree "'.");\
     } while (0)
 
@@ -162,39 +161,6 @@ namespace hg {
 
 #define HG_TEMPLATE_SNUMERIC_TYPES    int8_t, int16_t, int32_t, int64_t, float, double
 
-
-namespace xt {
-
-    inline
-    bool all(bool x) {
-        return x;
-    }
-
-    inline
-    bool any(bool x) {
-        return x;
-    }
-
-    template<typename value_type, typename T>
-    auto adapt_struct_array(T *data, size_t offset, size_t size) {
-        constexpr size_t struct_size = sizeof(T);
-        constexpr size_t value_size = sizeof(value_type);
-
-        static_assert(struct_size % value_size == 0, "Incorrect alignment (is this a packed struct?)");
-        using shape_type = std::array<size_t, 1>;
-        using cv_value_type = typename std::conditional<std::is_const<T>::value, typename std::add_const<value_type>::type, value_type>::type;
-        shape_type shape = {size};
-        shape_type stride = {struct_size / value_size};
-        return xt::adapt((cv_value_type*)((char*)data + offset), size, xt::no_ownership(), shape, stride);
-    }
-
-#define HG_ADAPT_STRUCT_ARRAY(pointer, member, size) \
-    (xt::adapt_struct_array<decltype(std::decay<decltype(*(pointer))>::type::member)>( \
-        pointer, \
-        offsetof(typename std::decay<decltype(*(pointer))>::type, member), \
-        size))
-
-}
 
 namespace hg {
 

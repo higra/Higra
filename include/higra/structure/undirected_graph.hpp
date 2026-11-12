@@ -14,6 +14,7 @@
 #include "details/graph_concepts.hpp"
 #include "details/indexed_edge.hpp"
 #include "higra/structure/details/iterators.hpp"
+#include "strided_span.hpp"
 #include <vector>
 #include <memory>
 #include <stdexcept>
@@ -289,8 +290,8 @@ namespace hg {
              * destroying the graph invalidates the views. 
              * Reacquire after edits.
              */
-            auto sources() const {
-                return HG_ADAPT_STRUCT_ARRAY(edge_data(), source, num_edges());
+            strided_span<const vertex_descriptor> sources() const {
+                return member_span(edge_data(), &edge_descriptor::source, (index_t) num_edges());
             }
 
             /**
@@ -299,8 +300,8 @@ namespace hg {
              * destroying the graph invalidates the views. 
              * Reacquire after edits.
              */
-            auto targets() const {
-                return HG_ADAPT_STRUCT_ARRAY(edge_data(), target, num_edges());
+            strided_span<const vertex_descriptor> targets() const {
+                return member_span(edge_data(), &edge_descriptor::target, (index_t) num_edges());
             }
 
             /** Retain the current generation without copying endpoints. */

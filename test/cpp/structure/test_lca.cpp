@@ -123,4 +123,74 @@ namespace lca {
         auto l2 = lca3.lca(v1, v2);
         REQUIRE((l2 == ref));
     }
+
+    TEST_CASE("lca state round trip", "[lca]") {
+        // same tree and expected state as the pickling fixture of the Python tests (baseline build)
+        tree t(array_1d<index_t>{3, 3, 4, 4, 4});
+        array_1d<index_t> map_ref{4, 3, 1, 3, 0, 3, 4, 2, 4};
+        array_1d<index_t> depth_ref{0, 1, 2, 1, 2, 1, 0, 1, 0};
+        array_1d<index_t> first_ref{4, 2, 7, 1, 0};
+
+        auto check_all_pairs = [&t](const auto &l) {
+            for (index_t i = 0; i < 5; ++i) {
+                for (index_t j = 0; j < 5; ++j) {
+                    REQUIRE(l.lca(i, j) == lowest_common_ancestor(i, j, t));
+                }
+            }
+        };
+
+        SECTION("sparse table") {
+            lca_sparse_table lca(t);
+            auto state = lca.get_state();
+            static_assert(std::is_same<decltype(state), lca_sparse_table::internal_state>::value,
+                          "the internal state is a plain structure");
+            static_assert(std::is_same<decltype(state.tree_Euler_tour_map), array_1d<index_t>>::value, "");
+            REQUIRE((state.tree_Euler_tour_map == map_ref));
+            REQUIRE((state.tree_Euler_tour_depth == depth_ref));
+            REQUIRE((state.first_visit_in_Euler_tour == first_ref));
+            auto &sp = state.rmq_state.sparse_table;
+            REQUIRE(sp.size() == 4);
+            REQUIRE((sp[0] == array_1d<std::size_t>{0, 1, 2, 3, 4, 5, 6, 7, 8}));
+            REQUIRE((sp[1] == array_1d<std::size_t>{0, 1, 3, 3, 5, 6, 6, 8}));
+            REQUIRE((sp[2] == array_1d<std::size_t>{0, 3, 5, 6, 6, 8}));
+            REQUIRE((sp[3] == array_1d<std::size_t>{6, 8}));
+
+            auto lca2 = lca_sparse_table::make_from_state(state);
+            // the rebuilt object owns copies: changing the state afterwards has no effect
+            state.tree_Euler_tour_map.fill(0);
+            state.rmq_state.sparse_table[1].fill(0);
+            check_all_pairs(lca2);
+            auto state2 = lca2.get_state();
+            REQUIRE((state2.tree_Euler_tour_map == map_ref));
+            REQUIRE((state2.rmq_state.sparse_table[1] == array_1d<std::size_t>{0, 1, 3, 3, 5, 6, 6, 8}));
+
+            auto lca3 = lca_sparse_table::make_from_state(std::move(state2));
+            check_all_pairs(lca3);
+            REQUIRE(lca3.num_elements() == 5);
+        }
+
+        SECTION("sparse table block") {
+            lca_sparse_table_block lca(t, 2);
+            auto state = lca.get_state();
+            static_assert(std::is_same<decltype(state), lca_sparse_table_block::internal_state>::value, "");
+            REQUIRE((state.tree_Euler_tour_map == map_ref));
+            REQUIRE(state.rmq_state.data_size == 9);
+            REQUIRE(state.rmq_state.block_size == 2);
+            REQUIRE(state.rmq_state.num_blocks == 5);
+            REQUIRE((state.rmq_state.block_minimum_prefix == array_1d<index_t>{0, 0, 2, 3, 4, 5, 6, 6, 8, 8}));
+            REQUIRE((state.rmq_state.block_minimum_suffix == array_1d<index_t>{0, 1, 3, 3, 5, 5, 6, 7, 9, 9}));
+            auto &sp = state.rmq_state.sparse_table.sparse_table;
+            REQUIRE(sp.size() == 3);
+            REQUIRE((sp[0] == array_1d<std::size_t>{0, 3, 5, 6, 8}));
+            REQUIRE((sp[2] == array_1d<std::size_t>{6, 8}));
+
+            auto lca2 = lca_sparse_table_block::make_from_state(state);
+            state.rmq_state.block_minimum_prefix.fill(0);
+            check_all_pairs(lca2);
+            auto lca3 = lca_sparse_table_block::make_from_state(lca2.get_state());
+            check_all_pairs(lca3);
+            REQUIRE((lca3.get_state().rmq_state.block_minimum_prefix ==
+                     array_1d<index_t>{0, 0, 2, 3, 4, 5, 6, 6, 8, 8}));
+        }
+    }
 }

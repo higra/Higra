@@ -24,6 +24,7 @@ set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}/test_array_parallel.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_array_traits.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/test_xtensor_bridge.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_strided_span.cpp
         PARENT_SCOPE)
 
 

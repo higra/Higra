@@ -13,6 +13,7 @@
 #include "../graph.hpp"
 #include "accumulator.hpp"
 #include "../structure/details/light_axis_view.hpp"
+#include "../structure/array/xtensor_bridge.hpp"
 
 namespace hg {
 
@@ -21,17 +22,16 @@ namespace hg {
         template<bool vectorial,
                 typename graph_t,
                 typename tree_t,
-                typename T,
+                typename V,
                 typename T2,
                 typename accumulator_t,
-                typename output_t = typename T::value_type>
+                typename output_t = V>
         auto accumulate_on_contours_impl(const graph_t &graph,
                                          const tree_t &tree,
-                                         const xt::xexpression<T> &xinput,
+                                         array_view<const V> input,
                                          const xt::xexpression<T2> &xdetph,
                                          const accumulator_t accumulator) {
             HG_TRACE();
-            auto &input = xinput.derived_cast();
             hg_assert_node_weights(tree, input);
             auto &depth = xdetph.derived_cast();
             hg_assert_node_weights(tree, depth);
@@ -89,17 +89,17 @@ namespace hg {
                                 const xt::xexpression<T> &xinput,
                                 const xt::xexpression<T1> &xdepth,
                                 const accumulator_t &accumulator) {
-        auto &input = xinput.derived_cast();
-        if (input.dimension() == 1) {
+        const auto input = hg::bridge::as_view(xinput);
+        if (input.view.dimension() == 1) {
             return tree_contour_accumulator_detail::accumulate_on_contours_impl<false>(graph,
                                                                                        tree,
-                                                                                       xinput,
+                                                                                       input.view,
                                                                                        xdepth,
                                                                                        accumulator);
         } else {
             return tree_contour_accumulator_detail::accumulate_on_contours_impl<true>(graph,
                                                                                       tree,
-                                                                                      xinput,
+                                                                                      input.view,
                                                                                       xdepth,
                                                                                       accumulator);
         }

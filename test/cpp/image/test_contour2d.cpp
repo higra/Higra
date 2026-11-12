@@ -29,7 +29,7 @@ namespace test_contour_2d {
 
             auto ti = embedding.lin2grid(t);
             auto si = embedding.lin2grid(s);
-            return xt::eval(ti + si);
+            return ti + si;
         };
 
         for (const auto &polyline: contour) {
@@ -37,10 +37,13 @@ namespace test_contour_2d {
             for (const auto &segment: polyline) {
                 count++;
                 for (const auto &e: segment) {
-                    result[edge_to_k(e.first)] = count;
+                    auto k = edge_to_k(e.first);
+                    result(k[0], k[1]) = count;
                 }
-                result[edge_to_k(segment.first().first)] = invalid_index * count;
-                result[edge_to_k(segment.last().first)] = invalid_index * count;
+                auto kf = edge_to_k(segment.first().first);
+                result(kf[0], kf[1]) = invalid_index * count;
+                auto kl = edge_to_k(segment.last().first);
+                result(kl[0], kl[1]) = invalid_index * count;
             }
         }
         /*

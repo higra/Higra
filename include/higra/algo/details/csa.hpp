@@ -866,21 +866,28 @@ if (f_a != a) \
         public:
 
             // construct and solve assignment problem
-            template<typename T1, typename T2>
-            CSA(const xt::xexpression<T1> &xsources,
-                const xt::xexpression<T1> &xtargets,
+            /**
+             * @tparam S1 1d indexable sequence type (see ``hg::is_1d_indexable_v``): edge sources
+             * @tparam S2 1d indexable sequence type: edge targets
+             */
+            template<typename S1, typename S2, typename T2>
+            CSA(const S1 &sources,
+                const S2 &targets,
                 index_t num_vertices,
                 const xt::xexpression<T2> &xweights) {
-                auto &sources = xsources.derived_cast();
-                auto &targets = xtargets.derived_cast();
+                static_assert(is_1d_indexable_v<S1> && is_1d_indexable_v<S2>,
+                              "Edge sources and targets must be 1d indexable sequences.");
                 auto &weights = xweights.derived_cast();
                 hg_assert_integral_value_type(weights);
-                hg_assert_1d_array(sources);
-                hg_assert_1d_array(targets);
-                hg_assert_integral_value_type(sources);
-                hg_assert_integral_value_type(targets);
-                hg_assert_same_shape(sources, targets);
-                hg_assert_same_shape(sources, weights);
+                assert_1d_indexable(sources, "sources");
+                assert_1d_indexable(targets, "targets");
+                static_assert(std::is_integral<indexable_1d_value_t<S1>>::value &&
+                              std::is_integral<indexable_1d_value_t<S2>>::value,
+                              "Array values of 'sources' and 'targets' must be integral (char, short, int, long...).");
+                hg_assert((index_t) sources.size() == (index_t) targets.size(),
+                          "Shapes of 'sources' and 'targets' must be equal.");
+                hg_assert((index_t) sources.size() == (index_t) weights.size(),
+                          "Shapes of 'sources' and 'weights' must be equal.");
                 hg_assert_1d_array(weights);
                 size_t n = num_vertices;
                 size_t m = sources.size();
@@ -1165,12 +1172,10 @@ Miscellaneous variables.
             }
         */
 
-            template<typename T1, typename T2>
-            void init(const xt::xexpression<T1> &xsources,
-                      const xt::xexpression<T1> &xtargets,
+            template<typename S1, typename S2, typename T2>
+            void init(const S1 &sources,
+                      const S2 &targets,
                       const xt::xexpression<T2> &xweights) {
-                auto &sources = xsources.derived_cast();
-                auto &targets = xtargets.derived_cast();
                 auto &weights = xweights.derived_cast();
 #if    defined(USE_P_REFINE) || defined(USE_P_UPDATE) || defined(USE_SP_AUG)
                 rhs_ptr	r_v;
@@ -1493,13 +1498,11 @@ setup is free.
                 index_t edge_index;
             } *ta_ptr;
 
-            template<typename T1, typename T2>
-            index_t parse(const xt::xexpression<T1> &xsources,
-                          const xt::xexpression<T1> &xtargets,
+            template<typename S1, typename S2, typename T2>
+            index_t parse(const S1 &sources,
+                          const S2 &targets,
                           const xt::xexpression<T2> &xweights) {
                 auto &weights = xweights.derived_cast();
-                auto &sources = xsources.derived_cast();
-                auto &targets = xtargets.derived_cast();
 
                 //size_t arc_count;
                 size_t tail, head, lhs_n,

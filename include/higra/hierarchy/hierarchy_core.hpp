@@ -52,20 +52,30 @@ namespace hg {
     }
 
     namespace hierarchy_core_internal {
-        template<typename E1, typename E2, typename T>
-        auto bpt_canonical_from_sorted_edges(const xt::xexpression<E1> &xsources,
-                                             const xt::xexpression<E2> &xtargets,
+        /**
+         * @tparam S1 1d indexable sequence type (see ``is_1d_indexable_v``): edge sources
+         * @tparam S2 1d indexable sequence type: edge targets
+         */
+        template<typename S1, typename S2, typename T>
+        auto bpt_canonical_from_sorted_edges(const S1 &sources,
+                                             const S2 &targets,
                                              const xt::xexpression<T> &xsorted_edge_indices,
                                              const index_t num_vertices) {
             HG_TRACE();
+            static_assert(is_1d_indexable_v<S1> && is_1d_indexable_v<S2>,
+                          "Edge sources and targets must be 1d indexable sequences.");
             auto &sorted_edge_indices = xsorted_edge_indices.derived_cast();
-            auto &sources = xsources.derived_cast();
-            auto &targets = xtargets.derived_cast();
-            hg_assert_1d_array(sources);
-            hg_assert_same_shape(sources, targets);
-            hg_assert_same_shape(sources, sorted_edge_indices);
-            hg_assert_integral_value_type(sources);
-            hg_assert_integral_value_type(targets);
+            assert_1d_indexable(sources, "sources");
+            assert_1d_indexable(targets, "targets");
+            hg_assert((index_t) sources.size() == (index_t) targets.size(),
+                      "Shapes of 'sources' and 'targets' must be equal.");
+            hg_assert_1d_array(sorted_edge_indices);
+            hg_assert((index_t) sources.size() == (index_t) sorted_edge_indices.size(),
+                      "Shapes of 'sources' and 'sorted_edge_indices' must be equal.");
+            static_assert(std::is_integral<indexable_1d_value_t<S1>>::value,
+                          "Array values of 'sources' must be integral (char, short, int, long...).");
+            static_assert(std::is_integral<indexable_1d_value_t<S2>>::value,
+                          "Array values of 'targets' must be integral (char, short, int, long...).");
             hg_assert_integral_value_type(sorted_edge_indices);
 
             auto num_edge_mst = num_vertices - 1;

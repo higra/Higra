@@ -10,6 +10,7 @@
 
 #include "higra/structure/details/light_axis_view.hpp"
 #include "higra/structure/array.hpp"
+#include "higra/structure/array/xtensor_bridge.hpp"
 #include "xtensor/views/xview.hpp"
 #include "xtensor/views/xstrided_view.hpp"
 #include "../../test_utils.hpp"
@@ -98,7 +99,9 @@ namespace light_axis_view {
                 }
         };
         auto va = view(a, xt::all(), xt::range(1, 2), xt::range(0, 3, 2));
-        auto v = make_light_axis_view<true>(va);
+        // light axis views require row-major storage: views go through hg::bridge::as_view
+        auto hva = hg::bridge::as_view(va);
+        auto v = make_light_axis_view<true>(hva.view);
         std::array<int, 2> v1{4, 6};
         REQUIRE(compare(v, v1));
 
@@ -119,7 +122,9 @@ namespace light_axis_view {
                 }
         };
         auto va = strided_view(a, {1});
-        auto v = make_light_axis_view<true>(va);
+        // light axis views require row-major storage: views go through hg::bridge::as_view
+        auto hva = hg::bridge::as_view(va);
+        auto v = make_light_axis_view<true>(hva.view);
         std::array<int, 3> v1{7, 8, 9};
         REQUIRE(compare(v, v1));
 
@@ -140,7 +145,9 @@ namespace light_axis_view {
                 }
         };
         auto va = strided_view(a, {xt::all(), xt::range(1, 2), xt::range(0, 3, 2)});
-        auto v = make_light_axis_view<true>(va);
+        // light axis views require row-major storage: views go through hg::bridge::as_view
+        auto hva = hg::bridge::as_view(va);
+        auto v = make_light_axis_view<true>(hva.view);
         std::array<int, 2> v1{4, 6};
         REQUIRE(compare(v, v1));
 

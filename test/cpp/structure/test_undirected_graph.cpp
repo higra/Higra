@@ -393,10 +393,10 @@ namespace test_undirected_graph {
             array_1d<index_t> targets_ref{1, 2, 2};
 
             auto src = sources(g);
-            REQUIRE((sources_ref == src));
+            REQUIRE(std::equal(src.begin(), src.end(), sources_ref.begin(), sources_ref.end()));
 
             auto tgt = targets(g);
-            REQUIRE((targets_ref == tgt));
+            REQUIRE(std::equal(tgt.begin(), tgt.end(), targets_ref.begin(), targets_ref.end()));
 
         }
     }

@@ -71,16 +71,17 @@ namespace py_regular_graph {
 
         c.def("shape",
               [](const graph_t &graph) {
-                  return pyarray<hg::index_t>(graph.embedding().shape());
+                  return hg::to_array(graph.embedding().shape());
               },
               "Get the shape of the grid graph.");
 
         c.def("neighbour_list",
               [](const graph_t &graph) {
-                  pyarray <hg::index_t> res = pyarray<hg::index_t>::from_shape({graph.neighbours().size(), dim});
-                  for (index_t i = 0; i < (index_t) res.shape()[0]; i++) {
-                      auto &p = graph.neighbours()[i];
-                      for (index_t j = 0; j < (index_t) res.shape()[1]; j++) {
+                  const auto &neighbours = graph.neighbours();
+                  hg::array<hg::index_t> res(hg::array_shape(neighbours.size(), dim));
+                  for (index_t i = 0; i < (index_t) neighbours.size(); i++) {
+                      const auto &p = neighbours[i];
+                      for (index_t j = 0; j < dim; j++) {
                           res(i, j) = p(j);
                       }
                   }

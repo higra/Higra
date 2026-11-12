@@ -120,10 +120,10 @@ namespace hg {
             if (t > s) {
                 auto ti = embedding.lin2grid(t);
                 auto si = embedding.lin2grid(s);
+                auto p = ti + si;
                 if (add_extra_border)
-                    res[ti + si + one] = weight(e);
-                else
-                    res[ti + si] = weight(e);
+                    p = p + one;
+                res(p[0], p[1]) = weight(e);
             }
         }
 
@@ -194,11 +194,11 @@ namespace hg {
         for (const auto &e: edge_iterator(g)) {
             auto s = embedding.lin2grid(source(e, g));
             auto t = embedding.lin2grid(target(e, g));
+            auto p = s + t;
             if (extra_border) {
-                weights(e) = khalimsky[s + t + one];
-            } else {
-                weights(e) = khalimsky[s + t];
+                p = p + one;
             }
+            weights(e) = khalimsky(p[0], p[1]);
         }
 
         return weights;

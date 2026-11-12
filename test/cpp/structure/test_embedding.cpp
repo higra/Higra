@@ -146,4 +146,78 @@ namespace embedding {
         auto res = e1.contains(coords);
         REQUIRE((res == ref));
     }
+
+    TEST_CASE("embedding array methods with extra leading dimensions", "[embedding]") {
+        hg::embedding_grid_2d e1{5, 10};
+
+        // (2, 3, 2) coordinates -> (2, 3) results
+        xt::xarray<hg::index_t> coords{{{0, 0}, {3, 8}, {-1, 2}},
+                                       {{2, 4}, {5, 5}, {4, 9}}};
+        auto lin = e1.grid2lin(coords);
+        static_assert(std::is_same<typename decltype(lin)::value_type, std::size_t>::value,
+                      "grid2lin returns unsigned linear coordinates");
+        REQUIRE(lin.shape().size() == 2);
+        REQUIRE(lin.shape()[0] == 2);
+        REQUIRE(lin.shape()[1] == 3);
+        REQUIRE(lin(0, 0) == 0);
+        REQUIRE(lin(0, 1) == 38);
+        REQUIRE(lin(1, 0) == 24);
+        REQUIRE(lin(1, 2) == 49);
+
+        auto inside = e1.contains(coords);
+        xt::xarray<bool> inside_ref{{true, true,  false},
+                                    {true, false, true}};
+        REQUIRE((inside == inside_ref));
+
+        // (2, 3) linear coordinates -> (2, 3, 2) coordinates
+        xt::xarray<hg::index_t> lin_ref{{0,  38, 2},
+                                        {24, 49, 13}};
+        auto grid = e1.lin2grid(lin_ref);
+        xt::xarray<hg::index_t> grid_ref{{{0, 0}, {3, 8}, {0, 2}},
+                                         {{2, 4}, {4, 9}, {1, 3}}};
+        REQUIRE((grid == grid_ref));
+
+        // 0-d linear coordinate -> (2,) coordinates; (2,) coordinates -> 0-d linear coordinate
+        xt::xarray<int> scalar = 13;
+        auto g0 = e1.lin2grid(scalar);
+        REQUIRE(g0.dimension() == 1);
+        REQUIRE((g0 == xt::xarray<hg::index_t>{1, 3}));
+        xt::xarray<int> point_coords{1, 3};
+        auto l0 = e1.grid2lin(point_coords);
+        REQUIRE(l0.dimension() == 0);
+        REQUIRE(l0() == 13);
+        auto c0 = e1.contains(point_coords);
+        REQUIRE(c0.dimension() == 0);
+        REQUIRE(c0());
+
+        // lazy and strided inputs
+        xt::xarray<hg::index_t> big{{0, 0, 9, 3, 8, 9, 4, 9, 9}};
+        auto strided = xt::view(xt::reshape_view(big, {3, 3}), xt::all(), xt::range(0, 2));
+        auto lin_strided = e1.grid2lin(strided);
+        REQUIRE((lin_strided == xt::xarray<std::size_t>{0, 38, 49}));
+        auto lin_lazy = e1.grid2lin(coords + 0);
+        REQUIRE((lin_lazy == lin));
+        auto grid_lazy = e1.lin2grid(xt::arange<hg::index_t>(3) * 10);
+        REQUIRE((grid_lazy == xt::xarray<hg::index_t>{{0, 0}, {1, 0}, {2, 0}}));
+
+        // empty leading dimension
+        xt::xarray<hg::index_t> none = xt::zeros<hg::index_t>({0, 2});
+        REQUIRE(e1.grid2lin(none).size() == 0);
+        REQUIRE(e1.contains(none).shape()[0] == 0);
+        REQUIRE(e1.lin2grid(xt::xarray<hg::index_t>::from_shape({0})).shape()[1] == 2);
+
+        // the size of the last axis must be the dimension (or 1 for grid2lin, broadcast to every coordinate)
+        xt::xarray<hg::index_t> bad = xt::zeros<hg::index_t>({3, 3});
+        REQUIRE_THROWS(e1.grid2lin(bad));
+        REQUIRE_THROWS(e1.contains(bad));
+        xt::xarray<hg::index_t> ones = xt::ones<hg::index_t>({3, 1});
+        REQUIRE((e1.grid2lin(ones) == xt::xarray<std::size_t>{11, 11, 11}));
+
+        // shape from an array
+        hg::embedding_grid_3d e3(xt::xarray<int>{2, 3, 4});
+        REQUIRE((e3.shape() == hg::point_3d_i{{2, 3, 4}}));
+        REQUIRE(e3.size() == 24);
+        REQUIRE_THROWS(hg::embedding_grid_2d(xt::xarray<int>{2, 3, 4}));
+        REQUIRE_THROWS(hg::embedding_grid_2d(xt::xarray<int>{2, 0}));
+    }
 }

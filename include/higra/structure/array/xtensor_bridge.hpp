@@ -40,7 +40,7 @@
 #include "xtensor/containers/xarray.hpp"
 #include "xtensor/containers/xtensor.hpp"
 #include "xtensor/core/xnoalias.hpp"
-#include "all.hpp"
+#include "array.hpp"
 
 #include <array>
 #include <cstddef>

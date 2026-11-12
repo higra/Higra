@@ -199,17 +199,16 @@ namespace hg {
     }
 
     namespace rag_internal {
-        template<bool vectorial, typename T>
+        template<bool vectorial, typename V>
         auto
-        rag_back_project_weights(const array_1d<index_t> &rag_map, const xt::xexpression<T> &xrag_weights) {
+        rag_back_project_weights(const array_1d<index_t> &rag_map, array_view<const V> rag_weights) {
             HG_TRACE();
-            auto &rag_weights = xrag_weights.derived_cast();
 
             index_t numv = rag_map.size();
             std::vector<size_t> shape;
             shape.push_back(numv);
             shape.insert(shape.end(), rag_weights.shape().begin() + 1, rag_weights.shape().end());
-            array_nd<typename T::value_type> weights = xt::zeros<typename T::value_type>(shape);
+            array_nd<V> weights = xt::zeros<V>(shape);
 
 
             auto input_view = make_light_axis_view<vectorial>(rag_weights);
@@ -238,10 +237,11 @@ namespace hg {
     template<typename T>
     auto
     rag_back_project_weights(const array_1d<index_t> &rag_map, const xt::xexpression<T> &xrag_weights) {
-        if (xrag_weights.derived_cast().dimension() == 1) {
-            return rag_internal::rag_back_project_weights<false>(rag_map, xrag_weights);
+        const auto rag_weights = hg::bridge::as_view(xrag_weights);
+        if (rag_weights.view.dimension() == 1) {
+            return rag_internal::rag_back_project_weights<false>(rag_map, rag_weights.view);
         } else {
-            return rag_internal::rag_back_project_weights<true>(rag_map, xrag_weights);
+            return rag_internal::rag_back_project_weights<true>(rag_map, rag_weights.view);
         }
 
     }

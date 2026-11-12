@@ -19,6 +19,7 @@
 #include <utility>
 #include "../utils.hpp"
 #include "array.hpp"
+#include "xtensor/views/xview.hpp"
 
 namespace hg {
 
@@ -250,12 +251,21 @@ namespace hg {
                 return _children_computed;
             }
 
-            auto sources() const{
-                return xt::arange<index_t>(0, _num_vertices - 1);
+            /**
+             * Array of edge sources: edge ``i`` of the tree links node ``i`` to its parent, for every node
+             * ``i`` except the root. Returns a new array ``[0, 1, ..., num_vertices - 2]``.
+             */
+            array_1d<index_t> sources() const {
+                return xt::arange<index_t>(0, (index_t) num_edges());
             }
 
-            auto targets() const{
-                return xt::strided_view(_parents, {xt::range(0, _num_vertices - 1)});
+            /**
+             * Array of edge targets: the parents of every node except the root.
+             * Zero-copy, read-only view of the parent array: it is valid as long as the tree is alive
+             * and is not modified or moved.
+             */
+            auto targets() const {
+                return xt::view(_parents, xt::range(0, (index_t) num_edges()));
             }
 
 

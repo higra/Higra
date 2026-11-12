@@ -79,34 +79,35 @@ namespace hg {
      *
      * If the graph is not bipartite, the function returns a pair of a boolean set to false and an empty array.
      *
-     * @tparam T type of the input arrays
-     * @param xsources source vertices of the edges
-     * @param xtargets target vertices of the edges
+     * @tparam S1 1d indexable sequence type (see ``is_1d_indexable_v``)
+     * @tparam S2 1d indexable sequence type
+     * @param sources source vertices of the edges
+     * @param targets target vertices of the edges
      * @param num_vertices number of vertices in the graph
      * @return a pair of a boolean and an array of colors.
      * The boolean is true if the graph is bipartite and false otherwise.
      * If the graph is bipartite, the array contains the color of each vertex.
      * If the graph is not bipartite, the array is empty.
      */
-    template<typename T>
-    std::pair<bool, array_1d<unsigned char>> is_bipartite_graph(const xt::xexpression<T> &xsources,
-                                                         const xt::xexpression<T> &xtargets,
+    template<typename S1, typename S2,
+            typename = std::enable_if_t<is_1d_indexable_v<S1> && is_1d_indexable_v<S2>>>
+    std::pair<bool, array_1d<unsigned char>> is_bipartite_graph(const S1 &sources,
+                                                         const S2 &targets,
                                                          index_t num_vertices) {
-        auto &sources = xsources.derived_cast();
-        auto &targets = xtargets.derived_cast();
-        hg_assert_1d_array(sources);
-        hg_assert_1d_array(targets);
-        hg_assert(xt::has_shape(sources, targets.shape()), "sources and targets must have the same shape");
-        hg_assert_integral_value_type(sources);
-        hg_assert_integral_value_type(targets);
+        assert_1d_indexable(sources, "sources");
+        assert_1d_indexable(targets, "targets");
+        hg_assert((index_t) sources.size() == (index_t) targets.size(), "sources and targets must have the same shape");
+        static_assert(std::is_integral<indexable_1d_value_t<S1>>::value &&
+                      std::is_integral<indexable_1d_value_t<S2>>::value,
+                      "Array values of 'sources' and 'targets' must be integral (char, short, int, long...).");
 
         union_find uf(num_vertices);
         array_1d<index_t> map({(size_t) num_vertices}, invalid_index);
         array_1d<unsigned char> color({(size_t) num_vertices}, 0);
 
         for (index_t i = 0; i < (index_t)sources.size(); ++i) {
-            auto s = sources[i];
-            auto t = targets[i];
+            auto s = sources(i);
+            auto t = targets(i);
             auto cs = uf.find(s);
             auto ct = uf.find(t);
             if (cs == ct) {

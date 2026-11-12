@@ -16,9 +16,6 @@
 #include "xtensor-python/pytensor.hpp"
 
 namespace py_common_graph {
-    // Return values only (point outputs of py_regular_graph.cpp, removed in step 4).
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
     using namespace hg;
 
     template<typename graph_t>

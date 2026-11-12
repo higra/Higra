@@ -100,10 +100,12 @@ namespace hg {
                 return m_data[p1] < m_data[p2] ? p1 : p2;
             }
 
-            template<template<typename> typename container_t>
+            /**
+             * Internal state of the solver (for serialization): the sparse table levels.
+             */
             struct internal_state {
                 using type = self_type;
-                using array_t = container_t<size_t>;
+                using array_t = array_1d<size_t>;
                 using sp_t = std::vector<array_t>;
                 sp_t sparse_table;
 
@@ -114,19 +116,22 @@ namespace hg {
                         sparse_table(std::move(_sparse_table)) {}
             };
 
-            auto get_state() const {
-                return internal_state<array_1d>(m_sparse_table);
+            /**
+             * Copy of the internal state of the solver.
+             */
+            internal_state get_state() const {
+                return internal_state(m_sparse_table);
             }
 
-            template<template<typename> typename container_t, typename T>
-            static auto make_from_state(internal_state<container_t> &&state, const T &data) {
+            template<typename T>
+            static auto make_from_state(internal_state &&state, const T &data) {
                 rmq_sparse_table<typename T::value_type> rmq;
                 rmq.set_state(std::move(state), data);
                 return rmq;
             }
 
-            template<template<typename> typename container_t, typename T>
-            static auto make_from_state(const internal_state<container_t> &state, const T &data) {
+            template<typename T>
+            static auto make_from_state(const internal_state &state, const T &data) {
                 rmq_sparse_table<typename T::value_type> rmq;
                 rmq.set_state(state, data);
                 return rmq;
@@ -134,8 +139,8 @@ namespace hg {
 
         private:
 
-            template<template<typename> typename container_t, typename T>
-            void set_state(internal_state<container_t> &&state, const T &data) {
+            template<typename T>
+            void set_state(internal_state &&state, const T &data) {
                 m_sparse_table.clear();
                 for(auto & e: state.sparse_table){
                     m_sparse_table.push_back(std::move(e));
@@ -143,8 +148,8 @@ namespace hg {
                 m_data = data.begin();
             }
 
-            template<template<typename> typename container_t, typename T>
-            void set_state(const internal_state<container_t> &state, const T &data) {
+            template<typename T>
+            void set_state(const internal_state &state, const T &data) {
                 m_sparse_table.clear();
                 for(auto & e: state.sparse_table){
                     m_sparse_table.push_back(e);
@@ -252,22 +257,24 @@ namespace hg {
                 return m_data[vv] < m_data[v] ? vv : v;
             }
 
-            template<template<typename> typename container_t>
+            /**
+             * Internal state of the solver (for serialization).
+             */
             struct internal_state {
                 using type = self_type;
-                using sp_state_type = typename rmq_sparse_table<data_t>::template internal_state<container_t>;
+                using sp_state_type = typename rmq_sparse_table<data_t>::internal_state;
                 index_t data_size;
                 index_t block_size;
                 index_t num_blocks;
-                container_t<index_t> block_minimum_prefix;
-                container_t<index_t> block_minimum_suffix;
+                array_1d<index_t> block_minimum_prefix;
+                array_1d<index_t> block_minimum_suffix;
                 sp_state_type sparse_table;
 
                 internal_state(index_t _data_size,
                                index_t _block_size,
                                index_t _num_blocks,
-                               container_t<index_t> &&_block_minimum_prefix,
-                               container_t<index_t> &&_block_minimum_suffix,
+                               array_1d<index_t> &&_block_minimum_prefix,
+                               array_1d<index_t> &&_block_minimum_suffix,
                                sp_state_type &&_sp_state) :
                         data_size(_data_size),
                         block_size(_block_size),
@@ -279,8 +286,8 @@ namespace hg {
                 internal_state(index_t _data_size,
                                index_t _block_size,
                                index_t _num_blocks,
-                               const container_t<index_t> &_block_minimum_prefix,
-                               const container_t<index_t> &_block_minimum_suffix,
+                               const array_1d<index_t> &_block_minimum_prefix,
+                               const array_1d<index_t> &_block_minimum_suffix,
                                const sp_state_type &_sp_state) :
                         data_size(_data_size),
                         block_size(_block_size),
@@ -290,8 +297,11 @@ namespace hg {
                         sparse_table(_sp_state) {}
             };
 
-            auto get_state() const {
-                return internal_state<array_1d>(m_data_size,
+            /**
+             * Copy of the internal state of the solver.
+             */
+            internal_state get_state() const {
+                return internal_state(m_data_size,
                         m_block_size,
                         m_num_blocks,
                         m_block_minimum_prefix,
@@ -299,15 +309,15 @@ namespace hg {
                         m_sparse_table.get_state());
             }
 
-            template<template<typename> typename container_t, typename T>
-            static auto make_from_state(internal_state<container_t> &&state, const T &data) {
+            template<typename T>
+            static auto make_from_state(internal_state &&state, const T &data) {
                 rmq_sparse_table_block<typename T::value_type> rmq;
                 rmq.set_state(std::move(state), data);
                 return rmq;
             }
 
-            template<template<typename> typename container_t, typename T>
-            static auto make_from_state(const internal_state<container_t> &state, const T &data) {
+            template<typename T>
+            static auto make_from_state(const internal_state &state, const T &data) {
                 rmq_sparse_table_block<typename T::value_type> rmq;
                 rmq.set_state(state, data);
                 return rmq;
@@ -315,8 +325,8 @@ namespace hg {
 
         private:
 
-            template<template<typename> typename container_t, typename T>
-            void set_state(internal_state<container_t> &&state, const T &data) {
+            template<typename T>
+            void set_state(internal_state &&state, const T &data) {
                 m_data_size = state.data_size;
                 m_block_size = state.block_size;
                 m_num_blocks = state.num_blocks;
@@ -327,8 +337,8 @@ namespace hg {
                 m_data = data.begin();
             }
 
-            template<template<typename> typename container_t, typename T>
-            void set_state(const internal_state<container_t> &state, const T &data) {
+            template<typename T>
+            void set_state(const internal_state &state, const T &data) {
                 m_data_size = state.data_size;
                 m_block_size = state.block_size;
                 m_num_blocks = state.num_blocks;

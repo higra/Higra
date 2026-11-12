@@ -160,7 +160,7 @@ namespace graph_image {
         //auto & graph = std::get<0>(r);
         auto &embedding = std::get<1>(r);
         auto &weights = std::get<2>(r);
-        REQUIRE(xt::allclose(embedding.shape(), ref_shape));
+        REQUIRE(std::equal(embedding.shape().begin(), embedding.shape().end(), ref_shape.begin(), ref_shape.end()));
         REQUIRE(xt::allclose(data, weights));
 
         xt::xarray<int> ref2{
@@ -178,7 +178,7 @@ namespace graph_image {
         auto &graph2 = std::get<0>(r2);
         auto &embedding2 = std::get<1>(r2);
         auto &weights2 = std::get<2>(r2);
-        REQUIRE(xt::allclose(embedding2.shape(), ref_shape));
+        REQUIRE(std::equal(embedding2.shape().begin(), embedding2.shape().end(), ref_shape.begin(), ref_shape.end()));
         REQUIRE(xt::allclose(data, weights2));
 
         auto weights3 = khalimsky_2_graph_4_adjacency(ref2, graph2, embedding2, true);
