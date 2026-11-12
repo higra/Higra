@@ -15,8 +15,6 @@
 #include "xtensor-python/pytensor.hpp"
 
 namespace py_component_tree {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -27,8 +25,8 @@ namespace py_component_tree {
         void def(C &c, const char *doc) {
             c.def("_component_tree_min_tree",
                   [](const graph_t &graph,
-                     const pyarray<value_t> &vertex_weights) {
-                      auto res = hg::component_tree_min_tree(graph, vertex_weights);
+                     const hg::array_view<const value_t> &vertex_weights) {
+                      auto res = hg::component_tree_min_tree(graph, hg::bridge::as_xt(vertex_weights));
                       return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
                   },
                   doc,
@@ -44,8 +42,8 @@ namespace py_component_tree {
         void def(C &c, const char *doc) {
             c.def("_component_tree_max_tree",
                   [](const graph_t &graph,
-                     const pyarray<value_t> &vertex_weights) {
-                      auto res = hg::component_tree_max_tree(graph, vertex_weights);
+                     const hg::array_view<const value_t> &vertex_weights) {
+                      auto res = hg::component_tree_max_tree(graph, hg::bridge::as_xt(vertex_weights));
                       return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
                   },
                   doc,

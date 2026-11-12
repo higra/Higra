@@ -16,9 +16,6 @@
 
 namespace py_tree_fusion {
 
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
     namespace py = pybind11;
     using namespace hg;
 

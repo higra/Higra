@@ -17,10 +17,6 @@
 
 namespace py_tree_accumulator {
 
-// @TODO Remove layout_type when xtensor solves the issue with iterators
-    template<typename T>
-    using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-
     namespace py = pybind11;
 
     using graph_t = hg::tree;
@@ -33,11 +29,12 @@ namespace py_tree_accumulator {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_accumulate_parallel", [](const graph_t &tree, const pyarray<value_t> &input,
+            c.def("_accumulate_parallel", [](const graph_t &tree, const hg::array_view<const value_t> &input,
                                              hg::accumulators accumulator) {
+                      auto xinput = hg::bridge::as_xt(input);
                       return dispatch_accumulator(
-                              [&tree, &input](const auto &acc) {
-                                  return hg::accumulate_parallel(tree, input, acc);
+                              [&tree, &xinput](const auto &acc) {
+                                  return hg::accumulate_parallel(tree, xinput, acc);
                               },
                               accumulator);
                   },
@@ -54,10 +51,12 @@ namespace py_tree_accumulator {
         static
         void def(C &c, const char *doc) {
             c.def("_accumulate_sequential",
-                  [](const graph_t &tree, const pyarray<value_t> &vertex_data, hg::accumulators accumulator) {
+                  [](const graph_t &tree, const hg::array_view<const value_t> &vertex_data,
+                     hg::accumulators accumulator) {
+                      auto xvertex_data = hg::bridge::as_xt(vertex_data);
                       return dispatch_accumulator(
-                              [&tree, &vertex_data](const auto &acc) {
-                                  return hg::accumulate_sequential(tree, vertex_data, acc);
+                              [&tree, &xvertex_data](const auto &acc) {
+                                  return hg::accumulate_sequential(tree, xvertex_data, acc);
                               },
                               accumulator);
                   },
@@ -104,11 +103,14 @@ namespace py_tree_accumulator {
         static
         void def(C &c, const char *doc, const char *name, const F &f) {
             c.def(name,
-                  [&f](const graph_t &tree, const pyarray<value_t> &input, const pyarray<value_t> &vertex_data,
+                  [&f](const graph_t &tree, const hg::array_view<const value_t> &input,
+                       const hg::array_view<const value_t> &vertex_data,
                        hg::accumulators accumulator) {
+                      auto xinput = hg::bridge::as_xt(input);
+                      auto xvertex_data = hg::bridge::as_xt(vertex_data);
                       return dispatch_accumulator(
-                              [&tree, &input, &vertex_data, &f](const auto &acc) {
-                                  return hg::accumulate_and_combine_sequential(tree, input, vertex_data, acc, f);
+                              [&tree, &xinput, &xvertex_data, &f](const auto &acc) {
+                                  return hg::accumulate_and_combine_sequential(tree, xinput, xvertex_data, acc, f);
                               },
                               accumulator);
                   },
@@ -127,9 +129,9 @@ namespace py_tree_accumulator {
         static
         void def(C &c, const char *doc) {
             c.def("_propagate_sequential",
-                  [](const graph_t &tree, const pyarray<value_t> &input,
-                     const pyarray<bool> &condition) {
-                      return hg::propagate_sequential(tree, input, condition);
+                  [](const graph_t &tree, const hg::array_view<const value_t> &input,
+                     const hg::array_view<const bool> &condition) {
+                      return hg::propagate_sequential(tree, hg::bridge::as_xt(input), hg::bridge::as_xt(condition));
                   },
                   doc,
                   py::arg("tree"),
@@ -144,18 +146,18 @@ namespace py_tree_accumulator {
         static
         void def(C &c, const char *doc) {
             c.def("_propagate_parallel",
-                  [](const graph_t &tree, const pyarray<value_t> &input,
-                     const pyarray<bool> &condition) {
+                  [](const graph_t &tree, const hg::array_view<const value_t> &input,
+                     const hg::array_view<const bool> &condition) {
                       if (condition.dimension() == 0) {
-                          return hg::propagate_parallel(tree, input);
+                          return hg::propagate_parallel(tree, hg::bridge::as_xt(input));
                       } else {
-                          return hg::propagate_parallel(tree, input, condition);
+                          return hg::propagate_parallel(tree, hg::bridge::as_xt(input), hg::bridge::as_xt(condition));
                       }
                   },
                   doc,
                   py::arg("tree"),
                   py::arg("input"),
-                  py::arg("condition") = pyarray<bool>{});
+                  py::arg("condition") = hg::array<bool>(hg::array_shape(), false));
         }
     };
 
@@ -166,10 +168,12 @@ namespace py_tree_accumulator {
         static
         void def(C &c, const char *doc) {
             c.def("_propagate_sequential_and_accumulate",
-                  [](const graph_t &tree, const pyarray<value_t> &vertex_data, hg::accumulators accumulator) {
+                  [](const graph_t &tree, const hg::array_view<const value_t> &vertex_data,
+                     hg::accumulators accumulator) {
+                      auto xvertex_data = hg::bridge::as_xt(vertex_data);
                       return dispatch_accumulator(
-                              [&tree, &vertex_data](const auto &acc) {
-                                  return hg::propagate_sequential_and_accumulate(tree, vertex_data, acc);
+                              [&tree, &xvertex_data](const auto &acc) {
+                                  return hg::propagate_sequential_and_accumulate(tree, xvertex_data, acc);
                               },
                               accumulator);
                   },
@@ -179,11 +183,13 @@ namespace py_tree_accumulator {
                   py::arg("accumulator"));
 
             c.def("_propagate_sequential_and_accumulate",
-                  [](const graph_t &tree, const pyarray<value_t> &vertex_data, hg::accumulators accumulator,
-                     const pyarray<bool> &condition) {
+                  [](const graph_t &tree, const hg::array_view<const value_t> &vertex_data,
+                     hg::accumulators accumulator, const hg::array_view<const bool> &condition) {
+                      auto xvertex_data = hg::bridge::as_xt(vertex_data);
+                      auto xcondition = hg::bridge::as_xt(condition);
                       return dispatch_accumulator(
-                              [&tree, &vertex_data, &condition](const auto &acc) {
-                                  return hg::propagate_sequential_and_accumulate(tree, vertex_data, acc, condition);
+                              [&tree, &xvertex_data, &xcondition](const auto &acc) {
+                                  return hg::propagate_sequential_and_accumulate(tree, xvertex_data, acc, xcondition);
                               },
                               accumulator);
                   },

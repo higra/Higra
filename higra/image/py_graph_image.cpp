@@ -15,11 +15,6 @@
 #include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"
 namespace py_graph_image {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
-    template<typename T, int n>
-    using pytensor = xt::pytensor<T, n>;
 
     namespace py = pybind11;
 
@@ -28,11 +23,12 @@ namespace py_graph_image {
         template<typename value_t>
         static
         void def(pybind11::module &m, const char *doc) {
-            m.def("_khalimsky_2_graph_4_adjacency", [](const pyarray<value_t> &khalimsky,
+            m.def("_khalimsky_2_graph_4_adjacency", [](const hg::array_view<const value_t> &khalimsky,
                                                        const hg::ugraph &graph,
                                                        const std::vector<size_t> &shape,
                                                        bool extra_border) {
-                      return hg::khalimsky_2_graph_4_adjacency(khalimsky, graph, hg::embedding_grid_2d(shape), extra_border);
+                      return hg::khalimsky_2_graph_4_adjacency(hg::bridge::as_xt(khalimsky), graph,
+                                                               hg::embedding_grid_2d(shape), extra_border);
                   },
                   doc,
                   py::arg("khalimsky"),
@@ -48,10 +44,11 @@ namespace py_graph_image {
         void def(pybind11::module &m, const char *doc) {
             m.def("_graph_4_adjacency_2_khalimsky", [](const hg::ugraph &graph,
                                                        const std::vector<size_t> &shape,
-                                                       const pyarray<value_t> &weights,
+                                                       const hg::array_view<const value_t> &weights,
                                                        bool add_extra_border) {
                       hg::embedding_grid_2d embedding(shape);
-                      return hg::graph_4_adjacency_2_khalimsky(graph, embedding, weights, add_extra_border);
+                      return hg::graph_4_adjacency_2_khalimsky(graph, embedding, hg::bridge::as_xt(weights),
+                                                               add_extra_border);
                   },
                   doc,
                   py::arg("graph"),
@@ -66,11 +63,13 @@ namespace py_graph_image {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_get_bipartite_matching_graph_contour_image_2d",
-                  [](const pytensor<value_t, 2> &image1,
-                     const pytensor<value_t, 2> &image2,
+                  [](const hg::array_view<const value_t> &image1,
+                     const hg::array_view<const value_t> &image2,
                      double max_distance) {
-                      hg::embedding_grid_2d embedding(image1.shape());
-                      auto res = hg::get_bipartite_matching_graph_contour_image_2d(embedding, image1, image2,
+                      auto ximage1 = py_bridge::as_xt_fixed<2>(image1, "image1");
+                      auto ximage2 = py_bridge::as_xt_fixed<2>(image2, "image2");
+                      hg::embedding_grid_2d embedding(ximage1.shape());
+                      auto res = hg::get_bipartite_matching_graph_contour_image_2d(embedding, ximage1, ximage2,
                                                                                    max_distance);
                       return py::make_tuple(std::move(std::get<0>(res)), // sources
                                             std::move(std::get<1>(res)), // targets

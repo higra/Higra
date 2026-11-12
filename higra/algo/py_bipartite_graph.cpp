@@ -16,12 +16,6 @@
 
 namespace py_bipartite_graph {
 
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
-    template<typename T>
-    using pytensor_1d = xt::pytensor<T, 1>;
-
     namespace py = pybind11;
 
     using namespace hg;
@@ -37,14 +31,17 @@ namespace py_bipartite_graph {
               py::arg("graph"));
 
         m.def("_is_bipartite_graph",
-              [](const pytensor_1d<index_t> &sources, const pytensor_1d<index_t> &targets, index_t num_vertices) {
-                  hg_assert((xt::amin)(sources)() >= 0, "Source vertex index cannot be negative.");
-                  hg_assert((xt::amin)(targets)() >= 0, "Target vertex index cannot be negative.");
-                  hg_assert((xt::amax)(sources)() < num_vertices,
+              [](const hg::array_view<const index_t> &sources, const hg::array_view<const index_t> &targets,
+                 index_t num_vertices) {
+                  auto xsources = py_bridge::as_xt_fixed<1>(sources, "sources");
+                  auto xtargets = py_bridge::as_xt_fixed<1>(targets, "targets");
+                  hg_assert(sources.empty() || hg::min(sources) >= 0, "Source vertex index cannot be negative.");
+                  hg_assert(targets.empty() || hg::min(targets) >= 0, "Target vertex index cannot be negative.");
+                  hg_assert(sources.empty() || hg::max(sources) < num_vertices,
                             "Source vertex index must be less than the number of vertices.");
-                  hg_assert((xt::amax)(targets)() < num_vertices,
+                  hg_assert(targets.empty() || hg::max(targets) < num_vertices,
                             "Target vertex index must be less than the number of vertices.");
-                  return hg::is_bipartite_graph(sources, targets, num_vertices);
+                  return hg::is_bipartite_graph(xsources, xtargets, num_vertices);
               },
               "Check if the graph is bipartite.",
               py::arg("sources"),
@@ -53,17 +50,20 @@ namespace py_bipartite_graph {
 
         m.def("_bipartite_graph_matching",
               [](
-                      const pytensor_1d<index_t> &sources,
-                      const pytensor_1d<index_t> &targets,
+                      const hg::array_view<const index_t> &sources,
+                      const hg::array_view<const index_t> &targets,
                       index_t num_vertices,
-                      const pytensor_1d<index_t> &weights) {
-                  hg_assert((xt::amin)(sources)() >= 0, "Source vertex index cannot be negative.");
-                  hg_assert((xt::amin)(targets)() >= 0, "Target vertex index cannot be negative.");
-                  hg_assert((xt::amax)(sources)() < num_vertices,
+                      const hg::array_view<const index_t> &weights) {
+                  auto xsources = py_bridge::as_xt_fixed<1>(sources, "sources");
+                  auto xtargets = py_bridge::as_xt_fixed<1>(targets, "targets");
+                  auto xweights = py_bridge::as_xt_fixed<1>(weights, "weights");
+                  hg_assert(sources.empty() || hg::min(sources) >= 0, "Source vertex index cannot be negative.");
+                  hg_assert(targets.empty() || hg::min(targets) >= 0, "Target vertex index cannot be negative.");
+                  hg_assert(sources.empty() || hg::max(sources) < num_vertices,
                             "Source vertex index must be less than the number of vertices.");
-                  hg_assert((xt::amax)(targets)() < num_vertices,
+                  hg_assert(targets.empty() || hg::max(targets) < num_vertices,
                             "Target vertex index must be less than the number of vertices.");
-                  hg::graph_algorithms::CSA csa(sources, targets, num_vertices, weights);
+                  hg::graph_algorithms::CSA csa(xsources, xtargets, num_vertices, xweights);
                   return csa.edge_indices();
               },
               "Compute a minimum weight matching in a bipartite graph.",

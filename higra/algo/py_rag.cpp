@@ -18,10 +18,6 @@
 
 namespace py_rag {
 
-// @TODO Remove layout_type when xtensor solves the issue with iterators
-    template<typename T>
-    using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-
     namespace py = pybind11;
 
     template<typename graph_t>
@@ -30,8 +26,8 @@ namespace py_rag {
         static
         void def(C &c, const char *doc) {
             c.def("_make_region_adjacency_graph_from_labelisation",
-                  [](const graph_t &graph, const pyarray<value_t> &input) {
-                      auto res = hg::make_region_adjacency_graph_from_labelisation(graph, input);
+                  [](const graph_t &graph, const hg::array_view<const value_t> &input) {
+                      auto res = hg::make_region_adjacency_graph_from_labelisation(graph, hg::bridge::as_xt(input));
                       return py::make_tuple(std::move(res.rag), std::move(res.vertex_map), std::move(res.edge_map));
                   },
                   doc,
@@ -46,8 +42,8 @@ namespace py_rag {
         static
         void def(C &c, const char *doc) {
             c.def("_make_region_adjacency_graph_from_graph_cut",
-                  [](const graph_t &graph, const pyarray<value_t> &input) {
-                      auto res = hg::make_region_adjacency_graph_from_graph_cut(graph, input);
+                  [](const graph_t &graph, const hg::array_view<const value_t> &input) {
+                      auto res = hg::make_region_adjacency_graph_from_graph_cut(graph, hg::bridge::as_xt(input));
                       return py::make_tuple(std::move(res.rag), std::move(res.vertex_map), std::move(res.edge_map));
                   },
                   doc,
@@ -61,8 +57,9 @@ namespace py_rag {
         static
         void def(C &c, const char *doc) {
             c.def("_rag_back_project_weights",
-                  [](const xt::pyarray<hg::index_t> &rag_map, const pyarray<value_t> &rag_weights) {
-                      return hg::rag_back_project_weights(rag_map, rag_weights);
+                  [](const hg::array_view<const hg::index_t> &rag_map,
+                     const hg::array_view<const value_t> &rag_weights) {
+                      return hg::rag_back_project_weights(hg::bridge::as_xt(rag_map), hg::bridge::as_xt(rag_weights));
                   },
                   doc,
                   py::arg("rag_map"),

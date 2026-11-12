@@ -15,8 +15,6 @@
 #include "xtensor-python/pytensor.hpp"
 
 namespace py_component_tree_dual_filter {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -27,10 +25,11 @@ namespace py_component_tree_dual_filter {
         void def(C &c, const char *doc) {
             c.def("_connected_alternating_sequential_filter",
                   [](const graph_t &graph,
-                     const pyarray<value_t> &vertex_weights,
+                     const hg::array_view<const value_t> &vertex_weights,
                      hg::ComponentTreeCasfAttribute attribute,
                      const std::vector<double> &thresholds) {
-                        hg::ComponentTreeCasf<value_t, graph_t> casf(graph, vertex_weights, attribute);
+                        hg::ComponentTreeCasf<value_t, graph_t> casf(graph, hg::bridge::as_xt(vertex_weights),
+                                                                     attribute);
                         return casf.filter(thresholds);
                   },
                   doc,

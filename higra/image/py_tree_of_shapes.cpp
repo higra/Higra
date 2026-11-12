@@ -16,8 +16,6 @@
 #include <string>
 
 namespace py_tree_of_shapes {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -26,7 +24,7 @@ struct def_tree_of_shapes {
     template<typename value_t, typename C>
     static
     void def(C &m, const char *doc) {
-        m.def("_component_tree_tree_of_shapes_image", [](const pyarray<value_t> &image,
+        m.def("_component_tree_tree_of_shapes_image", [](const hg::array_view<const value_t> &image,
                                                            const std::string &padding,
                                                            bool original_size,
                                                            bool immersion,
@@ -42,8 +40,8 @@ struct def_tree_of_shapes {
                       throw std::runtime_error("tree_of_shapes: Unknown padding option.");
                   }
 
-                  auto res = hg::component_tree_tree_of_shapes_image(image, tpadding, original_size, immersion,
-                                                                   exterior_vertex);
+                  auto res = hg::component_tree_tree_of_shapes_image(hg::bridge::as_xt(image), tpadding,
+                                                                   original_size, immersion, exterior_vertex);
                   return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
               },
               doc,

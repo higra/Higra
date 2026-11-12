@@ -17,9 +17,6 @@
 
 namespace py_tree {
 
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
     namespace py = pybind11;
 
     struct labelisation_horizontal_cut {
@@ -28,8 +25,9 @@ namespace py_tree {
         void def(pybind11::module &m, const char *doc) {
             m.def("_labelisation_horizontal_cut_from_threshold", [](const hg::tree &tree,
                                                                     double threshold,
-                                                                    const pyarray<value_t> &altitudes) {
-                      return hg::labelisation_horizontal_cut_from_threshold(tree, altitudes, threshold);
+                                                                    const hg::array_view<const value_t> &altitudes) {
+                      return hg::labelisation_horizontal_cut_from_threshold(tree, hg::bridge::as_xt(altitudes),
+                                                                            threshold);
                   },
                   doc,
                   py::arg("tree"),
@@ -43,8 +41,8 @@ namespace py_tree {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_labelisation_hierarchy_supervertices", [](const hg::tree &tree,
-                                                              const pyarray<value_t> &altitudes) {
-                      return hg::labelisation_hierarchy_supervertices(tree, altitudes);
+                                                              const hg::array_view<const value_t> &altitudes) {
+                      return hg::labelisation_hierarchy_supervertices(tree, hg::bridge::as_xt(altitudes));
                   },
                   doc,
                   py::arg("tree"),
@@ -57,9 +55,10 @@ namespace py_tree {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_binary_labelisation_from_markers", [](const hg::tree &tree,
-                                                          const pyarray<value_t> &object_marker,
-                                                          const pyarray<value_t> &background_marker) {
-                      return hg::binary_labelisation_from_markers(tree, object_marker, background_marker);
+                                                          const hg::array_view<const value_t> &object_marker,
+                                                          const hg::array_view<const value_t> &background_marker) {
+                      return hg::binary_labelisation_from_markers(tree, hg::bridge::as_xt(object_marker),
+                                                                  hg::bridge::as_xt(background_marker));
                   },
                   doc,
                   py::arg("tree"),
@@ -73,8 +72,8 @@ namespace py_tree {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_sort_hierarchy_with_altitudes", [](const hg::tree &tree,
-                                                       const pyarray<value_t> &altitudes) {
-                      auto res = hg::sort_hierarchy_with_altitudes(tree, altitudes);
+                                                       const hg::array_view<const value_t> &altitudes) {
+                      auto res = hg::sort_hierarchy_with_altitudes(tree, hg::bridge::as_xt(altitudes));
                       return pybind11::make_tuple(std::move(res.tree), std::move(res.node_map));
                   },
                   doc,

@@ -16,9 +16,6 @@
 
 namespace py_watershed {
 
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
     namespace py = pybind11;
 
 
@@ -27,8 +24,9 @@ namespace py_watershed {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_labelisation_watershed", [](const graph_t &graph, const pyarray<value_t> &edge_weights) {
-                      return hg::labelisation_watershed(graph, edge_weights);
+            c.def("_labelisation_watershed", [](const graph_t &graph,
+                                                const hg::array_view<const value_t> &edge_weights) {
+                      return hg::labelisation_watershed(graph, hg::bridge::as_xt(edge_weights));
                   },
                   doc,
                   py::arg("graph"),
@@ -43,10 +41,11 @@ namespace py_watershed {
         void def(C &c, const char *doc) {
             c.def("_labelisation_seeded_watershed",
                   [](const graph_t &graph,
-                     const pyarray<value_t> &edge_weights,
-                     const pyarray<hg::index_t> &vertex_seeds,
+                     const hg::array_view<const value_t> &edge_weights,
+                     const hg::array_view<const hg::index_t> &vertex_seeds,
                      const hg::index_t background_label) {
-                      return hg::labelisation_seeded_watershed(graph, edge_weights, vertex_seeds, background_label);
+                      return hg::labelisation_seeded_watershed(graph, hg::bridge::as_xt(edge_weights),
+                                                               hg::bridge::as_xt(vertex_seeds), background_label);
                   },
                   doc,
                   py::arg("graph"),
@@ -75,9 +74,9 @@ namespace py_watershed {
 
         cls.def("_add_seeds",
                 [](hg::incremental_watershed_cut &self,
-                   const pyarray<hg::index_t> &seed_vertices,
-                   const pyarray<hg::index_t> &seed_labels) {
-                    self.add_seeds(seed_vertices, seed_labels);
+                   const hg::array_view<const hg::index_t> &seed_vertices,
+                   const hg::array_view<const hg::index_t> &seed_labels) {
+                    self.add_seeds(hg::bridge::as_xt(seed_vertices), hg::bridge::as_xt(seed_labels));
                 },
                 "Add seeds with given labels.",
                 py::arg("seed_vertices"),
@@ -85,8 +84,8 @@ namespace py_watershed {
 
         cls.def("_remove_seeds",
                 [](hg::incremental_watershed_cut &self,
-                   const pyarray<hg::index_t> &seed_vertices) {
-                    self.remove_seeds(seed_vertices);
+                   const hg::array_view<const hg::index_t> &seed_vertices) {
+                    self.remove_seeds(hg::bridge::as_xt(seed_vertices));
                 },
                 "Remove seeds.",
                 py::arg("seed_vertices"));

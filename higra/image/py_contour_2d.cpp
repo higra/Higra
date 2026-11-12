@@ -15,8 +15,6 @@
 #include "xtensor-python/pytensor.hpp"
 #include "higra/image/contour_2d.hpp"
 namespace py_contour_2d {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     using namespace hg;
     namespace py = pybind11;
@@ -124,9 +122,9 @@ namespace py_contour_2d {
         void def(pybind11::module &m, const char *doc) {
             m.def("fit_contour_2d", [](const hg::ugraph &graph,
                                        const std::vector<size_t> &shape,
-                                       const pyarray<T> &weights) {
+                                       const hg::array_view<const T> &weights) {
                       hg::embedding_grid_2d embedding(shape);
-                      return hg::fit_contour_2d(graph, embedding, weights);
+                      return hg::fit_contour_2d(graph, embedding, hg::bridge::as_xt(weights));
                   },
                   doc,
                   py::arg("graph"),
@@ -147,8 +145,8 @@ namespace py_contour_2d {
 
         m.def("_rag_2d_vertex_perimeter_and_edge_length",
               [](const ugraph &rag,
-                 const pyarray<index_t> &vertex_map,
-                 const pyarray<index_t> &edge_map,
+                 const hg::array_view<const index_t> &vertex_map,
+                 const hg::array_view<const index_t> &edge_map,
                  const std::vector<size_t> &shape,
                  const ugraph &graph,
                  double epsilon = 0.1,
@@ -157,8 +155,8 @@ namespace py_contour_2d {
                   hg::embedding_grid_2d embedding(shape);
                   auto res = rag_2d_vertex_perimeter_and_edge_length(
                           rag,
-                          vertex_map,
-                          edge_map,
+                          hg::bridge::as_xt(vertex_map),
+                          hg::bridge::as_xt(edge_map),
                           embedding,
                           graph,
                           epsilon,

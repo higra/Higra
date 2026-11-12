@@ -16,9 +16,6 @@
 
 namespace py_tree_monotonic_regression {
 
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
     namespace py = pybind11;
     using namespace hg;
 
@@ -28,16 +25,17 @@ namespace py_tree_monotonic_regression {
         void def(C &m, const char *doc) {
             m.def("_tree_monotonic_regression",
                   [](const hg::tree &tree,
-                     const pyarray<type> &altitudes,
+                     const hg::array_view<const type> &altitudes,
                      const std::string mode,
-                     const pyarray<double> &weights = {}) {
-                      return hg::tree_monotonic_regression(tree, altitudes, weights, mode);
+                     const hg::array_view<const double> &weights) {
+                      return hg::tree_monotonic_regression(tree, hg::bridge::as_xt(altitudes),
+                                                           hg::bridge::as_xt(weights), mode);
                   },
                   doc,
                   py::arg("tree"),
                   py::arg("altitudes"),
                   py::arg("mode"),
-                  py::arg("weights") = hg::array_1d<double>());
+                  py::arg("weights") = hg::array<double>());
         }
     };
 

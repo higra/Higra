@@ -22,9 +22,11 @@ namespace py_partition {
         static
         void def(C &c, const char *doc) {
             c.def("assess_partition",
-                  [](const xt::pyarray<value_type> &candidate,
-                     const xt::pyarray<value_type> &ground_truth,
+                  [](const hg::array_view<const value_type> &vcandidate,
+                     const hg::array_view<const value_type> &vground_truth,
                      partition_measure measure) {
+                      auto candidate = hg::bridge::as_xt(vcandidate);
+                      auto ground_truth = hg::bridge::as_xt(vground_truth);
                       switch (measure) {
                           case partition_measure::DHamming:
                               return assess_partition(candidate, ground_truth, scorer_partition_DHamming());

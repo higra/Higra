@@ -14,8 +14,6 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 namespace py_pink_io {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -23,15 +21,16 @@ namespace py_pink_io {
     void def_save(pybind11::module &m) {
         m.def("_save_graph_pink", [](const std::string &filename,
                                      const graph_t &graph,
-                                     const pyarray<double> &vertex_values = {0},
-                                     const pyarray<double> &edge_values = {0},
-                                     const std::vector<size_t> &shape = {}) {
-                  hg::save_pink_graph(filename, graph, vertex_values, edge_values, shape);
+                                     const hg::array_view<const double> &vertex_values,
+                                     const hg::array_view<const double> &edge_values,
+                                     const std::vector<size_t> &shape) {
+                  hg::save_pink_graph(filename, graph, hg::bridge::as_xt(vertex_values),
+                                      hg::bridge::as_xt(edge_values), shape);
               },
               py::arg("filename"),
               py::arg("graph"),
-              py::arg("vertex_weights") = pyarray<double>(),
-              py::arg("edge_weights") = pyarray<double>(),
+              py::arg("vertex_weights") = hg::array<double>(hg::array_shape(), 0.0),
+              py::arg("edge_weights") = hg::array<double>(hg::array_shape(), 0.0),
               py::arg("shape") = std::vector<size_t>());
     }
 

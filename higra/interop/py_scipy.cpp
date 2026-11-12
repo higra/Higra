@@ -15,8 +15,6 @@
 #include "xtensor-python/pytensor.hpp"
 #include "xtensor/views/xview.hpp"
 namespace py_scipy {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -24,10 +22,10 @@ namespace py_scipy {
 
     template<typename tree_t, typename T1, typename T2, typename value_t=double>
     auto binary_hierarchy_to_scipy_linkage_matrix(const tree_t &tree,
-                                                  const xt::xexpression<T1> &xaltitudes,
-                                                  const xt::xexpression<T2> &xarea) {
-        auto &altitudes = xaltitudes.derived_cast();
-        auto &area = xarea.derived_cast();
+                                                  const hg::array_view<const T1> &valtitudes,
+                                                  const hg::array_view<const T2> &varea) {
+        auto altitudes = hg::bridge::as_xt(valtitudes);
+        auto area = hg::bridge::as_xt(varea);
         hg_assert_node_weights(tree, altitudes);
         hg_assert_node_weights(tree, area);
         tree.compute_children();
@@ -45,9 +43,9 @@ namespace py_scipy {
     };
 
 
-    template<typename T, typename value_t=typename T::value_type>
-    auto scipy_linkage_matrix_to_binary_hierarchy(const xt::xexpression<T> &xlinkage_matrix) {
-        auto &linkage_matrix = xlinkage_matrix.derived_cast();
+    template<typename T, typename value_t=T>
+    auto scipy_linkage_matrix_to_binary_hierarchy(const hg::array_view<const T> &vlinkage_matrix) {
+        auto linkage_matrix = hg::bridge::as_xt(vlinkage_matrix);
         hg_assert(linkage_matrix.dimension() == 2, "Linkage matrix must be a 2d array.");
         hg_assert(linkage_matrix.shape()[1] == 4, "Linkage matrix second dimension must be of size 4.");
 
@@ -77,7 +75,7 @@ namespace py_scipy {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_scipy_linkage_matrix_to_binary_hierarchy", [](
-                          const pyarray<value_t> &linkage_matrix) {
+                          const hg::array_view<const value_t> &linkage_matrix) {
                       auto res = scipy_linkage_matrix_to_binary_hierarchy(linkage_matrix);
                       return py::make_tuple(std::move(std::get<0>(res)), std::move(std::get<1>(res)),
                                             std::move(std::get<2>(res)));
@@ -94,8 +92,8 @@ namespace py_scipy {
         void def(pybind11::module &m, const char *doc) {
             m.def("_binary_hierarchy_to_scipy_linkage_matrix", [](
                           const tree_t &tree,
-                          const pyarray<value_t> &altitudes,
-                          const pyarray<hg::index_t> &area) {
+                          const hg::array_view<const value_t> &altitudes,
+                          const hg::array_view<const hg::index_t> &area) {
                       return binary_hierarchy_to_scipy_linkage_matrix(tree, altitudes, area);
                   },
                   doc,

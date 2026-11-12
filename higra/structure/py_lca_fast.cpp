@@ -19,9 +19,7 @@ namespace py_lca_fast {
     namespace py = pybind11;
     using namespace hg;
 
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
+    // Internal state pickling only (moved to hg::array in step 4).
     template<typename T>
     using pyarray_1d = xt::pytensor<T, 1>;
 
@@ -31,15 +29,15 @@ namespace py_lca_fast {
         static
         void def(C &c, const char *doc) {
             c.def("lca", [](const lca_t &l,
-                            const pyarray<value_t> &vertices1,
-                            const pyarray<value_t> &vertices2) {
-                      hg_assert((xt::amin)(vertices1)() >= 0, "Vertex indices cannot be negative.");
-                      hg_assert((index_t) (index_t) (xt::amax)(vertices1)() < (index_t) l.num_elements(),
+                            const hg::array_view<const value_t> &vertices1,
+                            const hg::array_view<const value_t> &vertices2) {
+                      hg_assert(vertices1.empty() || hg::min(vertices1) >= 0, "Vertex indices cannot be negative.");
+                      hg_assert(vertices1.empty() || (index_t) hg::max(vertices1) < (index_t) l.num_elements(),
                                 "Vertex indices must be smaller than the number of vertices in the tree.");
-                      hg_assert((xt::amin)(vertices2)() >= 0, "Vertex indices cannot be negative.");
-                      hg_assert((index_t) (xt::amax)(vertices2)() < (index_t) l.num_elements(),
+                      hg_assert(vertices2.empty() || hg::min(vertices2) >= 0, "Vertex indices cannot be negative.");
+                      hg_assert(vertices2.empty() || (index_t) hg::max(vertices2) < (index_t) l.num_elements(),
                                 "Vertex indices must be smaller than the number of vertices in the tree.");
-                      return l.lca(vertices1, vertices2);
+                      return l.lca(hg::bridge::as_xt(vertices1), hg::bridge::as_xt(vertices2));
                   },
                   doc,
                   pybind11::arg("vertices1"),

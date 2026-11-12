@@ -16,9 +16,6 @@
 
 namespace py_graph_core {
 
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
     namespace py = pybind11;
 
     template<typename graph_t>
@@ -27,8 +24,8 @@ namespace py_graph_core {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_graph_cut_2_labelisation", [](const graph_t &graph,
-                                                  const pyarray<value_t> &edge_weights) {
-                      return hg::graph_cut_2_labelisation(graph, edge_weights);
+                                                  const hg::array_view<const value_t> &edge_weights) {
+                      return hg::graph_cut_2_labelisation(graph, hg::bridge::as_xt(edge_weights));
                   },
                   doc,
                   py::arg("graph"),
@@ -42,8 +39,8 @@ namespace py_graph_core {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_labelisation_2_graph_cut", [](const graph_t &graph,
-                                                  const pyarray<value_t> &vertex_labels) {
-                      return hg::labelisation_2_graph_cut(graph, vertex_labels);
+                                                  const hg::array_view<const value_t> &vertex_labels) {
+                      return hg::labelisation_2_graph_cut(graph, hg::bridge::as_xt(vertex_labels));
                   },
                   doc,
                   py::arg("graph"),
@@ -57,8 +54,8 @@ namespace py_graph_core {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_minimum_spanning_tree", [](const graph_t &graph,
-                                               const pyarray<value_t> &edge_weights) {
-                      auto res = hg::minimum_spanning_tree(graph, edge_weights);
+                                               const hg::array_view<const value_t> &edge_weights) {
+                      auto res = hg::minimum_spanning_tree(graph, hg::bridge::as_xt(edge_weights));
                       return pybind11::make_tuple(std::move(res.mst), std::move(res.mst_edge_map));
                   },
                   doc,

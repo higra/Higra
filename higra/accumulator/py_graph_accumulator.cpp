@@ -17,10 +17,6 @@
 
 namespace py_graph_accumulator {
 
-// @TODO Remove layout_type when xtensor solves the issue with iterators
-    template<typename T>
-    using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
-
     namespace py = pybind11;
 
     using graph_t = hg::ugraph;
@@ -33,11 +29,12 @@ namespace py_graph_accumulator {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_accumulate_graph_edges", [](const graph_t &graph, const pyarray<value_t> &input,
+            c.def("_accumulate_graph_edges", [](const graph_t &graph, const hg::array_view<const value_t> &input,
                                                 hg::accumulators accumulator) {
+                      auto xinput = hg::bridge::as_xt(input);
                       return dispatch_accumulator(
-                              [&graph, &input](const auto &acc) {
-                                  return hg::accumulate_graph_edges(graph, input, acc);
+                              [&graph, &xinput](const auto &acc) {
+                                  return hg::accumulate_graph_edges(graph, xinput, acc);
                               },
                               accumulator);
                   },
@@ -54,11 +51,12 @@ namespace py_graph_accumulator {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_accumulate_graph_vertices", [](const graph_t &graph, const pyarray<value_t> &input,
+            c.def("_accumulate_graph_vertices", [](const graph_t &graph, const hg::array_view<const value_t> &input,
                                                    hg::accumulators accumulator) {
+                      auto xinput = hg::bridge::as_xt(input);
                       return dispatch_accumulator(
-                              [&graph, &input](const auto &acc) {
-                                  return hg::accumulate_graph_vertices(graph, input, acc);
+                              [&graph, &xinput](const auto &acc) {
+                                  return hg::accumulate_graph_vertices(graph, xinput, acc);
                               },
                               accumulator);
                   },

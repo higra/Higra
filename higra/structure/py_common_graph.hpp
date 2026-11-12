@@ -16,6 +16,7 @@
 #include "xtensor-python/pytensor.hpp"
 
 namespace py_common_graph {
+    // Return values only (point outputs of py_regular_graph.cpp, removed in step 4).
     template<typename T>
     using pyarray = xt::pyarray<T>;
     using namespace hg;
@@ -26,7 +27,8 @@ namespace py_common_graph {
         static
         void def(C &c, const char *doc) {
             c.def("out_degree", [](graph_t &g,
-                                   pyarray<value_t> vertices) {
+                                   const hg::array_view<const value_t> &vvertices) {
+                      auto vertices = hg::bridge::as_xt(vvertices);
                       hg_assert_vertex_indices(g, vertices);
                       return hg::out_degree(vertices, g);
                   },
@@ -93,7 +95,8 @@ namespace py_common_graph {
         static
         void def(C &c, const char *doc) {
             c.def("degree", [](graph_t &g,
-                               pyarray<value_t> vertices) {
+                               const hg::array_view<const value_t> &vvertices) {
+                      auto vertices = hg::bridge::as_xt(vvertices);
                       hg_assert_vertex_indices(g, vertices);
                       return hg::degree(vertices, g);
                   },
@@ -108,7 +111,8 @@ namespace py_common_graph {
         static
         void def(C &c, const char *doc) {
             c.def("in_degree", [](graph_t &g,
-                                  pyarray<value_t> vertices) {
+                                  const hg::array_view<const value_t> &vvertices) {
+                      auto vertices = hg::bridge::as_xt(vvertices);
                       hg_assert_vertex_indices(g, vertices);
                       return hg::in_degree(vertices, g);
                   },

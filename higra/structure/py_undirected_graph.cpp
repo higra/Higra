@@ -53,9 +53,11 @@ namespace py_undirected_graph {
         static
         void def(C &c, const char *doc) {
             c.def("add_edges", [](graph_t &g,
-                                  pyarray<value_t> sources,
-                                  pyarray<value_t> targets
+                                  const hg::array_view<const value_t> &vsources,
+                                  const hg::array_view<const value_t> &vtargets
                   ) {
+                      auto sources = hg::bridge::as_xt(vsources);
+                      auto targets = hg::bridge::as_xt(vtargets);
                       hg_assert_vertex_indices(g, sources);
                       hg_assert_vertex_indices(g, targets);
                       hg::add_edges(sources, targets, g);

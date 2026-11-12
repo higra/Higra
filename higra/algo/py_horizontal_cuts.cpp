@@ -26,8 +26,9 @@ namespace py_horizontal_cuts {
         template<typename type, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_reconstruct_leaf_data", [](const c_t &c, const tree_t &tree, const xt::pyarray<type> &data) {
-                      return c.reconstruct_leaf_data(tree, data);
+            c.def("_reconstruct_leaf_data", [](const c_t &c, const tree_t &tree,
+                                               const hg::array_view<const type> &data) {
+                      return c.reconstruct_leaf_data(tree, hg::bridge::as_xt(data));
                   },
                   doc,
                   py::arg("tree"),
@@ -71,8 +72,8 @@ namespace py_horizontal_cuts {
         static
         void def(C &c, const char *doc) {
             c.def_static("_make_HorizontalCutExplorer",
-                         [](const typename c_t::tree_type &tree, const xt::pyarray<type> &altitudes) {
-                             return c_t(tree, altitudes);
+                         [](const typename c_t::tree_type &tree, const hg::array_view<const type> &altitudes) {
+                             return c_t(tree, hg::bridge::as_xt(altitudes));
                          },
                          doc,
                          py::arg("tree"),

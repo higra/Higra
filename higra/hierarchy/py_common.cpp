@@ -17,9 +17,6 @@
 #include "higra/hierarchy/common.hpp"
 #include <string>
     namespace py_common_hierarchy {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
     using namespace hg;
     namespace py = pybind11;
 

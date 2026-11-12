@@ -18,6 +18,7 @@
 #include <string>
 
 namespace py_embedding {
+    // Return values only (point outputs, removed in step 4).
     template<typename T>
     using pyarray = xt::pyarray<T>;
 
@@ -30,8 +31,8 @@ namespace py_embedding {
         static
         void def(C &c, const char *doc) {
             c.def("lin2grid",
-                  [](const class_t &e, const pyarray<type> &a) {
-                      return xt::eval(e.lin2grid(a));
+                  [](const class_t &e, const hg::array_view<const type> &a) {
+                      return xt::eval(e.lin2grid(hg::bridge::as_xt(a)));
                   },
                   doc,
                   py::arg("points"));
@@ -44,8 +45,8 @@ namespace py_embedding {
         static
         void def(C &c, const char *doc) {
             c.def("contains",
-                  [](const class_t &e, const pyarray<type> &a) {
-                      return xt::eval(e.contains(a));
+                  [](const class_t &e, const hg::array_view<const type> &a) {
+                      return xt::eval(e.contains(hg::bridge::as_xt(a)));
                   },
                   doc,
                   py::arg("points"));
@@ -58,8 +59,8 @@ namespace py_embedding {
         static
         void def(C &c, const char *doc) {
             c.def("grid2lin",
-                  [](const class_t &e, const pyarray<type> &a) {
-                      return xt::eval(e.grid2lin(a));
+                  [](const class_t &e, const hg::array_view<const type> &a) {
+                      return xt::eval(e.grid2lin(hg::bridge::as_xt(a)));
                   },
                   doc,
                   py::arg("points"));
@@ -79,7 +80,9 @@ namespace py_embedding {
                "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
                py::arg("shape"));*/
 
-        c.def(py::init<const pyarray<hg::index_t> &>(),
+        c.def(py::init([](const hg::array_view<const hg::index_t> &shape) {
+                  return class_t(hg::bridge::as_xt(shape));
+              }),
               "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
               py::arg("shape"));
 

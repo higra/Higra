@@ -15,8 +15,6 @@
 #include "xtensor-python/pytensor.hpp"
 
 namespace py_attributes {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -27,13 +25,13 @@ namespace py_attributes {
             m.def("_attribute_contour_length_component_tree",
                   [](const hg::tree &tree,
                      const hg::ugraph &graph,
-                     const pyarray<T> &vertex_perimeter,
-                     const pyarray<T> &edge_length) {
+                     const hg::array_view<const T> &vertex_perimeter,
+                     const hg::array_view<const T> &edge_length) {
                       return hg::attribute_contour_length_component_tree(
                               tree,
                               graph,
-                              vertex_perimeter,
-                              edge_length
+                              hg::bridge::as_xt(vertex_perimeter),
+                              hg::bridge::as_xt(edge_length)
                       );
                   },
                   doc,
@@ -50,10 +48,10 @@ namespace py_attributes {
         void def(pybind11::module &m, const char *doc) {
             m.def("_attribute_extrema",
                   [](const hg::tree &tree,
-                     const pyarray<T> &altitudes) {
+                     const hg::array_view<const T> &altitudes) {
                       return hg::attribute_extrema(
                               tree,
-                              altitudes
+                              hg::bridge::as_xt(altitudes)
                       );
                   },
                   doc,
@@ -68,13 +66,13 @@ namespace py_attributes {
         void def(pybind11::module &m, const char *doc) {
             m.def("_attribute_extinction_value",
                   [](const hg::tree &tree,
-                     const pyarray<T> &altitudes,
-                     const pyarray<T> &attribute,
+                     const hg::array_view<const T> &altitudes,
+                     const hg::array_view<const T> &attribute,
                      bool increasing_altitudes) {
                       return hg::attribute_extinction_value(
                               tree,
-                              altitudes,
-                              attribute,
+                              hg::bridge::as_xt(altitudes),
+                              hg::bridge::as_xt(attribute),
                               increasing_altitudes
                       );
                   },
@@ -92,10 +90,10 @@ namespace py_attributes {
         void def(pybind11::module &m, const char *doc) {
             m.def("_attribute_children_pair_sum_product",
                   [](const hg::tree &tree,
-                     const pyarray<T> &node_weights) {
+                     const hg::array_view<const T> &node_weights) {
                       return hg::attribute_children_pair_sum_product(
                               tree,
-                              node_weights
+                              hg::bridge::as_xt(node_weights)
                       );
                   },
                   doc,

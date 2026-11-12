@@ -14,8 +14,6 @@
 #include "xtensor-python/pyarray.hpp"
 #include "xtensor-python/pytensor.hpp"
 namespace py_watershed_hierarchy {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -26,11 +24,19 @@ namespace py_watershed_hierarchy {
         void def(C &c, const char *doc) {
             c.def("_watershed_hierarchy_by_attribute",
                   [](const graph_t &graph,
-                     const pyarray<value_t> &edge_weights,
-                          // FIXME can we do better for return type ?
-                     const std::function<pyarray<double>(const hg::tree &,
-                                                         const hg::array_1d<value_t> &)> &attribute_functor) {
-                      auto res = hg::watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor);
+                     const hg::array_view<const value_t> &edge_weights,
+                     const std::function<hg::array<double>(const hg::tree &,
+                                                           const hg::array_1d<value_t> &)> &attribute_functor) {
+                      // The functor result is copied once from Python into attribute_storage, which outlives
+                      // the algorithm; the algorithm reads it through a non-owning adaptor.
+                      hg::array<double> attribute_storage;
+                      auto attribute_adaptor = [&attribute_functor, &attribute_storage](
+                              const hg::tree &tree, const hg::array_1d<value_t> &altitudes) {
+                          attribute_storage = attribute_functor(tree, altitudes);
+                          return hg::bridge::as_xt(attribute_storage);
+                      };
+                      auto res = hg::watershed_hierarchy_by_attribute(graph, hg::bridge::as_xt(edge_weights),
+                                                                      attribute_adaptor);
                       return py::make_tuple(
                               std::move(res.tree),
                               std::move(res.altitudes),
@@ -51,9 +57,10 @@ namespace py_watershed_hierarchy {
         void def(C &c, const char *doc) {
             c.def("_watershed_hierarchy_by_minima_ordering",
                   [](const graph_t &graph,
-                     const pyarray<value_t> &edge_weights,
-                     const pyarray<size_t> &minima_ranks) {
-                      auto res = hg::watershed_hierarchy_by_minima_ordering(graph, edge_weights, minima_ranks);
+                     const hg::array_view<const value_t> &edge_weights,
+                     const hg::array_view<const size_t> &minima_ranks) {
+                      auto res = hg::watershed_hierarchy_by_minima_ordering(graph, hg::bridge::as_xt(edge_weights),
+                                                                            hg::bridge::as_xt(minima_ranks));
                       return py::make_tuple(
                               std::move(res.tree),
                               std::move(res.altitudes),
