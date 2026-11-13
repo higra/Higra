@@ -12,8 +12,8 @@
 
 #include "../graph.hpp"
 #include "../accumulator/tree_accumulator.hpp"
+#include "../structure/array/xtensor_bridge.hpp"
 #include "xtensor/views/xview.hpp"
-#include "xtensor/views/xindex_view.hpp"
 #include "xtensor/core/xnoalias.hpp"
 
 namespace hg {
@@ -48,7 +48,8 @@ namespace hg {
      */
     template<typename tree_t>
     auto attribute_area(const tree_t &tree) {
-        return attribute_area(tree, xt::ones<index_t>({num_leaves(tree)}));
+        array_1d<index_t> leaf_area = xt::ones<index_t>({num_leaves(tree)});
+        return attribute_area(tree, leaf_area);
     }
 
     /**
@@ -128,12 +129,18 @@ namespace hg {
         hg_assert_node_weights(tree, altitudes);
         hg_assert_1d_array(altitudes);
         using value_type = typename T::value_type;
+        // type of the difference of two altitudes (promoted for types smaller than int)
+        using result_type = decltype(std::declval<value_type>() - std::declval<value_type>());
 
         tree.compute_children();
+        const auto &parents = tree.parents();
+        const index_t num_l = (index_t) num_leaves(tree);
+        const index_t num_v = (index_t) num_vertices(tree);
         if (increasing_altitudes) {
             auto min_depth = xt::empty_like(altitudes);
-            xt::noalias(xt::view(min_depth, xt::range(0, num_leaves(tree)))) =
-                    xt::view(xt::index_view(altitudes, tree.parents()), xt::range(0, num_leaves(tree)));
+            for (index_t i = 0; i < num_l; i++) {
+                min_depth(i) = altitudes(parents(i));
+            }
             for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
                 min_depth(n) = (std::numeric_limits<value_type>::max)();
                 bool flag = true;
@@ -149,11 +156,16 @@ namespace hg {
                     min_depth(n) = altitudes(n);
                 }
             }
-            return xt::eval(xt::index_view(altitudes, tree.parents()) - min_depth);
+            auto height = xt::empty<result_type>(altitudes.shape());
+            for (index_t i = 0; i < num_v; i++) {
+                height(i) = altitudes(parents(i)) - min_depth(i);
+            }
+            return height;
         } else {
             auto max_depth = xt::empty_like(altitudes);
-            xt::noalias(xt::view(max_depth, xt::range(0, num_leaves(tree)))) =
-                    xt::view(xt::index_view(altitudes, tree.parents()), xt::range(0, num_leaves(tree)));
+            for (index_t i = 0; i < num_l; i++) {
+                max_depth(i) = altitudes(parents(i));
+            }
             for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude)) {
                 max_depth(n) = std::numeric_limits<value_type>::lowest();
                 bool flag = true;
@@ -169,7 +181,11 @@ namespace hg {
                     max_depth(n) = altitudes(n);
                 }
             }
-            return xt::eval(max_depth - xt::index_view(altitudes, tree.parents()));
+            auto height = xt::empty<result_type>(altitudes.shape());
+            for (index_t i = 0; i < num_v; i++) {
+                height(i) = max_depth(i) - altitudes(parents(i));
+            }
+            return height;
         }
     };
 
@@ -316,7 +332,11 @@ namespace hg {
         if (!extrema(root(tree))) {
             indices(root(tree)) = -1;
         }
-        auto extrema_leaves = propagate_sequential(tree, indices, !extrema);
+        array_1d<bool> not_extrema = array_1d<bool>::from_shape({num_vertices(tree)});
+        for (index_t i = 0; i < (index_t) num_vertices(tree); i++) {
+            not_extrema(i) = !extrema(i);
+        }
+        auto extrema_leaves = propagate_sequential(tree, indices, not_extrema);
         for (auto n: leaves_iterator(tree)) {
             if (extrema_leaves(n) != -1) {
                 extinction(n) = extinction(extrema_leaves(n));
@@ -532,28 +552,24 @@ namespace hg {
 
         tree.compute_children();
         array_nd<value_type> res = xt::zeros<value_type>(node_weights.shape());
-        const auto num_v = num_vertices(tree);
-        const auto num_l = num_leaves(tree);
+        const index_t num_v = (index_t) num_vertices(tree);
+        const index_t num_l = (index_t) num_leaves(tree);
 
-        if (res.dimension() == 1) {
-            for (index_t i = num_l; i < (index_t) num_v; i++) {
-                for (index_t c1 = 0; c1 < (index_t) num_children(i, tree); c1++) {
-                    for (index_t c2 = c1 + 1; c2 < (index_t) num_children(i, tree); c2++) {
-                        res(i) += node_weights(child(c1, i, tree)) * node_weights(child(c2, i, tree));
-                    }
-                }
-            }
-        } else {
-            const size_t num_d = node_weights.size() / num_v;
-            auto vnode_weights = xt::reshape_view(node_weights, {num_v, num_d});
-            auto vres = xt::reshape_view(res, {num_v, num_d});
+        // row-major elements: node i owns the num_d values starting at i * num_d
+        const auto weights_holder = hg::bridge::as_view(node_weights);
+        const value_type *w = weights_holder.view.data();
+        value_type *r = res.data();
+        const index_t num_d = (num_v == 0) ? 0 : (index_t) res.size() / num_v;
 
-            for (index_t i = num_l; i < (index_t) num_v; i++) {
-                for (index_t c1 = 0; c1 < (index_t) num_children(i, tree); c1++) {
-                    for (index_t c2 = c1 + 1; c2 < (index_t) num_children(i, tree); c2++) {
-                        for (index_t k = 0; k < (index_t) num_d; k++) {
-                            vres(i, k) += vnode_weights(child(c1, i, tree), k) * vnode_weights(child(c2, i, tree), k);
-                        }
+        for (index_t i = num_l; i < num_v; i++) {
+            const index_t num_c = (index_t) num_children(i, tree);
+            value_type *ri = r + i * num_d;
+            for (index_t c1 = 0; c1 < num_c; c1++) {
+                const value_type *w1 = w + child(c1, i, tree) * num_d;
+                for (index_t c2 = c1 + 1; c2 < num_c; c2++) {
+                    const value_type *w2 = w + child(c2, i, tree) * num_d;
+                    for (index_t k = 0; k < num_d; k++) {
+                        ri[k] += w1[k] * w2[k];
                     }
                 }
             }

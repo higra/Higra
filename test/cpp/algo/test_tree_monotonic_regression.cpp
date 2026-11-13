@@ -72,4 +72,15 @@ namespace test_tree_monotonic_regression {
         auto res = tree_monotonic_regression(tree, altitudes, weights, "least_square");
         REQUIRE(xt::allclose(res, ref));
     }
+
+    TEST_CASE("tree_monotonic_regression least square default weights", "[tree_monotonic_regression]") {
+        hg::tree tree(array_1d<index_t>{7, 7, 8, 8, 8, 9, 9, 11, 10, 10, 11, 11});
+        array_1d<double> altitudes{0.5, 0, 1, 0, 0.25, 0, 0, 3, 2, 1.5, 0.5, 4};
+        array_1d<double> ones = xt::ones<double>({num_vertices(tree)});
+        auto res = tree_monotonic_regression(tree, altitudes, "least_square");
+        auto ref = tree_monotonic_regression(tree, altitudes, ones, "least_square");
+        REQUIRE((res == ref));
+        array_1d<float> altitudes_f = altitudes;
+        REQUIRE(xt::allclose(tree_monotonic_regression(tree, altitudes_f, "least_square"), ref));
+    }
 }

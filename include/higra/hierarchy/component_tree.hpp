@@ -131,9 +131,13 @@ namespace hg {
             auto parents = pre_tree_construction(graph, sorted_vertex_indices);
             canonize_tree(parents, vertex_weights, sorted_vertex_indices);
             auto res = expand_canonized_parent_relation(parents, vertex_weights, sorted_vertex_indices);
-            array_1d<typename T1::value_type> altitudes = xt::adapt(res.second, {res.second.size()});
+            array_1d<typename T1::value_type> altitudes = array_1d<typename T1::value_type>::from_shape(
+                    {res.second.size()});
+            std::copy(res.second.begin(), res.second.end(), altitudes.begin());
+            array_1d<index_t> tree_parents = array_1d<index_t>::from_shape({res.first.size()});
+            std::copy(res.first.begin(), res.first.end(), tree_parents.begin());
             return make_node_weighted_tree(
-                    tree(xt::adapt(res.first, {res.first.size()}), tree_category::component_tree),
+                    tree(std::move(tree_parents), tree_category::component_tree),
                     std::move(altitudes));
         }
     }

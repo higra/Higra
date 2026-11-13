@@ -15,6 +15,7 @@
 #include "higra/hierarchy/component_tree.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
+#include "higra/structure/array/xtensor_bridge.hpp"
 #include "xtensor/views/xview.hpp"
 #include "xtensor/core/xnoalias.hpp"
 #include "xtensor/views/xindex_view.hpp"
@@ -192,83 +193,91 @@ namespace hg {
             index_t m_size = 0;
         };
 
-        template<typename T1, typename T2>
-        auto fill_khalimsky_plane_2d(const xt::xexpression<T1> &ximage2d, xt::xexpression<T2> &xplain_map2d) {
-            auto &image2d = ximage2d.derived_cast();
-            auto &plain_map2d = xplain_map2d.derived_cast();
-            size_t h = image2d.shape(0);
-            size_t w = image2d.shape(1);
+        /**
+         * Element access to a plain map stored as a row-major array of shape (d * h * w, 2), seen as
+         * an array of shape (d, h, w, 2): plain_map(z, y, x, k) is the k-th bound of the voxel
+         * (z + z0, y + y0, x + x0).
+         */
+        template<typename value_type>
+        struct plain_map_accessor {
+            value_type *data;
+            index_t d;
+            index_t h;
+            index_t w;
+            index_t z0 = 0;
+            index_t y0 = 0;
+            index_t x0 = 0;
 
+            value_type &operator()(index_t z, index_t y, index_t x, index_t k) const {
+                return data[(((z + z0) * h + (y + y0)) * w + (x + x0)) * 2 + k];
+            }
+
+            /**
+             * Accessor whose origin is moved by (dz, dy, dx).
+             */
+            plain_map_accessor sub_volume(index_t dz, index_t dy, index_t dx) const {
+                return {data, d, h, w, z0 + dz, y0 + dy, x0 + dx};
+            }
+        };
+
+        /**
+         * Khalimsky interpolation of the 2d image of shape (h, w) stored row-major at image2d into the plane z
+         * of the plain map.
+         */
+        template<typename value_type>
+        void fill_khalimsky_plane_2d(const value_type *image2d, index_t h, index_t w,
+                                     const plain_map_accessor<value_type> &plain_map, index_t z) {
+            auto image = [image2d, w](index_t y, index_t x) {
+                return image2d[y * w + x];
+            };
 
             // 2 faces and horizontal 1 face
-            for(size_t y = 0; y < h; y++){
-                plain_map2d(2 * y, 0, 0) = image2d(y, 0);
-                plain_map2d(2 * y, 0, 1) = image2d(y, 0);
-                for(size_t x = 1; x < w; x++){
-                    plain_map2d(2 * y, 2 * x, 0) = image2d(y, x);
-                    plain_map2d(2 * y, 2 * x, 1) = image2d(y, x);
-                    plain_map2d(2 * y, 2 * x - 1, 0) = std::min(image2d(y, x - 1), image2d(y, x));
-                    plain_map2d(2 * y, 2 * x - 1, 1) = std::max(image2d(y, x - 1), image2d(y, x));
+            for (index_t y = 0; y < h; y++) {
+                plain_map(z, 2 * y, 0, 0) = image(y, 0);
+                plain_map(z, 2 * y, 0, 1) = image(y, 0);
+                for (index_t x = 1; x < w; x++) {
+                    plain_map(z, 2 * y, 2 * x, 0) = image(y, x);
+                    plain_map(z, 2 * y, 2 * x, 1) = image(y, x);
+                    plain_map(z, 2 * y, 2 * x - 1, 0) = std::min(image(y, x - 1), image(y, x));
+                    plain_map(z, 2 * y, 2 * x - 1, 1) = std::max(image(y, x - 1), image(y, x));
                 }
             }
 
-            for(size_t y = 1; y < 2 * h - 2; y+=2){
-                for(size_t x = 0; x < 2 * w - 1; x++){
-                    plain_map2d(y, x, 0) = std::min(plain_map2d(y - 1, x, 0), plain_map2d(y + 1, x, 0));
-                    plain_map2d(y, x, 1) = std::max(plain_map2d(y - 1, x, 1), plain_map2d(y + 1, x, 1));
+            for (index_t y = 1; y < 2 * h - 2; y += 2) {
+                for (index_t x = 0; x < 2 * w - 1; x++) {
+                    plain_map(z, y, x, 0) = std::min(plain_map(z, y - 1, x, 0), plain_map(z, y + 1, x, 0));
+                    plain_map(z, y, x, 1) = std::max(plain_map(z, y - 1, x, 1), plain_map(z, y + 1, x, 1));
                 }
             }
         }
 
-        /*template<typename T, typename value_type=typename T::value_type>
-        auto interpolate_plain_map_khalimsky_2d(const xt::xexpression<T> &ximage, const embedding_grid_2d &embedding, xt::xexpression<T> &xplain_map) {
-            auto &image = ximage.derived_cast();
-            auto &plain_map = xplain_map.derived_cast();
-            size_t h = embedding.shape()[0];
-            size_t w = embedding.shape()[1];
-            size_t h2 = h * 2 - 1;
-            size_t w2 = w * 2 - 1;
-
-            //array_2d<value_type> plain_map = array_2d<value_type>::from_shape({h2 * w2, 2});
-            const auto image2d = xt::reshape_view(image, {h, w});
-            auto plain_map2d = xt::reshape_view(plain_map, {h2, w2, (size_t) 2});
-
-            fill_khalimsky_plane_2d(image2d, plain_map2d);
-            return plain_map;
-        }*/
-
         /**
         * Interpolate khalimsky function for 3D images.
         *
-        * @param ximage    a container for image values
-        * @param embedding the associated embedding grid
-        * 
-        * @return a projection of the image in the Khalimsky grid
+        * @param image3d   row-major image values of shape (d, h, w)
+        * @param d         depth of the image
+        * @param h         height of the image
+        * @param w         width of the image
+        * @param plain_map plain map accessor whose origin is the first interpolated voxel
         */
-        template<typename T, typename T2>
-        auto interpolate_plain_map_khalimsky_3d(const xt::xexpression<T> &ximage3d, const embedding_grid_3d &embedding, xt::xexpression<T2> &xplain_map3d) {
-            auto &image3d = ximage3d.derived_cast();
-            auto &plain_map3d = xplain_map3d.derived_cast();
-            size_t d = embedding.shape()[0];
-            size_t h = embedding.shape()[1];
-            size_t w = embedding.shape()[2];
-
-            size_t d2 = d * 2 - 1;
-            size_t h2 = h * 2 - 1;
-            size_t w2 = w * 2 - 1;
+        template<typename value_type>
+        void interpolate_plain_map_khalimsky_3d(const value_type *image3d, index_t d, index_t h, index_t w,
+                                                const plain_map_accessor<value_type> &plain_map) {
+            index_t d2 = d * 2 - 1;
+            index_t h2 = h * 2 - 1;
+            index_t w2 = w * 2 - 1;
 
             // go over x-y odd planes and fill them as 2D Khalimsky plane
-            for(size_t z = 0; z < d; z++){
-                auto plain_map2d = xt::view(plain_map3d, 2 * z, xt::all(), xt::all(), xt::all());
-                fill_khalimsky_plane_2d(xt::view(image3d, z, xt::all(), xt::all()), plain_map2d);
+            for (index_t z = 0; z < d; z++) {
+                fill_khalimsky_plane_2d(image3d + z * h * w, h, w, plain_map, 2 * z);
             }
 
             // go over x-y even planes and fill them
-            for(size_t z = 1; z < d2 - 1 ; z += 2){
-                for(size_t y = 0; y < h2; y++){
-                    for(size_t x = 0; x < w2; x++){
-                        plain_map3d(z, y, x, 0) = std::min(plain_map3d(z - 1, y, x, 0), plain_map3d(z + 1, y, x, 0));
-                        plain_map3d(z, y, x, 1) = std::max(plain_map3d(z - 1, y, x, 1), plain_map3d(z + 1, y, x, 1));
+            for (index_t z = 1; z < d2 - 1; z += 2) {
+                for (index_t y = 0; y < h2; y++) {
+                    for (index_t x = 0; x < w2; x++) {
+                        plain_map(z, y, x, 0) = std::min(plain_map(z - 1, y, x, 0), plain_map(z + 1, y, x, 0));
+                        plain_map(z, y, x, 1) = std::max(plain_map(z - 1, y, x, 1), plain_map(z + 1, y, x, 1));
                     }
                 }
             }
@@ -473,13 +482,11 @@ namespace hg {
             return pad_value;
         }
 
-        template <typename T, typename value_type=typename T::value_type>
-        void fill_padding(xt::xexpression<T> & xplain_map, const value_type padding_value, bool immersion, bool is_input3d){
-            auto & plain_map = xplain_map.derived_cast();
-            auto shape = plain_map.shape();
-            size_t d = shape[0];
-            size_t h = shape[1];
-            size_t w = shape[2];
+        template <typename value_type>
+        void fill_padding(const plain_map_accessor<value_type> &plain_map, const value_type padding_value, bool immersion, bool is_input3d){
+            size_t d = (size_t) plain_map.d;
+            size_t h = (size_t) plain_map.h;
+            size_t w = (size_t) plain_map.w;
 
             if(is_input3d) {
                 // fill all 6 faces of the cube with padding value
@@ -646,8 +653,9 @@ namespace hg {
         size_t h = (is_input_3d) ? shape[1] : shape[0];
         size_t w = (is_input_3d) ? shape[2] : shape[1];
 
-        auto image3d = xt::reshape_view(image, {d, h, w});
-        auto shape3d = image3d.shape();
+        // row-major image values, seen as an image of shape (d, h, w)
+        const auto image_holder = hg::bridge::as_view(image);
+        const value_type *image3d = image_holder.view.data();
 
         // ----------------
         // Compute intermediate plain map representation size
@@ -671,20 +679,24 @@ namespace hg {
         // ----------------
         // Compute plain map, do Khalimsky interpolation if needed, then fill padding is needed
         // ----------------
-        array_4d<value_type> plain_map({d_plain_map, h_plain_map, w_plain_map, (size_t)2});
-
-        auto plain_map_interior = xt::view(plain_map, xt::range(border_size_d, d_plain_map - border_size_d),
-                                           xt::range(border_size_hw, h_plain_map - border_size_hw),
-                                           xt::range(border_size_hw, w_plain_map - border_size_hw), xt::all());
+        // plain map of shape (d_plain_map, h_plain_map, w_plain_map, 2) stored as (num voxels, 2)
+        array_2d<value_type> plain_map = array_2d<value_type>::from_shape(
+                {d_plain_map * h_plain_map * w_plain_map, (size_t) 2});
+        const tree_of_shapes_internal::plain_map_accessor<value_type> plain_map_4d{
+                plain_map.data(), (index_t) d_plain_map, (index_t) h_plain_map, (index_t) w_plain_map};
+        const auto plain_map_interior = plain_map_4d.sub_volume((index_t) border_size_d, (index_t) border_size_hw,
+                                                                (index_t) border_size_hw);
 
         if(immersion){
-            tree_of_shapes_internal::interpolate_plain_map_khalimsky_3d(image3d, embedding_grid_3d(shape3d), plain_map_interior);
+            tree_of_shapes_internal::interpolate_plain_map_khalimsky_3d(image3d, (index_t) d, (index_t) h, (index_t) w,
+                                                                        plain_map_interior);
         } else {
-            for(size_t z = 0; z < d; z++){
-                for(size_t y = 0; y < h; y++){
-                    for(size_t x = 0; x < w; x++){
-                        plain_map_interior(z, y, x, 0) = image3d(z, y, x);
-                        plain_map_interior(z, y, x, 1) = image3d(z, y, x);
+            for(index_t z = 0; z < (index_t) d; z++){
+                for(index_t y = 0; y < (index_t) h; y++){
+                    for(index_t x = 0; x < (index_t) w; x++){
+                        const value_type v = image3d[(z * (index_t) h + y) * (index_t) w + x];
+                        plain_map_interior(z, y, x, 0) = v;
+                        plain_map_interior(z, y, x, 1) = v;
                     }
                 }
             }
@@ -692,7 +704,7 @@ namespace hg {
 
         if(do_padding){
             auto padding_value = tree_of_shapes_internal::get_padding_value(image, padding);
-            tree_of_shapes_internal::fill_padding(plain_map, padding_value, immersion, is_input_3d);
+            tree_of_shapes_internal::fill_padding(plain_map_4d, padding_value, immersion, is_input_3d);
         }
 
         // ----------------
@@ -702,7 +714,7 @@ namespace hg {
 
         auto res_sort = tree_of_shapes_internal::sort_vertices_tree_of_shapes(
                 graph,
-                xt::reshape_view(plain_map, {d_plain_map * h_plain_map * w_plain_map, (size_t)2}),
+                plain_map,
                 exterior_vertex);
         auto &sorted_vertex_indices = res_sort.first;
         auto &enqueued_levels = res_sort.second;
@@ -720,11 +732,15 @@ namespace hg {
         auto &altitudes = res_tree.altitudes;
 
 
+        // keep the voxels of the original image: every immersion_factor voxel of the interior
         array_1d<bool> deleted_vertices({num_leaves(res_tree.tree)}, true);
-        auto deleted = xt::reshape_view(deleted_vertices, {d_plain_map, h_plain_map, w_plain_map});
-        xt::view(deleted, xt::range(border_size_d, d_plain_map - border_size_d, immersion_factor),
-                 xt::range(border_size_hw, h_plain_map - border_size_hw, immersion_factor),
-                 xt::range(border_size_hw, w_plain_map - border_size_hw, immersion_factor)) = false;
+        for (size_t z = border_size_d; z < d_plain_map - border_size_d; z += immersion_factor) {
+            for (size_t y = border_size_hw; y < h_plain_map - border_size_hw; y += immersion_factor) {
+                for (size_t x = border_size_hw; x < w_plain_map - border_size_hw; x += immersion_factor) {
+                    deleted_vertices((z * h_plain_map + y) * w_plain_map + x) = false;
+                }
+            }
+        }
 
         auto all_deleted = accumulate_sequential(tree, deleted_vertices, accumulator_min());
 

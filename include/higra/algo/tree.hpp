@@ -43,7 +43,13 @@ namespace hg {
         auto reconstruction = propagate_sequential(tree,
                                                    altitudes,
                                                    deleted_nodes);
-        return xt::eval(xt::strided_view(reconstruction, {xt::range(0, num_leaves(tree)), xt::ellipsis()}));
+        using value_type = typename decltype(reconstruction)::value_type;
+        // the leaves are the first rows of the row-major result
+        std::vector<size_t> shape(reconstruction.shape().begin(), reconstruction.shape().end());
+        shape[0] = num_leaves(tree);
+        auto result = array_nd<value_type>::from_shape(shape);
+        std::copy(reconstruction.data(), reconstruction.data() + result.size(), result.data());
+        return result;
     };
 
     /**
@@ -72,10 +78,15 @@ namespace hg {
                                                     const value_t threshold) {
         HG_TRACE();
         auto &altitudes = xaltitudes.derived_cast();
-        return reconstruct_leaf_data(tree,
-                                     xt::arange<index_t>(num_vertices(tree)),
-                                     xt::index_view(altitudes, tree.parents())
-                                     <= static_cast<typename T::value_type>(threshold));
+        const auto &parents = tree.parents();
+        const auto typed_threshold = static_cast<typename T::value_type>(threshold);
+        const index_t num_v = (index_t) num_vertices(tree);
+        array_1d<bool> deleted = array_1d<bool>::from_shape({(size_t) num_v});
+        for (index_t i = 0; i < num_v; i++) {
+            deleted(i) = altitudes(parents(i)) <= typed_threshold;
+        }
+        array_1d<index_t> vertices = xt::arange<index_t>(num_v);
+        return reconstruct_leaf_data(tree, vertices, deleted);
     };
 
     /**
@@ -336,7 +347,12 @@ namespace hg {
             }
         }
 
-        return xt::eval(xt::view(attr, xt::range(0, num_leaves(tree))) - 1);
+        const index_t num_l = (index_t) num_leaves(tree);
+        array_1d<int> result = array_1d<int>::from_shape({(size_t) num_l});
+        for (index_t i = 0; i < num_l; i++) {
+            result(i) = attr(i) - 1;
+        }
+        return result;
     }
 
     /**

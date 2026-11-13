@@ -124,4 +124,20 @@ namespace watershed_hierarchy {
         REQUIRE((altitudes == ref_altitudes));
     }
 
+    TEST_CASE("watershed hierarchy by area and volume default vertex area", "[watershed_hierarchy]") {
+        auto graph = get_4_adjacency_graph({4, 5});
+        array_1d<double> edge_weights{1, 5, 2, 0, 3, 6, 4, 2, 8, 1, 7, 3, 2, 5, 9, 1, 4, 6, 3, 2, 7, 1, 8, 4, 2,
+                                      6, 3, 5, 1, 9, 2};
+        array_1d<index_t> ones = xt::ones<index_t>({num_vertices(graph)});
+
+        auto res1 = watershed_hierarchy_by_area(graph, edge_weights);
+        auto ref1 = watershed_hierarchy_by_area(graph, edge_weights, ones);
+        REQUIRE((res1.tree.parents() == ref1.tree.parents()));
+        REQUIRE((res1.altitudes == ref1.altitudes));
+
+        auto res2 = watershed_hierarchy_by_volume(graph, edge_weights);
+        auto ref2 = watershed_hierarchy_by_volume(graph, edge_weights, ones);
+        REQUIRE((res2.tree.parents() == ref2.tree.parents()));
+        REQUIRE((res2.altitudes == ref2.altitudes));
+    }
 }

@@ -291,5 +291,29 @@ class TestAlgorithmTree(unittest.TestCase):
         self.assertFalse(hg.test_altitudes_increasingness(tree, altitudes))
 
 
+    def test_binary_labelisation_from_markers_dtype(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        object_marker = np.asarray((1, 0, 0, 0, 0), dtype=np.int8)
+        background_marker = np.asarray((0, 0, 0, 1, 0), dtype=np.int8)
+        labelisation = hg.binary_labelisation_from_markers(tree, object_marker, background_marker)
+        self.assertTrue(labelisation.dtype == np.int32)
+        self.assertTrue(np.all(labelisation == (1, 1, 0, 0, 0)))
+
+        # both markers empty
+        labelisation = hg.binary_labelisation_from_markers(tree, np.zeros(5, np.uint8), np.zeros(5, np.uint8))
+        self.assertTrue(labelisation.dtype == np.int32)
+        self.assertTrue(np.all(labelisation == 0))
+
+    def test_reconstruct_leaf_data_nd(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        altitudes = np.asarray([[i, -i, 2 * i] for i in range(8)], dtype=np.float32).reshape(8, 3, 1)
+        deleted = np.asarray((0, 1, 0, 0, 1, 1, 0, 0), dtype=bool)
+        result = hg.reconstruct_leaf_data(tree, altitudes, deleted)
+        ref = np.asarray(((0, 0, 0), (7, -7, 14), (2, -2, 4), (3, -3, 6), (6, -6, 12)), dtype=np.float32)
+        self.assertTrue(result.dtype == np.float32)
+        self.assertTrue(result.shape == (5, 3, 1))
+        self.assertTrue(np.all(result == ref.reshape(5, 3, 1)))
+
+
 if __name__ == '__main__':
     unittest.main()

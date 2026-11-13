@@ -14,8 +14,10 @@
 #include "../graph.hpp"
 #include "hierarchy_core.hpp"
 #include "../structure/fibonacci_heap.hpp"
+#include "../structure/array/xtensor_bridge.hpp"
 #include "xtensor/views/xview.hpp"
 #include "xtensor/core/xnoalias.hpp"
+#include <cmath>
 #include <string>
 
 namespace hg {
@@ -312,8 +314,17 @@ namespace hg {
                 auto &weights = xweights.derived_cast();
                 hg_assert_same_shape(values, weights);
 
-                m_weights = weights * xt::exp(alpha * values);
-                m_values = m_weights * values;
+                const auto values_holder = hg::bridge::as_view(values);
+                const auto weights_holder = hg::bridge::as_view(weights);
+                const value_type *v = values_holder.view.data();
+                const value_type *w = weights_holder.view.data();
+                const size_t n = (size_t) values_holder.view.size();
+                m_weights = array_1d<value_type>::from_shape({n});
+                m_values = array_1d<value_type>::from_shape({n});
+                for (size_t i = 0; i < n; i++) {
+                    m_weights(i) = w[i] * std::exp(alpha * v[i]);
+                    m_values(i) = m_weights(i) * v[i];
+                }
             }
 
             template<typename graph_t, typename neighbours_t>

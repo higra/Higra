@@ -911,8 +911,9 @@ if (f_a != a) \
             index_t cost() { return result_cost; }
 
             array_1d<index_t> edge_indices() {
-                std::vector<size_t> shape = {(size_t) result_n};
-                return xt::adapt(&result_edge_index[0], shape);
+                array_1d<index_t> res = array_1d<index_t>::from_shape({(size_t) result_n});
+                std::copy(result_edge_index, result_edge_index + result_n, res.begin());
+                return res;
             }
 
 

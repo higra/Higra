@@ -167,7 +167,8 @@ namespace hg {
     auto watershed_hierarchy_by_area(
             const graph_t &graph,
             const xt::xexpression<T1> &xedge_weights) {
-        return watershed_hierarchy_by_area(graph, xedge_weights, xt::ones<index_t>({num_vertices(graph)}));
+        array_1d<index_t> vertex_area = xt::ones<index_t>({num_vertices(graph)});
+        return watershed_hierarchy_by_area(graph, xedge_weights, vertex_area);
     };
 
     template<typename graph_t, typename T1, typename T2>
@@ -188,7 +189,8 @@ namespace hg {
     auto watershed_hierarchy_by_volume(
             const graph_t &graph,
             const xt::xexpression<T1> &xedge_weights) {
-        return watershed_hierarchy_by_volume(graph, xedge_weights, xt::ones<index_t>({num_vertices(graph)}));
+        array_1d<index_t> vertex_area = xt::ones<index_t>({num_vertices(graph)});
+        return watershed_hierarchy_by_volume(graph, xedge_weights, vertex_area);
     };
 
     template<typename graph_t, typename T>

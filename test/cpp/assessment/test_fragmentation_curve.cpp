@@ -238,4 +238,70 @@ namespace assessment_fragmentation_curve {
             REQUIRE(xt::allclose(res_scores, ref_scores / 11));
             REQUIRE(res_k == ref_k);
     }
+
+    TEST_CASE("fragmentation curve all measures horizontal cut", "[fragmentation_curve]") {
+        // same values as the Python test test_assess_fragmentation_curve_all_measures_horizontal_cut
+        hg::tree tree{array_1d<index_t>{11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18}};
+        array_1d<int> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3};
+        array_1d<int> ground_truth{0, 0, 0, 0, 3, 3, 3, 1, 1, 1, 1}; // label 2 unused
+        array_1d<double> ref_k{1, 3, 4, 9};
+
+        auto check = [&](const auto &scorer, const array_1d<double> &ref_scores) {
+            auto res = assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, scorer);
+            REQUIRE(res.num_regions_ground_truth() == 3);
+            REQUIRE(res.num_regions() == ref_k);
+            REQUIRE(xt::allclose(res.scores() * 11.0, ref_scores, 1e-14));
+            auto normalized = res.num_regions_normalized();
+            static_assert(std::is_same<decltype(normalized), array_1d<double>>::value, "");
+            REQUIRE(normalized == array_1d<double>{1.0 / 3, 3.0 / 3, 4.0 / 3, 9.0 / 3});
+            auto pos = std::max_element(ref_scores.begin(), ref_scores.end()) - ref_scores.begin();
+            REQUIRE(res.optimal_score() == res.scores()(pos));
+            REQUIRE(res.optimal_number_of_regions() == ref_k(pos));
+        };
+        check(scorer_partition_BCE(), {3.727272727272727, 5.666666666666666, 6.166666666666666, 3.5});
+        check(scorer_partition_DHamming(), {4, 8, 9, 10});
+        check(scorer_partition_DCovering(), {4, 6.199999999999999, 5.95, 3.366666666666667});
+    }
+
+    TEST_CASE("fragmentation curve all measures optimal cut", "[fragmentation_curve]") {
+        // same values as the Python test test_assess_fragmentation_curve_all_measures_optimal_cut_non_contiguous_labels
+        hg::tree t{array_1d<index_t>{8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14}};
+        array_1d<int> ground_truth{0, 0, 3, 3, 3, 1, 1, 1}; // label 2 unused
+        array_1d<double> ref_k{1, 2, 3, 4, 5, 6, 7, 8};
+
+        auto check = [&](optimal_cut_measure measure, const array_1d<double> &ref_scores, size_t optimal_k) {
+            assesser_fragmentation_optimal_cut assesser(t, ground_truth, measure);
+            auto res = assesser.fragmentation_curve();
+            REQUIRE(res.num_regions_ground_truth() == 3);
+            REQUIRE(res.num_regions() == ref_k);
+            REQUIRE(xt::allclose(res.scores() * 8.0, ref_scores, 1e-14));
+            REQUIRE(xt::allclose(res.num_regions_normalized(), ref_k / 3.0, 1e-15));
+            REQUIRE((size_t) assesser.optimal_number_of_regions() == optimal_k);
+            REQUIRE(res.optimal_number_of_regions() == optimal_k);
+            REQUIRE(assesser.optimal_score() == res.optimal_score());
+        };
+        check(optimal_cut_measure::BCE,
+              {2.75, 4.5, 5.833333333333333, 5.333333333333333, 4.666666666666666, 4.666666666666666, 4, 3}, 3);
+        check(optimal_cut_measure::DHamming, {3, 5, 7, 7, 7, 8, 8, 8}, 6);
+        check(optimal_cut_measure::DCovering,
+              {3, 5, 6.333333333333333, 5.666666666666666, 4.666666666666666, 4.666666666666666, 4, 3}, 3);
+    }
+
+    TEST_CASE("fragmentation curve optimal cut on rag, all measures", "[fragmentation_curve]") {
+        // a tree on a rag whose vertex map is the identity gives the same curves as the tree on the pixels
+        hg::tree t{array_1d<index_t>{8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14}};
+        array_1d<int> ground_truth{0, 0, 3, 3, 3, 1, 1, 1};
+        array_1d<index_t> vertex_map = xt::arange<index_t>(8);
+
+        for (auto measure: {optimal_cut_measure::BCE, optimal_cut_measure::DHamming, optimal_cut_measure::DCovering}) {
+            assesser_fragmentation_optimal_cut a_rag(t, ground_truth, measure, vertex_map);
+            assesser_fragmentation_optimal_cut a_pixels(t, ground_truth, measure);
+            auto c_rag = a_rag.fragmentation_curve();
+            auto c_pixels = a_pixels.fragmentation_curve();
+            REQUIRE(c_rag.num_regions() == c_pixels.num_regions());
+            REQUIRE(c_rag.scores() == c_pixels.scores());
+            REQUIRE(a_rag.optimal_number_of_regions() == a_pixels.optimal_number_of_regions());
+            REQUIRE(a_rag.straightened_altitudes() == a_pixels.straightened_altitudes());
+        }
+    }
 }

@@ -349,7 +349,11 @@ namespace hg {
 
         auto altitude_parents = propagate_parallel(tree, altitudes);
 
-        auto qfz = simplify_tree(tree, xt::equal(altitudes, altitude_parents));
+        array_1d<bool> same_altitude_as_parent = array_1d<bool>::from_shape({altitudes.size()});
+        for (index_t i = 0; i < (index_t) altitudes.size(); i++) {
+            same_altitude_as_parent(i) = altitudes(i) == altitude_parents(i);
+        }
+        auto qfz = simplify_tree(tree, same_altitude_as_parent);
         auto &qfz_tree = qfz.tree;
         auto &node_map = qfz.node_map;
 

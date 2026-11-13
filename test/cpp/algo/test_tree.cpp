@@ -174,4 +174,47 @@ namespace test_tree_algorithm {
         REQUIRE((ref3_node_map == res3.node_map));
     }
 
+    TEST_CASE("tree leaf data functions: value types, shapes and inputs", "[tree_algorithm]") {
+        tree t(array_1d<index_t>{5, 5, 6, 6, 6, 7, 7, 7});
+
+        SECTION("binary labelisation from markers") {
+            auto labelisation = binary_labelisation_from_markers(t, array_1d<char>{1, 0, 0, 0, 0},
+                                                                 array_1d<char>{0, 0, 0, 1, 0});
+            static_assert(std::is_same<decltype(labelisation), array_1d<int>>::value, "");
+            REQUIRE((labelisation == array_1d<int>{1, 1, 0, 0, 0}));
+            // both markers empty
+            auto labelisation2 = binary_labelisation_from_markers(t, array_1d<char>({5}, 0), array_1d<char>({5}, 0));
+            REQUIRE((labelisation2 == array_1d<int>({5}, 0)));
+        }
+
+        SECTION("reconstruct leaf data") {
+            array_1d<bool> deleted{false, true, false, false, true, true, false, false};
+            array_3d<float> altitudes = xt::zeros<float>({8, 3, 1});
+            for (index_t i = 0; i < 8; i++) {
+                altitudes(i, 0, 0) = (float) i;
+                altitudes(i, 1, 0) = (float) -i;
+                altitudes(i, 2, 0) = (float) (2 * i);
+            }
+            array_3d<float> ref{{{0}, {0}, {0}}, {{7}, {-7}, {14}}, {{2}, {-2}, {4}}, {{3}, {-3}, {6}}, {{6}, {-6}, {12}}};
+            auto res = reconstruct_leaf_data(t, altitudes, deleted);
+            static_assert(std::is_same<decltype(res), array_nd<float>>::value, "");
+            REQUIRE((res == ref));
+            array_1d<double> altitudes1{0, 1, 2, 3, 4, 5, 6, 7};
+            auto res1 = reconstruct_leaf_data(t, altitudes1, deleted);
+            static_assert(std::is_same<decltype(res1), array_nd<double>>::value, "");
+            REQUIRE((res1 == array_nd<double>{0, 7, 2, 3, 6}));
+            // lazy inputs
+            REQUIRE((reconstruct_leaf_data(t, altitudes1 * 1.0, !(!deleted)) == res1));
+        }
+
+        SECTION("labelisation horizontal cut") {
+            array_1d<double> altitudes{0, 0, 0, 0, 0, 1, 2, 3};
+            auto res = labelisation_horizontal_cut_from_threshold(t, altitudes, 1.5);
+            static_assert(std::is_same<decltype(res), array_nd<index_t>>::value, "");
+            REQUIRE((res == array_nd<index_t>{5, 5, 2, 3, 4}));
+            array_1d<int> altitudes_int{0, 0, 0, 0, 0, 1, 2, 3};
+            REQUIRE((labelisation_horizontal_cut_from_threshold(t, altitudes_int, 2.5) == array_nd<index_t>{5, 5, 6, 6, 6}));
+            REQUIRE((labelisation_horizontal_cut_from_threshold(t, altitudes_int, 0) == array_nd<index_t>{0, 1, 2, 3, 4}));
+        }
+    }
 }

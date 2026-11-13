@@ -15,7 +15,7 @@
 #include "../algo/tree.hpp"
 #include "../algo/rag.hpp"
 #include "../algo/horizontal_cuts.hpp"
-#include <xtensor/misc/xsort.hpp>
+#include <limits>
 
 namespace hg {
 
@@ -65,7 +65,12 @@ namespace hg {
         }
 
         auto num_regions_normalized() const {
-            return xt::eval(m_num_regions / (value_t) m_num_regions_ground_truth);
+            array_1d<value_t> res = array_1d<value_t>::from_shape({m_num_regions.size()});
+            const auto num_regions_ground_truth = (value_t) m_num_regions_ground_truth;
+            for (index_t i = 0; i < (index_t) m_num_regions.size(); i++) {
+                res(i) = m_num_regions(i) / num_regions_ground_truth;
+            }
+            return res;
         }
 
     private:
@@ -165,12 +170,7 @@ namespace hg {
 
             m_num_regions_ground_truth = xt::count_nonzero(region_gt_areas)();
 
-// TODO remove when xtensor MSVC witht he bug with xt::view(region_tree_area, xt::all(), xt::newaxis()) on 1d tensor
-#ifndef _MSC_VER
             array_1d<index_t> region_tree_area;
-#else
-            array_nd<index_t> region_tree_area;
-#endif
 
             // for a tree node i, a gt region j: card_intersection(i, j) is the number of pixels in R_i cap R_j
             array_2d<index_t> card_intersection_leaves{{num_leaves(m_tree), region_gt_areas.size()}, 0};
@@ -185,31 +185,58 @@ namespace hg {
                 for (index_t i = 0; i < (index_t) vertex_map.size(); i++) {
                     card_intersection_leaves(vertex_map(i), ground_truth(i))++;
                 }
+                array_1d<index_t> ones = xt::ones<index_t>({vertex_map.size()});
                 region_tree_area = attribute_area(m_tree,
-                                                  rag_accumulate(vertex_map, xt::ones<index_t>(vertex_map.shape()),
-                                                                 accumulator_counter()));
+                                                  rag_accumulate(vertex_map, ones, accumulator_counter()));
             }
 
             array_2d<double> card_intersection = accumulate_sequential(m_tree, card_intersection_leaves,
                                                                        accumulator_sum());
 
-            array_1d<double> scores;
+            // score of each node of the tree taken as a single region, computed row by row
+            const index_t num_nodes = (index_t) card_intersection.shape()[0];
+            const index_t num_gt_regions = (index_t) card_intersection.shape()[1];
+            const double *ci = card_intersection.data();
+            array_1d<double> scores = array_1d<double>::from_shape({(size_t) num_nodes});
 
             switch (measure) {
                 case optimal_cut_measure::BCE:
-                    scores = xt::eval(xt::sum(
-                            card_intersection *
-                            xt::minimum(card_intersection / region_gt_areas,
-                                        card_intersection / xt::view(region_tree_area, xt::all(), xt::newaxis())),
-                            {1}));
+                    for (index_t i = 0; i < num_nodes; i++) {
+                        const double *ci_row = ci + i * num_gt_regions;
+                        const double tree_area = (double) region_tree_area(i);
+                        double score = 0;
+                        for (index_t j = 0; j < num_gt_regions; j++) {
+                            const double c = ci_row[j];
+                            const double a = c / (double) region_gt_areas(j);
+                            const double b = c / tree_area;
+                            score += c * ((a < b) ? a : b);
+                        }
+                        scores(i) = score;
+                    }
                     break;
                 case optimal_cut_measure::DHamming:
-                    scores = xt::eval(xt::amax(card_intersection, {1}));
+                    for (index_t i = 0; i < num_nodes; i++) {
+                        const double *ci_row = ci + i * num_gt_regions;
+                        double score = std::numeric_limits<double>::lowest();
+                        for (index_t j = 0; j < num_gt_regions; j++) {
+                            score = (score > ci_row[j]) ? score : ci_row[j];
+                        }
+                        scores(i) = score;
+                    }
                     break;
                 case optimal_cut_measure::DCovering:
-                    auto card_union = xt::eval(-card_intersection + region_gt_areas +
-                                               xt::view(region_tree_area, xt::all(), xt::newaxis()));
-                    scores = xt::eval(xt::amax(card_intersection / card_union, {1}) * region_tree_area);
+                    for (index_t i = 0; i < num_nodes; i++) {
+                        const double *ci_row = ci + i * num_gt_regions;
+                        const double tree_area = (double) region_tree_area(i);
+                        double score = std::numeric_limits<double>::lowest();
+                        for (index_t j = 0; j < num_gt_regions; j++) {
+                            const double c = ci_row[j];
+                            const double card_union = -c + (double) region_gt_areas(j) + tree_area;
+                            const double r = c / card_union;
+                            score = (score > r) ? score : r;
+                        }
+                        scores(i) = score * tree_area;
+                    }
                     break;
             }
 
@@ -264,9 +291,14 @@ namespace hg {
                 final_scores(i) = backtrack_root[i].score;
             }
 
+            const double n = (double) num_leaves(m_tree);
+            for (index_t i = 0; i < (index_t) final_scores.size(); i++) {
+                final_scores(i) = final_scores(i) / n;
+            }
+
             return hg::fragmentation_curve<>{
                     xt::eval(xt::arange<double>(1, (double)((index_t)final_scores.size() + 1))),
-                    xt::eval(final_scores / (double) num_leaves(m_tree)),
+                    std::move(final_scores),
                     m_num_regions_ground_truth};
         }
 
@@ -324,8 +356,9 @@ namespace hg {
                 }
 
             }
+            array_1d<size_t> vertex_indices = xt::arange(num_vertices(m_tree));
             return reconstruct_leaf_data(m_tree,
-                                         xt::arange(num_vertices(m_tree)),
+                                         vertex_indices,
                                          non_cut_nodes);
         }
 
@@ -417,12 +450,26 @@ namespace hg {
         array_1d<index_t> num_regions = xt::empty<index_t>({num_cuts});
         std::copy(num_regions_cuts.begin(), num_regions_cuts.begin() + num_cuts, num_regions.begin());
 
+        // rows of card_intersection corresponding to the nodes of a cut
+        const size_t num_gt_regions = card_intersection.shape()[1];
+        array_2d<double> cut_card_intersection;
         for (index_t i = 0; i < num_cuts; i++) {
             auto hc = hc_explorer.horizontal_cut_from_index(i);
-            scores(i) = partition_scorer.score(xt::view(card_intersection, xt::keep(hc.nodes), xt::all()));
+            const auto &nodes = hc.nodes;
+            cut_card_intersection.resize(std::array<size_t, 2>{nodes.size(), num_gt_regions});
+            for (index_t k = 0; k < (index_t) nodes.size(); k++) {
+                const auto *src = card_intersection.data() + nodes(k) * num_gt_regions;
+                std::copy(src, src + num_gt_regions, cut_card_intersection.data() + k * num_gt_regions);
+            }
+            scores(i) = partition_scorer.score(cut_card_intersection);
         }
 
-        size_t num_regions_ground_truth = xt::count_nonzero(xt::view(card_intersection, root(tree), xt::all()))();;
+        size_t num_regions_ground_truth = 0;
+        for (size_t j = 0; j < num_gt_regions; j++) {
+            if (card_intersection(root(tree), j) != 0) {
+                num_regions_ground_truth++;
+            }
+        }
 
         return hg::fragmentation_curve<>{std::move(num_regions),
                                          std::move(scores),

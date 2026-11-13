@@ -246,4 +246,43 @@ namespace tree_attributes {
         REQUIRE(xt::allclose(ref, res));
     }
 
+    TEST_CASE("tree attribute height non binary, value types and inputs", "[tree_attributes]") {
+        hg::tree t(array_1d<index_t>{7, 7, 8, 8, 8, 9, 9, 10, 10, 11, 11, 11});
+        SECTION("increasing") {
+            array_1d<int> node_altitude{1, 0, 2, 0, 0, 0, 0, 3, 2, 1, 5, 8};
+            array_1d<int> ref{0, 0, 0, 0, 0, 0, 0, 2, 3, 7, 6, 7};
+            auto res = attribute_height(t, node_altitude, true);
+            static_assert(std::is_same<decltype(res), array_1d<int>>::value, "");
+            REQUIRE((ref == res));
+            // strided and lazy inputs
+            array_1d<int> wide = xt::zeros<int>({24});
+            xt::view(wide, xt::range(0, 24, 2)) = node_altitude;
+            REQUIRE((ref == attribute_height(t, xt::view(wide, xt::range(0, 24, 2)), true)));
+            REQUIRE((ref == attribute_height(t, node_altitude + 0, true)));
+        }
+        SECTION("decreasing") {
+            array_1d<float> node_altitude{0, 9, 0, 0, 0, 0, 0, 8, 5, 9, 4, 1};
+            array_1d<float> ref{0, 0, 0, 0, 0, 0, 0, 4, 1, 8, 7, 8};
+            auto res = attribute_height(t, node_altitude, false);
+            static_assert(std::is_same<decltype(res), array_1d<float>>::value, "");
+            REQUIRE((ref == res));
+        }
+    }
+
+    TEST_CASE("tree attribute children pair sum product nd and inputs", "[tree_attributes]") {
+        auto t = data.t; //{5, 5, 6, 6, 6, 7, 7, 7}
+        array_nd<int> node_weights = xt::arange<int>(32);
+        node_weights.reshape({8, 2, 2});
+        array_nd<int> ref = xt::zeros<int>({8, 2, 2});
+        xt::view(ref, xt::range(5, 8)) = array_3d<int>{{{0, 5}, {12, 21}}, {{416, 491}, {572, 659}}, {{480, 525}, {572, 621}}};
+        auto res = attribute_children_pair_sum_product(t, node_weights);
+        static_assert(std::is_same<decltype(res), array_nd<int>>::value, "");
+        REQUIRE((ref == res));
+        array_3d<int> node_weights3 = node_weights;
+        REQUIRE((ref == attribute_children_pair_sum_product(t, node_weights3)));
+        // strided input
+        array_3d<int> wide = xt::zeros<int>({8, 2, 4});
+        xt::view(wide, xt::all(), xt::all(), xt::range(0, 4, 2)) = node_weights3;
+        REQUIRE((ref == attribute_children_pair_sum_product(t, xt::view(wide, xt::all(), xt::all(), xt::range(0, 4, 2)))));
+    }
 }

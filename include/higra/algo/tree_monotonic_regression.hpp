@@ -44,7 +44,10 @@ namespace hg {
             array_1d<double> node_weight = weights;
             array_1d<double> node_block_total_weight = weights;
             array_1d<double> node_value = altitudes;
-            array_1d<double> node_block_weighted_sum = node_weight * node_value;
+            array_1d<double> node_block_weighted_sum = array_1d<double>::from_shape({node_value.size()});
+            for (index_t i = 0; i < (index_t) node_value.size(); i++) {
+                node_block_weighted_sum(i) = node_weight(i) * node_value(i);
+            }
 
             array_1d<double>::shape_type shape({num_vertices(tree)});
             array_1d<heap_type> node_heap = array_1d<heap_type>::from_shape(shape);
@@ -54,8 +57,10 @@ namespace hg {
                 node_heap_handles(i) = node_heap(parent(i, tree)).push({node_value(i), i});
             }
 
-            // lazy average
-            auto node_average_weight = node_block_weighted_sum / node_block_total_weight;
+            // average of a block, computed on demand from the current sums
+            auto node_average_weight = [&node_block_weighted_sum, &node_block_total_weight](index_t i) {
+                return node_block_weighted_sum(i) / node_block_total_weight(i);
+            };
 
             index_t num_v = num_vertices(tree);
             union_find uf(num_v); // Block maintenance
@@ -186,11 +191,10 @@ namespace hg {
                 return tree_monotonic_regression_internal::tree_monotonic_regression_least_square(tree, altitudes,
                                                                                                   weights);
             } else {
+                array_1d<double> unit_weights = xt::ones<double>({num_vertices(tree)});
                 return tree_monotonic_regression_internal::tree_monotonic_regression_least_square(tree,
                                                                                                   altitudes,
-                                                                                                  xt::ones<double>(
-                                                                                                          {num_vertices(
-                                                                                                                  tree)}));
+                                                                                                  unit_weights);
             }
 
         } else {

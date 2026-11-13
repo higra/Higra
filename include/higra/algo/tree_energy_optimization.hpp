@@ -656,7 +656,11 @@ namespace hg {
         }
 
         auto apparition_scales_parents = propagate_parallel(tree, apparition_scales);
-        auto qfz = simplify_tree(tree, xt::equal(apparition_scales, apparition_scales_parents));
+        array_1d<bool> same_scale_as_parent = array_1d<bool>::from_shape({apparition_scales.size()});
+        for (index_t i = 0; i < (index_t) apparition_scales.size(); i++) {
+            same_scale_as_parent(i) = apparition_scales(i) == apparition_scales_parents(i);
+        }
+        auto qfz = simplify_tree(tree, same_scale_as_parent);
         auto &qfz_tree = qfz.tree;
         auto &node_map = qfz.node_map;
         auto qfz_apparition_scales = xt::eval(xt::index_view(apparition_scales, node_map));

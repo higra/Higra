@@ -88,5 +88,16 @@ class TestAlignement(unittest.TestCase):
             res_k = hg.graph_4_adjacency_2_khalimsky(g, res, (3, 3))
             self.assertTrue(np.all(res_k == sm_k_ref))
 
+    def test_project_fine_to_coarse_labelisation_ties(self):
+        labelisation_fine = np.asarray((0, 0, 1, 1, 2, 2, 3, 3))
+        labelisation_coarse = np.asarray((1, 0, 0, 1, 2, 2, 1, 0))
+        # ties are resolved in favor of the smallest coarse label
+        res = hg.project_fine_to_coarse_labelisation(labelisation_fine, labelisation_coarse)
+        self.assertTrue(np.all(res == (0, 0, 2, 0)))
+        # fine region 4 is empty
+        res = hg.project_fine_to_coarse_labelisation(labelisation_fine, labelisation_coarse, 5, 4)
+        self.assertTrue(np.all(res == (0, 0, 2, 0, 0)))
+
+
 if __name__ == '__main__':
     unittest.main()

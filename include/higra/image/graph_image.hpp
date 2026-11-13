@@ -330,9 +330,15 @@ namespace hg {
             node_map[p.second + num_nodes1] = p.first;
         }
 
-        array_1d<index_t> sources_finalized = xt::adapt(sources, {sources.size()});
-        array_1d<index_t> targets_finalized = xt::adapt(targets, {targets.size()}) + num_nodes1;
-        array_1d<double> weights_finalized = xt::adapt(weights, {weights.size()});
+        const size_t num_edges = sources.size();
+        array_1d<index_t> sources_finalized = array_1d<index_t>::from_shape({num_edges});
+        array_1d<index_t> targets_finalized = array_1d<index_t>::from_shape({num_edges});
+        array_1d<double> weights_finalized = array_1d<double>::from_shape({num_edges});
+        for (size_t i = 0; i < num_edges; i++) {
+            sources_finalized(i) = sources[i];
+            targets_finalized(i) = targets[i] + num_nodes1;
+            weights_finalized(i) = weights[i];
+        }
 
         return std::make_tuple(std::move(sources_finalized), std::move(targets_finalized), std::move(weights_finalized),
                                std::move(node_map), num_nodes1, num_nodes2);

@@ -13,7 +13,6 @@
 #include "rag.hpp"
 #include "tree.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
-#include "xtensor/misc/xsort.hpp"
 
 namespace hg {
 
@@ -67,8 +66,19 @@ namespace hg {
             intersections(labelisation_fine(i), labelisation_coarse(i))++;
         }
 
-        // cast size_t -> index_t
-        array_1d<index_t> res = xt::argmax(intersections, 1);
+        // index of the first largest intersection of each fine region
+        array_1d<index_t> res = array_1d<index_t>::from_shape({num_regions_fine});
+        for (index_t i = 0; i < (index_t) num_regions_fine; i++) {
+            index_t best = 0;
+            size_t best_value = intersections(i, 0);
+            for (index_t j = 1; j < (index_t) num_regions_coarse; j++) {
+                if (intersections(i, j) > best_value) {
+                    best_value = intersections(i, j);
+                    best = j;
+                }
+            }
+            res(i) = best;
+        }
         return res;
     }
 
@@ -162,7 +172,12 @@ namespace hg {
             hg_assert(num_leaves(tree) == m_fine_rag.vertex_map.size(),
                       "Cannot align given hierarchy: incompatible sizes!");
             auto sv_hierarchy = supervertices_hierarchy(tree, altitudes);
-            auto altitudes_sv_hierarchy = xt::index_view(altitudes, sv_hierarchy.node_map);
+            using value_type = typename T::value_type;
+            const auto &node_map = sv_hierarchy.node_map;
+            array_1d<value_type> altitudes_sv_hierarchy = array_1d<value_type>::from_shape({node_map.size()});
+            for (index_t i = 0; i < (index_t) node_map.size(); i++) {
+                altitudes_sv_hierarchy(i) = altitudes(node_map(i));
+            }
             auto coarse_sm_on_fine_rag =
                     alignment_internal::project_hierarchy(m_fine_rag,
                                                            sv_hierarchy.supervertex_labelisation,

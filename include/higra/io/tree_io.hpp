@@ -122,7 +122,10 @@ namespace hg {
                 hg_assert(array.size() == m_tree.num_vertices(), "Attribute size does not match the size of the tree.");
                 hg_assert(m_num_attr < std::numeric_limits<int>::max(), "Too many tree attributes.");
                 auto bytes = byte_count(array.size(), sizeof(double));
-                xt::xarray<double> a = array;
+                std::vector<double> a(array.size());
+                for (index_t i = 0; i < (index_t) a.size(); i++) {
+                    a[i] = static_cast<double>(array(i));
+                }
                 m_out << HG_TREE_IO_NAME_KEY << "=" << name << std::endl;
                 m_out << HG_TREE_IO_HEADEREND_KEY << std::endl;
                 hg_assert(m_out, "Failed to write tree attribute header.");

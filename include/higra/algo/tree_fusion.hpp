@@ -39,12 +39,13 @@ namespace hg {
 
             // precompute areas and smallest enclosing shapes
             vector<array_1d<index_t>> areas;
-            array_2d<array_1d<index_t>> ses = xt::empty<array_1d<index_t>>({ntrees, ntrees});
+            // ses[i * ntrees + j]: smallest enclosing shapes of the nodes of tree i in tree j
+            vector<array_1d<index_t>> ses(ntrees * ntrees);
             for (ti = first, i = 0; ti != last; ti++, i++) {
                 areas.push_back(attribute_area(**ti));
                 for (tj = first, j = 0; tj != last; tj++, j++) {
                     if (j != i) {
-                        ses(i, j) = attribute_smallest_enclosing_shape(**ti, **tj);
+                        ses[i * ntrees + j] = attribute_smallest_enclosing_shape(**ti, **tj);
                     }
                 }
             }
@@ -68,7 +69,7 @@ namespace hg {
                 for (index_t n: leaves_to_root_iterator(**ti, leaves_it::exclude, root_it::exclude)) {
                     bool keep = true;
                     for (index_t j = 0; j < i && keep; j++) {
-                        auto ses_ij_n = ses(i, j)(n);
+                        auto ses_ij_n = ses[i * ntrees + j](n);
                         if (areas[j](ses_ij_n) == areas[i](n)) {
                             keep = false;
                             node_maps[i](n) = node_maps[j](ses_ij_n);
@@ -98,7 +99,7 @@ namespace hg {
                     adj_lists[node_maps[i](parent(n, **ti))].push_back(represent_n);
                     for (j = 0; j < (index_t) ntrees; j++) {
                         if (i != j) {
-                            auto ses_ij_n = ses(i, j)(n);
+                            auto ses_ij_n = ses[i * ntrees + j](n);
                             if (areas[j](ses_ij_n) != areas[i](n)) {
                                 adj_lists[node_maps[j](ses_ij_n)].push_back(represent_n);
                             }
