@@ -203,16 +203,16 @@ namespace test_linear_energy_function_optimization {
         array_1d<index_t> ref_parents{8, 8, 9, 7, 7, 10, 10, 9, 9, 10, 10};
         array_1d<double> ref_altitudes{0., 0., 0., 0., 0., 0., 0., 0.5, 0.75, 2.5, 14.0 / 3};
         REQUIRE(tree.parents() == ref_parents);
-        REQUIRE(xt::allclose(altitudes, ref_altitudes));
+        REQUIRE(hg::allclose(altitudes, ref_altitudes));
     }
 
     TEST_CASE("test binary_partition_tree_MumfordShah_energy scalar", "[optimal_cut_tree]") {
         auto g = hg::get_4_adjacency_graph({3, 3});
-        array_1d<double> edge_length = xt::ones<double>({num_edges(g)});
+        array_1d<double> edge_length = hg::ones<double>({num_edges(g)});
         array_1d<double> vertex_perimeter({9}, 4);
         array_1d<double> vertex_values{1, 1, 20, 6, 1, 20, 10, 10, 10};
-        array_1d<double> squared_vertex_values = vertex_values * vertex_values;
-        array_1d<double> vertex_area = xt::ones<double>({num_vertices(g)});
+        array_1d<double> squared_vertex_values = hg::map([](double a, double b) { return a * b; }, vertex_values, vertex_values);
+        array_1d<double> vertex_area = hg::ones<double>({num_vertices(g)});
 
         auto res = binary_partition_tree_MumfordShah_energy(
                 g,
@@ -230,17 +230,17 @@ namespace test_linear_energy_function_optimization {
                                        0., 0., 0.,
                                        0., 0., 4.6875, 25.741071, 53.973545};
         REQUIRE(tree.parents() == ref_parents);
-        REQUIRE(xt::allclose(altitudes, ref_altitudes));
+        REQUIRE(hg::allclose(altitudes, ref_altitudes));
     }
 
     TEST_CASE("test binary_partition_tree_MumfordShah_energy vectorial", "[optimal_cut_tree]") {
         auto g = hg::get_4_adjacency_graph({3, 3});
-        array_1d<double> edge_length = xt::ones<double>({num_edges(g)});
+        array_1d<double> edge_length = hg::ones<double>({num_edges(g)});
         array_1d<double> vertex_perimeter({9}, 4);
         array_2d<double> vertex_values{{1, 2}, {1, 2}, {20, 30}, {6, 7}, {1, 2}, {20, 30}, {10, 12}, {10, 12},
                                        {10, 12}};
-        array_2d<double> squared_vertex_values = vertex_values * vertex_values;
-        array_1d<double> vertex_area = xt::ones<double>({num_vertices(g)});
+        array_2d<double> squared_vertex_values = hg::map([](double a, double b) { return a * b; }, vertex_values, vertex_values);
+        array_1d<double> vertex_area = hg::ones<double>({num_vertices(g)});
 
         auto res = binary_partition_tree_MumfordShah_energy(
                 g,
@@ -259,6 +259,6 @@ namespace test_linear_energy_function_optimization {
                                        0., 0., 0.,
                                        0., 0., 9.375, 58.553571, 191.121693};
         REQUIRE(tree.parents() == ref_parents);
-        REQUIRE(xt::allclose(altitudes, ref_altitudes));
+        REQUIRE(hg::allclose(altitudes, ref_altitudes));
     }
 }

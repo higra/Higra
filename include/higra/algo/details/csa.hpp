@@ -874,10 +874,9 @@ if (f_a != a) \
             CSA(const S1 &sources,
                 const S2 &targets,
                 index_t num_vertices,
-                const xt::xexpression<T2> &xweights) {
+                array_view<const T2> weights) {
                 static_assert(is_1d_indexable_v<S1> && is_1d_indexable_v<S2>,
                               "Edge sources and targets must be 1d indexable sequences.");
-                auto &weights = xweights.derived_cast();
                 hg_assert_integral_value_type(weights);
                 assert_1d_indexable(sources, "sources");
                 assert_1d_indexable(targets, "targets");
@@ -1176,8 +1175,7 @@ Miscellaneous variables.
             template<typename S1, typename S2, typename T2>
             void init(const S1 &sources,
                       const S2 &targets,
-                      const xt::xexpression<T2> &xweights) {
-                auto &weights = xweights.derived_cast();
+                      array_view<const T2> weights) {
 #if    defined(USE_P_REFINE) || defined(USE_P_UPDATE) || defined(USE_SP_AUG)
                 rhs_ptr	r_v;
                 int64_t	i;
@@ -1502,9 +1500,7 @@ setup is free.
             template<typename S1, typename S2, typename T2>
             index_t parse(const S1 &sources,
                           const S2 &targets,
-                          const xt::xexpression<T2> &xweights) {
-                auto &weights = xweights.derived_cast();
-
+                          array_view<const T2> weights) {
                 //size_t arc_count;
                 size_t tail, head, lhs_n,
                         swap, id_offset, temp;

@@ -13,7 +13,6 @@
 #include "../graph.hpp"
 #include "accumulator.hpp"
 #include "../structure/details/light_axis_view.hpp"
-#include "../structure/array/xtensor_bridge.hpp"
 
 namespace hg {
 
@@ -35,7 +34,7 @@ namespace hg {
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(graph));
 
-            array_nd<output_t> output = array_nd<output_t>::from_shape(output_shape);
+            array_nd<output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
@@ -69,7 +68,7 @@ namespace hg {
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(graph));
 
-            array_nd<output_t> output = array_nd<output_t>::from_shape(output_shape);
+            array_nd<output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
@@ -91,27 +90,25 @@ namespace hg {
 
     }
 
-    template<typename graph_t, typename T, typename accumulator_t, typename output_t = typename T::value_type>
+    template<typename graph_t, typename T, typename accumulator_t, typename output_t = T>
     auto accumulate_graph_edges(const graph_t &graph,
-                                const xt::xexpression<T> &xedge_weights,
+                                array_view<const T> edge_weights,
                                 const accumulator_t &accumulator) {
-        const auto edge_weights = hg::bridge::as_view(xedge_weights);
-        if (edge_weights.view.dimension() == 1) {
-            return graph_accumulator_detail::accumulate_graph_edges_impl<false>(graph, edge_weights.view, accumulator);
+        if (edge_weights.dimension() == 1) {
+            return graph_accumulator_detail::accumulate_graph_edges_impl<false>(graph, edge_weights, accumulator);
         } else {
-            return graph_accumulator_detail::accumulate_graph_edges_impl<true>(graph, edge_weights.view, accumulator);
+            return graph_accumulator_detail::accumulate_graph_edges_impl<true>(graph, edge_weights, accumulator);
         }
     };
 
-    template<typename graph_t, typename T, typename accumulator_t, typename output_t = typename T::value_type>
+    template<typename graph_t, typename T, typename accumulator_t, typename output_t = T>
     auto accumulate_graph_vertices(const graph_t &graph,
-                                   const xt::xexpression<T> &xvertex_weights,
+                                   array_view<const T> vertex_weights,
                                    const accumulator_t &accumulator) {
-        const auto vertex_weights = hg::bridge::as_view(xvertex_weights);
-        if (vertex_weights.view.dimension() == 1) {
-            return graph_accumulator_detail::accumulate_graph_vertices_impl<false>(graph, vertex_weights.view, accumulator);
+        if (vertex_weights.dimension() == 1) {
+            return graph_accumulator_detail::accumulate_graph_vertices_impl<false>(graph, vertex_weights, accumulator);
         } else {
-            return graph_accumulator_detail::accumulate_graph_vertices_impl<true>(graph, vertex_weights.view, accumulator);
+            return graph_accumulator_detail::accumulate_graph_vertices_impl<true>(graph, vertex_weights, accumulator);
         }
     };
 

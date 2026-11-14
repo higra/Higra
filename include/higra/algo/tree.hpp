@@ -10,10 +10,6 @@
 
 #pragma once
 
-#include "xtensor/generators/xgenerator.hpp"
-#include "xtensor/core/xeval.hpp"
-#include "xtensor/views/xindex_view.hpp"
-#include "xtensor/views/xview.hpp"
 #include "../structure/tree_graph.hpp"
 #include "../accumulator/tree_accumulator.hpp"
 #include "../hierarchy/common.hpp"
@@ -37,15 +33,15 @@ namespace hg {
             typename T1,
             typename T2>
     auto reconstruct_leaf_data(const tree_t &tree,
-                               const xt::xexpression<T1> &altitudes,
-                               const xt::xexpression<T2> &deleted_nodes) {
+                               array_view<const T1> altitudes,
+                               array_view<const T2> deleted_nodes) {
         HG_TRACE();
         auto reconstruction = propagate_sequential(tree,
                                                    altitudes,
                                                    deleted_nodes);
         using value_type = typename decltype(reconstruction)::value_type;
         // the leaves are the first rows of the row-major result
-        std::vector<size_t> shape(reconstruction.shape().begin(), reconstruction.shape().end());
+        array_shape shape = reconstruction.shape();
         shape[0] = num_leaves(tree);
         auto result = array_nd<value_type>::from_shape(shape);
         std::copy(reconstruction.data(), reconstruction.data() + result.size(), result.data());
@@ -74,18 +70,17 @@ namespace hg {
             typename T,
             typename value_t>
     auto labelisation_horizontal_cut_from_threshold(const tree_t &tree,
-                                                    const xt::xexpression<T> &xaltitudes,
+                                                    array_view<const T> altitudes,
                                                     const value_t threshold) {
         HG_TRACE();
-        auto &altitudes = xaltitudes.derived_cast();
         const auto &parents = tree.parents();
-        const auto typed_threshold = static_cast<typename T::value_type>(threshold);
+        const auto typed_threshold = static_cast<T>(threshold);
         const index_t num_v = (index_t) num_vertices(tree);
         array_1d<bool> deleted = array_1d<bool>::from_shape({(size_t) num_v});
         for (index_t i = 0; i < num_v; i++) {
             deleted(i) = altitudes(parents(i)) <= typed_threshold;
         }
-        array_1d<index_t> vertices = xt::arange<index_t>(num_v);
+        array_1d<index_t> vertices = hg::arange<index_t>(num_v);
         return reconstruct_leaf_data(tree, vertices, deleted);
     };
 
@@ -105,9 +100,8 @@ namespace hg {
     template<typename tree_t,
             typename T>
     auto labelisation_hierarchy_supervertices(const tree_t &tree,
-                                              const xt::xexpression<T> &xaltitudes) {
+                                              array_view<const T> altitudes) {
         HG_TRACE();
-        auto &altitudes = xaltitudes.derived_cast();
         hg_assert_node_weights(tree, altitudes);
 
         auto labels = labelisation_horizontal_cut_from_threshold(tree, altitudes, 0);
@@ -159,9 +153,8 @@ namespace hg {
     template<typename tree_t,
             typename T>
     auto supervertices_hierarchy(const tree_t &tree,
-                                 const xt::xexpression<T> &xaltitudes) {
+                                 array_view<const T> altitudes) {
         HG_TRACE();
-        auto &altitudes = xaltitudes.derived_cast();
         hg_assert_node_weights(tree, altitudes);
 
         // new index of each node (deleted node contains the index of the node they are merged into)
@@ -214,8 +207,8 @@ namespace hg {
         // (with top-down traversal)
         // *******************************
         auto num_nodes_new_tree = num_vertices(tree) - removed;
-        array_1d<index_t> parents = xt::empty<index_t>({num_nodes_new_tree});
-        array_1d<index_t> node_map = xt::empty<index_t>({num_nodes_new_tree});
+        array_1d<index_t> parents = hg::empty<index_t>({num_nodes_new_tree});
+        array_1d<index_t> node_map = hg::empty<index_t>({num_nodes_new_tree});
         index_t node_number = num_nodes_new_tree - 1;
         std::queue<index_t> queue;
         queue.push(root(tree));
@@ -240,7 +233,7 @@ namespace hg {
             i++;
         }
 
-        auto supervertex_labels = xt::eval(xt::view(new_order, xt::range(0, num_leaves(tree))));
+        array_1d<index_t> supervertex_labels(new_order.slice(0, num_leaves(tree)));
 
         return supervertex_hierarchy<array_1d<index_t>, hg::tree, array_1d<index_t>>{
                 std::move(supervertex_labels), hg::tree(std::move(parents), tree.category()), std::move(node_map)
@@ -298,8 +291,8 @@ namespace hg {
      * final_object = union {R in T | R cap o neq emptyset and R cap b = emptyset}
      * 
      * @tparam tree_t tree type
-     * @tparam T1 xtensor type, value_type must be castable to bool
-     * @tparam T2 xtensor type, value_type must be castable to bool
+     * @tparam T1 element type of the object marker, must be castable to bool
+     * @tparam T2 element type of the background marker, must be castable to bool
      * @param tree input tree
      * @param xobject_marker indicator function of the object marker
      * @param xbackground_marker indicator function of the background marker
@@ -308,11 +301,9 @@ namespace hg {
     template<typename tree_t, typename T1, typename T2>
     auto binary_labelisation_from_markers(
             const tree_t &tree,
-            const xt::xexpression<T1> &xobject_marker,
-            const xt::xexpression<T2> &xbackground_marker) {
+            array_view<const T1> object_marker,
+            array_view<const T2> background_marker) {
         HG_TRACE();
-        auto &object_marker = xobject_marker.derived_cast();
-        auto &background_marker = xbackground_marker.derived_cast();
         hg_assert_leaf_weights(tree, object_marker);
         hg_assert_leaf_weights(tree, background_marker);
 
@@ -370,7 +361,7 @@ namespace hg {
      *
      *  auto res = sort_hierarchy_with_altitudes(tree, altitudes);
      *  auto & new_tree = res.tree;
-     *  auto new_altitudes = xt::index_view(altitudes, res.node_map);
+     *  auto new_altitudes = hg::take(altitudes, res.node_map);
      *
      * @tparam tree_t
      * @tparam T
@@ -381,21 +372,20 @@ namespace hg {
     template<typename tree_t,
             typename T>
     auto sort_hierarchy_with_altitudes(const tree_t &tree,
-                                       const xt::xexpression<T> &xaltitudes) {
+                                       array_view<const T> altitudes) {
         HG_TRACE();
-        auto &altitudes = xaltitudes.derived_cast();
         hg_assert_node_weights(tree, altitudes);
         hg_assert_1d_array(altitudes);
 
         array_1d<index_t> sorted = stable_arg_sort(altitudes);
 
-        array_1d<index_t> reverse_sorted = xt::empty_like(sorted);
+        array_1d<index_t> reverse_sorted = hg::empty_like(sorted);
         for (index_t i = 0; i < (index_t) reverse_sorted.size(); i++) {
             reverse_sorted(sorted(i)) = i;
         }
 
         auto &par = parents(tree);
-        array_1d<index_t> new_par = xt::empty_like(sorted);
+        array_1d<index_t> new_par = hg::empty_like(sorted);
         for (index_t i = 0; i < (index_t) reverse_sorted.size(); i++) {
             new_par(i) = reverse_sorted(par(sorted(i)));
         }

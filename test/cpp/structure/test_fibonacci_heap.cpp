@@ -491,7 +491,7 @@ namespace test_fibonacci_heap {
         fibonacci_heap<hg::index_t> heap;
         trivial_heap<hg::index_t> theap;
 
-        map<fibonacci_heap<hg::index_t>::value_handle, trivial_heap<hg::index_t>::value_handle> heapset;
+        std::map<fibonacci_heap<hg::index_t>::value_handle, trivial_heap<hg::index_t>::value_handle> heapset;
 
         for (int i = 0; i < nbop; i++) {
             int op = dist100(rng);

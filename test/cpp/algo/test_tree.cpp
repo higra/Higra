@@ -12,7 +12,6 @@
 #include "higra/graph.hpp"
 #include "higra/algo/tree.hpp"
 #include "higra/structure/array.hpp"
-#include <xtensor/views/xindex_view.hpp>
 
 using namespace hg;
 
@@ -22,7 +21,7 @@ namespace test_tree_algorithm {
 
         hg::tree t;
 
-        _data() : t(xt::xarray<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
+        _data() : t(hg::array<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
         }
 
     } data;
@@ -47,7 +46,7 @@ namespace test_tree_algorithm {
                           {7, 2},
                           {4, 5},
                           {7, 2}};
-        REQUIRE(xt::allclose(ref, output));
+        REQUIRE(hg::allclose(ref, output));
     }
 
     TEST_CASE("tree labelisation horizontal cut", "[tree_algorithm]") {
@@ -78,8 +77,8 @@ namespace test_tree_algorithm {
         auto output = labelisation_hierarchy_supervertices(tree, altitudes);
 
         REQUIRE(is_in_bijection(ref, output));
-        REQUIRE(xt::amin(output)() == 0);
-        REQUIRE(xt::amax(output)() == 2);
+        REQUIRE(hg::min(output) == 0);
+        REQUIRE(hg::max(output) == 2);
     }
 
     TEST_CASE("tree supervertices hierarchy", "[tree_algorithm]") {
@@ -148,7 +147,7 @@ namespace test_tree_algorithm {
         REQUIRE((ref_par == parents(res.tree)));
 
         array_1d<int> ref_altitudes{0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7};
-        REQUIRE((ref_altitudes == xt::index_view(altitudes, res.node_map)));
+        REQUIRE((ref_altitudes == hg::take(altitudes, res.node_map)));
     }
 
    TEST_CASE("sub tree", "[tree_sub_tree]") {
@@ -157,7 +156,7 @@ namespace test_tree_algorithm {
         // full tree
         auto res1 = sub_tree(t, 14);
         REQUIRE((t.parents() == res1.tree.parents()));
-        REQUIRE((xt::arange<index_t>(num_vertices(t)) == res1.node_map));
+        REQUIRE((hg::arange<index_t>(num_vertices(t)) == res1.node_map));
 
         // normal
         auto res2 = sub_tree(t, 13);
@@ -189,13 +188,14 @@ namespace test_tree_algorithm {
 
         SECTION("reconstruct leaf data") {
             array_1d<bool> deleted{false, true, false, false, true, true, false, false};
-            array_3d<float> altitudes = xt::zeros<float>({8, 3, 1});
+            array_3d<float> altitudes = hg::zeros<float>({8, 3, 1});
             for (index_t i = 0; i < 8; i++) {
                 altitudes(i, 0, 0) = (float) i;
                 altitudes(i, 1, 0) = (float) -i;
                 altitudes(i, 2, 0) = (float) (2 * i);
             }
-            array_3d<float> ref{{{0}, {0}, {0}}, {{7}, {-7}, {14}}, {{2}, {-2}, {4}}, {{3}, {-3}, {6}}, {{6}, {-6}, {12}}};
+            array_3d<float> ref{{0, 0, 0}, {7, -7, 14}, {2, -2, 4}, {3, -3, 6}, {6, -6, 12}};
+            ref.reshape({5, 3, 1});
             auto res = reconstruct_leaf_data(t, altitudes, deleted);
             static_assert(std::is_same<decltype(res), array_nd<float>>::value, "");
             REQUIRE((res == ref));
@@ -203,8 +203,8 @@ namespace test_tree_algorithm {
             auto res1 = reconstruct_leaf_data(t, altitudes1, deleted);
             static_assert(std::is_same<decltype(res1), array_nd<double>>::value, "");
             REQUIRE((res1 == array_nd<double>{0, 7, 2, 3, 6}));
-            // lazy inputs
-            REQUIRE((reconstruct_leaf_data(t, altitudes1 * 1.0, !(!deleted)) == res1));
+            // views as inputs
+            REQUIRE((reconstruct_leaf_data(t, altitudes1.view(), deleted.view()) == res1));
         }
 
         SECTION("labelisation horizontal cut") {

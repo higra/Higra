@@ -14,8 +14,7 @@
  *
  * Include this header in every translation unit that binds a function taking or returning these
  * types: the converters are ``pybind11::detail::type_caster`` specializations and must be visible
- * wherever such a function is bound. The header can be included together with xtensor-python:
- * it only specializes converters for ``hg::`` types.
+ * wherever such a function is bound. It only specializes converters for ``hg::`` types.
  *
  * Function parameters
  * -------------------
@@ -34,8 +33,7 @@
  *  element type (``HG_TEMPLATE_NUMERIC_TYPES``) dispatches a strided ``float32`` array to the
  *  ``float`` overload, never to a converting overload of another type. Inputs that are not NumPy
  *  arrays (lists, scalars, NumPy scalars) and arrays without an overload of their dtype go to the
- *  second pass, where the first registered overload that can convert them is selected. These are
- *  the rules of the xtensor-python ``pyarray`` converters.
+ *  second pass, where the first registered overload that can convert them is selected.
  *
  *  The view is valid for the duration of the call only: it may point into a temporary copy.
  *
@@ -166,9 +164,9 @@ namespace hg {
          * True if a NumPy dtype describes the same values as ``T``: same kind (bool, signed,
          * unsigned, floating point) and item size, in any byte order.
          *
-         * This is the dtype test of the first (no-convert) overload resolution pass. Like the
-         * xtensor-python converters, it ignores the byte order, so that a byte-swapped array
-         * selects the overload of its element type (and is then converted to native order).
+         * This is the dtype test of the first (no-convert) overload resolution pass. It ignores the
+         * byte order, so that a byte-swapped array selects the overload of its element type (and is
+         * then converted to native order).
          */
         template<class T>
         bool same_values(const py::dtype &dt) {

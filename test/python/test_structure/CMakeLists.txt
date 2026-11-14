@@ -19,8 +19,8 @@ set(PY_FILES
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")
 
-# Test-only extension module for the NumPy converters (higra/python/py_array.hpp) and the
-# xtensor bridge. Never built for packaging: setup.py configures with HG_BUILD_WHEEL=ON and sets
+# Test-only extension module for the NumPy converters (higra/python/py_array.hpp).
+# Never built for packaging: setup.py configures with HG_BUILD_WHEEL=ON and sets
 # CMAKE_LIBRARY_OUTPUT_DIRECTORY to the wheel's extension directory.
 if (NOT HG_BUILD_WHEEL)
     pybind11_add_module(_hg_array_test MODULE hg_array_test_module.cpp)
@@ -38,7 +38,7 @@ if (NOT HG_BUILD_WHEEL)
                 RUNTIME_OUTPUT_DIRECTORY_${config} $<1:${CMAKE_CURRENT_BINARY_DIR}>)
     endforeach ()
     if (HG_USE_TBB)
-        target_compile_definitions(_hg_array_test PRIVATE HG_USE_TBB XTENSOR_USE_TBB)
+        target_compile_definitions(_hg_array_test PRIVATE HG_USE_TBB)
         target_link_libraries(_hg_array_test PRIVATE TBB::tbb)
     endif ()
     # Built with the extension, so that the Python test suite always finds it.

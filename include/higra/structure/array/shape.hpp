@@ -31,6 +31,14 @@ namespace hg {
         inline constexpr bool is_index_type_v = std::is_integral_v<I> && !std::is_same_v<std::remove_cv_t<I>, bool>;
 
         /**
+         * Types accepted as element indices by operator(): integers (not bool), and class types implicitly
+         * convertible to index_t, such as graph edge descriptors (converted to their edge index).
+         */
+        template<class I>
+        inline constexpr bool is_element_index_v = is_index_type_v<I> ||
+                                                   (std::is_class_v<I> && std::is_convertible_v<I, index_t>);
+
+        /**
          * Converts an integral value to a dimension; throws if it is negative or above INT64_MAX.
          */
         template<class I>

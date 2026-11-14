@@ -10,16 +10,12 @@
 
 #include "higra/structure/details/light_axis_view.hpp"
 #include "higra/structure/array.hpp"
-#include "higra/structure/array/xtensor_bridge.hpp"
-#include "xtensor/views/xview.hpp"
-#include "xtensor/views/xstrided_view.hpp"
 #include "../../test_utils.hpp"
 
 namespace light_axis_view {
 
     using namespace hg;
     using namespace std;
-    using namespace xt;
 
     template<typename T>
     void print_it(T &&it) {
@@ -60,11 +56,11 @@ namespace light_axis_view {
                 }
         };
         auto v = make_light_axis_view<true>(a);
-        auto v1 = view(a, 0);
+        auto v1 = a.row(0);
         REQUIRE(compare(v, v1));
 
         v.set_position(1);
-        auto v2 = view(a, 1);
+        auto v2 = a.row(1);
         REQUIRE(compare(v, v2));
     }
 
@@ -87,7 +83,7 @@ namespace light_axis_view {
          REQUIRE(compare(v, v2));
      }*/
 
-    TEST_CASE("view on xtensor view", "[light_axis_view]") {
+    TEST_CASE("view on array slice", "[light_axis_view]") {
         array_nd<int> a{
                 {
                         {1, 2, 3},
@@ -98,19 +94,13 @@ namespace light_axis_view {
                         {10, 11, 12}
                 }
         };
-        auto va = view(a, xt::all(), xt::range(1, 2), xt::range(0, 3, 2));
-        // light axis views require row-major storage: views go through hg::bridge::as_view
-        auto hva = hg::bridge::as_view(va);
-        auto v = make_light_axis_view<true>(hva.view);
-        std::array<int, 2> v1{4, 6};
+        auto va = a.slice(1, 2);
+        auto v = make_light_axis_view<true>(va);
+        std::array<int, 6> v1{7, 8, 9, 10, 11, 12};
         REQUIRE(compare(v, v1));
-
-        v.set_position(1);
-        std::array<int, 2> v2{10, 12};
-        REQUIRE(compare(v, v2));
     }
 
-    TEST_CASE("view on xtensor strided view", "[light_axis_view]") {
+    TEST_CASE("view on array row", "[light_axis_view]") {
         array_nd<int> a{
                 {
                         {1, 2, 3},
@@ -121,10 +111,9 @@ namespace light_axis_view {
                         {10, 11, 12}
                 }
         };
-        auto va = strided_view(a, {1});
-        // light axis views require row-major storage: views go through hg::bridge::as_view
-        auto hva = hg::bridge::as_view(va);
-        auto v = make_light_axis_view<true>(hva.view);
+        const array_nd<int> &ca = a;
+        auto va = ca.row(1);
+        auto v = make_light_axis_view<true>(va);
         std::array<int, 3> v1{7, 8, 9};
         REQUIRE(compare(v, v1));
 
@@ -133,7 +122,7 @@ namespace light_axis_view {
         REQUIRE(compare(v, v2));
     }
 
-    TEST_CASE("view on xtensor strided view complex", "[light_axis_view]") {
+    TEST_CASE("view on reshaped array view", "[light_axis_view]") {
         array_nd<int> a{
                 {
                         {1, 2, 3},
@@ -144,15 +133,13 @@ namespace light_axis_view {
                         {10, 11, 12}
                 }
         };
-        auto va = strided_view(a, {xt::all(), xt::range(1, 2), xt::range(0, 3, 2)});
-        // light axis views require row-major storage: views go through hg::bridge::as_view
-        auto hva = hg::bridge::as_view(va);
-        auto v = make_light_axis_view<true>(hva.view);
-        std::array<int, 2> v1{4, 6};
+        auto va = a.reshaped({6, 2});
+        auto v = make_light_axis_view<true>(va);
+        std::array<int, 2> v1{1, 2};
         REQUIRE(compare(v, v1));
 
-        v.set_position(1);
-        std::array<int, 2> v2{10, 12};
+        v.set_position(4);
+        std::array<int, 2> v2{9, 10};
         REQUIRE(compare(v, v2));
     }
 

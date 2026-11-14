@@ -58,7 +58,7 @@ namespace test_rag {
                 0, 0, 2, 2,
                 0, 0, 3, 3
         };
-        REQUIRE(xt::equal(vertex_map, expected_vertex_map)());
+        REQUIRE((vertex_map == expected_vertex_map));
 
         auto iv = invalid_index;
         array_1d<index_t> expected_edge_map{

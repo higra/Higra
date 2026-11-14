@@ -11,8 +11,6 @@
 #include "py_watershed_hierarchy.hpp"
 #include "higra/hierarchy/watershed_hierarchy.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 namespace py_watershed_hierarchy {
 
     namespace py = pybind11;
@@ -33,9 +31,9 @@ namespace py_watershed_hierarchy {
                       auto attribute_adaptor = [&attribute_functor, &attribute_storage](
                               const hg::tree &tree, const hg::array_1d<value_t> &altitudes) {
                           attribute_storage = attribute_functor(tree, altitudes);
-                          return hg::bridge::as_xt(attribute_storage);
+                          return attribute_storage;
                       };
-                      auto res = hg::watershed_hierarchy_by_attribute(graph, hg::bridge::as_xt(edge_weights),
+                      auto res = hg::watershed_hierarchy_by_attribute(graph, edge_weights,
                                                                       attribute_adaptor);
                       return py::make_tuple(
                               std::move(res.tree),
@@ -59,8 +57,8 @@ namespace py_watershed_hierarchy {
                   [](const graph_t &graph,
                      const hg::array_view<const value_t> &edge_weights,
                      const hg::array_view<const size_t> &minima_ranks) {
-                      auto res = hg::watershed_hierarchy_by_minima_ordering(graph, hg::bridge::as_xt(edge_weights),
-                                                                            hg::bridge::as_xt(minima_ranks));
+                      auto res = hg::watershed_hierarchy_by_minima_ordering(graph, edge_weights,
+                                                                            minima_ranks);
                       return py::make_tuple(
                               std::move(res.tree),
                               std::move(res.altitudes),
@@ -75,7 +73,6 @@ namespace py_watershed_hierarchy {
     };
 
     void py_init_watershed_hierarchy(pybind11::module &m) {
-        //xt::import_numpy();
 
         add_type_overloads<def_watershed_hierarchy_by_attribute<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
 

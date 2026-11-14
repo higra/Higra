@@ -295,7 +295,7 @@ namespace test_watershed {
         // Regression test for scenario 07: interactive single seed churn with label changes.
         auto g = hg::get_4_adjacency_graph({100, 100});
         const index_t n_edges = g.num_edges();
-        array_1d<double> edge_weights = xt::empty<double>({n_edges});
+        array_1d<double> edge_weights = hg::empty<double>({n_edges});
         for (index_t i = 0; i < n_edges; ++i) {
             // Deterministic pseudo-random in [0, 1)
             edge_weights(i) = static_cast<double>(i % 997) / 997.0;
@@ -314,7 +314,7 @@ namespace test_watershed {
         auto labels = iws.get_labeling();
 
         // Baseline via full seeded watershed
-        array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+        array_1d<index_t> seeds = hg::zeros<index_t>({g.num_vertices()});
         for (index_t i = 0; i < 10; ++i) {
             seeds(sv(i)) = initial_labels(i);
         }
@@ -361,7 +361,7 @@ namespace test_watershed {
         array_1d<index_t> rm{0, 3};
         iws.remove_seeds(rm);
 
-        array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+        array_1d<index_t> seeds = hg::zeros<index_t>({g.num_vertices()});
         seeds(1) = 20;
         seeds(4) = 40;
         auto expected = hg::labelisation_seeded_watershed(g, edge_weights, seeds);
@@ -402,14 +402,14 @@ namespace test_watershed {
 
         for (int img_idx = 0; img_idx < 10; ++img_idx) {
             // Generate a random flat image (size*size pixel values in [0,1))
-            array_1d<double> image = xt::empty<double>({(size_t)num_vertices_total});
+            array_1d<double> image = hg::empty<double>({(size_t)num_vertices_total});
             for (index_t k = 0; k < num_vertices_total; ++k)
                 image(k) = dist_real(rng);
 
             auto edge_weights = hg::weight_graph(g, image, hg::weight_functions::L1);
 
             // seeds array (flat, 0 = background)
-            array_1d<index_t> seeds = xt::zeros<index_t>({(size_t)num_vertices_total});
+            array_1d<index_t> seeds = hg::zeros<index_t>({(size_t)num_vertices_total});
 
             std::unordered_map<index_t, index_t> seed_dic;
 

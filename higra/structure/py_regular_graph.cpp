@@ -98,7 +98,6 @@ namespace py_regular_graph {
 
 
     void py_init_regular_graph(pybind11::module &m) {
-        //xt::import_numpy();
         py_init_regular_graph_impl<1>(m);
         py_init_regular_graph_impl<2>(m);
         py_init_regular_graph_impl<3>(m);

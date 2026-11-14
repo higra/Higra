@@ -11,8 +11,6 @@
 #include "py_tree_energy_optimization.hpp"
 #include "higra/algo/tree_energy_optimization.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_tree_energy_optimization {
 
@@ -21,7 +19,7 @@ namespace py_tree_energy_optimization {
 
 /*
  * labelisation_optimal_cut_from_energy(const tree_type &tree,
-                                              const xt::xexpression<T> &xenergy_attribute,
+                                              array_view<const T> energy_attribute,
                                               const accumulator_type accumulator = hg::accumulator_sum())
  */
     template<typename tree_t>
@@ -32,7 +30,7 @@ namespace py_tree_energy_optimization {
             c.def("_labelisation_optimal_cut_from_energy", [](const tree_t &tree,
                                                               const hg::array_view<const value_t> &venergy_attribute,
                                                               const hg::accumulators accumulator) {
-                      auto energy_attribute = hg::bridge::as_xt(venergy_attribute);
+                      auto energy_attribute = venergy_attribute;
                       switch (accumulator) {
                           case hg::accumulators::min:
                               return hg::labelisation_optimal_cut_from_energy(tree,
@@ -74,8 +72,8 @@ namespace py_tree_energy_optimization {
                      const int approximation_piecewise_linear_function) {
                       auto res = hg::hierarchy_to_optimal_energy_cut_hierarchy(
                               tree,
-                              hg::bridge::as_xt(data_fidelity_attribute),
-                              hg::bridge::as_xt(regularization_attribute),
+                              data_fidelity_attribute,
+                              regularization_attribute,
                               approximation_piecewise_linear_function);
                       return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
                   },
@@ -89,7 +87,6 @@ namespace py_tree_energy_optimization {
 
 
     void py_init_tree_energy_optimization(pybind11::module &m) {
-        //xt::import_numpy();
 
         add_type_overloads<def_labelisation_optimal_cut_from_energy<hg::tree>, HG_TEMPLATE_FLOAT_TYPES>(m, "");
 
@@ -103,11 +100,11 @@ namespace py_tree_energy_optimization {
                                                               const hg::array_view<const double> &edge_length) {
                   auto res = hg::binary_partition_tree_MumfordShah_energy(
                           graph,
-                          hg::bridge::as_xt(vertex_perimeter),
-                          hg::bridge::as_xt(vertex_area),
-                          hg::bridge::as_xt(vertex_values),
-                          hg::bridge::as_xt(squared_vertex_values),
-                          hg::bridge::as_xt(edge_length));
+                          vertex_perimeter,
+                          vertex_area,
+                          vertex_values,
+                          squared_vertex_values,
+                          edge_length);
                   return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
               },
               "",

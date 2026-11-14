@@ -8,8 +8,6 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "xtensor/io/xio.hpp"
-#include "xtensor/generators/xrandom.hpp"
 #include "higra/graph.hpp"
 #include "higra/image/graph_image.hpp"
 #include "higra/structure/lca_fast.hpp"
@@ -25,7 +23,7 @@ namespace lca {
 
         hg::tree t;
 
-        _data() : t(xt::xarray<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
+        _data() : t(hg::array<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
         }
 
     } data;
@@ -69,9 +67,9 @@ namespace lca {
     }
 
     TEMPLATE_TEST_CASE("lca sanity", "[lca]", hg::lca_sparse_table, hg::lca_sparse_table_block) {
-        xt::random::seed(42);
+        hg_test::random_seed(42);
         auto g = hg::get_4_adjacency_graph({20, 20});
-        auto w = xt::eval(xt::random::rand<double>({num_edges(g)}));
+        auto w = hg_test::random_uniform<double>({num_edges(g)});
         auto h = hg::bpt_canonical(g, w);
         auto &tree = h.tree;
 
@@ -88,9 +86,9 @@ namespace lca {
     }
 
     TEST_CASE("lca sparse table block", "[lca]") {
-        xt::random::seed(42);
+        hg_test::random_seed(42);
         auto g = hg::get_4_adjacency_graph({10, 10});
-        auto w = xt::eval(xt::random::rand<double>({num_edges(g)}));
+        auto w = hg_test::random_uniform<double>({num_edges(g)});
         auto h = hg::bpt_canonical(g, w);
         auto &tree = h.tree;
 

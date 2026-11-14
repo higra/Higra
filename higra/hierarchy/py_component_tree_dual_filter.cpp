@@ -11,8 +11,6 @@
 #include "py_component_tree_dual_filter.hpp"
 #include "higra/hierarchy/component_tree_casf.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_component_tree_dual_filter {
 
@@ -28,7 +26,7 @@ namespace py_component_tree_dual_filter {
                      const hg::array_view<const value_t> &vertex_weights,
                      hg::ComponentTreeCasfAttribute attribute,
                      const std::vector<double> &thresholds) {
-                        hg::ComponentTreeCasf<value_t, graph_t> casf(graph, hg::bridge::as_xt(vertex_weights),
+                        hg::ComponentTreeCasf<value_t, graph_t> casf(graph, vertex_weights,
                                                                      attribute);
                         return casf.filter(thresholds);
                   },

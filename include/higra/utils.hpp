@@ -15,8 +15,6 @@
 #include <string>
 #include <iostream>
 #include <stack>
-#include "xtensor/views/xstrided_view.hpp"
-//#include "xtensor/xio.hpp"
 #include "detail/log.hpp"
 
 #ifdef  HG_USE_TBB
@@ -41,6 +39,16 @@ namespace hg {
      * Preferred type to represent a size
      */
     using size_t = std::size_t;
+
+    /**
+     * The constant pi (replaces M_PI, which is not standard C++)
+     */
+    inline constexpr double pi = 3.141592653589793238462643383279502884;
+
+    /**
+     * pi / 2
+     */
+    inline constexpr double pi_2 = 1.570796326794896619231321691639751442;
 }
 
 #define HG_MAIN_ASSERT
@@ -96,7 +104,7 @@ namespace hg {
     } while (0)
 
 #define hg_assert_same_shape(array1, array2) do { \
-    hg_assert(xt::same_shape(array1.shape(), array2.shape()), "Shapes of '" #array1 "' and '" #array2 "' must be equal."); \
+    hg_assert(hg::same_shape(array1.shape(), array2.shape()), "Shapes of '" #array1 "' and '" #array2 "' must be equal."); \
     } while (0)
 
 #define hg_assert_component_tree(tree) do { \
@@ -108,9 +116,9 @@ namespace hg {
     } while (0)
 
 #define hg_assert_vertex_indices(graph, vertex_indices) do { \
-    hg_assert((xt::amin)(vertex_indices)() >= 0, \
+    hg_assert(vertex_indices.size() == 0 || hg::min(vertex_indices) >= 0, \
               "Vertex indices cannot be negative.");\
-    hg_assert((hg::index_t)(xt::amax)(vertex_indices)() < (hg::index_t)hg::num_vertices(graph), "Vertex indices must be smaller than the number of vertices in the graph/tree.");\
+    hg_assert(vertex_indices.size() == 0 || (hg::index_t)hg::max(vertex_indices) < (hg::index_t)hg::num_vertices(graph), "Vertex indices must be smaller than the number of vertices in the graph/tree.");\
     } while (0)
 
 #define hg_assert_vertex_index(graph, vertex_index) do { \
@@ -120,9 +128,9 @@ namespace hg {
     } while (0)
 
 #define hg_assert_edge_indices(graph, edge_indices) do { \
-    hg_assert((xt::amin)(edge_indices)() >= 0, \
+    hg_assert(edge_indices.size() == 0 || hg::min(edge_indices) >= 0, \
               "Edge indices cannot be negative.");\
-    hg_assert((hg::index_t)(xt::amax)(edge_indices)() < (hg::index_t)hg::num_edges(graph), "Edge indices must be smaller than the number of edges in the graph/tree.");\
+    hg_assert(edge_indices.size() == 0 || (hg::index_t)hg::max(edge_indices) < (hg::index_t)hg::num_edges(graph), "Edge indices must be smaller than the number of edges in the graph/tree.");\
     } while (0)
 
 #define hg_assert_edge_index(graph, edge_index) do { \

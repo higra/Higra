@@ -16,9 +16,6 @@
 #include "higra/sorting.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 #include "higra/structure/lca_fast.hpp"
-#include "xtensor/views/xindex_view.hpp"
-#include "xtensor/views/xview.hpp"
-#include "xtensor/core/xnoalias.hpp"
 #include <utility>
 #include <tuple>
 #include <queue>
@@ -59,12 +56,11 @@ namespace hg {
         template<typename S1, typename S2, typename T>
         auto bpt_canonical_from_sorted_edges(const S1 &sources,
                                              const S2 &targets,
-                                             const xt::xexpression<T> &xsorted_edge_indices,
+                                             array_view<const T> sorted_edge_indices,
                                              const index_t num_vertices) {
             HG_TRACE();
             static_assert(is_1d_indexable_v<S1> && is_1d_indexable_v<S2>,
                           "Edge sources and targets must be 1d indexable sequences.");
-            auto &sorted_edge_indices = xsorted_edge_indices.derived_cast();
             assert_1d_indexable(sources, "sources");
             assert_1d_indexable(targets, "targets");
             hg_assert((index_t) sources.size() == (index_t) targets.size(),
@@ -80,12 +76,12 @@ namespace hg {
 
             auto num_edge_mst = num_vertices - 1;
 
-            array_1d<index_t> mst_edge_map = xt::empty<index_t>({num_edge_mst});
+            array_1d<index_t> mst_edge_map = hg::empty<index_t>({num_edge_mst});
 
             union_find uf(num_vertices);
 
-            array_1d<index_t> roots = xt::arange<index_t>(num_vertices);
-            array_1d<index_t> parents = xt::arange<index_t>(num_vertices * 2 - 1);
+            array_1d<index_t> roots = hg::arange<index_t>(num_vertices);
+            array_1d<index_t> parents = hg::arange<index_t>(num_vertices * 2 - 1);
 
             index_t num_nodes = num_vertices;
             index_t num_edge_found = 0;
@@ -133,9 +129,8 @@ namespace hg {
      * @return
      */
     template<typename graph_t, typename T>
-    auto bpt_canonical(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+    auto bpt_canonical(const graph_t &graph, array_view<const T> edge_weights) {
         HG_TRACE();
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
 
@@ -150,9 +145,8 @@ namespace hg {
 
         auto num_points = num_vertices(graph);
 
-        array_1d<typename T::value_type> levels = xt::zeros<typename T::value_type>({parents.size()});
-        xt::noalias(xt::view(levels, xt::range(num_points, levels.size()))) = xt::index_view(edge_weights,
-                                                                                             mst_edge_map);
+        array_1d<T> levels = hg::zeros<T>({parents.size()});
+        hg::assign(levels.slice(num_points, levels.size()), hg::take(edge_weights, mst_edge_map));
 
         return make_node_weighted_tree_and_mst(
                 tree(std::move(parents)),
@@ -189,7 +183,7 @@ namespace hg {
             // identification of deleted sub-trees
             // true if all nodes below a given  node are deleted
             // a non deleted non leaf node i such that removed_branch(i) && !removed_branch(parent(i)) is thus a new leaf
-            array_1d<bool> removed_branch = xt::zeros<bool>({num_vertices(t)});
+            array_1d<bool> removed_branch = hg::zeros<bool>({num_vertices(t)});
             for (index_t i = 0; i < (index_t) num_leaves(t); i++) {
                 removed_branch(i) = criterion(i);
             }
@@ -236,8 +230,8 @@ namespace hg {
             // (with top-down traversal)
             // *******************************
             auto num_nodes_new_tree = num_vertices(t) - removed;
-            array_1d<index_t> new_parent = xt::empty<index_t>({num_nodes_new_tree});
-            array_1d<index_t> node_map = xt::empty<index_t>({num_nodes_new_tree});
+            array_1d<index_t> new_parent = hg::empty<index_t>({num_nodes_new_tree});
+            array_1d<index_t> node_map = hg::empty<index_t>({num_nodes_new_tree});
             index_t node_number = num_nodes_new_tree - 1;
 
             std::queue<index_t> queue;
@@ -280,9 +274,9 @@ namespace hg {
             auto n_nodes = num_vertices(t);
             auto n_leaves = num_leaves(t);
 
-            array_1d<index_t> new_ranks = xt::empty<index_t>({n_nodes});
+            array_1d<index_t> new_ranks = hg::empty<index_t>({n_nodes});
 
-            xt::view(new_ranks, xt::range(0, n_leaves)) = xt::arange<index_t>(n_leaves);
+            hg::assign(new_ranks.slice(0, n_leaves), hg::arange<index_t>(n_leaves));
             index_t count = n_leaves;
 
             for (auto i: leaves_to_root_iterator(t, leaves_it::exclude, root_it::exclude)) {
@@ -295,8 +289,8 @@ namespace hg {
             new_ranks(root(t)) = count;
             ++count;
 
-            array_1d<index_t> new_parent = xt::empty<index_t>({count});
-            array_1d<index_t> node_map = xt::empty<index_t>({count});
+            array_1d<index_t> new_parent = hg::empty<index_t>({count});
+            array_1d<index_t> node_map = hg::empty<index_t>({count});
 
             count = new_parent.size() - 1;
 
@@ -337,9 +331,8 @@ namespace hg {
      * @return A node weighted tree
      */
     template<typename graph_t, typename T>
-    auto quasi_flat_zone_hierarchy(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+    auto quasi_flat_zone_hierarchy(const graph_t &graph, array_view<const T> edge_weights) {
         HG_TRACE();
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
 
@@ -357,7 +350,7 @@ namespace hg {
         auto &qfz_tree = qfz.tree;
         auto &node_map = qfz.node_map;
 
-        auto qfz_altitude = xt::eval(xt::index_view(altitudes, node_map));
+        auto qfz_altitude = hg::take(altitudes, node_map);
 
         return make_node_weighted_tree(std::move(qfz_tree), std::move(qfz_altitude));
     }
@@ -379,11 +372,10 @@ namespace hg {
     template<typename graph_t, typename tree_t, typename T>
     auto saliency_map(const graph_t &graph,
                       const tree_t &tree,
-                      const xt::xexpression<T> &xaltitudes) {
-        auto &altitudes = xaltitudes.derived_cast();
+                      array_view<const T> altitudes) {
         lca_fast lca(tree);
         auto lca_edges = lca.lca(edge_iterator(graph));
-        return xt::eval(xt::index_view(altitudes, lca_edges));
+        return hg::take(altitudes, lca_edges);
     }
 
     /**

@@ -10,15 +10,31 @@
 
 #pragma once
 
-#include "xtensor/core/xexpression.hpp"
 #include "array.hpp"
-#include "array/xtensor_bridge.hpp"
 #include "point.hpp"
 #include "../utils.hpp"
 #include <vector>
 
 
 namespace hg {
+
+    namespace embedding_internal {
+
+        /**
+         * True if T is an hg::array or an hg::array_view (the array overloads apply to them).
+         */
+        template<typename T, typename = void>
+        struct is_array : std::false_type {
+        };
+
+        template<typename T>
+        struct is_array<T, std::void_t<typename T::value_type>> :
+                std::is_base_of<array_view<const typename T::value_type>, T> {
+        };
+
+        template<typename T>
+        constexpr bool is_array_v = is_array<T>::value;
+    }
 
 
     namespace embedding_internal {
@@ -108,11 +124,9 @@ namespace hg {
              * @param shape array of dim positive integers
              */
             template<typename T>
-            embedding_grid(const xt::xexpression<T> &xshape) {
-                static_assert(std::is_integral<typename T::value_type>::value,
+            embedding_grid(array_view<const T> shape) {
+                static_assert(std::is_integral<T>::value,
                               "Coordinates must have integral value type.");
-                const auto shape_holder = hg::bridge::as_view(xshape);
-                const auto &shape = shape_holder.view;
                 hg_assert(shape.dimension() == 1 && dim == shape.size(),
                           "Shape dimension does not match embedding dimension !");
                 for (index_t i = 0; i < dim; ++i) {
@@ -180,7 +194,7 @@ namespace hg {
              * @return
              */
             template<typename T,
-                    typename = std::enable_if_t<!std::is_base_of<xt::xexpression<T>, T>::value>
+                    typename = std::enable_if_t<!embedding_internal::is_array_v<T>>
             >
             index_t grid2lin(const T &coordinates) const {
                 index_t result = 0;
@@ -213,18 +227,16 @@ namespace hg {
              * @return an array of linear coordinates of shape (n1, n2, .., nx)
              */
             template<typename T>
-            auto grid2lin(const xt::xexpression<T> &xcoordinates) const {
-                static_assert(std::is_integral<typename T::value_type>::value,
+            auto grid2lin(array_view<const T> coordinates) const {
+                static_assert(std::is_integral<T>::value,
                               "Coordinates must have integral value type.");
-                const auto coordinates_holder = hg::bridge::as_view(xcoordinates);
-                const auto &coordinates = coordinates_holder.view;
                 hg_assert(coordinates.dimension() > 0, "Coordinates must have at least one dimension.");
                 const index_t last = coordinates.shape(coordinates.dimension() - 1);
                 // a last axis of size 1 is broadcast to every coordinate
                 hg_assert(last == dim || last == 1, "Coordinates size does not match embedding dimension.");
 
                 std::vector<size_t> result_shape(coordinates.shape().begin(), coordinates.shape().end() - 1);
-                array_nd<size_t> result = array_nd<size_t>::from_shape(result_shape);
+                array_nd<size_t> result = array_nd<size_t>::from_shape(array_shape::from(result_shape));
                 const auto *c = coordinates.data();
                 const index_t n = (index_t) result.size();
                 size_t total_sum_prod = 0;
@@ -295,18 +307,16 @@ namespace hg {
              * @return an array of boolean of shape (n1, n2, .., nx)
              */
             template<typename T>
-            auto contains(const xt::xexpression<T> &xcoordinates) const {
-                static_assert(std::is_integral<typename T::value_type>::value,
+            auto contains(array_view<const T> coordinates) const {
+                static_assert(std::is_integral<T>::value,
                               "Coordinates must have integral value type.");
 
-                const auto coordinates_holder = hg::bridge::as_view(xcoordinates);
-                const auto &coordinates = coordinates_holder.view;
                 hg_assert(coordinates.dimension() > 0 &&
                           coordinates.shape(coordinates.dimension() - 1) == dim,
                           "Coordinates size does not match embedding dimension.");
 
                 std::vector<size_t> result_shape(coordinates.shape().begin(), coordinates.shape().end() - 1);
-                array_nd<bool> result = array_nd<bool>::from_shape(result_shape);
+                array_nd<bool> result = array_nd<bool>::from_shape(array_shape::from(result_shape));
                 const auto *c = coordinates.data();
                 const index_t n = (index_t) result.size();
                 auto *r = result.data();
@@ -329,7 +339,7 @@ namespace hg {
              * @return
              */
             template<typename T,
-                    typename = std::enable_if_t<!std::is_base_of<xt::xexpression<T>, T>::value>
+                    typename = std::enable_if_t<!embedding_internal::is_array_v<T>>
             >
             bool contains(const T &coordinates) const {
 
@@ -364,17 +374,15 @@ namespace hg {
              * @return an array of points grid coordinates of shape (n1, n2,... nx, dim)
              */
             template<typename T>
-            xt::xarray<coordinates_t> lin2grid(const xt::xexpression<T> &xindices) const {
-                static_assert(std::is_integral<typename T::value_type>::value,
+            array_nd<coordinates_t> lin2grid(array_view<const T> indices) const {
+                static_assert(std::is_integral<T>::value,
                               "Indices must have integral value type.");
-                const auto indices_holder = hg::bridge::as_view(xindices);
-                const auto &indices = indices_holder.view;
 
                 const index_t size = indices.size();
-                std::vector<size_t> shape(indices.shape().begin(), indices.shape().end());
+                std::vector<index_t> shape(indices.shape().begin(), indices.shape().end());
                 shape.push_back(dim);
 
-                array_nd<coordinates_t> result = array_nd<coordinates_t>::from_shape(shape);
+                array_nd<coordinates_t> result = array_nd<coordinates_t>::from_shape(array_shape::from(shape));
                 const auto *indices_data = indices.data();
                 auto *r = result.data();
 

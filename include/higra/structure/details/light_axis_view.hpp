@@ -10,8 +10,7 @@
 
 #pragma once
 #include "../../utils.hpp"
-#include "../array/xtensor_bridge.hpp"
-#include "xtensor/containers/xcontainer.hpp"
+#include "../array/array.hpp"
 #include <type_traits>
 
 namespace hg {
@@ -153,22 +152,6 @@ namespace hg {
     template<bool vectorial = true, typename T>
     auto make_light_axis_view(const array<T> &e, index_t position = 0) {
         return make_light_axis_view<vectorial>(e.view(), position);
-    }
-
-    /**
-     * Light axis view over an xtensor container (``xt::xarray``, ``xt::xtensor`` and their adaptors), which
-     * must store its elements in row-major order. Other xtensor expressions (views, lazy expressions)
-     * are not supported: obtain a contiguous view with ``hg::bridge::as_view`` first.
-     */
-    template<bool vectorial = true, typename T,
-            typename = std::enable_if_t<std::is_base_of<xt::xcontainer<std::remove_const_t<T>>,
-                    std::remove_const_t<T>>::value>>
-    auto make_light_axis_view(T &e, index_t position = 0) {
-        hg_assert(bridge::bridge_internal::is_c_contiguous(e),
-                  "light axis view: the array must be stored in row-major order.");
-        using value_t = std::remove_pointer_t<decltype(e.data())>;
-        return details::light_axis_view<vectorial, value_t>(e.data(), details::light_axis_view_row_size(e),
-                                                            position);
     }
 
 }

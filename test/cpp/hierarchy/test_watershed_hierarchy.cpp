@@ -64,7 +64,7 @@ namespace watershed_hierarchy {
 
         auto res = watershed_hierarchy_by_area(g, edge_weights);
 
-        REQUIRE((xt::sum(res.altitudes)() == 0));
+        REQUIRE((hg::sum(res.altitudes) == 0));
     }
 
     TEST_CASE("watershed hierarchy by dynamics", "[watershed_hierarchy]") {
@@ -128,7 +128,7 @@ namespace watershed_hierarchy {
         auto graph = get_4_adjacency_graph({4, 5});
         array_1d<double> edge_weights{1, 5, 2, 0, 3, 6, 4, 2, 8, 1, 7, 3, 2, 5, 9, 1, 4, 6, 3, 2, 7, 1, 8, 4, 2,
                                       6, 3, 5, 1, 9, 2};
-        array_1d<index_t> ones = xt::ones<index_t>({num_vertices(graph)});
+        array_1d<index_t> ones = hg::ones<index_t>({num_vertices(graph)});
 
         auto res1 = watershed_hierarchy_by_area(graph, edge_weights);
         auto ref1 = watershed_hierarchy_by_area(graph, edge_weights, ones);

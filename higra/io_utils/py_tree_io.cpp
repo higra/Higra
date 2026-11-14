@@ -11,14 +11,11 @@
 #include "py_tree_io.hpp"
 #include "higra/io/tree_io.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include <fstream>
 
 namespace py_tree_io {
 
     void py_init_tree_io(pybind11::module &m) {
-        //xt::import_numpy();
 
         m.def("_read_tree", [](const std::string &filename) {
                   std::ifstream file(filename, std::ios::binary);
@@ -34,7 +31,7 @@ namespace py_tree_io {
                   hg_assert(file.is_open(), "Cannot open tree file for writing: " + filename);
                   auto s = hg::save_tree(file, tree);
                   for (const auto &e: attributes) {
-                      s.add_attribute(e.first, hg::bridge::as_xt(e.second));
+                      s.add_attribute(e.first, e.second);
                   }
                   s.finalize();
                   file.close();

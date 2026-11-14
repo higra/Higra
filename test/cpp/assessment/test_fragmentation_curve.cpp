@@ -39,7 +39,7 @@ namespace assessment_fragmentation_curve {
             };
             array_1d<size_t> ref_k{ 1, 2, 3, 4, 5, 6, 7, 8 };
 
-            REQUIRE(res_scores == (ref_scores / num_leaves(t)));
+            REQUIRE(res_scores == (hg_test::divided(ref_scores, num_leaves(t))));
             REQUIRE(res_k == ref_k);
     }
 
@@ -65,7 +65,7 @@ namespace assessment_fragmentation_curve {
         };
         array_1d<size_t> ref_k{ 1, 2, 3, 4, 5, 6, 7, 8 };
 
-        REQUIRE(res_scores == (ref_scores / num_leaves(t)));
+        REQUIRE(res_scores == (hg_test::divided(ref_scores, num_leaves(t))));
         REQUIRE(res_k == ref_k);
     }
 
@@ -87,7 +87,7 @@ namespace assessment_fragmentation_curve {
             array_1d<double> ref_scores{ 2.75, 4.5, 2 + 4.0 / 3 + 2.5, 2 + 4.0 / 3 + 2, 2 + 4.0 / 3 + 4.0 / 3 };
             array_1d<size_t> ref_k{ 1, 2, 3, 4, 5 };
 
-            REQUIRE(xt::allclose(res_scores, ref_scores / num_leaves(t)));
+            REQUIRE(hg::allclose(res_scores, hg_test::divided(ref_scores, num_leaves(t))));
             REQUIRE(res_k == ref_k);
     }
 
@@ -108,8 +108,8 @@ namespace assessment_fragmentation_curve {
             array_1d<double> ref_scores{ 3, 5, 7, 7, 7, 8, 8, 8 };
             array_1d<double> ref_k{ 1, 2, 3, 4, 5, 6, 7, 8 };
 
-            REQUIRE(res_scores == (ref_scores / num_leaves(t)));
-            REQUIRE(xt::allclose(res_k, ref_k / 3));
+            REQUIRE(res_scores == (hg_test::divided(ref_scores, num_leaves(t))));
+            REQUIRE(hg::allclose(res_k, hg_test::divided(ref_k, 3)));
     }
 
     TEST_CASE("fragmentation curve Covering optimal cut", "[fragmentation_curve]") {
@@ -129,7 +129,7 @@ namespace assessment_fragmentation_curve {
             array_1d<double> ref_scores{ 3, 5, 5 + 4.0 / 3, 5 + 2.0 / 3, 4 + 2.0 / 3, 2 + 8.0 / 3, 4, 3 };
             array_1d<size_t> ref_k{ 1, 2, 3, 4, 5, 6, 7, 8 };
 
-            REQUIRE(xt::allclose(res_scores, (ref_scores / num_leaves(t))));
+            REQUIRE(hg::allclose(res_scores, (hg_test::divided(ref_scores, num_leaves(t)))));
             REQUIRE(res_k == ref_k);
     }
 
@@ -183,7 +183,7 @@ namespace assessment_fragmentation_curve {
                 { 0, 1, 2, 3, 4, 5, 6, 7 }
             };
 
-            auto sorted = xt::sort(altitudes);
+            auto sorted = hg_test::sort<double>(altitudes);
 
             for (index_t i = 0; i < (index_t) optimal_partitions.size(); i++) {
                 auto tmp = labelisation_horizontal_cut_from_threshold(t,
@@ -212,7 +212,7 @@ namespace assessment_fragmentation_curve {
             array_1d<double> ref_k{ 1, 3, 4, 9 };
 
             REQUIRE(res.num_regions_ground_truth() == 3);
-            REQUIRE(xt::allclose(res_scores, ref_scores / num_leaves(tree)));
+            REQUIRE(hg::allclose(res_scores, hg_test::divided(ref_scores, num_leaves(tree))));
             REQUIRE(res_k == (ref_k));
     }
 
@@ -235,7 +235,7 @@ namespace assessment_fragmentation_curve {
             array_1d<double> ref_scores{ 4.0, 8.0, 9.0, 10.0 };
             array_1d<double> ref_k{ 1, 3, 4, 9 };
 
-            REQUIRE(xt::allclose(res_scores, ref_scores / 11));
+            REQUIRE(hg::allclose(res_scores, hg_test::divided(ref_scores, 11)));
             REQUIRE(res_k == ref_k);
     }
 
@@ -250,7 +250,7 @@ namespace assessment_fragmentation_curve {
             auto res = assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, scorer);
             REQUIRE(res.num_regions_ground_truth() == 3);
             REQUIRE(res.num_regions() == ref_k);
-            REQUIRE(xt::allclose(res.scores() * 11.0, ref_scores, 1e-14));
+            REQUIRE(hg::allclose(hg_test::multiplied(res.scores(), 11.0), ref_scores, 1e-14));
             auto normalized = res.num_regions_normalized();
             static_assert(std::is_same<decltype(normalized), array_1d<double>>::value, "");
             REQUIRE(normalized == array_1d<double>{1.0 / 3, 3.0 / 3, 4.0 / 3, 9.0 / 3});
@@ -274,8 +274,8 @@ namespace assessment_fragmentation_curve {
             auto res = assesser.fragmentation_curve();
             REQUIRE(res.num_regions_ground_truth() == 3);
             REQUIRE(res.num_regions() == ref_k);
-            REQUIRE(xt::allclose(res.scores() * 8.0, ref_scores, 1e-14));
-            REQUIRE(xt::allclose(res.num_regions_normalized(), ref_k / 3.0, 1e-15));
+            REQUIRE(hg::allclose(hg_test::multiplied(res.scores(), 8.0), ref_scores, 1e-14));
+            REQUIRE(hg::allclose(res.num_regions_normalized(), hg_test::divided(ref_k, 3.0), 1e-15));
             REQUIRE((size_t) assesser.optimal_number_of_regions() == optimal_k);
             REQUIRE(res.optimal_number_of_regions() == optimal_k);
             REQUIRE(assesser.optimal_score() == res.optimal_score());
@@ -291,7 +291,7 @@ namespace assessment_fragmentation_curve {
         // a tree on a rag whose vertex map is the identity gives the same curves as the tree on the pixels
         hg::tree t{array_1d<index_t>{8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14}};
         array_1d<int> ground_truth{0, 0, 3, 3, 3, 1, 1, 1};
-        array_1d<index_t> vertex_map = xt::arange<index_t>(8);
+        array_1d<index_t> vertex_map = hg::arange<index_t>(8);
 
         for (auto measure: {optimal_cut_measure::BCE, optimal_cut_measure::DHamming, optimal_cut_measure::DCovering}) {
             assesser_fragmentation_optimal_cut a_rag(t, ground_truth, measure, vertex_map);

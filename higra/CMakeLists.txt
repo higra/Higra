@@ -47,7 +47,7 @@ pybind11_add_module(higram ${PYMODULE_COMPONENTS})
 
 
 if (HG_USE_TBB)
-    target_compile_definitions(higram PRIVATE HG_USE_TBB XTENSOR_USE_TBB)
+    target_compile_definitions(higram PRIVATE HG_USE_TBB)
         if (HG_BUILD_WHEEL AND WIN32)
                 if (NOT DEFINED TBB_RENAMED_LIBRARY)
                         message(FATAL_ERROR "TBB_RENAMED_LIBRARY must be set when building a Windows wheel with oneTBB.")

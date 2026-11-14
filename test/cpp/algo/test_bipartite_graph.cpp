@@ -11,7 +11,6 @@
 #include "higra/algo/bipartite_graph.hpp"
 #include "../test_utils.hpp"
 #include <set>
-#include "xtensor/generators/xrandom.hpp"
 
 using namespace hg;
 
@@ -28,7 +27,7 @@ namespace test_alignment {
         std::set<index_t> edge_set{4, 2, 1};
 
         size_t n = num_vertices(g) / 2;
-        REQUIRE(edges.size() == n);
+        REQUIRE(edges.size() == (index_t) n);
         for (index_t i = 0; i < (index_t) n; ++i) {
             REQUIRE(edge_set.count(edges[i]) == 1);
             edge_set.erase(edges[i]);
@@ -46,7 +45,7 @@ namespace test_alignment {
         std::set<index_t> edge_set{4, 0, 5};
 
         size_t n = num_vertices(g) / 2;
-        REQUIRE(edges.size() == n);
+        REQUIRE(edges.size() == (index_t) n);
         for (index_t i = 0; i < (index_t) n; ++i) {
             REQUIRE(edge_set.count(edges[i]) == 1);
             edge_set.erase(edges[i]);
@@ -172,7 +171,7 @@ namespace test_alignment {
         std::uniform_int_distribution<index_t> dis2(split, n - 1);
 
 
-        array_1d<index_t> randomized_order = xt::random::permutation(n);
+        array_1d<index_t> randomized_order = hg_test::random_permutation(n);
         for (index_t i = 0; i < m; ++i) {
             add_edge(randomized_order(dis(gen)), randomized_order(dis2(gen)), g);
         }
@@ -183,7 +182,7 @@ namespace test_alignment {
         auto &color = res.second;
 
         REQUIRE(ans);
-        REQUIRE(color.size() == (size_t)n);
+        REQUIRE(color.size() == (index_t) n);
         for (const auto &e: edge_iterator(g)){
             REQUIRE(color[e.source] != color[e.target]);
         }
@@ -201,7 +200,7 @@ namespace test_alignment {
         std::uniform_int_distribution<index_t> dis2(split, n - 1);
 
 
-        array_1d<index_t> randomized_order = xt::random::permutation(n);
+        array_1d<index_t> randomized_order = hg_test::random_permutation(n);
         for (index_t i = 0; i < m; ++i) {
             add_edge(randomized_order(dis(gen)), randomized_order(dis2(gen)), g);
         }
@@ -212,7 +211,7 @@ namespace test_alignment {
         auto &color = res.second;
 
         REQUIRE(ans);
-        REQUIRE(color.size() == (size_t)n);
+        REQUIRE(color.size() == (index_t) n);
         for (const auto &e: edge_iterator(g)){
             REQUIRE(color[e.source] != color[e.target]);
         }

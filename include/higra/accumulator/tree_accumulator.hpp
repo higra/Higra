@@ -13,7 +13,6 @@
 #include "../graph.hpp"
 #include "accumulator.hpp"
 #include "../structure/details/light_axis_view.hpp"
-#include "../structure/array/xtensor_bridge.hpp"
 
 namespace hg {
 
@@ -35,7 +34,7 @@ namespace hg {
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(tree));
 
-            array_nd <output_t> output = array_nd<output_t>::from_shape(output_shape);
+            array_nd <output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
@@ -103,7 +102,7 @@ namespace hg {
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(tree));
 
-            array_nd <output_t> output = array_nd<output_t>::from_shape(output_shape);
+            array_nd <output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
 
             auto vertex_data_view = make_light_axis_view<vectorial>(vertex_data);
             auto input_view = make_light_axis_view<vectorial>(output);
@@ -183,7 +182,7 @@ namespace hg {
                       "Vertex data shape does not match accumulator output shape.");
             output_shape.insert(output_shape.begin(), num_vertices(tree));
 
-            array_nd <output_t> output = array_nd<output_t>::from_shape(output_shape);
+            array_nd <output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto inout_view = make_light_axis_view<vectorial>(output);
@@ -254,8 +253,7 @@ namespace hg {
             HG_TRACE();
             hg_assert_node_weights(tree, input);
 
-            array_nd <output_t> output = array_nd<output_t>::from_shape(
-                    std::vector<size_t>(input.shape().begin(), input.shape().end()));
+            array_nd <output_t> output = array_nd<output_t>::from_shape(input.shape());
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
@@ -277,14 +275,12 @@ namespace hg {
                 typename output_t = V1>
         auto propagate_parallel_impl(const tree_t &tree,
                                      array_view<const V1> input,
-                                     const xt::xexpression<T2> &xcondition) {
+                                     array_view<const T2> condition) {
             HG_TRACE();
-            auto &condition = xcondition.derived_cast();
             hg_assert_node_weights(tree, input);
             hg_assert_node_weights(tree, condition);
 
-            array_nd <output_t> output = array_nd<output_t>::from_shape(
-                    std::vector<size_t>(input.shape().begin(), input.shape().end()));
+            array_nd <output_t> output = array_nd<output_t>::from_shape(input.shape());
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
@@ -310,15 +306,13 @@ namespace hg {
                 typename output_t = V1>
         auto propagate_sequential_impl(const tree_t &tree,
                                        array_view<const V1> input,
-                                       const xt::xexpression<T2> &xcondition) {
+                                       array_view<const T2> condition) {
             HG_TRACE();
-            auto &condition = xcondition.derived_cast();
             hg_assert_node_weights(tree, input);
             hg_assert_node_weights(tree, condition);
             hg_assert_1d_array(condition);
 
-            array_nd <output_t> output = array_nd<output_t>::from_shape(
-                    std::vector<size_t>(input.shape().begin(), input.shape().end()));
+            array_nd <output_t> output = array_nd<output_t>::from_shape(input.shape());
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
@@ -364,7 +358,7 @@ namespace hg {
                       "Input shape does not match accumulator output shape.");
 
             output_shape.insert(output_shape.begin(), num_vertices(tree));
-            array_nd <output_t> output = array_nd<output_t>::from_shape(output_shape);
+            array_nd <output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
@@ -405,10 +399,9 @@ namespace hg {
                 typename output_t = V1>
         auto propagate_sequential_and_accumulate_impl(const tree_t &tree,
                                                       array_view<const V1> input,
-                                                      const xt::xexpression<T2> &xcondition,
+                                                      array_view<const T2> condition,
                                                       accumulator_t &accumulator) {
             HG_TRACE();
-            auto &condition = xcondition.derived_cast();
             hg_assert_node_weights(tree, input);
             hg_assert_node_weights(tree, condition);
             hg_assert_1d_array(condition);
@@ -421,7 +414,7 @@ namespace hg {
                       "Input shape does not match accumulator output shape.");
 
             output_shape.insert(output_shape.begin(), num_vertices(tree));
-            array_nd <output_t> output = array_nd<output_t>::from_shape(output_shape);
+            array_nd <output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
@@ -468,119 +461,101 @@ namespace hg {
     }
 
     /*
-     * Public entry points: array inputs that are processed row by row are obtained through
-     * hg::bridge::as_view, which refers to the elements of contiguous arrays and evaluates lazy or
-     * strided expressions into temporary contiguous storage.
+     * Public entry points: 1d inputs are processed as scalars, inputs of higher dimension row by row.
      */
 
-    template<typename tree_t, typename T, typename accumulator_t, typename output_t = typename T::value_type>
+    template<typename tree_t, typename T, typename accumulator_t, typename output_t = T>
     auto accumulate_parallel(const tree_t &tree,
-                             const xt::xexpression<T> &xinput,
+                             array_view<const T> input,
                              const accumulator_t &accumulator) {
-        const auto input = hg::bridge::as_view(xinput);
-        if (input.view.dimension() == 1) {
-            return tree_accumulator_detail::accumulate_parallel_impl<false>(tree, input.view, accumulator);
+        if (input.dimension() == 1) {
+            return tree_accumulator_detail::accumulate_parallel_impl<false>(tree, input, accumulator);
         } else {
-            return tree_accumulator_detail::accumulate_parallel_impl<true>(tree, input.view, accumulator);
+            return tree_accumulator_detail::accumulate_parallel_impl<true>(tree, input, accumulator);
         }
     };
 
 
-    template<typename tree_t, typename T, typename accumulator_t, typename output_t = typename T::value_type>
+    template<typename tree_t, typename T, typename accumulator_t, typename output_t = T>
     auto accumulate_sequential(const tree_t &tree,
-                               const xt::xexpression<T> &xvertex_data,
+                               array_view<const T> vertex_data,
                                const accumulator_t &accumulator) {
-        const auto vertex_data = hg::bridge::as_view(xvertex_data);
-
-        if (vertex_data.view.dimension() == 1) {
-            return tree_accumulator_detail::accumulate_sequential_impl<false>(tree, vertex_data.view, accumulator);
+        if (vertex_data.dimension() == 1) {
+            return tree_accumulator_detail::accumulate_sequential_impl<false>(tree, vertex_data, accumulator);
         } else {
-            return tree_accumulator_detail::accumulate_sequential_impl<true>(tree, vertex_data.view, accumulator);
+            return tree_accumulator_detail::accumulate_sequential_impl<true>(tree, vertex_data, accumulator);
         }
     };
 
-    template<typename tree_t, typename T1, typename T2, typename accumulator_t, typename combination_fun_t, typename output_t = typename T1::value_type>
+    template<typename tree_t, typename T1, typename T2, typename accumulator_t, typename combination_fun_t, typename output_t = T1>
     auto accumulate_and_combine_sequential(const tree_t &tree,
-                                           const xt::xexpression<T1> &xinput,
-                                           const xt::xexpression<T2> &xvertex_data,
+                                           array_view<const T1> input,
+                                           array_view<const T2> vertex_data,
                                            const accumulator_t &accumulator,
                                            const combination_fun_t &combine) {
-        const auto input = hg::bridge::as_view(xinput);
-        const auto vertex_data = hg::bridge::as_view(xvertex_data);
-
-        if (input.view.dimension() == 1) {
-            return tree_accumulator_detail::accumulate_and_combine_sequential_impl<false>(tree, input.view,
-                                                                                          vertex_data.view,
+        if (input.dimension() == 1) {
+            return tree_accumulator_detail::accumulate_and_combine_sequential_impl<false>(tree, input,
+                                                                                          vertex_data,
                                                                                           accumulator, combine);
         } else {
-            return tree_accumulator_detail::accumulate_and_combine_sequential_impl<true>(tree, input.view,
-                                                                                         vertex_data.view,
+            return tree_accumulator_detail::accumulate_and_combine_sequential_impl<true>(tree, input,
+                                                                                         vertex_data,
                                                                                          accumulator, combine);
         }
     };
 
     template<typename tree_t, typename T1>
     auto propagate_parallel(const tree_t &tree,
-                            const xt::xexpression<T1> &xinput) {
-        const auto input = hg::bridge::as_view(xinput);
-
-        if (input.view.dimension() == 1) {
-            return tree_accumulator_detail::propagate_parallel_impl<false>(tree, input.view);
+                            array_view<const T1> input) {
+        if (input.dimension() == 1) {
+            return tree_accumulator_detail::propagate_parallel_impl<false>(tree, input);
         } else {
-            return tree_accumulator_detail::propagate_parallel_impl<true>(tree, input.view);
+            return tree_accumulator_detail::propagate_parallel_impl<true>(tree, input);
         }
     };
 
     template<typename tree_t, typename T1, typename T2>
     auto propagate_parallel(const tree_t &tree,
-                            const xt::xexpression<T1> &xinput,
-                            const xt::xexpression<T2> &xcondition) {
-        const auto input = hg::bridge::as_view(xinput);
-
-        if (input.view.dimension() == 1) {
-            return tree_accumulator_detail::propagate_parallel_impl<false>(tree, input.view, xcondition);
+                            array_view<const T1> input,
+                            array_view<const T2> xcondition) {
+        if (input.dimension() == 1) {
+            return tree_accumulator_detail::propagate_parallel_impl<false>(tree, input, xcondition);
         } else {
-            return tree_accumulator_detail::propagate_parallel_impl<true>(tree, input.view, xcondition);
+            return tree_accumulator_detail::propagate_parallel_impl<true>(tree, input, xcondition);
         }
     };
 
     template<typename tree_t, typename T1, typename T2>
     auto propagate_sequential(const tree_t &tree,
-                              const xt::xexpression<T1> &xinput,
-                              const xt::xexpression<T2> &xcondition) {
-        const auto input = hg::bridge::as_view(xinput);
-
-        if (input.view.dimension() == 1) {
-            return tree_accumulator_detail::propagate_sequential_impl<false>(tree, input.view, xcondition);
+                              array_view<const T1> input,
+                              array_view<const T2> xcondition) {
+        if (input.dimension() == 1) {
+            return tree_accumulator_detail::propagate_sequential_impl<false>(tree, input, xcondition);
         } else {
-            return tree_accumulator_detail::propagate_sequential_impl<true>(tree, input.view, xcondition);
+            return tree_accumulator_detail::propagate_sequential_impl<true>(tree, input, xcondition);
         }
     };
 
     template<typename tree_t, typename T, typename accumulator_t>
     auto propagate_sequential_and_accumulate(const tree_t &tree,
-                                             const xt::xexpression<T> &xinput,
+                                             array_view<const T> input,
                                              const accumulator_t &accumulator) {
-        const auto input = hg::bridge::as_view(xinput);
-
-        if (input.view.dimension() == 1) {
-            return tree_accumulator_detail::propagate_sequential_and_accumulate_impl<false>(tree, input.view, accumulator);
+        if (input.dimension() == 1) {
+            return tree_accumulator_detail::propagate_sequential_and_accumulate_impl<false>(tree, input, accumulator);
         } else {
-            return tree_accumulator_detail::propagate_sequential_and_accumulate_impl<true>(tree, input.view, accumulator);
+            return tree_accumulator_detail::propagate_sequential_and_accumulate_impl<true>(tree, input, accumulator);
         }
     };
 
     template<typename tree_t, typename T1, typename T2, typename accumulator_t>
     auto propagate_sequential_and_accumulate(const tree_t &tree,
-                                             const xt::xexpression<T1> &xinput,
+                                             array_view<const T1> input,
                                              const accumulator_t &accumulator,
-                                             const xt::xexpression<T2> &xcondition) {
-        const auto input = hg::bridge::as_view(xinput);
-
-        if (input.view.dimension() == 1) {
-            return tree_accumulator_detail::propagate_sequential_and_accumulate_impl<false>(tree, input.view, xcondition, accumulator);
+                                             array_view<const T2> xcondition) {
+        if (input.dimension() == 1) {
+            return tree_accumulator_detail::propagate_sequential_and_accumulate_impl<false>(tree, input, xcondition, accumulator);
         } else {
-            return tree_accumulator_detail::propagate_sequential_and_accumulate_impl<true>(tree, input.view, xcondition, accumulator);
+            return tree_accumulator_detail::propagate_sequential_and_accumulate_impl<true>(tree, input, xcondition, accumulator);
         }
     };
 

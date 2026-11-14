@@ -13,9 +13,6 @@
 #include <deque>
 #include <limits>
 #include <algorithm>
-#include "xtensor/views/xindex_view.hpp"
-#include "xtensor/views/xview.hpp"
-#include "xtensor/core/xnoalias.hpp"
 #include "higra/accumulator/accumulator.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 #include "higra/graph.hpp"
@@ -285,7 +282,7 @@ namespace hg {
             template<typename T>
             static auto init(const T &a) {
                 type res = type::from_shape({a.shape()[0] * 2 - 1, a.shape()[1]});
-                xt::view(res, xt::range(0, a.shape()[0]), xt::all()) = a;
+                hg::assign(res.slice(0, a.shape()[0]), a);
                 return res;
             }
         };
@@ -297,7 +294,7 @@ namespace hg {
             template<typename T>
             static auto init(const T &a) {
                 type res = type::from_shape({a.size() * 2 - 1});
-                xt::view(res, xt::range(0, a.size())) = a;
+                hg::assign(res.slice(0, a.size()), a);
                 return res;
             }
         };
@@ -410,24 +407,19 @@ namespace hg {
             template<typename T1, typename T2, typename T3, typename T4, typename T5>
             binary_partition_tree_MumfordShah_linkage_weighting_functor(
                     const graph_type &graph,
-                    const xt::xexpression<T1> &xvertex_area,
-                    const xt::xexpression<T2> &xsum_vertex_weights,
-                    const xt::xexpression<T3> &xsum_square_vertex_weights,
-                    const xt::xexpression<T4> &xvertex_perimeter,
-                    const xt::xexpression<T5> &xedge_length) :
+                    array_view<const T1> vertex_area,
+                    array_view<const T2> sum_vertex_weights,
+                    array_view<const T3> sum_square_vertex_weights,
+                    array_view<const T4> vertex_perimeter,
+                    array_view<const T5> xedge_length) :
                     m_graph(graph),
                     m_edge_length(xedge_length) {
-                auto &vertex_area = xvertex_area.derived_cast();
-                auto &sum_vertex_weights = xsum_vertex_weights.derived_cast();
-                auto &sum_square_vertex_weights = xsum_square_vertex_weights.derived_cast();
-                auto &vertex_perimeter = xvertex_perimeter.derived_cast();
-
                 size_t num_nodes = vertex_area.size();
                 size_t num_nodes_final = num_nodes * 2 - 1;
                 m_area = array_1d<double>::from_shape({num_nodes_final});
-                xt::noalias(xt::view(m_area, xt::range(0, num_nodes))) = vertex_area;
+                hg::assign(m_area.slice(0, num_nodes), vertex_area);
                 m_perimeter = array_1d<double>::from_shape({num_nodes_final});
-                xt::noalias(xt::view(m_perimeter, xt::range(0, num_nodes))) = vertex_perimeter;
+                hg::assign(m_perimeter.slice(0, num_nodes), vertex_perimeter);
                 m_sum = container_bpt<vectorial>::init(sum_vertex_weights);
                 m_sum2 = container_bpt<vectorial>::init(sum_square_vertex_weights);
 
@@ -530,11 +522,10 @@ namespace hg {
             typename T,
             typename accumulator_type=hg::accumulator_sum>
     auto labelisation_optimal_cut_from_energy(const tree_type &tree,
-                                              const xt::xexpression<T> &xenergy_attribute,
+                                              array_view<const T> energy_attribute,
                                               const accumulator_type accumulator = hg::accumulator_sum()) {
         HG_TRACE();
-        using value_type = typename T::value_type;
-        auto &energy_attribute = xenergy_attribute.derived_cast();
+        using value_type = T;
         hg_assert_node_weights(tree, energy_attribute);
         hg_assert_1d_array(energy_attribute);
 
@@ -546,9 +537,8 @@ namespace hg {
         auto acc = accumulator.template make_accumulator<false>(output_view);
 
         // forward pass
-        xt::view(optimal_nodes, xt::range(0, num_leaves(tree))) = true;
-        xt::noalias(xt::view(optimal_energy, xt::range(0, num_leaves(tree)))) =
-                xt::view(energy_attribute, xt::range(0, num_leaves(tree)));
+        optimal_nodes.slice(0, num_leaves(tree)).fill(true);
+        hg::assign(optimal_energy.slice(0, num_leaves(tree)), energy_attribute.slice(0, num_leaves(tree)));
 
         for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             output_view.set_position(i);
@@ -579,7 +569,7 @@ namespace hg {
                 }
             }
         }
-        return xt::eval(xt::view(labels, xt::range(0, num_leaves(tree))));
+        return array_1d<index_t>(labels.slice(0, num_leaves(tree)));
     };
 
     /**
@@ -614,12 +604,10 @@ namespace hg {
             typename T>
     auto
     hierarchy_to_optimal_energy_cut_hierarchy(const tree_type &tree,
-                                              const xt::xexpression<T> &xdata_fidelity_attribute,
-                                              const xt::xexpression<T> &xregularization_attribute,
+                                              array_view<const T> data_fidelity_attribute,
+                                              array_view<const T> regularization_attribute,
                                               const int approximation_piecewise_linear_function = 10) {
         HG_TRACE();
-        auto &data_fidelity_attribute = xdata_fidelity_attribute.derived_cast();
-        auto &regularization_attribute = xregularization_attribute.derived_cast();
         hg_assert_node_weights(tree, data_fidelity_attribute);
         hg_assert_node_weights(tree, regularization_attribute);
         hg_assert_1d_array(data_fidelity_attribute);
@@ -663,7 +651,7 @@ namespace hg {
         auto qfz = simplify_tree(tree, same_scale_as_parent);
         auto &qfz_tree = qfz.tree;
         auto &node_map = qfz.node_map;
-        auto qfz_apparition_scales = xt::eval(xt::index_view(apparition_scales, node_map));
+        auto qfz_apparition_scales = hg::take(apparition_scales, node_map);
 
         return make_node_weighted_tree(std::move(qfz_tree), std::move(qfz_apparition_scales));
     };
@@ -697,24 +685,18 @@ namespace hg {
             typename T1, typename T2, typename T3, typename T4, typename T5>
     auto binary_partition_tree_MumfordShah_energy(
             const graph_t &graph,
-            const xt::xexpression<T1> &xvertex_perimeter,
-            const xt::xexpression<T2> &xvertex_area,
-            const xt::xexpression<T3> &xvertex_values,
-            const xt::xexpression<T4> &xsquared_vertex_values,
-            const xt::xexpression<T5> &xedge_length) {
-
-        auto &vertex_perimeter = xvertex_perimeter.derived_cast();
+            array_view<const T1> vertex_perimeter,
+            array_view<const T2> vertex_area,
+            array_view<const T3> vertex_values,
+            array_view<const T4> squared_vertex_values,
+            array_view<const T5> edge_length) {
         hg_assert_vertex_weights(graph, vertex_perimeter);
         hg_assert_1d_array(vertex_perimeter);
-        auto &vertex_area = xvertex_area.derived_cast();
         hg_assert_vertex_weights(graph, vertex_area);
         hg_assert_1d_array(vertex_area);
-        auto &vertex_values = xvertex_values.derived_cast();
         hg_assert_vertex_weights(graph, vertex_values);
         hg_assert(vertex_values.dimension() <= 2, "Vertex values can be scalar or vectorial.");
-        auto &squared_vertex_values = xsquared_vertex_values.derived_cast();
         hg_assert_same_shape(vertex_values, squared_vertex_values);
-        auto &edge_length = xedge_length.derived_cast();
         hg_assert_edge_weights(graph, edge_length);
         hg_assert_1d_array(edge_length);
 

@@ -11,8 +11,6 @@
 #include "py_graph_image.hpp"
 #include "../py_common.hpp"
 #include "higra/image/graph_image.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"
 namespace py_graph_image {
 
@@ -27,7 +25,7 @@ namespace py_graph_image {
                                                        const hg::ugraph &graph,
                                                        const std::vector<size_t> &shape,
                                                        bool extra_border) {
-                      return hg::khalimsky_2_graph_4_adjacency(hg::bridge::as_xt(khalimsky), graph,
+                      return hg::khalimsky_2_graph_4_adjacency(khalimsky, graph,
                                                                hg::embedding_grid_2d(shape), extra_border);
                   },
                   doc,
@@ -47,7 +45,7 @@ namespace py_graph_image {
                                                        const hg::array_view<const value_t> &weights,
                                                        bool add_extra_border) {
                       hg::embedding_grid_2d embedding(shape);
-                      return hg::graph_4_adjacency_2_khalimsky(graph, embedding, hg::bridge::as_xt(weights),
+                      return hg::graph_4_adjacency_2_khalimsky(graph, embedding, weights,
                                                                add_extra_border);
                   },
                   doc,
@@ -66,8 +64,8 @@ namespace py_graph_image {
                   [](const hg::array_view<const value_t> &image1,
                      const hg::array_view<const value_t> &image2,
                      double max_distance) {
-                      auto ximage1 = py_bridge::as_xt_fixed<2>(image1, "image1");
-                      auto ximage2 = py_bridge::as_xt_fixed<2>(image2, "image2");
+                      auto ximage1 = py_args::fixed_rank<2>(image1, "image1");
+                      auto ximage2 = py_args::fixed_rank<2>(image2, "image2");
                       hg::embedding_grid_2d embedding(ximage1.shape());
                       auto res = hg::get_bipartite_matching_graph_contour_image_2d(embedding, ximage1, ximage2,
                                                                                    max_distance);
@@ -86,7 +84,6 @@ namespace py_graph_image {
     };
 
     void py_init_graph_image(pybind11::module &m) {
-        //xt::import_numpy();
 
         add_type_overloads<def_contour2Khalimsky, HG_TEMPLATE_NUMERIC_TYPES>
                 (m,

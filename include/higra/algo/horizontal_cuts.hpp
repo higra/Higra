@@ -27,8 +27,8 @@ namespace hg {
         template<typename tree_t>
         auto labelisation_leaves(const tree_t &tree) const {
             array_1d<bool> deleted({num_vertices(tree)}, true);
-            xt::index_view(deleted, nodes) = false;
-            array_1d<index_t> vertices = xt::arange<index_t>(num_vertices(tree));
+            hg::put(deleted, nodes, false);
+            array_1d<index_t> vertices = hg::arange<index_t>(num_vertices(tree));
             return hg::reconstruct_leaf_data(tree,
                                              vertices,
                                              deleted);
@@ -36,9 +36,9 @@ namespace hg {
 
         template<typename tree_t, typename T>
         auto reconstruct_leaf_data(const tree_t &tree,
-                                   const xt::xexpression<T> &altitudes) const {
+                                   array_view<const T> altitudes) const {
             array_1d<bool> deleted({num_vertices(tree)}, true);
-            xt::index_view(deleted, nodes) = false;
+            hg::put(deleted, nodes, false);
             return hg::reconstruct_leaf_data(tree,
                                              altitudes,
                                              deleted);
@@ -69,17 +69,16 @@ namespace hg {
         using value_type = value_t;
 
         template<typename T>
-        horizontal_cut_explorer(const tree_t &tree, const xt::xexpression<T> &xaltitudes):
+        horizontal_cut_explorer(const tree_t &tree, array_view<const T> altitudes):
                 m_original_tree(tree) {
-            auto &altitudes = xaltitudes.derived_cast();
             hg_assert_node_weights(tree, altitudes);
 
-            hg_assert(xt::count_nonzero(xt::view(altitudes, xt::range(0, num_leaves(tree))))() == 0,
+            hg_assert(hg::count_nonzero(altitudes.slice(0, num_leaves(tree))) == 0,
                       "The altitude of the leaf nodes must be equal to 0.");
 
             bool non_negative = true;
             for (index_t i = (index_t) num_leaves(tree); i < (index_t) num_vertices(tree) && non_negative; i++) {
-                non_negative = altitudes(i) >= static_cast<typename T::value_type>(0);
+                non_negative = altitudes(i) >= static_cast<T>(0);
             }
             hg_assert(non_negative, "The altitude of the nodes must be greater than or equal to 0.");
 
@@ -88,11 +87,11 @@ namespace hg {
                 auto res = sort_hierarchy_with_altitudes(tree, altitudes);
                 m_sorted_tree = std::move(res.tree);
                 m_node_map = std::move(res.node_map);
-                m_altitudes = xt::index_view(altitudes, m_node_map);
+                m_altitudes = hg::cast<value_t>(hg::take(altitudes, m_node_map));
                 init(m_sorted_tree, m_altitudes);
             } else {
                 m_use_node_map = false;
-                m_altitudes = altitudes;
+                m_altitudes = hg::cast<value_t>(altitudes);
                 init(m_original_tree, m_altitudes);
             }
         }

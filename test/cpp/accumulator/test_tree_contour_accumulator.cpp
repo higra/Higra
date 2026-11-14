@@ -33,7 +33,7 @@ namespace tree_contour_accumulator {
 
         auto result = accumulate_on_contours(graph, tree, node_saliency, depth, hg::accumulator_max());
         array_1d<double> expected{0, 7, 5, 7, 8, 0, 20, 8, 7, 0, 20, 8};
-        REQUIRE(xt::allclose(result, expected));
+        REQUIRE(hg::allclose(result, expected));
 
         array_2d<double> node_saliency2{{0,  0},
                                         {1,  0},
@@ -66,7 +66,7 @@ namespace tree_contour_accumulator {
                                    {13, 20},
                                    {54, 12}};
 
-        REQUIRE(xt::allclose(result2, expected2));
+        REQUIRE(hg::allclose(result2, expected2));
     }
 
     TEST_CASE("contour accumulator component tree", "[tree_contour_accumulator]") {
@@ -82,7 +82,7 @@ namespace tree_contour_accumulator {
 
             auto result = accumulate_on_contours(graph, tree, node_saliency, depth, hg::accumulator_max());
             array_1d<double> expected{5, 8, 0, 3, 2, 8, 9, 3, 8, 8, 9, 2};
-            REQUIRE(xt::allclose(result, expected));
+            REQUIRE(hg::allclose(result, expected));
 
     }
 }

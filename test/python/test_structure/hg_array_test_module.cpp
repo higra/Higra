@@ -9,24 +9,13 @@
 ****************************************************************************/
 
 // Test-only extension module "_hg_array_test": exercises the NumPy converters of
-// higra/python/py_array.hpp and the hg::bridge xtensor bridge through binding patterns used by
-// Higra. It is built for the test suite only and never installed or packaged.
-//
-// The translation unit also includes xtensor-python and binds a pyarray function, as Higra
-// bindings do while both array libraries coexist.
-
-#define FORCE_IMPORT_ARRAY
-
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
+// higra/python/py_array.hpp through binding patterns used by Higra. It is built for the test suite
+// only and never installed or packaged.
 
 #include "higra/python/py_array.hpp"
-#include "higra/structure/array/xtensor_bridge.hpp"
 
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
-
-#include "xtensor/core/xmath.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -133,15 +122,6 @@ namespace {
         }
     };
 
-    // Same overload set with the xtensor-python converter, as reference for the dispatch rules.
-    struct def_pyarray_dtype_name {
-        template<class T>
-        static void def(py::module_ &m) {
-            m.def("pyarray_dtype_name", [](const xt::pyarray<T> &) { return std::string(type_name<T>()); },
-                  py::arg("array"));
-        }
-    };
-
     struct def_view_info {
         template<class T>
         static void def(py::module_ &m) {
@@ -186,13 +166,11 @@ namespace {
 }
 
 PYBIND11_MODULE(_hg_array_test, m) {
-    xt::import_numpy();
-    m.doc() = "Test-only module for the Higra NumPy converters and the xtensor bridge.";
+    m.doc() = "Test-only module for the Higra NumPy converters.";
 
     // --- inputs: read-only views, dispatch over the numeric types (registration order of
     // HG_TEMPLATE_NUMERIC_TYPES) ---
     def_for_types<def_dtype_name, HG_TEMPLATE_NUMERIC_TYPES>(m);
-    def_for_types<def_pyarray_dtype_name, HG_TEMPLATE_NUMERIC_TYPES>(m);
     def_for_types<def_view_info, HG_TEMPLATE_NUMERIC_TYPES>(m);
     m.def("view_info_noconvert", &view_info<double>, py::arg("array").noconvert());
     m.def("view_info_bool", &view_info<bool>, py::arg("array"));
@@ -298,40 +276,4 @@ PYBIND11_MODULE(_hg_array_test, m) {
                 dtype_agreement_entry<float>("float"),
                 dtype_agreement_entry<double>("double")};
     });
-
-    // --- xtensor bridge ---
-    m.def("bridge_sum", [](array_view<const double> v) {
-        return xt::sum(hg::bridge::as_xt(v))();
-    }, py::arg("array"));
-    m.def("bridge_sum_2d", [](array_view<const double> v) {
-        auto x = hg::bridge::as_xt<2>(v);
-        return py::make_tuple(xt::sum(x)(), reinterpret_cast<std::uintptr_t>(x.data()));
-    }, py::arg("array"));
-    m.def("bridge_increment", [](array_view<double> v) {
-        auto x = hg::bridge::as_xt(v);
-        x += 1;
-    }, py::arg("array"));
-    m.def("bridge_view_of_adaptor", [](array_view<const double> v) {
-        auto h = hg::bridge::as_view(hg::bridge::as_xt(v));
-        return py::make_tuple(array<double>(h.view), h.is_zero_copy(),
-                              reinterpret_cast<std::uintptr_t>(h.view.data()) ==
-                              reinterpret_cast<std::uintptr_t>(v.data()));
-    }, py::arg("array"));
-    m.def("bridge_view_of_lazy", [](array_view<const double> v) {
-        auto h = hg::bridge::as_view(hg::bridge::as_xt(v) * 2 + 1);
-        return py::make_tuple(array<double>(h.view), h.is_zero_copy());
-    }, py::arg("array"));
-    m.def("bridge_to_xt_round_trip", [](array_view<const double> v) {
-        xt::xarray<double> x = hg::bridge::to_xt(v);
-        x += 1;
-        return hg::bridge::to_array(x);
-    }, py::arg("array"));
-
-    // --- coexistence with xtensor-python in one overload set ---
-    m.def("mixed", [](const xt::pyarray<double> &a) { return std::string("pyarray"); }, py::arg("array"));
-    m.def("mixed", [](array_view<const int32_t> a) { return std::string("array_view"); }, py::arg("array"));
-    m.def("pyarray_echo", [](const xt::pyarray<double> &a) {
-        xt::pyarray<double> r = a + 1;
-        return r;
-    }, py::arg("array"));
 }

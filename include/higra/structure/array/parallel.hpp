@@ -24,6 +24,7 @@
 /**
  * Minimum number of elements for which built-in array loops run in parallel (only when
  * ``HG_USE_TBB`` is defined). Must be defined identically in every translation unit.
+ * Fills (``fill``, ``full``, ``zeros``, ``ones``, ``*_like``) and ``arange`` are always sequential.
  */
 #ifndef HG_ARRAY_PARALLEL_THRESHOLD
 #define HG_ARRAY_PARALLEL_THRESHOLD (1 << 16)

@@ -12,8 +12,6 @@
 #include "../py_common.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/image/hierarchy_mean_pb.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"
 namespace py_hierarchy_mean_pb {
 
@@ -30,8 +28,8 @@ namespace py_hierarchy_mean_pb {
                                             const hg::array_view<const value_t> &edge_orientations) {
                       auto res = hg::oriented_watershed(graph,
                                                         hg::embedding_grid_2d(shape),
-                                                        hg::bridge::as_xt(edge_weights),
-                                                        hg::bridge::as_xt(edge_orientations));
+                                                        edge_weights,
+                                                        edge_orientations);
                       return py::make_tuple(std::move(res.first.rag),
                                             std::move(res.first.vertex_map),
                                             std::move(res.first.edge_map),
@@ -57,8 +55,8 @@ namespace py_hierarchy_mean_pb {
                                            const hg::array_view<const value_t> &edge_orientations) {
                       auto res = hg::mean_pb_hierarchy(graph,
                                                        hg::embedding_grid_2d(shape),
-                                                       hg::bridge::as_xt(edge_weights),
-                                                       hg::bridge::as_xt(edge_orientations));
+                                                       edge_weights,
+                                                       edge_orientations);
                       return py::make_tuple(std::move(res.first.rag),
                                             std::move(res.first.vertex_map),
                                             std::move(res.first.edge_map),
@@ -77,7 +75,6 @@ namespace py_hierarchy_mean_pb {
 
 
     void py_init_hierarchy_mean_pb(pybind11::module &m) {
-        //xt::import_numpy();
 
         add_type_overloads<def_oriented_watershed<hg::ugraph>, HG_TEMPLATE_FLOAT_TYPES>
                 (m,

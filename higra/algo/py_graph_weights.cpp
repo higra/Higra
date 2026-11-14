@@ -11,8 +11,6 @@
 #include "py_graph_weights.hpp"
 #include "../py_common.hpp"
 #include "higra/algo/graph_weights.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_graph_weights {
 
@@ -28,12 +26,7 @@ namespace py_graph_weights {
         void def(C &m, const char *doc) {
             m.def("_weight_graph", [](const graph_t &graph, const hg::array_view<const type> &data,
                                       hg::weight_functions weight_f) {
-                      // Vector-valued vertex weights arrive as 2d arrays (see hg.linearize_vertex_weights): a
-                      // fixed-rank adaptor keeps their element access as fast as with the previous converter.
-                      if (data.dimension() == 2) {
-                          return hg::weight_graph(graph, hg::bridge::as_xt<2>(data), weight_f);
-                      }
-                      return hg::weight_graph(graph, hg::bridge::as_xt(data), weight_f);
+                      return hg::weight_graph(graph, data, weight_f);
                   },
                   doc,
                   py::arg("explicit_graph"),
@@ -43,7 +36,6 @@ namespace py_graph_weights {
     };
 
     void py_init_graph_weights(pybind11::module &m) {
-        //xt::import_numpy();
 
         py::enum_<hg::weight_functions>(m, "WeightFunction")
                 .value("mean", hg::weight_functions::mean)

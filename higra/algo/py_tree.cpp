@@ -12,8 +12,6 @@
 #include "../py_common.hpp"
 #include "higra/graph.hpp"
 #include "higra/algo/tree.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_tree {
 
@@ -26,7 +24,7 @@ namespace py_tree {
             m.def("_labelisation_horizontal_cut_from_threshold", [](const hg::tree &tree,
                                                                     double threshold,
                                                                     const hg::array_view<const value_t> &altitudes) {
-                      return hg::labelisation_horizontal_cut_from_threshold(tree, hg::bridge::as_xt(altitudes),
+                      return hg::labelisation_horizontal_cut_from_threshold(tree, altitudes,
                                                                             threshold);
                   },
                   doc,
@@ -42,7 +40,7 @@ namespace py_tree {
         void def(pybind11::module &m, const char *doc) {
             m.def("_labelisation_hierarchy_supervertices", [](const hg::tree &tree,
                                                               const hg::array_view<const value_t> &altitudes) {
-                      return hg::labelisation_hierarchy_supervertices(tree, hg::bridge::as_xt(altitudes));
+                      return hg::labelisation_hierarchy_supervertices(tree, altitudes);
                   },
                   doc,
                   py::arg("tree"),
@@ -57,8 +55,8 @@ namespace py_tree {
             m.def("_binary_labelisation_from_markers", [](const hg::tree &tree,
                                                           const hg::array_view<const value_t> &object_marker,
                                                           const hg::array_view<const value_t> &background_marker) {
-                      return hg::binary_labelisation_from_markers(tree, hg::bridge::as_xt(object_marker),
-                                                                  hg::bridge::as_xt(background_marker));
+                      return hg::binary_labelisation_from_markers(tree, object_marker,
+                                                                  background_marker);
                   },
                   doc,
                   py::arg("tree"),
@@ -73,7 +71,7 @@ namespace py_tree {
         void def(pybind11::module &m, const char *doc) {
             m.def("_sort_hierarchy_with_altitudes", [](const hg::tree &tree,
                                                        const hg::array_view<const value_t> &altitudes) {
-                      auto res = hg::sort_hierarchy_with_altitudes(tree, hg::bridge::as_xt(altitudes));
+                      auto res = hg::sort_hierarchy_with_altitudes(tree, altitudes);
                       return pybind11::make_tuple(std::move(res.tree), std::move(res.node_map));
                   },
                   doc,
@@ -83,7 +81,6 @@ namespace py_tree {
     };
 
     void py_init_algo_tree(pybind11::module &m) {
-        //xt::import_numpy();
 
         m.def("test_tree_isomorphism", &hg::test_tree_isomorphism<hg::tree, hg::tree>,
               "Test if 2 trees :math:`t_1` and :math:`t_2` are isomorph assuming that they share the same leaves.\n"

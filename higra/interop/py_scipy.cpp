@@ -11,9 +11,6 @@
 #include "py_scipy.hpp"
 #include "../py_common.hpp"
 #include "higra/image/graph_image.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
-#include "xtensor/views/xview.hpp"
 namespace py_scipy {
 
     namespace py = pybind11;
@@ -24,13 +21,13 @@ namespace py_scipy {
     auto binary_hierarchy_to_scipy_linkage_matrix(const tree_t &tree,
                                                   const hg::array_view<const T1> &valtitudes,
                                                   const hg::array_view<const T2> &varea) {
-        auto altitudes = hg::bridge::as_xt(valtitudes);
-        auto area = hg::bridge::as_xt(varea);
+        auto altitudes = valtitudes;
+        auto area = varea;
         hg_assert_node_weights(tree, altitudes);
         hg_assert_node_weights(tree, area);
         tree.compute_children();
         hg::index_t n_leaves = num_leaves(tree);
-        hg::array_2d<value_t> M = xt::empty<value_t>({(size_t) n_leaves - 1, (size_t) 4});
+        hg::array_2d<value_t> M = hg::empty<value_t>({(size_t) n_leaves - 1, (size_t) 4});
         for (auto i: hg::leaves_to_root_iterator(tree, hg::leaves_it::exclude)) {
             hg::index_t n = i - n_leaves;
             hg_assert(hg::num_children(i, tree) == 2, "Input hierarchy must be a binary hierarchy.");
@@ -45,19 +42,19 @@ namespace py_scipy {
 
     template<typename T, typename value_t=T>
     auto scipy_linkage_matrix_to_binary_hierarchy(const hg::array_view<const T> &vlinkage_matrix) {
-        auto linkage_matrix = hg::bridge::as_xt(vlinkage_matrix);
+        auto linkage_matrix = vlinkage_matrix;
         hg_assert(linkage_matrix.dimension() == 2, "Linkage matrix must be a 2d array.");
         hg_assert(linkage_matrix.shape()[1] == 4, "Linkage matrix second dimension must be of size 4.");
 
         index_t n_leaves = linkage_matrix.shape()[0] + 1;
         index_t n_nodes = n_leaves * 2 - 1;
 
-        array_1d<index_t> parents = xt::empty<index_t>({n_nodes});
-        array_1d<value_t> altitudes = xt::empty<index_t>({n_nodes});
-        array_1d<index_t> area = xt::empty<index_t>({n_nodes});
+        array_1d<index_t> parents = hg::empty<index_t>({n_nodes});
+        array_1d<value_t> altitudes = hg::empty<value_t>({n_nodes});
+        array_1d<index_t> area = hg::empty<index_t>({n_nodes});
 
-        xt::view(altitudes, xt::range(0, n_leaves)) = 0;
-        xt::view(area, xt::range(0, n_leaves)) = 1;
+        altitudes.slice(0, n_leaves).fill(0);
+        area.slice(0, n_leaves).fill(1);
         parents(n_nodes - 1) = n_nodes - 1;
 
         for (index_t i = 0; i < n_leaves - 1; i++) {
@@ -104,7 +101,6 @@ namespace py_scipy {
     };
 
     void py_init_scipy(pybind11::module &m) {
-        //xt::import_numpy();
         add_type_overloads<def_binary_hierarchy_to_scipy_linkage_matrix<hg::tree>, HG_TEMPLATE_FLOAT_TYPES>
                 (m,
                  "Converts an Higra binary hierarchy to a SciPy linkage matrix."

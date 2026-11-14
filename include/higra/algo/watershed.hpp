@@ -39,13 +39,12 @@ namespace hg {
      */
     template<typename graph_t, typename T>
     auto
-    labelisation_watershed(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+    labelisation_watershed(const graph_t &graph, array_view<const T> edge_weights) {
         HG_TRACE();
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
 
-        using value_type = typename T::value_type;
+        using value_type = T;
         using vertex_t = typename graph_traits<graph_t>::vertex_descriptor;
 
         auto fminus = array_1d<value_type>::from_shape({graph.num_vertices()});
@@ -128,18 +127,16 @@ namespace hg {
     template<typename graph_t, typename T1, typename T2>
     auto labelisation_seeded_watershed(
             const graph_t &graph,
-            const xt::xexpression<T1> &xedge_weights,
-            const xt::xexpression<T2> &xvertex_seeds,
-            const typename T2::value_type background_label = 0) {
+            array_view<const T1> edge_weights,
+            array_view<const T2> vertex_seeds,
+            const array_internal::identity_t<T2> background_label = 0) {
         HG_TRACE();
-        auto &edge_weights = xedge_weights.derived_cast();
-        auto &vertex_seeds = xvertex_seeds.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_node_weights(graph, vertex_seeds);
         hg_assert_1d_array(edge_weights);
         hg_assert_1d_array(vertex_seeds);
 
-        using label_type = typename T2::value_type;
+        using label_type = T2;
 
         array_1d<index_t> sorted_edges_indices = stable_arg_sort(edge_weights);
 
@@ -148,7 +145,7 @@ namespace hg {
 
         union_find uf(num_nodes);
 
-        array_1d<label_type> labels = vertex_seeds;
+        array_1d<label_type> labels = hg::cast<label_type>(vertex_seeds);
 
         for (index_t i = 0; i < num_edges; i++) {
             auto ei = sorted_edges_indices[i];
@@ -238,7 +235,7 @@ namespace hg {
                       "MST must have the same number of vertices as leaves in the BPT.");
             hg_assert((index_t)num_edges(m_mst) == m_num_leaves - 1,
                       "MST must have exactly num_leaves - 1 edges.");
-            m_labels = xt::zeros<index_t>({(size_t)m_num_leaves});
+            m_labels = hg::zeros<index_t>({(size_t)m_num_leaves});
             m_seed_map = array_1d<index_t>::from_shape({(size_t)m_num_leaves});
             m_seed_map.fill(-1);
         }
@@ -257,11 +254,9 @@ namespace hg {
          * @param xseed_labels 1d array of seed labels (same size as seed_vertices)
          */
         template<typename T1, typename T2>
-        void add_seeds(const xt::xexpression<T1> &xseed_vertices,
-                       const xt::xexpression<T2> &xseed_labels) {
+        void add_seeds(array_view<const T1> seed_vertices,
+                       array_view<const T2> seed_labels) {
             HG_TRACE();
-            auto &seed_vertices = xseed_vertices.derived_cast();
-            auto &seed_labels = xseed_labels.derived_cast();
             hg_assert_1d_array(seed_vertices);
             hg_assert_1d_array(seed_labels);
             hg_assert(seed_vertices.size() == seed_labels.size(),
@@ -303,10 +298,9 @@ namespace hg {
          * @param xseed_vertices 1d array of seed vertex indices to remove
          */
         template<typename T1>
-        void remove_seeds(const xt::xexpression<T1> &xseed_vertices) {
+        void remove_seeds(array_view<const T1> seed_vertices) {
             m_visited_generation++;
             HG_TRACE();
-            auto &seed_vertices = xseed_vertices.derived_cast();
             hg_assert_1d_array(seed_vertices);
 
             std::vector<index_t> decut_edges;   // MST edge indices that just got un-cut
@@ -461,9 +455,8 @@ namespace hg {
      */
     template<typename graph_t, typename T>
     auto make_incremental_watershed_cut(const graph_t &graph,
-                                        const xt::xexpression<T> &xedge_weights) {
+                                        array_view<const T> edge_weights) {
         HG_TRACE();
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
 

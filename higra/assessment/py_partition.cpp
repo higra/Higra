@@ -11,8 +11,6 @@
 #include "py_partition.hpp"
 #include "../py_common.hpp"
 #include "higra/assessment/partition.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 namespace py_partition {
     using namespace hg;
     namespace py = pybind11;
@@ -25,8 +23,8 @@ namespace py_partition {
                   [](const hg::array_view<const value_type> &vcandidate,
                      const hg::array_view<const value_type> &vground_truth,
                      partition_measure measure) {
-                      auto candidate = hg::bridge::as_xt(vcandidate);
-                      auto ground_truth = hg::bridge::as_xt(vground_truth);
+                      auto candidate = vcandidate;
+                      auto ground_truth = vground_truth;
                       switch (measure) {
                           case partition_measure::DHamming:
                               return assess_partition(candidate, ground_truth, scorer_partition_DHamming());
@@ -47,7 +45,6 @@ namespace py_partition {
     };
 
     void py_init_assessment_partition(pybind11::module &m) {
-        //xt::import_numpy();
 
         py::enum_<partition_measure>(m, "PartitionMeasure",
                                      "Quality measures usable with partition assessment")

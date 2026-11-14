@@ -193,7 +193,7 @@ namespace hg {
         array &operator=(const array &other) {
             if (this != &other) {
                 if (m_alloc == other.m_alloc && this->size() == other.size()) {
-                    this->m_shape = other.m_shape;
+                    this->set_shape(other.m_shape);
                     array_internal::copy_elements(this->data(), other.data(), this->size());
                 } else {
                     array tmp(other);
@@ -230,7 +230,7 @@ namespace hg {
          */
         void resize(const array_shape &shape) {
             if (array_internal::checked_numel(shape, sizeof(T)) == this->size()) {
-                this->m_shape = shape;
+                this->set_shape(shape);
             } else {
                 array tmp(shape, *m_alloc);
                 swap(tmp);
@@ -242,7 +242,7 @@ namespace hg {
          */
         void reshape(const array_shape &shape) {
             this->check_reshape(shape);
-            this->m_shape = shape;
+            this->set_shape(shape);
         }
 
         allocator &get_allocator() const noexcept {
@@ -288,7 +288,7 @@ namespace hg {
             const index_t n = array_internal::checked_numel(shape, sizeof(T));
             this->m_data = n > 0 ? static_cast<T *>(m_alloc->allocate(static_cast<std::size_t>(n) * sizeof(T)))
                                  : nullptr;
-            this->m_shape = shape;
+            this->set_shape(shape);
             this->m_device = m_alloc->device();
         }
 
@@ -300,7 +300,7 @@ namespace hg {
 
         void reset_to_empty() noexcept {
             this->m_data = nullptr;
-            this->m_shape = array_shape(index_t(0));
+            this->set_shape(array_shape(index_t(0)));
             this->m_device = m_alloc->device();
         }
 

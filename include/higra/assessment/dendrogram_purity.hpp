@@ -55,8 +55,7 @@ namespace hg {
      * @return a score between 0 and 1 (higher is better)
      */
     template<typename tree_t, typename T>
-    auto dendrogram_purity(const tree_t &tree, const xt::xexpression<T> &xleaf_labels) {
-        auto &leaf_labels = xleaf_labels.derived_cast();
+    auto dendrogram_purity(const tree_t &tree, array_view<const T> leaf_labels) {
         hg_assert_1d_array(leaf_labels);
         hg_assert_leaf_weights(tree, leaf_labels);
         hg_assert_integral_value_type(leaf_labels);
@@ -64,9 +63,9 @@ namespace hg {
         auto num_l = num_leaves(tree);
         auto area = attribute_area(tree);
 
-        auto max_label = xt::amax(leaf_labels)();
+        auto max_label = hg::max(leaf_labels);
         size_t num_labels = max_label + 1;
-        array_2d<double> label_histo_leaves = xt::zeros<double>({num_l, num_labels});
+        array_2d<double> label_histo_leaves = hg::zeros<double>({num_l, num_labels});
         for (index_t i = 0; i < (index_t) num_l; i++) {
             label_histo_leaves(i, leaf_labels(i)) = 1;
         }

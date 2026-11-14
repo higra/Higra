@@ -10,8 +10,6 @@
 
 #include "py_at_accumulator.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "higra/accumulator/accumulator.hpp"
 #include "higra/accumulator/at_accumulator.hpp"
 #include "common.hpp"
@@ -27,8 +25,8 @@ namespace py_at_accumulator {
                   [](const hg::array_view<const hg::index_t> &rag_map,
                      const hg::array_view<const value_t> &weights,
                      hg::accumulators accumulator) {
-                      auto xrag_map = hg::bridge::as_xt(rag_map);
-                      auto xweights = hg::bridge::as_xt(weights);
+                      auto xrag_map = rag_map;
+                      auto xweights = weights;
                       return dispatch_accumulator(
                               [&xrag_map, &xweights](const auto &acc) {
                                   return hg::accumulate_at(xrag_map, xweights, acc);
@@ -45,7 +43,6 @@ namespace py_at_accumulator {
 
 
     void py_init_at_accumulator(pybind11::module &m) {
-        //xt::import_numpy();
         add_type_overloads<def_at_accumulate, HG_TEMPLATE_NUMERIC_TYPES>
                 (m, "");
     }

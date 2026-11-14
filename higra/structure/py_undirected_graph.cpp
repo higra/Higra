@@ -56,8 +56,8 @@ namespace py_undirected_graph {
                                   const hg::array_view<const value_t> &vsources,
                                   const hg::array_view<const value_t> &vtargets
                   ) {
-                      auto sources = hg::bridge::as_xt(vsources);
-                      auto targets = hg::bridge::as_xt(vtargets);
+                      auto sources = vsources;
+                      auto targets = vtargets;
                       hg_assert_vertex_indices(g, sources);
                       hg_assert_vertex_indices(g, targets);
                       hg::add_edges(sources, targets, g);
@@ -146,7 +146,6 @@ namespace py_undirected_graph {
     }
 
     void py_init_undirected_graph(py::module &m) {
-        //xt::import_numpy();
         auto c = py::class_<hg::undirected_graph<hg::vecS> >(m,
                                                              "UndirectedGraph",
                                                              "A class to represent sparse undirected graph as adjacency lists.",

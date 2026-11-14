@@ -11,7 +11,6 @@
 #pragma once
 
 #include "../graph.hpp"
-#include "xtensor/core/xexpression.hpp"
 #include <istream>
 #include <ostream>
 #include <map>
@@ -115,11 +114,10 @@ namespace hg {
             }
 
             template<typename T>
-            tree_saver_helper &add_attribute(const std::string &name, const xt::xexpression<T> &xarray) {
+            tree_saver_helper &add_attribute(const std::string &name, array_view<const T> array) {
                 hg_assert(!finalized, "Cannot add an attribute after tree finalization.");
-                auto &array = xarray.derived_cast();
                 hg_assert(array.dimension() == 1, "Only scalar attributes are supported.");
-                hg_assert(array.size() == m_tree.num_vertices(), "Attribute size does not match the size of the tree.");
+                hg_assert((size_t) array.size() == m_tree.num_vertices(), "Attribute size does not match the size of the tree.");
                 hg_assert(m_num_attr < std::numeric_limits<int>::max(), "Too many tree attributes.");
                 auto bytes = byte_count(array.size(), sizeof(double));
                 std::vector<double> a(array.size());

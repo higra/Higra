@@ -96,7 +96,7 @@ namespace test_alignment {
         auto &supervertex_labelisation_res = res.supervertex_labelisation;
         auto &node_map_res = res.node_map;
 
-        altitudes = xt::index_view(altitudes, node_map_res);
+        altitudes = hg::take(altitudes, node_map_res);
 
         auto sm = aligner.align_hierarchy(supervertex_labelisation_res, tree_res, altitudes);
         auto sm_k = graph_4_adjacency_2_khalimsky(g, {3, 3}, sm);

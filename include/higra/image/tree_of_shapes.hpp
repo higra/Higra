@@ -15,11 +15,6 @@
 #include "higra/hierarchy/component_tree.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
-#include "higra/structure/array/xtensor_bridge.hpp"
-#include "xtensor/views/xview.hpp"
-#include "xtensor/core/xnoalias.hpp"
-#include "xtensor/views/xindex_view.hpp"
-#include "xtensor/io/xio.hpp"
 
 #include <map>
 #include <deque>
@@ -285,17 +280,15 @@ namespace hg {
 
         template<typename graph_t,
                 typename T,
-                typename value_type = typename T::value_type,
+                typename value_type = T,
                 typename std::enable_if_t<sizeof(value_type) <= 2 && std::is_integral<value_type>::value, int> = 0>
         auto sort_vertices_tree_of_shapes(const graph_t &graph,
-                                          const xt::xexpression<T> &xplain_map, index_t exterior_vertex = 0) {
-
-            auto &plain_map = xplain_map.derived_cast();
+                                          array_view<const T> plain_map, index_t exterior_vertex = 0) {
             auto num_v = num_vertices(graph);
             array_1d<bool> dejavu({num_v}, false);
             array_1d<index_t> sorted_vertex_indices = array_1d<index_t>::from_shape({num_v});
             array_1d<value_type> enqueued_level = array_1d<value_type>::from_shape({num_v});
-            integer_level_multi_queue<value_type, index_t> queue(xt::amin(plain_map)(), xt::amax(plain_map)());
+            integer_level_multi_queue<value_type, index_t> queue(hg::min(plain_map), hg::max(plain_map));
 
             value_type current_level = (value_type) ((plain_map(exterior_vertex, 0) + plain_map(exterior_vertex, 1)) /
                                                      2.0);
@@ -323,12 +316,10 @@ namespace hg {
 
         template<typename graph_t,
                 typename T,
-                typename value_type = typename T::value_type,
+                typename value_type = T,
                 typename std::enable_if_t<3 <= sizeof(value_type) || !std::is_integral<value_type>::value, int> = 0>
         auto sort_vertices_tree_of_shapes(const graph_t &graph,
-                                          const xt::xexpression<T> &xplain_map, index_t exterior_vertex = 0) {
-
-            auto &plain_map = xplain_map.derived_cast();
+                                          array_view<const T> plain_map, index_t exterior_vertex = 0) {
             hg_assert(plain_map.dimension() == 2, "Invalid plain map");
             hg_assert(plain_map.shape()[1] == 2, "Invalid plain map");
             hg_assert_vertex_weights(graph, plain_map);
@@ -383,9 +374,8 @@ namespace hg {
         }
 
         template<typename T>
-        auto get_padding_value(const xt::xexpression<T> &ximage, tos_padding padding) {
-            auto &image = ximage.derived_cast();
-            using value_type = typename T::value_type;
+        auto get_padding_value(array_view<const T> image, tos_padding padding) {
+            using value_type = T;
             auto dim = image.dimension();
 
 
@@ -633,17 +623,16 @@ namespace hg {
      * @return a node weighted tree
      */
     template<typename T>
-    auto component_tree_tree_of_shapes_image(const xt::xexpression<T> &ximage,
+    auto component_tree_tree_of_shapes_image(array_view<const T> image,
                                              tos_padding padding = tos_padding::mean,
                                              bool original_size = true,
                                              bool immersion = true,
                                              index_t exterior_vertex = 0) {
         HG_TRACE();
-        auto &image = ximage.derived_cast();
         const int dim = image.dimension();
         hg_assert(dim == 2 || dim == 3, "image must be a 2d or 3d array");
 
-        using value_type = typename T::value_type;
+        using value_type = T;
 
         bool is_input_3d = dim == 3;
 
@@ -654,8 +643,7 @@ namespace hg {
         size_t w = (is_input_3d) ? shape[2] : shape[1];
 
         // row-major image values, seen as an image of shape (d, h, w)
-        const auto image_holder = hg::bridge::as_view(image);
-        const value_type *image3d = image_holder.view.data();
+        const value_type *image3d = image.data();
 
         // ----------------
         // Compute intermediate plain map representation size
@@ -745,7 +733,7 @@ namespace hg {
         auto all_deleted = accumulate_sequential(tree, deleted_vertices, accumulator_min());
 
         auto stree = simplify_tree(tree, all_deleted, true);
-        array_1d<value_type> simplified_altitudes = xt::index_view(altitudes, stree.node_map);
+        array_1d<value_type> simplified_altitudes = hg::take(altitudes, stree.node_map);
         return make_node_weighted_tree(std::move(stree.tree), std::move(simplified_altitudes));
 
     }
@@ -755,13 +743,12 @@ namespace hg {
      * @see description of component_tree_tree_of_shapes_image
      */
     template<typename T>
-    auto component_tree_tree_of_shapes_image2d(const xt::xexpression<T> &ximage,
+    auto component_tree_tree_of_shapes_image2d(array_view<const T> image,
                                                tos_padding padding = tos_padding::mean,
                                                bool original_size = true,
                                                bool immersion = true,
                                                index_t exterior_vertex = 0) {
         HG_TRACE();
-        auto &image = ximage.derived_cast();
         hg_assert(image.dimension() == 2, "image must be a 2d array");
         return component_tree_tree_of_shapes_image(image, padding, original_size, immersion, exterior_vertex);
     }
@@ -772,13 +759,12 @@ namespace hg {
      * @see description of component_tree_tree_of_shapes_image
      */
     template<typename T>
-    auto component_tree_tree_of_shapes_image3d(const xt::xexpression<T> &ximage,
+    auto component_tree_tree_of_shapes_image3d(array_view<const T> image,
                                                tos_padding padding = tos_padding::mean,
                                                bool original_size = true,
                                                bool immersion = true,
                                                index_t exterior_vertex = 0) {
         HG_TRACE();
-        auto &image = ximage.derived_cast();
         hg_assert(image.dimension() == 3, "image must be a 3d array");
         return component_tree_tree_of_shapes_image(image, padding, original_size, immersion, exterior_vertex);
     }

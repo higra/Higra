@@ -93,14 +93,13 @@ namespace hg {
      * @param embedding
      * @return
      */
-    template<typename graph_t, typename T, typename result_type = typename T::value_type>
+    template<typename graph_t, typename T, typename result_type = T>
     auto
     graph_4_adjacency_2_khalimsky(const graph_t &graph, const embedding_grid_2d &embedding,
-                                  const xt::xexpression<T> &xedge_weights,
+                                  array_view<const T> weight,
                                   bool add_extra_border = false,
                                   result_type extra_border_value = 0) {
         HG_TRACE();
-        const auto &weight = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, weight);
         hg_assert_1d_array(weight);
         hg_assert(num_vertices(graph) == embedding.size(),
@@ -109,9 +108,9 @@ namespace hg {
 
         index_t border = (add_extra_border) ? 1 : -1;
 
-        std::array<index_t, 2> res_shape{(index_t) shape[0] * 2 + border, (index_t) shape[1] * 2 + border};
+        array_shape res_shape{(index_t) shape[0] * 2 + border, (index_t) shape[1] * 2 + border};
 
-        array_2d<result_type> res = xt::zeros<result_type>(res_shape);
+        array_2d<result_type> res = hg::zeros<result_type>(res_shape);
 
         point_2d_i one{{1, 1}};
         for (const auto &e: edge_iterator(graph)) {
@@ -131,7 +130,7 @@ namespace hg {
         auto adj4 = get_4_adjacency_implicit_graph(res_embedding);
         auto h = res_embedding.shape()[0];
         auto w = res_embedding.shape()[1];
-        auto flat_res = xt::flatten(res);
+        auto flat_res = res.flat();
 
         if (add_extra_border && extra_border_value != 0) {
             for (index_t x = 1; x < w; x += 2) {
@@ -172,12 +171,11 @@ namespace hg {
      * @param extra_border if true, the khalimsky space will have an extra border of 0-faces and 1-faces
      * @return 2d array representing the weights of the edges in the khalimsky space
      */
-    template<typename T, typename result_type = typename T::value_type>
+    template<typename T, typename result_type = T>
     auto
-    khalimsky_2_graph_4_adjacency(const xt::xexpression<T> &xkhalimsky, const ugraph &g,
+    khalimsky_2_graph_4_adjacency(array_view<const T> khalimsky, const ugraph &g,
                                   const embedding_grid_2d &embedding, bool extra_border = false) {
         HG_TRACE();
-        const auto &khalimsky = xkhalimsky.derived_cast();
         hg_assert(khalimsky.dimension() == 2, "Only 2d khalimsky grids are supported!");
 
         auto &shape = khalimsky.shape();
@@ -188,7 +186,7 @@ namespace hg {
         hg_assert(embedding.shape()[0] == (index_t) shape[0] / 2 + border, "Embedding shape[0] does not match.");
         hg_assert(embedding.shape()[1] == (index_t) shape[1] / 2 + border, "Embedding shape[1] does not match.");
 
-        array_1d<result_type> weights = xt::zeros<result_type>({num_edges(g)});
+        array_1d<result_type> weights = hg::zeros<result_type>({num_edges(g)});
 
         point_2d_i one{{1, 1}};
         for (const auto &e: edge_iterator(g)) {
@@ -211,11 +209,10 @@ namespace hg {
      * @param extra_border if true, the khalimsky space will have an extra border of 0-faces and 1-faces
      * @return A tuple composed of the 4 adjacency graph, the embedding of the graph, and the weights of the edges in the khalimsky space
      */
-    template<typename T, typename result_type = typename T::value_type>
+    template<typename T, typename result_type = T>
     auto
-    khalimsky_2_graph_4_adjacency(const xt::xexpression<T> &xkhalimsky, bool extra_border = false) {
+    khalimsky_2_graph_4_adjacency(array_view<const T> khalimsky, bool extra_border = false) {
         HG_TRACE();
-        const auto &khalimsky = xkhalimsky.derived_cast();
         hg_assert(khalimsky.dimension() == 2, "Only 2d khalimsky grids are supported!");
 
         auto &shape = khalimsky.shape();
@@ -245,14 +242,12 @@ namespace hg {
      */
     template<typename T>
     auto get_bipartite_matching_graph_contour_image_2d(const embedding_grid_2d &embedding,
-                                                       const xt::xexpression<T> &xcontour_image1,
-                                                       const xt::xexpression<T> &xcontour_image2,
+                                                       array_view<const T> contour_image1,
+                                                       array_view<const T> contour_image2,
                                                        double max_distance) {
 
 
         HG_TRACE();
-        auto &contour_image1 = xcontour_image1.derived_cast();
-        auto &contour_image2 = xcontour_image2.derived_cast();
         hg_assert_same_shape(contour_image1, contour_image2);
         hg_assert(contour_image1.dimension() == 2, "Only 2d contour images are supported!");
         hg_assert(embedding.shape()[0] == (index_t)contour_image1.shape()[0], "Embedding shape[0] does not match.");

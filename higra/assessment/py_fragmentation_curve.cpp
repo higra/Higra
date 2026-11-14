@@ -12,8 +12,6 @@
 #include "../py_common.hpp"
 #include "higra/assessment/fragmentation_curve.hpp"
 #include "higra/assessment/partition.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_fragmentation_curve {
     using namespace hg;
@@ -28,8 +26,8 @@ namespace py_fragmentation_curve {
                               optimal_cut_measure measure,
                               const hg::array_view<const index_t> &vertex_map,
                               hg::size_t max_regions) {
-                      auto xvertex_map = py_bridge::as_xt_fixed<1>(vertex_map, "vertex_map");
-                      return assesser_fragmentation_optimal_cut(tree, hg::bridge::as_xt(ground_truth), measure,
+                      auto xvertex_map = py_args::fixed_rank<1>(vertex_map, "vertex_map");
+                      return assesser_fragmentation_optimal_cut(tree, ground_truth, measure,
                                                                 xvertex_map, max_regions);
                   }),
                   doc,
@@ -54,9 +52,9 @@ namespace py_fragmentation_curve {
                      const hg::array_view<const index_t> &vvertex_map,
                      hg::size_t max_regions
                   ) {
-                      auto vertex_map = py_bridge::as_xt_fixed<1>(vvertex_map, "vertex_map");
-                      auto altitudes = hg::bridge::as_xt(valtitudes);
-                      auto ground_truth = hg::bridge::as_xt(vground_truth);
+                      auto vertex_map = py_args::fixed_rank<1>(vvertex_map, "vertex_map");
+                      auto altitudes = valtitudes;
+                      auto ground_truth = vground_truth;
                       switch (measure) {
                           case partition_measure::DHamming:
                               return hg::assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth,
@@ -89,7 +87,6 @@ namespace py_fragmentation_curve {
     };
 
     void py_init_fragmentation_curve(pybind11::module &m) {
-        //xt::import_numpy();
 
         using fg_t = fragmentation_curve<double>;
         py::class_<fg_t>(m,

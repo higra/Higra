@@ -19,7 +19,6 @@
 #include <utility>
 #include "../utils.hpp"
 #include "array.hpp"
-#include "xtensor/views/xview.hpp"
 
 namespace hg {
 
@@ -111,15 +110,16 @@ namespace hg {
             }
 
             /**
-             * Construct from a 1d parent expression. Parent values are checked before
+             * Construct from a 1d parent array. Parent values are checked before
              * conversion to index_t: 0 <= parent < size, root last and self-parented,
              * other parents after children, and leaves before internal nodes.
              * Empty input has root invalid_index; {0} is a singleton tree.
+             * The parent array is copied (and converted to index_t if needed).
              */
             template<typename T>
-            tree(const xt::xexpression<T> &parents = xt::xarray<vertex_descriptor>({0}),
+            tree(array_view<const T> parents,
                  tree_category category = tree_category::partition_tree) :
-                    _parents(_validated_parents(parents.derived_cast())),
+                    _parents(_validated_parents_copy(parents)),
                     _children_computed(false),
                     _children(0),
                     _category(category) {
@@ -127,10 +127,12 @@ namespace hg {
                 _init();
             };
 
-            template<typename T>
-            tree(xt::xexpression<T> &&parents = xt::xarray<vertex_descriptor>({0}),
+            /**
+             * Construct from a 1d parent array of type index_t, whose storage is taken over by the tree.
+             */
+            tree(array<index_t> &&parents,
                  tree_category category = tree_category::partition_tree) :
-                    _parents(_validated_parents(std::move(parents.derived_cast()))),
+                    _parents(_validated_parents(std::move(parents))),
                     _children_computed(false),
                     _children(0),
                     _category(category) {
@@ -256,7 +258,7 @@ namespace hg {
              * ``i`` except the root. Returns a new array ``[0, 1, ..., num_vertices - 2]``.
              */
             array_1d<index_t> sources() const {
-                return xt::arange<index_t>(0, (index_t) num_edges());
+                return hg::arange<index_t>(0, (index_t) num_edges());
             }
 
             /**
@@ -265,24 +267,33 @@ namespace hg {
              * and is not modified or moved.
              */
             auto targets() const {
-                return xt::view(_parents, xt::range(0, (index_t) num_edges()));
+                return _parents.slice(0, (index_t) num_edges());
             }
 
 
         private:
 
             template<typename T>
-            static decltype(auto) _validated_parents(T &&parents) {
+            static void _validate_parents(array_view<const T> parents) {
                 hg_assert(parents.dimension() == 1, "parents must be a linear (1d) array");
-                hg_assert(parents.size() <= static_cast<size_t>((std::numeric_limits<index_t>::max)()),
-                          "too many tree nodes for index_t");
+                const size_t size = (size_t) parents.size();
                 for (const auto parent : parents) {
                     // Compare in the source type, before unsigned or wider values can narrow.
                     using comparison_t = std::common_type_t<decltype(parent), size_t>;
-                    hg_assert(parent >= 0 && static_cast<comparison_t>(parent) < parents.size(),
+                    hg_assert(parent >= 0 && static_cast<comparison_t>(parent) < size,
                               "parent index must be nonnegative and smaller than the number of nodes");
                 }
-                return std::forward<T>(parents);
+            }
+
+            template<typename T>
+            static array<index_t> _validated_parents_copy(array_view<const T> parents) {
+                _validate_parents(parents);
+                return hg::cast<index_t>(parents);
+            }
+
+            static array<index_t> _validated_parents(array<index_t> &&parents) {
+                _validate_parents<index_t>(parents);
+                return std::move(parents);
             }
 
             void _init() {
@@ -297,7 +308,7 @@ namespace hg {
                 _root = _num_vertices - 1;
                 hg_assert(_parents(_root) == _root, "nodes are not in a topological order (last node is not a root)");
 
-                array_1d<index_t> num_children = xt::zeros_like(_parents);
+                array_1d<index_t> num_children = hg::zeros_like(_parents);
                 for (vertex_descriptor v = 0; v < _root; ++v) {
                     vertex_descriptor parent_v = _parents(v);
                     hg_assert(parent_v != v, "several root nodes detected");
@@ -477,12 +488,11 @@ namespace hg {
 
     template<typename T>
     auto
-    num_children(const xt::xexpression<T> &xvertices, const tree &t) {
-        auto &vertices = xvertices.derived_cast();
+    num_children(array_view<const T> vertices, const tree &t) {
         hg_assert_1d_array(vertices);
         hg_assert_integral_value_type(vertices);
 
-        array_1d <size_t> result = xt::empty<index_t>({vertices.size()});
+        array_1d <size_t> result = hg::empty<size_t>({vertices.size()});
         for (index_t j = 0; j < (index_t) vertices.size(); j++) {
             result(j) = num_children(vertices(j), t);
         }
@@ -509,12 +519,11 @@ namespace hg {
 
     template<typename T>
     auto
-    parent(const xt::xexpression<T> &xvertices, const tree &t) {
-        auto &vertices = xvertices.derived_cast();
+    parent(array_view<const T> vertices, const tree &t) {
         hg_assert_1d_array(vertices);
         hg_assert_integral_value_type(vertices);
 
-        array_1d <index_t> result = xt::empty<index_t>({vertices.size()});
+        array_1d <index_t> result = hg::empty<index_t>({vertices.size()});
         for (index_t j = 0; j < (index_t) vertices.size(); j++) {
             result(j) = parent(vertices(j), t);
         }
@@ -529,12 +538,11 @@ namespace hg {
 
     template<typename T>
     auto
-    is_leaf(const xt::xexpression<T> &xvertices, const tree &t) {
-        auto &vertices = xvertices.derived_cast();
+    is_leaf(array_view<const T> vertices, const tree &t) {
         hg_assert_1d_array(vertices);
         hg_assert_integral_value_type(vertices);
 
-        array_1d<bool> result = xt::empty<bool>({vertices.size()});
+        array_1d<bool> result = hg::empty<bool>({vertices.size()});
         for (index_t j = 0; j < (index_t) vertices.size(); j++) {
             result(j) = is_leaf(vertices(j), t);
         }
@@ -597,12 +605,11 @@ namespace hg {
 
     template<typename T>
     auto
-    child(index_t i, const xt::xexpression<T> &xvertices, const tree &t) {
-        auto &vertices = xvertices.derived_cast();
+    child(index_t i, array_view<const T> vertices, const tree &t) {
         hg_assert_1d_array(vertices);
         hg_assert_integral_value_type(vertices);
 
-        array_1d <index_t> result = xt::empty<index_t>({vertices.size()});
+        array_1d <index_t> result = hg::empty<index_t>({vertices.size()});
         for (index_t j = 0; j < (index_t) vertices.size(); j++) {
             result(j) = t.child(i, vertices(j));
         }
@@ -717,14 +724,11 @@ namespace hg {
 
     template<typename T1, typename T2, typename T3>
     auto find_region(
-            const xt::xexpression<T1> &xvertices,
-            const xt::xexpression<T2> &xlambdas,
-            const xt::xexpression<T3> &xaltitudes,
+            array_view<const T1> vertices,
+            array_view<const T2> lambdas,
+            array_view<const T3> altitudes,
             const tree &t) {
         HG_TRACE();
-        auto &vertices = xvertices.derived_cast();
-        auto &lambdas = xlambdas.derived_cast();
-        auto &altitudes = xaltitudes.derived_cast();
         hg_assert_node_weights(t, altitudes);
         hg_assert_1d_array(altitudes);
         hg_assert_1d_array(vertices);
@@ -754,11 +758,9 @@ namespace hg {
     }
 
     template<typename T>
-    auto lowest_common_ancestor(const xt::xexpression<T> &xvertices_1,
-                                const xt::xexpression<T> &xvertices_2,
+    auto lowest_common_ancestor(array_view<const T> vertices_1,
+                                array_view<const T> vertices_2,
                                 const tree &t) {
-        auto &vertices_1 = xvertices_1.derived_cast();
-        auto &vertices_2 = xvertices_2.derived_cast();
         hg_assert_1d_array(vertices_1);
         hg_assert_same_shape(vertices_1, vertices_2);
         hg_assert_integral_value_type(vertices_1);

@@ -11,7 +11,6 @@
 #pragma once
 
 #include "../structure/array.hpp"
-#include "../structure/array/xtensor_bridge.hpp"
 #include <limits>
 #include <vector>
 
@@ -41,7 +40,7 @@ namespace hg {
         }
 
         /**
-         * Smaller of two values: b if a < b is false (same as xt::minimum).
+         * Smaller of two values: b if a < b is false (NaN in b propagates).
          */
         template<typename V>
         inline V select_min(const V &a, const V &b) {
@@ -49,7 +48,7 @@ namespace hg {
         }
 
         /**
-         * Larger of two values: b if a > b is false (same as xt::maximum).
+         * Larger of two values: b if a > b is false (NaN in b propagates).
          */
         template<typename V>
         inline V select_max(const V &a, const V &b) {
@@ -57,17 +56,19 @@ namespace hg {
         }
 
         /**
-         * Contiguous view of a 2d matrix given as an xtensor expression, its number of rows and
+         * Contiguous view of a 2d matrix, its number of rows and
          * columns, the sum of each row (candidate region areas) and of each column (ground-truth
          * region areas). Sums are computed sequentially by increasing indices.
          */
         template<typename T>
         struct card_intersection_matrix {
-            using value_type = typename std::decay_t<T>::value_type;
+            using value_type = T;
 
-            explicit card_intersection_matrix(const xt::xexpression<T> &xcard_intersection) :
-                    holder(hg::bridge::as_view(xcard_intersection)) {
-                const auto &v = holder.view;
+            /**
+             * The matrix refers to the elements of card_intersection, which must outlive it.
+             */
+            explicit card_intersection_matrix(array_view<const T> card_intersection) {
+                const auto &v = card_intersection;
                 hg_assert(v.dimension() == 2, "The card intersection matrix must be 2d.");
                 num_rows = v.shape(0);
                 num_cols = v.shape(1);
@@ -98,7 +99,6 @@ namespace hg {
                 return res;
             }
 
-            hg::bridge::view_holder<value_type> holder;
             const value_type *data;
             index_t num_rows;
             index_t num_cols;
@@ -108,12 +108,8 @@ namespace hg {
     }
 
     template<typename value_type=index_t, typename T1, typename T2>
-    auto card_intersections(const xt::xexpression<T1> &xcandidate,
-                            const xt::xexpression<T2> &xground_truths) {
-        const auto candidate_holder = hg::bridge::as_view(xcandidate);
-        const auto ground_truths_holder = hg::bridge::as_view(xground_truths);
-        const auto &candidate = candidate_holder.view;
-        const auto &ground_truths = ground_truths_holder.view;
+    auto card_intersections(array_view<const T1> candidate,
+                            array_view<const T2> ground_truths) {
 
         hg_assert_integral_value_type(candidate);
         hg_assert_integral_value_type(ground_truths);
@@ -124,8 +120,7 @@ namespace hg {
         auto compute = [&candidate, &result, num_regions_candidate](const auto &ground_truth) {
             hg_assert_same_shape(candidate, ground_truth);
             auto num_regions_ground_truth = partition_internal::max_value(ground_truth) + 1;
-            typename array_2d<value_type>::shape_type shape_result{(size_t) num_regions_candidate,
-                                                                   (size_t) num_regions_ground_truth};
+            array_shape shape_result{(index_t) num_regions_candidate, (index_t) num_regions_ground_truth};
             result.emplace_back(shape_result, 0);
             auto &r = result.back();
 
@@ -136,7 +131,7 @@ namespace hg {
             }
         };
 
-        if (xt::same_shape(candidate.shape(), ground_truths.shape())) {
+        if (hg::same_shape(candidate.shape(), ground_truths.shape())) {
             compute(ground_truths);
         } else {
             for (index_t i = 0; i < ground_truths.shape(0); i++) {
@@ -150,11 +145,11 @@ namespace hg {
     struct scorer_partition_BCE {
         template<typename T>
         static
-        auto score(const xt::xexpression<T> &xcard_intersection) {
+        auto score(array_view<const T> xcard_intersection) {
             const partition_internal::card_intersection_matrix<T> ci(xcard_intersection);
             using value_type = typename partition_internal::card_intersection_matrix<T>::value_type;
 
-            // sum of the row sums (same order as the former xtensor reduction)
+            // sum of the row sums
             value_type sum = 0;
             for (index_t i = 0; i < ci.num_rows; i++) {
                 value_type row_sum = 0;
@@ -173,7 +168,7 @@ namespace hg {
     struct scorer_partition_DHamming {
         template<typename T>
         static
-        auto score(const xt::xexpression<T> &xcard_intersection) {
+        auto score(array_view<const T> xcard_intersection) {
             const partition_internal::card_intersection_matrix<T> ci(xcard_intersection);
             using value_type = typename partition_internal::card_intersection_matrix<T>::value_type;
 
@@ -193,7 +188,7 @@ namespace hg {
     struct scorer_partition_DCovering {
         template<typename T>
         static
-        auto score(const xt::xexpression<T> &xcard_intersection) {
+        auto score(array_view<const T> xcard_intersection) {
             const partition_internal::card_intersection_matrix<T> ci(xcard_intersection);
             using value_type = typename partition_internal::card_intersection_matrix<T>::value_type;
 
@@ -223,8 +218,8 @@ namespace hg {
     }
 
     template<typename T1, typename T2, typename scorer_t>
-    auto assess_partition(const xt::xexpression<T1> &xcandidate,
-                          const xt::xexpression<T2> &xground_truths,
+    auto assess_partition(array_view<const T1> xcandidate,
+                          array_view<const T2> xground_truths,
                           const scorer_t &scorer) {
         auto card_intersections = hg::card_intersections<double>(xcandidate, xground_truths);
         return assess_partition(card_intersections, scorer);

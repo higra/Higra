@@ -157,8 +157,7 @@ namespace hg {
      * @return the indices of the edges in the matching
      */
     template<typename graph_t, typename T>
-    auto bipartite_graph_matching(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
-        auto &weights = xedge_weights.derived_cast();
+    auto bipartite_graph_matching(const graph_t &graph, array_view<const T> weights) {
         hg_assert_edge_weights(graph, weights);
         hg_assert_1d_array(weights);
         hg_assert_integral_value_type(weights);

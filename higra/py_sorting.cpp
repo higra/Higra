@@ -11,8 +11,6 @@
 #include "py_common.hpp"
 #include "py_sorting.hpp"
 #include "higra/sorting.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #ifdef HG_USE_TBB
     #include <memory>
     #include <oneapi/tbb/global_control.h>
@@ -28,7 +26,7 @@ namespace py_sorting {
         static
         void def(C &c, const char *doc) {
             c.def("_sort", [](const hg::array_view<value_t> &array) {
-                      auto xarray = hg::bridge::as_xt(array);
+                      auto xarray = array;
                       hg::sort(xarray);
                   },
                   doc,
@@ -41,7 +39,7 @@ namespace py_sorting {
         static
         void def(C &c, const char *doc) {
             c.def("_stable_sort", [](const hg::array_view<value_t> &array) {
-                      auto xarray = hg::bridge::as_xt(array);
+                      auto xarray = array;
                       hg::stable_sort(xarray);
                   },
                   doc,
@@ -54,7 +52,7 @@ namespace py_sorting {
         static
         void def(C &c, const char *doc) {
             c.def("_arg_sort", [](const hg::array_view<const value_t> &array) {
-                      return hg::arg_sort(hg::bridge::as_xt(array));
+                      return hg::arg_sort(array);
                   },
                   doc,
                   py::arg("array"));
@@ -66,7 +64,7 @@ namespace py_sorting {
         static
         void def(C &c, const char *doc) {
             c.def("_stable_arg_sort", [](const hg::array_view<const value_t> &array) {
-                      return hg::stable_arg_sort(hg::bridge::as_xt(array));
+                      return hg::stable_arg_sort(array);
                   },
                   doc,
                   py::arg("array"));

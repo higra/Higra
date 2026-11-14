@@ -11,8 +11,6 @@
 #include "py_tree_monotonic_regression.hpp"
 #include "higra/algo/tree_monotonic_regression.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_tree_monotonic_regression {
 
@@ -28,8 +26,8 @@ namespace py_tree_monotonic_regression {
                      const hg::array_view<const type> &altitudes,
                      const std::string mode,
                      const hg::array_view<const double> &weights) {
-                      return hg::tree_monotonic_regression(tree, hg::bridge::as_xt(altitudes),
-                                                           hg::bridge::as_xt(weights), mode);
+                      return hg::tree_monotonic_regression(tree, altitudes,
+                                                           weights, mode);
                   },
                   doc,
                   py::arg("tree"),
@@ -40,7 +38,6 @@ namespace py_tree_monotonic_regression {
     };
 
     void py_init_tree_monotonic_regression(pybind11::module &m) {
-        //xt::import_numpy();
 
         add_type_overloads<def_tree_monotonic_regression, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
     }

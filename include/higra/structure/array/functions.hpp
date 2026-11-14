@@ -251,11 +251,10 @@ namespace hg {
         }
         auto result = array<T>(array_shape(n));
         T *out = result.data();
-        detail::parallel_blocks(n, 4096, [out, start, step](index_t b, index_t e) {
-            for (index_t i = b; i < e; ++i) {
-                out[i] = static_cast<T>(start + static_cast<T>(i) * step);
-            }
-        });
+        // sequential, like fill (see array_internal::fill)
+        for (index_t i = 0; i < n; ++i) {
+            out[i] = static_cast<T>(start + static_cast<T>(i) * step);
+        }
         return result;
     }
 

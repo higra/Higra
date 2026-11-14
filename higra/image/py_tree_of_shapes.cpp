@@ -11,8 +11,6 @@
 #include "py_tree_of_shapes.hpp"
 #include "../py_common.hpp"
 #include "higra/image/tree_of_shapes.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include <string>
 
 namespace py_tree_of_shapes {
@@ -40,7 +38,7 @@ struct def_tree_of_shapes {
                       throw std::runtime_error("tree_of_shapes: Unknown padding option.");
                   }
 
-                  auto res = hg::component_tree_tree_of_shapes_image(hg::bridge::as_xt(image), tpadding,
+                  auto res = hg::component_tree_tree_of_shapes_image(image, tpadding,
                                                                    original_size, immersion, exterior_vertex);
                   return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
               },
@@ -56,7 +54,6 @@ struct def_tree_of_shapes {
 
 
     void py_init_tree_of_shapes_image(pybind11::module &m) {
-        //xt::import_numpy();
 
     add_type_overloads<def_tree_of_shapes, uint8_t, uint16_t, int32_t, int64_t, float, double>
             (m, "");

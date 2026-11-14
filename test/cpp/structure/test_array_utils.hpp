@@ -11,7 +11,6 @@
 #pragma once
 
 // Helpers for the tests of the array library (higra/structure/array/).
-// This header does not include xtensor.
 
 #include "higra/structure/array/all.hpp"
 
@@ -21,38 +20,9 @@
 
 #include "catch2/catch_test_macros.hpp"
 #include "catch2/catch_tostring.hpp"
+#include "../test_utils.hpp"
 
-namespace Catch {
-
-    template<class T>
-    struct StringMaker<hg::array<T>> {
-        static std::string convert(const hg::array<T> &a) {
-            std::ostringstream s;
-            s << a;
-            return s.str();
-        }
-    };
-
-    template<class T>
-    struct StringMaker<hg::array_view<T>> {
-        static std::string convert(const hg::array_view<T> &a) {
-            std::ostringstream s;
-            s << hg::array_view<const std::remove_const_t<T>>(a);
-            return s.str();
-        }
-    };
-
-    template<>
-    struct StringMaker<hg::array_shape> {
-        static std::string convert(const hg::array_shape &s) {
-            std::string r = "(";
-            for (hg::index_t k = 0; k < s.size(); ++k) {
-                r += (k > 0 ? ", " : "") + std::to_string(s[k]);
-            }
-            return r + ")";
-        }
-    };
-}
+// Catch::StringMaker specializations for arrays, views and shapes are in test_utils.hpp.
 
 namespace array_test_utils {
 

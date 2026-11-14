@@ -11,8 +11,6 @@
 #include "py_alignement.hpp"
 #include "../py_common.hpp"
 #include "higra/algo/alignment.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_alignement {
 
@@ -28,8 +26,8 @@ namespace py_alignement {
                      size_t num_regions_fine,
                      size_t num_regions_coarse) {
                       return hg::project_fine_to_coarse_labelisation(
-                              hg::bridge::as_xt(labelisation_fine),
-                              hg::bridge::as_xt(labelisation_coarse),
+                              labelisation_fine,
+                              labelisation_coarse,
                               num_regions_fine,
                               num_regions_coarse);
                   },
@@ -47,7 +45,7 @@ namespace py_alignement {
         void def(C &c, const char *doc) {
             c.def_static("from_graph_cut", [](const hg::ugraph &g,
                                               const hg::array_view<const value_t> &edge_weights) {
-                             return hg::make_hierarchy_aligner_from_graph_cut(g, hg::bridge::as_xt(edge_weights));
+                             return hg::make_hierarchy_aligner_from_graph_cut(g, edge_weights);
                          },
                          doc,
                          py::arg("graph"),
@@ -61,7 +59,7 @@ namespace py_alignement {
         void def(C &c, const char *doc) {
             c.def_static("from_labelisation", [](const hg::ugraph &g,
                                                  const hg::array_view<const value_t> &vertex_labels) {
-                             return hg::make_hierarchy_aligner_from_labelisation(g, hg::bridge::as_xt(vertex_labels));
+                             return hg::make_hierarchy_aligner_from_labelisation(g, vertex_labels);
                          },
                          doc,
                          py::arg("graph"),
@@ -76,7 +74,7 @@ namespace py_alignement {
             c.def_static("from_hierarchy", [](const hg::ugraph &g,
                                               const hg::tree &t,
                                               const hg::array_view<const value_t> &altitudes) {
-                             return hg::make_hierarchy_aligner_from_hierarchy(g, t, hg::bridge::as_xt(altitudes));
+                             return hg::make_hierarchy_aligner_from_hierarchy(g, t, altitudes);
                          },
                          doc,
                          py::arg("graph"),
@@ -93,7 +91,7 @@ namespace py_alignement {
                           const hg::hierarchy_aligner &a,
                           const hg::tree &t,
                           const hg::array_view<const value_t> &altitudes) {
-                      return a.align_hierarchy(t, hg::bridge::as_xt(altitudes));
+                      return a.align_hierarchy(t, altitudes);
                   },
                   doc,
                   py::arg("tree"),
@@ -102,7 +100,7 @@ namespace py_alignement {
                           const hg::hierarchy_aligner &a,
                           const hg::ugraph &graph,
                           const hg::array_view<const value_t> &saliency_map) {
-                      return a.align_hierarchy(graph, hg::bridge::as_xt(saliency_map));
+                      return a.align_hierarchy(graph, saliency_map);
                   },
                   doc,
                   py::arg("graph"),
@@ -112,7 +110,7 @@ namespace py_alignement {
                           const hg::array_view<const hg::index_t> &super_vertices,
                           const hg::tree &t,
                           const hg::array_view<const value_t> &altitudes) {
-                      return a.align_hierarchy(hg::bridge::as_xt(super_vertices), t, hg::bridge::as_xt(altitudes));
+                      return a.align_hierarchy(super_vertices, t, altitudes);
                   },
                   doc,
                   py::arg("super_vertices"),
@@ -122,7 +120,6 @@ namespace py_alignement {
     };
 
     void py_init_alignement(pybind11::module &m) {
-        //xt::import_numpy();
 
         add_type_overloads<def_project_fine_to_coarse_labelisation, HG_TEMPLATE_INTEGRAL_TYPES>
                 (m, "");

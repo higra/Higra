@@ -33,13 +33,16 @@ namespace hg {
             hg_assert(is_cpu_accessible(d), "Array elements are not accessible from the CPU.");
         }
 
+        /**
+         * Sequential at every size: the elements stay in the caches of the calling thread, which usually
+         * consumes them next. A parallel fill distributes them over the caches of the TBB workers, and a
+         * sequential loop that then reads a mid-sized array (up to a few MB) becomes several times slower.
+         */
         template<class T>
         void fill(T *data, index_t n, const T &value) {
-            detail::parallel_blocks(n, 4096, [data, &value](index_t b, index_t e) {
-                for (index_t i = b; i < e; ++i) {
-                    data[i] = value;
-                }
-            });
+            for (index_t i = 0; i < n; ++i) {
+                data[i] = value;
+            }
         }
     }
 
@@ -73,14 +76,14 @@ namespace hg {
         /**
          * Empty 1d view (shape ``(0,)``).
          */
-        HG_HOST_DEVICE array_view() noexcept: m_data(nullptr), m_shape(index_t(0)), m_device() {
+        HG_HOST_DEVICE array_view() noexcept: m_data(nullptr), m_shape(index_t(0)), m_size(0), m_device() {
         }
 
         /**
          * View of the elements ``data[0 .. shape.numel())`` with the given shape.
          */
         HG_HOST_DEVICE array_view(const T *data, const array_shape &shape, hg::device dev = cpu_device) noexcept:
-                m_data(data), m_shape(shape), m_device(dev) {
+                m_data(data), m_shape(shape), m_size(shape.numel()), m_device(dev) {
         }
 
         HG_HOST_DEVICE const array_shape &shape() const noexcept {
@@ -99,7 +102,7 @@ namespace hg {
          * Number of elements.
          */
         HG_HOST_DEVICE index_t size() const noexcept {
-            return m_shape.numel();
+            return m_size;
         }
 
         HG_HOST_DEVICE bool empty() const noexcept {
@@ -190,7 +193,7 @@ namespace hg {
 
         template<class... I>
         HG_HOST_DEVICE index_t offset(I... idx) const {
-            static_assert((array_internal::is_index_type_v<I> && ...), "Array indices must be integers.");
+            static_assert((array_internal::is_element_index_v<I> && ...), "Array indices must be integers.");
             static_assert(sizeof...(I) <= (std::size_t) max_rank, "Too many array indices.");
 #ifdef HG_ARRAY_CHECKS
             hg_assert((index_t) sizeof...(I) == m_shape.size(),
@@ -263,8 +266,17 @@ namespace hg {
                       array_internal::shape_to_string(shape) + ".");
         }
 
+        /**
+         * Sets the shape and the cached number of elements (every shape change goes through it).
+         */
+        HG_HOST_DEVICE void set_shape(const array_shape &shape) noexcept {
+            m_shape = shape;
+            m_size = shape.numel();
+        }
+
         const T *m_data;
         array_shape m_shape;
+        index_t m_size; // number of elements, cached: size() and end() are used in loop conditions
         hg::device m_device;
     };
 

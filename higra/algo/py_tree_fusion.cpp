@@ -11,8 +11,6 @@
 #include "py_tree_fusion.hpp"
 #include "higra/algo/tree_fusion.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_tree_fusion {
 
@@ -20,7 +18,6 @@ namespace py_tree_fusion {
     using namespace hg;
 
     void py_init_tree_fusion(pybind11::module &m) {
-        //xt::import_numpy();
 
         m.def("_tree_fusion_depth_map", [](const std::vector<tree *> &trees) {
             return tree_fusion_depth_map(trees);

@@ -164,12 +164,11 @@ option(DO_EMBEDDED_PYTHON_CPP_TEST
 
 enable_testing()
 
-option (USE_SIMD
-        "Enabled SIMD support for xtensor." ON)
-
-if (USE_SIMD)
-    add_definitions("-DXTENSOR_USE_XSIMD")
-endif()
+# USE_SIMD is obsolete: Higra no longer contains explicit SIMD code (compilers vectorize its loops).
+# The option is still accepted, and ignored, so that existing build scripts keep working.
+if (DEFINED USE_SIMD)
+    message(DEPRECATION "The USE_SIMD option is deprecated and has no effect.")
+endif ()
 
 option(DO_BENCHMARK
         "Build benchmark suit." OFF)

@@ -14,7 +14,6 @@
 #include "higra/structure/unionfind.hpp"
 #include "higra/graph.hpp"
 #include "higra/sorting.hpp"
-#include "xtensor/containers/xadapt.hpp"
 
 namespace hg {
     namespace component_tree_internal {
@@ -165,9 +164,8 @@ namespace hg {
      * @return a node weighted tree
      */
     template<typename graph_t, typename T>
-    auto component_tree_max_tree(const graph_t &graph, const xt::xexpression<T> &xvertex_weights) {
+    auto component_tree_max_tree(const graph_t &graph, array_view<const T> vertex_weights) {
         HG_TRACE();
-        auto &vertex_weights = xvertex_weights.derived_cast();
         hg_assert_vertex_weights(graph, vertex_weights);
         hg_assert_1d_array(vertex_weights);
 
@@ -198,14 +196,13 @@ namespace hg {
     * @return a node weighted tree
     */
     template<typename graph_t, typename T>
-    auto component_tree_min_tree(const graph_t &graph, const xt::xexpression<T> &xvertex_weights) {
+    auto component_tree_min_tree(const graph_t &graph, array_view<const T> vertex_weights) {
         HG_TRACE();
-        auto &vertex_weights = xvertex_weights.derived_cast();
         hg_assert_vertex_weights(graph, vertex_weights);
         hg_assert_1d_array(vertex_weights);
 
         array_1d<index_t> sorted_vertex_indices = stable_arg_sort(vertex_weights,
-                                                                  std::greater<typename T::value_type>());
+                                                                  std::greater<T>());
         return component_tree_internal::tree_from_sorted_vertices(graph, vertex_weights, sorted_vertex_indices);
     }
 

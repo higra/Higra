@@ -391,10 +391,9 @@ namespace hg {
     auto
     fit_contour_2d(const graph_t &graph,
                    const embedding_grid_2d &embedding,
-                   const xt::xexpression<T> &xedge_weights) {
+                   array_view<const T> edge_weights) {
         HG_TRACE();
         using point_type = point_2d_f;
-        const auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
         hg_assert(num_vertices(graph) == embedding.size(),
@@ -402,7 +401,7 @@ namespace hg {
 
         contour_2d result;
 
-        array_1d<index_t> positive_edge_index = xt::empty<index_t>({num_edges(graph)});
+        array_1d<index_t> positive_edge_index = hg::empty<index_t>({num_edges(graph)});
         for (index_t i = 0; i < (index_t) positive_edge_index.size(); i++) {
             if (edge_weights[i] > 0)
                 positive_edge_index[i] = i;
@@ -425,7 +424,7 @@ namespace hg {
             return coordinates;
         };
 
-        array_2d<bool> processed = xt::zeros<bool>(contours_khalimsky.shape());
+        array_2d<bool> processed = hg::zeros<bool>(contours_khalimsky.shape());
 
         index_t height = contours_khalimsky.shape()[0];
         index_t width = contours_khalimsky.shape()[1];
@@ -620,16 +619,13 @@ namespace hg {
     template<typename rag_graph_t, typename graph_t, typename T>
     auto rag_2d_vertex_perimeter_and_edge_length(
             const rag_graph_t &rag_graph,
-            const xt::xexpression<T> &xvertex_map,
-            const xt::xexpression<T> &xedge_map,
+            array_view<const T> vertex_map,
+            array_view<const T> edge_map,
             const embedding_grid_2d &embedding,
             const graph_t &graph,
             double epsilon = 0.1,
             bool relative_epsilon = true,
             int min_size = 2) {
-
-        const auto &vertex_map = xvertex_map.derived_cast();
-        const auto &edge_map = xedge_map.derived_cast();
         hg_assert_edge_weights(graph, edge_map);
         hg_assert_1d_array(edge_map);
         hg_assert_integral_value_type(edge_map);
@@ -642,8 +638,8 @@ namespace hg {
 
         contour2d.subdivide(epsilon, relative_epsilon, min_size);
 
-        array_1d<double> vertex_perimeter = xt::zeros<double>({num_vertices(rag_graph)});
-        array_1d<double> edge_length = xt::zeros<double>({num_edges(rag_graph)});
+        array_1d<double> vertex_perimeter = hg::zeros<double>({num_vertices(rag_graph)});
+        array_1d<double> edge_length = hg::zeros<double>({num_edges(rag_graph)});
 
         for (auto &polyline: contour2d) {
 

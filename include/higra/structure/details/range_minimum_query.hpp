@@ -69,7 +69,7 @@ namespace hg {
             rmq_sparse_table(const T &values) : m_data(values.data()) {
                 index_t size = values.size();
                 reserve_sparse_table(size);
-                m_sparse_table.push_back(xt::arange<size_t>(0, size));
+                m_sparse_table.push_back(hg::arange<size_t>(0, size));
                 init_sparse_table();
             }
 
@@ -185,7 +185,7 @@ namespace hg {
 
                 for (index_t lvl = 0; (2 << lvl) <= size; lvl++) {
                     index_t size_lvlp1 = size - (2 << lvl) + 1;
-                    m_sparse_table.push_back(array_1d<index_t>::from_shape({(size_t) size_lvlp1}));
+                    m_sparse_table.push_back(array_1d<size_t>::from_shape({size_lvlp1}));
                     parfor(0, size_lvlp1, [this, lvl](index_t i) {
                         auto p1 = m_sparse_table[lvl](i);
                         auto p2 = m_sparse_table[lvl](i + ((size_t)1 << lvl));
@@ -354,7 +354,7 @@ namespace hg {
                 /*
                  * Blocks preprocessing
                  */
-                array_1d<index_t> element_map = array_1d<index_t>::from_shape({(size_t) m_num_blocks});
+                array_1d<size_t> element_map = array_1d<size_t>::from_shape({m_num_blocks});
                 parfor(0, m_num_blocks, [&element_map, this](index_t i) {
                     index_t block_start = i * m_block_size;
                     index_t block_end = std::min(block_start + m_block_size, m_data_size);

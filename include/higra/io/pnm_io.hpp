@@ -134,8 +134,8 @@ namespace hg {
             if (bands != 1) {
                 shape.push_back(bands);
             }
-            array_nd<unsigned char> result = xt::empty<unsigned char>(shape);
-            auto r = xt::flatten(result);
+            array_nd<unsigned char> result = hg::empty<unsigned char>(array_shape::from(shape));
+            auto r = result.flat();
             if (ascii) {
                 for (index_t i = 0; i < num_values; i++) {
                     tmp = tok.next_token();
@@ -159,9 +159,8 @@ namespace hg {
         }
 
         template<typename T>
-        void save_image_pnm(std::ostream &out, const xt::xexpression<T> &ximage) {
-            static_assert(std::is_same<typename T::value_type, unsigned char>::value, "Can only save unsigned char values");
-            auto &image = ximage.derived_cast();
+        void save_image_pnm(std::ostream &out, array_view<const T> image) {
+            static_assert(std::is_same<T, unsigned char>::value, "Can only save unsigned char values");
             hg_assert(image.dimension() == 2 || image.dimension() == 3, "Array must have 2 or 3 dimensions.");
             hg_assert(image.dimension() == 2 || image.shape()[2] == 3,
                       "The size of the 3rd dimension must be 3 (RGB value).");
@@ -215,7 +214,7 @@ namespace hg {
      * @param ximage The array containing the data to save.
      */
     template<typename T>
-    void save_image_pnm(const char *filename, const xt::xexpression<T> &ximage) {
+    void save_image_pnm(const char *filename, array_view<const T> ximage) {
         std::ofstream s(filename);
         return pnm_io_internal::save_image_pnm(s, ximage);
     }

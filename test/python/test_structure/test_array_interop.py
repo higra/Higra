@@ -8,8 +8,8 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-# Tests of the NumPy converters of higra/python/py_array.hpp and of the hg::bridge xtensor bridge,
-# through the test-only extension module _hg_array_test built next to this file.
+# Tests of the NumPy converters of higra/python/py_array.hpp, through the test-only extension module
+# _hg_array_test built next to this file.
 
 import gc
 import importlib
@@ -69,8 +69,19 @@ class TestArrayInteropDispatch(unittest.TestCase):
 
         self.assertEqual(mod.dtype_name(np.arange(10, dtype=np.float32)[::2]), "float")
 
-    def test_same_dispatch_as_xtensor_python(self):
-        # The xtensor-python converter of the bindings being replaced is the reference.
+    @staticmethod
+    def expected_dispatch(a):
+        # Reference dispatch rule (unchanged from earlier Higra versions): an ndarray whose
+        # dtype has the kind and item size of a registered type selects that type, whatever its layout
+        # and byte order; any other input (lists, scalars, bool, complex, float16...) is converted by
+        # the first registered overload, int8_t.
+        if isinstance(a, np.ndarray):
+            for dt, name in zip(numeric_types, cpp_names):
+                if a.dtype.kind == np.dtype(dt).kind and a.dtype.itemsize == np.dtype(dt).itemsize:
+                    return name
+        return "int8_t"
+
+    def test_dispatch_reference_rule(self):
         base = np.arange(24).reshape(4, 6)
         inputs = [[1, 2, 3], [1.5, 2.5], [[1, 2], [3, 4]], 3, 2.5, True, [True, False],
                   np.float64(2), np.int32(2), np.array(2.0), np.array([True, False]),
@@ -82,10 +93,10 @@ class TestArrayInteropDispatch(unittest.TestCase):
             b = base.astype(dt)
             inputs += [b, b[::2], b.T, np.asfortranarray(b), b[:, 1], b[::-1], b.astype(b.dtype.newbyteorder())]
         with warnings.catch_warnings():
-            # complex inputs are converted (with a warning) by both converters
+            # complex inputs are converted (with a warning)
             warnings.simplefilter("ignore", np.exceptions.ComplexWarning)
             for a in inputs:
-                self.assertEqual(mod.dtype_name(a), mod.pyarray_dtype_name(a), repr(a))
+                self.assertEqual(mod.dtype_name(a), self.expected_dispatch(a), repr(a))
 
     def test_byte_swapped_input(self):
         for dt, name in zip(numeric_types, cpp_names):
@@ -124,7 +135,7 @@ class TestArrayInteropDispatch(unittest.TestCase):
 
     def test_lists_scalars_booleans(self):
         # Inputs that are not ndarrays only match in the converting pass: the first registered
-        # overload (int8_t) wins, as with the xtensor-python converters.
+        # overload (int8_t) wins.
         self.assertEqual(mod.dtype_name([1, 2, 3]), "int8_t")
         self.assertEqual(mod.dtype_name([1.5, 2.5]), "int8_t")
         self.assertEqual(mod.dtype_name(3), "int8_t")
@@ -191,12 +202,6 @@ class TestArrayInteropDispatch(unittest.TestCase):
         self.assertEqual((s, shape, name), (4.5, (), "double"))
         s, shape, _, name = mod.view_info(np.zeros((4, 0))[::2])
         self.assertEqual((s, shape, name), (0.0, (2, 0), "double"))
-
-    def test_coexistence_with_xtensor_python(self):
-        self.assertEqual(mod.mixed(np.zeros(3)), "pyarray")
-        self.assertEqual(mod.mixed(np.zeros(3, dtype=np.int32)), "array_view")
-        self.assertEqual(mod.mixed(np.zeros(3, dtype=np.int32)[::2]), "array_view")
-        self.assertTrue(np.array_equal(mod.pyarray_echo(np.arange(3.0)), [1, 2, 3]))
 
 
 @unittest.skipIf(mod is None, "the _hg_array_test module is only built in development builds")
@@ -460,44 +465,6 @@ class TestArrayInteropDtypes(unittest.TestCase):
         for name, agrees, numpy_dtype, size in mod.dtype_agreement():
             self.assertTrue(agrees, (name, numpy_dtype, size))
             self.assertEqual(np.dtype(numpy_dtype).itemsize, size, name)
-
-
-@unittest.skipIf(mod is None, "the _hg_array_test module is only built in development builds")
-class TestArrayInteropBridge(unittest.TestCase):
-
-    def test_as_xt(self):
-        a = np.arange(12, dtype=np.float64).reshape(3, 4)
-        self.assertEqual(mod.bridge_sum(a), 66)
-        self.assertEqual(mod.bridge_sum(a[:, ::2]), float(a[:, ::2].sum()))
-        self.assertEqual(mod.bridge_sum(np.array(3.0)), 3)
-        self.assertEqual(mod.bridge_sum(np.zeros((0, 2))), 0)
-        s, address = mod.bridge_sum_2d(a)
-        self.assertEqual(s, 66)
-        self.assertEqual(address, a.ctypes.data)
-        with self.assertRaises(RuntimeError):
-            mod.bridge_sum_2d(np.arange(3.0))
-
-    def test_as_xt_in_place(self):
-        a = np.arange(6, dtype=np.float64).reshape(2, 3)
-        mod.bridge_increment(a)
-        self.assertTrue(np.array_equal(a, np.arange(1, 7).reshape(2, 3)))
-
-    def test_as_view(self):
-        a = np.arange(6, dtype=np.float64).reshape(2, 3)
-        r, zero_copy, same = mod.bridge_view_of_adaptor(a)
-        self.assertTrue(zero_copy)
-        self.assertTrue(same)
-        self.assertTrue(np.array_equal(r, a))
-
-        r, zero_copy = mod.bridge_view_of_lazy(a)
-        self.assertFalse(zero_copy)
-        self.assertTrue(np.array_equal(r, a * 2 + 1))
-
-    def test_round_trip(self):
-        a = np.arange(6, dtype=np.float64).reshape(3, 2)
-        r = mod.bridge_to_xt_round_trip(a)
-        self.assertTrue(np.array_equal(r, a + 1))
-        self.assertTrue(np.array_equal(a, np.arange(6).reshape(3, 2)))
 
 
 if __name__ == '__main__':

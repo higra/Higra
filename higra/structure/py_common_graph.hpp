@@ -12,8 +12,6 @@
 
 #include "../py_common.hpp"
 #include "higra/graph.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_common_graph {
     using namespace hg;
@@ -25,7 +23,7 @@ namespace py_common_graph {
         void def(C &c, const char *doc) {
             c.def("out_degree", [](graph_t &g,
                                    const hg::array_view<const value_t> &vvertices) {
-                      auto vertices = hg::bridge::as_xt(vvertices);
+                      auto vertices = vvertices;
                       hg_assert_vertex_indices(g, vertices);
                       return hg::out_degree(vertices, g);
                   },
@@ -93,7 +91,7 @@ namespace py_common_graph {
         void def(C &c, const char *doc) {
             c.def("degree", [](graph_t &g,
                                const hg::array_view<const value_t> &vvertices) {
-                      auto vertices = hg::bridge::as_xt(vvertices);
+                      auto vertices = vvertices;
                       hg_assert_vertex_indices(g, vertices);
                       return hg::degree(vertices, g);
                   },
@@ -109,7 +107,7 @@ namespace py_common_graph {
         void def(C &c, const char *doc) {
             c.def("in_degree", [](graph_t &g,
                                   const hg::array_view<const value_t> &vvertices) {
-                      auto vertices = hg::bridge::as_xt(vvertices);
+                      auto vertices = vvertices;
                       hg_assert_vertex_indices(g, vertices);
                       return hg::in_degree(vertices, g);
                   },

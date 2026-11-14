@@ -56,9 +56,9 @@ namespace test_undirected_graph {
             array_2d<size_t> ref{{2, 0},
                                  {2, 2}};
 
-            REQUIRE(xt::allclose(degree(indices, g), ref));
-            REQUIRE(xt::allclose(in_degree(indices, g), ref));
-            REQUIRE(xt::allclose(out_degree(indices, g), ref));
+            REQUIRE(hg::allclose(degree(indices, g), ref));
+            REQUIRE(hg::allclose(in_degree(indices, g), ref));
+            REQUIRE(hg::allclose(out_degree(indices, g), ref));
         }
         SECTION("copy graph specialized") {
             auto g = data<TestType>::g();

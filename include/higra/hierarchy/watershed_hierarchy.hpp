@@ -26,7 +26,7 @@ namespace hg {
                                    const T2 &attribute) {
             using value_type = typename T2::value_type;
             tree.compute_children();
-            array_1d<value_type> result = xt::empty_like(attribute);
+            array_1d<value_type> result = hg::empty_like(attribute);
             for (auto n: leaves_iterator(tree)) {
                 result(n) = 0;
             }
@@ -71,9 +71,8 @@ namespace hg {
     template<typename graph_t, typename T, typename F>
     auto watershed_hierarchy_by_attribute(
             const graph_t &graph,
-            const xt::xexpression<T> &xedge_weights,
+            array_view<const T> edge_weights,
             const F &attribute_functor) {
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
 
@@ -86,9 +85,9 @@ namespace hg {
         auto bpt_attribute = attribute_functor(bpt, altitude);
         auto corrected_attribute = watershed_hierarchy_internal::correct_attribute_BPT(bpt, altitude, bpt_attribute);
         auto persistence = accumulate_parallel(bpt, corrected_attribute, accumulator_min());
-        xt::view(persistence, xt::range(0, num_leaves(bpt))) = 0;
+        persistence.slice(0, num_leaves(bpt)).fill(0);
 
-        auto mst_edge_weights = xt::view(persistence, xt::range(num_leaves(bpt), num_vertices(bpt)));
+        auto mst_edge_weights = persistence.slice(num_leaves(bpt), num_vertices(bpt));
 
         return bpt_canonical(mst, mst_edge_weights);
     };
@@ -124,12 +123,10 @@ namespace hg {
     template<typename graph_t, typename T1, typename T2>
     auto watershed_hierarchy_by_minima_ordering(
             const graph_t &graph,
-            const xt::xexpression<T1> &xedge_weights,
-            const xt::xexpression<T2> &xminima_ranks) {
-        auto &edge_weights = xedge_weights.derived_cast();
+            array_view<const T1> edge_weights,
+            array_view<const T2> minima_ranks) {
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
-        auto &minima_ranks = xminima_ranks.derived_cast();
         hg_assert_vertex_weights(graph, minima_ranks);
         hg_assert_1d_array(minima_ranks);
         hg_assert_integral_value_type(minima_ranks);
@@ -140,11 +137,11 @@ namespace hg {
         auto mst = subgraph_spanning(graph, mst_edge_map);
 
         auto extinction = accumulate_sequential(bpt, minima_ranks, accumulator_max());
-        xt::view(extinction, xt::range(0, num_leaves(bpt))) = 0;
+        extinction.slice(0, num_leaves(bpt)).fill(0);
         auto persistence = accumulate_parallel(bpt, extinction, accumulator_min());
-        xt::view(persistence, xt::range(0, num_leaves(bpt))) = 0;
+        persistence.slice(0, num_leaves(bpt)).fill(0);
 
-        auto mst_edge_weights = xt::view(persistence, xt::range(num_leaves(bpt), num_vertices(bpt)));
+        auto mst_edge_weights = persistence.slice(num_leaves(bpt), num_vertices(bpt));
 
         return bpt_canonical(mst, mst_edge_weights);
     };
@@ -152,8 +149,8 @@ namespace hg {
     template<typename graph_t, typename T1, typename T2>
     auto watershed_hierarchy_by_area(
             const graph_t &graph,
-            const xt::xexpression<T1> &edge_weights,
-            const xt::xexpression<T2> &vertex_area) {
+            array_view<const T1> edge_weights,
+            array_view<const T2> vertex_area) {
 
         return watershed_hierarchy_by_attribute(
                 graph,
@@ -166,16 +163,16 @@ namespace hg {
     template<typename graph_t, typename T1>
     auto watershed_hierarchy_by_area(
             const graph_t &graph,
-            const xt::xexpression<T1> &xedge_weights) {
-        array_1d<index_t> vertex_area = xt::ones<index_t>({num_vertices(graph)});
+            array_view<const T1> xedge_weights) {
+        array_1d<index_t> vertex_area = hg::ones<index_t>({num_vertices(graph)});
         return watershed_hierarchy_by_area(graph, xedge_weights, vertex_area);
     };
 
     template<typename graph_t, typename T1, typename T2>
     auto watershed_hierarchy_by_volume(
             const graph_t &graph,
-            const xt::xexpression<T1> &edge_weights,
-            const xt::xexpression<T2> &vertex_area) {
+            array_view<const T1> edge_weights,
+            array_view<const T2> vertex_area) {
 
         return watershed_hierarchy_by_attribute(
                 graph,
@@ -188,15 +185,15 @@ namespace hg {
     template<typename graph_t, typename T1>
     auto watershed_hierarchy_by_volume(
             const graph_t &graph,
-            const xt::xexpression<T1> &xedge_weights) {
-        array_1d<index_t> vertex_area = xt::ones<index_t>({num_vertices(graph)});
+            array_view<const T1> xedge_weights) {
+        array_1d<index_t> vertex_area = hg::ones<index_t>({num_vertices(graph)});
         return watershed_hierarchy_by_volume(graph, xedge_weights, vertex_area);
     };
 
     template<typename graph_t, typename T>
     auto watershed_hierarchy_by_dynamics(
             const graph_t &graph,
-            const xt::xexpression<T> &edge_weights) {
+            array_view<const T> edge_weights) {
 
         return watershed_hierarchy_by_attribute(
                 graph,

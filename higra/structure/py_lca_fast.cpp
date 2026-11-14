@@ -12,8 +12,6 @@
 #include "../py_common.hpp"
 #include "higra/graph.hpp"
 #include "higra/structure/lca_fast.hpp"
-// return converter of the xtensor results of lca queries (until the alias flip)
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_lca_fast {
     namespace py = pybind11;
@@ -33,7 +31,7 @@ namespace py_lca_fast {
                       hg_assert(vertices2.empty() || hg::min(vertices2) >= 0, "Vertex indices cannot be negative.");
                       hg_assert(vertices2.empty() || (index_t) hg::max(vertices2) < (index_t) l.num_elements(),
                                 "Vertex indices must be smaller than the number of vertices in the tree.");
-                      return l.lca(hg::bridge::as_xt(vertices1), hg::bridge::as_xt(vertices2));
+                      return l.lca(vertices1, vertices2);
                   },
                   doc,
                   pybind11::arg("vertices1"),
@@ -58,7 +56,7 @@ namespace py_lca_fast {
 
     template<typename T>
     hg::array<T> state_array_to_python(const array_1d<T> &a) {
-        return hg::bridge::to_array(a);
+        return hg::array<T>(a);
     }
 
     template<typename T>
@@ -68,7 +66,8 @@ namespace py_lca_fast {
             throw py::cast_error("Invalid LCA state: an element cannot be converted to a 1d array.");
         }
         const hg::array_view<const T> &v = py::detail::cast_op<const hg::array_view<const T> &>(caster);
-        return hg::bridge::to_xt<1>(v);
+        hg_assert(v.dimension() == 1, "Invalid LCA state: an element is not a 1d array.");
+        return array_1d<T>(v);
     }
 
     py::list get_rmq_state_to_python(const rmq_sparse_table<index_t>::internal_state &state) {
@@ -190,7 +189,6 @@ namespace py_lca_fast {
 
 
     void py_init_lca_fast(pybind11::module &m) {
-        //xt::import_numpy();
 
         auto c_lca_sp = def_lca_t<lca_sparse_table>(
                 m, "LCA_rmq_sparse_table",

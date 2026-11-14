@@ -11,8 +11,6 @@
 #include "py_tree_attributes.hpp"
 #include "../py_common.hpp"
 #include "higra/attribute/tree_attribute.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_attributes {
 
@@ -30,8 +28,8 @@ namespace py_attributes {
                       return hg::attribute_contour_length_component_tree(
                               tree,
                               graph,
-                              hg::bridge::as_xt(vertex_perimeter),
-                              hg::bridge::as_xt(edge_length)
+                              vertex_perimeter,
+                              edge_length
                       );
                   },
                   doc,
@@ -51,7 +49,7 @@ namespace py_attributes {
                      const hg::array_view<const T> &altitudes) {
                       return hg::attribute_extrema(
                               tree,
-                              hg::bridge::as_xt(altitudes)
+                              altitudes
                       );
                   },
                   doc,
@@ -71,8 +69,8 @@ namespace py_attributes {
                      bool increasing_altitudes) {
                       return hg::attribute_extinction_value(
                               tree,
-                              hg::bridge::as_xt(altitudes),
-                              hg::bridge::as_xt(attribute),
+                              altitudes,
+                              attribute,
                               increasing_altitudes
                       );
                   },
@@ -93,7 +91,7 @@ namespace py_attributes {
                      const hg::array_view<const T> &node_weights) {
                       return hg::attribute_children_pair_sum_product(
                               tree,
-                              hg::bridge::as_xt(node_weights)
+                              node_weights
                       );
                   },
                   doc,
@@ -103,7 +101,6 @@ namespace py_attributes {
     };
 
     void py_init_attributes(pybind11::module &m) {
-        //xt::import_numpy();
         m.def("_attribute_sibling",
               [](const hg::tree &tree, hg::index_t skip) {
                   return hg::attribute_sibling(tree, skip);

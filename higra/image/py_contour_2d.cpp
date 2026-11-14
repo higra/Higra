@@ -11,8 +11,6 @@
 #include "py_contour_2d.hpp"
 
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "higra/image/contour_2d.hpp"
 namespace py_contour_2d {
 
@@ -32,7 +30,7 @@ namespace py_contour_2d {
                   auto transform = [](const std::pair<index_t, point_2d_f> &e) {
                       return std::make_pair(e.first, std::make_pair(e.second[0], e.second[1]));
                   };
-                  // ::TODO:: remove this stupid transorm iterator when xtensor python supports it
+                  // ::TODO:: remove this transform iterator when points can be converted to Python directly
                   using transform_it_t = transform_forward_iterator<
                           decltype(transform),
                           contour_2d_internal::contour_segment_2d_iterator<point_2d_f>,
@@ -43,11 +41,11 @@ namespace py_contour_2d {
               "Iterator on the contour elements of the contour segment. ");
         c.def("__len__", &class_t::size, "Number of elements in the contour segment.");
         c.def("__getitem__", [](class_t &c, index_t i) {
-            // ::TODO:: remove this stupid thing when xtensor python supports it
+            // ::TODO:: return the element directly when points can be converted to Python
             const auto &e = c[i];
             return std::make_pair(e.first, std::make_pair(e.second[0], e.second[1]));
         });
-        // ::TODO:: uncomment when xtensor python supports it
+        // ::TODO:: uncomment when points can be converted to Python
         //c.def("first", &class_t::first, "First element of the contour segment.");
         //c.def("last", &class_t::last, "First element of the contour segment.");
         c.def("norm", &class_t::norm, "Distance between first and last elements of the contour segment.");
@@ -124,7 +122,7 @@ namespace py_contour_2d {
                                        const std::vector<size_t> &shape,
                                        const hg::array_view<const T> &weights) {
                       hg::embedding_grid_2d embedding(shape);
-                      return hg::fit_contour_2d(graph, embedding, hg::bridge::as_xt(weights));
+                      return hg::fit_contour_2d(graph, embedding, weights);
                   },
                   doc,
                   py::arg("graph"),
@@ -134,7 +132,6 @@ namespace py_contour_2d {
     };
 
     void py_init_contour_2d(pybind11::module &m) {
-        //xt::import_numpy();
         py_init_contour_segment_2d(m);
         py_init_polyline_contour_2d(m);
         py_init_contour_2d_impl(m);
@@ -155,8 +152,8 @@ namespace py_contour_2d {
                   hg::embedding_grid_2d embedding(shape);
                   auto res = rag_2d_vertex_perimeter_and_edge_length(
                           rag,
-                          hg::bridge::as_xt(vertex_map),
-                          hg::bridge::as_xt(edge_map),
+                          vertex_map,
+                          edge_map,
                           embedding,
                           graph,
                           epsilon,

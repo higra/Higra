@@ -14,7 +14,6 @@
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/structure/lca_fast.hpp"
 #include "higra/algo/bipartite_graph.hpp"
-#include "higra/structure/array/xtensor_bridge.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -45,7 +44,7 @@ namespace test_strided_span {
     static_assert(is_1d_indexable_v<cspan_t>, "");
     static_assert(is_1d_indexable_v<array_1d<int>>, "");
     static_assert(is_1d_indexable_v<array_view<const int>>, "");
-    static_assert(is_1d_indexable_v<decltype(xt::arange<index_t>(3))>, "");
+    static_assert(is_1d_indexable_v<decltype(hg::arange<index_t>(3))>, "");
     static_assert(!is_1d_indexable_v<index_t>, "");
     static_assert(!is_1d_indexable_v<std::vector<index_t>>, "");
     static_assert(std::is_same<indexable_1d_value_t<cspan_t>, index_t>::value, "");
@@ -181,9 +180,9 @@ namespace test_strided_span {
         ugraph g2(4);
         add_edges(sources(g), targets(g), g2);
         ugraph g3(4);
-        auto vsrc = bridge::as_view(src);
-        auto vtgt = bridge::as_view(tgt);
-        add_edges(vsrc.view, vtgt.view, g3);
+        array_view<const index_t> vsrc = src;
+        array_view<const index_t> vtgt = tgt;
+        add_edges(vsrc, vtgt, g3);
         for (index_t i = 0; i < 4; ++i) {
             REQUIRE(source(edge_from_index(i, g2), g2) == src(i));
             REQUIRE(target(edge_from_index(i, g2), g2) == tgt(i));
@@ -191,7 +190,7 @@ namespace test_strided_span {
             REQUIRE(target(edge_from_index(i, g3), g3) == tgt(i));
         }
         REQUIRE_THROWS(add_edges(src, array_1d<index_t>{1, 2}, g3));
-        REQUIRE_THROWS(add_edges(src, xt::xarray<index_t>{{1, 2}, {3, 3}}, g3));
+        REQUIRE_THROWS(add_edges(src, hg::array<index_t>{{1, 2}, {3, 3}}, g3));
 
         // bpt: strided spans (graph path) and arrays (Python path) give the same result
         auto r1 = hierarchy_core_internal::bpt_canonical_from_sorted_edges(sources(g), targets(g), sorted_edges, 4);

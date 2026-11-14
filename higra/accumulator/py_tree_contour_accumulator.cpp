@@ -10,7 +10,6 @@
 
 #include "py_tree_contour_accumulator.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
 #include "higra/accumulator/tree_contour_accumulator.hpp"
 #include "common.hpp"
 
@@ -30,8 +29,8 @@ namespace py_contour_accumulator {
                      const hg::array_view<const value_t> &vertex_data,
                      const hg::array_view<const hg::index_t> &depth,
                      hg::accumulators accumulator) {
-                      auto xvertex_data = hg::bridge::as_xt(vertex_data);
-                      auto xdepth = hg::bridge::as_xt(depth);
+                      auto xvertex_data = vertex_data;
+                      auto xdepth = depth;
                       return dispatch_accumulator(
                               [&graph, &tree, &xvertex_data, &xdepth](const auto &acc) {
                                   return hg::accumulate_on_contours(graph, tree, xvertex_data, xdepth, acc);
@@ -48,7 +47,6 @@ namespace py_contour_accumulator {
     };
 
     void py_init_tree_contour_accumulator(pybind11::module &m) {
-        //xt::import_numpy();
         add_type_overloads<def_accumulate_on_contours<hg::ugraph, hg::tree>, HG_TEMPLATE_NUMERIC_TYPES>
                 (m,
                  "");

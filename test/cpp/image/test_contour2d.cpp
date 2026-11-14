@@ -18,7 +18,7 @@ namespace test_contour_2d {
 
     auto contour_2_khalimsky(const hg::ugraph &graph, const std::array<index_t, 2> &shape, const contour_2d &contour) {
         std::array<index_t, 2> res_shape{shape[0] * 2 - 1, shape[1] * 2 - 1};
-        array_2d<index_t> result = xt::zeros<index_t>(res_shape);
+        array_2d<index_t> result = hg::zeros<index_t>({res_shape[0], res_shape[1]});
         embedding_grid_2d embedding(shape);
         index_t count = 0;
 
@@ -50,7 +50,7 @@ namespace test_contour_2d {
         if(interp){
             embedding_grid_2d res_embedding(res_shape);
             auto adj4 = get_4_adjacency_implicit_graph(res_embedding);
-            auto flat_res = xt::flatten(result);
+            auto flat_res = result.flat();
 
             for (long y = 1; y < shape[0] * 2 - 2; y += 2) {
                 for (long x = 1; x < shape[1] * 2 - 2; x += 2) {
@@ -71,7 +71,7 @@ namespace test_contour_2d {
 
         auto g = get_4_adjacency_graph({4, 5});
 
-        xt::xarray<int> data{
+        hg::array<int> data{
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0
         };
@@ -86,13 +86,13 @@ namespace test_contour_2d {
         std::array<index_t, 2> shape{4, 5};
         auto g = get_4_adjacency_graph(shape);
 
-        xt::xarray<int> data{
+        hg::array<int> data{
                 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 0, 2,
                 3
         };
 
 
-        xt::xarray<int> ref{
+        hg::array<int> ref{
                 {0, 0, 0, 9, 0, 7, 0, 8, 0},
                 {0, 0, 0, 0, 0, 0, 0, 0, 0},
                 {0, 0, 0, 1, 0, 2, 0, 3, 0},
@@ -142,12 +142,12 @@ namespace test_contour_2d {
         std::array<index_t, 2> shape{4, 5};
         auto g = get_4_adjacency_graph(shape);
 
-        xt::xarray<int> data{
+        hg::array<int> data{
                 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 4, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 1, 2,
                 3
         };
 
-        xt::xarray<int> ref{
+        hg::array<int> ref{
                 {0, 0, 0, 1, 0, 6, 0, 8, 0},
                 {0, 0, 0, 0, 0, 0, 0, 0, 0},
                 {0, 0, 0, 1, 0, 6, 0, 9, 0},
@@ -168,13 +168,13 @@ namespace test_contour_2d {
         std::array<index_t, 2> shape{4, 5};
         auto g = get_4_adjacency_graph(shape);
 
-        xt::xarray<int> data{
+        hg::array<int> data{
                 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 4, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 1, 2,
                 3
         };
 
 
-        xt::xarray<int> ref{
+        hg::array<int> ref{
                 {0, 0, 0, 1, 0, 6, 0, 8, 0},
                 {0, 0, 0, 0, 0, 0, 0, 0, 0},
                 {0, 0, 0, 1, 0, 6, 0, 9, 0},
@@ -196,12 +196,12 @@ namespace test_contour_2d {
         std::array<index_t, 2> shape{4, 5};
         auto g = get_4_adjacency_graph(shape);
 
-        xt::xarray<int> data{
+        hg::array<int> data{
                 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
                 0
         };
 
-        xt::xarray<int> ref{
+        hg::array<int> ref{
                 {0, 0, 0, 2, 0, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 0, 0, 0, 0},
                 {0, 0, 0, 1, 0, 0, 0, 0, 0},
@@ -223,12 +223,12 @@ namespace test_contour_2d {
         std::array<index_t, 2> shape{4, 5};
         auto g = get_4_adjacency_graph(shape);
 
-        xt::xarray<int> data{
+        hg::array<int> data{
                 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0
         };
 
-        xt::xarray<int> ref{
+        hg::array<int> ref{
                 {0, 0, 0, 0, 0, 0, 0, 0, 0},
                 {1, 0, 0, 0, 5, 0, 0, 0, 7},
                 {0, 2, 0, 4, 0, 6, 0, 8, 0},
@@ -250,7 +250,7 @@ namespace test_contour_2d {
         std::array<index_t, 2> shape{3, 2};
         auto g = get_4_adjacency_graph(shape);
 
-        xt::xarray<int> vertex_labels{
+        hg::array<int> vertex_labels{
                 1, 2,
                 3, 3,
                 4, 4

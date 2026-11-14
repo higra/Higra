@@ -24,7 +24,7 @@ namespace graph_accumulator {
         array_1d<int> vertex_weights{1, 2, 3, 4, 5, 6};
         auto res1 = accumulate_graph_vertices(g, vertex_weights, accumulator_max());
         array_1d<int> ref1{4, 5, 6, 5, 6, 5};
-        REQUIRE(xt::allclose(ref1, res1));
+        REQUIRE(hg::allclose(ref1, res1));
 
         array_2d<int> vertex_weights2{
                 {1, 6},
@@ -43,7 +43,7 @@ namespace graph_accumulator {
                 {12, 9},
                 {8,  6}
         };
-        REQUIRE(xt::allclose(ref2, res2));
+        REQUIRE(hg::allclose(ref2, res2));
     }
 
     TEST_CASE("accumulator graph edges", "[graph_accumulator]") {
@@ -53,7 +53,7 @@ namespace graph_accumulator {
         array_1d<int> edge_weights{1, 2, 3, 4, 6, 5, 7};
         auto res1 = accumulate_graph_edges(g, edge_weights, accumulator_max());
         array_1d<int> ref1{2, 4, 6, 5, 7, 7};
-        REQUIRE(xt::allclose(ref1, res1));
+        REQUIRE(hg::allclose(ref1, res1));
 
         array_2d<int> edge_weights2{
                 {1, 6},
@@ -73,6 +73,6 @@ namespace graph_accumulator {
                 {17, 13},
                 {12, 11}
         };
-        REQUIRE(xt::allclose(ref2, res2));
+        REQUIRE(hg::allclose(ref2, res2));
     }
 }

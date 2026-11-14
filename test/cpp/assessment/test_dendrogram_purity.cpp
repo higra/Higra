@@ -59,7 +59,7 @@ namespace assessment_dendrogram_purity {
             }
         }
         REQUIRE(almost_equal(dendrogram_purity(t, labels), total / z, 1e-14));
-        array_1d<char> labels_char = labels;
+        array_1d<char> labels_char = hg::cast<char>(labels);
         REQUIRE(almost_equal(dendrogram_purity(t, labels_char), total / z, 1e-14));
     }
 }

@@ -18,12 +18,10 @@
 #include "higra/algo/tree.hpp"
 #include "higra/image/graph_image.hpp"
 #include "higra/hierarchy/watershed_hierarchy.hpp"
-#include "xtensor/containers/xadapt.hpp"
 
 #include "higra/image/tree_of_shapes.hpp"
 
 using namespace hg;
-using namespace xt;
 using namespace std;
 
 TEST_CASE("unused", "[experimental]") {

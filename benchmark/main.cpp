@@ -12,41 +12,11 @@
 #include <cstdlib>
 
 #include <benchmark/benchmark.h>
-#include "xtensor/containers/xarray.hpp"
-#include "xtensor/containers/xtensor.hpp"
 #include <oneapi/tbb/global_control.h>
 #include <oneapi/tbb/task_arena.h>
 
-#ifdef XTENSOR_USE_XSIMD
-#ifdef __GNUC__
-
-template<class T>
-void print_type(T && /*t*/) {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-}
-
-#endif
-
-void print_stats() {
-    std::cout << "USING XSIMD\nSIMD SIZE: " << xsimd::simd_traits<double>::size << "\n\n";
-#ifdef __GNUC__
-    print_type(xt::xarray<double>());
-    print_type(xt::xtensor<double, 2>());
-#endif
-}
-
-#else
-
-void print_stats() {
-    std::cout << "NOT USING XSIMD\n\n";
-};
-#endif
-
-
-// Custom main function to print SIMD config and restrict TBB threads
+// Custom main function to restrict TBB threads
 int main(int argc, char **argv) {
-    print_stats();
-
     std::size_t num_threads = oneapi::tbb::this_task_arena::max_concurrency();
 
     if (const char* env_p = std::getenv("TBB_NUM_THREADS")) {

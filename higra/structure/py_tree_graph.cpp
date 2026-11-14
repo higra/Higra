@@ -28,7 +28,7 @@ namespace py_tree_graph {
         void def(C &c, const char *doc) {
             c.def("out_degree", [](graph_t &g,
                                    const hg::array_view<const value_t> &vvertices) {
-                      auto vertices = hg::bridge::as_xt(vvertices);
+                      auto vertices = vvertices;
                       g.compute_children();
                       hg_assert_vertex_indices(g, vertices);
                       return hg::out_degree(vertices, g);
@@ -45,7 +45,7 @@ namespace py_tree_graph {
         void def(C &c, const char *doc) {
             c.def("degree", [](graph_t &g,
                                const hg::array_view<const value_t> &vvertices) {
-                      auto vertices = hg::bridge::as_xt(vvertices);
+                      auto vertices = vvertices;
                       g.compute_children();
                       hg_assert_vertex_indices(g, vertices);
                       return hg::degree(vertices, g);
@@ -62,7 +62,7 @@ namespace py_tree_graph {
         void def(C &c, const char *doc) {
             c.def("in_degree", [](graph_t &g,
                                   const hg::array_view<const value_t> &vvertices) {
-                      auto vertices = hg::bridge::as_xt(vvertices);
+                      auto vertices = vvertices;
                       g.compute_children();
                       hg_assert_vertex_indices(g, vertices);
                       return hg::in_degree(vertices, g);
@@ -79,7 +79,7 @@ namespace py_tree_graph {
         void def(C &c, const char *doc) {
             c.def("is_leaf",
                   [](const graph_t &tree, const hg::array_view<const type> &vvertices) {
-                      auto vertices = hg::bridge::as_xt(vvertices);
+                      auto vertices = vvertices;
                       hg_assert_vertex_indices(tree, vertices);
                       return hg::is_leaf(vertices, tree);
                   },
@@ -99,9 +99,9 @@ namespace py_tree_graph {
                      const hg::array_view<const hg::index_t> &vvertices,
                      const hg::array_view<const type> &lambdas,
                      const hg::array_view<const type> &altitudes) {
-                      auto vertices = hg::bridge::as_xt(vvertices);
+                      auto vertices = vvertices;
                       hg_assert_vertex_indices(tree, vertices);
-                      return hg::find_region(vertices, hg::bridge::as_xt(lambdas), hg::bridge::as_xt(altitudes),
+                      return hg::find_region(vertices, lambdas, altitudes,
                                              tree);
                   },
                   doc,
@@ -115,7 +115,7 @@ namespace py_tree_graph {
                      type lambda,
                      const hg::array_view<const type> &altitudes) {
                       hg_assert_vertex_index(tree, vertex);
-                      return hg::find_region(vertex, lambda, hg::bridge::as_xt(altitudes), tree);
+                      return hg::find_region(vertex, lambda, altitudes, tree);
                   },
                   doc,
                   py::arg("vertex"),
@@ -133,7 +133,7 @@ namespace py_tree_graph {
         void def(C &c, const char *doc) {
             c.def("_num_children",
                   [](const graph_t &tree, const hg::array_view<const type> &vvertices) {
-                      auto vertices = hg::bridge::as_xt(vvertices);
+                      auto vertices = vvertices;
                       hg_assert_vertex_indices(tree, vertices);
                       tree.compute_children();
                       return hg::num_children(vertices, tree);
@@ -151,11 +151,11 @@ namespace py_tree_graph {
         void def(C &c, const char *doc) {
             c.def("_child",
                   [](const graph_t &tree, hg::index_t i, const hg::array_view<const type> &vvertices) {
-                      auto vertices = hg::bridge::as_xt(vvertices);
+                      auto vertices = vvertices;
                       tree.compute_children();
                       hg_assert_vertex_indices(tree, vertices);
                       hg_assert(i >= 0, "Child index cannot be negative.");
-                      hg_assert(i < (index_t) (xt::amin)(num_children(vertices, tree))(),
+                      hg_assert(i < (index_t) hg::min(num_children(vertices, tree)),
                                 "Child index is larger than the number of children.");
                       return hg::child(i, vertices, tree);
                   },
@@ -173,7 +173,7 @@ namespace py_tree_graph {
         void def(C &c, const char *doc) {
             c.def("parent",
                   [](const graph_t &tree, const hg::array_view<const type> &vvertices) {
-                      auto vertices = hg::bridge::as_xt(vvertices);
+                      auto vertices = vvertices;
                       hg_assert_vertex_indices(tree, vertices);
                       return hg::parent(vertices, tree);
                   },
@@ -184,7 +184,6 @@ namespace py_tree_graph {
     };
 
     void py_init_tree_graph(pybind11::module &m) {
-        //xt::import_numpy();
 
         py::enum_<hg::tree_category>(m, "TreeCategory",
                                      "Category of hierarchies.")
@@ -197,7 +196,7 @@ namespace py_tree_graph {
                                      py::dynamic_attr());
 
         c.def(py::init([](const hg::array_view<const hg::index_t> &parents, hg::tree_category category) {
-                  return graph_t(hg::bridge::as_xt(parents), category);
+                  return graph_t(parents, category);
               }),
               "Create a tree from a 1d parent relation. Every parent must be in [0, N), "
               "the last node must be its own parent, other parents must follow their children, "
@@ -208,7 +207,7 @@ namespace py_tree_graph {
         // Smaller integral types promote losslessly to index_t. Keep uint64 arrays
         // in their source type so the native constructor checks before narrowing.
         c.def(py::init([](const hg::array_view<const uint64_t> &parents, hg::tree_category category) {
-                  return graph_t(hg::bridge::as_xt(parents), category);
+                  return graph_t(parents, category);
               }), py::arg("parent_relation").noconvert(),
               py::arg("category") = hg::tree_category::partition_tree);
         add_edge_accessor_graph_concept<graph_t, decltype(c)>(c);
@@ -355,8 +354,8 @@ namespace py_tree_graph {
         c.def("_lowest_common_ancestor",
               [](const graph_t &tree, const hg::array_view<const hg::index_t> &vvertices1,
                  const hg::array_view<const hg::index_t> &vvertices2) {
-                  auto vertices1 = hg::bridge::as_xt(vvertices1);
-                  auto vertices2 = hg::bridge::as_xt(vvertices2);
+                  auto vertices1 = vvertices1;
+                  auto vertices2 = vvertices2;
                   hg_assert_vertex_indices(tree, vertices1);
                   hg_assert_vertex_indices(tree, vertices2);
                   return hg::lowest_common_ancestor(vertices1, vertices2, tree);

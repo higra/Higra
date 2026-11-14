@@ -11,8 +11,6 @@
 #include "py_pink_graph_io.hpp"
 #include "../py_common.hpp"
 #include "higra/io/pink_graph_io.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 namespace py_pink_io {
 
     namespace py = pybind11;
@@ -24,8 +22,8 @@ namespace py_pink_io {
                                      const hg::array_view<const double> &vertex_values,
                                      const hg::array_view<const double> &edge_values,
                                      const std::vector<size_t> &shape) {
-                  hg::save_pink_graph(filename, graph, hg::bridge::as_xt(vertex_values),
-                                      hg::bridge::as_xt(edge_values), shape);
+                  hg::save_pink_graph(filename, graph, vertex_values,
+                                      edge_values, shape);
               },
               py::arg("filename"),
               py::arg("graph"),
@@ -35,7 +33,6 @@ namespace py_pink_io {
     }
 
     void py_init_pink_io(pybind11::module &m) {
-        //xt::import_numpy();
 
         def_save<hg::ugraph>(m);
 
