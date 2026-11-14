@@ -17,7 +17,7 @@ Higra is a C++/Python library for efficient sparse graph analysis with a special
 - assessment: supervised assessment of graph clusterings and hierarchical clusterings;
 - image toolbox: special methods for grid graphs, tree of shapes, hierarchical clustering methods dedicated to image analysis, optimization of Mumford-Shah energy.
 
-Higra is thought for modularity, performance and seamless integration with classical data analysis pipelines. The data structures (graphs and trees) are decoupled from data (vertex and edge weights ) which are simply arrays ([xtensor](https://github.com/QuantStack/xtensor) arrays in C++ and [numpy](https://github.com/numpy/numpy) arrays in Python).
+Higra is thought for modularity, performance and seamless integration with classical data analysis pipelines. The data structures (graphs and trees) are decoupled from data (vertex and edge weights ) which are simply arrays (Higra's own contiguous arrays in C++ and [numpy](https://github.com/numpy/numpy) arrays in Python).
 
 ## Installation
 
@@ -89,7 +89,6 @@ The recommended way to give attribution is by citing the following presentation 
 Higra bundles several third-party libraries (inside the `lib` folder): 
 
 - [pybind11](https://github.com/pybind/pybind11) helps to create Python bindings of c++ methods and classes - [BSD-style license](https://github.com/pybind/pybind11/blob/master/LICENSE)
-- [xtensor](https://github.com/QuantStack/xtensor) (with [xtl](https://github.com/QuantStack/xtl), [xsimd](https://github.com/QuantStack/xsimd), and [xtensor-python](https://github.com/QuantStack/xtensor-python) provides `numpy` like arrays for c++ with seamless integration with Python - all under the [BSD-3-Clause license](https://github.com/QuantStack/xtensor/blob/master/LICENSE)
 - [Catch2](https://github.com/catchorg/Catch2) is a unit test framework - [Boost Software License 1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt)
 
 

@@ -25,7 +25,7 @@ REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")
 if (NOT HG_BUILD_WHEEL)
     pybind11_add_module(_hg_array_test MODULE hg_array_test_module.cpp)
     target_include_directories(_hg_array_test PRIVATE
-            ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${Python_NumPy_INCLUDE_DIRS})
+            ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include)
     # Explicit output directory (the generator expression prevents per-configuration
     # subdirectories), next to test_array_interop.py in the test build tree.
     set_target_properties(_hg_array_test PROPERTIES

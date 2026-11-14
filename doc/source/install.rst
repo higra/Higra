@@ -66,7 +66,6 @@ You can specify which version to use with ``-DPython_EXECUTABLE:FILEPATH=/PATH-T
 Cmake options:
 ++++++++++++++
 
-- ``USE_SIMD`` (boolean, default ``ON``): Use SIMD instructions
 - ``DO_CPP_TEST`` (boolean, default ``ON``): Build the c++ test suit
 - ``DO_AUTO_TEST`` (boolean, default ``OFF``): Execute test suit automatically at the end of the build
 - ``HG_USE_TBB`` (boolean, default ``OFF``): Use Intel Threading Building Blocks (TBB)

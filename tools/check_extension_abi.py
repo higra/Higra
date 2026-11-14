@@ -22,6 +22,7 @@ SOURCE = r"""
 #include <pybind11/pybind11.h>
 #include <higra/structure/tree_graph.hpp>
 #include <higra/structure/undirected_graph.hpp>
+#include <higra/python/py_array.hpp>
 
 namespace py = pybind11;
 PYBIND11_MODULE(higra_abi_probe, m) {
@@ -43,6 +44,16 @@ PYBIND11_MODULE(higra_abi_probe, m) {
     m.def("same_graph", [](hg::ugraph& g) -> hg::ugraph& { return g; },
           py::return_value_policy::reference);
     m.def("add_edge", [](hg::ugraph& g) { g.add_edge(0, 2); });
+    m.def("scaled", [](hg::array_view<const double> a, double f) {
+        return hg::map([f](double v) { return v * f; }, a);
+    });
+    m.def("scaled", [](hg::array_view<const float> a, float f) {
+        return hg::map([f](float v) { return v * f; }, a);
+    });
+    m.def("increment", [](hg::array_view<hg::index_t> a) {
+        for (auto& v : a) { ++v; }
+    });
+    m.def("parents_sum", [](const hg::tree& t) { return hg::sum(t.parents()); });
 }
 """
 
@@ -93,7 +104,22 @@ del graph, sources, targets
 gc.collect()
 np.testing.assert_array_equal(copy.edge_list(), [[0, 0], [1, 2]])
 np.testing.assert_array_equal(copy.out_degree(np.arange(3)), [2, 1, 1])
-print("tree/graph exchange passed:", sys.argv[1])
+x = np.arange(12, dtype=np.float64).reshape(3, 4)[:, ::-2]
+r = probe.scaled(x, 2.0)
+np.testing.assert_array_equal(r, x * 2)
+assert r.dtype == np.float64 and r.flags.writeable and r.flags.c_contiguous
+assert probe.scaled(np.ones(3, np.float32), 2.0).dtype == np.float32
+np.testing.assert_array_equal(probe.scaled(hg.attribute_area(created).astype(np.float64), 1.0), [1, 1, 2])
+y = np.zeros(4, dtype=np.int64)
+probe.increment(y)
+np.testing.assert_array_equal(y, [1, 1, 1, 1])
+try:
+    probe.increment(np.zeros(4, dtype=np.int64)[::2])
+    raise AssertionError("in-place update of a strided array must fail")
+except TypeError:
+    pass
+assert probe.parents_sum(created) == 6
+print("tree/graph/array exchange passed:", sys.argv[1])
 """
 
 

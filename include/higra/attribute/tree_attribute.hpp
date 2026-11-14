@@ -21,9 +21,9 @@ namespace hg {
      * area(n) = sum_{l in leaves(t), l is a  descendant of n} area(n)
      *
      * @tparam tree_t tree type
-     * @tparam T xexpression derived type of xleaf_area
+     * @tparam T element type of leaf_area
      * @param tree input tree
-     * @param xleaf_area area of the leaves of the input tree
+     * @param leaf_area area of the leaves of the input tree
      * @return an array with the area of each node of the tree
      */
     template<typename tree_t, typename T>
@@ -53,11 +53,11 @@ namespace hg {
      *    volume(n) = abs(altitude(n) - altitude(parent(n)) * area(n) + sum_{c in children(n, t)} volume(c)
      *
      * @tparam tree_t tree type
-     * @tparam T1 xexpression derived type of xnode_altitude
-     * @tparam T2 xexpression derived type of xnode_area
+     * @tparam T1 element type of node_altitude
+     * @tparam T2 element type of node_area
      * @param tree input tree
-     * @param xnode_altitude altitude of the nodes of the input tree
-     * @param xnode_area area of the nodes of the input tree
+     * @param node_altitude altitude of the nodes of the input tree
+     * @param node_area area of the nodes of the input tree
      * @return an array with the volume of each node of the tree
      */
     template<typename tree_t, typename T1, typename T2>
@@ -108,9 +108,9 @@ namespace hg {
      * (ie. for any node :math:`n`, :math:`altitude(n) \geq altitude(parent(n))`.
      *
      * @tparam tree_t tree type
-     * @tparam T xexpression derived type of xnode_altitude
+     * @tparam T element type of altitudes
      * @param tree input tree
-     * @param xnode_altitude altitude of the nodes of the input tree
+     * @param altitudes altitude of the nodes of the input tree
      * @param increasing_altitudes must be true if altitude is increasing, false if it is decreasing
      * @return an array with the height of each node of the tree
      */
@@ -194,7 +194,7 @@ namespace hg {
      * @tparam tree_t
      * @tparam T
      * @param tree Input tree
-     * @param xaltitudes Tree node altitudes
+     * @param altitudes Tree node altitudes
      * @return
      */
     template<typename tree_t, typename T>
@@ -242,10 +242,11 @@ namespace hg {
      * in the description above.
      *
      * @tparam tree_t tree type
-     * @tparam T xexpression derived type of xaltitude
+     * @tparam T1 element type of altitudes
+     * @tparam T2 element type of attribute
      * @param tree input tree
-     * @param xaltitudes altitude of the nodes of the input tree
-     * @param xattribute attribute used for filtering
+     * @param altitudes altitude of the nodes of the input tree
+     * @param attribute attribute used for filtering
      * @param increasing_altitudes must be true if altitude is increasing, false if it is decreasing
      * @return an array with the dynamics of each node of the tree
      */
@@ -353,9 +354,9 @@ namespace hg {
      * (ie. for any node :math:`n`, :math:`altitude(n) \geq altitude(parent(n))`.
      *
      * @tparam tree_t tree type
-     * @tparam T xexpression derived type of xaltitudes
+     * @tparam T element type of altitudes
      * @param tree input tree
-     * @param xaltitudes altitude of the nodes of the input tree
+     * @param altitudes altitude of the nodes of the input tree
      * @param increasing_altitudes must be true if altitude is increasing, false if it is decreasing
      * @return an array with the dynamics of each node of the tree
      */

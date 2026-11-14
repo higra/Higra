@@ -213,7 +213,7 @@ endif()
 ##########################
 
 set(PYBIND11_FINDPYTHON ON)
-set(HG_PYTHON_COMPONENTS Interpreter NumPy Development.Module)
+set(HG_PYTHON_COMPONENTS Interpreter Development.Module)
 if(DO_EMBEDDED_PYTHON_CPP_TEST)
     list(APPEND HG_PYTHON_COMPONENTS Development.Embed)
 endif()

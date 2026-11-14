@@ -418,7 +418,7 @@ Weighted graph
 
 Higra enforces a strong separation between graphs and weights (on vertices or edges): a graph never stores weights.
 Vertex indices and edge indices (except for ``regular_graph``) enables to have an immediate mapping between vertices
-or edges and values stored in an array. The preferred storage for weights are ``xtensor`` containers in c++ and ``numpy``
+or edges and values stored in an array. Weights are stored in ``hg::array`` in c++ (see :ref:`arrays`) and in ``numpy``
 arrays in python.
 
 .. tabs::
@@ -432,7 +432,7 @@ arrays in python.
                 result = 0
                 for v in g.adjacent_vertices(vertex);
                     result += vertex_weights[v]
-                return result
+                return result;
 
     .. tab:: c++
 

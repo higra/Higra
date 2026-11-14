@@ -209,7 +209,7 @@ namespace hg {
      *
      * If the provided filename already exists, it will be overwritten !
      *
-     * @tparam T xexpression derived type for ximage
+     * @tparam T element type of the image
      * @param filename Path to the file to write.
      * @param ximage The array containing the data to save.
      */

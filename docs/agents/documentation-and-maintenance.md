@@ -88,9 +88,9 @@ copies, so those helpers can warn or return missing paths there. Use checkout
 
 ## Dependency and version maintenance
 
-[lib/update_lib.sh](../../lib/update_lib.sh) pins vendor versions and deletes
-existing vendor include/config/license trees before downloading and reinstalling
-them. Its install prefix is the **current working directory**, intended to be
+[lib/update_lib.sh](../../lib/update_lib.sh) pins the pybind11 version (the only
+downloaded vendor library) and deletes the existing pybind11 include tree and the
+`lib/lib`, `lib/share` and `lib/license` trees before downloading and reinstalling it. Its install prefix is the **current working directory**, intended to be
 `lib/`. Running it from the repository root would delete important root paths.
 Do not run it as a setup step. For an explicitly requested update, inspect its
 paths, intended versions, header-layout changes, licenses, and resulting diff.

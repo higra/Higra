@@ -10,8 +10,8 @@ Use the same interpreter for configuration and manual Python test runs.
 
 ## Prerequisites and dependency sources
 
-Provide a C++17 compiler, CMake, Git, and Python with NumPy and development
-headers. The project does not set a compiler-version minimum. GCC 11 is a
+Provide a C++17 compiler, CMake, Git, and Python with development headers (and
+NumPy to run the tests). The project does not set a compiler-version minimum. GCC 11 is a
 regression CI target for the CASF exported-tree declaration, alongside current
 GCC and Clang jobs; it does not define the oldest supported compiler. The full
 Python suite additionally uses SciPy and scikit-learn:
@@ -26,8 +26,6 @@ substitute for building and importing the checkout.
 | Dependency | Source in this repository |
 | --- | --- |
 | pybind11 3.1.0 | Vendored headers and CMake config under `lib/` |
-| xtensor 0.26.0, xtl 0.8.0 | Vendored headers under `lib/include/` |
-| xtensor-python 0.28.0, xsimd 13.2.0 | Vendored headers under `lib/include/` |
 | Catch2 3.16.0 | Root `FetchContent`, downloaded at configure time |
 | Parallel stable sort | Vendored `lib/include/tbb-ssort/` |
 | oneTBB | External CMake package; CI builds version 2023.1.0 |
@@ -39,18 +37,21 @@ Python discovery uses FindPython with `Development.Module`, and additionally
 3.10 through 3.14. pybind11 3.1.0 requires Python 3.9 or newer and drops MSVC
 2017 support; use MSVC 2019 or newer on Windows.
 
-xtensor-python 0.28.0 carries a narrow pybind11 3 compatibility patch for
-compound assignments, retained by `lib/update_lib.sh`; see
-[vendor patch notes](../../lib/patches/README.md). Downstream extensions using
+Arrays are Higra's own (`include/higra/structure/array/`); NumPy is a run-time
+dependency only, and neither the build nor extensions use NumPy headers.
+`lib/update_lib.sh` refreshes pybind11 only; see the
+[vendor notes](../../lib/patches/README.md). Downstream extensions using
 Higra C++ objects must be rebuilt against the new wheel's exported pybind11
 headers after this upgrade from 2.13.6.
 
-The optional embedded tests cover the NumPy bridge's compound assignments and
-run in non-coverage Linux compiler CI. Unix wheel CI also runs
+The optional embedded tests (`test/python_cpp/`) check the NumPy converters of
+`include/higra/python/py_array.hpp` from an embedded interpreter and run in
+non-coverage Linux compiler CI. `test/python/test_structure/` also builds the
+test-only extension `_hg_array_test` (never packaged) for converter tests. Unix wheel CI also runs
 `python tools/check_extension_abi.py` outside the checkout against the installed
 artifact. Use `--cxx` to select a downstream compiler; the probe exercises Tree
 and UndirectedGraph inputs, owned returns, mutation and lifetimes in both import
-orders. This does not replace checking runtime portability or C++ ABI policy.
+orders, and NumPy array exchange through `py_array.hpp`. This does not replace checking runtime portability or C++ ABI policy.
 
 Linux wheels and their TBB dependency use default compiler ABI flags. Downstream
 GCC and Clang modules must use libstdc++ with `_GLIBCXX_USE_CXX11_ABI=1` and the
@@ -95,11 +96,11 @@ directory resets its dependency list.
 | Option | Default | Effect / constraint |
 | --- | --- | --- |
 | `CMAKE_BUILD_TYPE` | `Release` | `Debug`, `Release`, `RelWithDebInfo`, `MinSizeRel`, or custom `Coverage`; single-config generators |
-| `Python_EXECUTABLE` | Discovered | Select interpreter and matching NumPy; inspect configure output |
+| `Python_EXECUTABLE` | Discovered | Select interpreter (NumPy is needed only to run tests); inspect configure output |
 | `DO_CPP_TEST` | `ON` | Build `test_exe`; does not disable Catch2 fetching or Python tests |
 | `DO_AUTO_TEST` | `OFF` | Runs `ctest -V` after building `all_tests` |
 | `DO_EMBEDDED_PYTHON_CPP_TEST` | `OFF` | Builds `test_python_exe`, registers `Test_python_cpp` |
-| `USE_SIMD` | `ON` | Defines `XTENSOR_USE_XSIMD` |
+| `USE_SIMD` | unset | Deprecated, no effect; setting it prints a CMake deprecation message |
 | `HG_USE_TBB` | `OFF` | Enables TBB on extension/C++ test targets |
 | `TBB_DIR` | Discovered | Directory containing `TBBConfig.cmake`, not headers or a runtime-library directory |
 | `HG_UNITY_BUILD` | `OFF` | Unity builds for extension and C++ tests; module initializer is excluded |
@@ -120,7 +121,10 @@ if adding binding or test translation units.
 
 For parallel work, configure another build directory with `-DHG_USE_TBB=ON` and
 `-DTBB_DIR=/absolute/path/to/lib/cmake/TBB`. Repeat the affected tests in both
-modes. CI's `tools/cibuildwheel_*.sh` and `build_tbb_windows.ps1` build oneTBB;
+modes, including the determinism tests (`[array_parallel]` Catch2 tag): results
+must not depend on TBB or on the thread count. `HG_ARRAY_PARALLEL_THRESHOLD` and
+`HG_ARRAY_REDUCE_CHUNK` (`structure/array/parallel.hpp`) must have the same value in
+every translation unit of a target. CI's `tools/cibuildwheel_*.sh` and `build_tbb_windows.ps1` build oneTBB;
 they write/install outside the normal build tree and are not required if a
 suitable TBB installation already exists.
 
@@ -231,8 +235,8 @@ exclusion of vendor/system/`_deps` files. Coverage is not a portable MSVC mode.
 ## Packaging and platforms
 
 `python -m pip wheel . --no-deps --wheel-dir dist` invokes the setuptools/CMake
-backend with build isolation. `pyproject.toml` pins build NumPy by Python version
-and CMake 3.30.5; runtime NumPy minimums are separate in `setup.py`. The Python 3.9
+backend with build isolation. `pyproject.toml` pins CMake 3.30.5; NumPy is not a
+build requirement, and runtime NumPy minimums are in `setup.py`. The Python 3.9
 runtime entry has no matching current README/CI support or isolated NumPy pin;
 do not promise 3.9 support from that entry alone.
 
@@ -273,11 +277,11 @@ actual compile commands before treating it as a representative measurement.
 
 | Job group | Configured coverage |
 | --- | --- |
-| Linux core | Ubuntu 24.04, GCC 11 regression Debug with TBB off; GCC 14 Debug with TBB on/off; GCC 14 Coverage with TBB |
+| Linux core | Ubuntu 24.04, GCC 11 regression Debug with TBB off; GCC 14 and Clang 18 Debug with TBB on/off; GCC 14 Coverage with TBB |
 | macOS core | macOS 15, Clang, Debug with TBB on/off |
 | Wheels | CPython 3.10–3.14; Linux x86_64 manylinux_2_28, macOS x86_64/ARM64, Windows x86_64 |
 
-Linux GCC jobs also compile the CASF header with ordinary C++17 flags before
+Linux core jobs also compile the CASF header with ordinary C++17 flags before
 building. They clear inherited C/C++ flags and print compiler versions. Core
 jobs use unity batch size four. Coverage runs C++ tests only. Wheel jobs use
 cibuildwheel 3.3.1, enable TBB, and run the Python suite against installed wheels.

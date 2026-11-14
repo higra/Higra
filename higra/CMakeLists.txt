@@ -8,10 +8,9 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
-include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${Python_INCLUDE_DIRS} ${Python_NumPy_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${Python_INCLUDE_DIRS})
 
 message("Python include dirs: ${Python_INCLUDE_DIRS}")
-message("Python numpy include dirs: ${Python_NumPy_INCLUDE_DIRS}")
 
 set(PY_FILES
         __init__.py
@@ -43,7 +42,7 @@ add_subdirectory(plot)
 add_subdirectory(structure)
 
 pybind11_add_module(higram ${PYMODULE_COMPONENTS})
-#target_include_directories(higram PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${Python_INCLUDE_DIRS} ${Python_NumPy_INCLUDE_DIRS})
+#target_include_directories(higram PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${Python_INCLUDE_DIRS})
 
 
 if (HG_USE_TBB)

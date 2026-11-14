@@ -112,14 +112,6 @@ class CMakeBuild(build_ext):
 
         print("Setup.py: python executable: ", sys.executable)
 
-        # test if numpy is installed
-        try:
-            import numpy
-            print("Setup.py: numpy version: ", numpy.__version__)
-        except ImportError as e:
-            print("Setup.py: numpy is not installed. Please install numpy first.", e)
-            exit(1)
-
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPython_EXECUTABLE=' + sys.executable,
                       '-DHG_BUILD_WHEEL=On',

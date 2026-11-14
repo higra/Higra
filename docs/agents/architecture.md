@@ -13,8 +13,8 @@ flowchart TD
     PY --> BIND[higra.higram / hg.cpp]
     BIND --> CORE[Header-based hg namespace]
     CORE --> GRAPH[Graph concepts and structures]
-    CORE --> ARRAY[xtensor arrays and expressions]
-    BIND --> NUMPY[xtensor-python / NumPy]
+    CORE --> ARRAY[hg::array and array_view]
+    BIND --> NUMPY[py_array.hpp converters / NumPy]
 ```
 
 `include/higra/` contains the C++ core. There is no separate compiled core
@@ -30,7 +30,9 @@ functions rather than requiring every input to be an explicit `ugraph`.
 
 | Location under `include/higra/` | Role and useful entry points |
 | --- | --- |
-| `graph.hpp`, `structure/` | Graph API/traits; `undirected_graph.hpp`, `regular_graph.hpp`, `tree_graph.hpp`; embeddings, arrays, union-find, heaps, LCA |
+| `graph.hpp`, `structure/` | Graph API/traits; `undirected_graph.hpp`, `regular_graph.hpp`, `tree_graph.hpp`; embeddings, union-find, heaps, LCA; `point.hpp`, `strided_span.hpp` (edge endpoints) |
+| `structure/array/`, `structure/array.hpp` | Array library: `array<T>`, `array_view<const T>`/`array_view<T>`, shapes, allocator, free functions (`functions.hpp`), parallel loops (`parallel.hpp`); `array_1d`…`array_nd` alias `array<T>` |
+| `python/py_array.hpp` | pybind11 converters between NumPy and Higra arrays; shipped in the wheel for extensions; core headers never include pybind11 |
 | `structure/details/` | Iterators, graph concepts, indexed edges, light axis views, range-minimum-query implementations |
 | `accumulator/` | Reusable accumulator types and graph/tree reductions; `tree_accumulator.hpp`, `graph_accumulator.hpp` |
 | `attribute/tree_attribute.hpp` | C++ tree measurements; many further attributes are composed in Python |
@@ -49,7 +51,7 @@ that Python often exposes as tuples or the bound `SimplifiedTree` class.
 ## Bindings and package exports
 
 [higra/pymodule.cpp](../../higra/pymodule.cpp) defines
-`PYBIND11_MODULE(higram, m)`, initializes NumPy once,
+`PYBIND11_MODULE(higram, m)`
 and calls the binding initializer functions. `higra/all.hpp` includes module
 `all.hpp` aggregates, which include binding declarations.
 

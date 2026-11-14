@@ -11,7 +11,62 @@ Unreleased
   Keep results explicitly when reuse is needed; recompute them after input changes.
 
 - Upgrade bundled pybind11 to 3.1.0; C++ extensions must be rebuilt
-  against the installed wheel's exported headers. 
+  against the installed wheel's exported headers.
+
+- Replace the xtensor library by Higra's own array type. Python results are unchanged, except for the following
+  points:
+
+  - Arrays with any memory layout (slices with a step, reversed or transposed arrays...) are accepted by
+    every function. The following functions, and the functions built on them, previously raised an error for
+    non-contiguous arrays: :func:`~higra.accumulate_parallel`, :func:`~higra.accumulate_sequential`,
+    :func:`~higra.accumulate_and_add_sequential`, :func:`~higra.accumulate_and_multiply_sequential`,
+    :func:`~higra.accumulate_and_min_sequential`, :func:`~higra.accumulate_and_max_sequential`,
+    :func:`~higra.propagate_parallel`, :func:`~higra.propagate_sequential`,
+    :func:`~higra.propagate_sequential_and_accumulate`, :func:`~higra.accumulate_at`,
+    :func:`~higra.accumulate_graph_edges`, :func:`~higra.accumulate_graph_vertices`,
+    :func:`~higra.accumulate_on_contours`, :func:`~higra.weight_graph`,
+    :func:`~higra.make_region_adjacency_graph_from_labelisation`,
+    :func:`~higra.make_region_adjacency_graph_from_graph_cut`, :func:`~higra.rag_back_project_vertex_weights`
+    and :func:`~higra.rag_back_project_edge_weights` (and, for example, :func:`~higra.reconstruct_leaf_data`
+    and :func:`~higra.rag_accumulate_on_vertices`).
+  - :func:`~higra.sort` raises ``ValueError`` for a read-only array and ``TypeError`` for an unsupported input
+    (an array of another dtype or byte order, a list...) instead of leaving it unchanged.
+  - Fix :func:`~higra.save_tree`, which wrote wrong values for non-contiguous attribute arrays.
+  - :func:`~higra.accumulate_at` with vectorial weights returns an empty array, instead of crashing, when there
+    are no indices or when all indices are -1.
+  - Altitudes computed by :func:`~higra.binary_partition_tree_exponential_linkage` may differ in the last digits.
+  - Arrays returned by Higra's functions are not copied anymore when they are passed to Python, and many functions
+    are faster (for example :func:`~higra.weight_graph` on vectorial weights, :func:`~higra.dendrogram_purity`,
+    the partition and fragmentation assessment functions, and :func:`~higra.component_tree_tree_of_shapes_image2d`
+    with TBB).
+
+- C++ API and extensions (breaking changes):
+
+  - The bundled libraries xtensor, xtl, xsimd and xtensor-python are removed. Arrays are ``hg::array<T>``:
+    owning, C-contiguous arrays with value semantics and a number of dimensions defined at run time.
+    ``array_1d`` ... ``array_nd`` remain as other names of ``hg::array``. Non-owning access goes through
+    ``hg::array_view<const T>`` and ``hg::array_view<T>``. There are no expression templates and no arithmetic
+    operators on arrays: use the functions of namespace ``hg`` (``map``, ``sum``, ``take``...), see :ref:`arrays`.
+  - Array parameters of type ``const xt::xexpression<E>&`` become ``array_view<const T>``, and mutable ones
+    ``array_view<T>``, where ``T`` is the element type. Explicit template arguments must name the element type
+    instead of the container type. Lazy expressions and xtensor views must be replaced by arrays or by
+    ``array_view`` sub-views (``row``, ``slice``, ``reshaped``, ``flat``).
+  - Extensions include ``higra/python/py_array.hpp`` to exchange arrays with NumPy, and take
+    ``array_view<const T>``, ``array_view<T>`` or ``array<T>`` parameters instead of ``xt::pyarray`` and
+    ``xt::pytensor``; ``xt::import_numpy()`` is not needed (see :ref:`extensions`).
+  - ``hg::point`` is a plain fixed-size struct, without xtensor expressions or scalar arithmetic.
+  - ``undirected_graph::sources()`` and ``targets()`` return ``hg::strided_span<const index_t>``;
+    ``tree::targets()`` returns an ``array_view<const index_t>``; ``tree`` is constructed from an
+    ``array_view<const T>`` or an ``array<index_t>&&``.
+  - Other signature changes: ``rag_back_project_weights``, ``rag_accumulate``,
+    ``assess_fragmentation_horizontal_cut``, ``assesser_fragmentation_optimal_cut`` and ``ComponentTreeCasf``
+    take ``array_view`` parameters; ``oriented_watershed`` and ``mean_pb_hierarchy`` have separate overloads
+    with and without edge orientations; ``save_pink_graph`` requires its vertex and edge value arrays.
+  - The header ``higra/assessment/py_dendrogram_purity.hpp`` (a duplicate of ``dendrogram_purity.hpp``) is
+    removed.
+
+- Build: NumPy is no longer needed to compile Higra or its extensions, only to run them. The CMake option
+  ``USE_SIMD`` has no effect anymore and is deprecated.
 
 0.6.13
 ------

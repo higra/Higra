@@ -9,7 +9,7 @@
 ############################################################################
 
 
-include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${Python_INCLUDE_DIRS} ${Python_NumPy_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include ${Python_INCLUDE_DIRS})
 
 set(HIGRA_TESTS_PYTHON_SRC
         main.cpp)

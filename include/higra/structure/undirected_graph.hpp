@@ -15,6 +15,7 @@
 #include "details/indexed_edge.hpp"
 #include "higra/structure/details/iterators.hpp"
 #include "strided_span.hpp"
+#include <algorithm>
 #include <vector>
 #include <memory>
 #include <stdexcept>
