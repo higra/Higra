@@ -50,7 +50,12 @@ namespace py_contour_2d {
         //c.def("last", &class_t::last, "First element of the contour segment.");
         c.def("norm", &class_t::norm, "Distance between first and last elements of the contour segment.");
         c.def("angle", &class_t::angle, "Angle of the vector (last()-first()) in [-pi; pi].");
-        c.def("distance_to_point", &class_t::distance_to_point,
+        c.def("distance_to_point", [](class_t &c, hg::array_view<const double> point) {
+                  if (point.dimension() != 1 || point.size() != 2) {
+                      throw py::type_error("distance_to_point(): the argument 'point' must be a 1d array of 2 values.");
+                  }
+                  return c.distance_to_point(point_2d_f{{point(0), point(1)}});
+              },
               "Distance between the given point and the line "
               "defined by the fist and last element of the contour segment.",
               py::arg("point"));

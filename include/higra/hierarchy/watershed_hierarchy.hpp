@@ -59,6 +59,8 @@ namespace hg {
      *   - returns an 1d array giving the attribute value for each node of the input tree.
      * The computed regional attribute must be scalar, positive and increasing
      * (the attribute value of a node is smaller than or equal to the attribute value of its parent).
+     * A ``std::runtime_error`` is thrown if the result of the attribute functor is not a 1d array with one value per
+     * node of the binary partition tree.
      *
      * @tparam graph_t
      * @tparam T
@@ -83,6 +85,13 @@ namespace hg {
         auto mst = subgraph_spanning(graph, mst_edge_map);
 
         auto bpt_attribute = attribute_functor(bpt, altitude);
+        hg_assert(bpt_attribute.dimension() == 1,
+                  "The result of the attribute function must be a 1d array, got an array of dimension " +
+                  std::to_string(bpt_attribute.dimension()) + ".");
+        hg_assert((index_t) bpt_attribute.shape()[0] == (index_t) num_vertices(bpt),
+                  "The result of the attribute function must contain one value per node of the binary partition "
+                  "tree: expected " + std::to_string(num_vertices(bpt)) + " values, got " +
+                  std::to_string(bpt_attribute.shape()[0]) + ".");
         auto corrected_attribute = watershed_hierarchy_internal::correct_attribute_BPT(bpt, altitude, bpt_attribute);
         auto persistence = accumulate_parallel(bpt, corrected_attribute, accumulator_min());
         persistence.slice(0, num_leaves(bpt)).fill(0);

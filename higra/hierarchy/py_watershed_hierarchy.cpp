@@ -25,16 +25,8 @@ namespace py_watershed_hierarchy {
                      const hg::array_view<const value_t> &edge_weights,
                      const std::function<hg::array<double>(const hg::tree &,
                                                            const hg::array_1d<value_t> &)> &attribute_functor) {
-                      // The functor result is copied once from Python into attribute_storage, which outlives
-                      // the algorithm; the algorithm reads it through a non-owning adaptor.
-                      hg::array<double> attribute_storage;
-                      auto attribute_adaptor = [&attribute_functor, &attribute_storage](
-                              const hg::tree &tree, const hg::array_1d<value_t> &altitudes) {
-                          attribute_storage = attribute_functor(tree, altitudes);
-                          return attribute_storage;
-                      };
                       auto res = hg::watershed_hierarchy_by_attribute(graph, edge_weights,
-                                                                      attribute_adaptor);
+                                                                      attribute_functor);
                       return py::make_tuple(
                               std::move(res.tree),
                               std::move(res.altitudes),

@@ -140,4 +140,37 @@ namespace watershed_hierarchy {
         REQUIRE((res2.tree.parents() == ref2.tree.parents()));
         REQUIRE((res2.altitudes == ref2.altitudes));
     }
+
+    TEST_CASE("watershed hierarchy by attribute rejects an invalid attribute result", "[watershed_hierarchy]") {
+        auto g = hg::get_4_adjacency_graph({2, 3});
+        array_1d<int> edge_weights{1, 0, 1, 0, 0, 0, 1};
+
+        auto too_short = [](const hg::tree &tree, const array_1d<int> &) {
+            return array_1d<double>(hg::zeros<double>({num_vertices(tree) - 1}));
+        };
+        REQUIRE_THROWS_AS(watershed_hierarchy_by_attribute(g, edge_weights, too_short), std::runtime_error);
+
+        auto too_long = [](const hg::tree &tree, const array_1d<int> &) {
+            return array_1d<double>(hg::zeros<double>({num_vertices(tree) + 1}));
+        };
+        REQUIRE_THROWS_AS(watershed_hierarchy_by_attribute(g, edge_weights, too_long), std::runtime_error);
+
+        auto scalar = [](const hg::tree &, const array_1d<int> &) {
+            return hg::array<double>(hg::zeros<double>({}));
+        };
+        REQUIRE_THROWS_AS(watershed_hierarchy_by_attribute(g, edge_weights, scalar), std::runtime_error);
+
+        auto two_dimensional = [](const hg::tree &tree, const array_1d<int> &) {
+            return hg::array<double>(hg::zeros<double>({num_vertices(tree), (size_t) 2}));
+        };
+        REQUIRE_THROWS_AS(watershed_hierarchy_by_attribute(g, edge_weights, two_dimensional), std::runtime_error);
+
+        auto area = [](const hg::tree &tree, const array_1d<int> &) {
+            return hg::cast<double>(attribute_area(tree));
+        };
+        auto res = watershed_hierarchy_by_attribute(g, edge_weights, area);
+        auto ref = watershed_hierarchy_by_area(g, edge_weights);
+        REQUIRE((res.tree.parents() == ref.tree.parents()));
+        REQUIRE((res.altitudes == ref.altitudes));
+    }
 }

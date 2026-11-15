@@ -66,6 +66,24 @@ class TestContour2d(unittest.TestCase):
         contours_khalimsky = TestContour2d.contour_2_khalimsky(g, shape, contours)
         self.assertTrue(hg.is_in_bijection(ref, contours_khalimsky))
 
+    def test_contour_segment_distance_to_point(self):
+        g = hg.get_4_adjacency_graph((4, 5))
+        data = np.asarray((1, 0, 2, 1, 1, 1, 2, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 2, 0, 0, 0, 1, 0,
+                           0), dtype=np.float64)
+        contours = hg.fit_contour_2d(g, (4, 5), data)
+        polyline = contours[0]
+        segment = polyline[0]
+
+        self.assertAlmostEqual(segment.distance_to_point(np.array([3., 0.])), 3.0413812651491097)
+        self.assertAlmostEqual(segment.distance_to_point([0., 3.]), 2.5)
+        self.assertAlmostEqual(segment.distance_to_point((0., 3.)), 2.5)
+        self.assertAlmostEqual(segment.distance_to_point(np.array([3, 0], dtype=np.int64)), 3.0413812651491097)
+        self.assertAlmostEqual(segment.distance_to_point(np.array([3., 9., 0.])[::2]), 3.0413812651491097)
+
+        for point in ([1., 2., 3.], [1.], np.array([[3.], [0.]]), np.array([[3., 0.]]), np.float64(3.), None):
+            with self.assertRaises(TypeError):
+                segment.distance_to_point(point)
+
     def test_rag_2d_vertex_perimeter_and_edge_length_simple(self):
 
         shape = (3, 2)
