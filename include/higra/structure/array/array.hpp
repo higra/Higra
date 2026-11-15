@@ -238,7 +238,8 @@ namespace hg {
         }
 
         /**
-         * Changes the shape in place; the number of elements must be unchanged.
+         * Changes the shape in place; the number of elements must be unchanged. Throws, leaving
+         * the shape unchanged, if it differs or if the product of the dimensions overflows.
          */
         void reshape(const array_shape &shape) {
             this->check_reshape(shape);

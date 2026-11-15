@@ -168,7 +168,8 @@ namespace hg {
         }
 
         /**
-         * View of the same elements with another shape of the same number of elements.
+         * View of the same elements with another shape of the same number of elements. Throws if
+         * the number of elements differs or if the product of the dimensions overflows.
          */
         array_view<const T> reshaped(const array_shape &shape) const {
             check_reshape(shape);
@@ -261,7 +262,8 @@ namespace hg {
         }
 
         void check_reshape(const array_shape &shape) const {
-            hg_assert(shape.numel() == size(),
+            // checked_numel throws on an overflowing product instead of letting it wrap to size()
+            hg_assert(array_internal::checked_numel(shape, sizeof(T)) == size(),
                       "Cannot reshape an array of shape " + array_internal::shape_to_string(m_shape) + " to shape " +
                       array_internal::shape_to_string(shape) + ".");
         }

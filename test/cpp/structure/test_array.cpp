@@ -308,6 +308,37 @@ namespace test_array {
         REQUIRE(alloc.live_bytes == 0);
     }
 
+    TEST_CASE("array reshape rejects shapes whose element count overflows", "[array]") {
+        const index_t two32 = index_t(1) << 32;
+        array<int> e(array_shape(0));
+        REQUIRE_THROWS(e.reshape(array_shape(two32, two32)));
+        REQUIRE(e.shape() == array_shape(0)); // unchanged after the exception
+        REQUIRE_THROWS(e.view().reshaped(array_shape(two32, two32)));
+        REQUIRE_THROWS(array_view<const int>(e).reshaped(array_shape(two32, two32)));
+        // products that wrap modulo 2^64 to the current size: 2^62 * 4 -> 0, (2^61 + 1) * 8 -> 8
+        REQUIRE_THROWS(e.reshape(array_shape(index_t(1) << 62, 4)));
+        array<int> a{0, 1, 2, 3, 4, 5, 6, 7};
+        REQUIRE_THROWS(a.reshape(array_shape((index_t(1) << 61) + 1, 8)));
+        REQUIRE_THROWS(a.view().reshaped(array_shape((index_t(1) << 61) + 1, 8)));
+        REQUIRE(a.shape() == array_shape(8));
+        // the element size counts, as for resize: 2^61 doubles do not fit in a byte count
+        array<double> d(array_shape(0));
+        REQUIRE_THROWS(d.reshape(array_shape(index_t(1) << 61, 4)));
+        // a zero dimension makes the shape empty whatever the other dimensions, as for resize
+        e.reshape(array_shape(index_t(1) << 62, index_t(1) << 62, 0));
+        REQUIRE(e.size() == 0);
+        REQUIRE(e.shape() == array_shape(index_t(1) << 62, index_t(1) << 62, 0));
+        REQUIRE(e.view().reshaped(array_shape(two32, 0, two32)).size() == 0);
+        array<int> r;
+        r.resize(array_shape(index_t(1) << 62, index_t(1) << 62, 0));
+        REQUIRE(r.size() == 0);
+        // valid reshapes are unchanged
+        a.reshape(array_shape(2, 4));
+        REQUIRE(a(1, 3) == 7);
+        REQUIRE(a.view().reshaped(array_shape(4, 2))(3, 0) == 6);
+        REQUIRE_THROWS(a.reshape(array_shape(3, 3)));
+    }
+
     TEST_CASE("array accessors", "[array]") {
         array<int> a{{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
                      {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}};
@@ -456,6 +487,35 @@ namespace test_array {
         }
     }
 
+    TEST_CASE("array arange at integer limits", "[array][array_functions]") {
+        using i64 = std::int64_t;
+        using u64 = std::uint64_t;
+        const i64 min64 = std::numeric_limits<i64>::min();
+        const i64 max64 = std::numeric_limits<i64>::max();
+        // exact count ceil((stop - start) / step): min64 + 2 * max64 = max64 - 1 < max64, so 3
+        // elements (NumPy 2.4 computes the count in double precision and returns only the first two)
+        REQUIRE(values<i64>(hg::arange<i64>(min64, max64, max64)) == std::vector<i64>{min64, -1, max64 - 1});
+        REQUIRE(values<i64>(hg::arange<i64>(max64, min64, min64)) == std::vector<i64>{max64, -1});
+        REQUIRE(values<i64>(hg::arange<i64>(min64, max64, -1)).empty());
+        REQUIRE(values<i64>(hg::arange<i64>(max64 - 2, max64)) == std::vector<i64>{max64 - 2, max64 - 1});
+        REQUIRE(values<i64>(hg::arange<i64>(min64 + 2, min64, -1)) == std::vector<i64>{min64 + 2, min64 + 1});
+        // values computed by NumPy 2.4.3 with the same dtype
+        REQUIRE(values<std::int8_t>(hg::arange<std::int8_t>(-128, 127, 127)) == std::vector<std::int8_t>{-128, -1, 126});
+        REQUIRE(values<std::int8_t>(hg::arange<std::int8_t>(127, -128, -128)) == std::vector<std::int8_t>{127, -1});
+        auto r8 = hg::arange<std::int8_t>(-128, 127);
+        REQUIRE(r8.size() == 255);
+        REQUIRE(r8(0) == -128);
+        REQUIRE(r8(254) == 126);
+        REQUIRE(values<std::uint8_t>(hg::arange<std::uint8_t>(0, 255, 255)) == std::vector<std::uint8_t>{0});
+        REQUIRE(hg::arange<std::uint8_t>(0, 255).size() == 255);
+        REQUIRE(values<u64>(hg::arange<u64>(0, std::numeric_limits<u64>::max(), u64(1) << 63)) ==
+                std::vector<u64>{0, u64(1) << 63});
+        REQUIRE(values<u64>(hg::arange<u64>(std::numeric_limits<u64>::max() - 1, std::numeric_limits<u64>::max())) ==
+                std::vector<u64>{std::numeric_limits<u64>::max() - 1});
+        // more elements than an index_t can count
+        REQUIRE_THROWS(hg::arange<u64>(0, std::numeric_limits<u64>::max(), 1));
+    }
+
     TEST_CASE("array assign and cast", "[array][array_functions]") {
         array<double> a{{1.5, -2.7}, {3.2, 4}};
         array<int> b(array_shape(2, 2));
@@ -515,6 +575,32 @@ namespace test_array {
 
         REQUIRE_THROWS(hg::map([](int x, int y) { return x + y; }, a, array<int>{1, 2, 3, 4}));
         REQUIRE_THROWS(hg::map_into(out, [](int x) { return x; }, array<int>{1, 2}));
+    }
+
+    TEST_CASE("array map_into in place and with overlapping output", "[array][array_functions]") {
+        // an output that is exactly an input (in-place update) is allowed
+        array<int> a{1, 2, 3, 4, 5};
+        hg::map_into(a, [](int x) { return x * 10; }, a);
+        REQUIRE(a == array<int>{10, 20, 30, 40, 50});
+        hg::map_into(hg::exec::par, a.slice(1, 3), [](int x, int y) { return x + y; }, a.slice(1, 3), a.slice(3, 5));
+        REQUIRE(a == array<int>{10, 60, 80, 40, 50});
+        // disjoint parts of the same buffer
+        hg::map_into(a.slice(0, 2), [](int x) { return -x; }, a.slice(3, 5));
+        REQUIRE(a == array<int>{-40, -50, 80, 40, 50});
+#ifdef HG_ARRAY_CHECKS
+        // partial overlap breaks the precondition: rejected by the checks
+        array<int> b{1, 2, 3, 4, 5};
+        auto times10 = [](int x) { return x * 10; };
+        REQUIRE_THROWS(hg::map_into(b.slice(1, 5), times10, b.slice(0, 4)));
+        REQUIRE_THROWS(hg::map_into(hg::exec::seq, b.slice(0, 4), times10, b.slice(1, 5)));
+        REQUIRE_THROWS(hg::map_into(hg::exec::par, b.slice(0, 4), times10, b.slice(1, 5)));
+        REQUIRE_THROWS(hg::map_into(b.slice(0, 2), [](int x, int y) { return x + y; }, b.slice(3, 5), b.slice(1, 3)));
+        REQUIRE(b == array<int>{1, 2, 3, 4, 5}); // nothing written
+        // same start address but a different element size is a partial overlap
+        array<std::int32_t> c{1, 2};
+        array_view<std::uint8_t> bytes(reinterpret_cast<std::uint8_t *>(c.data()), {2});
+        REQUIRE_THROWS(hg::map_into(bytes, [](std::int32_t x) { return (std::uint8_t) x; }, c.view()));
+#endif
     }
 
     TEST_CASE("array reductions", "[array][array_functions]") {
@@ -639,6 +725,73 @@ namespace test_array {
         REQUIRE_THROWS(hg::put(a, array<int>{3}, 0));
         REQUIRE_THROWS(hg::put(a, array<int>{0}, array<int>{1, 2}));
         REQUIRE_THROWS(hg::put(a, array<int>{0, 1}, array<int>{{1, 2}}));
+    }
+
+    TEST_CASE("array put with indices or values that alias the destination", "[array][array_functions]") {
+        // values are the destination: a[[1, 0]] = a gives [20, 10] in NumPy
+        array<int> a{10, 20};
+        hg::put(a, array<int>{1, 0}, a);
+        REQUIRE(a == array<int>{20, 10});
+
+        // indices are the destination: head[head] = 3 with head = b[0:2] = [1, 0]
+        array<int> b{1, 0, 7, 7};
+        auto head = b.slice(0, 2);
+        hg::put(head, head, 3);
+        REQUIRE(b == array<int>{3, 3, 7, 7}); // b[2:] untouched
+
+        // the same through the values overload
+        array<int> b2{1, 0, 7, 7};
+        auto head2 = b2.slice(0, 2);
+        hg::put(head2, head2, array<int>{5, 6});
+        REQUIRE(b2 == array<int>{6, 5, 7, 7});
+
+        // indices stored in the destination are validated before any write: the out-of-range
+        // index 2 is rejected and nothing is written
+        array<int> c{0, 2, 9};
+        auto c01 = c.slice(0, 2);
+        REQUIRE_THROWS(hg::put(c01, c01, 5));
+        REQUIRE(c == array<int>{0, 2, 9});
+        // a valid index that a previous write turns into an invalid one: the snapshot is used,
+        // so head3[[1, 0]] = 2 writes both rows
+        array<int> d{1, 0, 9};
+        auto head3 = d.slice(0, 2);
+        hg::put(head3, head3, 2);
+        REQUIRE(d == array<int>{2, 2, 9});
+
+        // indices elsewhere in the same buffer but outside the destination are not copied
+        array<int> e{7, 7, 1, 0};
+        hg::put(e.slice(0, 2), e.slice(2, 4), array<int>{5, 6});
+        REQUIRE(e == array<int>{6, 5, 1, 0});
+
+        // values partially overlapping a 2d destination (shifted by one row)
+        array<int> m{{0, 1}, {2, 3}, {4, 5}, {6, 7}};
+        hg::put(m.slice(0, 3), array<int>{0, 1, 2}, m.slice(1, 4));
+        REQUIRE(m == array<int>{{2, 3}, {4, 5}, {6, 7}, {6, 7}}); // NumPy: m[0:3][[0, 1, 2]] = m[1:4]
+        array<int> m2{{0, 1}, {2, 3}, {4, 5}, {6, 7}};
+        hg::put(m2.slice(1, 4), array<int>{0, 1, 2}, m2.slice(0, 3));
+        REQUIRE(m2 == array<int>{{0, 1}, {0, 1}, {2, 3}, {4, 5}}); // no cascade
+        array<int> m3{{0, 1}, {2, 3}, {4, 5}, {6, 7}};
+        hg::put(m3, array<int>{3, 2, 1, 0}, m3);
+        REQUIRE(m3 == array<int>{{6, 7}, {4, 5}, {2, 3}, {0, 1}});
+
+        // scalar value that is an element of the destination
+        array<double> s{1.5, 2.5, 3.5};
+        hg::put(s, array<int>{0, 1, 2}, s(0));
+        REQUIRE(s == array<double>{1.5, 1.5, 1.5});
+        array<double> s2{1.5, 2.5, 3.5};
+        hg::put(s2, array<int>{2, 1, 0}, s2(2));
+        REQUIRE(s2 == array<double>{3.5, 3.5, 3.5});
+
+        // indices of another type overlapping the destination bytes
+        array<std::int32_t> w{1, 0};
+        array_view<const std::uint32_t> wi(reinterpret_cast<const std::uint32_t *>(w.data()), {2});
+        hg::put(w.view(), wi, 9);
+        REQUIRE(w == array<std::int32_t>{9, 9});
+
+        // duplicate indices still follow "last write wins" with snapshot values
+        array<int> f{1, 2, 3};
+        hg::put(f, array<int>{0, 0, 0}, f);
+        REQUIRE(f == array<int>{3, 2, 3});
     }
 
     TEST_CASE("array comparison", "[array][array_functions]") {

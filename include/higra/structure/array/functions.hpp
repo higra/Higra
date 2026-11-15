@@ -183,6 +183,55 @@ namespace hg {
             }
         }
 
+        /**
+         * Whether ``n`` elements at ``p`` and ``m`` elements at ``q`` share at least one byte.
+         * Addresses are compared as integers: ``p`` and ``q`` may point into unrelated buffers.
+         */
+        template<class T, class U>
+        bool ranges_overlap(const T *p, index_t n, const U *q, index_t m) noexcept {
+            if (n <= 0 || m <= 0) {
+                return false;
+            }
+            const auto p0 = reinterpret_cast<std::uintptr_t>(p);
+            const auto q0 = reinterpret_cast<std::uintptr_t>(q);
+            const auto p1 = p0 + static_cast<std::uintptr_t>(n) * sizeof(T);
+            const auto q1 = q0 + static_cast<std::uintptr_t>(m) * sizeof(U);
+            return p0 < q1 && q0 < p1;
+        }
+
+        /**
+         * Data of ``src``, or of a copy of ``src`` held in ``storage`` if ``src`` overlaps the
+         * ``n`` elements at ``dst``, so that writing to ``dst`` does not change what is read.
+         */
+        template<class T, class U>
+        const T *snapshot_if_overlap(array_view<const T> src, const U *dst, index_t n, array<T> &storage) {
+            if (!ranges_overlap(dst, n, src.data(), src.size())) {
+                return src.data();
+            }
+            storage = array<T>(src.shape());
+            copy_elements(storage.data(), src.data(), src.size());
+            return storage.data();
+        }
+
+        /**
+         * With ``HG_ARRAY_CHECKS``: throws if the ``n`` elements at ``out`` overlap those at ``in``
+         * without being exactly the same memory range.
+         */
+        template<class R, class T>
+        void assert_no_partial_overlap(const char *function, const R *out, const T *in, index_t n) {
+#ifdef HG_ARRAY_CHECKS
+            const bool same_range = static_cast<const void *>(out) == static_cast<const void *>(in) &&
+                                    sizeof(R) == sizeof(T);
+            hg_assert(same_range || !ranges_overlap(out, n, in, n),
+                      std::string(function) + ": the output partially overlaps an input.");
+#else
+            (void) function;
+            (void) out;
+            (void) in;
+            (void) n;
+#endif
+        }
+
         template<class R, class F, class... T>
         void map_loop(bool parallel, R *out, index_t n, F &f, const T *... in) {
             auto body = [out, &f, in...](index_t b, index_t e) {
@@ -228,34 +277,53 @@ namespace hg {
     /**
      * 1d array ``[start, start + step, ...]`` of the values below ``stop`` (above if ``step < 0``),
      * like ``numpy.arange``: ``ceil((stop - start) / step)`` elements, element ``i`` equal to
-     * ``start + i * step``. ``step`` cannot be 0.
+     * ``start + i * step``. ``step`` cannot be 0. For integer types, the number of elements and the
+     * elements are exact over the whole range of ``T``, even when ``stop - start`` or ``step`` is
+     * not representable in ``T``.
      */
     template<class T>
     array<T> arange(const array_internal::identity_t<T> &start, const array_internal::identity_t<T> &stop,
                     const array_internal::identity_t<T> &step = T(1)) {
         static_assert(std::is_arithmetic_v<T> && !std::is_same_v<T, bool>, "arange requires a numeric type.");
         hg_assert(step != T(0), "arange: step cannot be 0.");
-        index_t n;
         if constexpr (std::is_floating_point_v<T>) {
             const double count = std::ceil((static_cast<double>(stop) - static_cast<double>(start)) /
                                            static_cast<double>(step));
-            n = count > 0 ? static_cast<index_t>(count) : 0;
-        } else {
-            if ((step > T(0) && stop <= start) || (step < T(0) && stop >= start)) {
-                n = 0;
-            } else if (step > T(0)) {
-                n = static_cast<index_t>((stop - start - T(1)) / step) + 1;
-            } else {
-                n = static_cast<index_t>((start - stop - T(1)) / static_cast<T>(T(0) - step)) + 1;
+            const index_t n = count > 0 ? static_cast<index_t>(count) : 0;
+            auto result = array<T>(array_shape(n));
+            T *out = result.data();
+            // sequential, like fill (see array_internal::fill)
+            for (index_t i = 0; i < n; ++i) {
+                out[i] = static_cast<T>(start + static_cast<T>(i) * step);
             }
+            return result;
+        } else {
+            // Exact count and elements for the whole range of T: the count is computed in unsigned
+            // 64-bit arithmetic, which cannot overflow. Elements are computed modulo 2^64 (2^32 for
+            // types of at most 4 bytes, which keeps the loop as wide as T); every element lies
+            // between start and stop, so the result modulo 2^bits(T) is the exact value.
+            using U = std::uint64_t;
+            using E = std::conditional_t<(sizeof(T) <= 4), std::uint32_t, std::uint64_t>;
+            U count;
+            if ((step > T(0) && stop <= start) || (step < T(0) && stop >= start)) {
+                count = 0;
+            } else if (step > T(0)) {
+                count = (static_cast<U>(stop) - static_cast<U>(start) - 1) / static_cast<U>(step) + 1;
+            } else {
+                count = (static_cast<U>(start) - static_cast<U>(stop) - 1) / (U(0) - static_cast<U>(step)) + 1;
+            }
+            // array_shape rejects a count above the largest index_t
+            auto result = array<T>(array_shape(count));
+            T *out = result.data();
+            const index_t n = result.size();
+            const E ustart = static_cast<E>(start);
+            const E ustep = static_cast<E>(step);
+            // sequential, like fill (see array_internal::fill)
+            for (index_t i = 0; i < n; ++i) {
+                out[i] = static_cast<T>(ustart + static_cast<E>(i) * ustep);
+            }
+            return result;
         }
-        auto result = array<T>(array_shape(n));
-        T *out = result.data();
-        // sequential, like fill (see array_internal::fill)
-        for (index_t i = 0; i < n; ++i) {
-            out[i] = static_cast<T>(start + static_cast<T>(i) * step);
-        }
-        return result;
     }
 
     /**
@@ -358,6 +426,8 @@ namespace hg {
     /**
      * ``out[i] = f(a[i], b[i], ...)`` for every element; all shapes must be equal.
      * ``f`` is called sequentially on the calling thread.
+     * ``out`` must not partially overlap any input; it may be exactly the same memory as an input
+     * (in-place update). With ``HG_ARRAY_CHECKS``, a partial overlap throws.
      */
     template<class R, class F, class... T>
     void map_into(exec::seq_t, array_view<R> out, F &&f, array_view<const T>... in) {
@@ -365,12 +435,13 @@ namespace hg {
         array_internal::assert_cpu_accessible(out.device());
         (array_internal::assert_cpu_accessible(in.device()), ...);
         array_internal::assert_same_shapes("map_into", out.shape(), in.shape()...);
+        (array_internal::assert_no_partial_overlap("map_into", out.data(), in.data(), out.size()), ...);
         array_internal::map_loop(false, out.data(), out.size(), f, in.data()...);
     }
 
     /**
      * As ``map_into(out, f, ...)``, but ``f`` may be called concurrently (with ``HG_USE_TBB``,
-     * above ``HG_ARRAY_PARALLEL_THRESHOLD`` elements).
+     * above ``HG_ARRAY_PARALLEL_THRESHOLD`` elements). The same non-overlap precondition applies.
      */
     template<class R, class F, class... T>
     void map_into(exec::par_t, array_view<R> out, F &&f, array_view<const T>... in) {
@@ -378,9 +449,13 @@ namespace hg {
         array_internal::assert_cpu_accessible(out.device());
         (array_internal::assert_cpu_accessible(in.device()), ...);
         array_internal::assert_same_shapes("map_into", out.shape(), in.shape()...);
+        (array_internal::assert_no_partial_overlap("map_into", out.data(), in.data(), out.size()), ...);
         array_internal::map_loop(true, out.data(), out.size(), f, in.data()...);
     }
 
+    /**
+     * ``map_into(exec::seq, out, f, ...)``: ``out`` must not partially overlap any input.
+     */
     template<class R, class F, class... T>
     void map_into(array_view<R> out, F &&f, array_view<const T>... in) {
         map_into(exec::seq, out, std::forward<F>(f), in...);
@@ -586,9 +661,21 @@ namespace hg {
         return result;
     }
 
+    namespace array_internal {
+
+        // put with snapshots of the inputs that overlap the destination (defined after put)
+        template<class T, class I>
+        void put_from_snapshot(array_view<T> a, array_view<const I> idx, const T &value);
+
+        template<class T, class I>
+        void put_from_snapshot(array_view<T> a, array_view<const I> idx, array_view<const T> values);
+    }
+
     /**
      * ``a[idx] = value`` (NumPy): sets the rows of ``a`` at the positions in the 1d index array
-     * ``idx``. Sequential; with duplicate indices, the last write wins.
+     * ``idx``. The result is NumPy's even when ``idx`` or ``value`` refers to elements of ``a``:
+     * the indices and the value are read before any write. Writes are sequential; with duplicate
+     * indices, the last write wins.
      */
     template<class T, class I>
     void put(array_view<T> a, array_view<const I> idx, const array_internal::identity_t<T> &value) {
@@ -596,22 +683,30 @@ namespace hg {
         array_internal::assert_cpu_accessible(idx.device());
         hg_assert(a.dimension() >= 1, "put: the array must have at least one dimension.");
         hg_assert(idx.dimension() == 1, "put: the index array must be 1d.");
+        const T v = value; // value may be an element of a
+        T *out = a.data();
+        if (array_internal::ranges_overlap(out, a.size(), idx.data(), idx.size())) {
+            // indices stored in a: validated and read from a copy (separate function, so that
+            // this common path stays small)
+            array_internal::put_from_snapshot(a, idx, v);
+            return;
+        }
         const index_t rs = a.row_size();
         const index_t n0 = a.shape(0);
-        T *out = a.data();
         array_internal::check_indices(idx.data(), idx.size(), n0, "put");
         for (index_t i = 0; i < idx.size(); ++i) {
             const index_t j = static_cast<index_t>(idx.data()[i]);
             for (index_t k = 0; k < rs; ++k) {
-                out[j * rs + k] = value;
+                out[j * rs + k] = v;
             }
         }
     }
 
     /**
      * ``a[idx] = values`` (NumPy): row ``i`` of ``values`` is written to row ``idx[i]`` of ``a``.
-     * ``values`` must have shape ``(idx.size(), a.shape[1:]...)``. Sequential; with duplicate
-     * indices, the last write wins.
+     * ``values`` must have shape ``(idx.size(), a.shape[1:]...)``. The result is NumPy's even when
+     * ``idx`` or ``values`` overlaps ``a``: the indices and the values are read before any write.
+     * Writes are sequential; with duplicate indices, the last write wins.
      */
     template<class T, class I>
     void put(array_view<T> a, array_view<const I> idx, array_view<const array_internal::identity_t<T>> values) {
@@ -624,9 +719,16 @@ namespace hg {
         expected[0] = idx.size();
         hg_assert(values.shape() == expected, "put: values must have shape " +
                                               array_internal::shape_to_string(expected) + ".");
+        T *out = a.data();
+        if (array_internal::ranges_overlap(out, a.size(), idx.data(), idx.size()) ||
+            array_internal::ranges_overlap(out, a.size(), values.data(), values.size())) {
+            // indices or values stored in a: copied before any write, the indices are validated
+            // and read from the copy (separate function, so that this common path stays small)
+            array_internal::put_from_snapshot(a, idx, values);
+            return;
+        }
         const index_t rs = a.row_size();
         const index_t n0 = a.shape(0);
-        T *out = a.data();
         const T *in = values.data();
         array_internal::check_indices(idx.data(), idx.size(), n0, "put");
         for (index_t i = 0; i < idx.size(); ++i) {
@@ -634,6 +736,25 @@ namespace hg {
             for (index_t k = 0; k < rs; ++k) {
                 out[j * rs + k] = in[i * rs + k];
             }
+        }
+    }
+
+    namespace array_internal {
+
+        // The copies do not overlap a, so the nested put takes its common path.
+        template<class T, class I>
+        void put_from_snapshot(array_view<T> a, array_view<const I> idx, const T &value) {
+            const array<I> idx_copy(idx);
+            put(a, array_view<const I>(idx_copy), value);
+        }
+
+        template<class T, class I>
+        void put_from_snapshot(array_view<T> a, array_view<const I> idx, array_view<const T> values) {
+            array<I> idx_copy;
+            const I *ip = snapshot_if_overlap(idx, a.data(), a.size(), idx_copy);
+            array<T> values_copy;
+            const T *vp = snapshot_if_overlap(values, a.data(), a.size(), values_copy);
+            put(a, array_view<const I>(ip, idx.shape()), array_view<const T>(vp, values.shape()));
         }
     }
 

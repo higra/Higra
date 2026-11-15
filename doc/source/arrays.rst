@@ -156,7 +156,8 @@ there are no arithmetic operators on arrays.
     *   - ``map(f, a, b, ...)``
         - New array ``r`` with ``r[i] = f(a[i], b[i], ...)``; all inputs have the same shape.
     *   - ``map_into(out, f, a, b, ...)``
-        - Same as ``map``, writing into the existing mutable view ``out``.
+        - Same as ``map``, writing into the existing mutable view ``out``. ``out`` may be the same view as an input
+          (in-place update), but must not overlap an input in any other way.
     *   - ``min(a)``, ``max(a)``, ``minmax(a)``
         - Smallest and largest elements; throw on an empty array.
     *   - ``argmin(a)``, ``argmax(a)``
@@ -170,6 +171,8 @@ there are no arithmetic operators on arrays.
         - New array with the rows ``a[idx[0]], a[idx[1]], ...`` (NumPy's ``a[idx]``).
     *   - ``put(a, idx, v)``, ``put(a, idx, values)``
         - Sets the rows ``a[idx[i]]`` to the value ``v``, or to the rows of ``values`` (NumPy's ``a[idx] = ...``).
+          ``idx``, ``v`` and ``values`` are read before ``a`` is modified, so they may refer to elements of ``a``.
+          With repeated indices, the last write wins.
     *   - ``a == b``, ``a != b``
         - Whether two arrays have the same shape and equal elements.
     *   - ``allclose(a, b, rtol, atol)``

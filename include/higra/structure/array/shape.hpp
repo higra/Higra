@@ -126,14 +126,16 @@ namespace hg {
         }
 
         /**
-         * Number of elements: product of the dimensions, 1 for rank 0.
+         * Number of elements: product of the dimensions, 1 for rank 0. Not checked for overflow
+         * (see ``array_internal::checked_numel``); a shape with a zero dimension gives 0.
          */
         HG_HOST_DEVICE index_t numel() const noexcept {
-            index_t n = 1;
+            // unsigned product: well-defined when large dimensions precede a zero dimension
+            std::uint64_t n = 1;
             for (index_t k = 0; k < m_ndim; ++k) {
-                n *= m_dims[k];
+                n *= static_cast<std::uint64_t>(m_dims[k]);
             }
-            return n;
+            return static_cast<index_t>(n);
         }
 
         /**
