@@ -785,5 +785,22 @@ class TestAttributes(unittest.TestCase):
         self.assertTrue(np.all(res == (0, 0, 0, 0, 0, 0, 26, 30)))
 
 
+    def test_empty_tree(self):
+        tree = hg.Tree(np.array([], dtype=np.int64))
+        reference_tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+
+        area = hg.attribute_area(tree)
+        self.assertEqual(area.shape, (0,))
+        self.assertEqual(area.dtype, hg.attribute_area(reference_tree).dtype)
+
+        volume = hg.attribute_volume(tree, np.zeros((0,)))
+        self.assertEqual(volume.shape, (0,))
+        self.assertEqual(volume.dtype, hg.attribute_volume(reference_tree, np.zeros((8,))).dtype)
+
+        depth = hg.attribute_depth(tree)
+        self.assertEqual(depth.shape, (0,))
+        self.assertEqual(depth.dtype, hg.attribute_depth(reference_tree).dtype)
+
+
 if __name__ == '__main__':
     unittest.main()

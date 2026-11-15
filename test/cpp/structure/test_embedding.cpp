@@ -10,6 +10,7 @@
 
 #include "../test_utils.hpp"
 #include "higra/structure/embedding.hpp"
+#include "catch2/matchers/catch_matchers_string.hpp"
 
 namespace embedding {
 
@@ -214,5 +215,42 @@ namespace embedding {
         REQUIRE(e3.size() == 24);
         REQUIRE_THROWS(hg::embedding_grid_2d(hg::array<int>{2, 3, 4}));
         REQUIRE_THROWS(hg::embedding_grid_2d(hg::array<int>{2, 0}));
+    }
+
+    TEST_CASE("scalar coordinates must have one value per dimension", "[embedding]") {
+        hg::embedding_grid_1d e1({5});
+        hg::embedding_grid_2d e2({3, 4});
+        const std::vector<hg::index_t> c3{1, 2, 3};
+        const std::vector<hg::index_t> c1{1};
+
+        // std::vector (generic overloads)
+        REQUIRE_THROWS_AS(e1.grid2lin(c3), std::runtime_error);
+        REQUIRE_THROWS_AS(e1.contains(c3), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.grid2lin(c3), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.contains(c3), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.grid2lin(c1), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.contains(c1), std::runtime_error);
+        REQUIRE_THROWS_AS(e1.grid2lin(std::vector<hg::index_t>{}), std::runtime_error);
+        REQUIRE_THROWS_WITH(e2.grid2lin(c3), Catch::Matchers::ContainsSubstring("expected 2, got 3"));
+
+        // initializer lists
+        REQUIRE_THROWS_AS(e1.grid2lin({1, 2, 3}), std::runtime_error);
+        REQUIRE_THROWS_AS(e1.contains({1, 2, 3}), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.grid2lin({1, 2, 3}), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.contains({1, 2, 3}), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.grid2lin({1}), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.contains({1}), std::runtime_error);
+
+        // correct number of coordinates
+        REQUIRE(e1.grid2lin(c1) == 1);
+        REQUIRE(e1.grid2lin({3}) == 3);
+        REQUIRE(e1.contains({4}));
+        REQUIRE(!e1.contains({5}));
+        REQUIRE(e2.grid2lin(std::vector<hg::index_t>{2, 3}) == 11);
+        REQUIRE(e2.grid2lin({2, 3}) == 11);
+        REQUIRE(e2.contains(std::vector<hg::index_t>{2, 3}));
+        REQUIRE(!e2.contains(std::vector<hg::index_t>{3, 0}));
+        REQUIRE(e2.contains({2, 3}));
+        REQUIRE(!e2.contains({-1, 0}));
     }
 }

@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <limits>
 #include "details/indexed_edge.hpp"
@@ -205,16 +206,20 @@ namespace hg {
 
             auto leaves_to_root_iterator(leaves_it leaves_opt = leaves_it::include,
                                          root_it root_opt = root_it::include) const {
+                const index_t num_vertices = (index_t) _num_vertices;
                 vertex_descriptor start = (leaves_opt == leaves_it::include) ? 0 : num_leaves();
-                vertex_descriptor end = (root_opt == root_it::include) ? _num_vertices : _num_vertices - 1;
-                return irange<index_t>(start, end);
+                vertex_descriptor end = (root_opt == root_it::include) ? num_vertices : num_vertices - 1;
+                // irange does not yield an empty range when stop is before start (empty or single node tree)
+                return irange<index_t>(start, std::max(start, end));
             }
 
             auto root_to_leaves_iterator(leaves_it leaves_opt = leaves_it::include,
                                          root_it root_opt = root_it::include) const {
+                const index_t num_vertices = (index_t) _num_vertices;
                 vertex_descriptor end = (leaves_opt == leaves_it::include) ? -1 : num_leaves() - 1;
-                vertex_descriptor start = (root_opt == root_it::include) ? _num_vertices - 1 : _num_vertices - 2;
-                return irange<index_t>(start, end, -1);
+                vertex_descriptor start = (root_opt == root_it::include) ? num_vertices - 1 : num_vertices - 2;
+                // irange does not yield an empty range when stop is after start (empty or single node tree)
+                return irange<index_t>(start, std::min(start, end), -1);
             }
 
             auto edge_from_index(edge_index_t ei) const {

@@ -464,6 +464,42 @@ namespace tree {
         t.clear();
     }
 
+    TEST_CASE("tree topological order iterators on empty and single node trees", "[tree]") {
+        auto to_vector = [](const auto &range) {
+            vector<index_t> res;
+            for (auto v: range) {
+                res.push_back(v);
+            }
+            return res;
+        };
+        const hg::leaves_it leaves_opts[] = {hg::leaves_it::include, hg::leaves_it::exclude};
+        const hg::root_it root_opts[] = {hg::root_it::include, hg::root_it::exclude};
+
+        hg::tree empty_tree(array_1d<index_t>{});
+        REQUIRE(to_vector(hg::leaves_iterator(empty_tree)).empty());
+        for (auto leaves_opt: leaves_opts) {
+            for (auto root_opt: root_opts) {
+                REQUIRE(to_vector(hg::leaves_to_root_iterator(empty_tree, leaves_opt, root_opt)).empty());
+                REQUIRE(to_vector(hg::root_to_leaves_iterator(empty_tree, leaves_opt, root_opt)).empty());
+                REQUIRE(to_vector(empty_tree.leaves_to_root_iterator(leaves_opt, root_opt)).empty());
+                REQUIRE(to_vector(empty_tree.root_to_leaves_iterator(leaves_opt, root_opt)).empty());
+            }
+        }
+
+        // the single node is both the root and a leaf: it is visited only if both are included
+        hg::tree single_node_tree(array_1d<index_t>{0});
+        for (auto leaves_opt: leaves_opts) {
+            for (auto root_opt: root_opts) {
+                vector<index_t> ref;
+                if (leaves_opt == hg::leaves_it::include && root_opt == hg::root_it::include) {
+                    ref.push_back(0);
+                }
+                REQUIRE(vectorEqual(ref, to_vector(hg::leaves_to_root_iterator(single_node_tree, leaves_opt, root_opt))));
+                REQUIRE(vectorEqual(ref, to_vector(hg::root_to_leaves_iterator(single_node_tree, leaves_opt, root_opt))));
+            }
+        }
+    }
+
     TEST_CASE("tree adjacency matrix", "[tree]") {
         auto t = data.t;
 

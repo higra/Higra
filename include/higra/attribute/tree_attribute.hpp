@@ -90,6 +90,9 @@ namespace hg {
     template<typename tree_t>
     auto attribute_depth(const tree_t &tree) {
         array_1d<index_t> depth = hg::empty<index_t>({tree.num_vertices()});
+        if (num_vertices(tree) == 0) {
+            return depth;
+        }
         depth(tree.root()) = 0;
         for (auto i: root_to_leaves_iterator(tree, leaves_it::include, root_it::exclude)) {
             depth(i) = depth(parent(i, tree)) + 1;

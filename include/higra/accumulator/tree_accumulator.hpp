@@ -36,6 +36,10 @@ namespace hg {
 
             array_nd <output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
 
+            if (num_vertices(tree) == 0) {
+                return output;
+            }
+
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
 
@@ -103,6 +107,10 @@ namespace hg {
             output_shape.insert(output_shape.begin(), num_vertices(tree));
 
             array_nd <output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
+
+            if (num_vertices(tree) == 0) {
+                return output;
+            }
 
             auto vertex_data_view = make_light_axis_view<vectorial>(vertex_data);
             auto input_view = make_light_axis_view<vectorial>(output);
@@ -183,6 +191,10 @@ namespace hg {
             output_shape.insert(output_shape.begin(), num_vertices(tree));
 
             array_nd <output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
+
+            if (num_vertices(tree) == 0) {
+                return output;
+            }
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto inout_view = make_light_axis_view<vectorial>(output);
@@ -314,6 +326,10 @@ namespace hg {
 
             array_nd <output_t> output = array_nd<output_t>::from_shape(input.shape());
 
+            if (num_vertices(tree) == 0) {
+                return output;
+            }
+
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
             auto inout_view = make_light_axis_view<vectorial>(output);
@@ -359,6 +375,10 @@ namespace hg {
 
             output_shape.insert(output_shape.begin(), num_vertices(tree));
             array_nd <output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
+
+            if (num_vertices(tree) == 0) {
+                return output;
+            }
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
@@ -415,6 +435,10 @@ namespace hg {
 
             output_shape.insert(output_shape.begin(), num_vertices(tree));
             array_nd <output_t> output = array_nd<output_t>::from_shape(array_shape::from(output_shape));
+
+            if (num_vertices(tree) == 0) {
+                return output;
+            }
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);

@@ -59,6 +59,14 @@ namespace tree_attributes {
         REQUIRE((ref == res));
     }
 
+    TEST_CASE("tree attributes area, volume and depth on an empty tree", "[tree_attributes]") {
+        hg::tree t(hg::array<index_t>{});
+        REQUIRE(attribute_depth(t).size() == 0);
+        auto area = attribute_area(t);
+        REQUIRE(area.size() == 0);
+        REQUIRE(attribute_volume(t, hg::array<double>::from_shape({0}), area).size() == 0);
+    }
+
     TEST_CASE("tree attribute height", "[tree_attributes]") {
         hg::tree t(hg::array<index_t>{7, 7, 8, 8, 8, 9, 9, 10, 10, 11, 11, 11});
         SECTION("increasing") {

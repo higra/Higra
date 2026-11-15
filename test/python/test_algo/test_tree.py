@@ -315,5 +315,16 @@ class TestAlgorithmTree(unittest.TestCase):
         self.assertTrue(np.all(result == ref.reshape(5, 3, 1)))
 
 
+    def test_reconstruct_leaf_data_empty_tree(self):
+        tree = hg.Tree(np.array([], dtype=np.int64))
+        for trailing_shape in ((), (3,)):
+            altitudes = np.zeros((0,) + trailing_shape, dtype=np.float32)
+            deleted = np.zeros((0,), dtype=bool)
+            for result in (hg.reconstruct_leaf_data(tree, altitudes),
+                           hg.reconstruct_leaf_data(tree, altitudes, deleted)):
+                self.assertEqual(result.shape, altitudes.shape)
+                self.assertEqual(result.dtype, np.float32)
+
+
 if __name__ == '__main__':
     unittest.main()

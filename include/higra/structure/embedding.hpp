@@ -13,6 +13,8 @@
 #include "array.hpp"
 #include "point.hpp"
 #include "../utils.hpp"
+#include <iterator>
+#include <string>
 #include <vector>
 
 
@@ -68,6 +70,22 @@ namespace hg {
                 } else {
                     return (unsigned long long) c < (unsigned long long) s;
                 }
+            }
+
+            /**
+             * Number of elements of an iterable sequence of coordinates.
+             */
+            template<typename T>
+            static index_t coordinates_count(const T &coordinates) {
+                return (index_t) std::distance(std::begin(coordinates), std::end(coordinates));
+            }
+
+            /**
+             * Message of the error raised when a sequence of coordinates does not have dim elements.
+             */
+            static std::string coordinates_count_error(index_t count) {
+                return "Coordinates size does not match embedding dimension (expected " + std::to_string(dim) +
+                       ", got " + std::to_string(count) + ").";
             }
 
             void computeSize() {
@@ -197,6 +215,8 @@ namespace hg {
                     typename = std::enable_if_t<!embedding_internal::is_array_v<T>>
             >
             index_t grid2lin(const T &coordinates) const {
+                hg_assert(coordinates_count(coordinates) == dim,
+                          coordinates_count_error(coordinates_count(coordinates)));
                 index_t result = 0;
                 index_t count = 0;
                 for (const auto &c: coordinates)
@@ -266,6 +286,8 @@ namespace hg {
              * @return
              */
             index_t grid2lin(const std::initializer_list<coordinates_t> &coordinates) const {
+                hg_assert(coordinates_count(coordinates) == dim,
+                          coordinates_count_error(coordinates_count(coordinates)));
                 index_t result = 0;
                 index_t count = 0;
                 for (const auto &c: coordinates)
@@ -280,6 +302,8 @@ namespace hg {
              * @return
              */
             bool contains(const std::initializer_list<coordinates_t> &coordinates) const {
+                hg_assert(coordinates_count(coordinates) == dim,
+                          coordinates_count_error(coordinates_count(coordinates)));
                 index_t count = 0;
                 for (const auto &c: coordinates)
                     if (c < 0 || c >= _shape(count++))
@@ -342,7 +366,8 @@ namespace hg {
                     typename = std::enable_if_t<!embedding_internal::is_array_v<T>>
             >
             bool contains(const T &coordinates) const {
-
+                hg_assert(coordinates_count(coordinates) == dim,
+                          coordinates_count_error(coordinates_count(coordinates)));
                 index_t count = 0;
                 for (const auto &c: coordinates)
                     if (c < 0 || c >= _shape(count++))

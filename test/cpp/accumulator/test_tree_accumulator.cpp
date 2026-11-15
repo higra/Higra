@@ -262,4 +262,46 @@ namespace tree_accumulator {
                            {8,  1}};
         REQUIRE(hg::allclose(ref5, output5));
     }
+
+    template<typename array_t>
+    static bool has_shape(const array_t &a, const std::vector<size_t> &ref) {
+        return std::equal(a.shape().begin(), a.shape().end(), ref.begin(), ref.end());
+    }
+
+    template<typename T>
+    static void check_empty_tree_accumulators(const hg::tree &tree, const std::vector<size_t> &shape) {
+        // shape: (0, *trailing dimensions) of the node and leaf data
+        hg::array<T> input = hg::zeros<T>(array_shape::from(shape));
+        array_1d<bool> condition = hg::zeros<bool>({0});
+
+        REQUIRE(has_shape(accumulate_parallel(tree, input, hg::accumulator_sum()), shape));
+        REQUIRE(has_shape(accumulate_parallel(tree, input, hg::accumulator_max()), shape));
+        REQUIRE(has_shape(accumulate_sequential(tree, input, hg::accumulator_sum()), shape));
+        REQUIRE(has_shape(accumulate_and_combine_sequential(tree, input, input, hg::accumulator_max(),
+                                                            std::plus<T>()), shape));
+        REQUIRE(has_shape(propagate_parallel(tree, input), shape));
+        REQUIRE(has_shape(propagate_parallel(tree, input, condition), shape));
+        REQUIRE(has_shape(propagate_sequential(tree, input, condition), shape));
+        REQUIRE(has_shape(propagate_sequential_and_accumulate(tree, input, hg::accumulator_sum()), shape));
+        REQUIRE(has_shape(propagate_sequential_and_accumulate(tree, input, hg::accumulator_prod(), condition),
+                          shape));
+    }
+
+    TEST_CASE("accumulators and propagators on an empty tree", "[tree_accumulator]") {
+        hg::tree tree(array_1d<index_t>{});
+        REQUIRE(num_vertices(tree) == 0);
+
+        SECTION("children not computed") {
+            check_empty_tree_accumulators<index_t>(tree, {0});
+            check_empty_tree_accumulators<double>(tree, {0, 3});
+            REQUIRE(!tree.children_computed());
+        }
+
+        SECTION("children computed") {
+            tree.compute_children();
+            REQUIRE(tree.children_computed());
+            check_empty_tree_accumulators<index_t>(tree, {0});
+            check_empty_tree_accumulators<double>(tree, {0, 3});
+        }
+    }
 }
