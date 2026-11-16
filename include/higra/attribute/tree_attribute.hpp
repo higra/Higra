@@ -546,7 +546,7 @@ namespace hg {
         const index_t num_l = (index_t) num_leaves(tree);
 
         // row-major elements: node i owns the num_d values starting at i * num_d
-        const value_type *w = node_weights.data();
+        const T *w = node_weights.data();
         value_type *r = res.data();
         const index_t num_d = (num_v == 0) ? 0 : (index_t) res.size() / num_v;
 
@@ -554,11 +554,12 @@ namespace hg {
             const index_t num_c = (index_t) num_children(i, tree);
             value_type *ri = r + i * num_d;
             for (index_t c1 = 0; c1 < num_c; c1++) {
-                const value_type *w1 = w + child(c1, i, tree) * num_d;
+                const T *w1 = w + child(c1, i, tree) * num_d;
                 for (index_t c2 = c1 + 1; c2 < num_c; c2++) {
-                    const value_type *w2 = w + child(c2, i, tree) * num_d;
+                    const T *w2 = w + child(c2, i, tree) * num_d;
                     for (index_t k = 0; k < num_d; k++) {
-                        ri[k] += w1[k] * w2[k];
+                        // product computed in T, then converted to value_type
+                        ri[k] += static_cast<value_type>(w1[k] * w2[k]);
                     }
                 }
             }

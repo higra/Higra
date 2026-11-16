@@ -142,4 +142,71 @@ namespace assessment_partition {
         check(scorer_partition_DHamming(), 0.5);
         check(scorer_partition_DCovering(), 0.3134920634920635);
     }
+
+    TEMPLATE_TEST_CASE("partition scorers on small unsigned count matrices", "[assessment_partition]",
+                       uint8_t, uint16_t) {
+        // row and column sums exceed the element type: same scores as with int64_t
+        std::vector<array_2d<int64_t>> matrices{
+                {{200, 100}, {50, 200}},
+                {{255, 255}, {255, 255}},
+                {{200, 0},   {0, 250}},
+                {{3, 0, 1},  {0, 4, 0}, {2, 0, 5}}};
+        if (std::numeric_limits<TestType>::max() > 255) {
+            matrices.push_back({{40000, 30000}, {1000, 40000}});
+        }
+        for (const auto &m: matrices) {
+            array_2d<TestType> mt = hg::cast<TestType>(m);
+            REQUIRE(scorer_partition_BCE::score(mt.view()) == scorer_partition_BCE::score(m.view()));
+            REQUIRE(scorer_partition_DCovering::score(mt.view()) == scorer_partition_DCovering::score(m.view()));
+            REQUIRE(scorer_partition_DHamming::score(mt.view()) == scorer_partition_DHamming::score(m.view()));
+        }
+        // integer division, as for other integer types
+        array_2d<TestType> diagonal{{200, 0}, {0, 250}};
+        REQUIRE(scorer_partition_DHamming::score(diagonal.view()) == 1);
+        array_2d<TestType> m{{200, 100}, {50, 200}};
+        REQUIRE(scorer_partition_BCE::score(m.view()) == 0);
+        REQUIRE(scorer_partition_DCovering::score(m.view()) == 0);
+        REQUIRE(scorer_partition_DHamming::score(m.view()) == 0);
+        // DHamming returns the type of T / T
+        static_assert(std::is_same<decltype(scorer_partition_DHamming::score(m.view())), int>::value, "");
+    }
+
+    TEST_CASE("partition scorers result values and types", "[assessment_partition]") {
+        // integer types: integer division
+        array_2d<int32_t> mi{{200, 100}, {50, 200}};
+        array_2d<int64_t> ml{{3, 0, 1}, {0, 4, 0}, {2, 0, 5}};
+        array_2d<uint64_t> mu{{200, 0}, {0, 250}};
+        REQUIRE(scorer_partition_BCE::score(mi.view()) == 0);
+        REQUIRE(scorer_partition_DCovering::score(mi.view()) == 0);
+        REQUIRE(scorer_partition_DHamming::score(mi.view()) == 0);
+        REQUIRE(scorer_partition_BCE::score(ml.view()) == 4.0 / 15);
+        REQUIRE(scorer_partition_DCovering::score(ml.view()) == 4.0 / 15);
+        REQUIRE(scorer_partition_DHamming::score(ml.view()) == 0);
+        REQUIRE(scorer_partition_DHamming::score(mu.view()) == 1);
+        static_assert(std::is_same<decltype(scorer_partition_DHamming::score(mi.view())), int32_t>::value, "");
+        static_assert(std::is_same<decltype(scorer_partition_DHamming::score(ml.view())), int64_t>::value, "");
+        static_assert(std::is_same<decltype(scorer_partition_DHamming::score(mu.view())), uint64_t>::value, "");
+        static_assert(std::is_same<decltype(scorer_partition_BCE::score(mi.view())), double>::value, "");
+        static_assert(std::is_same<decltype(scorer_partition_DCovering::score(mi.view())), double>::value, "");
+
+        // floating point types: accumulated in their own type
+        array_2d<double> md{{200, 100}, {50, 200}};
+        array_2d<float> mf{{200, 100}, {50, 200}};
+        REQUIRE(scorer_partition_BCE::score(md.view()) == 0.56363636363636349);
+        REQUIRE(scorer_partition_DCovering::score(md.view()) == 0.5714285714285714);
+        REQUIRE(scorer_partition_DHamming::score(md.view()) == 0.72727272727272729);
+        REQUIRE(scorer_partition_BCE::score(mf.view()) == 0.56363641912286933);
+        REQUIRE(scorer_partition_DCovering::score(mf.view()) == 0.57142855557528405);
+        REQUIRE(scorer_partition_DHamming::score(mf.view()) == 0.72727274894714355f);
+        static_assert(std::is_same<decltype(scorer_partition_DHamming::score(mf.view())), float>::value, "");
+    }
+
+    TEMPLATE_TEST_CASE("cardinal of intersections of empty unsigned labelisations", "[assessment_partition]",
+                       uint8_t, uint64_t) {
+        // one region (the lowest value of the type plus one) for empty labelisations
+        array_1d<TestType> empty = hg::empty<TestType>({0});
+        auto r = card_intersections(empty, empty);
+        REQUIRE(r.size() == 1);
+        REQUIRE((r[0] == array_2d<index_t>{{0}}));
+    }
 }

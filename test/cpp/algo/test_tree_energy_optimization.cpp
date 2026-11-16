@@ -261,4 +261,42 @@ namespace test_linear_energy_function_optimization {
         REQUIRE(tree.parents() == ref_parents);
         REQUIRE(hg::allclose(altitudes, ref_altitudes));
     }
+
+    TEMPLATE_TEST_CASE("test binary_partition_tree_MumfordShah_energy edge length and input types",
+                       "[optimal_cut_tree]", int, float) {
+        auto g = hg::get_4_adjacency_graph({3, 3});
+        array_1d<double> vertex_perimeter({9}, 4);
+        array_1d<double> vertex_values{1, 1, 20, 6, 1, 20, 10, 10, 10};
+        array_1d<double> squared_vertex_values = hg::map([](double a, double b) { return a * b; }, vertex_values, vertex_values);
+        array_1d<double> vertex_area = hg::ones<double>({num_vertices(g)});
+        array_2d<double> vertex_values_v{{1, 2}, {1, 2}, {20, 30}, {6, 7}, {1, 2}, {20, 30}, {10, 12}, {10, 12},
+                                         {10, 12}};
+        array_2d<double> squared_vertex_values_v = hg::map([](double a, double b) { return a * b; }, vertex_values_v, vertex_values_v);
+        array_1d<double> edge_length_d = hg::ones<double>({num_edges(g)});
+        array_1d<TestType> edge_length = hg::ones<TestType>({num_edges(g)});
+
+        auto ref = binary_partition_tree_MumfordShah_energy(g, vertex_perimeter, vertex_area, vertex_values,
+                                                            squared_vertex_values, edge_length_d);
+        auto res = binary_partition_tree_MumfordShah_energy(g, vertex_perimeter, vertex_area, vertex_values,
+                                                            squared_vertex_values, edge_length);
+        REQUIRE(res.tree.parents() == ref.tree.parents());
+        REQUIRE((res.altitudes == ref.altitudes));
+
+        // all inputs in TestType
+        array_1d<TestType> vertex_perimeter_t = hg::cast<TestType>(vertex_perimeter);
+        array_1d<TestType> vertex_area_t = hg::cast<TestType>(vertex_area);
+        array_1d<TestType> vertex_values_t = hg::cast<TestType>(vertex_values);
+        array_1d<TestType> squared_vertex_values_t = hg::cast<TestType>(squared_vertex_values);
+        auto res_t = binary_partition_tree_MumfordShah_energy(g, vertex_perimeter_t, vertex_area_t, vertex_values_t,
+                                                              squared_vertex_values_t, edge_length);
+        REQUIRE(res_t.tree.parents() == ref.tree.parents());
+        REQUIRE((res_t.altitudes == ref.altitudes));
+
+        auto ref_v = binary_partition_tree_MumfordShah_energy(g, vertex_perimeter, vertex_area, vertex_values_v,
+                                                              squared_vertex_values_v, edge_length_d);
+        auto res_v = binary_partition_tree_MumfordShah_energy(g, vertex_perimeter, vertex_area, vertex_values_v,
+                                                              squared_vertex_values_v, edge_length);
+        REQUIRE(res_v.tree.parents() == ref_v.tree.parents());
+        REQUIRE((res_v.altitudes == ref_v.altitudes));
+    }
 }

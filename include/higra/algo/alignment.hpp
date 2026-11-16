@@ -16,6 +16,23 @@
 
 namespace hg {
 
+    namespace alignment_internal {
+
+        /**
+         * max(labelisation) + 1; for an empty labelisation, the lowest value of the type plus 1:
+         * 1 for unsigned types. Throws if the result is negative (empty signed labelisation).
+         */
+        template<typename T>
+        size_t num_regions_from_labelisation(array_view<const T> labelisation) {
+            const auto max_label = array_internal::max_or_lowest(labelisation);
+            if constexpr (std::is_signed_v<T>) {
+                hg_assert(max_label >= -1,
+                          "The number of regions cannot be deduced from an empty or negative labelisation.");
+            }
+            return (size_t) max_label + 1;
+        }
+    }
+
     /**
    * Given two labelisations, a fine and a coarse one, of a same set of elements.
    * Find for each label (ie. region) of the fine labelisation, the label of the region in the
@@ -51,11 +68,11 @@ namespace hg {
                   "Labelisations must have the same size.");
 
         if (num_regions_fine == 0) {
-            num_regions_fine = hg::max(labelisation_fine) + 1;
+            num_regions_fine = alignment_internal::num_regions_from_labelisation(labelisation_fine);
         }
 
         if (num_regions_coarse == 0) {
-            num_regions_coarse = hg::max(labelisation_coarse) + 1;
+            num_regions_coarse = alignment_internal::num_regions_from_labelisation(labelisation_coarse);
         }
 
         array_2d<size_t> intersections = hg::zeros<size_t>({num_regions_fine, num_regions_coarse});

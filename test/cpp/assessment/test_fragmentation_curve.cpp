@@ -304,4 +304,24 @@ namespace assessment_fragmentation_curve {
             REQUIRE(a_rag.straightened_altitudes() == a_pixels.straightened_altitudes());
         }
     }
+
+    TEMPLATE_TEST_CASE("fragmentation curve optimal score, empty curve and NaN", "[fragmentation_curve]",
+                       float, double) {
+        using curve_t = hg::fragmentation_curve<TestType>;
+        // empty curve: the lowest value of the type
+        curve_t empty_curve(hg::empty<TestType>({0}), hg::empty<TestType>({0}), 3);
+        REQUIRE(empty_curve.optimal_score() == std::numeric_limits<TestType>::lowest());
+
+        curve_t curve(array_1d<TestType>{1, 2, 3}, array_1d<TestType>{0.5, 0.75, 0.25}, 3);
+        REQUIRE(curve.optimal_score() == TestType(0.75));
+
+        // a NaN score propagates, wherever it is
+        const TestType nan = std::numeric_limits<TestType>::quiet_NaN();
+        for (const auto &scores: {array_1d<TestType>{0.5, nan, 0.25},
+                                  array_1d<TestType>{nan, 0.5, 0.25},
+                                  array_1d<TestType>{0.5, 0.25, nan}}) {
+            curve_t nan_curve(array_1d<TestType>{1, 2, 3}, array_1d<TestType>(scores), 3);
+            REQUIRE(std::isnan(nan_curve.optimal_score()));
+        }
+    }
 }

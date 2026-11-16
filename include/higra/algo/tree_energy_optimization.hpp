@@ -413,7 +413,7 @@ namespace hg {
                     array_view<const T4> vertex_perimeter,
                     array_view<const T5> xedge_length) :
                     m_graph(graph),
-                    m_edge_length(xedge_length) {
+                    m_edge_length(hg::cast<double>(xedge_length)) {
                 size_t num_nodes = vertex_area.size();
                 size_t num_nodes_final = num_nodes * 2 - 1;
                 m_area = array_1d<double>::from_shape({num_nodes_final});

@@ -49,11 +49,12 @@ namespace hg {
         }
 
         /**
-         * Score of the optimal cut
+         * Score of the optimal cut: the largest score, NaN if a score is NaN, or the lowest value of
+         * value_t if the curve is empty.
          * @return
          */
         auto optimal_score() const {
-            return hg::max(m_scores);
+            return array_internal::max_or_lowest<value_t>(m_scores);
         }
 
         const auto &scores() const {

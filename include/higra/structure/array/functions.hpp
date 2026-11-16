@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -554,6 +555,18 @@ namespace hg {
     template<class T>
     index_t argmax(array_view<const T> a) {
         return array_internal::arg_extremum(a, std::greater<T>(), "argmax");
+    }
+
+    namespace array_internal {
+
+        /**
+         * ``max(a)``, or ``std::numeric_limits<T>::lowest()`` if ``a`` is empty. NaN propagates
+         * as in ``max``.
+         */
+        template<class T>
+        T max_or_lowest(array_view<const T> a) {
+            return a.size() == 0 ? std::numeric_limits<T>::lowest() : hg::max(a);
+        }
     }
 
     /**

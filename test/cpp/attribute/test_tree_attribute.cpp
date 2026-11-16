@@ -293,4 +293,35 @@ namespace tree_attributes {
         hg::assign(wide.slice(2, 10), node_weights3);
         REQUIRE((ref == attribute_children_pair_sum_product(t, wide.slice(2, 10))));
     }
+
+    TEMPLATE_TEST_CASE("tree attribute children pair sum product with a wider value type", "[tree_attributes]",
+                       int, float) {
+        auto t = data.t; //{5, 5, 6, 6, 6, 7, 7, 7}
+
+        array_1d<TestType> node_weights{2, 3, 4, 5, 6, 7, 8, 9};
+        auto res = attribute_children_pair_sum_product<hg::tree, TestType, double>(t, node_weights);
+        static_assert(std::is_same<decltype(res), array_nd<double>>::value, "");
+        array_1d<double> ref{0, 0, 0, 0, 0, 6, 74, 56};
+        REQUIRE((ref == res));
+
+        array_nd<TestType> node_weights_v{2, 9, 3, 8, 4, 7, 5, 6, 6, 5, 7, 4, 8, 3, 9, 2};
+        node_weights_v.reshape({8, 2});
+        auto res_v = attribute_children_pair_sum_product<hg::tree, TestType, double>(t, node_weights_v);
+        array_nd<double> ref_v{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 72, 74, 107, 56, 12};
+        ref_v.reshape({8, 2});
+        REQUIRE((ref_v == res_v));
+    }
+
+    TEST_CASE("tree attribute children pair sum product, products computed in the weight type", "[tree_attributes]") {
+        auto t = data.t; //{5, 5, 6, 6, 6, 7, 7, 7}
+        // each product is computed in float, then converted to double
+        array_1d<float> node_weights{1.1f, 1.3f, 0.7f, 1.9f, 2.3f, 0.3f, 1.7f, 2.9f};
+        auto res = attribute_children_pair_sum_product<hg::tree, float, double>(t, node_weights);
+        array_1d<double> ref = hg::zeros<double>({8});
+        ref(5) = (double) (node_weights(0) * node_weights(1));
+        ref(6) = (double) (node_weights(2) * node_weights(3)) + (double) (node_weights(2) * node_weights(4)) +
+                 (double) (node_weights(3) * node_weights(4));
+        ref(7) = (double) (node_weights(5) * node_weights(6));
+        REQUIRE((ref == res));
+    }
 }

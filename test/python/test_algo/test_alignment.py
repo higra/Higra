@@ -98,6 +98,31 @@ class TestAlignement(unittest.TestCase):
         res = hg.project_fine_to_coarse_labelisation(labelisation_fine, labelisation_coarse, 5, 4)
         self.assertTrue(np.all(res == (0, 0, 2, 0, 0)))
 
+    def test_project_fine_to_coarse_labelisation_empty(self):
+        for dtype in (np.uint8, np.uint32, np.uint64):
+            empty = np.zeros(0, dtype)
+            # one region for empty unsigned labelisations
+            res = hg.project_fine_to_coarse_labelisation(empty, empty)
+            self.assertTrue(np.array_equal(res, (0,)))
+            res = hg.project_fine_to_coarse_labelisation(empty, empty, 2, 3)
+            self.assertTrue(np.array_equal(res, (0, 0)))
+
+        for dtype in (np.int8, np.int32, np.int64):
+            empty = np.zeros(0, dtype)
+            with self.assertRaises(RuntimeError):
+                hg.project_fine_to_coarse_labelisation(empty, empty)
+            with self.assertRaises(RuntimeError):
+                hg.project_fine_to_coarse_labelisation(empty, empty, 2)
+            res = hg.project_fine_to_coarse_labelisation(empty, empty, 2, 3)
+            self.assertTrue(np.array_equal(res, (0, 0)))
+
+        labelisation_fine = np.asarray((0, 1, 1, 2, 2, 2, 3, 3, 3, 3))
+        labelisation_coarse = np.asarray((0, 0, 1, 1, 1, 0, 2, 2, 1, 2))
+        for dtype in (np.uint8, np.int64):
+            res = hg.project_fine_to_coarse_labelisation(labelisation_fine.astype(dtype),
+                                                         labelisation_coarse.astype(dtype))
+            self.assertTrue(np.array_equal(res, (0, 0, 1, 2)))
+
 
 if __name__ == '__main__':
     unittest.main()
