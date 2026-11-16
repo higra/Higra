@@ -394,19 +394,11 @@ namespace test_fibonacci_heap {
         heap.pop();
     }
 
-    struct rnd {
-        static auto &get_rng() {
-            static std::mt19937 rng(150000); //std::random_device()()
-            return rng;
-        }
-
-    };
-
-    auto random_heaps(int nbop) {
+    // Each randomized test case owns its generator, so its sequence does not depend on
+    // which test cases ran before it.
+    auto random_heaps(int nbop, std::mt19937 &rng) {
         std::uniform_int_distribution<std::mt19937::result_type> dist100(1, 100);
         std::uniform_int_distribution<std::mt19937::result_type> weights(1, 100000);
-
-        auto &rng = rnd::get_rng();
 
 
         fibonacci_heap<hg::index_t> heap;
@@ -437,9 +429,10 @@ namespace test_fibonacci_heap {
 
 
     TEST_CASE("fibonacci heap randomized stress test push-pop", "[fibonacci_heap]") {
-        random_heaps(1000);
-        random_heaps(1000);
-        random_heaps(1000);
+        std::mt19937 rng(150000);
+        random_heaps(1000, rng);
+        random_heaps(1000, rng);
+        random_heaps(1000, rng);
     }
 
     TEST_CASE("fibonacci heap randomized stress test push-pop-merge", "[fibonacci_heap]") {
@@ -447,7 +440,7 @@ namespace test_fibonacci_heap {
         std::uniform_int_distribution<std::mt19937::result_type> dist100(1, 100);
         std::uniform_int_distribution<std::mt19937::result_type> weights(1, 100000);
 
-        auto &rng = rnd::get_rng();
+        std::mt19937 rng(150001);
         int nbop = 500;
 
         fibonacci_heap<hg::index_t> heap;
@@ -474,7 +467,7 @@ namespace test_fibonacci_heap {
                     REQUIRE(heap.size() == theap.size());
                 }
             } else {
-                auto hh = random_heaps(100);
+                auto hh = random_heaps(100, rng);
                 heap.merge(hh.first);
                 theap.merge(hh.second);
             }
@@ -483,14 +476,17 @@ namespace test_fibonacci_heap {
 
     TEST_CASE("fibonacci heap randomized stress test push-pop-update-erase", "[fibonacci_heap]") {
         std::uniform_int_distribution<std::mt19937::result_type> dist100(1, 100);
-        std::uniform_int_distribution<std::mt19937::result_type> weights(1, 100000);
+        // A narrow weight range makes equal minima frequent, so that pops must handle ties.
+        std::uniform_int_distribution<std::mt19937::result_type> weights(1, 1000);
 
-        auto &rng = rnd::get_rng();
+        std::mt19937 rng(150002);
         int nbop = 20000;
 
         fibonacci_heap<hg::index_t> heap;
         trivial_heap<hg::index_t> theap;
 
+        // Pairs each element of the Fibonacci heap with the same element of the reference heap.
+        // The stored reference handles are kept up to date with the element values.
         std::map<fibonacci_heap<hg::index_t>::value_handle, trivial_heap<hg::index_t>::value_handle> heapset;
 
         for (int i = 0; i < nbop; i++) {
@@ -505,13 +501,18 @@ namespace test_fibonacci_heap {
 
                     REQUIRE(fht->get_value() == tht.get_value());
                     REQUIRE(heap.size() == theap.size());
+                    // With equal minima, the two heaps may choose different elements: remove from the
+                    // reference heap the element paired with the one popped from the Fibonacci heap.
+                    auto twin = heapset.at(fht);
+                    REQUIRE(twin.get_value() == fht->get_value());
                     heap.pop();
-                    theap.pop();
+                    theap.erase(twin);
                     heapset.erase(fht);
                     if (theap.size() > 0) {
                         REQUIRE(heap.top()->get_value() == theap.top().get_value());
                     }
                     REQUIRE(heap.size() == theap.size());
+                    REQUIRE(heapset.size() == heap.size());
                 }
 
             } else if (op < 90) {
@@ -521,37 +522,55 @@ namespace test_fibonacci_heap {
 
                     auto it = heapset.begin();
                     std::advance(it, nb);
-                    auto e = *it;
 
-                    auto fhe = e.first;
-                    auto the = e.second;
+                    auto fhe = it->first;
+                    auto the = it->second;
+                    REQUIRE(fhe->get_value() == the.get_value());
 
                     heap.erase(fhe);
                     theap.erase(the);
-                    heapset.erase(fhe);
+                    heapset.erase(it);
+                    if (theap.size() > 0) {
+                        REQUIRE(heap.top()->get_value() == theap.top().get_value());
+                    }
+                    REQUIRE(heap.size() == theap.size());
+                    REQUIRE(heapset.size() == heap.size());
                 }
             } else {
                 if (heap.size() > 0) {
-
-
                     std::uniform_int_distribution<std::mt19937::result_type> dist(0, heapset.size() - 1);
                     auto nb = dist(rng);
 
                     auto it = heapset.begin();
                     std::advance(it, nb);
-                    auto e = *it;
 
-                    auto fhe = e.first;
-                    auto the = e.second;
+                    auto fhe = it->first;
+                    auto &the = it->second;
+                    REQUIRE(fhe->get_value() == the.get_value());
 
                     if (fhe->get_value() != 1) {
                         auto w = weights(rng);
                         heap.update(fhe, w);
                         theap.update(the, w);
+                        REQUIRE(fhe->get_value() == the.get_value());
+                        REQUIRE(heap.top()->get_value() == theap.top().get_value());
                     }
-
                 }
             }
         }
+
+        // Drain both heaps: the remaining pairs must come out in the same order of values.
+        REQUIRE(heap.size() == theap.size());
+        while (!heap.empty()) {
+            auto fht = heap.top();
+            REQUIRE(fht->get_value() == theap.top().get_value());
+            auto twin = heapset.at(fht);
+            heap.pop();
+            theap.erase(twin);
+            heapset.erase(fht);
+            REQUIRE(heap.size() == theap.size());
+        }
+        REQUIRE(theap.empty());
+        REQUIRE(heapset.empty());
     }
 }
