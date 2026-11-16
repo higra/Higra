@@ -230,7 +230,7 @@ namespace hg {
          * @param mst minimum spanning tree of the original graph (as ugraph)
          */
         incremental_watershed_cut(
-                                tree bpt, 
+                                tree bpt,
                                 ugraph mst
                             ) :
             m_bpt(std::move(bpt)),
@@ -239,11 +239,6 @@ namespace hg {
             m_root((index_t)hg::num_vertices(m_bpt) - 1),
             m_seed_count(hg::num_vertices(m_bpt), 0),
             m_is_cut(m_num_leaves - 1, false),
-            #ifdef HG_USE_TBB
-            m_minimum_parallel_front_size(200),
-            m_num_parrallel_hops(10),
-            m_maximum_concurrency(oneapi::tbb::info::default_concurrency()),
-            #endif
             m_visited(m_num_leaves, 0) {
                 HG_TRACE();
                 hg_assert((index_t)num_vertices(m_mst) == m_num_leaves,
@@ -256,35 +251,71 @@ namespace hg {
             }
 
         /**
-         * Set the value of m_minimum_parallel_front_size
-         * 
-         * @param minimum_parallel_front_size minimum breadth for the parallel algorithm (index_t)
+         * Set the minimum size of the propagation front for parallel relabeling.
+         *
+         * When seeds are added or removed, labels are propagated from a front of
+         * vertices. The propagation is distributed between threads only while the
+         * front contains more than this number of vertices; smaller fronts are
+         * processed sequentially.
+         *
+         * Values smaller than 1 are replaced by 1. Without TBB, this function only
+         * logs a warning and the value is left unchanged.
+         *
+         * @param minimum_parallel_front_size minimum number of vertices in the front (default 200)
          */
         void set_minimum_parallel_front_size(index_t minimum_parallel_front_size) {
             #ifndef HG_USE_TBB
                 HG_LOG_WARNING("set_minimum_parallel_front_size has no effect because TBB is not enabled.");
             #else
-                m_minimum_parallel_front_size = std::clamp(minimum_parallel_front_size, index_t(1), std::numeric_limits<index_t>::infinity());
+                m_minimum_parallel_front_size = std::clamp(minimum_parallel_front_size, index_t(1), (std::numeric_limits<index_t>::max)());
             #endif
         }
 
         /**
-         * Set the value of m_num_parrallel_hops
-         * 
-         * @param num_parrallel_hops parallel depth for the parallel algorithm (index_t)
+         * @return the minimum size of the propagation front for parallel relabeling
+         * @see set_minimum_parallel_front_size
          */
-        void set_num_parrallel_hops(index_t num_parrallel_hops) {
+        index_t get_minimum_parallel_front_size() const {
+            return m_minimum_parallel_front_size;
+        }
+
+        /**
+         * Set the number of propagation steps that each thread performs on its part
+         * of the front before the fronts of all threads are merged and divided again.
+         *
+         * Larger values reduce synchronization between threads but may balance the
+         * work less evenly.
+         *
+         * Values smaller than 1 are replaced by 1. Without TBB, this function only
+         * logs a warning and the value is left unchanged.
+         *
+         * @param num_parallel_hops number of independent propagation steps (default 10)
+         */
+        void set_num_parallel_hops(index_t num_parallel_hops) {
             #ifndef HG_USE_TBB
-                HG_LOG_WARNING("set_num_parrallel_hops has no effect because TBB is not enabled.");
+                HG_LOG_WARNING("set_num_parallel_hops has no effect because TBB is not enabled.");
             #else
-                m_num_parrallel_hops = std::clamp(num_parrallel_hops, index_t(1), std::numeric_limits<index_t>::infinity());
+                m_num_parallel_hops = std::clamp(num_parallel_hops, index_t(1), (std::numeric_limits<index_t>::max)());
             #endif
         }
 
         /**
-         * Set the value of m_maximum_concurrency
-         * 
-         * @param maximum_concurrency maximum number of processors to use (index_t)
+         * @return the number of propagation steps performed independently by each thread
+         * @see set_num_parallel_hops
+         */
+        index_t get_num_parallel_hops() const {
+            return m_num_parallel_hops;
+        }
+
+        /**
+         * Set the maximum number of threads used to relabel the vertices.
+         *
+         * A value of 1 disables parallel relabeling. Values are clamped between 1
+         * and the default concurrency reported by TBB. Without TBB, this function
+         * only logs a warning and the value is left unchanged (relabeling is always
+         * sequential).
+         *
+         * @param maximum_concurrency maximum number of threads (default: TBB default concurrency)
          */
         void set_max_concurrency(index_t maximum_concurrency) {
             #ifndef HG_USE_TBB
@@ -292,6 +323,14 @@ namespace hg {
             #else
                 m_maximum_concurrency = std::clamp(maximum_concurrency, index_t(1), static_cast<index_t>(oneapi::tbb::info::default_concurrency()));
             #endif
+        }
+
+        /**
+         * @return the maximum number of threads used to relabel the vertices (always 1 without TBB)
+         * @see set_max_concurrency
+         */
+        index_t get_max_concurrency() const {
+            return m_maximum_concurrency;
         }
 
         /**
@@ -441,7 +480,7 @@ namespace hg {
                 m_seed_map.fill(-1);
                 return;
             }
-            
+
             #ifdef HG_USE_TBB
             if (m_maximum_concurrency > 1) {
                 relabel_component_from_seeds(start_vertices, labels_to_propagate, reference_seeds);
@@ -516,7 +555,7 @@ namespace hg {
             const index_t nb_values = values.size();
             const index_t quotient = nb_values / nb_processor;
             const index_t rest = nb_values % nb_processor;
-            
+
             tbb::parallel_for(index_t(0), nb_processor, index_t(1), [&](index_t i) {
                 index_t size;
                 index_t begin;
@@ -539,7 +578,7 @@ namespace hg {
         void relabel_component_from_seeds(std::vector<index_t>& roots, std::vector<index_t>& root_labels, std::vector<index_t>& root_seeds) {
             hg_assert(roots.size() == root_labels.size(), "Each root must have a label.");
             hg_assert(roots.size() == root_seeds.size(), "Each root must have an origin seed.");
-            
+
             std::vector<index_t> E = roots;
 
             for (size_t i = 0; i < roots.size(); ++i) {
@@ -560,7 +599,7 @@ namespace hg {
                     arena.execute([&]{
                         partition(E, thread_count, E_i);
                         tbb::parallel_for(index_t(0), thread_count, index_t(1), [&](index_t i) {
-                            for (index_t l = 0; l <= m_num_parrallel_hops; l++) {
+                            for (index_t l = 0; l < m_num_parallel_hops; l++) {
                                 successor_labeling(E_i[i], S_parts[i]);
                                 E_i[i].swap(S_parts[i]);
                             }
@@ -598,7 +637,7 @@ namespace hg {
             }
         }
         #endif
-        
+
         tree m_bpt;
         ugraph m_mst;
         index_t m_num_leaves;
@@ -622,9 +661,14 @@ namespace hg {
         index_t m_visited_generation = 0;
         std::vector<index_t> m_visited;
 
-        index_t m_minimum_parallel_front_size;
-        index_t m_num_parrallel_hops;
-        index_t m_maximum_concurrency;
+        // tuning of the parallel relabeling (see the corresponding setters)
+        index_t m_minimum_parallel_front_size = 200;
+        index_t m_num_parallel_hops = 10;
+#ifdef HG_USE_TBB
+        index_t m_maximum_concurrency = static_cast<index_t>(oneapi::tbb::info::default_concurrency());
+#else
+        index_t m_maximum_concurrency = 1;
+#endif
     };
 
     /**

@@ -503,9 +503,9 @@ namespace test_watershed {
                            index_t num_hops = 2,
                            index_t min_front_size = 1) {
         auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
-        iws.set_max_concurrency(oneapi::tbb::info::default_concurrency()); 
+        iws.set_max_concurrency(oneapi::tbb::info::default_concurrency());
         iws.set_minimum_parallel_front_size(min_front_size);
-        iws.set_num_parrallel_hops(num_hops);
+        iws.set_num_parallel_hops(num_hops);
         return iws;
     }
 
@@ -748,6 +748,43 @@ namespace test_watershed {
         REQUIRE((iws.get_labeling() == hg::labelisation_seeded_watershed(g, edge_weights, seeds)));
     }
 
+    TEST_CASE("incremental watershed cut parallel settings accessors",
+              "[incremental_watershed_cut][tbb]") {
+        auto g = hg::get_4_adjacency_graph({2, 3});
+        array_1d<int> edge_weights{1, 0, 2, 0, 0, 1, 2};
+        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
+        const auto default_concurrency = static_cast<index_t>(oneapi::tbb::info::default_concurrency());
+
+        // default values
+        REQUIRE(iws.get_minimum_parallel_front_size() == 200);
+        REQUIRE(iws.get_num_parallel_hops() == 10);
+        REQUIRE(iws.get_max_concurrency() == default_concurrency);
+
+        // valid values are stored as given
+        iws.set_minimum_parallel_front_size(5);
+        iws.set_num_parallel_hops(3);
+        iws.set_max_concurrency(1);
+        REQUIRE(iws.get_minimum_parallel_front_size() == 5);
+        REQUIRE(iws.get_num_parallel_hops() == 3);
+        REQUIRE(iws.get_max_concurrency() == 1);
+
+        const auto big = (std::numeric_limits<index_t>::max)();
+        iws.set_minimum_parallel_front_size(big);
+        iws.set_num_parallel_hops(big);
+        REQUIRE(iws.get_minimum_parallel_front_size() == big);
+        REQUIRE(iws.get_num_parallel_hops() == big);
+
+        // out of range values are clamped
+        iws.set_max_concurrency(default_concurrency + 1);
+        REQUIRE(iws.get_max_concurrency() == default_concurrency);
+        iws.set_minimum_parallel_front_size(0);
+        iws.set_num_parallel_hops(-3);
+        iws.set_max_concurrency(0);
+        REQUIRE(iws.get_minimum_parallel_front_size() == 1);
+        REQUIRE(iws.get_num_parallel_hops() == 1);
+        REQUIRE(iws.get_max_concurrency() == 1);
+    }
+
 #else
 
     TEST_CASE("incremental watershed cut parallel setters without tbb",
@@ -759,8 +796,13 @@ namespace test_watershed {
 
         auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
         iws.set_minimum_parallel_front_size(1);
-        iws.set_num_parrallel_hops(2);
+        iws.set_num_parallel_hops(2);
         iws.set_max_concurrency(4);
+
+        // the settings are left unchanged and relabeling is sequential
+        REQUIRE(iws.get_minimum_parallel_front_size() == 200);
+        REQUIRE(iws.get_num_parallel_hops() == 10);
+        REQUIRE(iws.get_max_concurrency() == 1);
 
         array_1d<index_t> sv{0, 2, 4};
         array_1d<index_t> sl{1, 2, 3};

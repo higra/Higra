@@ -63,7 +63,7 @@ namespace py_watershed {
                 "Incremental seeded watershed cut based on the binary partition tree.\n\n"
                 "Provides efficient computation of seeded watershed cuts in an interactive "
                 "segmentation setting, where seeds are added and removed incrementally.");
-       
+
         cls.def(py::init<const hg::tree &, const hg::ugraph &>(),
             py::arg("bpt"),
             py::arg("mst"),
@@ -76,12 +76,12 @@ namespace py_watershed {
                 "Set the minimum parallel front size.",
                 py::arg("minimum_parallel_front_size"));
 
-        cls.def("_set_num_parrallel_hops",
-                [](hg::incremental_watershed_cut &self, hg::index_t num_parrallel_hops) {
-                    self.set_num_parrallel_hops(num_parrallel_hops);
+        cls.def("_set_num_parallel_hops",
+                [](hg::incremental_watershed_cut &self, hg::index_t num_parallel_hops) {
+                    self.set_num_parallel_hops(num_parallel_hops);
                 },
                 "Set the number of parallel hops.",
-                py::arg("num_parrallel_hops"));
+                py::arg("num_parallel_hops"));
 
         cls.def("_set_max_concurrency",
                 [](hg::incremental_watershed_cut &self, hg::index_t maximum_concurrency) {
@@ -89,6 +89,18 @@ namespace py_watershed {
                 },
                 "Set the maximum concurrency.",
                 py::arg("maximum_concurrency"));
+
+        cls.def("_get_minimum_parallel_front_size",
+                &hg::incremental_watershed_cut::get_minimum_parallel_front_size,
+                "Get the minimum parallel front size.");
+
+        cls.def("_get_num_parallel_hops",
+                &hg::incremental_watershed_cut::get_num_parallel_hops,
+                "Get the number of parallel hops.");
+
+        cls.def("_get_max_concurrency",
+                &hg::incremental_watershed_cut::get_max_concurrency,
+                "Get the maximum concurrency.");
 
         cls.def("_add_seeds",
                 [](hg::incremental_watershed_cut &self,

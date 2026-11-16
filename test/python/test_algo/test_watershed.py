@@ -410,6 +410,71 @@ class TestIncrementalWatershed(unittest.TestCase):
         with self.assertRaises(Exception):
             iws.add_seeds(np.array([0]), np.array([0]))
 
+    def test_parallel_setters_invalid_values_raise(self):
+        g = hg.get_4_adjacency_graph((2, 2))
+        edge_weights = np.asarray((1, 2, 3, 4))
+
+        iws = hg.IncrementalWatershedCut(g, edge_weights)
+        for value in (0, -1):
+            with self.assertRaises(ValueError):
+                iws.set_minimum_parallel_front_size(value)
+            with self.assertRaises(ValueError):
+                iws.set_num_parallel_hops(value)
+            with self.assertRaises(ValueError):
+                iws.set_max_concurrency(value)
+
+    def test_parallel_settings_accessors(self):
+        g = hg.get_4_adjacency_graph((2, 3))
+        edge_weights = np.asarray((1, 0, 2, 0, 0, 1, 2))
+        iws = hg.IncrementalWatershedCut(g, edge_weights)
+
+        self.assertEqual(iws.get_minimum_parallel_front_size(), 200)
+        self.assertEqual(iws.get_num_parallel_hops(), 10)
+        default_concurrency = iws.get_max_concurrency()
+        self.assertGreaterEqual(default_concurrency, 1)
+
+        iws.set_minimum_parallel_front_size(5)
+        iws.set_num_parallel_hops(3)
+        iws.set_max_concurrency(default_concurrency + 1)
+
+        if iws.get_minimum_parallel_front_size() == 5:
+            # built with parallel support: values are stored, concurrency is clamped
+            self.assertEqual(iws.get_num_parallel_hops(), 3)
+            self.assertEqual(iws.get_max_concurrency(), default_concurrency)
+            iws.set_max_concurrency(1)
+            self.assertEqual(iws.get_max_concurrency(), 1)
+        else:
+            # built without parallel support: the setters have no effect
+            self.assertEqual(iws.get_minimum_parallel_front_size(), 200)
+            self.assertEqual(iws.get_num_parallel_hops(), 10)
+            self.assertEqual(iws.get_max_concurrency(), 1)
+
+    def test_parallel_settings_consistency_with_seeded_watershed(self):
+        # the parallel settings must not change the result, whether or not
+        # Higra is built with parallel support
+        g = hg.get_4_adjacency_graph((30, 30))
+        rng = np.random.default_rng(1)
+        edge_weights = rng.random(g.num_edges())
+
+        seed_vertices = np.array([12, 97, 250, 431, 555, 618, 777, 899])
+        seed_labels = np.array([1, 2, 3, 4, 5, 1, 2, 3])
+        removed = np.array([97, 555, 899])
+
+        for max_concurrency, min_front_size, num_hops in ((1, 1, 1), (2, 1, 1), (4, 1, 3), (4, 16, 2), (4, 10000, 2)):
+            iws = hg.IncrementalWatershedCut(g, edge_weights)
+            iws.set_max_concurrency(max_concurrency)
+            iws.set_minimum_parallel_front_size(min_front_size)
+            iws.set_num_parallel_hops(num_hops)
+
+            seeds = np.zeros(g.num_vertices(), dtype=np.int64)
+            seeds[seed_vertices] = seed_labels
+            iws.add_seeds(seed_vertices, seed_labels)
+            self.assertTrue(np.all(iws.get_labeling() == hg.labelisation_seeded_watershed(g, edge_weights, seeds)))
+
+            seeds[removed] = 0
+            iws.remove_seeds(removed)
+            self.assertTrue(np.all(iws.get_labeling() == hg.labelisation_seeded_watershed(g, edge_weights, seeds)))
+
 
 if __name__ == '__main__':
     unittest.main()
