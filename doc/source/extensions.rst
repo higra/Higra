@@ -41,7 +41,9 @@ A minimal extension, ``extension.cpp``:
     // read-only input, new result
     template<typename T>
     array<double> normalize(array_view<const T> weights) {
-        auto [lo, hi] = minmax(weights);
+        const auto mm = minmax(weights);
+        const T lo = mm.first;
+        const T hi = mm.second;
         double range = (hi > lo) ? double(hi - lo) : 1.0;
         return map([lo, range](T v) { return (v - lo) / range; }, weights);
     }

@@ -102,7 +102,8 @@ Properties and element access
     }
 
 Element access is not checked by default. Defining the macro ``HG_ARRAY_CHECKS`` enables rank and bounds checks on
-``operator()``, ``operator[]`` and ``row``; Higra's CMake project defines it in all builds except Release.
+``operator()``, ``operator[]`` and ``row``. Higra's CMake project defines it in every build configuration except
+Release (for example Debug and RelWithDebInfo).
 
 Arrays can be printed with ``std::cout << a``; large arrays are summarized.
 
@@ -194,8 +195,9 @@ Parallel execution
 ------------------
 
 When Higra is compiled with Intel TBB (``HG_USE_TBB``), copies, conversions, ``take``, reductions and comparisons of
-large arrays (at least 65,536 elements) run on several threads. Filling an array and ``put`` always run on the
-calling thread.
+large arrays (at least 65,536 elements) run on several threads. Filling an array runs on the calling thread.
+``put`` writes the elements on the calling thread, in the order of the indices, but may check the indices, and copy
+inputs that refer to elements of the destination, on several threads.
 
 ``map`` and ``map_into`` call their function on the calling thread, one element after the other, because the
 function may use objects that are not safe to use from several threads. When the function can safely be called
@@ -227,7 +229,9 @@ elements.
     // read-only input, new result
     template<typename T>
     array<double> normalize(array_view<const T> weights) {
-        auto [lo, hi] = minmax(weights);
+        const auto mm = minmax(weights);
+        const T lo = mm.first;
+        const T hi = mm.second;
         double range = (hi > lo) ? double(hi - lo) : 1.0;
         return map([lo, range](T v) { return (v - lo) / range; }, weights);
     }

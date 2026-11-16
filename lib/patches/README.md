@@ -4,7 +4,8 @@ pybind11 is installed by `lib/update_lib.sh` without local source patches, from
 release v3.1.0 (commit `97bf890db679505a14dfe547a5e77bb2bd05dc90`).
 The source archive used for this refresh has SHA-256
 `ef712655692a2e9bf7bb7874c022564a45f91d847ddee987e720cd9e28849665`.
-Run the script from `lib/`, never from the repository root: it deletes and
-recreates directories relative to the current directory.
+The script can be run from any directory: it works in `lib/`, refuses to run
+if `lib/` does not contain `include/tbb-ssort` and `FindTBB.cmake`, and
+downloads and extracts the archive before deleting the previous installation.
 
 No local patches are currently applied to vendored libraries.

@@ -109,7 +109,21 @@ r = probe.scaled(x, 2.0)
 np.testing.assert_array_equal(r, x * 2)
 assert r.dtype == np.float64 and r.flags.writeable and r.flags.c_contiguous
 assert probe.scaled(np.ones(3, np.float32), 2.0).dtype == np.float32
-np.testing.assert_array_equal(probe.scaled(hg.attribute_area(created).astype(np.float64), 1.0), [1, 1, 2])
+# arrays allocated by each module are passed to the other one, then released
+area = hg.attribute_area(created)
+assert area.dtype == np.float64 and type(area.base).__name__ == "PyCapsule"
+scaled_area = probe.scaled(area, 2.0)
+assert type(scaled_area.base).__name__ == "PyCapsule"
+del area
+gc.collect()
+np.testing.assert_array_equal(scaled_area, [2, 2, 4])
+np.testing.assert_array_equal(hg.accumulate_parallel(created, scaled_area, hg.Accumulators.sum), [0, 0, 4])
+depth = hg.attribute_depth(created)
+assert depth.dtype == np.int64 and type(depth.base).__name__ == "PyCapsule"
+probe.increment(depth)
+np.testing.assert_array_equal(depth, [2, 2, 1])
+del scaled_area, depth
+gc.collect()
 y = np.zeros(4, dtype=np.int64)
 probe.increment(y)
 np.testing.assert_array_equal(y, [1, 1, 1, 1])

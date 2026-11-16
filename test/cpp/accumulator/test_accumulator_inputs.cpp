@@ -9,8 +9,10 @@
 ****************************************************************************/
 
 /*
- * Accumulator entry points fed with arrays, views into larger arrays (slices), const views and
- * computed arrays: every kind of input must give the result obtained with the equivalent array.
+ * Accumulator entry points fed with arrays, views into larger arrays (slices) and mutable views:
+ * every kind of input must give the result obtained with the equivalent array. C++ arrays and views
+ * are always C-contiguous; other memory layouts (strided, transposed) are covered by
+ * test/python/test_array_inputs.py.
  */
 
 #include "../test_utils.hpp"
@@ -31,7 +33,6 @@ namespace accumulator_inputs {
         hg::tree t{hg::array<index_t>{5, 5, 6, 6, 6, 7, 7, 7}};
         array_2d<double> nodes;
         array_2d<double> wide;      // (12, 3): nodes in rows 2 to 9
-        array_2d<double> nodes_t;   // (3, 8): nodes transposed
         array_1d<double> wide_column; // (12,): column 1 of nodes in elements 2 to 9
         array_2d<double> leaves;
         array_1d<bool> condition{false, true, false, true, true, false, true, false};
@@ -39,14 +40,12 @@ namespace accumulator_inputs {
         inputs() {
             nodes = hg::zeros<double>({8, 3});
             wide = hg::full<double>({12, 3}, 1000);
-            nodes_t = hg::zeros<double>({3, 8});
             wide_column = hg::full<double>({12}, 1000);
             for (index_t i = 0; i < 8; ++i) {
                 for (index_t j = 0; j < 3; ++j) {
                     double v = (double) ((i * 7 + j * 3) % 11) - 2.5;
                     nodes(i, j) = v;
                     wide(i + 2, j) = v;
-                    nodes_t(j, i) = v;
                 }
                 wide_column(i + 2) = nodes(i, 1);
             }
@@ -55,14 +54,6 @@ namespace accumulator_inputs {
 
         auto sliced_nodes() const {
             return wide.slice(2, 10);
-        }
-
-        auto transposed_nodes() const {
-            return hg_test::transpose<double>(nodes_t);
-        }
-
-        auto const_view_nodes() const {
-            return nodes.view();
         }
 
         auto sliced_column() const {
@@ -82,8 +73,6 @@ namespace accumulator_inputs {
     void check_node_inputs(const inputs &d, F f) {
         auto ref = f(d.nodes);
         REQUIRE((f(d.sliced_nodes()) == ref));
-        REQUIRE((f(d.transposed_nodes()) == ref));
-        REQUIRE((f(d.const_view_nodes()) == ref));
 
         auto ref1 = f(d.column());
         REQUIRE((f(d.sliced_column()) == ref1));

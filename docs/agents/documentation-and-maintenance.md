@@ -22,6 +22,13 @@ C++ documentation comes from header comments under `include/`.
 C++ header in that include tree does not require its own Doxygen input entry.
 The current C++ API page is a raw namespace listing, not curated per-module docs.
 
+C++ examples in `doc/source/` (for example `arrays.rst` and `extensions.rst`) must
+be valid C++17. Compile each changed example standalone with both GCC
+(`g++ -std=c++17 -pedantic -fsyntax-only`) and Clang (`clang++ -std=c++17
+-fsyntax-only`), with `-I include -I lib/include` and, for pybind11 examples, the
+Python include directory. GCC accepts some C++20 constructs in C++17 mode, such
+as a lambda capturing a structured binding, that Clang rejects.
+
 ## Build documentation against the checkout
 
 First build the development extension as described in
@@ -89,9 +96,12 @@ copies, so those helpers can warn or return missing paths there. Use checkout
 ## Dependency and version maintenance
 
 [lib/update_lib.sh](../../lib/update_lib.sh) pins the pybind11 version (the only
-downloaded vendor library) and deletes the existing pybind11 include tree and the
-`lib/lib`, `lib/share` and `lib/license` trees before downloading and reinstalling it. Its install prefix is the **current working directory**, intended to be
-`lib/`. Running it from the repository root would delete important root paths.
+downloaded vendor library). It changes to its own directory, `lib/`, whatever the
+current directory, and stops if `lib/include/tbb-ssort` or `lib/FindTBB.cmake` is
+missing. It downloads and extracts pybind11 into `lib/tmp/`, then deletes the
+existing pybind11 include tree and the `lib/lib`, `lib/share` and `lib/license`
+trees and reinstalls them. A failed download leaves the vendored copy intact; a
+failed CMake build or install after the deletion does not.
 Do not run it as a setup step. For an explicitly requested update, inspect its
 paths, intended versions, header-layout changes, licenses, and resulting diff.
 The bundled `tbb-ssort` implementation is separate from its main download list.

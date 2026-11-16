@@ -57,8 +57,8 @@ namespace hg {
      * of these types with a single instantiation per element type.
      *
      * Element access with ``operator()``, ``operator[]`` and ``row`` is checked (rank and bounds)
-     * only when ``HG_ARRAY_CHECKS`` is defined (Debug builds). Sub-views created with ``slice`` and
-     * ``reshaped`` are always checked.
+     * only when ``HG_ARRAY_CHECKS`` is defined; Higra's CMake project defines it in every build
+     * configuration except Release. Sub-views created with ``slice`` and ``reshaped`` are always checked.
      */
     template<class T>
     class array_view<const T> {

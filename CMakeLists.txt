@@ -179,11 +179,12 @@ if (DO_BENCHMARK)
     find_package(benchmark REQUIRED)
 endif ()
 
-if(NOT ${U_CMAKE_BUILD_TYPE} MATCHES RELEASE)
-    add_definitions("-DHG_ENABLE_TRACE")
-    # rank and bounds checks of element access in higra/structure/array/
-    add_definitions("-DHG_ARRAY_CHECKS")
-endif()
+# Every configuration except Release, evaluated per configuration so that multi-configuration
+# generators (Visual Studio, Xcode, Ninja Multi-Config) also define them in Debug.
+add_compile_definitions(
+        $<$<NOT:$<CONFIG:Release>>:HG_ENABLE_TRACE>
+        # rank and bounds checks of element access in higra/structure/array/
+        $<$<NOT:$<CONFIG:Release>>:HG_ARRAY_CHECKS>)
 
 option(HG_USE_TBB
         "Enable Intel TBB support." OFF)
