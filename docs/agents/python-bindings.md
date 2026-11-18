@@ -26,9 +26,9 @@ For an entirely new subpackage, also add its `add_subdirectory` in
 export in `higra/__init__.py`. Current setuptools uses namespace-package discovery;
 the contributor page's instruction to edit a fixed package list is obsolete.
 
-`pymodule.cpp` owns `FORCE_IMPORT_ARRAY` and `xt::import_numpy()`. Do not duplicate
-the module definition or NumPy import ownership in each binding file. Its
-exclusion from unity batches is explicit in `higra/CMakeLists.txt`.
+`pymodule.cpp` owns the module definition; do not duplicate it in binding files.
+NumPy needs no explicit initialization: the converters use pybind11's run-time
+NumPy API. Its exclusion from unity batches is explicit in `higra/CMakeLists.txt`.
 
 ## Binding patterns and overloads
 
@@ -49,11 +49,25 @@ bindings. Some APIs use `.noconvert()` to require an existing matching NumPy
 dtype; others allow conversion. This is an observable difference, especially
 for in-place operations and overload selection.
 
-`xt::pyarray<T>` and `xt::pytensor<T,N>` are Python-owned NumPy-backed containers,
-not the owning C++ `hg::array_*` aliases. Their vendored casters can wrap matching
-arrays or create converted arrays. Dynamic layout does not universally require
-contiguity. Review dtype, rank, strides, and mutation behavior for the actual
-container and algorithm; do not add a blanket contiguous-copy rule.
+Every binding translation unit includes `higra/py_common.hpp`, which includes the
+converters of [py_array.hpp](../../include/higra/python/py_array.hpp). Binding
+parameters are `hg::array_view<const T>` (read-only), `hg::array<T>` (when the
+binding keeps the data) or `hg::array_view<T>` (in place); results are `hg::array<T>`.
+Use `py_args::fixed_rank<N>(view, "name")` where a fixed rank is required (raises
+`TypeError`, like a failed conversion).
+
+Input rules (header documentation is authoritative):
+- `array_view<const T>`: in the no-convert pass, matches on dtype kind and size
+  only, never on layout, so per-dtype overload dispatch (`HG_TEMPLATE_*`) is
+  layout-independent; non-contiguous, unaligned or byte-swapped arrays are copied
+  to contiguous storage, others are shared. The convert pass accepts lists, scalars
+  and other dtypes. Rank above 8 raises `ValueError`. The view lives for the call
+  only: copy into `hg::array` to keep data.
+- `array_view<T>`: exact dtype, C-contiguous, aligned, writeable ndarray only; no
+  conversion, so writes reach the caller. Anything else fails the cast (`TypeError`).
+  A Python wrapper that must accept other inputs copies, calls, and writes back, as
+  `hg.sort` does. Before changing a parameter to `array_view<T>`, check whether the
+  binding really mutates it.
 
 Hierarchy bindings often move owned `tree` and `altitudes` members into a Python
 tuple. Accumulator bindings dispatch a runtime `hg::accumulators` enum to a C++
@@ -62,15 +76,17 @@ accumulator type through `higra/accumulator/common.hpp`.
 ## Array ownership and lifetime
 
 The authoritative conversion implementation is
-[xtensor_type_caster_base.hpp](../../lib/include/xtensor-python/xtensor_type_caster_base.hpp), together with the
-`pyarray`/`pytensor` casters. Owning xtensor values returned by value are moved to
-a heap object retained by a Python capsule. Default lvalue array returns are
-copied; `reference_internal` instead associates a view with its parent Python
-object. Const references produce non-writeable arrays in this path.
+[py_array.hpp](../../include/higra/python/py_array.hpp). An `hg::array<T>` returned
+by value is moved to NumPy without copy: the buffer is released to a capsule that
+is the result's `base` and frees it with the array's allocator; zero-size results
+are new NumPy arrays. Default lvalue/view returns are copied; `reference_internal`
+instead returns an array sharing the C++ memory with the parent Python object as
+`base`. Const references and `array_view<const T>` produce non-writeable arrays in
+this path.
 
 | Existing API | Ownership / mutation behavior |
 | --- | --- |
-| `hg.Tree(parent_array)` | C++ owns an evaluated parent array; does not share the constructor's NumPy storage |
+| `hg.Tree(parent_array)` | C++ owns a copy of the parent array; does not share the constructor's NumPy storage |
 | `Tree.parents()` | Read-only array referencing tree-owned storage, with `reference_internal` |
 | `Tree.children(node)` | Allocates and returns a copy of the child IDs |
 | `Tree.sources()` | Python creates a new `np.arange` array |
@@ -85,10 +101,10 @@ may become stale. They are not immutable creation-time snapshots. Obtain a new
 array for current topology or copy before mutation for stable values. NumPy
 cannot enable writeability through the private capsule base. Both explicit graph
 variants use this binding contract; the optimized-delete variant retains its
-underscored accessor API. Native endpoint adapters remain borrowed and invalid
+underscored accessor API. Native endpoint spans remain borrowed and invalid
 after graph mutation, assignment/move, or destruction.
 
-Returning an adapter by value does not make its pointed-to storage owned. For a
+Returning a view or span by value does not make its pointed-to storage owned. For a
 new borrowed result, explicitly review the backing owner and invalidation rules.
 Likewise, several existing `py::make_iterator` bindings have no explicit
 `keep_alive` policy. Keep the backing graph/tree alive and unchanged during

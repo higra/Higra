@@ -18,9 +18,6 @@
 #include "higra/sorting.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 #include "higra/structure/lca_fast.hpp"
-#include "xtensor/views/xindex_view.hpp"
-#include "xtensor/views/xview.hpp"
-#include "xtensor/core/xnoalias.hpp"
 #include <tuple>
 #include <queue>
 
@@ -53,30 +50,39 @@ namespace hg {
     }
 
     namespace hierarchy_core_internal {
-        template<typename E1, typename E2, typename T>
-        auto bpt_canonical_from_sorted_edges(const xt::xexpression<E1> &xsources,
-                                             const xt::xexpression<E2> &xtargets,
-                                             const xt::xexpression<T> &xsorted_edge_indices,
+        /**
+         * @tparam S1 1d indexable sequence type (see ``is_1d_indexable_v``): edge sources
+         * @tparam S2 1d indexable sequence type: edge targets
+         */
+        template<typename S1, typename S2, typename T>
+        auto bpt_canonical_from_sorted_edges(const S1 &sources,
+                                             const S2 &targets,
+                                             array_view<const T> sorted_edge_indices,
                                              const index_t num_vertices) {
             HG_TRACE();
-            auto &sorted_edge_indices = xsorted_edge_indices.derived_cast();
-            auto &sources = xsources.derived_cast();
-            auto &targets = xtargets.derived_cast();
-            hg_assert_1d_array(sources);
-            hg_assert_same_shape(sources, targets);
-            hg_assert_same_shape(sources, sorted_edge_indices);
-            hg_assert_integral_value_type(sources);
-            hg_assert_integral_value_type(targets);
+            static_assert(is_1d_indexable_v<S1> && is_1d_indexable_v<S2>,
+                          "Edge sources and targets must be 1d indexable sequences.");
+            assert_1d_indexable(sources, "sources");
+            assert_1d_indexable(targets, "targets");
+            hg_assert((index_t) sources.size() == (index_t) targets.size(),
+                      "Shapes of 'sources' and 'targets' must be equal.");
+            hg_assert_1d_array(sorted_edge_indices);
+            hg_assert((index_t) sources.size() == (index_t) sorted_edge_indices.size(),
+                      "Shapes of 'sources' and 'sorted_edge_indices' must be equal.");
+            static_assert(std::is_integral<indexable_1d_value_t<S1>>::value,
+                          "Array values of 'sources' must be integral (char, short, int, long...).");
+            static_assert(std::is_integral<indexable_1d_value_t<S2>>::value,
+                          "Array values of 'targets' must be integral (char, short, int, long...).");
             hg_assert_integral_value_type(sorted_edge_indices);
 
             auto num_edge_mst = num_vertices - 1;
 
-            array_1d<index_t> mst_edge_map = xt::empty<index_t>({num_edge_mst});
+            array_1d<index_t> mst_edge_map = hg::empty<index_t>({num_edge_mst});
 
             union_find uf(num_vertices);
 
-            array_1d<index_t> roots = xt::arange<index_t>(num_vertices);
-            array_1d<index_t> parents = xt::arange<index_t>(num_vertices * 2 - 1);
+            array_1d<index_t> roots = hg::arange<index_t>(num_vertices);
+            array_1d<index_t> parents = hg::arange<index_t>(num_vertices * 2 - 1);
 
             index_t num_nodes = num_vertices;
             index_t num_edge_found = 0;
@@ -126,9 +132,8 @@ namespace hg {
      * @return
      */
     template<typename graph_t, typename T>
-    auto bpt_canonical(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+    auto bpt_canonical(const graph_t &graph, array_view<const T> edge_weights) {
         HG_TRACE();
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
 
@@ -143,9 +148,8 @@ namespace hg {
 
         auto num_points = num_vertices(graph);
 
-        array_1d<typename T::value_type> levels = xt::zeros<typename T::value_type>({parents.size()});
-        xt::noalias(xt::view(levels, xt::range(num_points, levels.size()))) = xt::index_view(edge_weights,
-                                                                                             mst_edge_map);
+        array_1d<T> levels = hg::zeros<T>({parents.size()});
+        hg::assign(levels.slice(num_points, levels.size()), hg::take(edge_weights, mst_edge_map));
 
         return make_node_weighted_tree_and_mst(
                 tree(std::move(parents)),
@@ -173,13 +177,12 @@ namespace hg {
      * edges. Empty or disconnected graphs and invalid inputs throw.
      */
     template<typename graph_t, typename T>
-    auto bpt_canonical_boruvka(const graph_t &graph, const xt::xexpression<T> &xedge_weights,
+    auto bpt_canonical_boruvka(const graph_t &graph, array_view<const T> edge_weights,
                               hierarchy_core_internal::bpt_boruvka_numbering numbering =
                                   hierarchy_core_internal::bpt_boruvka_numbering::exact,
                               bool compact_edges = false) {
         HG_TRACE();
-        const auto &edge_weights = xedge_weights.derived_cast();
-        using value_type = typename T::value_type;
+        using value_type = T;
         static_assert(std::is_arithmetic<value_type>::value, "Edge weights must be real numeric values.");
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
@@ -195,13 +198,13 @@ namespace hg {
         auto less = [&](index_t a, index_t b) {
             return hierarchy_core_internal::bpt_boruvka_scalar_less(edge_weights, a, b);
         };
-        const auto &src = sources(graph);
-        const auto &dst = targets(graph);
-        hg_assert(src.size() == edge_weights.size(), "Endpoint and weight counts must match.");
+        const auto src = sources(graph);
+        const auto dst = targets(graph);
+        hg_assert((index_t) src.size() == edge_weights.size(), "Endpoint and weight counts must match.");
         auto result = hierarchy_core_internal::bpt_boruvka_from_edge_order(src, dst, n, less, numbering,
             compact_edges ? hierarchy_core_internal::bpt_boruvka_traversal::active :
                             hierarchy_core_internal::bpt_boruvka_traversal::full_scan);
-        array_1d<value_type> levels = xt::zeros<value_type>({result.first.size()});
+        array_1d<value_type> levels = hg::zeros<value_type>({result.first.size()});
         parfor(0, n - 1, [&](index_t i) {
             levels(n + i) = edge_weights(result.second(i));
         });
@@ -238,7 +241,7 @@ namespace hg {
             // identification of deleted sub-trees
             // true if all nodes below a given  node are deleted
             // a non deleted non leaf node i such that removed_branch(i) && !removed_branch(parent(i)) is thus a new leaf
-            array_1d<bool> removed_branch = xt::zeros<bool>({num_vertices(t)});
+            array_1d<bool> removed_branch = hg::zeros<bool>({num_vertices(t)});
             for (index_t i = 0; i < (index_t) num_leaves(t); i++) {
                 removed_branch(i) = criterion(i);
             }
@@ -285,8 +288,8 @@ namespace hg {
             // (with top-down traversal)
             // *******************************
             auto num_nodes_new_tree = num_vertices(t) - removed;
-            array_1d<index_t> new_parent = xt::empty<index_t>({num_nodes_new_tree});
-            array_1d<index_t> node_map = xt::empty<index_t>({num_nodes_new_tree});
+            array_1d<index_t> new_parent = hg::empty<index_t>({num_nodes_new_tree});
+            array_1d<index_t> node_map = hg::empty<index_t>({num_nodes_new_tree});
             index_t node_number = num_nodes_new_tree - 1;
 
             std::queue<index_t> queue;
@@ -329,9 +332,9 @@ namespace hg {
             auto n_nodes = num_vertices(t);
             auto n_leaves = num_leaves(t);
 
-            array_1d<index_t> new_ranks = xt::empty<index_t>({n_nodes});
+            array_1d<index_t> new_ranks = hg::empty<index_t>({n_nodes});
 
-            xt::view(new_ranks, xt::range(0, n_leaves)) = xt::arange<index_t>(n_leaves);
+            hg::assign(new_ranks.slice(0, n_leaves), hg::arange<index_t>(n_leaves));
             index_t count = n_leaves;
 
             for (auto i: leaves_to_root_iterator(t, leaves_it::exclude, root_it::exclude)) {
@@ -344,8 +347,8 @@ namespace hg {
             new_ranks(root(t)) = count;
             ++count;
 
-            array_1d<index_t> new_parent = xt::empty<index_t>({count});
-            array_1d<index_t> node_map = xt::empty<index_t>({count});
+            array_1d<index_t> new_parent = hg::empty<index_t>({count});
+            array_1d<index_t> node_map = hg::empty<index_t>({count});
 
             count = new_parent.size() - 1;
 
@@ -386,9 +389,8 @@ namespace hg {
      * @return A node weighted tree
      */
     template<typename graph_t, typename T>
-    auto quasi_flat_zone_hierarchy(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+    auto quasi_flat_zone_hierarchy(const graph_t &graph, array_view<const T> edge_weights) {
         HG_TRACE();
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
 
@@ -398,11 +400,15 @@ namespace hg {
 
         auto altitude_parents = propagate_parallel(tree, altitudes);
 
-        auto qfz = simplify_tree(tree, xt::equal(altitudes, altitude_parents));
+        array_1d<bool> same_altitude_as_parent = array_1d<bool>::from_shape({altitudes.size()});
+        for (index_t i = 0; i < (index_t) altitudes.size(); i++) {
+            same_altitude_as_parent(i) = altitudes(i) == altitude_parents(i);
+        }
+        auto qfz = simplify_tree(tree, same_altitude_as_parent);
         auto &qfz_tree = qfz.tree;
         auto &node_map = qfz.node_map;
 
-        auto qfz_altitude = xt::eval(xt::index_view(altitudes, node_map));
+        auto qfz_altitude = hg::take(altitudes, node_map);
 
         return make_node_weighted_tree(std::move(qfz_tree), std::move(qfz_altitude));
     }
@@ -424,11 +430,10 @@ namespace hg {
     template<typename graph_t, typename tree_t, typename T>
     auto saliency_map(const graph_t &graph,
                       const tree_t &tree,
-                      const xt::xexpression<T> &xaltitudes) {
-        auto &altitudes = xaltitudes.derived_cast();
+                      array_view<const T> altitudes) {
         lca_fast lca(tree);
         auto lca_edges = lca.lca(edge_iterator(graph));
-        return xt::eval(xt::index_view(altitudes, lca_edges));
+        return hg::take(altitudes, lca_edges);
     }
 
     /**

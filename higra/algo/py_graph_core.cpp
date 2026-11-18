@@ -11,13 +11,8 @@
 #include "py_graph_core.hpp"
 #include "../py_common.hpp"
 #include "higra/algo/graph_core.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_graph_core {
-
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -27,7 +22,7 @@ namespace py_graph_core {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_graph_cut_2_labelisation", [](const graph_t &graph,
-                                                  const pyarray<value_t> &edge_weights) {
+                                                  const hg::array_view<const value_t> &edge_weights) {
                       return hg::graph_cut_2_labelisation(graph, edge_weights);
                   },
                   doc,
@@ -42,7 +37,7 @@ namespace py_graph_core {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_labelisation_2_graph_cut", [](const graph_t &graph,
-                                                  const pyarray<value_t> &vertex_labels) {
+                                                  const hg::array_view<const value_t> &vertex_labels) {
                       return hg::labelisation_2_graph_cut(graph, vertex_labels);
                   },
                   doc,
@@ -57,7 +52,7 @@ namespace py_graph_core {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_minimum_spanning_tree", [](const graph_t &graph,
-                                               const pyarray<value_t> &edge_weights) {
+                                               const hg::array_view<const value_t> &edge_weights) {
                       auto res = hg::minimum_spanning_tree(graph, edge_weights);
                       return pybind11::make_tuple(std::move(res.mst), std::move(res.mst_edge_map));
                   },
@@ -80,7 +75,6 @@ namespace py_graph_core {
     };
 
     void py_init_algo_graph_core(pybind11::module &m) {
-        //xt::import_numpy();
 
         add_type_overloads<def_graph_cut_2_labelisation<hg::ugraph>,
                 HG_TEMPLATE_NUMERIC_TYPES>

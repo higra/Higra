@@ -11,16 +11,10 @@
 #include "py_embedding.hpp"
 
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "higra/structure/embedding.hpp"
-#include "xtensor/core/xeval.hpp"
 #include <string>
 
 namespace py_embedding {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
     using namespace hg;
     namespace py = pybind11;
 
@@ -30,8 +24,8 @@ namespace py_embedding {
         static
         void def(C &c, const char *doc) {
             c.def("lin2grid",
-                  [](const class_t &e, const pyarray<type> &a) {
-                      return xt::eval(e.lin2grid(a));
+                  [](const class_t &e, const hg::array_view<const type> &a) {
+                      return e.lin2grid(a);
                   },
                   doc,
                   py::arg("points"));
@@ -44,8 +38,8 @@ namespace py_embedding {
         static
         void def(C &c, const char *doc) {
             c.def("contains",
-                  [](const class_t &e, const pyarray<type> &a) {
-                      return xt::eval(e.contains(a));
+                  [](const class_t &e, const hg::array_view<const type> &a) {
+                      return e.contains(a);
                   },
                   doc,
                   py::arg("points"));
@@ -58,8 +52,8 @@ namespace py_embedding {
         static
         void def(C &c, const char *doc) {
             c.def("grid2lin",
-                  [](const class_t &e, const pyarray<type> &a) {
-                      return xt::eval(e.grid2lin(a));
+                  [](const class_t &e, const hg::array_view<const type> &a) {
+                      return e.grid2lin(a);
                   },
                   doc,
                   py::arg("points"));
@@ -79,11 +73,13 @@ namespace py_embedding {
                "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
                py::arg("shape"));*/
 
-        c.def(py::init<const pyarray<hg::index_t> &>(),
+        c.def(py::init([](const hg::array_view<const hg::index_t> &shape) {
+                  return class_t(shape);
+              }),
               "Create a new grid embedding. Shape must be a 1d array with striclty positive values.",
               py::arg("shape"));
 
-        c.def("shape", [](const class_t &e) { return pyarray<hg::index_t>(e.shape()); },
+        c.def("shape", [](const class_t &e) { return hg::to_array(e.shape()); },
               "Get the shape/dimensions of the grid embedding");
 
         c.def("size", &class_t::size, "Get the total number of points contained in the embedding.");
@@ -100,8 +96,7 @@ namespace py_embedding {
                  "Takes a n1 x n2 x ... nk  array, with nk = self.dimension(), and returns a boolean array of dimension n1 x n2 x ... n(k-1) "
                  "indicating if each point is contained in the embedding.");
 
-        // ::TODO:: remove cast to xt::pyarray when xtesnor python supports xtensor_fixed
-        c.def("lin2grid", [](const class_t &e, const index_t a) { return pyarray<hg::index_t>(e.lin2grid(a)); },
+        c.def("lin2grid", [](const class_t &e, const index_t a) { return hg::to_array(e.lin2grid(a)); },
               "Compute the nd coordinates of a point given its linear coordinate.",
               py::arg("index"));
 
@@ -125,7 +120,6 @@ namespace py_embedding {
     }
 
     void py_init_embedding(pybind11::module &m) {
-        //xt::import_numpy();
         py_init_embedding_impl<1>(m);
         py_init_embedding_impl<2>(m);
         py_init_embedding_impl<3>(m);

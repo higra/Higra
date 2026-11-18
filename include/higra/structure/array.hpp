@@ -10,30 +10,28 @@
 
 #pragma once
 
-#include "xtensor/containers/xarray.hpp"
-#include "xtensor/containers/xtensor.hpp"
-#include "xtensor/generators/xgenerator.hpp"
-#include "xtensor/core/xeval.hpp"
-
+#include "array/all.hpp"
 #include "point.hpp"
 
 namespace hg {
 
-    template<typename value_t>
-    using array_1d = xt::xtensor<value_t, 1>;
+    /*
+     * Names kept for continuity: the rank is not part of the type, every alias is hg::array<value_t>.
+     * Code that needs a given rank checks it at run time (hg_assert_1d_array, dimension()).
+     */
 
     template<typename value_t>
-    using array_2d = xt::xtensor<value_t, 2>;
+    using array_1d = array<value_t>;
 
     template<typename value_t>
-    using array_3d = xt::xtensor<value_t, 3>;
+    using array_2d = array<value_t>;
 
     template<typename value_t>
-    using array_3d = xt::xtensor<value_t, 3>;
+    using array_3d = array<value_t>;
 
     template<typename value_t>
-    using array_4d = xt::xtensor<value_t, 4>;
+    using array_4d = array<value_t>;
 
     template<typename value_t>
-    using array_nd = xt::xarray<value_t>;
+    using array_nd = array<value_t>;
 }

@@ -15,9 +15,6 @@
 #include <string>
 #include <iostream>
 #include <stack>
-#include "xtensor/views/xstrided_view.hpp"
-#include "xtensor/containers/xadapt.hpp"
-//#include "xtensor/xio.hpp"
 #include "detail/log.hpp"
 
 #ifdef  HG_USE_TBB
@@ -42,6 +39,16 @@ namespace hg {
      * Preferred type to represent a size
      */
     using size_t = std::size_t;
+
+    /**
+     * The constant pi (replaces M_PI, which is not standard C++)
+     */
+    inline constexpr double pi = 3.141592653589793238462643383279502884;
+
+    /**
+     * pi / 2
+     */
+    inline constexpr double pi_2 = 1.570796326794896619231321691639751442;
 }
 
 #define HG_MAIN_ASSERT
@@ -63,28 +70,28 @@ namespace hg {
 #define hg_assert_edge_weights(graph, edge_weights) do { \
     hg_assert(edge_weights.dimension() > 0, \
               "The dimension of the array '" #edge_weights "', representing edge data of the graph '" #graph "' must be at least 1.");\
-    hg_assert(num_edges(graph) == edge_weights.shape()[0], "The dimension of the provided edge data array '" #edge_weights "' does "\
+    hg_assert((hg::index_t)num_edges(graph) == (hg::index_t)edge_weights.shape()[0], "The dimension of the provided edge data array '" #edge_weights "' does "\
                                                            "not match the number of edges in the provided graph '" #graph "'.");\
     } while (0)
 
 #define hg_assert_vertex_weights(graph, vertex_weights) do { \
     hg_assert(vertex_weights.dimension() > 0, \
               "The dimension of the array '" #vertex_weights "', representing vertex data of the graph '" #graph "' must be at least 1.");\
-    hg_assert(num_vertices(graph) == vertex_weights.shape()[0], "The dimension of the provided vertex data array '" #vertex_weights "' does "\
+    hg_assert((hg::index_t)num_vertices(graph) == (hg::index_t)vertex_weights.shape()[0], "The dimension of the provided vertex data array '" #vertex_weights "' does "\
                                                            "not match the number of vertices in the provided graph '" #graph "'.");\
     } while (0)
 
 #define hg_assert_node_weights(tree, node_weights) do { \
     hg_assert(node_weights.dimension() > 0, \
               "The dimension of the array '" #node_weights "', representing node data of the tree '" #tree "' must be at least 1.");\
-    hg_assert(num_vertices(tree) == node_weights.shape()[0], "The dimension of the provided node data array '" #node_weights "' does "\
+    hg_assert((hg::index_t)num_vertices(tree) == (hg::index_t)node_weights.shape()[0], "The dimension of the provided node data array '" #node_weights "' does "\
                                                            "not match the number of nodes in the provided tree '" #tree "'.");\
     } while (0)
 
 #define hg_assert_leaf_weights(tree, leaf_weights) do { \
     hg_assert(leaf_weights.dimension() > 0, \
               "The dimension of the array '" #leaf_weights "', representing leaves data of the tree '" #tree "' must be at least 1.");\
-    hg_assert(num_leaves(tree) == leaf_weights.shape()[0], "The dimension of the provided leaf data array '" #leaf_weights "' does "\
+    hg_assert((hg::index_t)num_leaves(tree) == (hg::index_t)leaf_weights.shape()[0], "The dimension of the provided leaf data array '" #leaf_weights "' does "\
                                                            "not match the number of leaves in the provided tree '" #tree "'.");\
     } while (0)
 
@@ -97,7 +104,7 @@ namespace hg {
     } while (0)
 
 #define hg_assert_same_shape(array1, array2) do { \
-    hg_assert(xt::same_shape(array1.shape(), array2.shape()), "Shapes of '" #array1 "' and '" #array2 "' must be equal."); \
+    hg_assert(hg::same_shape(array1.shape(), array2.shape()), "Shapes of '" #array1 "' and '" #array2 "' must be equal."); \
     } while (0)
 
 #define hg_assert_component_tree(tree) do { \
@@ -109,9 +116,9 @@ namespace hg {
     } while (0)
 
 #define hg_assert_vertex_indices(graph, vertex_indices) do { \
-    hg_assert((xt::amin)(vertex_indices)() >= 0, \
+    hg_assert(vertex_indices.size() == 0 || hg::min(vertex_indices) >= 0, \
               "Vertex indices cannot be negative.");\
-    hg_assert((hg::index_t)(xt::amax)(vertex_indices)() < (hg::index_t)hg::num_vertices(graph), "Vertex indices must be smaller than the number of vertices in the graph/tree.");\
+    hg_assert(vertex_indices.size() == 0 || (hg::index_t)hg::max(vertex_indices) < (hg::index_t)hg::num_vertices(graph), "Vertex indices must be smaller than the number of vertices in the graph/tree.");\
     } while (0)
 
 #define hg_assert_vertex_index(graph, vertex_index) do { \
@@ -121,9 +128,9 @@ namespace hg {
     } while (0)
 
 #define hg_assert_edge_indices(graph, edge_indices) do { \
-    hg_assert((xt::amin)(edge_indices)() >= 0, \
+    hg_assert(edge_indices.size() == 0 || hg::min(edge_indices) >= 0, \
               "Edge indices cannot be negative.");\
-    hg_assert((hg::index_t)(xt::amax)(edge_indices)() < (hg::index_t)hg::num_edges(graph), "Edge indices must be smaller than the number of edges in the graph/tree.");\
+    hg_assert(edge_indices.size() == 0 || (hg::index_t)hg::max(edge_indices) < (hg::index_t)hg::num_edges(graph), "Edge indices must be smaller than the number of edges in the graph/tree.");\
     } while (0)
 
 #define hg_assert_edge_index(graph, edge_index) do { \
@@ -162,39 +169,6 @@ namespace hg {
 
 #define HG_TEMPLATE_SNUMERIC_TYPES    int8_t, int16_t, int32_t, int64_t, float, double
 
-
-namespace xt {
-
-    inline
-    bool all(bool x) {
-        return x;
-    }
-
-    inline
-    bool any(bool x) {
-        return x;
-    }
-
-    template<typename value_type, typename T>
-    auto adapt_struct_array(T *data, size_t offset, size_t size) {
-        constexpr size_t struct_size = sizeof(T);
-        constexpr size_t value_size = sizeof(value_type);
-
-        static_assert(struct_size % value_size == 0, "Incorrect alignment (is this a packed struct?)");
-        using shape_type = std::array<size_t, 1>;
-        using cv_value_type = typename std::conditional<std::is_const<T>::value, typename std::add_const<value_type>::type, value_type>::type;
-        shape_type shape = {size};
-        shape_type stride = {struct_size / value_size};
-        return xt::adapt((cv_value_type*)((char*)data + offset), size, xt::no_ownership(), shape, stride);
-    }
-
-#define HG_ADAPT_STRUCT_ARRAY(pointer, member, size) \
-    (xt::adapt_struct_array<decltype(std::decay<decltype(*(pointer))>::type::member)>( \
-        pointer, \
-        offsetof(typename std::decay<decltype(*(pointer))>::type, member), \
-        size))
-
-}
 
 namespace hg {
 

@@ -12,6 +12,7 @@
 #include "higra/image/graph_image.hpp"
 #include "../test_utils.hpp"
 #include "higra/algo/tree.hpp"
+#include "catch2/matchers/catch_matchers_string.hpp"
 
 using namespace hg;
 
@@ -96,7 +97,7 @@ namespace test_alignment {
         auto &supervertex_labelisation_res = res.supervertex_labelisation;
         auto &node_map_res = res.node_map;
 
-        altitudes = xt::index_view(altitudes, node_map_res);
+        altitudes = hg::take(altitudes, node_map_res);
 
         auto sm = aligner.align_hierarchy(supervertex_labelisation_res, tree_res, altitudes);
         auto sm_k = graph_4_adjacency_2_khalimsky(g, {3, 3}, sm);
@@ -110,4 +111,30 @@ namespace test_alignment {
         REQUIRE((sm_k == sm_k_ref));
     }
 
+    TEMPLATE_TEST_CASE("project fine to coarse labelisation empty unsigned labelisations", "[alignment]",
+                       uint8_t, uint32_t, uint64_t) {
+        array_1d<TestType> empty = hg::empty<TestType>({0});
+        // max + 1 with the lowest value of the type on empty input: one region
+        auto map = project_fine_to_coarse_labelisation(empty, empty);
+        REQUIRE((map == array_1d<index_t>{0}));
+        REQUIRE((project_fine_to_coarse_labelisation(empty, empty, 2, 3) == array_1d<index_t>{0, 0}));
+
+        array_1d<TestType> fine_labels{0, 1, 2, 3, 4, 2, 3, 4, 2};
+        array_1d<TestType> coarse_labels{0, 1, 1, 0, 2, 2, 0, 2, 2};
+        REQUIRE((project_fine_to_coarse_labelisation(fine_labels, coarse_labels) ==
+                 array_1d<index_t>{0, 1, 2, 0, 2}));
+    }
+
+    TEMPLATE_TEST_CASE("project fine to coarse labelisation empty signed labelisations", "[alignment]",
+                       int8_t, int32_t, int64_t) {
+        array_1d<TestType> empty = hg::empty<TestType>({0});
+        array_1d<TestType> labels{0};
+        REQUIRE_THROWS_WITH(project_fine_to_coarse_labelisation(empty, empty),
+                            Catch::Matchers::ContainsSubstring("number of regions cannot be deduced"));
+        REQUIRE_THROWS_AS(project_fine_to_coarse_labelisation(empty, empty, 2), std::runtime_error);
+        REQUIRE_THROWS_AS(project_fine_to_coarse_labelisation(empty, empty, 0, 3), std::runtime_error);
+        // explicit numbers of regions
+        REQUIRE((project_fine_to_coarse_labelisation(empty, empty, 2, 3) == array_1d<index_t>{0, 0}));
+        REQUIRE((project_fine_to_coarse_labelisation(labels, labels) == array_1d<index_t>{0}));
+    }
 }

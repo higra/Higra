@@ -32,13 +32,13 @@ namespace tree_io {
             auto t2 = tree_attr.first;
             auto attributes = tree_attr.second;
 
-            REQUIRE(xt::allclose(parent, parents(t2)));
+            REQUIRE(hg::allclose(parent, parents(t2)));
 
             REQUIRE(attributes.count("attr1") == 1);
-            REQUIRE(xt::allclose(attributes["attr1"], attr1));
+            REQUIRE(hg::allclose(attributes["attr1"], attr1));
 
             REQUIRE(attributes.count("attr2") == 1);
-            REQUIRE(xt::allclose(attributes["attr2"], attr2));
+            REQUIRE(hg::allclose(attributes["attr2"], attr2));
     }
 
     TEST_CASE("tree input failures and legacy compatibility", "[tree_io]") {
@@ -66,7 +66,7 @@ namespace tree_io {
                 "UNKNOWN=42\nNBNODES=1\nNBNODES=3\nNBATTR=0\nEND\n"}) {
             istringstream in(h + payload);
             auto result = read_tree(in);
-            REQUIRE(xt::all(xt::equal(result.first.parents(), array_1d<int>{2, 2, 2})));
+            REQUIRE((result.first.parents() == array_1d<int>{2, 2, 2}));
             REQUIRE(result.second.empty());
             REQUIRE(result.first.category() == tree_category::partition_tree);
         }
@@ -82,7 +82,7 @@ namespace tree_io {
                             "NAME=a\nEND\n" + string(reinterpret_cast<char *>(a), sizeof(a)) +
                             "NAME=a\nEND\n" + string(reinterpret_cast<char *>(b), sizeof(b)));
             auto result = read_tree(in);
-            REQUIRE(xt::allclose(result.second.at("a"), array_1d<double>{4, 5, 6}));
+            REQUIRE(hg::allclose(result.second.at("a"), array_1d<double>{4, 5, 6}));
         }
         int bad_p[] = {10, 2, 2};
         istringstream bad_topology(header + string(reinterpret_cast<char *>(bad_p), sizeof(bad_p)));
@@ -198,8 +198,8 @@ namespace tree_io {
         save_tree(out, t).add_attribute("a", a).finalize();
         istringstream in(out.str());
         auto result = read_tree(in);
-        REQUIRE(xt::all(xt::equal(result.first.parents(), p)));
-        REQUIRE(xt::allclose(result.second.at("a"), a));
+        REQUIRE((result.first.parents() == p));
+        REQUIRE(hg::allclose(result.second.at("a"), a));
     }
 
     TEST_CASE("empty tree and category I/O", "[tree_io]") {
@@ -221,12 +221,12 @@ namespace tree_io {
                     REQUIRE(result.first.num_leaves() == t.num_leaves());
                     REQUIRE(result.first.root() == t.root());
                     REQUIRE(result.first.parents().size() == p.size());
-                    for (std::size_t i = 0; i < p.size(); ++i)
+                    for (index_t i = 0; i < p.size(); ++i)
                         REQUIRE(result.first.parents()(i) == p(i));
                     REQUIRE(result.second.size() == (with_attribute ? 1 : 0));
                     if (with_attribute) {
                         REQUIRE(result.second.at("a").size() == a.size());
-                        for (std::size_t i = 0; i < a.size(); ++i)
+                        for (index_t i = 0; i < a.size(); ++i)
                             REQUIRE(result.second.at("a")(i) == a(i));
                     }
                 }

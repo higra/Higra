@@ -11,8 +11,6 @@
 #include "higra/image/tree_of_shapes.hpp"
 #include "higra/image/graph_image.hpp"
 #include "higra/algo/tree.hpp"
-#include "xtensor/views/xstrided_view.hpp"
-#include "xtensor/generators/xrandom.hpp"
 #include "../test_utils.hpp"
 #include <set>
 
@@ -81,7 +79,7 @@ namespace tree_of_shapes {
                  {{1, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 3}, {1, 1}},
                  {{1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}}};
 
-        REQUIRE((result == xt::reshape_view(expected_result, {result.shape()[0], result.shape()[1]})));
+        REQUIRE((result == expected_result.reshaped({result.shape()[0], result.shape()[1]})));
     }*/
 
     TEST_CASE("test sort_vertices_tree_of_shapes small integers", "[tree_of_shapes]") {
@@ -395,56 +393,56 @@ TEST_CASE("test tree of shapes 2D no immersion padding zero no original space", 
 
 
 TEST_CASE("test tree of shapes 2D self duality", "[tree_of_shapes]") {
-    xt::random::seed(42);
-    array_2d<double> image = xt::random::rand<double>({25, 38});
+    hg_test::random_seed(42);
+    array_2d<double> image = hg_test::random_uniform<double>({25, 38});
     auto res1 = component_tree_tree_of_shapes_image2d(image);
-    auto res2 = component_tree_tree_of_shapes_image2d(-image);
+    auto res2 = component_tree_tree_of_shapes_image2d(hg_test::negated(image));
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 }
 
 // 3D ToS tests
 
 TEST_CASE("test tree of shapes 3D self duality", "[tree_of_shapes]") {
-    xt::random::seed(42);
-    array_3d<double> image = xt::random::rand<double>({8, 15, 12});
+    hg_test::random_seed(42);
+    array_3d<double> image = hg_test::random_uniform<double>({8, 15, 12});
 
     auto res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::mean, true, true);
-    auto res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::mean, true, true);
+    auto res2 = component_tree_tree_of_shapes_image3d(hg_test::negated(image),tos_padding::mean, true, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::mean, true, false);
-    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::mean, true, false);
+    res2 = component_tree_tree_of_shapes_image3d(hg_test::negated(image),tos_padding::mean, true, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::mean, false, false);
-    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::mean, false, false);
+    res2 = component_tree_tree_of_shapes_image3d(hg_test::negated(image),tos_padding::mean, false, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::mean, false, true);
-    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::mean, false, true);
+    res2 = component_tree_tree_of_shapes_image3d(hg_test::negated(image),tos_padding::mean, false, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::none, false, false);
-    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::none, false, false);
+    res2 = component_tree_tree_of_shapes_image3d(hg_test::negated(image),tos_padding::none, false, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::none, true, false);
-    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::none, true, false);
+    res2 = component_tree_tree_of_shapes_image3d(hg_test::negated(image),tos_padding::none, true, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::none, true, true);
-    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::none, true, true);
+    res2 = component_tree_tree_of_shapes_image3d(hg_test::negated(image),tos_padding::none, true, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image3d(image, tos_padding::none, false, true);
-    res2 = component_tree_tree_of_shapes_image3d(-image,tos_padding::none, false, true);
+    res2 = component_tree_tree_of_shapes_image3d(hg_test::negated(image),tos_padding::none, false, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 }
@@ -545,46 +543,46 @@ TEST_CASE("test tree of shapes 3D default param", "[tree_of_shapes]") {
 //  generic ToS tests
 
 TEST_CASE("test tree of shapes self duality", "[tree_of_shapes]") {
-    xt::random::seed(42);
-    array_3d<double> image = xt::random::rand<double>({25, 38, 24});
+    hg_test::random_seed(42);
+    array_3d<double> image = hg_test::random_uniform<double>({25, 38, 24});
 
     auto res1 = component_tree_tree_of_shapes_image(image, tos_padding::mean, true, true);
-    auto res2 = component_tree_tree_of_shapes_image(-image,tos_padding::mean, true, true);
+    auto res2 = component_tree_tree_of_shapes_image(hg_test::negated(image),tos_padding::mean, true, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image(image, tos_padding::mean, true, false);
-    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::mean, true, false);
+    res2 = component_tree_tree_of_shapes_image(hg_test::negated(image),tos_padding::mean, true, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image(image, tos_padding::mean, false, false);
-    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::mean, false, false);
+    res2 = component_tree_tree_of_shapes_image(hg_test::negated(image),tos_padding::mean, false, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image(image, tos_padding::mean, false, true);
-    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::mean, false, true);
+    res2 = component_tree_tree_of_shapes_image(hg_test::negated(image),tos_padding::mean, false, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image(image, tos_padding::none, false, false);
-    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::none, false, false);
+    res2 = component_tree_tree_of_shapes_image(hg_test::negated(image),tos_padding::none, false, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image(image, tos_padding::none, true, false);
-    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::none, true, false);
+    res2 = component_tree_tree_of_shapes_image(hg_test::negated(image),tos_padding::none, true, false);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image(image, tos_padding::none, true, true);
-    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::none, true, true);
+    res2 = component_tree_tree_of_shapes_image(hg_test::negated(image),tos_padding::none, true, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 
     res1 = component_tree_tree_of_shapes_image(image, tos_padding::none, false, true);
-    res2 = component_tree_tree_of_shapes_image(-image,tos_padding::none, false, true);
+    res2 = component_tree_tree_of_shapes_image(hg_test::negated(image),tos_padding::none, false, true);
     
     REQUIRE(test_tree_isomorphism(res1.tree, res2.tree));
 }

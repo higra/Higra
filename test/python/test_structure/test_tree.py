@@ -55,6 +55,22 @@ class TestTree(unittest.TestCase):
         self.assertTrue(t.parent(4) == 6)
         self.assertTrue(np.all(t.parent((0, 5, 2, 3, 7)) == (5, 7, 6, 6, 7)))
 
+    def test_parents_array_is_borrowed_and_read_only(self):
+        t = TestTree.get_tree()
+        p = t.parents()
+        self.assertEqual(p.dtype, np.int64)
+        self.assertTrue(np.array_equal(p, (5, 5, 6, 6, 6, 7, 7, 7)))
+        # the array shares the memory of the tree, keeps it alive and cannot be modified
+        self.assertIs(p.base, t)
+        self.assertFalse(p.flags.writeable)
+        with self.assertRaises(ValueError):
+            p[0] = 6
+        with self.assertRaises(ValueError):
+            p.flags.writeable = True
+        self.assertEqual(p.ctypes.data, t.parents().ctypes.data)
+        del t
+        self.assertTrue(np.array_equal(p, (5, 5, 6, 6, 6, 7, 7, 7)))
+
     def test_empty_tree(self):
         t = hg.Tree([])
 

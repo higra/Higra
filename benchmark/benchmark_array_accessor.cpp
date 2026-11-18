@@ -11,20 +11,15 @@
 #include <benchmark/benchmark.h>
 
 #include "higra/graph.hpp"
-#include "xtensor/views/xview.hpp"
-#include "xtensor/generators/xrandom.hpp"
 
-using namespace xt;
 using namespace hg;
 
 std::size_t min_array_size = 10;
 std::size_t max_array_size = 16;
 std::size_t max_array2d_size = 12;
 
-
 template<typename T>
-int sum1d_fori(const xt::xexpression<T> &xa) {
-    auto a = xa.derived_cast();
+int sum1d_fori(array_view<const T> a) {
     auto s = a.shape();
     int sum = 0;
     for (index_t i = 0; i < (index_t)s[0]; ++i) {
@@ -34,8 +29,7 @@ int sum1d_fori(const xt::xexpression<T> &xa) {
 }
 
 template<typename T>
-int sum2d_fori(const xt::xexpression<T> &xa) {
-    auto a = xa.derived_cast();
+int sum2d_fori(array_view<const T> a) {
     auto s = a.shape();
     int sum = 0;
     for (index_t i = 0; i < (index_t)s[0]; ++i) {
@@ -87,12 +81,12 @@ static void BM_1Darray_access_cstyle_iter(benchmark::State &state) {
 
 BENCHMARK(BM_1Darray_access_cstyle_iter)->Range(1 << min_array_size, 1 << max_array_size);
 
-static void BM_1Darray_access_xtensor_fori(benchmark::State &state) {
+static void BM_1Darray_access_hg_fori(benchmark::State &state) {
     for (auto _ : state) {
         state.PauseTiming();
 
         int size = state.range(0);
-        xt::xtensor<int, 1> array({(ulong) size}, 1);
+        hg::array<int> array({(ulong) size}, 1);
         state.ResumeTiming();
         int sum = sum1d_fori(array);
         bool flag;
@@ -100,14 +94,14 @@ static void BM_1Darray_access_xtensor_fori(benchmark::State &state) {
     }
 }
 
-BENCHMARK(BM_1Darray_access_xtensor_fori)->Range(1 << min_array_size, 1 << max_array_size);
+BENCHMARK(BM_1Darray_access_hg_fori)->Range(1 << min_array_size, 1 << max_array_size);
 
-static void BM_1Darray_access_xtensor_iter(benchmark::State &state) {
+static void BM_1Darray_access_hg_iter(benchmark::State &state) {
     for (auto _ : state) {
         state.PauseTiming();
 
         int size = state.range(0);
-        xt::xtensor<int, 1> array({(ulong) size}, 1);
+        hg::array<int> array({(ulong) size}, 1);
         state.ResumeTiming();
         int sum = sum_it(array);
         bool flag;
@@ -115,38 +109,7 @@ static void BM_1Darray_access_xtensor_iter(benchmark::State &state) {
     }
 }
 
-BENCHMARK(BM_1Darray_access_xtensor_iter)->Range(1 << min_array_size, 1 << max_array_size);
-
-static void BM_1Darray_access_xarray_fori(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        xt::xarray<int> array({(ulong) size}, 1);
-        state.ResumeTiming();
-        int sum = sum1d_fori(array);
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
-    }
-}
-
-BENCHMARK(BM_1Darray_access_xarray_fori)->Range(1 << min_array_size, 1 << max_array_size);
-
-static void BM_1Darray_access_xarray_iter(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        xt::xarray<int> array({(ulong) size}, 1);
-        state.ResumeTiming();
-        int sum = sum_it(array);
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
-    }
-}
-
-BENCHMARK(BM_1Darray_access_xarray_iter)->Range(1 << min_array_size, 1 << max_array_size);
-
+BENCHMARK(BM_1Darray_access_hg_iter)->Range(1 << min_array_size, 1 << max_array_size);
 
 static void BM_2Darray_access_cstyle_fori(benchmark::State &state) {
     for (auto _ : state) {
@@ -184,12 +147,12 @@ static void BM_2Darray_access_cstyle_iter(benchmark::State &state) {
 
 BENCHMARK(BM_2Darray_access_cstyle_iter)->Range(1 << min_array_size, 1 << max_array2d_size);
 
-static void BM_2Darray_access_xtensor_fori(benchmark::State &state) {
+static void BM_2Darray_access_hg_fori(benchmark::State &state) {
     for (auto _ : state) {
         state.PauseTiming();
 
         int size = state.range(0);
-        xt::xtensor<int, 2> array({(ulong) size, (ulong) size}, 1);
+        hg::array<int> array({(ulong) size, (ulong) size}, 1);
         state.ResumeTiming();
         int sum = sum2d_fori(array);
         bool flag;
@@ -197,14 +160,14 @@ static void BM_2Darray_access_xtensor_fori(benchmark::State &state) {
     }
 }
 
-BENCHMARK(BM_2Darray_access_xtensor_fori)->Range(1 << min_array_size, 1 << max_array2d_size);
+BENCHMARK(BM_2Darray_access_hg_fori)->Range(1 << min_array_size, 1 << max_array2d_size);
 
-static void BM_2Darray_access_xtensor_iter(benchmark::State &state) {
+static void BM_2Darray_access_hg_iter(benchmark::State &state) {
     for (auto _ : state) {
         state.PauseTiming();
 
         int size = state.range(0);
-        xt::xtensor<int, 2> array({(ulong) size, (ulong) size}, 1);
+        hg::array<int> array({(ulong) size, (ulong) size}, 1);
         state.ResumeTiming();
         int sum = sum_it(array);
         bool flag;
@@ -212,34 +175,4 @@ static void BM_2Darray_access_xtensor_iter(benchmark::State &state) {
     }
 }
 
-BENCHMARK(BM_2Darray_access_xtensor_iter)->Range(1 << min_array_size, 1 << max_array2d_size);
-
-static void BM_2Darray_access_xarray_fori(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        xt::xarray<int> array({(ulong) size, (ulong) size}, 1);
-        state.ResumeTiming();
-        int sum = sum2d_fori(array);
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
-    }
-}
-
-BENCHMARK(BM_2Darray_access_xarray_fori)->Range(1 << min_array_size, 1 << max_array2d_size);
-
-static void BM_2Darray_access_xarray_iter(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        xt::xarray<int> array({(ulong) size, (ulong) size}, 1);
-        state.ResumeTiming();
-        int sum = sum_it(array);
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
-    }
-}
-
-BENCHMARK(BM_2Darray_access_xarray_iter)->Range(1 << min_array_size, 1 << max_array2d_size);
+BENCHMARK(BM_2Darray_access_hg_iter)->Range(1 << min_array_size, 1 << max_array2d_size);

@@ -12,7 +12,7 @@
 
 #include "higra/structure/array.hpp"
 #include "higra/sorting.hpp"
-#include "xtensor/generators/xbuilder.hpp"
+#include "higra/structure/strided_span.hpp"
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
@@ -60,9 +60,7 @@ namespace hg {
         }
 
         inline auto bpt_boruvka_invalid_indices(index_t count) {
-            array_1d<index_t> result = xt::empty<index_t>({count});
-            result.fill(invalid_index);
-            return result;
+            return hg::full<index_t>({count}, invalid_index);
         }
 
         // All history indices are selected slots, except selected_edges itself
@@ -109,14 +107,14 @@ namespace hg {
         // Reused across rounds. Allocate/resize only outside parallel bodies.
         struct bpt_boruvka_scratch {
             static constexpr index_t block_size = 1024;
-            xt::uvector<uint8_t> edge_class;
+            array_1d<uint8_t> edge_class;
             std::vector<bpt_boruvka_counts> counts, offsets;
 #ifdef HG_USE_TBB
             std::unique_ptr<std::atomic<index_t>[]> saddle_atomic;
 #endif
 
             bpt_boruvka_scratch(index_t n, index_t m)
-                : edge_class((std::max)(n, m)),
+                : edge_class(hg::empty<uint8_t>({(std::max)(n, m)})),
                   counts((std::max)(n, m) / block_size + ((std::max)(n, m) % block_size != 0)),
                   offsets(counts.size())
 #ifdef HG_USE_TBB
@@ -180,6 +178,13 @@ namespace hg {
             return total;
         }
 
+        // Allocation-free identity sequence [0, count) used as compaction input.
+        struct bpt_boruvka_iota {
+            index_t count;
+            index_t size() const { return count; }
+            index_t operator[](index_t i) const { return i; }
+        };
+
         // Frozen component saddles enumerate the selected set without an edge scan.
         // A sole chooser emits its edge; two choosers emit only at the smaller
         // component. Compare original edge IDs, including for parallel edges.
@@ -191,7 +196,7 @@ namespace hg {
                                              const array_1d<index_t> &saddle,
                                              bpt_boruvka_scratch &scratch,
                                              index_t capacity, const emit_t &emit) {
-            auto components = xt::arange<index_t>(saddle.size());
+            bpt_boruvka_iota components{saddle.size()};
             auto counts = bpt_boruvka_compact(components, scratch, capacity,
                 [&](index_t c) -> uint8_t {
                     const auto edge = saddle(c);
@@ -213,9 +218,9 @@ namespace hg {
         // writer per original edge, so states need no atomics.
         struct bpt_boruvka_full_scan {
             bpt_boruvka_scratch scratch;
-            xt::uvector<uint8_t> states;
+            array_1d<uint8_t> states;
             bpt_boruvka_full_scan(index_t n, index_t m)
-                : scratch(n, 0), states(m, bpt_boruvka_undecided) {}
+                : scratch(n, 0), states(hg::full<uint8_t>({m}, bpt_boruvka_undecided)) {}
             void selected(index_t edge) {
                 assert(states[edge] == bpt_boruvka_undecided);
                 states[edge] = bpt_boruvka_selected;
@@ -272,7 +277,7 @@ namespace hg {
 #ifdef HG_USE_TBB
             auto &scratch = traversal.scratch;
 #endif
-            array_1d<index_t> saddle = xt::empty<index_t>({component_count});
+            array_1d<index_t> saddle = hg::empty<index_t>({component_count});
             parfor(0, component_count, [&](index_t c) {
 #ifdef HG_USE_TBB
                 scratch.saddle_atomic[c].store(invalid_index, std::memory_order_relaxed);
@@ -326,11 +331,11 @@ namespace hg {
                                           const array_1d<index_t> &saddle) {
             const index_t count = saddle.size();
 
-            array_1d<index_t> successor = xt::empty<index_t>({count});
-            array_1d<index_t> jump_a = xt::empty<index_t>({count});
-            array_1d<index_t> jump_b = xt::empty<index_t>({count});
-            array_1d<index_t> root_rank = xt::empty<index_t>({count});
-            array_1d<index_t> component_to_new = xt::empty<index_t>({count});
+            array_1d<index_t> successor = hg::empty<index_t>({count});
+            array_1d<index_t> jump_a = hg::empty<index_t>({count});
+            array_1d<index_t> jump_b = hg::empty<index_t>({count});
+            array_1d<index_t> root_rank = hg::empty<index_t>({count});
+            array_1d<index_t> component_to_new = hg::empty<index_t>({count});
             parfor(0, count, [&](index_t c) {
                 auto edge = saddle(c), a = labels(sources(edge)), b = labels(targets(edge));
                 assert(a != b && (a == c || b == c));
@@ -426,17 +431,17 @@ namespace hg {
         auto bpt_boruvka_waterfall_impl(const E1 &sources, const E2 &targets,
                                   index_t n, const edge_less_t &less) {
             const index_t m = sources.size();
-            bpt_boruvka_history history{xt::empty<index_t>({n - 1}),
-                                        xt::empty<index_t>({n}),
-                                        xt::empty<index_t>({n - 1}),
-                                        xt::empty<index_t>({n - 1})};
+            bpt_boruvka_history history{hg::empty<index_t>({n - 1}),
+                                        hg::empty<index_t>({n}),
+                                        hg::empty<index_t>({n - 1}),
+                                        hg::empty<index_t>({n - 1})};
             if (n == 1) {
                 history.leaf_parent(0) = invalid_index;
                 return history;
             }
 
             array_1d<index_t> edge_to_slot = bpt_boruvka_invalid_indices(m);
-            array_1d<index_t> labels = array_1d<index_t>(xt::arange<index_t>(n));
+            array_1d<index_t> labels = hg::arange<index_t>(n);
             traversal_t traversal(n, m);
             auto &scratch = traversal.scratch;
             index_t component_count = n, selected_count = 0, basin_offset = 0;
@@ -491,8 +496,8 @@ namespace hg {
         template<typename edge_less_t>
         auto bpt_boruvka_expand(const bpt_boruvka_history &history, const edge_less_t &less) {
             const index_t count = history.selected_edges.size();
-            array_1d<index_t> parents = xt::empty<index_t>({count});
-            array_1d<index_t> basins = xt::empty<index_t>({count});
+            array_1d<index_t> parents = hg::empty<index_t>({count});
+            array_1d<index_t> basins = hg::empty<index_t>({count});
             parfor(0, count, [&](index_t slot) {
                 auto node = slot;
                 auto ancestor = history.raw_parent(node);
@@ -521,7 +526,7 @@ namespace hg {
             const index_t count = global_order.size();
             array_1d<index_t> order = global_order;
             if (count < 2) return order;
-            array_1d<index_t> scratch = xt::empty<index_t>({count});
+            array_1d<index_t> scratch = hg::empty<index_t>({count});
             constexpr index_t buckets = 256;
             const index_t blocks = (std::min)(index_t(64), count / 16384 + (count % 16384 != 0));
             std::vector<index_t> offsets(size_t(blocks) * buckets);
@@ -577,7 +582,7 @@ namespace hg {
             };
             array_1d<index_t> node_order, group_order;
             if (numbering == bpt_boruvka_numbering::exact) {
-                node_order = xt::arange<index_t>(count);
+                node_order = hg::arange<index_t>(count);
                 {
                     hg::sort(node_order.begin(), node_order.end(), slot_less);
                 }
@@ -586,7 +591,7 @@ namespace hg {
                 // Rewiring agrees; cross-basin parents and final IDs stay intact.
                 group_order = bpt_boruvka_group_basins(node_order, basins);
             } else {
-                group_order = xt::arange<index_t>(count);
+                group_order = hg::arange<index_t>(count);
 
                 hg::sort(group_order.begin(), group_order.end(), [&](index_t a, index_t b) {
                     return basins(a) < basins(b) || (basins(a) == basins(b) && slot_less(a, b));
@@ -613,13 +618,13 @@ namespace hg {
             // Release grouping before allocating inverse maps and outputs.
             group_order = array_1d<index_t>();
 
-            array_1d<index_t> slot_to_node = xt::empty<index_t>({count});
-            array_1d<index_t> mst_edge_map = xt::empty<index_t>({count});
+            array_1d<index_t> slot_to_node = hg::empty<index_t>({count});
+            array_1d<index_t> mst_edge_map = hg::empty<index_t>({count});
             parfor(0, count, [&](index_t i) {
                 slot_to_node(node_order(i)) = n + i;
                 mst_edge_map(i) = history.selected_edges(node_order(i));
             });
-            array_1d<index_t> parents = xt::empty<index_t>({n + count});
+            array_1d<index_t> parents = hg::empty<index_t>({n + count});
             if (n == 1) {
                 parents(0) = 0;
             } else {
@@ -647,20 +652,27 @@ namespace hg {
         // by default. Basin numbering preserves the edge-labeled tree and leaf
         // IDs, but internal altitudes need not be globally sorted. The supplied
         // comparator is authoritative in both modes, including explicit ranks.
-        template<typename E1, typename E2, typename edge_less_t>
-        auto bpt_boruvka_from_edge_order(const xt::xexpression<E1> &xsources,
-                                        const xt::xexpression<E2> &xtargets,
+        //
+        // S1, S2: 1d indexable sequence types (see ``is_1d_indexable_v``), e.g.
+        // ``array_view`` or the ``strided_span`` endpoints of an explicit graph.
+        template<typename S1, typename S2, typename edge_less_t>
+        auto bpt_boruvka_from_edge_order(const S1 &sources,
+                                        const S2 &targets,
                                         index_t n, const edge_less_t &less,
                                         bpt_boruvka_numbering numbering = bpt_boruvka_numbering::exact,
                                         bpt_boruvka_traversal traversal = bpt_boruvka_traversal::full_scan) {
-            const auto &sources = xsources.derived_cast();
-            const auto &targets = xtargets.derived_cast();
-            hg_assert_1d_array(sources);
-            hg_assert_same_shape(sources, targets);
-            hg_assert_integral_value_type(sources);
-            hg_assert_integral_value_type(targets);
+            static_assert(is_1d_indexable_v<S1> && is_1d_indexable_v<S2>,
+                          "Edge sources and targets must be 1d indexable sequences.");
+            static_assert(std::is_integral<indexable_1d_value_t<S1>>::value,
+                          "Array values of 'sources' must be integral (char, short, int, long...).");
+            static_assert(std::is_integral<indexable_1d_value_t<S2>>::value,
+                          "Array values of 'targets' must be integral (char, short, int, long...).");
+            assert_1d_indexable(sources, "sources");
+            assert_1d_indexable(targets, "targets");
+            hg_assert((index_t) sources.size() == (index_t) targets.size(),
+                      "Shapes of 'sources' and 'targets' must be equal.");
             bpt_boruvka_check_sizes(n, sources.size());
-            for (size_t e = 0; e < sources.size(); ++e) {
+            for (index_t e = 0; e < (index_t) sources.size(); ++e) {
                 hg_assert(sources(e) >= 0 && targets(e) >= 0 &&
                           static_cast<uintmax_t>(sources(e)) < static_cast<uintmax_t>(n) &&
                           static_cast<uintmax_t>(targets(e)) < static_cast<uintmax_t>(n),

@@ -1,8 +1,0 @@
-prefix=/Users/sullyvancoulon/Desktop/Higra_workspace/Higra/lib
-libdir=/Users/sullyvancoulon/Desktop/Higra_workspace/Higra/lib/lib
-includedir=/Users/sullyvancoulon/Desktop/Higra_workspace/Higra/lib/include
-
-Name: xsimd
-Description: xsimd provides a unified means for using SIMD features for library authors..
-Version: 13.2.0
-Cflags: -I${includedir}

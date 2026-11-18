@@ -283,13 +283,11 @@ namespace hg::detail::hierarchy {
          * :Complexity: Time O(N), Space O(N).
          */
         template<typename T1>
-        void buildFromParent(const xt::xexpression<T1> &xparent, index_t numProperParts) {
-            auto &sourceParent = xparent.derived_cast();
-
+        void buildFromParent(array_view<const T1> sourceParent, index_t numProperParts) {
             hg_assert_1d_array(sourceParent);
             hg_assert_integral_value_type(sourceParent);
 
-            const auto parent = xt::cast<index_t>(sourceParent);
+            const auto parent = hg::cast<index_t>(sourceParent);
             const index_t n = (index_t) parent.size();
 
             hg_assert(n > 0, "DynamicComponentTree cannot be empty.");
@@ -329,7 +327,7 @@ namespace hg::detail::hierarchy {
         }
 
         template<typename T>
-        index_t inferNumProperParts(const xt::xexpression<T> &xparent) const {
+        index_t inferNumProperParts(array_view<const T> xparent) const {
             const tree inferredTree(xparent);
             return (index_t) inferredTree.num_leaves();
         }
@@ -379,7 +377,7 @@ namespace hg::detail::hierarchy {
          * :Complexity: Time O(N), Space O(N).
          */
         template<typename T1>
-        explicit DynamicComponentTree(const xt::xexpression<T1> &xparent) {
+        explicit DynamicComponentTree(array_view<const T1> xparent) {
             buildFromParent(xparent, inferNumProperParts(xparent));
         }
 
@@ -398,7 +396,7 @@ namespace hg::detail::hierarchy {
          * :Complexity: Time O(N), Space O(N).
          */
         template<typename T1>
-        void reset(const xt::xexpression<T1> &xparent) {
+        void reset(array_view<const T1> xparent) {
             buildFromParent(xparent, inferNumProperParts(xparent));
         }
 

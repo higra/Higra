@@ -11,12 +11,8 @@
 #include "py_tree_attributes.hpp"
 #include "../py_common.hpp"
 #include "higra/attribute/tree_attribute.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_attributes {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -27,8 +23,8 @@ namespace py_attributes {
             m.def("_attribute_contour_length_component_tree",
                   [](const hg::tree &tree,
                      const hg::ugraph &graph,
-                     const pyarray<T> &vertex_perimeter,
-                     const pyarray<T> &edge_length) {
+                     const hg::array_view<const T> &vertex_perimeter,
+                     const hg::array_view<const T> &edge_length) {
                       return hg::attribute_contour_length_component_tree(
                               tree,
                               graph,
@@ -50,7 +46,7 @@ namespace py_attributes {
         void def(pybind11::module &m, const char *doc) {
             m.def("_attribute_extrema",
                   [](const hg::tree &tree,
-                     const pyarray<T> &altitudes) {
+                     const hg::array_view<const T> &altitudes) {
                       return hg::attribute_extrema(
                               tree,
                               altitudes
@@ -62,35 +58,14 @@ namespace py_attributes {
         }
     };
 
-    struct def_attribute_height {
-        template<typename T>
-        static
-        void def(pybind11::module &m, const char *doc) {
-            m.def("_attribute_height",
-                  [](const hg::tree &tree,
-                     const pyarray<T> &altitudes,
-                     bool increasing_altitudes) {
-                      return hg::attribute_height(
-                              tree,
-                              altitudes,
-                              increasing_altitudes
-                      );
-                  },
-                  doc,
-                  py::arg("tree"),
-                  py::arg("altitudes"),
-                  py::arg("increasing_altitudes"));
-        }
-    };
-
     struct def_attribute_extinction_value {
         template<typename T>
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_attribute_extinction_value",
                   [](const hg::tree &tree,
-                     const pyarray<T> &altitudes,
-                     const pyarray<T> &attribute,
+                     const hg::array_view<const T> &altitudes,
+                     const hg::array_view<const T> &attribute,
                      bool increasing_altitudes) {
                       return hg::attribute_extinction_value(
                               tree,
@@ -113,7 +88,7 @@ namespace py_attributes {
         void def(pybind11::module &m, const char *doc) {
             m.def("_attribute_children_pair_sum_product",
                   [](const hg::tree &tree,
-                     const pyarray<T> &node_weights) {
+                     const hg::array_view<const T> &node_weights) {
                       return hg::attribute_children_pair_sum_product(
                               tree,
                               node_weights
@@ -126,7 +101,6 @@ namespace py_attributes {
     };
 
     void py_init_attributes(pybind11::module &m) {
-        //xt::import_numpy();
         m.def("_attribute_sibling",
               [](const hg::tree &tree, hg::index_t skip) {
                   return hg::attribute_sibling(tree, skip);
@@ -157,9 +131,6 @@ namespace py_attributes {
 
         add_type_overloads<def_attribute_extinction_value,
                 HG_TEMPLATE_FLOAT_TYPES>(m, "");
-
-        add_type_overloads<def_attribute_height,
-                HG_TEMPLATE_NUMERIC_TYPES>(m, "");
 
         add_type_overloads<def_attribute_children_pair_sum_product,
                 int32_t, uint32_t, int64_t, uint64_t, float, double>(m, "");

@@ -8,7 +8,6 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#include "xtensor/io/xio.hpp"
 #include "higra/graph.hpp"
 #include "../test_utils.hpp"
 #include <functional>
@@ -58,7 +57,7 @@ namespace tree {
             REQUIRE_THROWS_WITH(hg::tree(parents), Catch::Matchers::ContainsSubstring("parent index"));
             REQUIRE(parents == original);
             REQUIRE_THROWS_AS(hg::tree(array_1d<TestType>{bad, 2, 2}), std::runtime_error);
-            REQUIRE_THROWS_AS(hg::tree(parents + TestType(0)), std::runtime_error);
+            REQUIRE_THROWS_AS(hg::tree(parents.view()), std::runtime_error);
             REQUIRE_THROWS_AS(hg::tree(array_1d<TestType>{2, 2, bad}), std::runtime_error);
             REQUIRE_THROWS_AS(hg::tree(array_1d<TestType>{bad}), std::runtime_error);
         }
@@ -77,12 +76,12 @@ namespace tree {
                 REQUIRE(parents == original);
                 REQUIRE(t.category() == category);
                 REQUIRE(t.root() == (parents.size() == 0 ? invalid_index : index_t(parents.size() - 1)));
-                REQUIRE(t.num_vertices() == parents.size());
+                REQUIRE((index_t) t.num_vertices() == parents.size());
                 REQUIRE(t.num_leaves() == (parents.size() == 0 ? 0 : parents.size() == 1 ? 1 : 2));
                 REQUIRE(t.parents() == parents);
                 t.compute_children();
                 REQUIRE(std::vector<index_t>(t.leaves_to_root_iterator().begin(),
-                                            t.leaves_to_root_iterator().end()).size() == parents.size());
+                                            t.leaves_to_root_iterator().end()).size() == (size_t) parents.size());
                 if (parents.size() == 3) {
                     REQUIRE(t.children(2) == std::vector<index_t>{0, 1});
                 }
@@ -111,7 +110,7 @@ namespace tree {
         }
         for (auto shape : {std::vector<size_t>{}, std::vector<size_t>{1, 1},
                            std::vector<size_t>{0, 2}, std::vector<size_t>{2, 0}}) {
-            auto parents = xt::xarray<index_t>::from_shape(shape);
+            auto parents = hg::array<index_t>::from_shape(hg::array_shape::from(shape));
             parents.fill(0);
             REQUIRE_THROWS_WITH(hg::tree(parents), Catch::Matchers::ContainsSubstring("1d"));
             REQUIRE_THROWS_AS(hg::tree(std::move(parents)), std::runtime_error);
@@ -183,10 +182,10 @@ namespace tree {
     }
 
     TEST_CASE("tree constructor asserts", "[tree]") {
-        REQUIRE_THROWS_AS(hg::tree(xt::xarray<index_t>{5, 0, 6, 6, 6, 7, 7, 7}), std::runtime_error);
-        REQUIRE_THROWS_AS(hg::tree(xt::xarray<index_t>{5, 1, 6, 6, 6, 7, 7, 7}), std::runtime_error);
-        REQUIRE_THROWS_AS(hg::tree(xt::xarray<index_t>{5, 1, 6, 6, 6, 7, 7, 2}), std::runtime_error);
-        REQUIRE_THROWS_AS(hg::tree(xt::xarray<index_t>{2, 2, 4, 4, 4}), std::runtime_error);
+        REQUIRE_THROWS_AS(hg::tree(hg::array<index_t>{5, 0, 6, 6, 6, 7, 7, 7}), std::runtime_error);
+        REQUIRE_THROWS_AS(hg::tree(hg::array<index_t>{5, 1, 6, 6, 6, 7, 7, 7}), std::runtime_error);
+        REQUIRE_THROWS_AS(hg::tree(hg::array<index_t>{5, 1, 6, 6, 6, 7, 7, 2}), std::runtime_error);
+        REQUIRE_THROWS_AS(hg::tree(hg::array<index_t>{2, 2, 4, 4, 4}), std::runtime_error);
     }
 
     TEST_CASE("tree edge iterator", "[tree]") {
@@ -465,6 +464,42 @@ namespace tree {
         t.clear();
     }
 
+    TEST_CASE("tree topological order iterators on empty and single node trees", "[tree]") {
+        auto to_vector = [](const auto &range) {
+            vector<index_t> res;
+            for (auto v: range) {
+                res.push_back(v);
+            }
+            return res;
+        };
+        const hg::leaves_it leaves_opts[] = {hg::leaves_it::include, hg::leaves_it::exclude};
+        const hg::root_it root_opts[] = {hg::root_it::include, hg::root_it::exclude};
+
+        hg::tree empty_tree(array_1d<index_t>{});
+        REQUIRE(to_vector(hg::leaves_iterator(empty_tree)).empty());
+        for (auto leaves_opt: leaves_opts) {
+            for (auto root_opt: root_opts) {
+                REQUIRE(to_vector(hg::leaves_to_root_iterator(empty_tree, leaves_opt, root_opt)).empty());
+                REQUIRE(to_vector(hg::root_to_leaves_iterator(empty_tree, leaves_opt, root_opt)).empty());
+                REQUIRE(to_vector(empty_tree.leaves_to_root_iterator(leaves_opt, root_opt)).empty());
+                REQUIRE(to_vector(empty_tree.root_to_leaves_iterator(leaves_opt, root_opt)).empty());
+            }
+        }
+
+        // the single node is both the root and a leaf: it is visited only if both are included
+        hg::tree single_node_tree(array_1d<index_t>{0});
+        for (auto leaves_opt: leaves_opts) {
+            for (auto root_opt: root_opts) {
+                vector<index_t> ref;
+                if (leaves_opt == hg::leaves_it::include && root_opt == hg::root_it::include) {
+                    ref.push_back(0);
+                }
+                REQUIRE(vectorEqual(ref, to_vector(hg::leaves_to_root_iterator(single_node_tree, leaves_opt, root_opt))));
+                REQUIRE(vectorEqual(ref, to_vector(hg::root_to_leaves_iterator(single_node_tree, leaves_opt, root_opt))));
+            }
+        }
+    }
+
     TEST_CASE("tree adjacency matrix", "[tree]") {
         auto t = data.t;
 
@@ -504,7 +539,7 @@ namespace tree {
     }
 
     TEST_CASE("test lca with altitudes pairs of vertices", "[tree]") {
-        hg::tree t(xt::xarray<index_t>{5, 5, 6, 6, 6, 7, 7, 7});
+        hg::tree t(hg::array<index_t>{5, 5, 6, 6, 6, 7, 7, 7});
         REQUIRE(hg::lowest_common_ancestor(0, 0, t) == 0);
         REQUIRE(hg::lowest_common_ancestor(3, 3, t) == 3);
         REQUIRE(hg::lowest_common_ancestor(5, 5, t) == 5);
@@ -521,7 +556,7 @@ namespace tree {
     }
 
     TEST_CASE("test lca with altitudes vectorial", "[tree]") {
-        hg::tree t(xt::xarray<index_t>{5, 5, 6, 6, 6, 7, 7, 7});
+        hg::tree t(hg::array<index_t>{5, 5, 6, 6, 6, 7, 7, 7});
         array_1d<index_t> v1{0, 0, 1, 3};
         array_1d<index_t> v2{0, 3, 0, 0};
 

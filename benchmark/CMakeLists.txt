@@ -44,10 +44,23 @@ set(FILES_BENCHMARK
 
 set(BENCHMARK_TARGET benchmark_higra)
 add_executable(${BENCHMARK_TARGET} ${FILES_BENCHMARK})
-foreach(target IN ITEMS ${BENCHMARK_TARGET})
+target_compile_definitions(${BENCHMARK_TARGET} PRIVATE HG_BENCHMARK_BPT)
+
+# Array library (higra/structure/array/): benchmark_array with TBB (built-in loops run in
+# parallel above HG_ARRAY_PARALLEL_THRESHOLD, only when HG_USE_TBB=ON) and
+# benchmark_array_seq without.
+set(ARRAY_BENCHMARK_TARGETS benchmark_array_seq)
+if (HG_USE_TBB)
+    list(APPEND ARRAY_BENCHMARK_TARGETS benchmark_array)
+endif ()
+foreach (target IN ITEMS ${ARRAY_BENCHMARK_TARGETS})
+    add_executable(${target} main.cpp benchmark_array.cpp)
+endforeach ()
+
+foreach(target IN ITEMS ${BENCHMARK_TARGET} ${ARRAY_BENCHMARK_TARGETS})
     target_link_libraries(${target} PRIVATE benchmark::benchmark)
-    if (HG_USE_TBB)
-        target_compile_definitions(${target} PRIVATE HG_USE_TBB XTENSOR_USE_TBB)
+    if (HG_USE_TBB AND NOT target STREQUAL "benchmark_array_seq")
+        target_compile_definitions(${target} PRIVATE HG_USE_TBB)
         target_link_libraries(${target} PRIVATE TBB::tbb)
     endif()
     if (MSVC)

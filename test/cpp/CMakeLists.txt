@@ -32,7 +32,7 @@ if (DO_CPP_TEST)
     target_link_libraries(test_exe PRIVATE Catch2::Catch2WithMain)
 
     if (HG_USE_TBB)
-        target_compile_definitions(test_exe PRIVATE HG_USE_TBB XTENSOR_USE_TBB)
+        target_compile_definitions(test_exe PRIVATE HG_USE_TBB)
         target_link_libraries(test_exe PRIVATE TBB::tbb)
     endif ()
 

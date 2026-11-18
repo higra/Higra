@@ -17,7 +17,6 @@
 #include <string>
 #include <vector>
 #include "higra/structure/array.hpp"
-#include "xtensor/containers/xscalar.hpp"
 
 
 namespace hg {
@@ -105,13 +104,11 @@ namespace hg {
             typename S>
     auto save_pink_graph(std::ostream &out,
                          const graph_t &graph,
-                         const xt::xexpression<T1> &xvertex_values = xt::xscalar<char>(0),
-                         const xt::xexpression<T2> &xedge_values = xt::xscalar<char>(0),
+                         array_view<const T1> vertex_values,
+                         array_view<const T2> edge_values,
                          S &shape = std::vector<std::size_t>()
     ) {
         HG_TRACE();
-        auto &vertex_values = xvertex_values.derived_cast();
-        auto &edge_values = xedge_values.derived_cast();
 
         hg_assert(vertex_values.dimension() <= 1, "Too many dimensions for vertex values!");
         hg_assert(edge_values.dimension() <= 1, "Too many dimensions for edge values!");
@@ -165,12 +162,12 @@ namespace hg {
             typename S>
     void save_pink_graph(const std::string &filename,
                          const graph_t &graph,
-                         const xt::xexpression<T1> &xvertex_values = xt::xscalar<char>(0),
-                         const xt::xexpression<T2> &xedge_values = xt::xscalar<char>(0),
+                         array_view<const T1> vertex_values,
+                         array_view<const T2> edge_values,
                          S &shape = std::vector<std::size_t>()
     ) {
         std::ofstream file(filename);
-        save_pink_graph(file, graph, xvertex_values, xedge_values, shape);
+        save_pink_graph(file, graph, vertex_values, edge_values, shape);
     };
 
 }

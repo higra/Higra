@@ -11,8 +11,6 @@
 #include "py_horizontal_cuts.hpp"
 #include "../py_common.hpp"
 #include "higra/algo/horizontal_cuts.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 
 namespace py_horizontal_cuts {
@@ -26,7 +24,8 @@ namespace py_horizontal_cuts {
         template<typename type, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_reconstruct_leaf_data", [](const c_t &c, const tree_t &tree, const xt::pyarray<type> &data) {
+            c.def("_reconstruct_leaf_data", [](const c_t &c, const tree_t &tree,
+                                               const hg::array_view<const type> &data) {
                       return c.reconstruct_leaf_data(tree, data);
                   },
                   doc,
@@ -71,7 +70,7 @@ namespace py_horizontal_cuts {
         static
         void def(C &c, const char *doc) {
             c.def_static("_make_HorizontalCutExplorer",
-                         [](const typename c_t::tree_type &tree, const xt::pyarray<type> &altitudes) {
+                         [](const typename c_t::tree_type &tree, const hg::array_view<const type> &altitudes) {
                              return c_t(tree, altitudes);
                          },
                          doc,
@@ -140,7 +139,6 @@ regions is returned.)""",
     }
 
     void py_init_horizontal_cuts(pybind11::module &m) {
-        //xt::import_numpy();
 
         def_horizontal_cut_nodes<hg::tree>(m);
         def_horizontal_cut_explorer<hg::tree>(m);

@@ -30,6 +30,32 @@ class TestWatershedHierarchy(unittest.TestCase):
         self.assertTrue(hg.test_tree_isomorphism(t, ref_tree))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 
+    def test_watershed_hierarchy_by_attribute_invalid_result(self):
+        g = hg.get_4_adjacency_graph((3, 4))
+        edge_weights = np.arange(g.num_edges(), dtype=np.float64) % 5
+
+        def returning(f):
+            return lambda tree, _: f(hg.attribute_area(tree))
+
+        invalid_results = (
+            lambda area: None,
+            lambda area: 1.0,
+            lambda area: area[:-1],
+            lambda area: np.concatenate((area, [1.])),
+            lambda area: np.zeros(0),
+            lambda area: np.stack((area, area), axis=1),
+        )
+        for invalid_result in invalid_results:
+            with self.assertRaisesRegex(RuntimeError, "attribute function"):
+                hg.watershed_hierarchy_by_attribute(g, edge_weights, returning(invalid_result))
+
+        # valid results are still accepted after the errors above
+        t, altitudes = hg.watershed_hierarchy_by_attribute(g, edge_weights, returning(lambda area: area))
+        t_list, altitudes_list = hg.watershed_hierarchy_by_attribute(
+            g, edge_weights, returning(lambda area: area.astype(np.int64).tolist()))
+        self.assertTrue(np.all(t.parents() == t_list.parents()))
+        self.assertTrue(np.all(altitudes == altitudes_list))
+
     def test_watershed_hierarchy_by_minima_ordering(self):
         g = hg.get_4_adjacency_graph((1, 7))
         edge_weights = np.asarray((1, 4, 1, 0, 10, 8))

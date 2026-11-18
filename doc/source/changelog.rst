@@ -11,7 +11,98 @@ Unreleased
   Keep results explicitly when reuse is needed; recompute them after input changes.
 
 - Upgrade bundled pybind11 to 3.1.0; C++ extensions must be rebuilt
-  against the installed wheel's exported headers. 
+  against the installed wheel's exported headers.
+
+- Replace the xtensor library by Higra's own array type. Python results are unchanged, except for the following
+  points:
+
+  - Arrays with any memory layout (slices with a step, reversed or transposed arrays...) are accepted by
+    every function. The following functions, and the functions built on them, previously raised an error for
+    non-contiguous arrays: :func:`~higra.accumulate_parallel`, :func:`~higra.accumulate_sequential`,
+    :func:`~higra.accumulate_and_add_sequential`, :func:`~higra.accumulate_and_multiply_sequential`,
+    :func:`~higra.accumulate_and_min_sequential`, :func:`~higra.accumulate_and_max_sequential`,
+    :func:`~higra.propagate_parallel`, :func:`~higra.propagate_sequential`,
+    :func:`~higra.propagate_sequential_and_accumulate`, :func:`~higra.accumulate_at`,
+    :func:`~higra.accumulate_graph_edges`, :func:`~higra.accumulate_graph_vertices`,
+    :func:`~higra.accumulate_on_contours`, :func:`~higra.weight_graph`,
+    :func:`~higra.make_region_adjacency_graph_from_labelisation`,
+    :func:`~higra.make_region_adjacency_graph_from_graph_cut`, :func:`~higra.rag_back_project_vertex_weights`
+    and :func:`~higra.rag_back_project_edge_weights` (and, for example, :func:`~higra.reconstruct_leaf_data`
+    and :func:`~higra.rag_accumulate_on_vertices`). These functions also accept empty arrays and arrays with a
+    dimension of size 0, for which they previously raised the same error.
+  - Arrays with more than 8 dimensions are not supported: they raise ``ValueError``.
+  - The tree accumulators and propagators listed above, :func:`~higra.attribute_area`,
+    :func:`~higra.attribute_volume`, :func:`~higra.attribute_depth` and :func:`~higra.reconstruct_leaf_data`
+    return empty arrays for a tree without any vertex, instead of raising an error (or crashing, for
+    :func:`~higra.attribute_depth`).
+  - Invalid inputs raise ``RuntimeError`` instead of giving a wrong result, another error or a crash, for
+    example: an image of shape ``(height, width, 1)`` in :func:`~higra.connected_alternating_sequential_filter`;
+    an :class:`~higra.EmbeddingGrid2d` created from a shape array that is not one-dimensional; a list of
+    coordinates whose length differs from the dimension of the grid in the ``grid2lin`` and ``contains``
+    methods of the grid embeddings; an attribute function of :func:`~higra.watershed_hierarchy_by_attribute`
+    that does not return one value per node; a graph without any vertex in :func:`~higra.bpt_canonical`,
+    :func:`~higra.quasi_flat_zone_hierarchy`, :func:`~higra.watershed_hierarchy_by_area` and
+    :func:`~higra.minimum_spanning_tree`; a labelisation of signed integers that is empty, or whose labels are
+    all below -1, in :func:`~higra.project_fine_to_coarse_labelisation`.
+  - Node altitudes of shape ``(n, 1)`` in :func:`~higra.assess_fragmentation_horizontal_cut`, and edge weights
+    of shape ``(m, 1)`` in :func:`~higra.binary_partition_tree_average_linkage` and
+    :func:`~higra.binary_partition_tree_complete_linkage`, give the same results as one-dimensional arrays
+    (previously wrong results).
+  - :func:`~higra.sort` raises ``ValueError`` for a read-only array, instead of sorting it in place despite the
+    read-only flag, and ``TypeError`` for an unsupported input (an array of another dtype or byte order, a
+    list...), instead of leaving it unchanged.
+  - Fix :func:`~higra.save_tree`, which wrote wrong values for non-contiguous attribute arrays.
+  - :func:`~higra.accumulate_at` with vectorial weights returns an empty array, instead of crashing, when there
+    are no indices or when all indices are -1.
+  - Altitudes computed by :func:`~higra.binary_partition_tree_exponential_linkage` may differ in the last digits.
+  - Many functions are faster (for example :func:`~higra.weight_graph` on vectorial weights, :func:`~higra.dendrogram_purity`,
+    the partition and fragmentation assessment functions, and :func:`~higra.component_tree_tree_of_shapes_image2d`
+    with TBB).
+
+- C++ API and extensions (breaking changes):
+
+  - The bundled libraries xtensor, xtl, xsimd and xtensor-python are removed. Arrays are ``hg::array<T>``:
+    owning, C-contiguous arrays with value semantics and a number of dimensions defined at run time.
+    ``array_1d`` ... ``array_nd`` remain as other names of ``hg::array``. Non-owning access goes through
+    ``hg::array_view<const T>`` and ``hg::array_view<T>``. There are no expression templates and no arithmetic
+    operators on arrays: use the functions of namespace ``hg`` (``map``, ``sum``, ``take``...), see :ref:`arrays`.
+  - Array parameters of type ``const xt::xexpression<E>&`` become ``array_view<const T>``, and mutable ones
+    ``array_view<T>``, where ``T`` is the element type. Explicit template arguments must name the element type
+    instead of the container type. Lazy expressions and xtensor views must be replaced by arrays or by
+    ``array_view`` sub-views (``row``, ``slice``, ``reshaped``, ``flat``).
+  - Extensions include ``higra/python/py_array.hpp`` to exchange arrays with NumPy, and take
+    ``array_view<const T>``, ``array_view<T>`` or ``array<T>`` parameters instead of ``xt::pyarray`` and
+    ``xt::pytensor``; ``xt::import_numpy()`` is not needed (see :ref:`extensions`).
+  - ``hg::point`` is a plain fixed-size struct, without xtensor expressions or scalar arithmetic.
+  - ``undirected_graph::sources()`` and ``targets()`` return ``hg::strided_span<const index_t>``;
+    ``tree::sources()`` returns an ``array<index_t>`` and ``tree::targets()`` an ``array_view<const index_t>``;
+    ``tree`` is constructed from an ``array_view<const T>`` or an ``array<index_t>&&``.
+  - Other signature changes: ``rag_back_project_weights``, ``rag_accumulate``,
+    ``assess_fragmentation_horizontal_cut``, ``assesser_fragmentation_optimal_cut`` and ``ComponentTreeCasf``
+    take ``array_view`` parameters; ``accumulate_at`` takes its indices as an ``array_view<const TI>`` of any
+    integer type ``TI``; ``oriented_watershed`` and ``mean_pb_hierarchy`` have separate overloads
+    with and without edge orientations; ``save_pink_graph`` requires its vertex and edge value arrays.
+  - ``details::light_axis_view<vectorial, T>`` takes the element type ``T`` (``const``-qualified for a
+    read-only view) instead of the container type, and is created from arrays and views only.
+  - The header ``higra/assessment/py_dendrogram_purity.hpp`` (a duplicate of ``dendrogram_purity.hpp``) is
+    removed, as are the macro ``HG_ADAPT_STRUCT_ARRAY`` and the functions ``xt::adapt_struct_array``,
+    ``xt::all(bool)`` and ``xt::any(bool)`` of ``higra/utils.hpp``.
+  - New constants ``hg::pi`` and ``hg::pi_2``.
+  - Functions on trees without any vertex return empty arrays (accumulators, propagators, ``attribute_area``,
+    ``attribute_volume``, ``attribute_depth``), and ``leaves_to_root_iterator`` and ``root_to_leaves_iterator``
+    return empty ranges. On a tree with a single node, these two iterators return an empty range when both the
+    leaves and the root are excluded, instead of an invalid vertex.
+  - ``grid2lin`` and ``contains`` of the grid embeddings throw ``std::runtime_error`` when given a
+    ``std::vector`` or an initializer list whose size differs from the dimension of the grid.
+  - ``watershed_hierarchy_by_attribute`` throws ``std::runtime_error`` when the attribute function does not
+    return a one-dimensional array with one value per node.
+  - ``fragmentation_curve::optimal_score()`` returns NaN when a score of the curve is NaN.
+
+- Build: NumPy is no longer needed to compile Higra or its extensions, only to run them. The CMake option
+  ``USE_SIMD`` has no effect anymore and is deprecated. With multi-configuration generators (Visual Studio,
+  Xcode, Ninja Multi-Config), traces (``HG_ENABLE_TRACE``) are enabled in every configuration except Release,
+  as with single-configuration generators, instead of never. Array checks (``HG_ARRAY_CHECKS``, see
+  :ref:`arrays`) follow the same rule.
 
 0.6.13
 ------

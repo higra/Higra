@@ -612,7 +612,7 @@ class TestAttributes(unittest.TestCase):
                             [4, 4, 4, 4, 4, 4, 4, 4, 4, 4]], dtype=np.uint8)
 
         tree, altitudes = hg.component_tree_max_tree(graph, vertex_weights)
-        height = hg.attribute_height(tree, altitudes, True, "current")
+        height = hg.attribute_height(tree, altitudes, False, "current")
         map = hg.reconstruct_leaf_data(tree, height)
 
         self.assertTrue(np.allclose(ref_map, map))
@@ -641,7 +641,7 @@ class TestAttributes(unittest.TestCase):
                             [4, 4, 4, 4, 4, 4, 4, 4, 4, 4]], dtype=np.uint8)
 
         tree, altitudes = hg.component_tree_min_tree(graph, vertex_weights.max()-vertex_weights)
-        height = hg.attribute_height(tree, altitudes, False, "current")
+        height = hg.attribute_height(tree, altitudes, True, "current")
         map = hg.reconstruct_leaf_data(tree, height)
 
         self.assertTrue(np.allclose(ref_map, map))
@@ -710,7 +710,7 @@ class TestAttributes(unittest.TestCase):
              7 * 9 + 7 * 5 + 9 * 5,
              6 * 7 + 6 * 9 + 6 * 5 + 8 * 7 + 8 * 9 + 8 * 5 + 2 * 7 + 2 * 9 + 2 * 5 + 7 * 7 + 7 * 9 + 7 * 5,
              6 * 11 + 6 * 15 + 8 * 11 + 8 * 15 + 2 * 11 + 2 * 15 + 11 * 7 + 11 * 7 + 11 * 9 + 11 * 5 + 15 * 7 + 15 * 7 + 15 * 9 + 15 * 5)) / \
-              (Z * Z)
+              (2 * Z * Z)
         self.assertTrue(np.allclose(ref, res))
 
     def test_topological_height(self):
@@ -770,6 +770,37 @@ class TestAttributes(unittest.TestCase):
         self.assertTrue(np.all(ref == bounding_box))
         self.assertTrue(np.all(ref[:,:,0] == bounding_box[:,:,0]))
         self.assertTrue(np.all(ref[:,:,1] == bounding_box[:,:,1]))
+
+    def test_attribute_children_pair_sum_product_nd(self):
+        tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        node_weights = np.arange(8 * 4, dtype=np.int32).reshape(8, 2, 2)
+        res = hg.attribute_children_pair_sum_product(tree, node_weights)
+        ref = np.zeros((8, 2, 2), dtype=np.int32)
+        ref[5:] = (((0, 5), (12, 21)), ((416, 491), (572, 659)), ((480, 525), (572, 621)))
+        self.assertTrue(res.dtype == np.int32)
+        self.assertTrue(np.all(res == ref))
+
+        res = hg.attribute_children_pair_sum_product(tree, np.arange(8, dtype=np.float32))
+        self.assertTrue(res.dtype == np.float32)
+        self.assertTrue(np.all(res == (0, 0, 0, 0, 0, 0, 26, 30)))
+
+
+    def test_empty_tree(self):
+        tree = hg.Tree(np.array([], dtype=np.int64))
+        reference_tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+
+        area = hg.attribute_area(tree)
+        self.assertEqual(area.shape, (0,))
+        self.assertEqual(area.dtype, hg.attribute_area(reference_tree).dtype)
+
+        volume = hg.attribute_volume(tree, np.zeros((0,)))
+        self.assertEqual(volume.shape, (0,))
+        self.assertEqual(volume.dtype, hg.attribute_volume(reference_tree, np.zeros((8,))).dtype)
+
+        depth = hg.attribute_depth(tree)
+        self.assertEqual(depth.shape, (0,))
+        self.assertEqual(depth.dtype, hg.attribute_depth(reference_tree).dtype)
+
 
 if __name__ == '__main__':
     unittest.main()

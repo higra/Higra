@@ -500,7 +500,7 @@ The following example demonstrates the application of a parallel sum accumulator
 
             // tree in the above example
             tree t({5, 5, 6, 6, 6, 7, 7, 7});
-            array_1d<index_t> input = xt::ones({num_vertices(t)});
+            array_1d<index_t> input = ones<index_t>({num_vertices(t)});
 
             auto result = accumulate_parallel(t, input, hg::accumulator_sum());
 
@@ -558,7 +558,7 @@ The following example demonstrates the application of a sequential sum accumulat
 
             // tree in the above example
             tree t({5, 5, 6, 6, 6, 7, 7, 7});
-            array_1d<index_t> input = xt::ones({num_leaves(t)});
+            array_1d<index_t> input = ones<index_t>({num_leaves(t)});
 
             auto result = accumulate_sequential(t, input, hg::accumulator_sum());
 
@@ -619,8 +619,8 @@ The following example demonstrates the application of sequential max accumulator
 
             // tree in the above example
             tree t({5, 5, 6, 6, 6, 7, 7, 7});
-            array_1d<index_t> leaf_attribute = xt::ones({num_leaves(t)});
-            array_1d<index_t> tree_attribute = xt::ones({num_vertices(t)});
+            array_1d<index_t> leaf_attribute = ones<index_t>({num_leaves(t)});
+            array_1d<index_t> tree_attribute = ones<index_t>({num_vertices(t)});
 
             auto result = accumulate_and_combine_sequential(t,
                                                             tree_attribute,

@@ -23,7 +23,7 @@ namespace tree_attributes {
 
         hg::tree t;
 
-        _data() : t(xt::xarray<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
+        _data() : t(hg::array<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
         }
 
     } data;
@@ -59,8 +59,16 @@ namespace tree_attributes {
         REQUIRE((ref == res));
     }
 
+    TEST_CASE("tree attributes area, volume and depth on an empty tree", "[tree_attributes]") {
+        hg::tree t(hg::array<index_t>{});
+        REQUIRE(attribute_depth(t).size() == 0);
+        auto area = attribute_area(t);
+        REQUIRE(area.size() == 0);
+        REQUIRE(attribute_volume(t, hg::array<double>::from_shape({0}), area).size() == 0);
+    }
+
     TEST_CASE("tree attribute height", "[tree_attributes]") {
-        hg::tree t(xt::xarray<index_t>{7, 7, 8, 8, 8, 9, 9, 10, 10, 11, 11, 11});
+        hg::tree t(hg::array<index_t>{7, 7, 8, 8, 8, 9, 9, 10, 10, 11, 11, 11});
         SECTION("increasing") {
             array_1d<double> node_altitude{0, 0, 0, 0, 0, 0, 0, 3, 2, 1, 5, 8};
             array_1d<index_t> ref{0, 0, 0, 0, 0, 0, 0, 2, 3, 7, 6, 7};
@@ -75,7 +83,7 @@ namespace tree_attributes {
     }
 
     TEST_CASE("tree attribute extrema", "[tree_attributes]") {
-        tree t(xt::xarray<index_t>{11, 11, 9, 9, 8, 8, 13, 13, 10, 10, 12, 12, 14, 14, 14});
+        tree t(hg::array<index_t>{11, 11, 9, 9, 8, 8, 13, 13, 10, 10, 12, 12, 14, 14, 14});
 
         array_1d<double> node_altitude{0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 1, 4, 8, 10};
         array_1d<bool> ref{0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0};
@@ -104,7 +112,7 @@ namespace tree_attributes {
 
     TEST_CASE("tree attribute extinction value", "[tree_attributes]") {
         // same as dynamics
-        tree t(xt::xarray<index_t>{8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12});
+        tree t(hg::array<index_t>{8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12});
 
         array_1d<double> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 8, 10};
         array_1d<double> attribute{0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 4, 2, 10};
@@ -138,7 +146,7 @@ namespace tree_attributes {
     }
 
     TEST_CASE("tree attribute dynamics", "[tree_attributes]") {
-        tree t(xt::xarray<index_t>{8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12});
+        tree t(hg::array<index_t>{8, 8, 9, 7, 7, 11, 11, 9, 10, 10, 12, 12, 12});
 
         array_1d<double> node_altitude{0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 8, 10};
         array_1d<index_t> ref{3, 3, 0, 10, 10, 2, 2, 10, 3, 10, 10, 2, 10};
@@ -147,7 +155,7 @@ namespace tree_attributes {
     }
 
     TEST_CASE("tree attribute dynamics2", "[tree_attributes]") {
-        tree t(xt::xarray<index_t>{11, 11, 9, 9, 8, 8, 13, 13, 10, 10, 12, 12, 14, 14, 14});
+        tree t(hg::array<index_t>{11, 11, 9, 9, 8, 8, 13, 13, 10, 10, 12, 12, 14, 14, 14});
 
         array_1d<double> node_altitude{0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 1, 4, 8, 10};
         array_1d<index_t> ref{3, 3, 0, 0, 10, 10, 2, 2, 10, 0, 10, 3, 10, 2, 10};
@@ -203,7 +211,7 @@ namespace tree_attributes {
                              4, 4, 4, 4,
                              4, 6, 4, 4, 4, 10, 6, 10, 22, 20, 18, 16, 16};
 
-        REQUIRE(xt::allclose(ref, res));
+        REQUIRE(hg::allclose(ref, res));
     }
 
     TEST_CASE("tree attribute child number", "[tree_attributes]") {
@@ -232,7 +240,7 @@ namespace tree_attributes {
         array_1d<double> node_weights{2, 3, 4, 5, 6, 7, 8, 9};
         auto res = attribute_children_pair_sum_product(t, node_weights);
         array_1d<double> ref{0, 0, 0, 0, 0, 6, 74, 56};
-        REQUIRE(xt::allclose(ref, res));
+        REQUIRE(hg::allclose(ref, res));
     }
 
     TEST_CASE("tree attribute children pair sum product vectorial", "[tree_attributes]") {
@@ -243,7 +251,77 @@ namespace tree_attributes {
         auto res = attribute_children_pair_sum_product(t, node_weights);
         array_nd<double> ref{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 72, 74, 107, 56, 12};
         ref.reshape({8, 2});
-        REQUIRE(xt::allclose(ref, res));
+        REQUIRE(hg::allclose(ref, res));
     }
 
+    TEST_CASE("tree attribute height non binary, value types and inputs", "[tree_attributes]") {
+        hg::tree t(array_1d<index_t>{7, 7, 8, 8, 8, 9, 9, 10, 10, 11, 11, 11});
+        SECTION("increasing") {
+            array_1d<int> node_altitude{1, 0, 2, 0, 0, 0, 0, 3, 2, 1, 5, 8};
+            array_1d<int> ref{0, 0, 0, 0, 0, 0, 0, 2, 3, 7, 6, 7};
+            auto res = attribute_height(t, node_altitude, true);
+            static_assert(std::is_same<decltype(res), array_1d<int>>::value, "");
+            REQUIRE((ref == res));
+            // views as inputs
+            array_1d<int> wide = hg::zeros<int>({24});
+            hg::assign(wide.slice(5, 17), node_altitude);
+            REQUIRE((ref == attribute_height(t, wide.slice(5, 17), true)));
+            REQUIRE((ref == attribute_height(t, node_altitude.view(), true)));
+        }
+        SECTION("decreasing") {
+            array_1d<float> node_altitude{0, 9, 0, 0, 0, 0, 0, 8, 5, 9, 4, 1};
+            array_1d<float> ref{0, 0, 0, 0, 0, 0, 0, 4, 1, 8, 7, 8};
+            auto res = attribute_height(t, node_altitude, false);
+            static_assert(std::is_same<decltype(res), array_1d<float>>::value, "");
+            REQUIRE((ref == res));
+        }
+    }
+
+    TEST_CASE("tree attribute children pair sum product nd and inputs", "[tree_attributes]") {
+        auto t = data.t; //{5, 5, 6, 6, 6, 7, 7, 7}
+        array_nd<int> node_weights = hg::arange<int>(32);
+        node_weights.reshape({8, 2, 2});
+        array_nd<int> ref = hg::zeros<int>({8, 2, 2});
+        hg::assign(ref.slice(5, 8), array_3d<int>{{{0, 5}, {12, 21}}, {{416, 491}, {572, 659}}, {{480, 525}, {572, 621}}});
+        auto res = attribute_children_pair_sum_product(t, node_weights);
+        static_assert(std::is_same<decltype(res), array_nd<int>>::value, "");
+        REQUIRE((ref == res));
+        array_3d<int> node_weights3 = node_weights;
+        REQUIRE((ref == attribute_children_pair_sum_product(t, node_weights3)));
+        // view input: rows 2 to 9 of a larger array
+        array_3d<int> wide = hg::zeros<int>({12, 2, 2});
+        hg::assign(wide.slice(2, 10), node_weights3);
+        REQUIRE((ref == attribute_children_pair_sum_product(t, wide.slice(2, 10))));
+    }
+
+    TEMPLATE_TEST_CASE("tree attribute children pair sum product with a wider value type", "[tree_attributes]",
+                       int, float) {
+        auto t = data.t; //{5, 5, 6, 6, 6, 7, 7, 7}
+
+        array_1d<TestType> node_weights{2, 3, 4, 5, 6, 7, 8, 9};
+        auto res = attribute_children_pair_sum_product<hg::tree, TestType, double>(t, node_weights);
+        static_assert(std::is_same<decltype(res), array_nd<double>>::value, "");
+        array_1d<double> ref{0, 0, 0, 0, 0, 6, 74, 56};
+        REQUIRE((ref == res));
+
+        array_nd<TestType> node_weights_v{2, 9, 3, 8, 4, 7, 5, 6, 6, 5, 7, 4, 8, 3, 9, 2};
+        node_weights_v.reshape({8, 2});
+        auto res_v = attribute_children_pair_sum_product<hg::tree, TestType, double>(t, node_weights_v);
+        array_nd<double> ref_v{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 72, 74, 107, 56, 12};
+        ref_v.reshape({8, 2});
+        REQUIRE((ref_v == res_v));
+    }
+
+    TEST_CASE("tree attribute children pair sum product, products computed in the weight type", "[tree_attributes]") {
+        auto t = data.t; //{5, 5, 6, 6, 6, 7, 7, 7}
+        // each product is computed in float, then converted to double
+        array_1d<float> node_weights{1.1f, 1.3f, 0.7f, 1.9f, 2.3f, 0.3f, 1.7f, 2.9f};
+        auto res = attribute_children_pair_sum_product<hg::tree, float, double>(t, node_weights);
+        array_1d<double> ref = hg::zeros<double>({8});
+        ref(5) = (double) (node_weights(0) * node_weights(1));
+        ref(6) = (double) (node_weights(2) * node_weights(3)) + (double) (node_weights(2) * node_weights(4)) +
+                 (double) (node_weights(3) * node_weights(4));
+        ref(7) = (double) (node_weights(5) * node_weights(6));
+        REQUIRE((ref == res));
+    }
 }

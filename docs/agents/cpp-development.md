@@ -8,8 +8,9 @@ Doxygen comments for public algorithms. Recent dynamic component-tree classes
 use CamelCase classes and camelCase methods; match that subsystem rather than
 renaming it to match older code. There is no configured formatter.
 
-Algorithms commonly take a generic `graph_t` and `const xt::xexpression<T>&`,
-then obtain `x.derived_cast()`, validate it, and work with its concrete type.
+Algorithms commonly take a generic `graph_t` and array inputs as
+`array_view<const T>` by value (`T` is the element type), validate them, and
+return `array<T>` by value; in-place parameters are `array_view<T>`.
 Internal helpers often live in `<module>_internal` namespaces. `detail/hierarchy`
 instead uses `hg::detail::hierarchy`. Inspect the existing location before adding
 a new helper or exposing an internal type.
@@ -67,32 +68,53 @@ Respect data dependencies: parent accumulations cannot be arbitrarily moved into
 over direct children, in contrast to recursive sequential aggregation; it does
 not guarantee execution by multiple threads.
 
-## Arrays, expressions, and ownership
+## Arrays, views, and ownership
 
-`structure/array.hpp` supplies owning `array_1d` through `array_4d` and `array_nd`
-aliases. Fixed-rank arrays and fixed-size points allow compile-time optimization.
-Use the most specific representation that fits the operation, while preserving
-support for generic expressions at API boundaries.
+`structure/array.hpp` includes the array library (`structure/array/`) and defines
+`array_1d` … `array_nd` as aliases of `hg::array<T>`: owning, C-contiguous, value
+semantics, rank known only at run time (0–8). The public reference is
+[doc/source/arrays.rst](../../doc/source/arrays.rst). Conventions:
+
+- Read-only inputs: `template<class T> R f(array_view<const T> a)`. It accepts
+  arrays, views, const arrays and temporaries with one instantiation per element
+  type. Mutable inputs: `array_view<T>` (rejects const arrays and temporaries at
+  compile time). Results: `array<T>` by value. Members that keep data are
+  `array<T>`; never store a view past the call that received it.
+- The rank is not part of the type: keep `hg_assert_1d_array` and similar checks
+  where a rank is required. Overloads that differ only by rank collide.
+- There are no arithmetic operators, broadcasting, strides or lazy expressions.
+  Write loops on `data()`/`operator()`, or use the eager free functions of
+  `structure/array/functions.hpp` (`map`, `assign`, `cast`, `take`, `put`, reductions).
+  Sub-views are first-axis only: `row(i)`, `slice(b, e)`, `reshaped`, `flat`;
+  anything else (columns, strided sub-volumes) is an explicit loop.
+- Brace initialization means data, never a shape: `array<int>{5}` is `[5]`. Shapes
+  go through `array_shape`, `empty`/`zeros`/`full`, or `from_shape`. Beware the
+  vexing parse `array<T> x(array_shape(n));`.
+- Sizes and indices are signed `index_t`; graph sizes are `size_t`, so cast once at
+  comparisons. `operator()`/`operator[]` are checked only with `HG_ARRAY_CHECKS`
+  (non-Release CMake builds), whereas shape checks in functions use `hg_assert`.
+- `point<T, dim>` is a plain struct with inline storage; `to_array` converts it.
 
 The first axis normally indexes graph entities; remaining axes describe vector
 data. Check existing scalar/vector dispatch before assuming every weight array
 is one-dimensional. `structure/details/light_axis_view.hpp` deliberately offers
 a small, efficient slice interface, without general broadcasting.
 
-xtensor operations can be lazy. Do not return `a + b`, a view, or an adaptor when
-its operands/storage die on return. Store into an owning array or use `xt::eval`
-when materialization is needed. `xt::adapt` can either wrap storage or produce a
-representation subsequently copied into an owning result; inspect the exact
-construction and lifetime rather than inferring ownership from `auto`.
+Views are non-owning. Do not return a view (`row`, `slice`, `reshaped`, a
+`strided_span`) whose storage dies on return, and do not keep one across a
+`resize`, assignment or move of its array; copy into an `array<T>` when the data
+must outlive the source.
 
-`HG_ADAPT_STRUCT_ARRAY` adapts fields of an array of structs using
-`xt::no_ownership()`. Explicit-graph endpoint arrays use this machinery and are
-strided, const, borrowed adapters. Mutation, assignment, moving from the graph,
+Explicit-graph endpoint arrays (`undirected_graph::sources()/targets()`) are
+`strided_span<const index_t>`: a field of the edge structs, strided, const, and
+borrowed; consumers are templated on "1-d indexable" (`strided_span` or
+`array_view`), the only exception to the single-input-type rule.
+Mutation, assignment, moving from the graph,
 or destruction invalidates them; reacquire after edits. Explicit graphs own a
 shared edge-storage generation. Python endpoint arrays retain a const storage
 handle and graph reference. Insertion with insufficient capacity copies a shared
 generation into a larger vector before switching; an unshared vector can grow
-normally. In-place set/remove operations do not detach. Native adapters do not
+normally. In-place set/remove operations do not detach. Native spans do not
 retain storage, and an exported allocation does not extend their validity.
 Graph copies deep-copy storage and adjacency to preserve independent values.
 
@@ -128,9 +150,20 @@ tracing is disabled by default. Logging/trace controls are bound in
 ## Performance and parallelism
 
 `utils.hpp::parfor` selects TBB or a serial loop. `sorting.hpp` selects standard
-sorting or oneTBB plus the bundled `tbb-ssort` stable sort. `XTENSOR_USE_TBB` and
-`HG_USE_TBB` are enabled on the bindings/test targets when requested; SIMD is
-separately controlled by `USE_SIMD`.
+sorting or oneTBB plus the bundled `tbb-ssort` stable sort. `HG_USE_TBB` is
+enabled on the bindings/test targets when requested. There is no explicit SIMD
+code (`USE_SIMD` is a deprecated no-op).
+
+Under `HG_USE_TBB`, array-library loops over at least `HG_ARRAY_PARALLEL_THRESHOLD`
+elements (default 2^16) run through `hg::detail::parallel_blocks` (static
+partitioner): copies, `assign`, `cast`, `take`, reductions and comparisons. Fills,
+`arange` and `put` stay sequential (scatter races; parallel fills hurt the
+sequential consumer's cache locality). Results must be bit-identical with TBB on and
+off and for any thread count: floating-point sums use fixed `HG_ARRAY_REDUCE_CHUNK`
+chunks combined in chunk order, and `argmin`/`argmax` return the first index.
+`map`/`map_into` run the caller's function sequentially unless `hg::exec::par` is
+passed, which asserts that the function is thread-safe (lazy tree children, for
+example, are not).
 
 Performance-sensitive paths include component-tree vertex sorting and union-find,
 agglomeration, accumulator loops, LCA/RMQ preprocessing and queries, image

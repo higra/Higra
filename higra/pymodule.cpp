@@ -7,16 +7,12 @@
 *                                                                          *
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
-#define FORCE_IMPORT_ARRAY
 #include "pybind11/pybind11.h"
 
 #include "all.hpp"
 
-#include "xtl/xmeta_utils.hpp"
 
 
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 PYBIND11_MODULE(higram, m) {
     m.doc() = R"pbdoc(
@@ -33,7 +29,6 @@ PYBIND11_MODULE(higram, m) {
 #else
     m.attr("__version__") = "dev";
 #endif
-    xt::import_numpy();
     py_accumulator::py_init_accumulators(m);
     py_graph_core::py_init_algo_graph_core(m);
     py_tree::py_init_algo_tree(m);

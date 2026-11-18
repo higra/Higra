@@ -88,7 +88,7 @@ namespace bpt_boruvka_tests {
         REQUIRE(history.raw_parent == raw_parent);
         REQUIRE(history.raw_basin == raw_basin);
 
-        array_1d<index_t> order = xt::arange<index_t>(src.size());
+        array_1d<index_t> order = hg::arange<index_t>(src.size());
         std::sort(order.begin(), order.end(), less);
         auto reference = internal::bpt_canonical_from_sorted_edges(src, dst, order, n);
         REQUIRE(exact.first == reference.first);
@@ -96,7 +96,7 @@ namespace bpt_boruvka_tests {
 
         // Check that the returned order really reuses the expansion's basin
         // permutation, rather than silently falling back to global numbering.
-        order = xt::arange<index_t>(count);
+        order = hg::arange<index_t>(count);
         std::sort(order.begin(), order.end(), [&](index_t a, index_t b) {
             return expanded.second(a) < expanded.second(b) ||
                    (expanded.second(a) == expanded.second(b) &&
@@ -107,7 +107,7 @@ namespace bpt_boruvka_tests {
             edge_to_exact(exact.second(i)) = n + i;
             REQUIRE(relaxed.second(i) == history.selected_edges(order(i)));
         }
-        array_1d<index_t> to_exact = xt::arange<index_t>(total);
+        array_1d<index_t> to_exact = hg::arange<index_t>(total);
         for (index_t i = 0; i < count; ++i) {
             REQUIRE(edge_to_exact(relaxed.second(i)) != invalid_index);
             to_exact(n + i) = edge_to_exact(relaxed.second(i));
@@ -288,7 +288,7 @@ namespace bpt_boruvka_tests {
         };
         auto relaxed = check_numberings(sources(graph), targets(graph), 5, less);
         REQUIRE(relaxed.second == array_1d<index_t>{1, 0, 3, 2});
-        array_1d<int> internal_altitudes = xt::index_view(weights, relaxed.second);
+        array_1d<int> internal_altitudes = hg::take(weights, relaxed.second);
         REQUIRE(internal_altitudes == array_1d<int>{3, 4, 1, 10});
         REQUIRE_FALSE(std::is_sorted(internal_altitudes.begin(), internal_altitudes.end()));
         auto exact = bpt_canonical_boruvka(graph, weights);
@@ -341,7 +341,7 @@ namespace bpt_boruvka_tests {
             for (index_t e = 0; e < 2 * n; ++e) {
                 add_edge(random() % n, random() % n, graph);
             }
-            array_1d<int> weights = xt::empty<int>({num_edges(graph)});
+            array_1d<int> weights = hg::empty<int>({num_edges(graph)});
             for (auto &weight: weights) {
                 weight = (int)(random() % 5) - 2;
             }
@@ -353,7 +353,7 @@ namespace bpt_boruvka_tests {
     TEST_CASE("Boruvka output policies honor explicit ranks and vector comparators",
               "[hierarchy_core][bpt_boruvka][bpt_boruvka_policies]") {
         array_1d<int> src{0, 1, 2, 3}, dst{1, 2, 3, 0};
-        array_1d<index_t> order{0, 1, 2, 3}, rank = xt::empty<index_t>({4});
+        array_1d<index_t> order{0, 1, 2, 3}, rank = hg::empty<index_t>({4});
         // All 24 supplied orders are authoritative, even if scalar weights or
         // another tie rule would prefer a different MST. No scalar comparator
         // is consulted by the endpoint/rank entry point in either numbering.
@@ -417,7 +417,7 @@ namespace bpt_boruvka_tests {
         auto grid = bpt_canonical_boruvka(graph, weights);
         REQUIRE(grid.tree.parents() == array_1d<index_t>{6, 7, 9, 6, 8, 9, 7, 8, 10, 10, 10});
         REQUIRE(grid.mst_edge_map == array_1d<index_t>{1, 0, 3, 4, 2});
-        check_exact(get_8_adjacency_graph({3, 4}), xt::eval(xt::zeros<int>({29})));
+        check_exact(get_8_adjacency_graph({3, 4}), hg::zeros<int>({29}));
     }
 
     TEST_CASE("Boruvka paper Figures 3 and 4", "[hierarchy_core][bpt_boruvka]") {
@@ -477,9 +477,9 @@ namespace bpt_boruvka_tests {
         for (index_t v = 1; v < 30; ++v) {
             add_edge(0, v, star);
         }
-        check_exact(star, xt::eval(xt::arange<int>(29)));
+        check_exact(star, hg::arange<int>(29));
         auto balanced = path(64);
-        array_1d<int> levels = xt::empty<int>({63});
+        array_1d<int> levels = hg::empty<int>({63});
         for (index_t i = 1; i < 64; ++i) {
             levels(i - 1) = 0;
             for (auto j = i; j % 2 == 0; j /= 2) {
@@ -545,7 +545,7 @@ namespace bpt_boruvka_tests {
         REQUIRE_THROWS(bpt_canonical_boruvka(disconnected, array_1d<int>{1}));
         REQUIRE_THROWS(bpt_canonical_boruvka(path(2), array_1d<int>{}));
         REQUIRE_THROWS(bpt_canonical_boruvka(path(2), array_2d<int>{{1}}));
-        REQUIRE_THROWS(bpt_canonical_boruvka(path(2), array_nd<int>(1)));
+        REQUIRE_THROWS(bpt_canonical_boruvka(path(2), hg::full<int>(array_shape(), 1)));
         auto deleted = path(3);
         remove_edge(0, deleted);
         REQUIRE_THROWS(bpt_canonical_boruvka(deleted, array_1d<int>{1, 2}));
@@ -570,7 +570,7 @@ namespace bpt_boruvka_tests {
         // Reverse endpoints, strided inputs, and a non-weight permutation.
         array_1d<uint64_t> src_storage{1, 99, 2, 99, 3, 99, 3, 99};
         array_1d<int> dst{0, 1, 2, 0};
-        auto src = xt::view(src_storage, xt::range(0, 8, 2));
+        strided_span<const uint64_t> src(src_storage.data(), 2, 4);
         array_1d<index_t> order{2, 0, 3, 1}, rank{1, 3, 0, 2};
         auto rank_less = [&](index_t a, index_t b) { return rank(a) < rank(b); };
         auto result = internal::bpt_boruvka_from_edge_order(src, dst, 4, rank_less);
@@ -636,7 +636,8 @@ namespace bpt_boruvka_tests {
                     }
                 }
                 INFO("n=" << n << " code=" << code);
-                array_1d<int> weights = xt::adapt(values);
+                array_1d<int> weights = hg::empty<int>({values.size()});
+                std::copy(values.begin(), values.end(), weights.begin());
                 if (connected(graph)) {
                     check_exact(graph, weights);
                     check_tie_refinements(graph, weights);
@@ -660,17 +661,15 @@ namespace bpt_boruvka_tests {
             }
             std::shuffle(edges.begin(), edges.end(), random);
             ugraph graph(n);
-            array_1d<int64_t> storage = xt::empty<int64_t>({edges.size() * 2});
+            array_1d<int64_t> weights = hg::empty<int64_t>({edges.size()});
             for (size_t e = 0; e < edges.size(); ++e) {
                 add_edge(edges[e].first, edges[e].second, graph);
-                storage(2 * e) = (trial % 2 == 0) ? (int64_t)(random() % 4) - 2 : (int64_t)random();
-                storage(2 * e + 1) = INT64_MAX;
+                weights(e) = (trial % 2 == 0) ? (int64_t)(random() % 4) - 2 : (int64_t)random();
             }
-            auto weights = xt::view(storage, xt::range(0, storage.size(), 2));
-            auto copy = storage;
+            auto copy = weights;
             INFO("trial=" << trial << " n=" << n);
             check_exact(graph, weights);
-            REQUIRE(storage == copy);
+            REQUIRE(weights == copy);
         }
     }
     // Independent serial forest oracle. No union-find instance is shared with
@@ -679,7 +678,7 @@ namespace bpt_boruvka_tests {
     void check_successor_rounds(const ugraph &graph, const weights_t &weights) {
         const index_t n = num_vertices(graph), m = num_edges(graph);
         auto src = sources(graph), dst = targets(graph);
-        array_1d<index_t> labels = xt::arange<index_t>(n);
+        array_1d<index_t> labels = hg::arange<index_t>(n);
         auto count = n;
         while (count > 1) {
             auto saddle = internal::bpt_boruvka_invalid_indices(count);
@@ -759,8 +758,8 @@ namespace bpt_boruvka_tests {
               "[hierarchy_core][bpt_boruvka][bpt_boruvka_parallel]") {
         const index_t n = 4096;
         auto chain = path(n);
-        check_successor_rounds(chain, xt::eval(xt::arange<index_t>(n - 1)));
-        array_1d<int> levels = xt::empty<int>({n - 1});
+        check_successor_rounds(chain, hg::arange<index_t>(n - 1));
+        array_1d<int> levels = hg::empty<int>({n - 1});
         for (index_t v = 1; v < n; ++v) {
             levels(v - 1) = 0;
             for (auto j = v; j % 2 == 0; j /= 2) {
@@ -772,13 +771,13 @@ namespace bpt_boruvka_tests {
         for (index_t v = 1; v < n; ++v) {
             add_edge(0, v, star);
         }
-        check_successor_rounds(star, xt::eval(xt::zeros<int>({n - 1})));
+        check_successor_rounds(star, hg::zeros<int>({n - 1}));
         std::mt19937 random(0x03B0A017u);
         auto irregular = path(1024);
         for (index_t e = 0; e < 4096; ++e) {
             add_edge(random() % 1024, random() % 1024, irregular);
         }
-        array_1d<int> weights = xt::empty<int>({num_edges(irregular)});
+        array_1d<int> weights = hg::empty<int>({num_edges(irregular)});
         for (auto &w: weights) {
             w = random() % 13;
         }
@@ -792,7 +791,7 @@ namespace bpt_boruvka_tests {
         REQUIRE(result.first == array_1d<index_t>{0, 0, 0, 0});
         // Each pair roots at its smaller endpoint; dense IDs scan these roots
         // in order, even when the pairs' endpoints interleave.
-        labels = xt::arange<index_t>(6);
+        labels = hg::arange<index_t>(6);
         src = {0, 1, 2};
         dst = {5, 4, 3};
         saddle = {0, 1, 2, 2, 1, 0};
@@ -809,7 +808,7 @@ namespace bpt_boruvka_tests {
         for (index_t i = 0; i < n - 1; ++i) {
             edge_to_exact(reference.mst_edge_map(i)) = n + i;
         }
-        array_1d<index_t> to_exact = xt::arange<index_t>(2 * n - 1);
+        array_1d<index_t> to_exact = hg::arange<index_t>(2 * n - 1);
         for (index_t i = 0; i < n - 1; ++i) {
             auto e = output.second(i);
             REQUIRE(e >= 0);
@@ -844,7 +843,7 @@ namespace bpt_boruvka_tests {
                 add_edge(v, v, graph);
                 if (v + 1 < n) add_edge(v, v + 1, graph);
             }
-            array_1d<int> weights = xt::empty<int>({num_edges(graph)});
+            array_1d<int> weights = hg::empty<int>({num_edges(graph)});
             weights.fill(100);
             // Balanced path weights force several geometrically shrinking rounds;
             // loops and parallel edges exercise compaction tails across block boundaries.
@@ -893,7 +892,7 @@ namespace bpt_boruvka_tests {
                     add_edge(random() % n, random() % n, graph);
                 }
             }
-            array_1d<double> weights = xt::empty<double>({num_edges(graph)});
+            array_1d<double> weights = hg::empty<double>({num_edges(graph)});
             for (index_t e = 0; e < (index_t)num_edges(graph); ++e) {
                 weights(e) = family == 0 ? double(e) : family == 1 ? 0. : double(random() % 9);
                 if (family == 2) {
@@ -937,7 +936,7 @@ namespace bpt_boruvka_tests {
                     auto reverse = [&](index_t a, index_t b) {
                         return weights(a) < weights(b) || (!(weights(b) < weights(a)) && a > b);
                     };
-                    array_1d<index_t> order = xt::arange<index_t>(num_edges(graph));
+                    array_1d<index_t> order = hg::arange<index_t>(num_edges(graph));
                     std::sort(order.begin(), order.end(), reverse);
                     auto reversed_ref = internal::bpt_canonical_from_sorted_edges(sources(graph), targets(graph), order, n);
                     auto reversed = internal::bpt_boruvka_from_edge_order(sources(graph), targets(graph), n, reverse,
@@ -977,11 +976,11 @@ TEST_CASE("Stable basin grouping preserves arbitrary global edge order", "[bpt_b
     {
 #endif
         for (index_t count: {0, 1, 2, 255, 256, 257, 16385, 65537, 1048577}) {
-            array_1d<index_t> global = xt::arange<index_t>(count);
+            array_1d<index_t> global = hg::arange<index_t>(count);
             std::mt19937 rng(1729);
             std::shuffle(global.begin(), global.end(), rng);
             for (int pattern = 0; pattern < 5; ++pattern) {
-                array_1d<index_t> basins = xt::empty<index_t>({count});
+                array_1d<index_t> basins = hg::empty<index_t>({count});
                 for (index_t i = 0; i < count; ++i) {
                     basins(i) = pattern == 0 ? 0 : pattern == 1 ? i :
                         pattern == 2 ? (i % 11 == 0 ? count - 1 : 0) :
@@ -995,7 +994,7 @@ TEST_CASE("Stable basin grouping preserves arbitrary global edge order", "[bpt_b
                 std::vector<index_t> counts(count + 1, 0);
                 for (auto slot: global) ++counts[basins(slot) + 1];
                 std::partial_sum(counts.begin(), counts.end(), counts.begin());
-                array_1d<index_t> serial = xt::empty<index_t>({count});
+                array_1d<index_t> serial = hg::empty<index_t>({count});
                 for (auto slot: global) serial(counts[basins(slot)]++) = slot;
                 REQUIRE(serial == expected);
                 const auto saved = global;
@@ -1026,8 +1025,8 @@ TEST_CASE("Saddle enumeration matches edge scans and history by original edge ID
             if (trial % 4) for (index_t i = 0; i < 3 * n; ++i) edges.emplace_back(rng() % n, rng() % n);
             std::shuffle(edges.begin(), edges.end(), rng);
             const index_t m = edges.size();
-            array_1d<index_t> src = xt::empty<index_t>({m});
-            array_1d<index_t> dst = xt::empty<index_t>({m}), weights = xt::empty<index_t>({m});
+            array_1d<index_t> src = hg::empty<index_t>({m});
+            array_1d<index_t> dst = hg::empty<index_t>({m}), weights = hg::empty<index_t>({m});
             for (index_t e = 0; e < m; ++e) {
                 src(e) = edges[e].first; dst(e) = edges[e].second;
                 if (e % 2) std::swap(src(e), dst(e));
@@ -1040,7 +1039,7 @@ TEST_CASE("Saddle enumeration matches edge scans and history by original edge ID
                 REQUIRE(slots[got.selected_edges(s)] == invalid_index);
                 slots[got.selected_edges(s)] = s;
             }
-            array_1d<index_t> labels = xt::arange<index_t>(n);
+            array_1d<index_t> labels = hg::arange<index_t>(n);
             index_t c = n, offset = 0, total = 0;
             while (c > 1) {
                 // Serial original-edge oracle: no enumeration/compaction helper.
@@ -1115,10 +1114,10 @@ TEST_CASE("Compact history sparse IDs and error cleanup", "[bpt_boruvka][hierarc
     using namespace hg;
     namespace core = hg::hierarchy_core_internal;
     for (auto mode: {core::bpt_boruvka_traversal::full_scan, core::bpt_boruvka_traversal::active}) {
-        array_1d<index_t> src = xt::zeros<index_t>({4099});
+        array_1d<index_t> src = hg::zeros<index_t>({4099});
         array_1d<index_t> dst = src;
         dst(4096) = 1; src(4097) = 1; dst(4097) = 2; src(4098) = 2; dst(4098) = 3;
-        array_1d<int> weights = xt::zeros<int>({4099});
+        array_1d<int> weights = hg::zeros<int>({4099});
         weights(4096) = 10; weights(4097) = 1; weights(4098) = 9;
         auto less = [&](index_t a, index_t b) { return core::bpt_boruvka_scalar_less(weights, a, b); };
         bpt_boruvka_tests::check_numberings(src, dst, 4, less);
@@ -1197,8 +1196,8 @@ TEST_CASE("Traversal phases freeze equal minima and monotone edge states", "[hie
 #endif
         for (int trial = 0; trial < 25; ++trial) {
             const index_t n = 7 + trial, m = 6 * n;
-            array_1d<index_t> src = xt::empty<index_t>({m});
-            array_1d<index_t> dst = xt::empty<index_t>({m}), weights = xt::empty<index_t>({m});
+            array_1d<index_t> src = hg::empty<index_t>({m});
+            array_1d<index_t> dst = hg::empty<index_t>({m}), weights = hg::empty<index_t>({m});
             for (index_t e = 0; e < m; ++e) {
                 src(e) = e < n - 1 ? e : rng() % n;
                 dst(e) = e < n - 1 ? e + 1 : rng() % n;
@@ -1209,7 +1208,7 @@ TEST_CASE("Traversal phases freeze equal minima and monotone edge states", "[hie
             c::bpt_boruvka_active_scan active(n,m);
             REQUIRE(full.scratch.edge_class.size() == size_t(n));
             REQUIRE(active.scratch.edge_class.size() == size_t(m));
-            array_1d<index_t> labels = xt::arange<index_t>(n);
+            array_1d<index_t> labels = hg::arange<index_t>(n);
             index_t count = n;
             std::vector<uint8_t> previous(m, c::bpt_boruvka_undecided);
             while (count > 1) {

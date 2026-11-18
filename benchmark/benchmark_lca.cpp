@@ -15,10 +15,8 @@
 #include "higra/image/graph_image.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/hierarchy/watershed_hierarchy.hpp"
-#include "xtensor/generators/xrandom.hpp"
 #include "higra/structure/lca_fast.hpp"
 
-using namespace xt;
 using namespace hg;
 
 index_t repetition = 1;
@@ -33,7 +31,7 @@ static void BM_lca_sparse_table_block(benchmark::State &state) {
 
 
             auto g = get_4_adjacency_graph({size, size});
-            array_1d<double> weights = xt::random::rand<double>({num_edges(g)});
+            array_1d<double> weights = bench_utils::random_uniform<double>({num_edges(g)});
             auto res = watershed_hierarchy_by_area(g, weights);
             auto & tree = res.tree;
 
@@ -66,7 +64,7 @@ static void BM_lca_sparse_table(benchmark::State &state) {
             index_t size = state.range(0);
 
             auto g = get_4_adjacency_graph({size, size});
-            array_1d<double> weights = xt::random::rand<double>({num_edges(g)});
+            array_1d<double> weights = bench_utils::random_uniform<double>({num_edges(g)});
             auto res = watershed_hierarchy_by_area(g, weights);
             auto & tree = res.tree;
 

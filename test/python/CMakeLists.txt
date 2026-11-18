@@ -12,6 +12,7 @@ add_subdirectory(resources)
 set(PYTHON_MODULE_PATH ${CMAKE_BINARY_DIR}/python/)
 
 set(PY_FILES
+        test_array_inputs.py
         test_concept.py
         test_data_cache.py
         test_hg_utils.py

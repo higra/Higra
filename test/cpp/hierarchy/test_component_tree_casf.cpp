@@ -119,8 +119,7 @@ namespace component_tree_casf {
 
         template<typename altitude_t>
         // Exported trees must respect Higra's static topological ordering convention.
-        void require_higra_topological_order(const tree &staticTree, const xt::xexpression<altitude_t> &xaltitude) {
-            const auto &alt = xaltitude.derived_cast();
+        void require_higra_topological_order(const tree &staticTree, array_view<const altitude_t> alt) {
             const index_t n = (index_t) staticTree.num_vertices();
             const index_t numLeaves = (index_t) staticTree.num_leaves();
 
@@ -161,11 +160,13 @@ namespace component_tree_casf {
         image_t apply_naive_threshold_by_area(const graph_t &graph, const image_t &image, double threshold) {
             auto maxTree = component_tree_max_tree(graph, image);
             auto maxArea = attribute_area(maxTree.tree);
-            auto filtered = reconstruct_leaf_data(maxTree.tree, maxTree.altitudes, maxArea <= threshold);
+            auto filtered = reconstruct_leaf_data(maxTree.tree, maxTree.altitudes,
+                                                  hg::map([threshold](index_t a) { return a <= threshold; }, maxArea));
 
             auto minTree = component_tree_min_tree(graph, filtered);
             auto minArea = attribute_area(minTree.tree);
-            return reconstruct_leaf_data(minTree.tree, minTree.altitudes, minArea <= threshold);
+            return reconstruct_leaf_data(minTree.tree, minTree.altitudes,
+                                         hg::map([threshold](index_t a) { return a <= threshold; }, minArea));
         }
 
         template<typename image_t, typename graph_t>
@@ -191,7 +192,7 @@ namespace component_tree_casf {
             std::vector<index_t> ymin((size_t) treeWithChildren.num_vertices(), std::numeric_limits<index_t>::max());
             std::vector<index_t> ymax((size_t) treeWithChildren.num_vertices(), std::numeric_limits<index_t>::lowest());
             std::vector<bool> empty((size_t) treeWithChildren.num_vertices(), true);
-            array_1d<double> attribute = xt::zeros<double>({treeWithChildren.num_vertices()});
+            array_1d<double> attribute = hg::zeros<double>({treeWithChildren.num_vertices()});
 
             for (index_t leaf = 0; leaf < (index_t) treeWithChildren.num_leaves(); ++leaf) {
                 const auto point = graph.embedding().lin2grid(leaf);
@@ -255,11 +256,13 @@ namespace component_tree_casf {
                                                       detail::hierarchy::DynamicComponentTreeBoundingBoxMeasure measure) {
             auto maxTree = component_tree_max_tree(graph, image);
             auto maxAttribute = compute_naive_bounding_box_attribute(maxTree.tree, graph, measure);
-            auto filtered = reconstruct_leaf_data(maxTree.tree, maxTree.altitudes, maxAttribute <= threshold);
+            auto filtered = reconstruct_leaf_data(maxTree.tree, maxTree.altitudes,
+                                                  hg::map([threshold](double a) { return a <= threshold; }, maxAttribute));
 
             auto minTree = component_tree_min_tree(graph, filtered);
             auto minAttribute = compute_naive_bounding_box_attribute(minTree.tree, graph, measure);
-            return reconstruct_leaf_data(minTree.tree, minTree.altitudes, minAttribute <= threshold);
+            return reconstruct_leaf_data(minTree.tree, minTree.altitudes,
+                                         hg::map([threshold](double a) { return a <= threshold; }, minAttribute));
         }
 
         template<typename image_t, typename graph_t>
@@ -449,8 +452,8 @@ namespace component_tree_casf {
         auto graph = get_4_adjacency_graph({12, 12});
         const auto image = make_demo_image();
         ComponentTreeCasf<uint8_t, decltype(graph)> casf(graph, image);
-        array_1d<double> vertexPerimeters = xt::ones<double>({(size_t) num_vertices(graph)});
-        array_1d<double> edgeLengths = xt::ones<double>({(size_t) num_edges(graph)});
+        array_1d<double> vertexPerimeters = hg::ones<double>({(size_t) num_vertices(graph)});
+        array_1d<double> edgeLengths = hg::ones<double>({(size_t) num_edges(graph)});
         for (const auto &thresholds: {std::vector<double>{}, std::vector<double>{15.0, 100.0}}) {
             const auto filtered = casf.filter(thresholds);
             for (bool isMaxTree: {true, false}) {

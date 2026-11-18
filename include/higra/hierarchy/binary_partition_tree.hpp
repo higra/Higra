@@ -14,8 +14,7 @@
 #include "../graph.hpp"
 #include "hierarchy_core.hpp"
 #include "../structure/fibonacci_heap.hpp"
-#include "xtensor/views/xview.hpp"
-#include "xtensor/core/xnoalias.hpp"
+#include <cmath>
 #include <string>
 
 namespace hg {
@@ -203,7 +202,7 @@ namespace hg {
         */
         template<typename T>
         struct binary_partition_tree_complete_linkage_weighting_functor {
-            using value_type = typename T::value_type;
+            using value_type = T;
 
             array_1d<value_type> m_weights;
 
@@ -211,7 +210,7 @@ namespace hg {
              * Initialize the clustering with given edge weights
              * @param weights
              */
-            binary_partition_tree_complete_linkage_weighting_functor(const xt::xexpression<T> &weights) :
+            binary_partition_tree_complete_linkage_weighting_functor(array_view<const T> weights) :
                     m_weights(weights) {
             }
 
@@ -247,13 +246,13 @@ namespace hg {
         */
         template<typename T>
         struct binary_partition_tree_average_linkage_weighting_functor {
-            using value_type = typename T::value_type;
+            using value_type = T;
 
             array_1d<value_type> m_values;
             array_1d<value_type> m_weights;
 
-            binary_partition_tree_average_linkage_weighting_functor(const xt::xexpression<T> &values,
-                                                                    const xt::xexpression<T> &weights)
+            binary_partition_tree_average_linkage_weighting_functor(array_view<const T> values,
+                                                                    array_view<const T> weights)
                     : m_values(values), m_weights(weights) {
                 hg_assert_same_shape(m_values, m_weights);
             }
@@ -297,23 +296,28 @@ namespace hg {
        */
         template<typename T>
         struct binary_partition_tree_exponential_linkage_weighting_functor {
-            using value_type = typename T::value_type;
+            using value_type = T;
 
             array_1d<value_type> m_values;
             array_1d<value_type> m_weights;
             value_type m_alpha;
 
             binary_partition_tree_exponential_linkage_weighting_functor(
-                    const xt::xexpression<T> &xvalues,
-                    const xt::xexpression<T> &xweights,
+                    array_view<const T> values,
+                    array_view<const T> weights,
                     const value_type &alpha)
                     : m_alpha(alpha) {
-                auto &values = xvalues.derived_cast();
-                auto &weights = xweights.derived_cast();
                 hg_assert_same_shape(values, weights);
 
-                m_weights = weights * xt::exp(alpha * values);
-                m_values = m_weights * values;
+                const value_type *v = values.data();
+                const value_type *w = weights.data();
+                const size_t n = (size_t) values.size();
+                m_weights = array_1d<value_type>::from_shape({n});
+                m_values = array_1d<value_type>::from_shape({n});
+                for (size_t i = 0; i < n; i++) {
+                    m_weights(i) = w[i] * std::exp(alpha * v[i]);
+                    m_values(i) = m_weights(i) * v[i];
+                }
             }
 
             template<typename graph_t, typename neighbours_t>
@@ -357,10 +361,8 @@ namespace hg {
         public:
 
             binary_partition_tree_ward_linkage_weighting_functor(
-                    const xt::xexpression<T1> &xvertex_centroids,
-                    const xt::xexpression<T2> &xvertex_sizes) {
-                auto &vertex_centroids = xvertex_centroids.derived_cast();
-                auto &vertex_sizes = xvertex_sizes.derived_cast();
+                    array_view<const T1> vertex_centroids,
+                    array_view<const T2> vertex_sizes) {
                 hg_assert_1d_array(vertex_sizes);
                 hg_assert(vertex_centroids.dimension() == 2,
                           "vertex_centroids must be 2d (each vertex centroid is a 1d vector).");
@@ -370,17 +372,16 @@ namespace hg {
                 auto num_elem = vertex_sizes.size() * 2 - 1;
                 m_dim = vertex_centroids.shape(1);
 
-                m_sizes = xt::empty<double>({num_elem});
-                xt::noalias(xt::view(m_sizes, xt::range(0, vertex_sizes.size()))) = vertex_sizes;
-                m_centroids = xt::empty<double>({num_elem, vertex_centroids.shape(1)});
-                xt::noalias(
-                        xt::view(m_centroids, xt::range(0, vertex_centroids.shape(0)), xt::all())) = vertex_centroids;
+                m_sizes = hg::empty<double>({num_elem});
+                hg::assign(m_sizes.slice(0, vertex_sizes.size()), vertex_sizes);
+                m_centroids = hg::empty<double>({num_elem, vertex_centroids.shape(1)});
+                hg::assign(m_centroids.slice(0, vertex_centroids.shape(0)), vertex_centroids);
 
             }
 
             template<typename graph_t>
             auto get_weights(const graph_t &graph) {
-                array_1d<double> weights = xt::empty<double>({num_edges(graph)});
+                array_1d<double> weights = hg::empty<double>({num_edges(graph)});
                 for (auto e: edge_iterator(graph)) {
                     weights(e) = cluster_distance(source(e, graph), target(e, graph));
                 }
@@ -488,11 +489,10 @@ namespace hg {
      */
     template<typename graph_t, typename weighter, typename T>
     auto
-    binary_partition_tree(const graph_t &graph, const xt::xexpression<T> &xedge_weights, weighter weight_function) {
-        using weight_t = typename T::value_type;
+    binary_partition_tree(const graph_t &graph, array_view<const T> edge_weights, weighter weight_function) {
+        using weight_t = T;
         using heap_t = fibonacci_heap<binary_partition_tree_internal::heap_element<weight_t> >;
 
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
 
         auto g = copy_graph<undirected_graph<hash_setS> >(graph); // optimized for removal
@@ -500,15 +500,15 @@ namespace hg {
         auto num_points = num_vertices(g);
         auto num_nodes_tree = num_points * 2 - 1;
 
-        array_1d<index_t> parents = xt::arange(num_nodes_tree);
-        array_1d<weight_t> levels = xt::zeros<weight_t>({num_nodes_tree});
+        array_1d<index_t> parents = hg::arange<index_t>(num_nodes_tree);
+        array_1d<weight_t> levels = hg::zeros<weight_t>({num_nodes_tree});
 
         // optimization to detect already visited neighbours during neighbour search
         array_1d<index_t> new_neighbour_indices({num_nodes_tree}, invalid_index);
 
         // active edges are in the heap and still present in the graph (removed edges are leazily left in the heap)
         // TODO: check for performance impact
-        array_1d<bool> active = xt::zeros<bool>({num_edges(g)});
+        array_1d<bool> active = hg::zeros<bool>({num_edges(g)});
 
         // special structure to store the list of neighbours adjacent to the fused regions.
         std::vector<binary_partition_tree_internal::new_neighbour<weight_t> > new_neighbours;
@@ -623,7 +623,7 @@ namespace hg {
      * @return a node weighted tree
      */
     template<typename graph_t, typename T>
-    auto binary_partition_tree_min_linkage(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+    auto binary_partition_tree_min_linkage(const graph_t &graph, array_view<const T> xedge_weights) {
         auto res = bpt_canonical(graph, xedge_weights);
         return make_node_weighted_tree(std::move(res.tree), std::move(res.altitudes));
     }
@@ -647,7 +647,7 @@ namespace hg {
      * @return a node weighted tree
      */
     template<typename graph_t, typename T>
-    auto binary_partition_tree_complete_linkage(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+    auto binary_partition_tree_complete_linkage(const graph_t &graph, array_view<const T> xedge_weights) {
         return binary_partition_tree(
                 graph,
                 xedge_weights,
@@ -678,8 +678,8 @@ namespace hg {
      */
     template<typename graph_t, typename T>
     auto binary_partition_tree_average_linkage(const graph_t &graph,
-                                               const xt::xexpression<T> &xedge_weights,
-                                               const xt::xexpression<T> &xedge_weight_weights) {
+                                               array_view<const T> xedge_weights,
+                                               array_view<const T> xedge_weight_weights) {
         return binary_partition_tree(
                 graph,
                 xedge_weights,
@@ -724,9 +724,9 @@ namespace hg {
      */
     template<typename graph_t, typename T>
     auto binary_partition_tree_exponential_linkage(const graph_t &graph,
-                                               const xt::xexpression<T> &xedge_weights,
-                                               const typename T::value_type &alpha,
-                                               const xt::xexpression<T> &xedge_weight_weights) {
+                                               array_view<const T> xedge_weights,
+                                               const array_internal::identity_t<T> &alpha,
+                                               array_view<const T> xedge_weight_weights) {
         return binary_partition_tree(
                 graph,
                 xedge_weights,
@@ -769,8 +769,8 @@ namespace hg {
      */
     template<typename graph_t, typename T1, typename T2>
     auto binary_partition_tree_ward_linkage(const graph_t &graph,
-                                            const xt::xexpression<T1> &xvertex_centroids,
-                                            const xt::xexpression<T2> &xvertex_sizes,
+                                            array_view<const T1> xvertex_centroids,
+                                            array_view<const T2> xvertex_sizes,
                                             const std::string &altitude_correction = "max") {
 
         auto f = binary_partition_tree_internal::binary_partition_tree_ward_linkage_weighting_functor<T1, T2>

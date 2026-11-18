@@ -11,13 +11,11 @@
 #include <benchmark/benchmark.h>
 
 #include "higra/graph.hpp"
-#include "xtensor/views/xview.hpp"
-#include "xtensor/generators/xrandom.hpp"
 #include <algorithm>
+#include "utils.h"
 #include <oneapi/tbb/parallel_sort.h>
 #include "tbb-ssort/parallel_stable_sort.h"
 
-using namespace xt;
 using namespace hg;
 
 std::size_t min_array_size = 10;
@@ -31,11 +29,11 @@ static void BM_stl_sort(benchmark::State &state) {
         state.PauseTiming();
 
         size_t size = state.range(0);
-        array_1d<float> a = xt::random::rand<float>({size});
+        array_1d<float> a = bench_utils::random_uniform<float>({size});
         state.ResumeTiming();
         std::sort(a.begin(), a.end());
         bool flag;
-        benchmark::DoNotOptimize(flag = (a.size() == size));
+        benchmark::DoNotOptimize(flag = ((size_t) a.size() == size));
     }
 }
 
@@ -46,11 +44,11 @@ static void BM_stl_stable_sort(benchmark::State &state) {
         state.PauseTiming();
 
         size_t size = state.range(0);
-        array_1d<float> a = xt::random::rand<float>({size});
+        array_1d<float> a = bench_utils::random_uniform<float>({size});
         state.ResumeTiming();
         std::stable_sort(a.begin(), a.end());
         bool flag;
-        benchmark::DoNotOptimize(flag = (a.size() == size));
+        benchmark::DoNotOptimize(flag = ((size_t) a.size() == size));
     }
 }
 
@@ -61,11 +59,11 @@ static void BM_tbb_parallel_sort(benchmark::State &state) {
         state.PauseTiming();
 
         size_t size = state.range(0);
-        array_1d<float> a = xt::random::rand<float>({size});
+        array_1d<float> a = bench_utils::random_uniform<float>({size});
         state.ResumeTiming();
         oneapi::tbb::parallel_sort(a.begin(), a.end());
         bool flag;
-        benchmark::DoNotOptimize(flag = (a.size() == size));
+        benchmark::DoNotOptimize(flag = ((size_t) a.size() == size));
     }
 }
 
@@ -76,11 +74,11 @@ static void BM_tbb_parallel_stable_sort(benchmark::State &state) {
         state.PauseTiming();
 
         size_t size = state.range(0);
-        array_1d<float> a = xt::random::rand<float>({size});
+        array_1d<float> a = bench_utils::random_uniform<float>({size});
         state.ResumeTiming();
         pss::parallel_stable_sort(a.begin(), a.end());
         bool flag;
-        benchmark::DoNotOptimize(flag = (a.size() == size));
+        benchmark::DoNotOptimize(flag = ((size_t) a.size() == size));
     }
 }
 

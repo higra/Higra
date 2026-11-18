@@ -11,13 +11,9 @@
 #include "py_tree_of_shapes.hpp"
 #include "../py_common.hpp"
 #include "higra/image/tree_of_shapes.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include <string>
 
 namespace py_tree_of_shapes {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -26,7 +22,7 @@ struct def_tree_of_shapes {
     template<typename value_t, typename C>
     static
     void def(C &m, const char *doc) {
-        m.def("_component_tree_tree_of_shapes_image", [](const pyarray<value_t> &image,
+        m.def("_component_tree_tree_of_shapes_image", [](const hg::array_view<const value_t> &image,
                                                            const std::string &padding,
                                                            bool original_size,
                                                            bool immersion,
@@ -42,8 +38,8 @@ struct def_tree_of_shapes {
                       throw std::runtime_error("tree_of_shapes: Unknown padding option.");
                   }
 
-                  auto res = hg::component_tree_tree_of_shapes_image(image, tpadding, original_size, immersion,
-                                                                   exterior_vertex);
+                  auto res = hg::component_tree_tree_of_shapes_image(image, tpadding,
+                                                                   original_size, immersion, exterior_vertex);
                   return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
               },
               doc,
@@ -58,7 +54,6 @@ struct def_tree_of_shapes {
 
 
     void py_init_tree_of_shapes_image(pybind11::module &m) {
-        //xt::import_numpy();
 
     add_type_overloads<def_tree_of_shapes, uint8_t, uint16_t, int32_t, int64_t, float, double>
             (m, "");

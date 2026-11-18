@@ -11,20 +11,15 @@
 #include "py_tree_energy_optimization.hpp"
 #include "higra/algo/tree_energy_optimization.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_tree_energy_optimization {
-
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
 
 /*
  * labelisation_optimal_cut_from_energy(const tree_type &tree,
-                                              const xt::xexpression<T> &xenergy_attribute,
+                                              array_view<const T> energy_attribute,
                                               const accumulator_type accumulator = hg::accumulator_sum())
  */
     template<typename tree_t>
@@ -33,8 +28,9 @@ namespace py_tree_energy_optimization {
         static
         void def(C &c, const char *doc) {
             c.def("_labelisation_optimal_cut_from_energy", [](const tree_t &tree,
-                                                              const pyarray<value_t> &energy_attribute,
+                                                              const hg::array_view<const value_t> &venergy_attribute,
                                                               const hg::accumulators accumulator) {
+                      auto energy_attribute = venergy_attribute;
                       switch (accumulator) {
                           case hg::accumulators::min:
                               return hg::labelisation_optimal_cut_from_energy(tree,
@@ -69,10 +65,11 @@ namespace py_tree_energy_optimization {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_hierarchy_to_optimal_energy_cut_hierarchy", [](const tree_t &tree,
-                                                                   const pyarray<value_t> &data_fidelity_attribute,
-                                                                   const pyarray<value_t> &regularization_attribute,
-                                                                   const int approximation_piecewise_linear_function) {
+            c.def("_hierarchy_to_optimal_energy_cut_hierarchy",
+                  [](const tree_t &tree,
+                     const hg::array_view<const value_t> &data_fidelity_attribute,
+                     const hg::array_view<const value_t> &regularization_attribute,
+                     const int approximation_piecewise_linear_function) {
                       auto res = hg::hierarchy_to_optimal_energy_cut_hierarchy(
                               tree,
                               data_fidelity_attribute,
@@ -90,18 +87,17 @@ namespace py_tree_energy_optimization {
 
 
     void py_init_tree_energy_optimization(pybind11::module &m) {
-        //xt::import_numpy();
 
         add_type_overloads<def_labelisation_optimal_cut_from_energy<hg::tree>, HG_TEMPLATE_FLOAT_TYPES>(m, "");
 
         add_type_overloads<def_hierarchy_to_optimal_energy_cut_hierarchy<hg::tree>, HG_TEMPLATE_FLOAT_TYPES>(m, "");
 
         m.def("_binary_partition_tree_MumfordShah_energy", [](const hg::ugraph &graph,
-                                                              const pyarray<double> &vertex_perimeter,
-                                                              const pyarray<double> &vertex_area,
-                                                              const pyarray<double> &vertex_values,
-                                                              const pyarray<double> &squared_vertex_values,
-                                                              const pyarray<double> &edge_length) {
+                                                              const hg::array_view<const double> &vertex_perimeter,
+                                                              const hg::array_view<const double> &vertex_area,
+                                                              const hg::array_view<const double> &vertex_values,
+                                                              const hg::array_view<const double> &squared_vertex_values,
+                                                              const hg::array_view<const double> &edge_length) {
                   auto res = hg::binary_partition_tree_MumfordShah_energy(
                           graph,
                           vertex_perimeter,

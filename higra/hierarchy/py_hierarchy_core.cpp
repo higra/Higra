@@ -11,12 +11,8 @@
 #include "py_hierarchy_core.hpp"
 #include "../py_common.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"
 namespace py_hierarchy_core {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -25,7 +21,8 @@ namespace py_hierarchy_core {
         template<typename value_t, typename C>
         static
         void def(C &m, const char *doc) {
-            m.def("_quasi_flat_zone_hierarchy", [](const graph_t &graph, const pyarray<value_t> &edge_weights) {
+            m.def("_quasi_flat_zone_hierarchy", [](const graph_t &graph,
+                                                   const hg::array_view<const value_t> &edge_weights) {
                       auto res = hg::quasi_flat_zone_hierarchy(graph, edge_weights);
                       return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
                   },
@@ -37,13 +34,12 @@ namespace py_hierarchy_core {
     };
 
     // Validate the permutation before any indexed scatter or parallel comparison.
-    auto boruvka_inverse_order(const xt::pytensor<hg::index_t, 1> &order, size_t m) {
+    auto boruvka_inverse_order(const hg::array_view<const hg::index_t> &order, hg::index_t m) {
         hg_assert(order.size() == m, "Edge order must contain every edge exactly once.");
-        hg::array_1d<hg::index_t> ranks = hg::array_1d<hg::index_t>::from_shape({m});
-        ranks.fill(hg::invalid_index);
-        for (size_t i = 0; i < m; ++i) {
+        hg::array_1d<hg::index_t> ranks = hg::full<hg::index_t>({m}, hg::invalid_index);
+        for (hg::index_t i = 0; i < m; ++i) {
             auto e = order(i);
-            hg_assert(e >= 0 && static_cast<size_t>(e) < m, "Invalid edge index in edge order.");
+            hg_assert(e >= 0 && e < m, "Invalid edge index in edge order.");
             hg_assert(ranks(e) == hg::invalid_index, "Edge order must be a permutation.");
             ranks(e) = i;
         }
@@ -54,17 +50,20 @@ namespace py_hierarchy_core {
         template<typename T, typename C>
         static void def(C &m, const char *doc) {
             m.def("_bpt_canonical_boruvka", [](
-                    const xt::pytensor<hg::index_t, 1> &sources,
-                    const xt::pytensor<hg::index_t, 1> &targets,
-                    hg::index_t n, const xt::pytensor<T, 2> &weights, bool stable, bool compact_edges) {
-                hg_assert(static_cast<size_t>(weights.shape()[0]) == sources.size(), "Incorrect edge weight count.");
+                    const hg::array_view<const hg::index_t> &xsources,
+                    const hg::array_view<const hg::index_t> &xtargets,
+                    hg::index_t n, const hg::array_view<const T> &xweights, bool stable, bool compact_edges) {
+                const auto &sources = py_args::fixed_rank<1>(xsources, "sources");
+                const auto &targets = py_args::fixed_rank<1>(xtargets, "targets");
+                const auto &weights = py_args::fixed_rank<2>(xweights, "weights");
+                hg_assert(weights.shape(0) == sources.size(), "Incorrect edge weight count.");
                 for (const auto &w: weights) {
                     if constexpr (std::is_floating_point<T>::value) {
                         hg_assert(!std::isnan(w), "Edge weights cannot contain NaNs.");
                     }
                 }
                 auto less = [&weights](hg::index_t a, hg::index_t b) {
-                    for (hg::index_t k = 0; k < weights.shape()[1]; ++k) {
+                    for (hg::index_t k = 0; k < weights.shape(1); ++k) {
                         if (weights(a, k) < weights(b, k)) return true;
                         if (weights(b, k) < weights(a, k)) return false;
                     }
@@ -99,33 +98,39 @@ namespace py_hierarchy_core {
     }
 
     void py_init_hierarchy_core(pybind11::module &m) {
-        //xt::import_numpy();
 
-        m.def("_bpt_canonical", [](const xt::pytensor<hg::index_t, 1> &sources,
-                                   const xt::pytensor<hg::index_t, 1> &targets,
-                                   const xt::pytensor<hg::index_t, 1> &sorted_edge_indices,
+        m.def("_bpt_canonical", [](const hg::array_view<const hg::index_t> &sources,
+                                   const hg::array_view<const hg::index_t> &targets,
+                                   const hg::array_view<const hg::index_t> &sorted_edge_indices,
                                    const hg::index_t num_vertices) {
+            auto xsources = py_args::fixed_rank<1>(sources, "sources");
+            auto xtargets = py_args::fixed_rank<1>(targets, "targets");
+            auto xsorted_edge_indices = py_args::fixed_rank<1>(sorted_edge_indices, "sorted_edge_indices");
             hg_assert(num_vertices >= 0, "Number of vertices must be a positive number.");
-            hg_assert((xt::amin)(sources)() >= 0, "Source vertex index cannot be negative.");
-            hg_assert((xt::amin)(targets)() >= 0, "Target vertex index cannot be negative.");
-            hg_assert((xt::amin)(sorted_edge_indices)() >= 0, "Edge index cannot be negative.");
-            hg_assert((xt::amax)(sources)() < num_vertices,
+            hg_assert(sources.empty() || hg::min(sources) >= 0, "Source vertex index cannot be negative.");
+            hg_assert(targets.empty() || hg::min(targets) >= 0, "Target vertex index cannot be negative.");
+            hg_assert(sorted_edge_indices.empty() || hg::min(sorted_edge_indices) >= 0,
+                      "Edge index cannot be negative.");
+            hg_assert(sources.empty() || hg::max(sources) < num_vertices,
                       "Source vertex index must be less than the number of vertices.");
-            hg_assert((xt::amax)(targets)() < num_vertices,
+            hg_assert(targets.empty() || hg::max(targets) < num_vertices,
                       "Target vertex index must be less than the number of vertices.");
-            hg_assert((xt::amax)(sorted_edge_indices)() < (hg::index_t) sorted_edge_indices.size(),
+            hg_assert(sorted_edge_indices.empty() || hg::max(sorted_edge_indices) < sorted_edge_indices.size(),
                       "Edge index must be smaller than the number of edges in the graph/tree.");
-            auto res = hg::hierarchy_core_internal::bpt_canonical_from_sorted_edges(sources, targets,
-                                                                                    sorted_edge_indices,
+            auto res = hg::hierarchy_core_internal::bpt_canonical_from_sorted_edges(xsources, xtargets,
+                                                                                    xsorted_edge_indices,
                                                                                     num_vertices);
             return py::make_tuple(std::move(res.first), std::move(res.second));
         });
 
         add_type_overloads<def_bpt_boruvka, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
         m.def("_bpt_canonical_boruvka_from_order", [](
-                const xt::pytensor<hg::index_t, 1> &sources,
-                const xt::pytensor<hg::index_t, 1> &targets,
-                hg::index_t n, const xt::pytensor<hg::index_t, 1> &order, bool stable, bool compact_edges) {
+                const hg::array_view<const hg::index_t> &xsources,
+                const hg::array_view<const hg::index_t> &xtargets,
+                hg::index_t n, const hg::array_view<const hg::index_t> &xorder, bool stable, bool compact_edges) {
+            const auto &sources = py_args::fixed_rank<1>(xsources, "sources");
+            const auto &targets = py_args::fixed_rank<1>(xtargets, "targets");
+            const auto &order = py_args::fixed_rank<1>(xorder, "sorted_edge_indices");
             auto ranks = boruvka_inverse_order(order, sources.size());
             auto less = [&ranks](hg::index_t a, hg::index_t b) { return ranks(a) < ranks(b); };
             auto res = hg::hierarchy_core_internal::bpt_boruvka_from_edge_order(
@@ -140,7 +145,7 @@ namespace py_hierarchy_core {
 
         add_simplified_tree(m);
         m.def("_simplify_tree",
-              [](const hg::tree &t, pyarray<bool> &criterion, bool process_leaves) {
+              [](const hg::tree &t, const hg::array_view<const bool> &criterion, bool process_leaves) {
                   return hg::simplify_tree(t, criterion, process_leaves);
               },
               "",

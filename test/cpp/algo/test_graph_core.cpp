@@ -42,7 +42,7 @@ namespace test_graph_core {
     TEST_CASE("minimum spanning tree", "[graph_algorithm]") {
         auto graph = get_4_adjacency_graph({2, 3});
 
-        xt::xarray<double> edge_weights{1, 0, 2, 1, 1, 1, 2};
+        hg::array<double> edge_weights{1, 0, 2, 1, 1, 1, 2};
 
         auto res = minimum_spanning_tree(graph, edge_weights);
         auto &mst = res.mst;
@@ -59,7 +59,7 @@ namespace test_graph_core {
             auto e = edge_from_index(i, mst);
             REQUIRE(e == ref[i]);
         }
-        REQUIRE(xt::equal(mst_edge_map, array_1d<int>({1, 0, 3, 4, 2}))());
+        REQUIRE((mst_edge_map == array_1d<int>({1, 0, 3, 4, 2})));
     }
 
     TEST_CASE("minimum spanning forest", "[graph_algorithm]") {
@@ -72,7 +72,7 @@ namespace test_graph_core {
         add_edge(3, 5, graph);
         add_edge(4, 5, graph);
 
-        xt::xarray<double> edge_weights{0, 1, 2, 3, 4, 5};
+        hg::array<double> edge_weights{0, 1, 2, 3, 4, 5};
 
         auto res = minimum_spanning_tree(graph, edge_weights);
         auto &mst = res.mst;
@@ -98,7 +98,7 @@ namespace test_graph_core {
 
         auto subgraph = subgraph_spanning(graph, edge_indices);
         REQUIRE(num_vertices(subgraph) == num_vertices(graph));
-        REQUIRE(num_edges(subgraph) == edge_indices.size());
+        REQUIRE((index_t) num_edges(subgraph) == edge_indices.size());
         std::vector<ugraph::edge_descriptor> ref = {{2, 3, 0},
                                                     {0, 1, 1}};
         for (index_t i = 0; i < (index_t) ref.size(); i++) {

@@ -3,33 +3,51 @@ jobs:
     strategy:
       matrix:
         gcc_11_regression:
-          gcc_version: '11'
+          c_compiler: 'gcc-11'
+          cxx_compiler: 'g++-11'
+          compiler_packages: 'gcc-11 g++-11'
           HG_USE_TBB: 'Off'
         gcc_14:
-          gcc_version: '14'
+          c_compiler: 'gcc-14'
+          cxx_compiler: 'g++-14'
+          compiler_packages: 'gcc-14 g++-14'
           HG_USE_TBB: 'Off'
         gcc_14_tbb:
-          gcc_version: '14'
+          c_compiler: 'gcc-14'
+          cxx_compiler: 'g++-14'
+          compiler_packages: 'gcc-14 g++-14'
+          HG_USE_TBB: 'On'
+        clang_18:
+          c_compiler: 'clang-18'
+          cxx_compiler: 'clang++-18'
+          compiler_packages: 'clang-18'
+          HG_USE_TBB: 'Off'
+        clang_18_tbb:
+          c_compiler: 'clang-18'
+          cxx_compiler: 'clang++-18'
+          compiler_packages: 'clang-18'
           HG_USE_TBB: 'On'
         gcc_14_coverage:
-          gcc_version: '14'
+          c_compiler: 'gcc-14'
+          cxx_compiler: 'g++-14'
+          compiler_packages: 'gcc-14 g++-14'
           HG_USE_TBB: 'On'
           COVERAGE: 1
     pool:
       vmImage: ubuntu-24.04
     variables:
       CODECOV_TOKEN: $(CODECOV_TOKEN_scr)
-      CC: gcc-$(gcc_version)
-      CXX: g++-$(gcc_version)
+      CC: $(c_compiler)
+      CXX: $(cxx_compiler)
     timeoutInMinutes: 360
     steps:
 
       - script: |
           set -e
           sudo apt-get update
-          sudo apt-get --no-install-suggests --no-install-recommends install gcc-$(gcc_version) g++-$(gcc_version)
-          gcc-$(gcc_version) --version
-          g++-$(gcc_version) --version
+          sudo apt-get --no-install-suggests --no-install-recommends install $(compiler_packages)
+          $(c_compiler) --version
+          $(cxx_compiler) --version
           if [[ -n "$COVERAGE" ]]; then
             sudo apt-get --no-install-suggests --no-install-recommends install lcov
           fi

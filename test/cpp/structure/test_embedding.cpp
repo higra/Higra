@@ -10,10 +10,7 @@
 
 #include "../test_utils.hpp"
 #include "higra/structure/embedding.hpp"
-#include "xtensor/views/xview.hpp"
-#include "xtensor/generators/xgenerator.hpp"
-#include "xtensor/io/xinfo.hpp"
-#include "xtensor/core/xeval.hpp"
+#include "catch2/matchers/catch_matchers_string.hpp"
 
 namespace embedding {
 
@@ -76,8 +73,8 @@ namespace embedding {
         REQUIRE(e1.grid2lin(p1) == 35);
     }
 
-    TEST_CASE("create embedding grid from xtensor shape", "[embedding]") {
-        xt::xarray<int> a = xt::zeros<int>({10, 5, 2});
+    TEST_CASE("create embedding grid from array shape", "[embedding]") {
+        hg::array<int> a = hg::zeros<int>({10, 5, 2});
         hg::embedding_grid_3d e1(a.shape());
         REQUIRE(e1.size() == 100);
         REQUIRE(e1.dimension() == 3);
@@ -88,8 +85,8 @@ namespace embedding {
         REQUIRE(e1.grid2lin(p1) == 35);
     }
 
-    TEST_CASE("create embedding grid from xtensor", "[embedding]") {
-        xt::xarray<hg::index_t> shape = {10, 5, 2};
+    TEST_CASE("create embedding grid from array", "[embedding]") {
+        hg::array<hg::index_t> shape = {10, 5, 2};
         hg::embedding_grid_3d e1(shape);
         REQUIRE(e1.size() == 100);
         REQUIRE(e1.dimension() == 3);
@@ -103,10 +100,10 @@ namespace embedding {
     }
 
     TEST_CASE("grid to linear coordinates", "[embedding]") {
-        xt::xarray<hg::index_t> shape = {10, 5, 2};
+        hg::array<hg::index_t> shape = {10, 5, 2};
         hg::embedding_grid_3d e1(shape);
 
-        xt::xarray<hg::index_t> coord = {{0, 0, 0},
+        hg::array<hg::index_t> coord = {{0, 0, 0},
                                          {0, 0, 1},
                                          {0, 0, 2},
                                          {3, 2, 1}};
@@ -121,12 +118,12 @@ namespace embedding {
     }
 
     TEST_CASE("linear coordinates to grid", "[embedding]") {
-        xt::xarray<hg::index_t> shape = {5, 10};
+        hg::array<hg::index_t> shape = {5, 10};
         hg::embedding_grid_2d e1(shape);
 
-        xt::xarray<hg::index_t> coordLin = {{0,  1,  2,  3},
+        hg::array<hg::index_t> coordLin = {{0,  1,  2,  3},
                                             {22, 42, 43, 44}};
-        xt::xarray<hg::index_t> coords = {{{0, 0}, {0, 1}, {0, 2}, {0, 3}},
+        hg::array<hg::index_t> coords = {{{0, 0}, {0, 1}, {0, 2}, {0, 3}},
                                           {{2, 2}, {4, 2}, {4, 3}, {4, 4}}};
 
         auto res = e1.lin2grid(coordLin);
@@ -134,16 +131,126 @@ namespace embedding {
     }
 
     TEST_CASE("contains", "[embedding]") {
-        xt::xarray<hg::index_t> shape = {5, 10};
+        hg::array<hg::index_t> shape = {5, 10};
         hg::embedding_grid_2d e1(shape);
 
-        xt::xarray<hg::index_t> coords{{{0, 0}, {3, 8}, {-1, 2}},
+        hg::array<hg::index_t> coords{{{0, 0}, {3, 8}, {-1, 2}},
                                        {{2, 4}, {5, 5}, {43, 44}}};
 
-        xt::xarray<bool> ref{{true, true,  false},
+        hg::array<bool> ref{{true, true,  false},
                              {true, false, false}};
 
         auto res = e1.contains(coords);
         REQUIRE((res == ref));
+    }
+
+    TEST_CASE("embedding array methods with extra leading dimensions", "[embedding]") {
+        hg::embedding_grid_2d e1{5, 10};
+
+        // (2, 3, 2) coordinates -> (2, 3) results
+        hg::array<hg::index_t> coords{{{0, 0}, {3, 8}, {-1, 2}},
+                                       {{2, 4}, {5, 5}, {4, 9}}};
+        auto lin = e1.grid2lin(coords);
+        static_assert(std::is_same<typename decltype(lin)::value_type, std::size_t>::value,
+                      "grid2lin returns unsigned linear coordinates");
+        REQUIRE(lin.shape().size() == 2);
+        REQUIRE(lin.shape()[0] == 2);
+        REQUIRE(lin.shape()[1] == 3);
+        REQUIRE(lin(0, 0) == 0);
+        REQUIRE(lin(0, 1) == 38);
+        REQUIRE(lin(1, 0) == 24);
+        REQUIRE(lin(1, 2) == 49);
+
+        auto inside = e1.contains(coords);
+        hg::array<bool> inside_ref{{true, true,  false},
+                                    {true, false, true}};
+        REQUIRE((inside == inside_ref));
+
+        // (2, 3) linear coordinates -> (2, 3, 2) coordinates
+        hg::array<hg::index_t> lin_ref{{0,  38, 2},
+                                        {24, 49, 13}};
+        auto grid = e1.lin2grid(lin_ref);
+        hg::array<hg::index_t> grid_ref{{{0, 0}, {3, 8}, {0, 2}},
+                                         {{2, 4}, {4, 9}, {1, 3}}};
+        REQUIRE((grid == grid_ref));
+
+        // 0-d linear coordinate -> (2,) coordinates; (2,) coordinates -> 0-d linear coordinate
+        hg::array<int> scalar(hg::array_shape(), 13);
+        auto g0 = e1.lin2grid(scalar);
+        REQUIRE(g0.dimension() == 1);
+        REQUIRE((g0 == hg::array<hg::index_t>{1, 3}));
+        hg::array<int> point_coords{1, 3};
+        auto l0 = e1.grid2lin(point_coords);
+        REQUIRE(l0.dimension() == 0);
+        REQUIRE(l0() == 13);
+        auto c0 = e1.contains(point_coords);
+        REQUIRE(c0.dimension() == 0);
+        REQUIRE(c0());
+
+        // inputs given as views or computed arrays
+        hg::array<hg::index_t> rows{{9, 9}, {0, 0}, {3, 8}, {4, 9}, {9, 9}};
+        auto lin_view = e1.grid2lin(rows.slice(1, 4));
+        REQUIRE((lin_view == hg::array<std::size_t>{0, 38, 49}));
+        auto lin_v = e1.grid2lin(coords.view());
+        REQUIRE((lin_v == lin));
+        auto grid_computed = e1.lin2grid(hg::map([](hg::index_t i) { return i * 10; }, hg::arange<hg::index_t>(3)));
+        REQUIRE((grid_computed == hg::array<hg::index_t>{{0, 0}, {1, 0}, {2, 0}}));
+
+        // empty leading dimension
+        hg::array<hg::index_t> none = hg::zeros<hg::index_t>({0, 2});
+        REQUIRE(e1.grid2lin(none).size() == 0);
+        REQUIRE(e1.contains(none).shape()[0] == 0);
+        REQUIRE(e1.lin2grid(hg::array<hg::index_t>::from_shape({0})).shape()[1] == 2);
+
+        // the size of the last axis must be the dimension (or 1 for grid2lin, broadcast to every coordinate)
+        hg::array<hg::index_t> bad = hg::zeros<hg::index_t>({3, 3});
+        REQUIRE_THROWS(e1.grid2lin(bad));
+        REQUIRE_THROWS(e1.contains(bad));
+        hg::array<hg::index_t> ones = hg::ones<hg::index_t>({3, 1});
+        REQUIRE((e1.grid2lin(ones) == hg::array<std::size_t>{11, 11, 11}));
+
+        // shape from an array
+        hg::embedding_grid_3d e3(hg::array<int>{2, 3, 4});
+        REQUIRE((e3.shape() == hg::point_3d_i{{2, 3, 4}}));
+        REQUIRE(e3.size() == 24);
+        REQUIRE_THROWS(hg::embedding_grid_2d(hg::array<int>{2, 3, 4}));
+        REQUIRE_THROWS(hg::embedding_grid_2d(hg::array<int>{2, 0}));
+    }
+
+    TEST_CASE("scalar coordinates must have one value per dimension", "[embedding]") {
+        hg::embedding_grid_1d e1({5});
+        hg::embedding_grid_2d e2({3, 4});
+        const std::vector<hg::index_t> c3{1, 2, 3};
+        const std::vector<hg::index_t> c1{1};
+
+        // std::vector (generic overloads)
+        REQUIRE_THROWS_AS(e1.grid2lin(c3), std::runtime_error);
+        REQUIRE_THROWS_AS(e1.contains(c3), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.grid2lin(c3), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.contains(c3), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.grid2lin(c1), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.contains(c1), std::runtime_error);
+        REQUIRE_THROWS_AS(e1.grid2lin(std::vector<hg::index_t>{}), std::runtime_error);
+        REQUIRE_THROWS_WITH(e2.grid2lin(c3), Catch::Matchers::ContainsSubstring("expected 2, got 3"));
+
+        // initializer lists
+        REQUIRE_THROWS_AS(e1.grid2lin({1, 2, 3}), std::runtime_error);
+        REQUIRE_THROWS_AS(e1.contains({1, 2, 3}), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.grid2lin({1, 2, 3}), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.contains({1, 2, 3}), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.grid2lin({1}), std::runtime_error);
+        REQUIRE_THROWS_AS(e2.contains({1}), std::runtime_error);
+
+        // correct number of coordinates
+        REQUIRE(e1.grid2lin(c1) == 1);
+        REQUIRE(e1.grid2lin({3}) == 3);
+        REQUIRE(e1.contains({4}));
+        REQUIRE(!e1.contains({5}));
+        REQUIRE(e2.grid2lin(std::vector<hg::index_t>{2, 3}) == 11);
+        REQUIRE(e2.grid2lin({2, 3}) == 11);
+        REQUIRE(e2.contains(std::vector<hg::index_t>{2, 3}));
+        REQUIRE(!e2.contains(std::vector<hg::index_t>{3, 0}));
+        REQUIRE(e2.contains({2, 3}));
+        REQUIRE(!e2.contains({-1, 0}));
     }
 }

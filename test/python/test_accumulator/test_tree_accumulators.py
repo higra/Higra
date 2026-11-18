@@ -136,5 +136,53 @@ class TestTreeAccumulators(unittest.TestCase):
         self.assertTrue(np.allclose(ref2, output2))
 
 
+    def test_empty_tree(self):
+        reference_tree = TestTreeAccumulators.get_tree()
+        acc = hg.Accumulators.sum
+
+        def calls(tree, data, condition):
+            num_leaves = tree.num_leaves()
+            leaf_data = data[:num_leaves]
+            return {
+                "accumulate_parallel": lambda: hg.accumulate_parallel(tree, data, acc),
+                "accumulate_sequential": lambda: hg.accumulate_sequential(tree, leaf_data, acc),
+                "accumulate_and_add_sequential":
+                    lambda: hg.accumulate_and_add_sequential(tree, data, leaf_data, acc),
+                "accumulate_and_multiply_sequential":
+                    lambda: hg.accumulate_and_multiply_sequential(tree, data, leaf_data, acc),
+                "accumulate_and_min_sequential":
+                    lambda: hg.accumulate_and_min_sequential(tree, data, leaf_data, acc),
+                "accumulate_and_max_sequential":
+                    lambda: hg.accumulate_and_max_sequential(tree, data, leaf_data, acc),
+                "propagate_parallel": lambda: hg.propagate_parallel(tree, data),
+                "propagate_parallel condition": lambda: hg.propagate_parallel(tree, data, condition),
+                "propagate_sequential": lambda: hg.propagate_sequential(tree, data, condition),
+                "propagate_sequential_and_accumulate":
+                    lambda: hg.propagate_sequential_and_accumulate(tree, data, acc),
+                "propagate_sequential_and_accumulate condition":
+                    lambda: hg.propagate_sequential_and_accumulate(tree, data, acc, condition),
+            }
+
+        for compute_children in (False, True):
+            for dtype in (np.float64, np.int32):
+                for trailing_shape in ((), (3,)):
+                    tree = hg.Tree(np.array([], dtype=np.int64))
+                    if compute_children:
+                        self.assertEqual(tree.num_children().shape, (0,))  # computes the children
+                    data = np.zeros((0,) + trailing_shape, dtype=dtype)
+                    condition = np.zeros((0,), dtype=np.bool_)
+
+                    reference_data = np.ones((reference_tree.num_vertices(),) + trailing_shape, dtype=dtype)
+                    reference_condition = np.zeros((reference_tree.num_vertices(),), dtype=np.bool_)
+                    references = calls(reference_tree, reference_data, reference_condition)
+
+                    for name, call in calls(tree, data, condition).items():
+                        with self.subTest(function=name, dtype=dtype, shape=data.shape,
+                                          compute_children=compute_children):
+                            result = call()
+                            self.assertEqual(result.shape, data.shape)
+                            self.assertEqual(result.dtype, references[name]().dtype)
+
+
 if __name__ == '__main__':
     unittest.main()

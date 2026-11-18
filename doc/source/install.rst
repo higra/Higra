@@ -30,7 +30,9 @@ Building Higra from source requires:
 
     * a C++17 compiler (GCC, Clang, or Visual Studio 2019)
     * cmake 3.18+
-    * Python 3 with Numpy
+    * Python 3
+
+NumPy is not needed to build Higra, only to run it.
 
 No compiler-version minimum is specified. GCC 11 is covered by a regression
 CI job for CASF header compatibility, alongside the current GCC and Clang jobs;
@@ -66,7 +68,6 @@ You can specify which version to use with ``-DPython_EXECUTABLE:FILEPATH=/PATH-T
 Cmake options:
 ++++++++++++++
 
-- ``USE_SIMD`` (boolean, default ``ON``): Use SIMD instructions
 - ``DO_CPP_TEST`` (boolean, default ``ON``): Build the c++ test suit
 - ``DO_AUTO_TEST`` (boolean, default ``OFF``): Execute test suit automatically at the end of the build
 - ``HG_USE_TBB`` (boolean, default ``OFF``): Use Intel Threading Building Blocks (TBB)

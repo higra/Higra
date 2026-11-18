@@ -11,16 +11,11 @@
 #include "py_tree_io.hpp"
 #include "higra/io/tree_io.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include <fstream>
 
 namespace py_tree_io {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     void py_init_tree_io(pybind11::module &m) {
-        //xt::import_numpy();
 
         m.def("_read_tree", [](const std::string &filename) {
                   std::ifstream file(filename, std::ios::binary);
@@ -31,11 +26,11 @@ namespace py_tree_io {
               pybind11::arg("filename"));
 
         m.def("save_tree", [](const std::string &filename, const hg::tree &tree,
-                              const std::map<std::string, pyarray<double>> &attributes) {
+                              const std::map<std::string, hg::array<double>> &attributes) {
                   std::ofstream file(filename, std::ios::binary);
                   hg_assert(file.is_open(), "Cannot open tree file for writing: " + filename);
                   auto s = hg::save_tree(file, tree);
-                  for (auto e: attributes) {
+                  for (const auto &e: attributes) {
                       s.add_attribute(e.first, e.second);
                   }
                   s.finalize();
@@ -49,7 +44,7 @@ namespace py_tree_io {
               "Attributes must be numpy 1d arrays stored in a dictionary with string keys (attribute names).",
               pybind11::arg("filename"),
               pybind11::arg("tree"),
-              pybind11::arg("attributes") = std::map<std::string, pyarray<double>>());
+              pybind11::arg("attributes") = std::map<std::string, hg::array<double>>());
     }
 }
 

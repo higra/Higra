@@ -56,9 +56,9 @@ namespace test_undirected_graph {
             array_2d<size_t> ref{{2, 0},
                                  {2, 2}};
 
-            REQUIRE(xt::allclose(degree(indices, g), ref));
-            REQUIRE(xt::allclose(in_degree(indices, g), ref));
-            REQUIRE(xt::allclose(out_degree(indices, g), ref));
+            REQUIRE(hg::allclose(degree(indices, g), ref));
+            REQUIRE(hg::allclose(in_degree(indices, g), ref));
+            REQUIRE(hg::allclose(out_degree(indices, g), ref));
         }
         SECTION("copy graph specialized") {
             auto g = data<TestType>::g();
@@ -393,10 +393,10 @@ namespace test_undirected_graph {
             array_1d<index_t> targets_ref{1, 2, 2};
 
             auto src = sources(g);
-            REQUIRE((sources_ref == src));
+            REQUIRE(std::equal(src.begin(), src.end(), sources_ref.begin(), sources_ref.end()));
 
             auto tgt = targets(g);
-            REQUIRE((targets_ref == tgt));
+            REQUIRE(std::equal(tgt.begin(), tgt.end(), targets_ref.begin(), targets_ref.end()));
 
         }
     }

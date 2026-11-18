@@ -13,12 +13,9 @@
 #include "utils.h"
 #include "higra/graph.hpp"
 
-#include "xtensor/generators/xrandom.hpp"
 #include "higra/image/graph_image.hpp"
 
 #include <iostream>
-#include "xtensor/io/xio.hpp"
-using namespace xt;
 using namespace hg;
 
 
@@ -30,17 +27,11 @@ static void BM_from_edge_list_no_preallocation(benchmark::State &state) {
         state.PauseTiming();
 
         hg::index_t size = state.range(0);
-        xt::random::seed(42);
+        bench_utils::random_seed(42);
 
-        array_2d<index_t> vertices = reshape_view(arange<index_t>({size * size}), {size, size});
-        array_1d<index_t> h_edges_sources = flatten(view(vertices, all(), range(0, size - 1)));
-        array_1d<index_t> h_edges_targets = flatten(view(vertices, all(), range(1, size)));
-
-        array_1d<index_t> v_edges_sources = flatten(view(vertices, range(0, size - 1), all()));
-        array_1d<index_t> v_edges_targets = flatten(view(vertices, range(1, size), all()));
-
-        array_1d<index_t> edges_sources = concatenate(xtuple(h_edges_sources, v_edges_sources));
-        array_1d<index_t> edges_targets = concatenate(xtuple(h_edges_targets, v_edges_targets));
+        auto edges = bench_utils::grid_4adj_edges(size);
+        const auto &edges_sources = edges.first;
+        const auto &edges_targets = edges.second;
 
         state.ResumeTiming();
         ugraph g(size * size);
@@ -57,18 +48,11 @@ static void BM_from_edge_list_with_preallocation(benchmark::State &state) {
         state.PauseTiming();
 
         hg::index_t size = state.range(0);
-        xt::random::seed(42);
+        bench_utils::random_seed(42);
 
-        array_2d<index_t> vertices = reshape_view(arange<index_t>({size * size}), {size, size});
-
-        array_1d<index_t> h_edges_sources = flatten(view(vertices, all(), range(0, size - 1)));
-        array_1d<index_t> h_edges_targets = flatten(view(vertices, all(), range(1, size)));
-
-        array_1d<index_t> v_edges_sources = flatten(view(vertices, range(0, size - 1), all()));
-        array_1d<index_t> v_edges_targets = flatten(view(vertices, range(1, size), all()));
-
-        array_1d<index_t> edges_sources = concatenate(xtuple(h_edges_sources, v_edges_sources));
-        array_1d<index_t> edges_targets = concatenate(xtuple(h_edges_targets, v_edges_targets));
+        auto edges = bench_utils::grid_4adj_edges(size);
+        const auto &edges_sources = edges.first;
+        const auto &edges_targets = edges.second;
 
         state.ResumeTiming();
         ugraph g(size * size, edges_sources.size(), 4);
@@ -85,7 +69,7 @@ static void BM_graph_implicit_to_explicit(benchmark::State &state) {
         state.PauseTiming();
 
         hg::index_t size = state.range(0);
-        xt::random::seed(42);
+        bench_utils::random_seed(42);
 
         state.ResumeTiming();
         auto res = hg::get_4_adjacency_graph(hg::embedding_grid_2d({size, size}));

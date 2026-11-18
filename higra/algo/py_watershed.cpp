@@ -11,13 +11,8 @@
 #include "py_watershed.hpp"
 #include "higra/algo/watershed.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_watershed {
-
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -27,7 +22,8 @@ namespace py_watershed {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_labelisation_watershed", [](const graph_t &graph, const pyarray<value_t> &edge_weights) {
+            c.def("_labelisation_watershed", [](const graph_t &graph,
+                                                const hg::array_view<const value_t> &edge_weights) {
                       return hg::labelisation_watershed(graph, edge_weights);
                   },
                   doc,
@@ -43,10 +39,11 @@ namespace py_watershed {
         void def(C &c, const char *doc) {
             c.def("_labelisation_seeded_watershed",
                   [](const graph_t &graph,
-                     const pyarray<value_t> &edge_weights,
-                     const pyarray<hg::index_t> &vertex_seeds,
+                     const hg::array_view<const value_t> &edge_weights,
+                     const hg::array_view<const hg::index_t> &vertex_seeds,
                      const hg::index_t background_label) {
-                      return hg::labelisation_seeded_watershed(graph, edge_weights, vertex_seeds, background_label);
+                      return hg::labelisation_seeded_watershed(graph, edge_weights,
+                                                               vertex_seeds, background_label);
                   },
                   doc,
                   py::arg("graph"),
@@ -58,7 +55,6 @@ namespace py_watershed {
 
 
     void py_init_watershed(pybind11::module &m) {
-        //xt::import_numpy();
 
         add_type_overloads<def_labelisation_watershed<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
         add_type_overloads<def_labelisation_seeded_watershed<hg::ugraph>, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
@@ -69,14 +65,47 @@ namespace py_watershed {
                 "segmentation setting, where seeds are added and removed incrementally.");
 
         cls.def(py::init<const hg::tree &, const hg::ugraph &>(),
-                py::arg("bpt"),
-                py::arg("mst"),
-                "Create an incremental watershed cut object from a binary partition tree and its MST.");
+            py::arg("bpt"),
+            py::arg("mst"),
+            "Create an incremental watershed cut object from a binary partition tree and its MST.");
+
+        cls.def("_set_minimum_parallel_front_size",
+                [](hg::incremental_watershed_cut &self, hg::index_t minimum_parallel_front_size) {
+                    self.set_minimum_parallel_front_size(minimum_parallel_front_size);
+                },
+                "Set the minimum parallel front size.",
+                py::arg("minimum_parallel_front_size"));
+
+        cls.def("_set_num_parallel_hops",
+                [](hg::incremental_watershed_cut &self, hg::index_t num_parallel_hops) {
+                    self.set_num_parallel_hops(num_parallel_hops);
+                },
+                "Set the number of parallel hops.",
+                py::arg("num_parallel_hops"));
+
+        cls.def("_set_max_concurrency",
+                [](hg::incremental_watershed_cut &self, hg::index_t maximum_concurrency) {
+                    self.set_max_concurrency(maximum_concurrency);
+                },
+                "Set the maximum concurrency.",
+                py::arg("maximum_concurrency"));
+
+        cls.def("_get_minimum_parallel_front_size",
+                &hg::incremental_watershed_cut::get_minimum_parallel_front_size,
+                "Get the minimum parallel front size.");
+
+        cls.def("_get_num_parallel_hops",
+                &hg::incremental_watershed_cut::get_num_parallel_hops,
+                "Get the number of parallel hops.");
+
+        cls.def("_get_max_concurrency",
+                &hg::incremental_watershed_cut::get_max_concurrency,
+                "Get the maximum concurrency.");
 
         cls.def("_add_seeds",
                 [](hg::incremental_watershed_cut &self,
-                   const pyarray<hg::index_t> &seed_vertices,
-                   const pyarray<hg::index_t> &seed_labels) {
+                   const hg::array_view<const hg::index_t> &seed_vertices,
+                   const hg::array_view<const hg::index_t> &seed_labels) {
                     self.add_seeds(seed_vertices, seed_labels);
                 },
                 "Add seeds with given labels.",
@@ -85,7 +114,7 @@ namespace py_watershed {
 
         cls.def("_remove_seeds",
                 [](hg::incremental_watershed_cut &self,
-                   const pyarray<hg::index_t> &seed_vertices) {
+                   const hg::array_view<const hg::index_t> &seed_vertices) {
                     self.remove_seeds(seed_vertices);
                 },
                 "Remove seeds.",
@@ -96,6 +125,5 @@ namespace py_watershed {
                 "Compute and return the current vertex labeling.");
     }
 }
-
 
 

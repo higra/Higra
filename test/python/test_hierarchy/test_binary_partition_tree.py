@@ -169,5 +169,21 @@ class TestBinaryPartitionTree(unittest.TestCase):
         self.assertTrue(np.allclose(altitudes, alt_ref))
 
 
+    def test_binary_partition_tree_exponential_linkage_float32(self):
+        graph = hg.get_4_adjacency_graph((2, 3))
+        edge_weights = np.asarray((1.5, 0.25, 3, 2, 0.5, 1.25, 4), dtype=np.float32)
+        edge_weight_weights = np.asarray((1, 2, 1, 0.5, 3, 1, 2), dtype=np.float32)
+        ref_parents = (6, 9, 7, 6, 8, 7, 8, 10, 9, 10, 10)
+        refs = {0.0: (1.6666666, 3.6666667), 1.5: (1.7571046, 3.8996325), -2.0: (1.5776812, 3.213014)}
+
+        for alpha, (alt9, alt10) in refs.items():
+            tree, altitudes = hg.binary_partition_tree_exponential_linkage(graph, edge_weights, alpha,
+                                                                           edge_weight_weights)
+            self.assertTrue(np.all(tree.parents() == ref_parents))
+            self.assertTrue(altitudes.dtype == np.float32)
+            ref_altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0.25, 0.5, 1.25, alt9, alt10), dtype=np.float32)
+            self.assertTrue(np.allclose(altitudes, ref_altitudes, rtol=1e-6))
+
+
 if __name__ == '__main__':
     unittest.main()

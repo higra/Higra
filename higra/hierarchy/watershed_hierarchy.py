@@ -194,6 +194,8 @@ def watershed_hierarchy_by_attribute(graph, edge_weights, attribute_functor, can
 
     The attribute functor is a function that takes a binary partition tree and an array of altitudes as argument
     and returns an array with the node attribute values for the given tree.
+    A ``RuntimeError`` is raised if the attribute functor does not return a 1d array with one value per node
+    of the tree.
 
     Example:
 

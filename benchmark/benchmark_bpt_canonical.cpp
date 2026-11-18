@@ -28,7 +28,7 @@ struct input {
 
     explicit input(index_t side = 1024)
         : graph(side * side, 2 * side * (side - 1) + 2 * (side - 1) * (side - 1), 8),
-          weights(xt::empty<float>({2 * side * (side - 1) + 2 * (side - 1) * (side - 1)})) {
+          weights(hg::empty<float>({2 * side * (side - 1) + 2 * (side - 1) * (side - 1)})) {
         uint64_t state = 1729;
         index_t e = 0;
         auto mix = [&](uint64_t value) { fingerprint = (fingerprint ^ value) * 1099511628211ULL; };
