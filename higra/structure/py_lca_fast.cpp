@@ -12,18 +12,10 @@
 #include "../py_common.hpp"
 #include "higra/graph.hpp"
 #include "higra/structure/lca_fast.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_lca_fast {
     namespace py = pybind11;
     using namespace hg;
-
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
-    template<typename T>
-    using pyarray_1d = xt::pytensor<T, 1>;
 
     template<typename lca_t>
     struct def_lca_vertices {
@@ -31,13 +23,13 @@ namespace py_lca_fast {
         static
         void def(C &c, const char *doc) {
             c.def("lca", [](const lca_t &l,
-                            const pyarray<value_t> &vertices1,
-                            const pyarray<value_t> &vertices2) {
-                      hg_assert((xt::amin)(vertices1)() >= 0, "Vertex indices cannot be negative.");
-                      hg_assert((index_t) (index_t) (xt::amax)(vertices1)() < (index_t) l.num_elements(),
+                            const hg::array_view<const value_t> &vertices1,
+                            const hg::array_view<const value_t> &vertices2) {
+                      hg_assert(vertices1.empty() || hg::min(vertices1) >= 0, "Vertex indices cannot be negative.");
+                      hg_assert(vertices1.empty() || (index_t) hg::max(vertices1) < (index_t) l.num_elements(),
                                 "Vertex indices must be smaller than the number of vertices in the tree.");
-                      hg_assert((xt::amin)(vertices2)() >= 0, "Vertex indices cannot be negative.");
-                      hg_assert((index_t) (xt::amax)(vertices2)() < (index_t) l.num_elements(),
+                      hg_assert(vertices2.empty() || hg::min(vertices2) >= 0, "Vertex indices cannot be negative.");
+                      hg_assert(vertices2.empty() || (index_t) hg::max(vertices2) < (index_t) l.num_elements(),
                                 "Vertex indices must be smaller than the number of vertices in the tree.");
                       return l.lca(vertices1, vertices2);
                   },
@@ -49,24 +41,52 @@ namespace py_lca_fast {
 
     using namespace range_minimum_query_internal;
 
+    /*
+     * Pickling of the internal state.
+     *
+     * Format (unchanged since the first pickled versions):
+     *  - LCA state: [tree_Euler_tour_map (int64), tree_Euler_tour_depth (int64),
+     *                first_visit_in_Euler_tour (int64), rmq_state];
+     *  - sparse table state: [level_0 (uint64), level_1 (uint64), ...];
+     *  - sparse table block state: [data_size (int), block_size (int), num_blocks (int),
+     *                block_minimum_prefix (int64), block_minimum_suffix (int64), sparse table state].
+     *
+     * Arrays are returned as copies; incoming arrays are converted to the expected dtype if needed and copied.
+     */
 
-    auto get_rmq_state_to_python(const rmq_sparse_table<index_t>::internal_state<array_1d> &state) {
+    template<typename T>
+    hg::array<T> state_array_to_python(const array_1d<T> &a) {
+        return hg::array<T>(a);
+    }
+
+    template<typename T>
+    array_1d<T> state_array_from_python(const py::handle &h) {
+        py::detail::make_caster<hg::array_view<const T>> caster;
+        if (!caster.load(h, true)) {
+            throw py::cast_error("Invalid LCA state: an element cannot be converted to a 1d array.");
+        }
+        const hg::array_view<const T> &v = py::detail::cast_op<const hg::array_view<const T> &>(caster);
+        hg_assert(v.dimension() == 1, "Invalid LCA state: an element is not a 1d array.");
+        return array_1d<T>(v);
+    }
+
+    py::list get_rmq_state_to_python(const rmq_sparse_table<index_t>::internal_state &state) {
         py::list list;
         for (auto &t: state.sparse_table) {
-            list.append(std::move(t));
+            list.append(state_array_to_python(t));
         }
         return list;
     }
 
 
-    auto get_rmq_state_to_python(const rmq_sparse_table_block<index_t>::internal_state<array_1d> &state) {
+    py::list get_rmq_state_to_python(const rmq_sparse_table_block<index_t>::internal_state &state) {
         py::list list;
 
         list.append(state.data_size);
         list.append(state.block_size);
         list.append(state.num_blocks);
-        list.append(std::move(state.block_minimum_prefix));
-        list.append(std::move(state.block_minimum_suffix));
+        list.append(state_array_to_python(state.block_minimum_prefix));
+        list.append(state_array_to_python(state.block_minimum_suffix));
         list.append(get_rmq_state_to_python(state.sparse_table));
 
         return list;
@@ -78,44 +98,44 @@ namespace py_lca_fast {
     template<>
     auto get_rmq_state_from_python<range_minimum_query_internal::rmq_sparse_table<index_t>>(const py::list &list) {
 
-        std::vector<pyarray_1d<size_t>> sp;
+        std::vector<array_1d<size_t>> sp;
         for (auto &e: list) {
-            sp.push_back(e.template cast<pyarray_1d<size_t>>());
+            sp.push_back(state_array_from_python<size_t>(e));
         }
-        return range_minimum_query_internal::rmq_sparse_table<index_t>::internal_state<pyarray_1d>(sp);
+        return range_minimum_query_internal::rmq_sparse_table<index_t>::internal_state(std::move(sp));
     }
 
     template<>
     auto
     get_rmq_state_from_python<range_minimum_query_internal::rmq_sparse_table_block<index_t>>(const py::list &list) {
-        return range_minimum_query_internal::rmq_sparse_table_block<index_t>::internal_state<pyarray_1d>(
+        return range_minimum_query_internal::rmq_sparse_table_block<index_t>::internal_state(
                 list[0].template cast<index_t>(),
                 list[1].template cast<index_t>(),
                 list[2].template cast<index_t>(),
-                list[3].template cast<pyarray_1d<index_t>>(),
-                list[4].template cast<pyarray_1d<index_t>>(),
+                state_array_from_python<index_t>(list[3]),
+                state_array_from_python<index_t>(list[4]),
                 get_rmq_state_from_python<range_minimum_query_internal::rmq_sparse_table<index_t>>(
                         list[5].template cast<py::list>())
         );
     }
 
     template<typename T>
-    auto get_lca_state_to_python(const T &state) {
+    py::list get_lca_state_to_python(const T &state) {
         py::list list;
-        list.append(std::move(state.tree_Euler_tour_map));
-        list.append(std::move(state.tree_Euler_tour_depth));
-        list.append(std::move(state.first_visit_in_Euler_tour));
+        list.append(state_array_to_python(state.tree_Euler_tour_map));
+        list.append(state_array_to_python(state.tree_Euler_tour_depth));
+        list.append(state_array_to_python(state.first_visit_in_Euler_tour));
         list.append(get_rmq_state_to_python(state.rmq_state));
         return list;
     }
 
     template<typename lca_t>
     auto get_lca_state_from_python(const py::list &list) {
-        using state_type = typename lca_t::template internal_state<pyarray_1d>;
+        using state_type = typename lca_t::internal_state;
         return state_type(
-                list[0].template cast<pyarray_1d<index_t>>(),
-                list[1].template cast<pyarray_1d<index_t>>(),
-                list[2].template cast<pyarray_1d<index_t>>(),
+                state_array_from_python<index_t>(list[0]),
+                state_array_from_python<index_t>(list[1]),
+                state_array_from_python<index_t>(list[2]),
                 get_rmq_state_from_python<typename lca_t::rmq_type>(list[3])
         );
     }
@@ -169,7 +189,6 @@ namespace py_lca_fast {
 
 
     void py_init_lca_fast(pybind11::module &m) {
-        //xt::import_numpy();
 
         auto c_lca_sp = def_lca_t<lca_sparse_table>(
                 m, "LCA_rmq_sparse_table",

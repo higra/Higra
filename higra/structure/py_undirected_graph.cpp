@@ -53,9 +53,11 @@ namespace py_undirected_graph {
         static
         void def(C &c, const char *doc) {
             c.def("add_edges", [](graph_t &g,
-                                  pyarray<value_t> sources,
-                                  pyarray<value_t> targets
+                                  const hg::array_view<const value_t> &vsources,
+                                  const hg::array_view<const value_t> &vtargets
                   ) {
+                      auto sources = vsources;
+                      auto targets = vtargets;
                       hg_assert_vertex_indices(g, sources);
                       hg_assert_vertex_indices(g, targets);
                       hg::add_edges(sources, targets, g);
@@ -144,7 +146,6 @@ namespace py_undirected_graph {
     }
 
     void py_init_undirected_graph(py::module &m) {
-        //xt::import_numpy();
         auto c = py::class_<hg::undirected_graph<hg::vecS> >(m,
                                                              "UndirectedGraph",
                                                              "A class to represent sparse undirected graph as adjacency lists.",

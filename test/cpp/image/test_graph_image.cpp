@@ -107,12 +107,12 @@ namespace graph_image {
     TEST_CASE("4 adjacency graph to Khalimsky 2d", "[graph_image]") {
         auto g = get_4_adjacency_graph({4, 5});
 
-        xt::xarray<int> data{
+        hg::array<int> data{
                 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 0, 2,
                 3
         };
 
-        xt::xarray<int> ref{
+        hg::array<int> ref{
                 {0, 0, 0, 1, 0, 2, 0, 3, 0},
                 {0, 0, 0, 1, 0, 2, 0, 3, 0},
                 {0, 0, 0, 1, 0, 2, 0, 3, 0},
@@ -122,9 +122,9 @@ namespace graph_image {
                 {0, 0, 0, 0, 0, 2, 0, 3, 0}
         };
         auto r = graph_4_adjacency_2_khalimsky(g, {4, 5}, data);
-        REQUIRE(xt::allclose(ref, r));
+        REQUIRE(hg::allclose(ref, r));
 
-        xt::xarray<int> ref2{
+        hg::array<int> ref2{
                 {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
                 {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
                 {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
@@ -136,18 +136,18 @@ namespace graph_image {
                 {0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0}
         };
         auto r2 = graph_4_adjacency_2_khalimsky(g, {4, 5}, data, true);
-        REQUIRE(xt::allclose(ref2, r2));
+        REQUIRE(hg::allclose(ref2, r2));
     }
 
     TEST_CASE("Khalimsky 2d to 4 adjacency graph to ", "[graph_image]") {
         array_1d<index_t> ref_shape{4, 5};
 
-        xt::xarray<int> data{
+        hg::array<int> data{
                 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0, 0, 1, 1, 1, 2, 0, 3, 0, 0, 0, 0, 2,
                 3
         };
 
-        xt::xarray<int> ref{
+        hg::array<int> ref{
                 {0, 0, 0, 1, 0, 2, 0, 3, 0},
                 {0, 0, 0, 1, 0, 2, 0, 3, 0},
                 {0, 0, 0, 1, 0, 2, 0, 3, 0},
@@ -160,10 +160,10 @@ namespace graph_image {
         //auto & graph = std::get<0>(r);
         auto &embedding = std::get<1>(r);
         auto &weights = std::get<2>(r);
-        REQUIRE(xt::allclose(embedding.shape(), ref_shape));
-        REQUIRE(xt::allclose(data, weights));
+        REQUIRE(std::equal(embedding.shape().begin(), embedding.shape().end(), ref_shape.begin(), ref_shape.end()));
+        REQUIRE(hg::allclose(data, weights));
 
-        xt::xarray<int> ref2{
+        hg::array<int> ref2{
                 {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
                 {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
                 {0, 0, 0, 0, 1, 0, 2, 0, 3, 0, 0},
@@ -178,11 +178,11 @@ namespace graph_image {
         auto &graph2 = std::get<0>(r2);
         auto &embedding2 = std::get<1>(r2);
         auto &weights2 = std::get<2>(r2);
-        REQUIRE(xt::allclose(embedding2.shape(), ref_shape));
-        REQUIRE(xt::allclose(data, weights2));
+        REQUIRE(std::equal(embedding2.shape().begin(), embedding2.shape().end(), ref_shape.begin(), ref_shape.end()));
+        REQUIRE(hg::allclose(data, weights2));
 
         auto weights3 = khalimsky_2_graph_4_adjacency(ref2, graph2, embedding2, true);
-        REQUIRE(xt::allclose(data, weights3));
+        REQUIRE(hg::allclose(data, weights3));
     }
 
     TEST_CASE("get_bipartite_matching_graph_contour_image_2d ", "[graph_image]") {
@@ -206,10 +206,10 @@ namespace graph_image {
 
         REQUIRE(num_nodes1 == 2);
         REQUIRE(num_nodes2 == 2);
-        REQUIRE(xt::allclose(sources, xt::xarray<index_t>{0, 1, 1}));
-        REQUIRE(xt::allclose(targets, xt::xarray<index_t>{2, 2, 3}));
-        REQUIRE(xt::allclose(weights, xt::xarray<double>{0, 1, 1}));
-        REQUIRE(xt::allclose(node_map, xt::xarray<index_t>{3, 7, 3, 6}));
+        REQUIRE(hg::allclose(sources, hg::array<index_t>{0, 1, 1}));
+        REQUIRE(hg::allclose(targets, hg::array<index_t>{2, 2, 3}));
+        REQUIRE(hg::allclose(weights, hg::array<double>{0, 1, 1}));
+        REQUIRE(hg::allclose(node_map, hg::array<index_t>{3, 7, 3, 6}));
     }
 
     TEST_CASE("get_bipartite_matching_graph_contour_image_2d 2", "[graph_image]") {
@@ -233,9 +233,9 @@ namespace graph_image {
 
         REQUIRE(num_nodes1 == 2);
         REQUIRE(num_nodes2 == 2);
-        REQUIRE(xt::allclose(sources, xt::xarray<index_t>{0, 0, 1, 1}));
-        REQUIRE(xt::allclose(targets, xt::xarray<index_t>{2, 3, 2, 3}));
-        REQUIRE(xt::allclose(weights, xt::xarray<double>{0, sqrt(2), 1, 1}));
-        REQUIRE(xt::allclose(node_map, xt::xarray<index_t>{3, 7, 3, 6}));
+        REQUIRE(hg::allclose(sources, hg::array<index_t>{0, 0, 1, 1}));
+        REQUIRE(hg::allclose(targets, hg::array<index_t>{2, 3, 2, 3}));
+        REQUIRE(hg::allclose(weights, hg::array<double>{0, sqrt(2), 1, 1}));
+        REQUIRE(hg::allclose(node_map, hg::array<index_t>{3, 7, 3, 6}));
     }
 }

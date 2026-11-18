@@ -11,8 +11,6 @@
 #include "py_common.hpp"
 #include "py_sorting.hpp"
 #include "higra/sorting.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #ifdef HG_USE_TBB
     #include <memory>
     #include <oneapi/tbb/global_control.h>
@@ -20,8 +18,6 @@
 #endif
 namespace py_sorting {
 
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
     namespace py = pybind11;
 
 
@@ -29,8 +25,9 @@ namespace py_sorting {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_sort", [](pyarray<value_t> &array) {
-                      hg::sort(array);
+            c.def("_sort", [](const hg::array_view<value_t> &array) {
+                      auto xarray = array;
+                      hg::sort(xarray);
                   },
                   doc,
                   py::arg("array"));
@@ -41,8 +38,9 @@ namespace py_sorting {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_stable_sort", [](pyarray<value_t> &array) {
-                      hg::stable_sort(array);
+            c.def("_stable_sort", [](const hg::array_view<value_t> &array) {
+                      auto xarray = array;
+                      hg::stable_sort(xarray);
                   },
                   doc,
                   py::arg("array"));
@@ -53,7 +51,7 @@ namespace py_sorting {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_arg_sort", [](pyarray<value_t> &array) {
+            c.def("_arg_sort", [](const hg::array_view<const value_t> &array) {
                       return hg::arg_sort(array);
                   },
                   doc,
@@ -65,7 +63,7 @@ namespace py_sorting {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_stable_arg_sort", [](pyarray<value_t> &array) {
+            c.def("_stable_arg_sort", [](const hg::array_view<const value_t> &array) {
                       return hg::stable_arg_sort(array);
                   },
                   doc,

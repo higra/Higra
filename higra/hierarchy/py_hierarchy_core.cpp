@@ -11,12 +11,8 @@
 #include "py_hierarchy_core.hpp"
 #include "../py_common.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"
 namespace py_hierarchy_core {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -25,7 +21,8 @@ namespace py_hierarchy_core {
         template<typename value_t, typename C>
         static
         void def(C &m, const char *doc) {
-            m.def("_quasi_flat_zone_hierarchy", [](const graph_t &graph, const pyarray<value_t> &edge_weights) {
+            m.def("_quasi_flat_zone_hierarchy", [](const graph_t &graph,
+                                                   const hg::array_view<const value_t> &edge_weights) {
                       auto res = hg::quasi_flat_zone_hierarchy(graph, edge_weights);
                       return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
                   },
@@ -53,31 +50,34 @@ namespace py_hierarchy_core {
     }
 
     void py_init_hierarchy_core(pybind11::module &m) {
-        //xt::import_numpy();
 
-        m.def("_bpt_canonical", [](const xt::pytensor<hg::index_t, 1> &sources,
-                                   const xt::pytensor<hg::index_t, 1> &targets,
-                                   const xt::pytensor<hg::index_t, 1> &sorted_edge_indices,
+        m.def("_bpt_canonical", [](const hg::array_view<const hg::index_t> &sources,
+                                   const hg::array_view<const hg::index_t> &targets,
+                                   const hg::array_view<const hg::index_t> &sorted_edge_indices,
                                    const hg::index_t num_vertices) {
+            auto xsources = py_args::fixed_rank<1>(sources, "sources");
+            auto xtargets = py_args::fixed_rank<1>(targets, "targets");
+            auto xsorted_edge_indices = py_args::fixed_rank<1>(sorted_edge_indices, "sorted_edge_indices");
             hg_assert(num_vertices >= 0, "Number of vertices must be a positive number.");
-            hg_assert((xt::amin)(sources)() >= 0, "Source vertex index cannot be negative.");
-            hg_assert((xt::amin)(targets)() >= 0, "Target vertex index cannot be negative.");
-            hg_assert((xt::amin)(sorted_edge_indices)() >= 0, "Edge index cannot be negative.");
-            hg_assert((xt::amax)(sources)() < num_vertices,
+            hg_assert(sources.empty() || hg::min(sources) >= 0, "Source vertex index cannot be negative.");
+            hg_assert(targets.empty() || hg::min(targets) >= 0, "Target vertex index cannot be negative.");
+            hg_assert(sorted_edge_indices.empty() || hg::min(sorted_edge_indices) >= 0,
+                      "Edge index cannot be negative.");
+            hg_assert(sources.empty() || hg::max(sources) < num_vertices,
                       "Source vertex index must be less than the number of vertices.");
-            hg_assert((xt::amax)(targets)() < num_vertices,
+            hg_assert(targets.empty() || hg::max(targets) < num_vertices,
                       "Target vertex index must be less than the number of vertices.");
-            hg_assert((xt::amax)(sorted_edge_indices)() < (hg::index_t) sorted_edge_indices.size(),
+            hg_assert(sorted_edge_indices.empty() || hg::max(sorted_edge_indices) < sorted_edge_indices.size(),
                       "Edge index must be smaller than the number of edges in the graph/tree.");
-            auto res = hg::hierarchy_core_internal::bpt_canonical_from_sorted_edges(sources, targets,
-                                                                                    sorted_edge_indices,
+            auto res = hg::hierarchy_core_internal::bpt_canonical_from_sorted_edges(xsources, xtargets,
+                                                                                    xsorted_edge_indices,
                                                                                     num_vertices);
             return py::make_tuple(std::move(res.first), std::move(res.second));
         });
 
         add_simplified_tree(m);
         m.def("_simplify_tree",
-              [](const hg::tree &t, pyarray<bool> &criterion, bool process_leaves) {
+              [](const hg::tree &t, const hg::array_view<const bool> &criterion, bool process_leaves) {
                   return hg::simplify_tree(t, criterion, process_leaves);
               },
               "",

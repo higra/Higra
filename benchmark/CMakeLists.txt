@@ -17,12 +17,12 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -ffast-math -Wunused-parameter -Wextra -Wreorder")
-    CHECK_CXX_COMPILER_FLAG("-std=c++14" HAS_CPP14_FLAG)
+    CHECK_CXX_COMPILER_FLAG("-std=c++17" HAS_CPP17_FLAG)
 
-    if (HAS_CPP14_FLAG)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+    if (HAS_CPP17_FLAG)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
     else ()
-        message(FATAL_ERROR "Unsupported compiler -- xtensor requires C++14 support!")
+        message(FATAL_ERROR "Unsupported compiler -- Higra requires C++17 support!")
     endif ()
 
     # Enable link time optimization and set the default symbol
@@ -85,6 +85,21 @@ add_executable(${BENCHMARK_TARGET} ${FILES_BENCHMARK})
 target_compile_definitions(${BENCHMARK_TARGET} PRIVATE HG_USE_TBB)
 target_link_libraries(${BENCHMARK_TARGET} benchmark::benchmark TBB::tbb)
 
+
+# Array library (higra/structure/array/): benchmark_array with TBB (built-in loops run in
+# parallel above HG_ARRAY_PARALLEL_THRESHOLD) and benchmark_array_seq without.
+foreach (variant IN ITEMS tbb seq)
+    if (variant STREQUAL "tbb")
+        set(ARRAY_BENCHMARK_TARGET benchmark_array)
+    else ()
+        set(ARRAY_BENCHMARK_TARGET benchmark_array_seq)
+    endif ()
+    add_executable(${ARRAY_BENCHMARK_TARGET} main.cpp benchmark_array.cpp)
+    target_link_libraries(${ARRAY_BENCHMARK_TARGET} benchmark::benchmark TBB::tbb)
+    if (variant STREQUAL "tbb")
+        target_compile_definitions(${ARRAY_BENCHMARK_TARGET} PRIVATE HG_USE_TBB)
+    endif ()
+endforeach ()
 
 add_custom_target(benchmark_exe
         COMMAND benchmark_higra

@@ -11,19 +11,13 @@
 #include "py_common.hpp"
 
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "higra/graph.hpp"
 #include "higra/hierarchy/common.hpp"
 #include <string>
     namespace py_common_hierarchy {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
-
     using namespace hg;
     namespace py = pybind11;
 
     void py_init_common_hierarchy(pybind11::module &m) {
-        //xt::import_numpy();
     }
 }

@@ -11,12 +11,8 @@
 #include "py_contour_2d.hpp"
 
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "higra/image/contour_2d.hpp"
 namespace py_contour_2d {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     using namespace hg;
     namespace py = pybind11;
@@ -34,7 +30,7 @@ namespace py_contour_2d {
                   auto transform = [](const std::pair<index_t, point_2d_f> &e) {
                       return std::make_pair(e.first, std::make_pair(e.second[0], e.second[1]));
                   };
-                  // ::TODO:: remove this stupid transorm iterator when xtensor python supports it
+                  // ::TODO:: remove this transform iterator when points can be converted to Python directly
                   using transform_it_t = transform_forward_iterator<
                           decltype(transform),
                           contour_2d_internal::contour_segment_2d_iterator<point_2d_f>,
@@ -45,16 +41,21 @@ namespace py_contour_2d {
               "Iterator on the contour elements of the contour segment. ");
         c.def("__len__", &class_t::size, "Number of elements in the contour segment.");
         c.def("__getitem__", [](class_t &c, index_t i) {
-            // ::TODO:: remove this stupid thing when xtensor python supports it
+            // ::TODO:: return the element directly when points can be converted to Python
             const auto &e = c[i];
             return std::make_pair(e.first, std::make_pair(e.second[0], e.second[1]));
         });
-        // ::TODO:: uncomment when xtensor python supports it
+        // ::TODO:: uncomment when points can be converted to Python
         //c.def("first", &class_t::first, "First element of the contour segment.");
         //c.def("last", &class_t::last, "First element of the contour segment.");
         c.def("norm", &class_t::norm, "Distance between first and last elements of the contour segment.");
         c.def("angle", &class_t::angle, "Angle of the vector (last()-first()) in [-pi; pi].");
-        c.def("distance_to_point", &class_t::distance_to_point,
+        c.def("distance_to_point", [](class_t &c, hg::array_view<const double> point) {
+                  if (point.dimension() != 1 || point.size() != 2) {
+                      throw py::type_error("distance_to_point(): the argument 'point' must be a 1d array of 2 values.");
+                  }
+                  return c.distance_to_point(point_2d_f{{point(0), point(1)}});
+              },
               "Distance between the given point and the line "
               "defined by the fist and last element of the contour segment.",
               py::arg("point"));
@@ -124,7 +125,7 @@ namespace py_contour_2d {
         void def(pybind11::module &m, const char *doc) {
             m.def("fit_contour_2d", [](const hg::ugraph &graph,
                                        const std::vector<size_t> &shape,
-                                       const pyarray<T> &weights) {
+                                       const hg::array_view<const T> &weights) {
                       hg::embedding_grid_2d embedding(shape);
                       return hg::fit_contour_2d(graph, embedding, weights);
                   },
@@ -136,7 +137,6 @@ namespace py_contour_2d {
     };
 
     void py_init_contour_2d(pybind11::module &m) {
-        //xt::import_numpy();
         py_init_contour_segment_2d(m);
         py_init_polyline_contour_2d(m);
         py_init_contour_2d_impl(m);
@@ -147,8 +147,8 @@ namespace py_contour_2d {
 
         m.def("_rag_2d_vertex_perimeter_and_edge_length",
               [](const ugraph &rag,
-                 const pyarray<index_t> &vertex_map,
-                 const pyarray<index_t> &edge_map,
+                 const hg::array_view<const index_t> &vertex_map,
+                 const hg::array_view<const index_t> &edge_map,
                  const std::vector<size_t> &shape,
                  const ugraph &graph,
                  double epsilon = 0.1,

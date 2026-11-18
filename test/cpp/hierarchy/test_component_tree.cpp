@@ -13,7 +13,6 @@
 #include "higra/attribute/tree_attribute.hpp"
 #include "higra/image/graph_image.hpp"
 #include "higra/algo/tree.hpp"
-#include "xtensor/containers/xadapt.hpp"
 
 using namespace hg;
 using namespace std;
@@ -26,7 +25,7 @@ namespace binary_partition_tree {
                                          7, 5, 6, 8,
                                          2, 3, 4, 1,
                                          9, 8, 6, 7});
-        array_1d<index_t> sorted_vertex_indices = xt::arange(num_vertices(graph));
+        array_1d<index_t> sorted_vertex_indices = hg::arange<index_t>(num_vertices(graph));
         std::stable_sort(sorted_vertex_indices.begin(), sorted_vertex_indices.end(),
                          [&vertex_weights](index_t i, index_t j) { return vertex_weights[i] < vertex_weights[j]; });
         auto parents = component_tree_internal::pre_tree_construction(graph, sorted_vertex_indices);
@@ -44,7 +43,7 @@ namespace binary_partition_tree {
                                          7, 5, 6, 8,
                                          2, 3, 4, 1,
                                          9, 8, 6, 7});
-        array_1d<index_t> sorted_vertex_indices = xt::arange(num_vertices(graph));
+        array_1d<index_t> sorted_vertex_indices = hg::arange<index_t>(num_vertices(graph));
         std::stable_sort(sorted_vertex_indices.begin(), sorted_vertex_indices.end(),
                          [&vertex_weights](index_t i, index_t j) { return vertex_weights[i] < vertex_weights[j]; });
 
@@ -68,7 +67,7 @@ namespace binary_partition_tree {
                                          7, 5, 6, 8,
                                          2, 3, 4, 1,
                                          9, 8, 6, 7});
-        array_1d<index_t> sorted_vertex_indices = xt::arange(num_vertices(graph));
+        array_1d<index_t> sorted_vertex_indices = hg::arange<index_t>(num_vertices(graph));
         std::stable_sort(sorted_vertex_indices.begin(), sorted_vertex_indices.end(),
                          [&vertex_weights](index_t i, index_t j) { return vertex_weights[i] < vertex_weights[j]; });
 
@@ -79,8 +78,8 @@ namespace binary_partition_tree {
 
         auto res = component_tree_internal::expand_canonized_parent_relation(parents, vertex_weights,
                                                                              sorted_vertex_indices);
-        auto new_parents = xt::adapt(res.first, {res.first.size()});
-        auto new_altitudes = xt::adapt(res.second, {res.second.size()});
+        array_1d<index_t> new_parents(array_view<const index_t>(res.first.data(), {res.first.size()}));
+        array_1d<double> new_altitudes(array_view<const double>(res.second.data(), {res.second.size()}));
 
         array_1d<index_t> expected_parents({28, 27, 24, 24,
                                             20, 23, 22, 18,
@@ -135,7 +134,7 @@ namespace binary_partition_tree {
                                          2, 3, 4, 1,
                                          9, 8, 6, 7});
 
-        vertex_weights *= -1.;
+        vertex_weights = hg_test::multiplied(vertex_weights, -1.);
 
         auto res = component_tree_min_tree(graph, vertex_weights);
         auto &tree = res.tree;
@@ -156,7 +155,7 @@ namespace binary_partition_tree {
                                              8., 8., 7., 7., 6.,
                                              6., 5., 4., 3., 2.,
                                              1., 0.});
-        expected_altitudes *= -1.;
+        expected_altitudes = hg_test::multiplied(expected_altitudes, -1.);
         REQUIRE((expected_altitudes == altitudes));
     }
 
@@ -173,7 +172,8 @@ namespace binary_partition_tree {
         auto &altitudes = res.altitudes;
 
         auto area = attribute_area(tree);
-        auto filtered_weights = reconstruct_leaf_data(tree, altitudes, area <= 4);
+        auto filtered_weights = reconstruct_leaf_data(tree, altitudes,
+                                                      hg::map([](index_t a) { return a <= 4; }, area));
 
         array_1d<double> expected_filtered_weights
                 ({-5, 2, 2, 3, 3,

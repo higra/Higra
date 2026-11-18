@@ -69,11 +69,11 @@ namespace test_sorting {
     TEST_CASE("sort array lexicographic", "[sorting]") {
         array_2d<int> a1 = {{2, 2, 1, 1, 3},
                             {2, 1, 1, 2, 0}};
-        auto i1 = hg::arg_sort(xt::transpose(a1));
+        auto i1 = hg::arg_sort(hg_test::transpose<int>(a1));
         array_1d<int> ref = {2, 3, 1, 0, 4};
         REQUIRE((i1 == ref));
 
-        auto i2 = hg::arg_sort(xt::transpose(a1), std::greater<int>());
+        auto i2 = hg::arg_sort(hg_test::transpose<int>(a1), std::greater<int>());
         array_1d<int> ref2 = {4, 0, 1, 3, 2};
         REQUIRE((i2 == ref2));
     }
@@ -81,18 +81,18 @@ namespace test_sorting {
     TEST_CASE("stable sort array lexicographic", "[sorting]") {
         array_2d<int> a1 = {{2, 2, 1, 1, 3},
                             {2, 2, 2, 1, 0}};
-        auto i1 = hg::arg_sort(xt::transpose(a1));
+        auto i1 = hg::arg_sort(hg_test::transpose<int>(a1));
         array_1d<int> ref = {3, 2, 0, 1, 4};
         REQUIRE((i1 == ref));
 
-        auto i2 = hg::arg_sort(xt::transpose(a1), std::greater<int>());
+        auto i2 = hg::arg_sort(hg_test::transpose<int>(a1), std::greater<int>());
         array_1d<int> ref2 = {4, 0, 1, 2, 3};
         REQUIRE((i2 == ref2));
     }
 
     TEST_CASE("stable arg sort large array scalar", "[sorting]") {
         constexpr index_t size = 8192;
-        array_1d<int> a = xt::arange<int>(size) % 23;
+        array_1d<int> a = hg::map([](int v) { return v % 23; }, hg::arange<int>(size));
         auto indices = hg::stable_arg_sort(a);
 
         for (index_t i = 1; i < size; ++i) {

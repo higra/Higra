@@ -28,8 +28,8 @@ namespace test_tree_fusion {
 
         array_1d<int> expected{2, 2, 2, 3, 3};
 
-        auto diff = xt::eval(expected - res);
-        REQUIRE(xt::sum(diff - diff(0))() == 0);
+        auto diff = hg::map([](int a, index_t b) { return (index_t) a - b; }, expected, res);
+        REQUIRE(hg::sum(hg::map([&diff](index_t d) { return d - diff(0); }, diff)) == 0);
     }
 
     TEST_CASE("tree_fusion_depth_map 2", "[tree_fusion]") {
@@ -47,8 +47,8 @@ namespace test_tree_fusion {
 
         array_1d<int> expected{3, 2, 1, 2};
 
-        auto diff = xt::eval(expected - res);
-        REQUIRE(xt::sum(diff - diff(0))() == 0);
+        auto diff = hg::map([](int a, index_t b) { return (index_t) a - b; }, expected, res);
+        REQUIRE(hg::sum(hg::map([&diff](index_t d) { return d - diff(0); }, diff)) == 0);
     }
 
     TEST_CASE("tree_fusion_depth_map 3", "[tree_fusion]") {
@@ -81,8 +81,8 @@ namespace test_tree_fusion {
                                2, 2, 2, 2, 1, 1, 1,
                                1, 1, 1, 1, 1, 0, 0};
 
-        auto diff = xt::eval(expected - res);
-        REQUIRE(xt::sum(diff - diff(0))() == 0);
+        auto diff = hg::map([](int a, index_t b) { return (index_t) a - b; }, expected, res);
+        REQUIRE(hg::sum(hg::map([&diff](index_t d) { return d - diff(0); }, diff)) == 0);
     }
 
     TEST_CASE("tree_fusion_depth_map 4", "[tree_fusion]") {
@@ -95,8 +95,8 @@ namespace test_tree_fusion {
         auto res = tree_fusion_depth_map(std::vector<tree *>{&t1, &t2});
         array_1d<int> expected{0, 3, 2, 2, 2, 3};
 
-        auto diff = xt::eval(expected - res);
-        REQUIRE(xt::sum(diff - diff(0))() == 0);
+        auto diff = hg::map([](int a, index_t b) { return (index_t) a - b; }, expected, res);
+        REQUIRE(hg::sum(hg::map([&diff](index_t d) { return d - diff(0); }, diff)) == 0);
     }
 
 }

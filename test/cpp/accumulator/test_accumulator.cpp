@@ -23,7 +23,7 @@ namespace accumulator {
         auto out_shape = acc_t::get_output_shape(data_shape);
         if (out_shape.empty())
             out_shape.push_back(1);
-        hg::array_nd<double> storage = hg::array_nd<double>::from_shape(out_shape);
+        hg::array_nd<double> storage = hg::array_nd<double>::from_shape(hg::array_shape::from(out_shape));
         auto acc = accFactory.template make_accumulator<vec>(storage);
         acc.initialize();
 
@@ -50,17 +50,17 @@ namespace accumulator {
 
     TEST_CASE("accumulator scalar", "[accumulator]") {
         hg::array_nd<double> values{-5, 10, -20, 5, 2, -2};
-        double r = applyAccG(values, hg::accumulator_max())();
+        double r = applyAccG(values, hg::accumulator_max())(0);
         REQUIRE(r == 10.0);
-        REQUIRE((applyAccG(values, hg::accumulator_min()))() == -20);
-        REQUIRE((applyAccG(values, hg::accumulator_sum()))() == -10);
-        REQUIRE((applyAccG(values, hg::accumulator_counter()))() == 6);
-        REQUIRE((applyAccG(values, hg::accumulator_first()))() == -5);
-        REQUIRE((applyAccG(values, hg::accumulator_last()))() == -2);
-        REQUIRE((applyAccG(values, hg::accumulator_argmin()))() == 2);
-        REQUIRE((applyAccG(values, hg::accumulator_argmax()))() == 1);
-        REQUIRE((isclose(applyAccG(values, hg::accumulator_mean())(), (-5 + 10 + -20 + 5 + 2 + -2) / 6.0)));
-        REQUIRE((isclose(applyAccG(values, hg::accumulator_prod())(), -5 * 10 * -20 * 5 * 2 * -2)));
+        REQUIRE((applyAccG(values, hg::accumulator_min()))(0) == -20);
+        REQUIRE((applyAccG(values, hg::accumulator_sum()))(0) == -10);
+        REQUIRE((applyAccG(values, hg::accumulator_counter()))(0) == 6);
+        REQUIRE((applyAccG(values, hg::accumulator_first()))(0) == -5);
+        REQUIRE((applyAccG(values, hg::accumulator_last()))(0) == -2);
+        REQUIRE((applyAccG(values, hg::accumulator_argmin()))(0) == 2);
+        REQUIRE((applyAccG(values, hg::accumulator_argmax()))(0) == 1);
+        REQUIRE((isclose(applyAccG(values, hg::accumulator_mean())(0), (-5 + 10 + -20 + 5 + 2 + -2) / 6.0)));
+        REQUIRE((isclose(applyAccG(values, hg::accumulator_prod())(0), -5 * 10 * -20 * 5 * 2 * -2)));
 
     }
 
@@ -74,27 +74,27 @@ namespace accumulator {
 
         hg::array_nd<double> ref1{{3, 12},
                                   {1, 5}};
-        REQUIRE(xt::allclose(res1, ref1));
+        REQUIRE(hg::allclose(res1, ref1));
 
         auto res2 = applyAccG(values, hg::accumulator_mean());
         hg::array_nd<double> ref2{{1,       4},
                                   {1.0 / 3, 5.0 / 3}};
-        REQUIRE(xt::allclose(res2, ref2));
+        REQUIRE(hg::allclose(res2, ref2));
 
         auto res3 = applyAccG(values, hg::accumulator_prod());
         hg::array_nd<double> ref3{{0,  18},
                                   {-1, -8}};
-        REQUIRE(xt::allclose(res3, ref3));
+        REQUIRE(hg::allclose(res3, ref3));
 
         auto res4 = applyAccG(values, hg::accumulator_first());
         hg::array_nd<double> ref4{{0, 1},
                                   {1, 2}};
-        REQUIRE(xt::allclose(res4, ref4));
+        REQUIRE(hg::allclose(res4, ref4));
 
         auto res5 = applyAccG(values, hg::accumulator_last());
         hg::array_nd<double> ref5{{-2, 2},
                                   {1,  -1}};
-        REQUIRE(xt::allclose(res5, ref5));
+        REQUIRE(hg::allclose(res5, ref5));
 
         hg::array_nd<double> values2{{0,  1},
                                      {-1, -2},
@@ -103,10 +103,10 @@ namespace accumulator {
                                      {-2, 10},
                                      {1,  -1}};
 
-        auto res6 = applyAccG(values2, hg::accumulator_argmin())();
+        auto res6 = applyAccG(values2, hg::accumulator_argmin())(0);
         REQUIRE(res6 == 1);
 
-        auto res7 = applyAccG(values2, hg::accumulator_argmax())();
+        auto res7 = applyAccG(values2, hg::accumulator_argmax())(0);
         REQUIRE(res7 == 2);
 
     }

@@ -12,8 +12,6 @@
 #include "../py_common.hpp"
 #include "higra/assessment/fragmentation_curve.hpp"
 #include "higra/assessment/partition.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_fragmentation_curve {
     using namespace hg;
@@ -23,16 +21,20 @@ namespace py_fragmentation_curve {
         template<typename value_type, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def(py::init<const hg::tree &,
-                          const xt::pyarray<value_type> &,
-                          optimal_cut_measure,
-                          const xt::pytensor<index_t, 1> &,
-                          hg::size_t>(),
+            c.def(py::init([](const hg::tree &tree,
+                              const hg::array_view<const value_type> &ground_truth,
+                              optimal_cut_measure measure,
+                              const hg::array_view<const index_t> &vertex_map,
+                              hg::size_t max_regions) {
+                      auto xvertex_map = py_args::fixed_rank<1>(vertex_map, "vertex_map");
+                      return assesser_fragmentation_optimal_cut(tree, ground_truth, measure,
+                                                                xvertex_map, max_regions);
+                  }),
                   doc,
                   py::arg("tree"),
                   py::arg("ground_truth"),
                   py::arg("optimal_cut_measure") = hg::optimal_cut_measure::BCE,
-                  py::arg("vertex_map") = xt::pytensor<index_t, 1>{},
+                  py::arg("vertex_map") = hg::array<index_t>{0},
                   py::arg("max_regions") = 200);
         }
     };
@@ -44,12 +46,15 @@ namespace py_fragmentation_curve {
         void def(C &c, const char *doc) {
             c.def("_assess_fragmentation_horizontal_cut",
                   [](const tree_t &tree,
-                     const xt::pyarray<value_type> &altitudes,
-                     const xt::pyarray<index_t> &ground_truth,
+                     const hg::array_view<const value_type> &valtitudes,
+                     const hg::array_view<const index_t> &vground_truth,
                      hg::partition_measure measure,
-                     const xt::pytensor<index_t, 1> &vertex_map,
+                     const hg::array_view<const index_t> &vvertex_map,
                      hg::size_t max_regions
                   ) {
+                      auto vertex_map = py_args::fixed_rank<1>(vvertex_map, "vertex_map");
+                      auto altitudes = valtitudes;
+                      auto ground_truth = vground_truth;
                       switch (measure) {
                           case partition_measure::DHamming:
                               return hg::assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth,
@@ -76,13 +81,12 @@ namespace py_fragmentation_curve {
                   py::arg("altitudes"),
                   py::arg("ground_truth"),
                   py::arg("optimal_cut_measure"),
-                  py::arg("vertex_map") = xt::pytensor<index_t, 1>{},
+                  py::arg("vertex_map") = hg::array<index_t>{0},
                   py::arg("max_regions") = 200);
         }
     };
 
     void py_init_fragmentation_curve(pybind11::module &m) {
-        //xt::import_numpy();
 
         using fg_t = fragmentation_curve<double>;
         py::class_<fg_t>(m,

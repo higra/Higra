@@ -105,6 +105,11 @@ class IncrementalWatershedCut:
     :func:`get_labeling` is :math:`\\mathcal{O}(1)` (the labeling is
     maintained incrementally).
 
+    If Higra is built with parallel support (TBB), the relabeling performed by
+    :func:`add_seeds` and :func:`remove_seeds` can use several threads. The result
+    does not depend on the number of threads. See :func:`set_max_concurrency`,
+    :func:`set_minimum_parallel_front_size` and :func:`set_num_parallel_hops`.
+
     Reference:
 
         Q. Lebon, J. Lefevre, J. Cousty, B. Perret.
@@ -116,7 +121,7 @@ class IncrementalWatershedCut:
     """
 
     def __init__(self, graph, edge_weights):
-        
+
         tree, _ = hg.bpt_canonical(graph, edge_weights, compute_mst=True)
         mst = hg.CptBinaryHierarchy.get_mst(tree)
 
@@ -125,36 +130,92 @@ class IncrementalWatershedCut:
 
     def set_minimum_parallel_front_size(self, minimum_parallel_front_size):
         """
-        Set the value of m_minimum_parallel_front_size.
+        Set the minimum size of the propagation front for parallel relabeling.
 
-        :param minimum_parallel_front_size minimum breadth for the parallel algorithm (index_t)
+        When seeds are added or removed, labels are propagated from a front of vertices.
+        The propagation is distributed between threads only while the front contains more
+        than :attr:`minimum_parallel_front_size` vertices; smaller fronts are processed
+        sequentially. The default value is 200.
+
+        If Higra was built without parallel support (TBB), this function has no effect
+        and logs a warning.
+
+        :param minimum_parallel_front_size: minimum number of vertices in the front (positive integer)
+        :raises ValueError: if :attr:`minimum_parallel_front_size` is not positive
         """
         if minimum_parallel_front_size <= 0:
             raise ValueError("minimum_parallel_front_size must be positive.")
 
         self._impl._set_minimum_parallel_front_size(minimum_parallel_front_size)
 
-    def set_num_parrallel_hops(self, num_parallel_hops):
+    def get_minimum_parallel_front_size(self):
         """
-        Set the value of m_num_parrallel_hops
-        
-        :param num_parrallel_hops parallel depth for the parallel algorithm (index_t)
+        Minimum size of the propagation front for parallel relabeling.
+
+        See :func:`set_minimum_parallel_front_size`.
+
+        :return: a positive integer
+        """
+        return self._impl._get_minimum_parallel_front_size()
+
+    def set_num_parallel_hops(self, num_parallel_hops):
+        """
+        Set the number of propagation steps that each thread performs on its part of the
+        front before the fronts of all threads are merged and divided again.
+
+        Larger values reduce synchronization between threads but may balance the work less
+        evenly. The default value is 10.
+
+        If Higra was built without parallel support (TBB), this function has no effect
+        and logs a warning.
+
+        :param num_parallel_hops: number of independent propagation steps (positive integer)
+        :raises ValueError: if :attr:`num_parallel_hops` is not positive
         """
         if num_parallel_hops <= 0:
             raise ValueError("num_parallel_hops must be positive.")
 
-        self._impl._set_num_parrallel_hops(num_parallel_hops)
+        self._impl._set_num_parallel_hops(num_parallel_hops)
+
+    def get_num_parallel_hops(self):
+        """
+        Number of propagation steps that each thread performs independently.
+
+        See :func:`set_num_parallel_hops`.
+
+        :return: a positive integer
+        """
+        return self._impl._get_num_parallel_hops()
 
     def set_max_concurrency(self, maximum_concurrency):
         """
-        Set the value of m_maximum_concurrency
-        
-        :param maximum_concurrency maximum number of processors to use (index_t)
+        Set the maximum number of threads used to relabel the vertices.
+
+        A value of 1 disables parallel relabeling. Values larger than the number of
+        threads available to Higra are reduced to that number, which is also the
+        default value.
+
+        If Higra was built without parallel support (TBB), this function has no effect
+        and logs a warning: relabeling is always sequential.
+
+        :param maximum_concurrency: maximum number of threads (positive integer)
+        :raises ValueError: if :attr:`maximum_concurrency` is not positive
         """
         if maximum_concurrency <= 0:
             raise ValueError("maximum_concurrency must be positive.")
 
         self._impl._set_max_concurrency(maximum_concurrency)
+
+    def get_max_concurrency(self):
+        """
+        Maximum number of threads used to relabel the vertices.
+
+        See :func:`set_max_concurrency`. Always 1 if Higra was built without parallel
+        support (TBB).
+
+        :return: a positive integer
+        """
+        return self._impl._get_max_concurrency()
 
     def add_seeds(self, seed_vertices, seed_labels):
         """
@@ -172,15 +233,15 @@ class IncrementalWatershedCut:
         seed_labels = np.asarray(seed_labels, dtype=np.int64).ravel()
         if seed_vertices.size != seed_labels.size:
             raise ValueError("seed_vertices and seed_labels must have the same size.")
-        
+
         # assert that seed labels are non-zero
         if np.any(seed_labels == 0):
             raise ValueError("seed_labels must be non-zero (0 is reserved for background).")
-        
+
         # assert that seed vertices are valid indices
         if np.any(seed_vertices < 0) or np.any(seed_vertices >= self._graph.num_vertices()):
             raise ValueError("seed_vertices must be valid vertex indices in the graph.")
-        
+
         self._impl._add_seeds(seed_vertices, seed_labels)
 
     def remove_seeds(self, seed_vertices):
@@ -192,7 +253,7 @@ class IncrementalWatershedCut:
         seed_vertices = np.asarray(seed_vertices, dtype=np.int64).ravel()
         if seed_vertices.size == 0:
             return
-        
+
         # assert that seed vertices are valid indices
         if np.any(seed_vertices < 0) or np.any(seed_vertices >= self._graph.num_vertices()):
             raise ValueError("seed_vertices must be valid vertex indices in the graph.")

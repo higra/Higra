@@ -17,7 +17,6 @@
 #include <vector>
 #include <utility>
 
-#include "xtensor/containers/xarray.hpp"
 #include "embedding.hpp"
 
 namespace hg {
@@ -119,8 +118,8 @@ namespace hg {
 
 
                 for (const auto &n: m_neighbours) {
-                    m_safe_lower_bound = xt::minimum(m_safe_lower_bound, n);
-                    m_safe_upper_bound = xt::maximum(m_safe_upper_bound, n);
+                    m_safe_lower_bound = hg::min(m_safe_lower_bound, n);
+                    m_safe_upper_bound = hg::max(m_safe_upper_bound, n);
 
                 }
                 bool safe_area_non_empty = true;
@@ -138,7 +137,7 @@ namespace hg {
                     point<index_t, embedding_t::_dim> ref = m_safe_lower_bound;
                     index_t ref_index = m_embedding.grid2lin(ref);
                     for (const auto &n: m_neighbours) {
-                        index_t n_index = m_embedding.grid2lin(xt::eval(ref + n));
+                        index_t n_index = m_embedding.grid2lin(ref + n);
                         m_relative_neighbours.push_back(n_index - ref_index);
                     }
                 }

@@ -13,15 +13,7 @@
 
 #include "higra/graph.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
-#include "xtensor/containers/xarray.hpp"
-#include "xtensor/containers/xtensor.hpp"
-#include "xtensor/views/xview.hpp"
-#include "xtensor/generators/xgenerator.hpp"
-#include "xtensor/generators/xrandom.hpp"
-#include "xtensor/xstrided_view.hpp"
-#include "xtensor/xeval.hpp"
 
-using namespace xt;
 using namespace hg;
 
 std::size_t min_tree_size = 10;
@@ -34,9 +26,9 @@ static void BM_tree_accumulate_parallel_scalar_cstyle(benchmark::State &state) {
         state.PauseTiming();
 
         std::size_t size = state.range(0);
-        xt::random::seed(42);
+        bench_utils::random_seed(42);
         auto t = get_complete_binary_tree(size);
-        auto input = eval(random::randn<double>({t.num_vertices()}));
+        auto input = bench_utils::random_normal<double>({t.num_vertices()});
         state.ResumeTiming();
         array_nd<double> output = array_nd<double>::from_shape({t.num_vertices()});
         auto sout = output.data();
@@ -61,9 +53,9 @@ static void BM_tree_accumulate_parallel_scalar_view(benchmark::State& state) {
         state.PauseTiming();
 
         std::size_t size = state.range(0);
-        xt::random::seed(42);
+        bench_utils::random_seed(42);
         auto t = get_complete_binary_tree(size);
-        auto input = eval(random::randn<double>({t.num_vertices()}));
+        auto input = bench_utils::random_normal<double>({t.num_vertices()});
         state.ResumeTiming();
         array_nd <double> output;
         benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum<double>()));
@@ -78,9 +70,9 @@ static void BM_tree_accumulate_parallel_light_view_scalar(benchmark::State &stat
         state.PauseTiming();
 
         std::size_t size = state.range(0);
-        xt::random::seed(42);
+        bench_utils::random_seed(42);
         auto t = get_complete_binary_tree(size);
-        auto input = eval(random::randn<double>({t.num_vertices()}));
+        auto input = bench_utils::random_normal<double>({t.num_vertices()});
         state.ResumeTiming();
         array_nd<double> output;
         benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum()));
@@ -95,9 +87,9 @@ static void BM_tree_accumulate_parallel_light_view_vectorial(benchmark::State &s
         state.PauseTiming();
 
         std::size_t size = state.range(0);
-        xt::random::seed(42);
+        bench_utils::random_seed(42);
         auto t = get_complete_binary_tree(size);
-        auto input = eval(random::randn<double>({t.num_vertices(), 3ul, 3ul}));
+        auto input = bench_utils::random_normal<double>({t.num_vertices(), 3ul, 3ul});
         state.ResumeTiming();
         array_nd<double> output;
         benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum()));
@@ -113,9 +105,9 @@ static void BM_tree_accumulate_parallel_vectorial(benchmark::State& state) {
         state.PauseTiming();
 
         std::size_t size = state.range(0);
-        xt::random::seed(42);
+        bench_utils::random_seed(42);
         auto t = get_complete_binary_tree(size);
-        auto input = eval(random::randn<double>({t.num_vertices(), 3ul, 3ul}));
+        auto input = bench_utils::random_normal<double>({t.num_vertices(), 3ul, 3ul});
         state.ResumeTiming();
         array_nd <double> output;
         benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum<double>()));

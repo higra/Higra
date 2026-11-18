@@ -11,14 +11,8 @@
 #include "py_graph_weights.hpp"
 #include "../py_common.hpp"
 #include "higra/algo/graph_weights.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 
 namespace py_graph_weights {
-
-// @TODO Remove layout_type when xtensor solves the issue with iterators
-    template<typename T>
-    using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
 
 #include "pybind11/functional.h"
 
@@ -30,7 +24,8 @@ namespace py_graph_weights {
         template<typename type, typename C>
         static
         void def(C &m, const char *doc) {
-            m.def("_weight_graph", [](const graph_t &graph, const pyarray<type> &data, hg::weight_functions weight_f) {
+            m.def("_weight_graph", [](const graph_t &graph, const hg::array_view<const type> &data,
+                                      hg::weight_functions weight_f) {
                       return hg::weight_graph(graph, data, weight_f);
                   },
                   doc,
@@ -41,7 +36,6 @@ namespace py_graph_weights {
     };
 
     void py_init_graph_weights(pybind11::module &m) {
-        //xt::import_numpy();
 
         py::enum_<hg::weight_functions>(m, "WeightFunction")
                 .value("mean", hg::weight_functions::mean)

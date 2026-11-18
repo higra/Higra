@@ -13,9 +13,7 @@
 #include "utils.h"
 #include "higra/structure/array.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
-#include "xtensor/generators/xrandom.hpp"
 
-using namespace xt;
 using namespace hg;
 
 
@@ -28,11 +26,10 @@ static void BM_tree_accumulator(benchmark::State &state) {
         state.PauseTiming();
 
         std::size_t size = state.range(0);
-        xt::random::seed(42);
+        bench_utils::random_seed(42);
 
         auto t = get_complete_binary_tree(size);
-        array_1d<int> area = xt::ones<int>({t.num_leaves()});
-        //auto altitude = eval(xt::arange<double>(t.num_vertices())/(t.num_vertices()*255.));
+        array_1d<int> area = hg::ones<int>({t.num_leaves()});
 
         state.ResumeTiming();
         auto res = hg::accumulate_sequential(t, area, hg::accumulator_sum());

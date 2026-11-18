@@ -13,7 +13,6 @@
 #include "../graph.hpp"
 #include "../algo/graph_weights.hpp"
 #include "higra/structure/unionfind.hpp"
-#include "xtensor/views/xview.hpp"
 #include "higra/sorting.hpp"
 #include <optional>
 #include <vector>
@@ -37,14 +36,13 @@ namespace hg {
     template<typename graph_t,
             typename T>
     auto graph_cut_2_labelisation(const graph_t &graph,
-                                  const xt::xexpression<T> &xedge_weights) {
+                                  array_view<const T> edge_weights) {
         HG_TRACE();
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
 
         stackv<index_t> stack;
-        array_1d<index_t> labels = xt::empty<index_t>({num_vertices(graph)});
+        array_1d<index_t> labels = hg::empty<index_t>({num_vertices(graph)});
         labels.fill(invalid_index);
 
         index_t current_label = 0;
@@ -87,9 +85,8 @@ namespace hg {
     template<typename graph_t,
             typename T>
     auto labelisation_2_graph_cut(const graph_t &graph,
-                                  const xt::xexpression<T> &xvertex_labels) {
+                                  array_view<const T> vertex_labels) {
         HG_TRACE();
-        auto &vertex_labels = xvertex_labels.derived_cast();
         hg_assert_vertex_weights(graph, vertex_labels);
         hg_assert_1d_array(vertex_labels);
 
@@ -132,9 +129,8 @@ namespace hg {
     template<typename graph_t,
             typename T>
     auto minimum_spanning_tree(const graph_t &graph,
-                               const xt::xexpression<T> &xedge_weights) {
+                               array_view<const T> edge_weights) {
         HG_TRACE();
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
 
@@ -144,7 +140,7 @@ namespace hg {
 
         auto num_edge_mst_max = num_points - 1;
         ugraph mst(num_points);
-        array_1d<index_t> mst_edge_map = xt::empty<index_t>({num_edge_mst_max});
+        array_1d<index_t> mst_edge_map = hg::empty<index_t>({num_edge_mst_max});
 
         union_find uf(num_points);
 
@@ -168,7 +164,7 @@ namespace hg {
         if (num_edge_found != num_edge_mst_max) {
             return minimum_spanning_tree_result<ugraph>{
                     std::move(mst),
-                    xt::view(mst_edge_map, xt::range(0, num_edge_found))};
+                    array_1d<index_t>(mst_edge_map.slice(0, num_edge_found))};
         } else {
             return minimum_spanning_tree_result<ugraph>{
                     std::move(mst),
@@ -189,8 +185,7 @@ namespace hg {
      * @return a spanning subgraph
      */
     template<typename graph_t, typename T>
-    auto subgraph_spanning(const graph_t &graph, const xt::xexpression<T> &xedge_indices) {
-        auto &edge_indices = xedge_indices.derived_cast();
+    auto subgraph_spanning(const graph_t &graph, array_view<const T> edge_indices) {
         hg_assert_1d_array(edge_indices);
         hg_assert_integral_value_type(edge_indices);
 
@@ -292,7 +287,7 @@ namespace hg {
      */
     template<typename graph_t>
     auto connected_components_labeling(const graph_t &graph) {
-        return graph_cut_2_labelisation(graph, xt::zeros<char>({num_edges(graph)}));
+        return graph_cut_2_labelisation(graph, hg::zeros<char>({num_edges(graph)}));
     }
 
     /**

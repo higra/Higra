@@ -298,7 +298,7 @@ namespace test_watershed {
         // Regression test for scenario 07: interactive single seed churn with label changes.
         auto g = hg::get_4_adjacency_graph({100, 100});
         const index_t n_edges = g.num_edges();
-        array_1d<double> edge_weights = xt::empty<double>({n_edges});
+        array_1d<double> edge_weights = hg::empty<double>({n_edges});
         for (index_t i = 0; i < n_edges; ++i) {
             // Deterministic pseudo-random in [0, 1)
             edge_weights(i) = static_cast<double>(i % 997) / 997.0;
@@ -317,7 +317,7 @@ namespace test_watershed {
         auto labels = iws.get_labeling();
 
         // Baseline via full seeded watershed
-        array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+        array_1d<index_t> seeds = hg::zeros<index_t>({g.num_vertices()});
         for (index_t i = 0; i < 10; ++i) {
             seeds(sv(i)) = initial_labels(i);
         }
@@ -364,7 +364,7 @@ namespace test_watershed {
         array_1d<index_t> rm{0, 3};
         iws.remove_seeds(rm);
 
-        array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+        array_1d<index_t> seeds = hg::zeros<index_t>({g.num_vertices()});
         seeds(1) = 20;
         seeds(4) = 40;
         auto expected = hg::labelisation_seeded_watershed(g, edge_weights, seeds);
@@ -405,14 +405,14 @@ namespace test_watershed {
 
         for (int img_idx = 0; img_idx < 10; ++img_idx) {
             // Generate a random flat image (size*size pixel values in [0,1))
-            array_1d<double> image = xt::empty<double>({(size_t)num_vertices_total});
+            array_1d<double> image = hg::empty<double>({(size_t)num_vertices_total});
             for (index_t k = 0; k < num_vertices_total; ++k)
                 image(k) = dist_real(rng);
 
             auto edge_weights = hg::weight_graph(g, image, hg::weight_functions::L1);
 
             // seeds array (flat, 0 = background)
-            array_1d<index_t> seeds = xt::zeros<index_t>({(size_t)num_vertices_total});
+            array_1d<index_t> seeds = hg::zeros<index_t>({(size_t)num_vertices_total});
 
             std::unordered_map<index_t, index_t> seed_dic;
 
@@ -503,9 +503,9 @@ namespace test_watershed {
                            index_t num_hops = 2,
                            index_t min_front_size = 1) {
         auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
-        iws.set_max_concurrency(oneapi::tbb::info::default_concurrency()); 
+        iws.set_max_concurrency(oneapi::tbb::info::default_concurrency());
         iws.set_minimum_parallel_front_size(min_front_size);
-        iws.set_num_parrallel_hops(num_hops);
+        iws.set_num_parallel_hops(num_hops);
         return iws;
     }
 
@@ -583,7 +583,7 @@ namespace test_watershed {
         array_1d<index_t> rm{0, 3};
         iws.remove_seeds(rm);
 
-        array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+        array_1d<index_t> seeds = hg::zeros<index_t>({g.num_vertices()});
         seeds(1) = 20;
         seeds(4) = 40;
         auto expected = hg::labelisation_seeded_watershed(g, edge_weights, seeds);
@@ -617,7 +617,7 @@ namespace test_watershed {
               "[incremental_watershed_cut][tbb]") {
         auto g = hg::get_4_adjacency_graph({100, 100});
         const index_t n_edges = g.num_edges();
-        array_1d<double> edge_weights = xt::empty<double>({n_edges});
+        array_1d<double> edge_weights = hg::empty<double>({n_edges});
         for (index_t i = 0; i < n_edges; ++i) {
             edge_weights(i) = static_cast<double>(i % 997) / 997.0;
         }
@@ -634,7 +634,7 @@ namespace test_watershed {
 
             iws.add_seeds(sv, initial_labels);
 
-            array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+            array_1d<index_t> seeds = hg::zeros<index_t>({g.num_vertices()});
             for (index_t i = 0; i < 10; ++i) {
                 seeds(sv(i)) = initial_labels(i);
             }
@@ -670,12 +670,12 @@ namespace test_watershed {
         auto g = hg::get_4_adjacency_graph({size, size});
 
         for (int img_idx = 0; img_idx < 5; ++img_idx) {
-            array_1d<double> image = xt::empty<double>({(size_t) num_vertices_total});
+            array_1d<double> image = hg::empty<double>({(size_t) num_vertices_total});
             for (index_t k = 0; k < num_vertices_total; ++k)
                 image(k) = dist_real(rng);
             auto edge_weights = hg::weight_graph(g, image, hg::weight_functions::L1);
 
-            array_1d<index_t> seeds = xt::zeros<index_t>({(size_t) num_vertices_total});
+            array_1d<index_t> seeds = hg::zeros<index_t>({(size_t) num_vertices_total});
             std::vector<index_t> current_seeds;
 
             // vary the number of parallel hops from one image to another
@@ -737,7 +737,7 @@ namespace test_watershed {
         array_1d<index_t> sl{1, 1, 1, 2, 2, 3, 3};
         iws.add_seeds(sv, sl);
 
-        array_1d<index_t> seeds = xt::zeros<index_t>({g.num_vertices()});
+        array_1d<index_t> seeds = hg::zeros<index_t>({g.num_vertices()});
         for (index_t i = 0; i < 7; ++i) seeds(sv(i)) = sl(i);
         REQUIRE((iws.get_labeling() == hg::labelisation_seeded_watershed(g, edge_weights, seeds)));
 
@@ -746,6 +746,43 @@ namespace test_watershed {
         seeds(1) = 0;
         seeds(13) = 0;
         REQUIRE((iws.get_labeling() == hg::labelisation_seeded_watershed(g, edge_weights, seeds)));
+    }
+
+    TEST_CASE("incremental watershed cut parallel settings accessors",
+              "[incremental_watershed_cut][tbb]") {
+        auto g = hg::get_4_adjacency_graph({2, 3});
+        array_1d<int> edge_weights{1, 0, 2, 0, 0, 1, 2};
+        auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
+        const auto default_concurrency = static_cast<index_t>(oneapi::tbb::info::default_concurrency());
+
+        // default values
+        REQUIRE(iws.get_minimum_parallel_front_size() == 200);
+        REQUIRE(iws.get_num_parallel_hops() == 10);
+        REQUIRE(iws.get_max_concurrency() == default_concurrency);
+
+        // valid values are stored as given
+        iws.set_minimum_parallel_front_size(5);
+        iws.set_num_parallel_hops(3);
+        iws.set_max_concurrency(1);
+        REQUIRE(iws.get_minimum_parallel_front_size() == 5);
+        REQUIRE(iws.get_num_parallel_hops() == 3);
+        REQUIRE(iws.get_max_concurrency() == 1);
+
+        const auto big = (std::numeric_limits<index_t>::max)();
+        iws.set_minimum_parallel_front_size(big);
+        iws.set_num_parallel_hops(big);
+        REQUIRE(iws.get_minimum_parallel_front_size() == big);
+        REQUIRE(iws.get_num_parallel_hops() == big);
+
+        // out of range values are clamped
+        iws.set_max_concurrency(default_concurrency + 1);
+        REQUIRE(iws.get_max_concurrency() == default_concurrency);
+        iws.set_minimum_parallel_front_size(0);
+        iws.set_num_parallel_hops(-3);
+        iws.set_max_concurrency(0);
+        REQUIRE(iws.get_minimum_parallel_front_size() == 1);
+        REQUIRE(iws.get_num_parallel_hops() == 1);
+        REQUIRE(iws.get_max_concurrency() == 1);
     }
 
 #else
@@ -759,8 +796,13 @@ namespace test_watershed {
 
         auto iws = hg::make_incremental_watershed_cut(g, edge_weights);
         iws.set_minimum_parallel_front_size(1);
-        iws.set_num_parrallel_hops(2);
+        iws.set_num_parallel_hops(2);
         iws.set_max_concurrency(4);
+
+        // the settings are left unchanged and relabeling is sequential
+        REQUIRE(iws.get_minimum_parallel_front_size() == 200);
+        REQUIRE(iws.get_num_parallel_hops() == 10);
+        REQUIRE(iws.get_max_concurrency() == 1);
 
         array_1d<index_t> sv{0, 2, 4};
         array_1d<index_t> sl{1, 2, 3};

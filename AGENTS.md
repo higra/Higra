@@ -28,6 +28,7 @@ before committing, and preserve unrelated changes in both.
 | Task | Source | Tests |
 | --- | --- | --- |
 | Core data structure or algorithm | `include/higra/<module>/*.hpp` | `test/cpp/<module>/test_*.cpp` |
+| Array library and NumPy converters | `include/higra/structure/array/`, `include/higra/python/py_array.hpp` | `test/cpp/structure/test_array*.cpp`, `test/python/test_structure/test_array_interop.py`, `test/python/test_array_inputs.py` |
 | Bind or change a C++ API | `higra/<module>/py_*.cpp`, matching `.hpp`, `all.hpp`, `higra/pymodule.cpp` | `test/python/test_<module>/test_*.py` |
 | Python wrapper or composed algorithm | `higra/<module>/*.py` and package `__init__.py` | `test/python/test_<module>/test_*.py` |
 | Shapes, concepts, caching, dtype conversion | `higra/hg_utils.py`, `concept.py`, `data_cache.py` | Top-level `test/python/test_*.py` |
@@ -87,8 +88,11 @@ requirements, which include a released Higra package.
 - Register new Python files and tests in their module CMake files. Register new
   binding translation units, declarations, aggregate includes, and initializer
   calls. An unregistered source test can pass locally yet never run in CTest.
-- Do not return lazy xtensor expressions or borrowed views of destroyed locals.
-  Review NumPy return policies, backing storage, mutation, and iterator lifetimes.
+- Read-only array inputs are `hg::array_view<const T>` by value, in-place ones
+  `hg::array_view<T>`, results `hg::array<T>` by value; see the
+  [array guide](doc/source/arrays.rst). Never return or store a view of a local or
+  temporary array. NumPy conversions follow `include/higra/python/py_array.hpp`:
+  review return policies, backing storage, mutation, and iterator lifetimes.
   A `keep_alive` policy does not prevent vector reallocation.
 - Attribute functions recompute on every call. Do not add automatic result caching.
   Retired cache APIs and implicit controls are warning-emitting compatibility no-ops;
@@ -98,6 +102,11 @@ requirements, which include a released Higra package.
 - Preserve stable-sort semantics and dependencies in tree traversals. A function
   named "parallel" need not use threads. Do not assume const tree operations are
   thread-safe: lazy child computation changes shared state.
+- Results must be identical with TBB on and off and for any thread count. Array
+  loops parallelize only under `HG_USE_TBB` above `HG_ARRAY_PARALLEL_THRESHOLD`;
+  floating-point reductions use fixed chunks combined in order, never a dynamic
+  `parallel_reduce`. `hg::map` calls its function sequentially unless given
+  `hg::exec::par`, which requires a thread-safe function.
 - Edit sources, not build-tree copies, generated XML/HTML, or packaging copies
   under `higra/include` and `higra/lib`. Treat vendored `lib/` changes as explicit
   dependency work; its update script deletes and recreates directories.

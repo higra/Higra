@@ -195,11 +195,10 @@ namespace hg {
      * @return array of the same size as xindex containing the degree of each vertex indicated in xindex
      */
     template<typename T, typename graph_t>
-    auto degree(const xt::xexpression<T> &xindex, const graph_t &g) {
-        static_assert(std::is_integral<typename T::value_type>::value,
+    auto degree(array_view<const T> index, const graph_t &g) {
+        static_assert(std::is_integral<T>::value,
                       "Vertex indices must have integral value type.");
-        auto &index = xindex.derived_cast();
-        auto f = xt::flatten(index);
+        auto f = index.flat();
         array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
         for (index_t i = 0; i < (index_t) res.size(); ++i) {
             res(i) = degree(f(i), g);
@@ -217,11 +216,10 @@ namespace hg {
      * @return array of the same size as xindex containing the in-degree of each vertex indicated in xindex
      */
     template<typename T, typename graph_t>
-    auto in_degree(const xt::xexpression<T> &xindex, const graph_t &g) {
-        static_assert(std::is_integral<typename T::value_type>::value,
+    auto in_degree(array_view<const T> index, const graph_t &g) {
+        static_assert(std::is_integral<T>::value,
                       "Vertex indices must have integral value type.");
-        auto &index = xindex.derived_cast();
-        auto f = xt::flatten(index);
+        auto f = index.flat();
         array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
         for (index_t i = 0; i < (index_t) res.size(); ++i) {
             res(i) = in_degree(f(i), g);
@@ -239,11 +237,10 @@ namespace hg {
      * @return array of the same size as xindex containing the out-degree of each vertex indicated in xindex
      */
     template<typename T, typename graph_t>
-    auto out_degree(const xt::xexpression<T> &xindex, const graph_t &g) {
-        static_assert(std::is_integral<typename T::value_type>::value,
+    auto out_degree(array_view<const T> index, const graph_t &g) {
+        static_assert(std::is_integral<T>::value,
                       "Vertex indices must have integral value type.");
-        auto &index = xindex.derived_cast();
-        auto f = xt::flatten(index);
+        auto f = index.flat();
         array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
         for (index_t i = 0; i < (index_t) res.size(); ++i) {
             res(i) = out_degree(f(i), g);
@@ -255,21 +252,25 @@ namespace hg {
     /**
      * Add all edges given as a pair of arrays (sources, targets) to the graph.
      *
-     * @tparam T xexpression type
+     * @tparam S1 1d indexable sequence type (see ``is_1d_indexable_v``)
+     * @tparam S2 1d indexable sequence type
      * @tparam graph_t Mutable graph type
-     * @param xsources Must be a 1d array of integral values
-     * @param xtargets Must have the same shape as xsources
+     * @param sources Must be a 1d array of integral values
+     * @param targets Must have the same shape as sources
      * @param g A mutable graph
      */
-    template<typename T, typename graph_t>
-    void add_edges(const xt::xexpression<T> &xsources,
-                   const xt::xexpression<T> &xtargets,
+    template<typename S1, typename S2, typename graph_t,
+            typename = std::enable_if_t<is_1d_indexable_v<S1> && is_1d_indexable_v<S2>>>
+    void add_edges(const S1 &sources,
+                   const S2 &targets,
                    graph_t &g) {
-        auto &sources = xsources.derived_cast();
-        auto &targets = xtargets.derived_cast();
-        hg_assert_1d_array(sources);
-        hg_assert_integral_value_type(sources);
-        hg_assert_same_shape(sources, targets);
+        static_assert(std::is_integral<indexable_1d_value_t<S1>>::value &&
+                      std::is_integral<indexable_1d_value_t<S2>>::value,
+                      "Array values of 'sources' and 'targets' must be integral (char, short, int, long...).");
+        assert_1d_indexable(sources, "sources");
+        assert_1d_indexable(targets, "targets");
+        hg_assert((index_t) sources.size() == (index_t) targets.size(),
+                  "Shapes of 'sources' and 'targets' must be equal.");
 
         for (index_t i = 0; i < (index_t) sources.size(); i++)
             g.add_edge(sources(i), targets(i));
@@ -420,11 +421,10 @@ namespace hg {
      * @param non_edge_value Value used to represent non existing edges
      * @return A 2d square array
      */
-    template<typename undirected_graph, typename T, typename value_type = typename T::value_type>
+    template<typename undirected_graph, typename T, typename value_type = T>
     auto undirected_graph_2_adjacency_matrix(const undirected_graph &graph,
-                                             const xt::xexpression<T> &xedge_weights,
+                                             array_view<const T> edge_weights,
                                              const value_type &non_edge_value = 0) {
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         array_2d<value_type> a = array_2d<value_type>::from_shape({num_vertices(graph), num_vertices(graph)});
 
@@ -449,10 +449,9 @@ namespace hg {
      * @param non_edge_value Value used to represent non existing edges
      * @return a pair of types (ugraph, array_1d) representing the graph and its edge-weights
      */
-    template<typename T, typename value_type = typename T::value_type>
-    auto adjacency_matrix_2_undirected_graph(const xt::xexpression<T> &xadjacency_matrix,
+    template<typename T, typename value_type = T>
+    auto adjacency_matrix_2_undirected_graph(array_view<const T> adjacency_matrix,
                                              const value_type &non_edge_value = 0) {
-        auto &adjacency_matrix = xadjacency_matrix.derived_cast();
         hg_assert(adjacency_matrix.dimension() == 2, "Adjacency matrix must be a 2d array.");
         hg_assert(adjacency_matrix.shape()[0] == adjacency_matrix.shape()[1], "Adjacency matrix must be square.");
 
@@ -467,7 +466,7 @@ namespace hg {
                 }
             }
         }
-        array_1d<value_type> edge_weights = xt::empty<value_type>({n_edges});
+        array_1d<value_type> edge_weights = hg::empty<value_type>({n_edges});
         index_t n = 0;
         for (index_t i = 0; i < n_vertices; i++) {
             for (index_t j = i; j < n_vertices; j++) {

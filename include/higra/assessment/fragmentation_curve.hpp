@@ -15,7 +15,7 @@
 #include "../algo/tree.hpp"
 #include "../algo/rag.hpp"
 #include "../algo/horizontal_cuts.hpp"
-#include <xtensor/misc/xsort.hpp>
+#include <limits>
 
 namespace hg {
 
@@ -49,11 +49,12 @@ namespace hg {
         }
 
         /**
-         * Score of the optimal cut
+         * Score of the optimal cut: the largest score, NaN if a score is NaN, or the lowest value of
+         * value_t if the curve is empty.
          * @return
          */
         auto optimal_score() const {
-            return xt::amax(m_scores)();
+            return array_internal::max_or_lowest<value_t>(m_scores);
         }
 
         const auto &scores() const {
@@ -65,7 +66,12 @@ namespace hg {
         }
 
         auto num_regions_normalized() const {
-            return xt::eval(m_num_regions / (value_t) m_num_regions_ground_truth);
+            array_1d<value_t> res = array_1d<value_t>::from_shape({m_num_regions.size()});
+            const auto num_regions_ground_truth = (value_t) m_num_regions_ground_truth;
+            for (index_t i = 0; i < (index_t) m_num_regions.size(); i++) {
+                res(i) = m_num_regions(i) / num_regions_ground_truth;
+            }
+            return res;
         }
 
     private:
@@ -91,12 +97,11 @@ namespace hg {
         template<typename value_t=index_t, typename tree_t, typename T>
         auto compute_card_intersection_tree_ground_truth(
                 const tree_t &tree,
-                const xt::xexpression<T> &xground_truth,
-                const array_1d<index_t> &vertex_map = {}) {
-            auto &ground_truth = xground_truth.derived_cast();
+                array_view<const T> ground_truth,
+                array_view<const index_t> vertex_map = {}) {
             hg_assert_1d_array(ground_truth);
 
-            auto num_regions_ground_truth = xt::amax(ground_truth)() + 1;
+            auto num_regions_ground_truth = hg::max(ground_truth) + 1;
             array_2d<index_t> card_intersection_leaves({num_leaves(tree), (size_t) num_regions_ground_truth}, 0);
             if (vertex_map.size() <= 1) { // no rag
                 hg_assert_leaf_weights(tree, ground_truth);
@@ -110,8 +115,8 @@ namespace hg {
                 }
             }
 
-            array_2d<value_t> card_intersection = accumulate_sequential(tree, card_intersection_leaves,
-                                                                        accumulator_sum());
+            array_2d<value_t> card_intersection = hg::cast<value_t>(
+                    accumulate_sequential(tree, card_intersection_leaves, accumulator_sum()));
             return card_intersection;
         };
 
@@ -142,13 +147,11 @@ namespace hg {
         template<typename tree_t, typename T>
         assesser_fragmentation_optimal_cut(
                 const tree_t &tree,
-                const xt::xexpression<T> &xground_truth,
+                array_view<const T> ground_truth,
                 optimal_cut_measure measure,
-                const array_1d<index_t> &vertex_map = {},
+                array_view<const index_t> vertex_map = {},
                 size_t max_regions = 200):
                 m_tree(tree) {
-            auto &ground_truth = xground_truth.derived_cast();
-
             hg_assert_1d_array(ground_truth);
             hg_assert_integral_value_type(ground_truth);
 
@@ -156,21 +159,16 @@ namespace hg {
 
             max_regions = (std::min)(max_regions, num_leaves(m_tree));
 
-            size_t num_regions_ground_truth = xt::amax(ground_truth)() + 1;
+            size_t num_regions_ground_truth = hg::max(ground_truth) + 1;
 
             array_1d<index_t> region_gt_areas({num_regions_ground_truth}, 0);
             for (auto v:ground_truth) {
                 region_gt_areas[v]++;
             }
 
-            m_num_regions_ground_truth = xt::count_nonzero(region_gt_areas)();
+            m_num_regions_ground_truth = hg::count_nonzero(region_gt_areas);
 
-// TODO remove when xtensor MSVC witht he bug with xt::view(region_tree_area, xt::all(), xt::newaxis()) on 1d tensor
-#ifndef _MSC_VER
             array_1d<index_t> region_tree_area;
-#else
-            array_nd<index_t> region_tree_area;
-#endif
 
             // for a tree node i, a gt region j: card_intersection(i, j) is the number of pixels in R_i cap R_j
             array_2d<index_t> card_intersection_leaves{{num_leaves(m_tree), region_gt_areas.size()}, 0};
@@ -185,31 +183,58 @@ namespace hg {
                 for (index_t i = 0; i < (index_t) vertex_map.size(); i++) {
                     card_intersection_leaves(vertex_map(i), ground_truth(i))++;
                 }
+                array_1d<index_t> ones = hg::ones<index_t>({vertex_map.size()});
                 region_tree_area = attribute_area(m_tree,
-                                                  rag_accumulate(vertex_map, xt::ones<index_t>(vertex_map.shape()),
-                                                                 accumulator_counter()));
+                                                  rag_accumulate(vertex_map, ones, accumulator_counter()));
             }
 
-            array_2d<double> card_intersection = accumulate_sequential(m_tree, card_intersection_leaves,
-                                                                       accumulator_sum());
+            array_2d<double> card_intersection = hg::cast<double>(
+                    accumulate_sequential(m_tree, card_intersection_leaves, accumulator_sum()));
 
-            array_1d<double> scores;
+            // score of each node of the tree taken as a single region, computed row by row
+            const index_t num_nodes = (index_t) card_intersection.shape()[0];
+            const index_t num_gt_regions = (index_t) card_intersection.shape()[1];
+            const double *ci = card_intersection.data();
+            array_1d<double> scores = array_1d<double>::from_shape({(size_t) num_nodes});
 
             switch (measure) {
                 case optimal_cut_measure::BCE:
-                    scores = xt::eval(xt::sum(
-                            card_intersection *
-                            xt::minimum(card_intersection / region_gt_areas,
-                                        card_intersection / xt::view(region_tree_area, xt::all(), xt::newaxis())),
-                            {1}));
+                    for (index_t i = 0; i < num_nodes; i++) {
+                        const double *ci_row = ci + i * num_gt_regions;
+                        const double tree_area = (double) region_tree_area(i);
+                        double score = 0;
+                        for (index_t j = 0; j < num_gt_regions; j++) {
+                            const double c = ci_row[j];
+                            const double a = c / (double) region_gt_areas(j);
+                            const double b = c / tree_area;
+                            score += c * ((a < b) ? a : b);
+                        }
+                        scores(i) = score;
+                    }
                     break;
                 case optimal_cut_measure::DHamming:
-                    scores = xt::eval(xt::amax(card_intersection, {1}));
+                    for (index_t i = 0; i < num_nodes; i++) {
+                        const double *ci_row = ci + i * num_gt_regions;
+                        double score = std::numeric_limits<double>::lowest();
+                        for (index_t j = 0; j < num_gt_regions; j++) {
+                            score = (score > ci_row[j]) ? score : ci_row[j];
+                        }
+                        scores(i) = score;
+                    }
                     break;
                 case optimal_cut_measure::DCovering:
-                    auto card_union = xt::eval(-card_intersection + region_gt_areas +
-                                               xt::view(region_tree_area, xt::all(), xt::newaxis()));
-                    scores = xt::eval(xt::amax(card_intersection / card_union, {1}) * region_tree_area);
+                    for (index_t i = 0; i < num_nodes; i++) {
+                        const double *ci_row = ci + i * num_gt_regions;
+                        const double tree_area = (double) region_tree_area(i);
+                        double score = std::numeric_limits<double>::lowest();
+                        for (index_t j = 0; j < num_gt_regions; j++) {
+                            const double c = ci_row[j];
+                            const double card_union = -c + (double) region_gt_areas(j) + tree_area;
+                            const double r = c / card_union;
+                            score = (score > r) ? score : r;
+                        }
+                        scores(i) = score * tree_area;
+                    }
                     break;
             }
 
@@ -264,9 +289,14 @@ namespace hg {
                 final_scores(i) = backtrack_root[i].score;
             }
 
+            const double n = (double) num_leaves(m_tree);
+            for (index_t i = 0; i < (index_t) final_scores.size(); i++) {
+                final_scores(i) = final_scores(i) / n;
+            }
+
             return hg::fragmentation_curve<>{
-                    xt::eval(xt::arange<double>(1, (double)((index_t)final_scores.size() + 1))),
-                    xt::eval(final_scores / (double) num_leaves(m_tree)),
+                    hg::arange<double>(1, (double)((index_t)final_scores.size() + 1)),
+                    std::move(final_scores),
                     m_num_regions_ground_truth};
         }
 
@@ -324,8 +354,9 @@ namespace hg {
                 }
 
             }
+            array_1d<size_t> vertex_indices = hg::arange<size_t>(num_vertices(m_tree));
             return reconstruct_leaf_data(m_tree,
-                                         xt::arange(num_vertices(m_tree)),
+                                         vertex_indices,
                                          non_cut_nodes);
         }
 
@@ -391,14 +422,11 @@ namespace hg {
     template<typename tree_t, typename T1, typename T2, typename scorer_t>
     auto assess_fragmentation_horizontal_cut(
             const tree_t &tree,
-            const xt::xexpression<T1> &xaltitudes,
-            const xt::xexpression<T2> &xground_truth,
+            array_view<const T1> altitudes,
+            array_view<const T2> ground_truth,
             const scorer_t &partition_scorer,
-            const array_1d<index_t> &vertex_map = {},
+            array_view<const index_t> vertex_map = {},
             size_t max_regions = 200) {
-        auto &altitudes = xaltitudes.derived_cast();
-        auto &ground_truth = xground_truth.derived_cast();
-
         hg_assert_node_weights(tree, altitudes);
         hg_assert_integral_value_type(ground_truth);
         hg_assert_1d_array(ground_truth);
@@ -413,18 +441,32 @@ namespace hg {
 
         index_t num_cuts = std::distance(num_regions_cuts.begin(), last_cut);
 
-        array_1d<double> scores = xt::empty<double>({num_cuts});
-        array_1d<index_t> num_regions = xt::empty<index_t>({num_cuts});
+        array_1d<double> scores = hg::empty<double>({num_cuts});
+        array_1d<index_t> num_regions = hg::empty<index_t>({num_cuts});
         std::copy(num_regions_cuts.begin(), num_regions_cuts.begin() + num_cuts, num_regions.begin());
 
+        // rows of card_intersection corresponding to the nodes of a cut
+        const size_t num_gt_regions = card_intersection.shape()[1];
+        array_2d<double> cut_card_intersection;
         for (index_t i = 0; i < num_cuts; i++) {
             auto hc = hc_explorer.horizontal_cut_from_index(i);
-            scores(i) = partition_scorer.score(xt::view(card_intersection, xt::keep(hc.nodes), xt::all()));
+            const auto &nodes = hc.nodes;
+            cut_card_intersection.resize({nodes.size(), num_gt_regions});
+            for (index_t k = 0; k < (index_t) nodes.size(); k++) {
+                const auto *src = card_intersection.data() + nodes(k) * num_gt_regions;
+                std::copy(src, src + num_gt_regions, cut_card_intersection.data() + k * num_gt_regions);
+            }
+            scores(i) = partition_scorer.score(cut_card_intersection);
         }
 
-        size_t num_regions_ground_truth = xt::count_nonzero(xt::view(card_intersection, root(tree), xt::all()))();;
+        size_t num_regions_ground_truth = 0;
+        for (size_t j = 0; j < num_gt_regions; j++) {
+            if (card_intersection(root(tree), j) != 0) {
+                num_regions_ground_truth++;
+            }
+        }
 
-        return hg::fragmentation_curve<>{std::move(num_regions),
+        return hg::fragmentation_curve<>{hg::cast<double>(num_regions),
                                          std::move(scores),
                                          num_regions_ground_truth};
     };

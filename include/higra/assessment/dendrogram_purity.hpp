@@ -16,9 +16,6 @@
 
 namespace hg {
 
-    using namespace xt;
-    using namespace xt::placeholders;
-
     /**
      * Weighted average of the purity of each node of the tree with respect to a ground truth
      * labelization of the tree leaves.
@@ -58,8 +55,7 @@ namespace hg {
      * @return a score between 0 and 1 (higher is better)
      */
     template<typename tree_t, typename T>
-    auto dendrogram_purity(const tree_t &tree, const xt::xexpression<T> &xleaf_labels) {
-        auto &leaf_labels = xleaf_labels.derived_cast();
+    auto dendrogram_purity(const tree_t &tree, array_view<const T> leaf_labels) {
         hg_assert_1d_array(leaf_labels);
         hg_assert_leaf_weights(tree, leaf_labels);
         hg_assert_integral_value_type(leaf_labels);
@@ -67,20 +63,42 @@ namespace hg {
         auto num_l = num_leaves(tree);
         auto area = attribute_area(tree);
 
-        auto max_label = xt::amax(leaf_labels)();
+        auto max_label = hg::max(leaf_labels);
         size_t num_labels = max_label + 1;
-        array_2d<double> label_histo_leaves = zeros<double>({num_l, num_labels});
+        array_2d<double> label_histo_leaves = hg::zeros<double>({num_l, num_labels});
         for (index_t i = 0; i < (index_t) num_l; i++) {
             label_histo_leaves(i, leaf_labels(i)) = 1;
         }
 
         auto label_histo = accumulate_sequential(tree, label_histo_leaves, accumulator_sum());
-        auto class_purity = label_histo / view(area, all(), newaxis());
-
         auto weights = attribute_children_pair_sum_product(tree, label_histo);
-        double Z = sum(weights)();
-        double total = sum(view(class_purity, range(num_l, _), all()) *
-                           view(weights, range(num_l, _), all()))();
+
+        // label_histo and weights are row-major arrays of shape (num_vertices, num_labels)
+        const double *histo = label_histo.data();
+        const double *w = weights.data();
+        const index_t num_v = (index_t) num_vertices(tree);
+        const index_t nl = (index_t) num_labels;
+
+        // sums of the row sums
+        double Z = 0;
+        for (index_t n = 0; n < num_v; n++) {
+            double row_sum = 0;
+            for (index_t l = 0; l < nl; l++) {
+                row_sum += w[n * nl + l];
+            }
+            Z += row_sum;
+        }
+
+        // sum over non leaf nodes n and labels l of purity(n, l) * weights(n, l)
+        double total = 0;
+        for (index_t n = (index_t) num_l; n < num_v; n++) {
+            const double node_area = (double) area(n);
+            double row_sum = 0;
+            for (index_t l = 0; l < nl; l++) {
+                row_sum += (histo[n * nl + l] / node_area) * w[n * nl + l];
+            }
+            total += row_sum;
+        }
 
         return total / Z;
     }

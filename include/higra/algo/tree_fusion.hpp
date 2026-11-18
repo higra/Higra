@@ -12,7 +12,6 @@
 
 #include "../graph.hpp"
 #include "../attribute/tree_attribute.hpp"
-#include <xtensor/core/xnoalias.hpp>
 #include <vector>
 #include <stack>
 
@@ -39,12 +38,13 @@ namespace hg {
 
             // precompute areas and smallest enclosing shapes
             vector<array_1d<index_t>> areas;
-            array_2d<array_1d<index_t>> ses = xt::empty<array_1d<index_t>>({ntrees, ntrees});
+            // ses[i * ntrees + j]: smallest enclosing shapes of the nodes of tree i in tree j
+            vector<array_1d<index_t>> ses(ntrees * ntrees);
             for (ti = first, i = 0; ti != last; ti++, i++) {
                 areas.push_back(attribute_area(**ti));
                 for (tj = first, j = 0; tj != last; tj++, j++) {
                     if (j != i) {
-                        ses(i, j) = attribute_smallest_enclosing_shape(**ti, **tj);
+                        ses[i * ntrees + j] = attribute_smallest_enclosing_shape(**ti, **tj);
                     }
                 }
             }
@@ -63,12 +63,12 @@ namespace hg {
             for (ti = first, i = 0; ti != last; ti++, i++) {
                 node_maps.emplace_back(array_1d<index_t>::from_shape({num_vertices(**ti)}));
                 // create leaves association
-                xt::noalias(xt::view(node_maps[i], xt::range(0, nleaves))) = xt::arange<index_t>(nleaves);
+                hg::assign((node_maps[i]).slice(0, nleaves), hg::arange<index_t>(nleaves));
 
                 for (index_t n: leaves_to_root_iterator(**ti, leaves_it::exclude, root_it::exclude)) {
                     bool keep = true;
                     for (index_t j = 0; j < i && keep; j++) {
-                        auto ses_ij_n = ses(i, j)(n);
+                        auto ses_ij_n = ses[i * ntrees + j](n);
                         if (areas[j](ses_ij_n) == areas[i](n)) {
                             keep = false;
                             node_maps[i](n) = node_maps[j](ses_ij_n);
@@ -98,7 +98,7 @@ namespace hg {
                     adj_lists[node_maps[i](parent(n, **ti))].push_back(represent_n);
                     for (j = 0; j < (index_t) ntrees; j++) {
                         if (i != j) {
-                            auto ses_ij_n = ses(i, j)(n);
+                            auto ses_ij_n = ses[i * ntrees + j](n);
                             if (areas[j](ses_ij_n) != areas[i](n)) {
                                 adj_lists[node_maps[j](ses_ij_n)].push_back(represent_n);
                             }
@@ -118,9 +118,9 @@ namespace hg {
             * Topological sort of the GOS
             */
             auto nnodes = adj_lists.size();
-            array_1d<index_t> sorted_nodes = xt::empty<index_t>({nnodes});
+            array_1d<index_t> sorted_nodes = hg::empty<index_t>({nnodes});
             // marks: 0 = never seen, 1 = being visited (not finalized and sucessors on the stack), 2 = sorted
-            array_1d<char> marks = xt::zeros<char>({nnodes});
+            array_1d<char> marks = hg::zeros<char>({nnodes});
             stack<index_t> s;
 
             index_t count = 0;
@@ -146,7 +146,7 @@ namespace hg {
             /* ***************
             * Depth of the nodes of the GOS
             */
-            array_1d<index_t> depth = xt::zeros<index_t>({nnodes});
+            array_1d<index_t> depth = hg::zeros<index_t>({nnodes});
             for (index_t i = nnodes - 1; i >= 0; i--) {
                 index_t n = sorted_nodes[i];
                 for (auto o: adj_lists[n]) {
@@ -157,7 +157,7 @@ namespace hg {
             /* ***************
             * Depth of the nodes of the GOS
             */
-            return xt::eval(xt::view(depth, xt::range(0, nleaves)));
+            return array_1d<index_t>(depth.slice(0, nleaves));
         }
 
         template<typename range_tree_t>

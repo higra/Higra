@@ -12,7 +12,6 @@
 #include <sstream>
 #include <string>
 #include "../test_utils.hpp"
-#include "xtensor/generators/xgenerator.hpp"
 
 namespace pink_graph_io {
     
@@ -99,7 +98,7 @@ namespace pink_graph_io {
             for (index_t i = 0; i < 14; ++i)
             edges.emplace_back(i, i + 1, i);
 
-            array_1d<double> vertex_weights = xt::arange<double>(1, 16);
+            array_1d<double> vertex_weights = hg::arange<double>(1, 16);
             array_1d<double> edge_weights = { 3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0 };
 
             std::vector<ugraph::edge_descriptor> res_edges;
@@ -108,8 +107,8 @@ namespace pink_graph_io {
 
             REQUIRE(vectorEqual(edges, res_edges));
             REQUIRE(vectorEqual(shape, res.shape));
-            REQUIRE(xt::allclose(vertex_weights, res.vertex_weights));
-            REQUIRE(xt::allclose(edge_weights, res.edge_weights));
+            REQUIRE(hg::allclose(vertex_weights, res.vertex_weights));
+            REQUIRE(hg::allclose(edge_weights, res.edge_weights));
     }
 
     TEST_CASE("read graph from stream no shape", "[pink_graph_io]") {
@@ -123,7 +122,7 @@ namespace pink_graph_io {
         for (index_t i = 0; i < 14; ++i)
             edges.emplace_back(i, i + 1, i);
 
-        array_1d<double> vertex_weights = xt::arange<double>(1, 16);
+        array_1d<double> vertex_weights = hg::arange<double>(1, 16);
         array_1d<double> edge_weights = { 3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0 };
 
         std::vector<ugraph::edge_descriptor> res_edges;
@@ -132,12 +131,12 @@ namespace pink_graph_io {
 
         REQUIRE(vectorEqual(edges, res_edges));
         REQUIRE(vectorEqual(shape, res.shape));
-        REQUIRE(xt::allclose(vertex_weights, res.vertex_weights));
-        REQUIRE(xt::allclose(edge_weights, res.edge_weights));
+        REQUIRE(hg::allclose(vertex_weights, res.vertex_weights));
+        REQUIRE(hg::allclose(edge_weights, res.edge_weights));
     }
 
     TEST_CASE("write graph to stream", "[pink_graph_io]") {
-            array_1d<double> vertex_weights = xt::arange<double>(1, 16);
+            array_1d<double> vertex_weights = hg::arange<double>(1, 16);
             array_1d<double> edge_weights = { 3, 0, 0, 1, 3, 0, 1, 0, 2, 0, 1, 0, 3, 0 };
             std::vector<size_t> shape = { 3, 5 };
 

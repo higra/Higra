@@ -13,9 +13,25 @@
 #include "rag.hpp"
 #include "tree.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
-#include "xtensor/misc/xsort.hpp"
 
 namespace hg {
+
+    namespace alignment_internal {
+
+        /**
+         * max(labelisation) + 1; for an empty labelisation, the lowest value of the type plus 1:
+         * 1 for unsigned types. Throws if the result is negative (empty signed labelisation).
+         */
+        template<typename T>
+        size_t num_regions_from_labelisation(array_view<const T> labelisation) {
+            const auto max_label = array_internal::max_or_lowest(labelisation);
+            if constexpr (std::is_signed_v<T>) {
+                hg_assert(max_label >= -1,
+                          "The number of regions cannot be deduced from an empty or negative labelisation.");
+            }
+            return (size_t) max_label + 1;
+        }
+    }
 
     /**
    * Given two labelisations, a fine and a coarse one, of a same set of elements.
@@ -38,13 +54,11 @@ namespace hg {
    */
     template<typename T1, typename T2>
     auto project_fine_to_coarse_labelisation
-            (const xt::xexpression<T1> &xlabelisation_fine,
-             const xt::xexpression<T2> &xlabelisation_coarse,
+            (array_view<const T1> labelisation_fine,
+             array_view<const T2> labelisation_coarse,
              size_t num_regions_fine = 0,
              size_t num_regions_coarse = 0) {
         HG_TRACE();
-        auto &labelisation_fine = xlabelisation_fine.derived_cast();
-        auto &labelisation_coarse = xlabelisation_coarse.derived_cast();
 
         hg_assert_integral_value_type(labelisation_fine);
         hg_assert_integral_value_type(labelisation_coarse);
@@ -54,21 +68,32 @@ namespace hg {
                   "Labelisations must have the same size.");
 
         if (num_regions_fine == 0) {
-            num_regions_fine = xt::amax(labelisation_fine)(0) + 1;
+            num_regions_fine = alignment_internal::num_regions_from_labelisation(labelisation_fine);
         }
 
         if (num_regions_coarse == 0) {
-            num_regions_coarse = xt::amax(labelisation_coarse)(0) + 1;
+            num_regions_coarse = alignment_internal::num_regions_from_labelisation(labelisation_coarse);
         }
 
-        array_2d<size_t> intersections = xt::zeros<size_t>({num_regions_fine, num_regions_coarse});
+        array_2d<size_t> intersections = hg::zeros<size_t>({num_regions_fine, num_regions_coarse});
 
         for (index_t i = 0; i < (index_t)labelisation_fine.size(); i++) {
             intersections(labelisation_fine(i), labelisation_coarse(i))++;
         }
 
-        // cast size_t -> index_t
-        array_1d<index_t> res = xt::argmax(intersections, 1);
+        // index of the first largest intersection of each fine region
+        array_1d<index_t> res = array_1d<index_t>::from_shape({num_regions_fine});
+        for (index_t i = 0; i < (index_t) num_regions_fine; i++) {
+            index_t best = 0;
+            size_t best_value = intersections(i, 0);
+            for (index_t j = 1; j < (index_t) num_regions_coarse; j++) {
+                if (intersections(i, j) > best_value) {
+                    best_value = intersections(i, j);
+                    best = j;
+                }
+            }
+            res(i) = best;
+        }
         return res;
     }
 
@@ -107,7 +132,7 @@ namespace hg {
             auto &rag = rag_fine.rag;
 
             auto fine_to_coarse_map = project_fine_to_coarse_labelisation(fine_supervertices, coarse_supervertices);
-            array_1d<typename T2::value_type> coarse_sm_on_fine_rag = xt::empty<typename T2::value_type>(
+            array_1d<typename T2::value_type> coarse_sm_on_fine_rag = hg::empty<typename T2::value_type>(
                     {num_edges(rag_fine.rag)});
 
             lca_fast lca(tree_coarse);
@@ -154,15 +179,19 @@ namespace hg {
         }
 
         template<typename T>
-        auto align_hierarchy(const hg::tree &tree, const xt::xexpression<T> &xaltitudes) const {
+        auto align_hierarchy(const hg::tree &tree, array_view<const T> altitudes) const {
             HG_TRACE();
-            auto &altitudes = xaltitudes.derived_cast();
             hg_assert_node_weights(tree, altitudes);
             hg_assert_1d_array(altitudes);
-            hg_assert(num_leaves(tree) == m_fine_rag.vertex_map.size(),
+            hg_assert((index_t) num_leaves(tree) == m_fine_rag.vertex_map.size(),
                       "Cannot align given hierarchy: incompatible sizes!");
             auto sv_hierarchy = supervertices_hierarchy(tree, altitudes);
-            auto altitudes_sv_hierarchy = xt::index_view(altitudes, sv_hierarchy.node_map);
+            using value_type = T;
+            const auto &node_map = sv_hierarchy.node_map;
+            array_1d<value_type> altitudes_sv_hierarchy = array_1d<value_type>::from_shape({node_map.size()});
+            for (index_t i = 0; i < (index_t) node_map.size(); i++) {
+                altitudes_sv_hierarchy(i) = altitudes(node_map(i));
+            }
             auto coarse_sm_on_fine_rag =
                     alignment_internal::project_hierarchy(m_fine_rag,
                                                            sv_hierarchy.supervertex_labelisation,
@@ -172,12 +201,11 @@ namespace hg {
         }
 
         template<typename graph_t, typename T>
-        auto align_hierarchy(const graph_t &graph, const xt::xexpression<T> &xsaliency_map) const {
+        auto align_hierarchy(const graph_t &graph, array_view<const T> saliency_map) const {
             HG_TRACE();
-            auto &saliency_map = xsaliency_map.derived_cast();
             hg_assert_edge_weights(graph, saliency_map);
             hg_assert_1d_array(saliency_map);
-            hg_assert(num_vertices(graph) == m_fine_rag.vertex_map.size(),
+            hg_assert((index_t) num_vertices(graph) == m_fine_rag.vertex_map.size(),
                       "Cannot align given hierarchy: incompatible sizes!");
             auto coarse_rag = make_region_adjacency_graph_from_graph_cut(graph, saliency_map);
             auto coarse_rag_edge_weights = rag_accumulate(coarse_rag.edge_map, saliency_map, accumulator_first());
@@ -193,12 +221,10 @@ namespace hg {
         }
 
         template<typename T1, typename T2>
-        auto align_hierarchy(const xt::xexpression<T1> &xcoarse_supervertices,
+        auto align_hierarchy(array_view<const T1> coarse_supervertices,
                              const hg::tree &tree,
-                             const xt::xexpression<T2> &xaltitudes) const {
+                             array_view<const T2> altitudes) const {
             HG_TRACE();
-            auto &coarse_supervertices = xcoarse_supervertices.derived_cast();
-            auto &altitudes = xaltitudes.derived_cast();
             hg_assert_node_weights(tree, altitudes);
             hg_assert_1d_array(altitudes);
             hg_assert_1d_array(coarse_supervertices);
@@ -220,18 +246,18 @@ namespace hg {
     };
 
     template<typename graph_t, typename T>
-    auto make_hierarchy_aligner_from_graph_cut(const graph_t &graph, const xt::xexpression<T> &saliency_map) {
+    auto make_hierarchy_aligner_from_graph_cut(const graph_t &graph, array_view<const T> saliency_map) {
         return hierarchy_aligner(make_region_adjacency_graph_from_graph_cut(graph, saliency_map));
     }
 
     template<typename graph_t, typename T>
-    auto make_hierarchy_aligner_from_labelisation(const graph_t &graph, const xt::xexpression<T> &vertex_labels) {
+    auto make_hierarchy_aligner_from_labelisation(const graph_t &graph, array_view<const T> vertex_labels) {
         return hierarchy_aligner(make_region_adjacency_graph_from_labelisation(graph, vertex_labels));
     }
 
     template<typename graph_t, typename tree_t, typename T>
     auto make_hierarchy_aligner_from_hierarchy(const graph_t &graph, const tree_t &tree,
-                                               const xt::xexpression<T> &altitudes) {
+                                               array_view<const T> altitudes) {
         return hierarchy_aligner(
                 make_region_adjacency_graph_from_labelisation(graph, labelisation_hierarchy_supervertices(tree,
                                                                                                           altitudes)));

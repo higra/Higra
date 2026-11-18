@@ -42,19 +42,17 @@ namespace hg {
      * @tparam T2
      * @param graph
      * @param embedding
-     * @param xedge_weights
-     * @param xedge_orientations
+     * @param edge_weights
+     * @param edge_orientations
      * @return
      */
     template<typename graph_t, typename T1, typename T2>
     auto oriented_watershed(const graph_t &graph,
                             const embedding_grid_2d &embedding,
-                            const xt::xexpression<T1> &xedge_weights,
-                            const xt::xexpression<T2> &xedge_orientations = array_nd<int>()) {
+                            array_view<const T1> edge_weights,
+                            array_view<const T2> edge_orientations) {
         HG_TRACE();
-        using value_t = typename T1::value_type;
-        const auto &edge_weights = xedge_weights.derived_cast();
-        const auto &edge_orientations = xedge_orientations.derived_cast();
+        using value_t = T1;
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
         hg_assert(num_vertices(graph) == embedding.size(),
@@ -62,7 +60,7 @@ namespace hg {
         auto watershed_labels = labelisation_watershed(graph, edge_weights);
         auto rag = make_region_adjacency_graph_from_labelisation(graph, watershed_labels);
 
-        array_1d<value_t> final_weights = xt::zeros<value_t>({num_edges(graph)});
+        array_1d<value_t> final_weights = hg::zeros<value_t>({num_edges(graph)});
 
         if (edge_orientations.dimension() != 0) {
             // reweighting contours according to contour orientations
@@ -75,7 +73,7 @@ namespace hg {
 
             for (auto &polyline: contour2d) {
                 for (auto &segment: polyline) {
-                    auto segment_orientation = std::fmod(segment.angle(), xt::numeric_constants<double>::PI);
+                    auto segment_orientation = std::fmod(segment.angle(), hg::pi);
 
                     for (auto element: segment) {
                         auto edge_index = element.first;
@@ -83,7 +81,7 @@ namespace hg {
                         auto edge_orientation = edge_orientations(edge_index);
                         auto new_weight = edge_weight
                                           * std::abs(
-                                std::cos(edge_orientation - xt::numeric_constants<double>::PI_2 - segment_orientation));
+                                std::cos(edge_orientation - hg::pi_2 - segment_orientation));
                         if (new_weight > final_weights(edge_index)) {
                             final_weights(edge_index) = (value_t)new_weight;
                         }
@@ -91,7 +89,7 @@ namespace hg {
                 }
             }
         } else {
-            final_weights = edge_weights;
+            final_weights = array_1d<value_t>(edge_weights);
         }
 
 
@@ -99,6 +97,16 @@ namespace hg {
         auto rag_edge_weights = rag_accumulate(rag.edge_map, final_weights, accumulator_mean());
 
         return std::make_pair(std::move(rag), std::move(rag_edge_weights));
+    }
+
+    /**
+     * Overload without edge orientations: same as passing a 0-d orientation array.
+     */
+    template<typename graph_t, typename T1>
+    auto oriented_watershed(const graph_t &graph,
+                            const embedding_grid_2d &embedding,
+                            array_view<const T1> edge_weights) {
+        return oriented_watershed(graph, embedding, edge_weights, array<T1>(array_shape(), T1(0)));
     }
 
     /**
@@ -119,20 +127,18 @@ namespace hg {
      * @tparam T2
      * @param graph
      * @param embedding
-     * @param xedge_weights
-     * @param xedge_orientations
+     * @param edge_weights
+     * @param edge_orientations
      * @return
      */
     template<typename graph_t, typename T1, typename T2>
     auto mean_pb_hierarchy(const graph_t &graph,
                            const embedding_grid_2d &embedding,
-                           const xt::xexpression<T1> &xedge_weights,
-                           const xt::xexpression<T2> &xedge_orientations = array_nd<int>()) {
+                           array_view<const T1> edge_weights,
+                           array_view<const T2> edge_orientations) {
         HG_TRACE();
 
-        using value_t = typename T1::value_type;
-        const auto &edge_weights = xedge_weights.derived_cast();
-        const auto &edge_orientations = xedge_orientations.derived_cast();
+        using value_t = T1;
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
         hg_assert(num_vertices(graph) == embedding.size(),
@@ -148,5 +154,15 @@ namespace hg {
                                                           rag_edge_weights,
                                                           rag_edge_length);
         return std::make_pair(std::move(rag), std::move(tree));
+    }
+
+    /**
+     * Overload without edge orientations: same as passing a 0-d orientation array.
+     */
+    template<typename graph_t, typename T1>
+    auto mean_pb_hierarchy(const graph_t &graph,
+                           const embedding_grid_2d &embedding,
+                           array_view<const T1> edge_weights) {
+        return mean_pb_hierarchy(graph, embedding, edge_weights, array<T1>(array_shape(), T1(0)));
     }
 }

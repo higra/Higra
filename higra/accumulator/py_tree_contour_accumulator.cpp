@@ -10,15 +10,10 @@
 
 #include "py_tree_contour_accumulator.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
 #include "higra/accumulator/tree_contour_accumulator.hpp"
 #include "common.hpp"
 
 namespace py_contour_accumulator {
-
-// @TODO Remove layout_type when xtensor solves the issue with iterators
-    template<typename T>
-    using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
 
     namespace py = pybind11;
 
@@ -31,12 +26,14 @@ namespace py_contour_accumulator {
             c.def("_accumulate_on_contours",
                   [](const graph_t &graph,
                      const tree_t &tree,
-                     const pyarray<value_t> &vertex_data,
-                     const pyarray<hg::index_t> &depth,
+                     const hg::array_view<const value_t> &vertex_data,
+                     const hg::array_view<const hg::index_t> &depth,
                      hg::accumulators accumulator) {
+                      auto xvertex_data = vertex_data;
+                      auto xdepth = depth;
                       return dispatch_accumulator(
-                              [&graph, &tree, &vertex_data, &depth](const auto &acc) {
-                                  return hg::accumulate_on_contours(graph, tree, vertex_data, depth, acc);
+                              [&graph, &tree, &xvertex_data, &xdepth](const auto &acc) {
+                                  return hg::accumulate_on_contours(graph, tree, xvertex_data, xdepth, acc);
                               },
                               accumulator);
                   },
@@ -50,7 +47,6 @@ namespace py_contour_accumulator {
     };
 
     void py_init_tree_contour_accumulator(pybind11::module &m) {
-        //xt::import_numpy();
         add_type_overloads<def_accumulate_on_contours<hg::ugraph, hg::tree>, HG_TEMPLATE_NUMERIC_TYPES>
                 (m,
                  "");

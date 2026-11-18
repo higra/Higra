@@ -275,7 +275,7 @@ namespace hg {
          */
         template<typename altitude_buffer_t>
         ExportedTree exportTreeState(const tree_t &tree, const altitude_buffer_t &altitude) const {
-            hg_assert(altitude.size() >= (size_t) tree.getGlobalIdSpaceSize(), "Altitude buffer must cover the full dynamic-tree global id space.");
+            hg_assert((size_t) altitude.size() >= (size_t) tree.getGlobalIdSpaceSize(), "Altitude buffer must cover the full dynamic-tree global id space.");
 
             const index_t numLeaves = tree.getNumTotalProperParts();
             const index_t numAliveNodes = tree.getNumNodes();
@@ -351,7 +351,7 @@ namespace hg {
          * @param image Input vertex weights.
          * @param attribute Increasing attribute used to select pruning candidates.
          */
-        ComponentTreeCasf(const graph_t &graph, const array_1d<altitude_t> &image, ComponentTreeCasfAttribute attribute = ComponentTreeCasfAttribute::area)
+        ComponentTreeCasf(const graph_t &graph, array_view<const altitude_t> image, ComponentTreeCasfAttribute attribute = ComponentTreeCasfAttribute::area)
                 : graph_(&graph), attributeComputerMin_(nullptr), attributeComputerMax_(nullptr), attribute_(attribute) {
             const auto minStatic = component_tree_min_tree(*graph_, image);
             const auto maxStatic = component_tree_max_tree(*graph_, image);

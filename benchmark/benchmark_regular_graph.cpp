@@ -12,10 +12,8 @@
 #include <benchmark/benchmark.h>
 #include "utils.h"
 #include "higra/graph.hpp"
-#include "xtensor/generators/xrandom.hpp"
 #include "higra/image/graph_image.hpp"
 
-using namespace xt;
 using namespace hg;
 
 
@@ -28,7 +26,7 @@ static void BM_graph_implicit_adjacency_iterator(benchmark::State &state) {
         state.PauseTiming();
 
         hg::index_t size = state.range(0);
-        xt::random::seed(42);
+        bench_utils::random_seed(42);
         auto g = hg::get_4_adjacency_implicit_graph(hg::embedding_grid_2d({size, size}));
 
         state.ResumeTiming();

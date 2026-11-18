@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include "xtensor/misc/xsort.hpp"
 
 #include "../graph.hpp"
 #include "../accumulator/at_accumulator.hpp"
@@ -49,9 +48,8 @@ namespace hg {
      */
     template<typename graph_t, typename T>
     auto
-    make_region_adjacency_graph_from_labelisation(const graph_t &graph, const xt::xexpression<T> &xvertex_labels) {
+    make_region_adjacency_graph_from_labelisation(const graph_t &graph, array_view<const T> vertex_labels) {
         HG_TRACE();
-        auto &vertex_labels = xvertex_labels.derived_cast();
         hg_assert_vertex_weights(graph, vertex_labels);
         hg_assert_1d_array(vertex_labels);
         hg_assert_integral_value_type(vertex_labels);
@@ -132,9 +130,8 @@ namespace hg {
      */
     template<typename graph_t, typename T>
     auto
-    make_region_adjacency_graph_from_graph_cut(const graph_t &graph, const xt::xexpression<T> &xedge_weights) {
+    make_region_adjacency_graph_from_graph_cut(const graph_t &graph, array_view<const T> edge_weights) {
         HG_TRACE();
-        auto &edge_weights = xedge_weights.derived_cast();
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
 
@@ -199,17 +196,16 @@ namespace hg {
     }
 
     namespace rag_internal {
-        template<bool vectorial, typename T>
+        template<bool vectorial, typename V>
         auto
-        rag_back_project_weights(const array_1d<index_t> &rag_map, const xt::xexpression<T> &xrag_weights) {
+        rag_back_project_weights(array_view<const index_t> rag_map, array_view<const V> rag_weights) {
             HG_TRACE();
-            auto &rag_weights = xrag_weights.derived_cast();
 
             index_t numv = rag_map.size();
             std::vector<size_t> shape;
             shape.push_back(numv);
             shape.insert(shape.end(), rag_weights.shape().begin() + 1, rag_weights.shape().end());
-            array_nd<typename T::value_type> weights = xt::zeros<typename T::value_type>(shape);
+            array_nd<V> weights = hg::zeros<V>(array_shape::from(shape));
 
 
             auto input_view = make_light_axis_view<vectorial>(rag_weights);
@@ -237,11 +233,11 @@ namespace hg {
      */
     template<typename T>
     auto
-    rag_back_project_weights(const array_1d<index_t> &rag_map, const xt::xexpression<T> &xrag_weights) {
-        if (xrag_weights.derived_cast().dimension() == 1) {
-            return rag_internal::rag_back_project_weights<false>(rag_map, xrag_weights);
+    rag_back_project_weights(array_view<const index_t> rag_map, array_view<const T> rag_weights) {
+        if (rag_weights.dimension() == 1) {
+            return rag_internal::rag_back_project_weights<false>(rag_map, rag_weights);
         } else {
-            return rag_internal::rag_back_project_weights<true>(rag_map, xrag_weights);
+            return rag_internal::rag_back_project_weights<true>(rag_map, rag_weights);
         }
 
     }
@@ -256,9 +252,9 @@ namespace hg {
      * @param accumulator
      * @return rag (vertices or edges) weights
      */
-    template<typename T, typename accumulator_t, typename output_t = typename T::value_type>
-    auto rag_accumulate(const array_1d<index_t> &rag_map,
-                        const xt::xexpression<T> &xweights,
+    template<typename T, typename accumulator_t, typename output_t = T>
+    auto rag_accumulate(array_view<const index_t> rag_map,
+                        array_view<const T> xweights,
                         const accumulator_t &accumulator) {
         return accumulate_at(rag_map, xweights, accumulator);
     }

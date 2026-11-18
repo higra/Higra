@@ -10,16 +10,10 @@
 
 #include "py_graph_accumulator.hpp"
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "higra/accumulator/graph_accumulator.hpp"
 #include "common.hpp"
 
 namespace py_graph_accumulator {
-
-// @TODO Remove layout_type when xtensor solves the issue with iterators
-    template<typename T>
-    using pyarray = xt::pyarray<T, xt::layout_type::row_major>;
 
     namespace py = pybind11;
 
@@ -33,11 +27,12 @@ namespace py_graph_accumulator {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_accumulate_graph_edges", [](const graph_t &graph, const pyarray<value_t> &input,
+            c.def("_accumulate_graph_edges", [](const graph_t &graph, const hg::array_view<const value_t> &input,
                                                 hg::accumulators accumulator) {
+                      auto xinput = input;
                       return dispatch_accumulator(
-                              [&graph, &input](const auto &acc) {
-                                  return hg::accumulate_graph_edges(graph, input, acc);
+                              [&graph, &xinput](const auto &acc) {
+                                  return hg::accumulate_graph_edges(graph, xinput, acc);
                               },
                               accumulator);
                   },
@@ -54,11 +49,12 @@ namespace py_graph_accumulator {
         template<typename value_t, typename C>
         static
         void def(C &c, const char *doc) {
-            c.def("_accumulate_graph_vertices", [](const graph_t &graph, const pyarray<value_t> &input,
+            c.def("_accumulate_graph_vertices", [](const graph_t &graph, const hg::array_view<const value_t> &input,
                                                    hg::accumulators accumulator) {
+                      auto xinput = input;
                       return dispatch_accumulator(
-                              [&graph, &input](const auto &acc) {
-                                  return hg::accumulate_graph_vertices(graph, input, acc);
+                              [&graph, &xinput](const auto &acc) {
+                                  return hg::accumulate_graph_vertices(graph, xinput, acc);
                               },
                               accumulator);
                   },
@@ -71,7 +67,6 @@ namespace py_graph_accumulator {
 
 
     void py_init_graph_accumulator(pybind11::module &m) {
-        //xt::import_numpy();
         add_type_overloads<def_accumulate_graph_edges<graph_t>, HG_TEMPLATE_NUMERIC_TYPES>
                 (m,
                  "");

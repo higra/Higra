@@ -53,15 +53,14 @@ namespace hg {
     }
 
     template<typename T, typename Compare>
-    void stable_sort(xt::xexpression<T> &arrayx, Compare comp) {
-        auto &array = arrayx.derived_cast();
+    void stable_sort(array_view<T> array, Compare comp) {
         hg_assert_1d_array(array);
         hg::stable_sort(array.begin(), array.end(), comp);
     }
 
     template<typename T>
-    void stable_sort(xt::xexpression<T> &arrayx) {
-        hg::stable_sort(arrayx, std::less<typename T::value_type>());
+    void stable_sort(array_view<T> arrayx) {
+        hg::stable_sort(arrayx, std::less<T>());
     }
 
     template<typename RandomAccessIterator>
@@ -71,22 +70,21 @@ namespace hg {
     }
 
     template<typename T, typename Compare>
-    void sort(xt::xexpression<T> &arrayx, Compare comp) {
-        auto &array = arrayx.derived_cast();
+    void sort(array_view<T> array, Compare comp) {
         hg_assert_1d_array(array);
         hg::sort(array.begin(), array.end(), comp);
     }
 
     template<typename T>
-    void sort(xt::xexpression<T> &arrayx) {
-        hg::sort(arrayx, std::less<typename T::value_type>());
+    void sort(array_view<T> arrayx) {
+        hg::sort(arrayx, std::less<T>());
     }
 
 #define HIGRA_ARG_SORT(sort_function)                                                                   \
-    auto &array = arrayx.derived_cast();                                                                \
+    const auto &array = arrayx;                                                                         \
     hg_assert(array.dimension() > 0 && array.dimension() <= 2,                                          \
           "Array dimension must be strictly positive and lower or equal than 2.");                      \
-    array_1d <index_t> indices = xt::arange<index_t>(array.shape()[0]);                                 \
+    array_1d <index_t> indices = hg::arange<index_t>(array.shape()[0]);                                 \
     if (array.dimension() == 1) {                                                                       \
         sort_function(indices.begin(), indices.end(),                                                   \
         [&array, &comp](index_t i, index_t j) { return comp(array(i), array(j)); });                    \
@@ -107,23 +105,23 @@ namespace hg {
 return indices;
 
     template<typename T, typename Compare>
-    auto arg_sort(const xt::xexpression<T> &arrayx, Compare comp) {
+    auto arg_sort(array_view<const T> arrayx, Compare comp) {
         HIGRA_ARG_SORT(hg::sort);
     }
 
     template<typename T>
-    auto arg_sort(const xt::xexpression<T> &arrayx) {
-        return arg_sort(arrayx, std::less<typename T::value_type>());
+    auto arg_sort(array_view<const T> arrayx) {
+        return arg_sort(arrayx, std::less<T>());
     }
 
     template<typename T, typename Compare>
-    auto stable_arg_sort(const xt::xexpression<T> &arrayx, Compare comp) {
+    auto stable_arg_sort(array_view<const T> arrayx, Compare comp) {
         HIGRA_ARG_SORT(hg::stable_sort);
     }
 
     template<typename T>
-    auto stable_arg_sort(const xt::xexpression<T> &arrayx) {
-        return stable_arg_sort(arrayx, std::less<typename T::value_type>());
+    auto stable_arg_sort(array_view<const T> arrayx) {
+        return stable_arg_sort(arrayx, std::less<T>());
     }
 
 #undef HIGRA_ARG_SORT

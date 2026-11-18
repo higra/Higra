@@ -447,11 +447,13 @@ template<typename image_t, typename graph_t>
 image_t apply_naive_threshold_by_area(const graph_t &graph, const image_t &image, double threshold) {
     auto maxTree = component_tree_max_tree(graph, image);
     auto maxArea = attribute_area(maxTree.tree);
-    auto filtered = reconstruct_leaf_data(maxTree.tree, maxTree.altitudes, maxArea <= threshold);
+    auto filtered = reconstruct_leaf_data(maxTree.tree, maxTree.altitudes,
+                                          hg::map([threshold](index_t a) { return a <= threshold; }, maxArea));
 
     auto minTree = component_tree_min_tree(graph, filtered);
     auto minArea = attribute_area(minTree.tree);
-    return reconstruct_leaf_data(minTree.tree, minTree.altitudes, minArea <= threshold);
+    return reconstruct_leaf_data(minTree.tree, minTree.altitudes,
+                                 hg::map([threshold](index_t a) { return a <= threshold; }, minArea));
 }
 
 template<typename image_t, typename graph_t>

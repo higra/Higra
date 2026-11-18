@@ -9,11 +9,34 @@
 ****************************************************************************/
 
 #pragma once
-#include "xtl/xmeta_utils.hpp"
 #include "pybind11/stl.h"
 #include "pybind11/functional.h"
 #include "higra/utils.hpp"
+#include "higra/python/py_array.hpp"
+#include <cstddef>
+#include <string>
 #include <functional>
+
+/*
+ * Array inputs of the bindings are hg::array_view<const T> (or hg::array<T> when the binding keeps the
+ * data), converted by higra/python/py_array.hpp: they are always C-contiguous. Array results are returned
+ * as hg::array<T>, moved to NumPy without copy.
+ */
+namespace py_args {
+    /**
+     * Checks the dimension of a binding argument that must have a fixed rank N: an input of another rank
+     * raises TypeError. Returns the argument.
+     */
+    template<std::size_t N, typename T>
+    const hg::array_view<const T> &fixed_rank(const hg::array_view<const T> &v, const char *arg_name) {
+        if (v.dimension() != static_cast<hg::index_t>(N)) {
+            throw pybind11::type_error(std::string("Argument '") + arg_name + "' must be an array of dimension " +
+                                       std::to_string(N) + " (got dimension " + std::to_string(v.dimension()) +
+                                       ").");
+        }
+        return v;
+    }
+}
 
 
 template <typename F, typename T, typename module_t, typename... Args>
@@ -27,31 +50,3 @@ add_type_overloads(module_t & m, const char * doc, Args&&... args){
     F::template def<T1>(m, doc, std::forward<Args>(args)...);
     add_type_overloads<F, Ts...>(m, "", std::forward<Args>(args)...);
 };
-
-
-#if defined(__GNUC__) && !defined(__clang__)
-namespace workaround
-{
-    // Fixes "undefined symbol" issues with xtensor-python
-    inline void extra_allocator()
-    {
-        std::allocator<long long> a;
-        std::allocator<unsigned long long> b;
-        std::allocator<double> c;
-        std::allocator<std::complex<double>> d;
-        std::allocator<unsigned short> e;
-        std::allocator<short> f;
-        std::allocator<float> g;
-        std::allocator<unsigned int> h;
-        std::allocator<int> i;
-        std::allocator<unsigned char> j;
-        std::allocator<char> k;
-        if(!std::is_same<char, signed char>::value){
-            std::allocator<signed char> l;
-        }
-        std::allocator<unsigned long> m;
-        std::allocator<long> n;
-        std::allocator<bool> o;
-    }
-}
-#endif

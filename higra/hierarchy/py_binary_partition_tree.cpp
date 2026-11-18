@@ -11,13 +11,9 @@
 #include "py_binary_partition_tree.hpp"
 
 #include "../py_common.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "higra/hierarchy/binary_partition_tree.hpp"
 
 namespace py_binary_partition_tree {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     using namespace hg;
     namespace py = pybind11;
@@ -48,8 +44,10 @@ namespace py_binary_partition_tree {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_binary_partition_tree_average_linkage",
-                  [](const hg::ugraph &graph, pyarray<T> &edge_weights, pyarray<T> &edge_weight_weights) {
-                      auto res = binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weights);
+                  [](const hg::ugraph &graph, const hg::array_view<const T> &edge_weights,
+                     const hg::array_view<const T> &edge_weight_weights) {
+                      auto res = binary_partition_tree_average_linkage(graph, edge_weights,
+                                                                       edge_weight_weights);
                       return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
                   },
                   doc,
@@ -64,7 +62,8 @@ namespace py_binary_partition_tree {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_binary_partition_tree_exponential_linkage",
-                  [](const hg::ugraph &graph, pyarray<T> &edge_weights, T alpha, pyarray<T> &edge_weight_weights) {
+                  [](const hg::ugraph &graph, const hg::array_view<const T> &edge_weights, T alpha,
+                     const hg::array_view<const T> &edge_weight_weights) {
                       auto res = binary_partition_tree_exponential_linkage(graph, edge_weights, alpha,
                                                                            edge_weight_weights);
                       return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
@@ -83,10 +82,11 @@ namespace py_binary_partition_tree {
         void def(pybind11::module &m, const char *doc) {
             m.def("_binary_partition_tree_ward_linkage",
                   [](const hg::ugraph &graph,
-                     const pyarray<T> &vertex_centroids,
-                     const pyarray<T> &vertex_sizes,
+                     const hg::array_view<const T> &vertex_centroids,
+                     const hg::array_view<const T> &vertex_sizes,
                      const std::string &altitude_correction) {
-                      auto res = binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes,
+                      auto res = binary_partition_tree_ward_linkage(graph, vertex_centroids,
+                                                                    vertex_sizes,
                                                                     altitude_correction);
                       return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
                   },
@@ -104,7 +104,7 @@ namespace py_binary_partition_tree {
         void def(pybind11::module &m, const char *doc) {
             m.def("_binary_partition_tree",
                   [](const hg::ugraph &graph,
-                     pyarray<T> &edge_weights,
+                     const hg::array_view<const T> &edge_weights,
                      py::object weighting_function) {
                       //using new_neighbours_type = const std::vector<binary_partition_tree_internal::new_neighbour<T> >;
                       auto weighter = [&weighting_function](
@@ -134,7 +134,7 @@ namespace py_binary_partition_tree {
         static
         void def(pybind11::module &m, const char *doc) {
             m.def("_binary_partition_tree_complete_linkage",
-                  [](const hg::ugraph &graph, pyarray<T> &edge_weights) {
+                  [](const hg::ugraph &graph, const hg::array_view<const T> &edge_weights) {
                       auto res = hg::binary_partition_tree_complete_linkage(graph, edge_weights);
                       return py::make_tuple(std::move(res.tree), std::move(res.altitudes));
                   },
@@ -145,7 +145,6 @@ namespace py_binary_partition_tree {
     };
 
     void py_init_binary_partition_tree(pybind11::module &m) {
-        //xt::import_numpy();
 
         add_type_overloads<def_binary_partition_tree_ward_linkage, HG_TEMPLATE_FLOAT_TYPES>(m, "");
         add_type_overloads<def_binary_partition_tree_average_linkage, HG_TEMPLATE_FLOAT_TYPES>(m, "");

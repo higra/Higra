@@ -80,6 +80,28 @@ class TestEmbedding(unittest.TestCase):
         p = e1.grid2lin((3, 2, 1))
         self.assertTrue(p == 35)
 
+    def test_wrong_number_of_coordinates(self):
+        e1 = hg.EmbeddingGrid1d((5,))
+        e2 = hg.EmbeddingGrid2d((3, 4))
+        for e in (e1, e2):
+            for coordinates in ([1, 2, 3], (1, 2, 3), []):
+                with self.subTest(dimension=e.dimension(), coordinates=coordinates):
+                    with self.assertRaises(RuntimeError):
+                        e.grid2lin(coordinates)
+                    with self.assertRaises(RuntimeError):
+                        e.contains(coordinates)
+        with self.assertRaises(RuntimeError):
+            e2.grid2lin([1])
+        with self.assertRaises(RuntimeError):
+            e2.contains([1])
+
+        self.assertEqual(e1.grid2lin([3]), 3)
+        self.assertTrue(e1.contains([4]))
+        self.assertFalse(e1.contains([5]))
+        self.assertEqual(e2.grid2lin([2, 3]), 11)
+        self.assertTrue(e2.contains([2, 3]))
+        self.assertFalse(e2.contains([3, 0]))
+
     def test_grid2linV(self):
         e1 = hg.EmbeddingGrid2d((5, 10))
 

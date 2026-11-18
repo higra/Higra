@@ -12,12 +12,8 @@
 #include "../py_common.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/image/hierarchy_mean_pb.hpp"
-#include "xtensor-python/pyarray.hpp"
-#include "xtensor-python/pytensor.hpp"
 #include "pybind11/functional.h"
 namespace py_hierarchy_mean_pb {
-    template<typename T>
-    using pyarray = xt::pyarray<T>;
 
     namespace py = pybind11;
 
@@ -28,8 +24,8 @@ namespace py_hierarchy_mean_pb {
         void def(C &m, const char *doc) {
             m.def("_oriented_watershed", [](const graph_t &graph,
                                             const std::vector<size_t> &shape,
-                                            const pyarray<value_t> &edge_weights,
-                                            const pyarray<value_t> &edge_orientations) {
+                                            const hg::array_view<const value_t> &edge_weights,
+                                            const hg::array_view<const value_t> &edge_orientations) {
                       auto res = hg::oriented_watershed(graph,
                                                         hg::embedding_grid_2d(shape),
                                                         edge_weights,
@@ -43,7 +39,7 @@ namespace py_hierarchy_mean_pb {
                   py::arg("graph"),
                   py::arg("shape"),
                   py::arg("edge_weights"),
-                  py::arg("edge_orientations") = pyarray<value_t>()
+                  py::arg("edge_orientations") = hg::array<value_t>(hg::array_shape(), value_t(0))
             );
         }
     };
@@ -55,8 +51,8 @@ namespace py_hierarchy_mean_pb {
         void def(C &m, const char *doc) {
             m.def("_mean_pb_hierarchy", [](const graph_t &graph,
                                            const std::vector<size_t> &shape,
-                                           const pyarray<value_t> &edge_weights,
-                                           const pyarray<value_t> &edge_orientations) {
+                                           const hg::array_view<const value_t> &edge_weights,
+                                           const hg::array_view<const value_t> &edge_orientations) {
                       auto res = hg::mean_pb_hierarchy(graph,
                                                        hg::embedding_grid_2d(shape),
                                                        edge_weights,
@@ -72,14 +68,13 @@ namespace py_hierarchy_mean_pb {
                   py::arg("graph"),
                   py::arg("shape"),
                   py::arg("edge_weights"),
-                  py::arg("edge_orientations") = pyarray<value_t>()
+                  py::arg("edge_orientations") = hg::array<value_t>(hg::array_shape(), value_t(0))
             );
         }
     };
 
 
     void py_init_hierarchy_mean_pb(pybind11::module &m) {
-        //xt::import_numpy();
 
         add_type_overloads<def_oriented_watershed<hg::ugraph>, HG_TEMPLATE_FLOAT_TYPES>
                 (m,

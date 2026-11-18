@@ -8,110 +8,97 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-//#include "xtl/xmeta_utils.hpp"
-#define FORCE_IMPORT_ARRAY
-
 #include <catch2/catch_test_macros.hpp>
-#include <xtensor/containers/xtensor.hpp>
-#include <xtensor/containers/xarray.hpp>
-#include <xtensor-python/pyarray.hpp>
-#include <xtensor-python/pytensor.hpp>
+#include "higra/python/py_array.hpp"
 #include <pybind11/embed.h> // everything needed for embedding
 
 namespace py = pybind11;
 using namespace py::literals;
-//using namespace xt;
 using namespace std;
+
+namespace {
+    struct holder {
+        hg::array<double> data{1., 2., 3.};
+    };
+}
 
 PYBIND11_EMBEDDED_MODULE(dummy, m
 ) {
-    xt::import_numpy();
-
-    m.def("foo", [](
-            xt::pytensor<float, 1> array
-    ) {
+    // dtype dispatch: the overload matching the input dtype is selected
+    m.def("foo", [](hg::array_view<const float>) {
         return 42;
     });
-    m.def("foo", [](
-            xt::pyarray<float> array
-    ) {
+    m.def("foo", [](hg::array_view<const double>) {
         return 43;
     });
 
-    m.def("increment_array", [](xt::pyarray<double>& array) {
-        array += 1.0;
-        return array;
+    // NumPy input, in-place mutation and NumPy output
+    m.def("increment_array", [](hg::array_view<double> array) {
+        for (auto &v: array) {
+            v += 1.0;
+        }
+        return hg::array<double>(array);
     });
-    m.def("increment_tensor", [](xt::pytensor<double, 1>& array) {
-        array += 1.0;
-        return array;
+    m.def("sum", [](hg::array_view<const double> array) {
+        double s = 0;
+        for (auto v: array) {
+            s += v;
+        }
+        return s;
     });
+    m.def("arange", [](hg::index_t n) {
+        return hg::arange<double>(n);
+    });
+
+    // borrowed (read-only) view of data owned by a C++ object
+    py::class_<holder>(m, "Holder")
+            .def(py::init<>())
+            .def("data", [](const holder &h) -> const hg::array<double> & { return h.data; },
+                 py::return_value_policy::reference_internal);
 }
 
 
 TEST_CASE("basic python embedded interpreter", "[embedded]") {
+    // A single interpreter session: NumPy cannot be imported again after the interpreter is finalized,
+    // so the checks are not split into Catch2 sections (each section reruns the test case).
     py::initialize_interpreter();
-    SECTION("example import") {
-        py::module sys = py::module::import("sys");
+    py::module sys = py::module::import("sys");
 
-        /*    py::scoped_interpreter guard{};
-            auto locals = py::dict("name"_a = "World", "number"_a = 42);
-            py::exec(R"(
-            result = 42
-        )", py::globals(), locals);
-            BOOST_CHECK(locals["result"].cast<int>() == 42);*/
-    }
-    SECTION("xtensor compound assignments and NumPy casts") {
-        py::exec(R"(
+    // NumPy inputs, outputs, in-place mutation and borrowed views
+    py::exec(R"(
 import numpy as np
 import dummy
-for increment in (dummy.increment_array, dummy.increment_tensor):
-    values = np.array([1., 2., 3.])
-    result = increment(values)
-    np.testing.assert_array_equal(values, [2., 3., 4.])
-    np.testing.assert_array_equal(result, values)
+assert dummy.foo(np.zeros(3, dtype=np.float32)) == 42
+assert dummy.foo(np.zeros(3, dtype=np.float64)) == 43
+assert dummy.foo(np.zeros(6, dtype=np.float32)[::2]) == 42
+
+values = np.array([1., 2., 3.])
+result = dummy.increment_array(values)
+np.testing.assert_array_equal(values, [2., 3., 4.])
+np.testing.assert_array_equal(result, values)
+
+assert dummy.sum(np.arange(10.)[::3]) == 18.
+
+r = dummy.arange(4)
+np.testing.assert_array_equal(r, [0., 1., 2., 3.])
+assert r.flags.writeable and r.flags.c_contiguous
+
+h = dummy.Holder()
+d = h.data()
+np.testing.assert_array_equal(d, [1., 2., 3.])
+assert not d.flags.writeable
+assert d.base is h
 )");
-    }
-    SECTION("failed overload") {
-        py::module sys = py::module::import("sys");
-        /*sys.attr("path") = py::make_tuple("", "/home/perretb/Higra/cmake-build-debug/python",
-                "/home/perretb/anaconda3/lib/python36.zip",
-                "/home/perretb/anaconda3/lib/python3.6",
-                "/home/perretb/anaconda3/lib/python3.6/lib-dynload",
-                "/home/perretb/.local/lib/python3.6/site-packages",
-                "/home/perretb/anaconda3/lib/python3.6/site-packages");
 
-        auto dummy_m = py::module::import("dummy");
-        BOOST_CHECK_THROW(dummy_m.attr("foo")("bar").cast<int>(), py::error_already_set);
-        */
-    }
-    SECTION("overload tensor array") {
-        /* py::module sys = py::module::import("sys");
-        sys.attr("path") = py::make_tuple("", "/home/perretb/Higra/cmake-build-debug/python",
-                "/home/perretb/anaconda3/lib/python36.zip",
-                "/home/perretb/anaconda3/lib/python3.6",
-                "/home/perretb/anaconda3/lib/python3.6/lib-dynload",
-                "/home/perretb/.local/lib/python3.6/site-packages",
-                "/home/perretb/anaconda3/lib/python3.6/site-packages");
-
-        auto dummy_m = py::module::import("dummy");
-
-        xt::xtensor<float, 2> a{{1}};
-        dummy_m.attr("foo")(a);*/
-    }
-    SECTION("higra sand box") {
-        /*
-        py::module sys = py::module::import("sys");
-        sys.attr("path") = py::make_tuple("", "/home/perretb/Higra/cmake-build-debug/python",
-                                          "/home/perretb/anaconda3/lib/python36.zip",
-                                          "/home/perretb/anaconda3/lib/python3.6",
-                                          "/home/perretb/anaconda3/lib/python3.6/lib-dynload",
-                                          "/home/perretb/.local/lib/python3.6/site-packages",
-                                          "/home/perretb/anaconda3/lib/python3.6/site-packages");
-
-        auto higra_m = py::module::import("higra");
-        */
-        //auto res = higra_m.attr("read_graph_pink")("/home/perretb/2008_000009.graph");
-    }
+    // failed overload
+    py::exec(R"(
+import dummy
+try:
+    dummy.foo("bar")
+    raise AssertionError("TypeError expected")
+except TypeError:
+    pass
+)");
+    REQUIRE(true);
     py::finalize_interpreter();
 }

@@ -22,7 +22,7 @@ namespace tree_accumulator {
 
         hg::tree t;
 
-        _data() : t(xt::xarray<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
+        _data() : t(hg::array<index_t>{5, 5, 6, 6, 6, 7, 7, 7}) {
         }
 
     } data;
@@ -35,17 +35,17 @@ namespace tree_accumulator {
 
         auto res1 = accumulate_parallel(tree, input, hg::accumulator_sum());
         array_1d<index_t> ref1{0, 0, 0, 0, 0, 2, 3, 2};
-        REQUIRE(xt::allclose(ref1, res1));
+        REQUIRE(hg::allclose(ref1, res1));
 
         array_1d<index_t> vertex_data{1, 1, 1, 1, 1};
         auto res2 = accumulate_sequential(tree, vertex_data, hg::accumulator_sum());
         array_1d<index_t> ref2{1, 1, 1, 1, 1, 2, 3, 5};
-        REQUIRE(xt::allclose(ref2, res2));
+        REQUIRE(hg::allclose(ref2, res2));
 
         auto res3 = accumulate_and_combine_sequential(tree, input, vertex_data, hg::accumulator_max(),
                                                       std::plus<index_t>());
         array_1d<index_t> ref3{1, 1, 1, 1, 1, 2, 2, 3};
-        REQUIRE(xt::allclose(ref3, res3));
+        REQUIRE(hg::allclose(ref3, res3));
 
     }
 
@@ -74,7 +74,7 @@ namespace tree_accumulator {
                                {1,       0},
                                {1,       2},
                                {1,       5}};
-        REQUIRE(xt::allclose(ref1, res1));
+        REQUIRE(hg::allclose(ref1, res1));
 
         array_2d<index_t> vertex_data{{1, 0},
                                       {1, 1},
@@ -90,7 +90,7 @@ namespace tree_accumulator {
                                {2, 1},
                                {3, 9},
                                {5, 10}};
-        REQUIRE(xt::allclose(ref2, res2));
+        REQUIRE(hg::allclose(ref2, res2));
 
         auto res3 = accumulate_and_combine_sequential(tree, input, vertex_data, hg::accumulator_sum(),
                                                       std::plus<index_t>());
@@ -102,7 +102,7 @@ namespace tree_accumulator {
                                {3, 6},
                                {4, 15},
                                {8, 28}};
-        REQUIRE(xt::allclose(ref3, res3));
+        REQUIRE(hg::allclose(ref3, res3));
 
     }
 
@@ -131,7 +131,7 @@ namespace tree_accumulator {
                                {1,       0},
                                {1,       2},
                                {1,       5}};
-        REQUIRE(xt::allclose(ref1, res1));
+        REQUIRE(hg::allclose(ref1, res1));
 
         array_2d<index_t> vertex_data{{1, 0},
                                       {1, 1},
@@ -147,7 +147,7 @@ namespace tree_accumulator {
                                {2, 1},
                                {3, 9},
                                {5, 10}};
-        REQUIRE(xt::allclose(ref2, res2));
+        REQUIRE(hg::allclose(ref2, res2));
 
         auto res3 = accumulate_and_combine_sequential(tree, input, vertex_data, hg::accumulator_sum(),
                                                       std::plus<index_t>());
@@ -159,7 +159,7 @@ namespace tree_accumulator {
                                {3, 6},
                                {4, 15},
                                {8, 28}};
-        REQUIRE(xt::allclose(ref3, res3));
+        REQUIRE(hg::allclose(ref3, res3));
 
     }
 
@@ -170,28 +170,28 @@ namespace tree_accumulator {
 
         auto output = propagate_parallel(tree, input);
         array_1d<int> ref{6, 6, 7, 7, 7, 8, 8, 8};
-        REQUIRE(xt::allclose(ref, output));
+        REQUIRE(hg::allclose(ref, output));
 
         auto output2 = propagate_parallel(tree, input, condition);
         array_1d<int> ref2{6, 2, 7, 4, 7, 8, 7, 8};
-        REQUIRE(xt::allclose(ref2, output2));
+        REQUIRE(hg::allclose(ref2, output2));
 
         auto output3 = propagate_sequential(tree, input, condition);
         array_1d<int> ref3{8, 2, 7, 4, 7, 8, 7, 8};
-        REQUIRE(xt::allclose(ref3, output3));
+        REQUIRE(hg::allclose(ref3, output3));
 
         auto output4 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_sum());
         array_1d<int> ref4{15, 16, 18, 19, 20, 14, 15, 8};
-        REQUIRE(xt::allclose(ref4, output4));
+        REQUIRE(hg::allclose(ref4, output4));
 
         auto output5 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_prod(), condition);
         array_1d<int> ref5{48, 2, 21, 4, 35, 48, 7, 8};
-        REQUIRE(xt::allclose(ref5, output5));
+        REQUIRE(hg::allclose(ref5, output5));
 
         condition(root(tree)) = true;
         auto output6 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_counter(), condition);
         array_1d<int> ref6{2, 2, 2, 4, 2, 2, 7, 1};
-        REQUIRE(xt::allclose(ref6, output6));
+        REQUIRE(hg::allclose(ref6, output6));
     }
 
     TEST_CASE("propagate tree vectorial", "[tree_accumulator]") {
@@ -216,7 +216,7 @@ namespace tree_accumulator {
                           {8, 1},
                           {8, 1},
                           {8, 1}};
-        REQUIRE(xt::allclose(ref, output));
+        REQUIRE(hg::allclose(ref, output));
 
         auto output2 = propagate_parallel(tree, input, condition);
         array_2d<int> ref2{{6, 3},
@@ -227,7 +227,7 @@ namespace tree_accumulator {
                            {8, 1},
                            {7, 2},
                            {8, 1}};
-        REQUIRE(xt::allclose(ref2, output2));
+        REQUIRE(hg::allclose(ref2, output2));
 
         auto output3 = propagate_sequential(tree, input, condition);
         array_2d<int> ref3{{8, 1},
@@ -238,7 +238,7 @@ namespace tree_accumulator {
                            {8, 1},
                            {7, 2},
                            {8, 1}};
-        REQUIRE(xt::allclose(ref3, output3));
+        REQUIRE(hg::allclose(ref3, output3));
 
         auto output4 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_sum());
         array_2d<int> ref4{{15, 12},
@@ -249,7 +249,7 @@ namespace tree_accumulator {
                            {14, 4},
                            {15, 3},
                            {8,  1}};
-        REQUIRE(xt::allclose(ref4, output4));
+        REQUIRE(hg::allclose(ref4, output4));
 
         auto output5 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_prod(), condition);
         array_2d<int> ref5{{48, 24},
@@ -260,6 +260,48 @@ namespace tree_accumulator {
                            {48, 3},
                            {7, 2},
                            {8,  1}};
-        REQUIRE(xt::allclose(ref5, output5));
+        REQUIRE(hg::allclose(ref5, output5));
+    }
+
+    template<typename array_t>
+    static bool has_shape(const array_t &a, const std::vector<size_t> &ref) {
+        return std::equal(a.shape().begin(), a.shape().end(), ref.begin(), ref.end());
+    }
+
+    template<typename T>
+    static void check_empty_tree_accumulators(const hg::tree &tree, const std::vector<size_t> &shape) {
+        // shape: (0, *trailing dimensions) of the node and leaf data
+        hg::array<T> input = hg::zeros<T>(array_shape::from(shape));
+        array_1d<bool> condition = hg::zeros<bool>({0});
+
+        REQUIRE(has_shape(accumulate_parallel(tree, input, hg::accumulator_sum()), shape));
+        REQUIRE(has_shape(accumulate_parallel(tree, input, hg::accumulator_max()), shape));
+        REQUIRE(has_shape(accumulate_sequential(tree, input, hg::accumulator_sum()), shape));
+        REQUIRE(has_shape(accumulate_and_combine_sequential(tree, input, input, hg::accumulator_max(),
+                                                            std::plus<T>()), shape));
+        REQUIRE(has_shape(propagate_parallel(tree, input), shape));
+        REQUIRE(has_shape(propagate_parallel(tree, input, condition), shape));
+        REQUIRE(has_shape(propagate_sequential(tree, input, condition), shape));
+        REQUIRE(has_shape(propagate_sequential_and_accumulate(tree, input, hg::accumulator_sum()), shape));
+        REQUIRE(has_shape(propagate_sequential_and_accumulate(tree, input, hg::accumulator_prod(), condition),
+                          shape));
+    }
+
+    TEST_CASE("accumulators and propagators on an empty tree", "[tree_accumulator]") {
+        hg::tree tree(array_1d<index_t>{});
+        REQUIRE(num_vertices(tree) == 0);
+
+        SECTION("children not computed") {
+            check_empty_tree_accumulators<index_t>(tree, {0});
+            check_empty_tree_accumulators<double>(tree, {0, 3});
+            REQUIRE(!tree.children_computed());
+        }
+
+        SECTION("children computed") {
+            tree.compute_children();
+            REQUIRE(tree.children_computed());
+            check_empty_tree_accumulators<index_t>(tree, {0});
+            check_empty_tree_accumulators<double>(tree, {0, 3});
+        }
     }
 }

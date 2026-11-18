@@ -164,12 +164,11 @@ option(DO_EMBEDDED_PYTHON_CPP_TEST
 
 enable_testing()
 
-option (USE_SIMD
-        "Enabled SIMD support for xtensor." ON)
-
-if (USE_SIMD)
-    add_definitions("-DXTENSOR_USE_XSIMD")
-endif()
+# USE_SIMD is obsolete: Higra no longer contains explicit SIMD code (compilers vectorize its loops).
+# The option is still accepted, and ignored, so that existing build scripts keep working.
+if (DEFINED USE_SIMD)
+    message(DEPRECATION "The USE_SIMD option is deprecated and has no effect.")
+endif ()
 
 option(DO_BENCHMARK
         "Build benchmark suit." OFF)
@@ -180,9 +179,12 @@ if (DO_BENCHMARK)
     find_package(benchmark REQUIRED)
 endif ()
 
-if(NOT ${U_CMAKE_BUILD_TYPE} MATCHES RELEASE)
-    add_definitions("-DHG_ENABLE_TRACE")
-endif()
+# Every configuration except Release, evaluated per configuration so that multi-configuration
+# generators (Visual Studio, Xcode, Ninja Multi-Config) also define them in Debug.
+add_compile_definitions(
+        $<$<NOT:$<CONFIG:Release>>:HG_ENABLE_TRACE>
+        # rank and bounds checks of element access in higra/structure/array/
+        $<$<NOT:$<CONFIG:Release>>:HG_ARRAY_CHECKS>)
 
 option(HG_USE_TBB
         "Enable Intel TBB support." OFF)
@@ -212,7 +214,7 @@ endif()
 ##########################
 
 set(PYBIND11_FINDPYTHON ON)
-set(HG_PYTHON_COMPONENTS Interpreter NumPy Development.Module)
+set(HG_PYTHON_COMPONENTS Interpreter Development.Module)
 if(DO_EMBEDDED_PYTHON_CPP_TEST)
     list(APPEND HG_PYTHON_COMPONENTS Development.Embed)
 endif()

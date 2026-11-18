@@ -11,7 +11,6 @@
 #include "../test_utils.hpp"
 #include "higra/hierarchy/binary_partition_tree.hpp"
 #include "higra/image/graph_image.hpp"
-#include "xtensor/generators/xrandom.hpp"
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/algo/tree.hpp"
 
@@ -38,7 +37,7 @@ namespace binary_partition_tree {
     TEST_CASE("single linkage clustering", "[binary_partition_tree]") {
         long size = 100;
         auto graph = get_4_adjacency_graph({size, size});
-        array_1d<double> edge_weights = xt::random::rand<double>({num_edges(graph)});
+        array_1d<double> edge_weights = hg_test::random_uniform<double>({num_edges(graph)});
         auto res = binary_partition_tree_min_linkage(graph, edge_weights);
         auto &tree = res.tree;
 
@@ -127,7 +126,7 @@ namespace binary_partition_tree {
         array_1d<double> expected_altitudes{0., 0., 0., 0., 0.,
                                             1., 3.333333, 4.333333, 27.};
         REQUIRE((expected_parents == parents(tree)));
-        REQUIRE(xt::allclose(expected_altitudes, altitudes));
+        REQUIRE(hg::allclose(expected_altitudes, altitudes));
     }
 
     TEST_CASE("ward linkage non increasing", "[binary_partition_tree]") {
@@ -150,7 +149,7 @@ namespace binary_partition_tree {
         array_1d<index_t> expected_parents{4, 3, 3, 4, 4};
         array_1d<double> expected_altitudes{0., 0., 0., 8, 8};
         REQUIRE((expected_parents == parents(tree)));
-        REQUIRE(xt::allclose(expected_altitudes, altitudes));
+        REQUIRE(hg::allclose(expected_altitudes, altitudes));
 
         auto res2 = binary_partition_tree_ward_linkage(graph, vertex_centroids, vertex_sizes, "none");
 
@@ -160,7 +159,7 @@ namespace binary_partition_tree {
         array_1d<index_t> expected_parents2{4, 3, 3, 4, 4};
         array_1d<double> expected_altitudes2{0., 0., 0., 8, 6};
         REQUIRE((expected_parents2 == parents(tree2)));
-        REQUIRE(xt::allclose(expected_altitudes2, altitudes2));
+        REQUIRE(hg::allclose(expected_altitudes2, altitudes2));
     }
 
     TEST_CASE("average linkage clustering", "[binary_partition_tree]") {
@@ -174,7 +173,7 @@ namespace binary_partition_tree {
                 0.63556478, 0.64684775, 1.14865302, 0.81741018, 2.1591071, 0.60563004,
                 2.06636665, 1.35617725, 0.83085949
         };
-        array_1d<double> edge_weight_weights = xt::ones_like(edge_weights);
+        array_1d<double> edge_weight_weights = hg::ones_like(edge_weights);
         auto res = binary_partition_tree_average_linkage(graph, edge_weights, edge_weight_weights);
 
         auto &tree = res.tree;
@@ -186,7 +185,7 @@ namespace binary_partition_tree {
                 0.635565, 0.661594, 0.732129, 0.810695, 1.241727, 1.35874
         };
         REQUIRE((expected_parents == parents(tree)));
-        REQUIRE(xt::allclose(expected_altitudes, altitudes));
+        REQUIRE(hg::allclose(expected_altitudes, altitudes));
     }
 
     TEST_CASE("exponential linkage clustering", "[binary_partition_tree]") {
@@ -208,20 +207,20 @@ namespace binary_partition_tree {
         
         REQUIRE(tree.parents() == ref_parents);
         // large tolerance due to numerical instabilities, especially with fastmath
-        REQUIRE(xt::allclose(altitudes, ref_altitudes, 1e-5, 1e-1));
+        REQUIRE(hg::allclose(altitudes, ref_altitudes, 1e-5, 1e-1));
     }
 
     TEST_CASE("exponential linkage clustering equiv", "[binary_partition_tree]") {
-        xt::random::seed(10);
+        hg_test::random_seed(10);
         auto g = get_4_adjacency_graph({5, 5});
-        array_1d<double> edge_weights = xt::random::rand<double>({num_edges(g)});
-        array_1d<double> edge_weight_weights = xt::random::randint<int>({num_edges(g)}, 1, 10);
+        array_1d<double> edge_weights = hg_test::random_uniform<double>({num_edges(g)});
+        array_1d<double> edge_weight_weights = hg::cast<double>(hg_test::random_randint<int>({num_edges(g)}, 1, 10));
 
         auto r1 = binary_partition_tree_exponential_linkage(g, edge_weights, 0, edge_weight_weights);
         auto r1_ref = binary_partition_tree_average_linkage(g, edge_weights, edge_weight_weights);
 
         REQUIRE(r1.tree.parents() == r1_ref.tree.parents());
-        REQUIRE(xt::allclose(r1.altitudes, r1_ref.altitudes));
+        REQUIRE(hg::allclose(r1.altitudes, r1_ref.altitudes));
 
         auto r2 = binary_partition_tree_exponential_linkage(g, edge_weights, 200, edge_weight_weights);
         auto r2_ref = binary_partition_tree_complete_linkage(g, edge_weights);

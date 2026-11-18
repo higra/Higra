@@ -11,7 +11,6 @@
 #pragma once
 
 #include "../graph.hpp"
-#include "xtensor/core/xexpression.hpp"
 #include "../structure/details/light_axis_view.hpp"
 
 namespace hg {
@@ -66,7 +65,7 @@ namespace hg {
      * @tparam graph_t
      * @tparam T
      * @param graph
-     * @param xvertex_weights
+     * @param vertex_weights
      * @param weight
      * @return
      */
@@ -74,13 +73,11 @@ namespace hg {
             typename promoted_type = double,
             typename graph_t,
             typename T>
-    auto weight_graph(const graph_t &graph, const xt::xexpression<T> &xvertex_weights, weight_functions weight) {
+    auto weight_graph(const graph_t &graph, array_view<const T> vertex_weights, weight_functions weight) {
         HG_TRACE();
         using vertex_t = typename graph_t::vertex_descriptor;
-        const auto &vertex_weights = xvertex_weights.derived_cast();
         hg_assert_vertex_weights(graph, vertex_weights);
 
-        auto num_v = num_vertices(graph);
         switch (weight) {
             case weight_functions::mean: {
                 hg_assert_1d_array(vertex_weights);
@@ -112,13 +109,16 @@ namespace hg {
             }
             case weight_functions::L0: {
                 if (vertex_weights.dimension() > 1) {
-                    index_t dim = vertex_weights.size() / num_v;
-                    auto view = xt::reshape_view(vertex_weights, {num_v, (size_t)dim});
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&view, dim](
+                    // rows of dim values: vertex i starts at data + i * dim
+                    const index_t dim = vertex_weights.row_size();
+                    const T *data = vertex_weights.data();
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [data, dim](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
+                        const T *vi = data + i * dim;
+                        const T *vj = data + j * dim;
                         for (index_t k = 0; k < dim; k++) {
-                            if (view(i, k) != view(j, k))
+                            if (vi[k] != vj[k])
                                 return 1;
                         }
                         return 0;
@@ -134,14 +134,17 @@ namespace hg {
             }
             case weight_functions::L1: {
                 if (vertex_weights.dimension() > 1) {
-                    index_t dim = vertex_weights.size() / num_v;
-                    auto view = xt::reshape_view(vertex_weights, {num_v, (size_t)dim});
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&view, dim](
+                    // rows of dim values: vertex i starts at data + i * dim
+                    const index_t dim = vertex_weights.row_size();
+                    const T *data = vertex_weights.data();
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [data, dim](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
+                        const T *vi = data + i * dim;
+                        const T *vj = data + j * dim;
                         promoted_type res = 0;
                         for (index_t k = 0; k < dim; k++) {
-                            res += std::abs(static_cast<promoted_type>(view(i, k)) - static_cast<promoted_type>(view(j,k)));
+                            res += std::abs(static_cast<promoted_type>(vi[k]) - static_cast<promoted_type>(vj[k]));
                         }
                         return static_cast<result_value_t>(res);
                     };
@@ -157,14 +160,17 @@ namespace hg {
             }
             case weight_functions::L2: {
                 if (vertex_weights.dimension() > 1) {
-                    index_t dim = vertex_weights.size() / num_v;
-                    auto view = xt::reshape_view(vertex_weights, {num_v, (size_t)dim});
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&view, dim](
+                    // rows of dim values: vertex i starts at data + i * dim
+                    const index_t dim = vertex_weights.row_size();
+                    const T *data = vertex_weights.data();
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [data, dim](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
+                        const T *vi = data + i * dim;
+                        const T *vj = data + j * dim;
                         promoted_type res = 0;
                         for (index_t k = 0; k < dim; k++) {
-                            auto tmp = static_cast<promoted_type>(view(i, k)) - static_cast<promoted_type>(view(j, k));
+                            auto tmp = static_cast<promoted_type>(vi[k]) - static_cast<promoted_type>(vj[k]);
                             res += tmp * tmp;
                         }
                         return static_cast<result_value_t>(std::sqrt(res));
@@ -183,15 +189,18 @@ namespace hg {
             }
             case weight_functions::L_infinity: {
                 if (vertex_weights.dimension() > 1) {
-                    index_t dim = vertex_weights.size() / num_v;
-                    auto view = xt::reshape_view(vertex_weights, {num_v, (size_t)dim});
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&view, dim](
+                    // rows of dim values: vertex i starts at data + i * dim
+                    const index_t dim = vertex_weights.row_size();
+                    const T *data = vertex_weights.data();
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [data, dim](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
+                        const T *vi = data + i * dim;
+                        const T *vj = data + j * dim;
                         promoted_type res = -1;
                         for (index_t k = 0; k < dim; k++) {
                             res = (std::max)(res, std::abs(
-                                    static_cast<promoted_type>(view(i, k)) - static_cast<promoted_type>(view(j, k))));
+                                    static_cast<promoted_type>(vi[k]) - static_cast<promoted_type>(vj[k])));
                         }
                         return static_cast<result_value_t>(res);
                     };
@@ -207,14 +216,17 @@ namespace hg {
             }
             case weight_functions::L2_squared: {
                 if (vertex_weights.dimension() > 1) {
-                    index_t dim = vertex_weights.size() / num_v;
-                    auto view = xt::reshape_view(vertex_weights, {num_v, (size_t)dim});
-                    std::function<result_value_t(vertex_t, vertex_t)> fun = [&view, dim](
+                    // rows of dim values: vertex i starts at data + i * dim
+                    const index_t dim = vertex_weights.row_size();
+                    const T *data = vertex_weights.data();
+                    std::function<result_value_t(vertex_t, vertex_t)> fun = [data, dim](
                             vertex_t i,
                             vertex_t j) -> result_value_t {
+                        const T *vi = data + i * dim;
+                        const T *vj = data + j * dim;
                         promoted_type res = 0;
                         for (index_t k = 0; k < dim; k++) {
-                            auto tmp = static_cast<promoted_type>(view(i, k)) - static_cast<promoted_type>(view(j, k));
+                            auto tmp = static_cast<promoted_type>(vi[k]) - static_cast<promoted_type>(vj[k]);
                             res += tmp * tmp;
                         }
                         return static_cast<result_value_t>(res);
