@@ -30,7 +30,7 @@ def make_assesser_fragmentation_optimal_cut(tree,
     :param tree: input hierarchy (Concept :class:`~higra.CptHierarchy`)
     :param ground_truth: labelisation of base graph vertices
     :param measure: evaluation measure to use (see enumeration :class:`~higra.OptimalCutMeasure`)
-    :param max_regions: maximum number of regions in the cuts
+    :param max_regions: maximum number of regions in the cuts (must be positive)
     :param vertex_map: optional, vertex mapping if the hierarchy is build on a region adjacency graph (deduced from :class:`~higra.CptRegionAdjacencyGraph` on the leaf graph of `tree`)
     :return: an object of type :class:`~higra.AssesserFragmentationOptimalCut`
     """
@@ -59,7 +59,7 @@ def assess_fragmentation_optimal_cut(tree,
     :param tree: input hierarchy (Concept :class:`~higra.CptHierarchy`)
     :param ground_truth: labelisation of base graph vertices
     :param measure: evaluation measure to use (see enumeration :class:`~higra.OptimalCutMeasure`)
-    :param max_regions: maximum number of regions in the cuts
+    :param max_regions: maximum number of regions in the cuts (must be positive)
     :param vertex_map: optional, vertex mapping if the hierarchy is build on a region adjacency graph (deduced from :class:`~higra.CptRegionAdjacencyGraph` on the leaf graph of `tree`)
     :return: an object of type :class:`~higra.FragmentationCurve`
     """

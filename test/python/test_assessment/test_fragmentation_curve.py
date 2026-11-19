@@ -150,5 +150,28 @@ class TestFragmentationCurve(unittest.TestCase):
             self.assertTrue(np.isclose(assesser.optimal_score() * t.num_leaves(), np.max(scores), rtol=1e-14))
 
 
+    def test_optimal_cut_max_regions(self):
+        tree = hg.Tree((8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14))
+        ground_truth = np.asarray((0, 0, 1, 1, 1, 2, 2, 2), dtype=np.int32)
+
+        with self.assertRaises(RuntimeError):
+            hg.make_assesser_fragmentation_optimal_cut(tree, ground_truth, hg.OptimalCutMeasure.BCE, max_regions=0)
+        with self.assertRaises(RuntimeError):
+            hg.assess_fragmentation_optimal_cut(tree, ground_truth, hg.OptimalCutMeasure.BCE, max_regions=0)
+
+        assesser = hg.make_assesser_fragmentation_optimal_cut(tree, ground_truth, hg.OptimalCutMeasure.BCE,
+                                                              max_regions=1)
+        self.assertTrue(assesser.optimal_number_of_regions() == 1)
+        self.assertTrue(np.isclose(assesser.optimal_score(), 2.75 / 8))
+
+    def test_horizontal_cut_max_regions_zero(self):
+        tree = hg.Tree((11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18))
+        altitudes = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3))
+        ground_truth = np.asarray((3, 3, 3, 3, 1, 1, 1, 2, 2, 2, 2), dtype=np.int32)
+        curve = hg.assess_fragmentation_horizontal_cut(tree, altitudes, ground_truth, hg.PartitionMeasure.BCE,
+                                                       max_regions=0)
+        self.assertTrue(curve.scores().size == 0)
+        self.assertTrue(curve.num_regions().size == 0)
+
 if __name__ == '__main__':
     unittest.main()
