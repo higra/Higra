@@ -122,7 +122,8 @@ Unreleased
   empty image.
 
 - :func:`~higra.tree_fusion_depth_map` does not crash when every tree has a single node, and raises
-  ``RuntimeError`` when the trees do not have the same number of leaves, for which it read outside its arrays.
+  ``RuntimeError`` when the trees do not have the same number of leaves or have no leaf, for which it read outside
+  its arrays.
 
 - :func:`~higra.make_assesser_fragmentation_optimal_cut` and :func:`~higra.assess_fragmentation_optimal_cut`
   raise ``RuntimeError`` when ``max_regions`` is 0, for which the optimal number of regions and score were

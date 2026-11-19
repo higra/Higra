@@ -123,5 +123,13 @@ namespace test_tree_fusion {
         REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&t1, &t2}));
         REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&t2, &t1}));
         REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&t1, &t3}));
+
+        // trees without any leaf
+        tree e1(array_1d<index_t>{});
+        tree e2(array_1d<index_t>{});
+        REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&e1, &e2}));
+        REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&e1, &e2, &e1}));
+        REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&e1, &t3}));
+        REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&t3, &e1}));
     }
 }

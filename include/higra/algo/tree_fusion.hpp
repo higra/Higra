@@ -29,6 +29,7 @@ namespace hg {
             auto ntrees = last - first;
             hg_assert(ntrees > 1, "Fusion requires at least two trees");
             auto nleaves = num_leaves(**first);
+            hg_assert(nleaves > 0, "Fusion requires trees with at least one leaf.");
             for (tree_iterator t = first; t != last; t++) {
                 hg_assert(num_leaves(**t) == nleaves, "All trees must have the same number of leaves.");
             }
