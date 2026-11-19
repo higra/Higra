@@ -631,6 +631,7 @@ namespace hg {
         HG_TRACE();
         const int dim = image.dimension();
         hg_assert(dim == 2 || dim == 3, "image must be a 2d or 3d array");
+        hg_assert(image.size() > 0, "image must have at least one pixel");
 
         using value_type = T;
 

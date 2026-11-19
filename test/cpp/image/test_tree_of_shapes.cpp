@@ -909,4 +909,13 @@ TEST_CASE("test tree of shapes no immersion padding zero no original space", "[t
 }
 
 
+TEST_CASE("test tree of shapes empty image", "[tree_of_shapes]") {
+    for (const auto &image: {array_2d<double>::from_shape({0, 3}), array_2d<double>::from_shape({3, 0})}) {
+        REQUIRE_THROWS(component_tree_tree_of_shapes_image2d(image));
+        REQUIRE_THROWS(component_tree_tree_of_shapes_image2d(image, tos_padding::none, true, false));
+        REQUIRE_THROWS(component_tree_tree_of_shapes_image2d(image, tos_padding::zero, false, true));
+    }
+    REQUIRE_THROWS(component_tree_tree_of_shapes_image3d(array_3d<double>::from_shape({0, 3, 3})));
+}
+
 }

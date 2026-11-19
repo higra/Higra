@@ -116,6 +116,11 @@ Unreleased
   leaf value to the root of such a tree. The result previously depended on whether the children of the tree
   had been computed.
 
+- :func:`~higra.component_tree_max_tree` and :func:`~higra.component_tree_min_tree` raise ``RuntimeError``
+  for a graph without any vertex, instead of crashing. :func:`~higra.component_tree_tree_of_shapes_image2d` and
+  :func:`~higra.component_tree_tree_of_shapes_image3d` raise ``RuntimeError`` with an explicit message for an
+  empty image.
+
 0.6.13
 ------
 
