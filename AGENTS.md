@@ -8,8 +8,12 @@ metadata and composed algorithms.
 ## Private working context
 
 `higra-workspace/` is a separate private Git repository for agents' working
-context, version history, and synchronization. Keep review reports, follow-up
-trackers, handoff notes, plans, and task-specific evidence there. 
+context, version history, and synchronization. Keep review reports, handoff
+notes, plans, and task-specific evidence there. Track technical issues (defects,
+review findings, follow-ups, unrun checks, pending decisions) as GitHub issues of
+that private repository, following the conventions in its `README.md`. Never
+mention those issues, their numbers, or their links in public commits, pull
+requests, or files.
 
 Keep source code, tests, public documentation, and reusable contributor guidance
 in the Higra repository. `higra-workspace/` must remain ignored by Higra's
