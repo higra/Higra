@@ -209,4 +209,48 @@ namespace assessment_partition {
         REQUIRE(r.size() == 1);
         REQUIRE((r[0] == array_2d<index_t>{{0}}));
     }
+
+    TEMPLATE_TEST_CASE("partition scorers with empty rows or columns", "[assessment_partition]",
+                       int64_t, uint8_t, double) {
+        // the same partition, with an unused candidate label, an unused ground-truth label, or both
+        std::vector<array_2d<TestType>> matrices{
+                {{2, 0}, {0, 0}, {0, 2}},
+                {{2, 0, 0}, {0, 0, 2}},
+                {{2, 0, 0}, {0, 0, 0}, {0, 0, 2}}};
+        for (const auto &m: matrices) {
+            REQUIRE(scorer_partition_BCE::score(m.view()) == 1);
+            REQUIRE(scorer_partition_DCovering::score(m.view()) == 1);
+            REQUIRE(scorer_partition_DHamming::score(m.view()) == 1);
+        }
+
+        // empty rows and columns do not change the score of a non-trivial matrix
+        array_2d<TestType> base{{3, 1}, {1, 5}};
+        array_2d<TestType> padded{{3, 0, 1}, {0, 0, 0}, {1, 0, 5}};
+        REQUIRE(scorer_partition_BCE::score(padded.view()) == scorer_partition_BCE::score(base.view()));
+        REQUIRE(scorer_partition_DCovering::score(padded.view()) == scorer_partition_DCovering::score(base.view()));
+        REQUIRE(scorer_partition_DHamming::score(padded.view()) == scorer_partition_DHamming::score(base.view()));
+
+        // a matrix whose total is 0 is rejected
+        for (const auto &z: {array_2d<TestType>{{0, 0}, {0, 0}}, array_2d<TestType>{{0}}}) {
+            REQUIRE_THROWS(scorer_partition_BCE::score(z.view()));
+            REQUIRE_THROWS(scorer_partition_DCovering::score(z.view()));
+            REQUIRE_THROWS(scorer_partition_DHamming::score(z.view()));
+        }
+    }
+
+    TEST_CASE("assess partition degenerate inputs", "[assessment_partition]") {
+        array_1d<int> candidate{0, 0, 2, 2};
+        array_1d<int> ground_truth{0, 0, 1, 1};
+        REQUIRE(assess_partition(candidate, ground_truth, scorer_partition_BCE()) == 1);
+        REQUIRE(assess_partition(candidate, ground_truth, scorer_partition_DHamming()) == 1);
+        REQUIRE(assess_partition(candidate, ground_truth, scorer_partition_DCovering()) == 1);
+        REQUIRE(assess_partition(ground_truth, candidate, scorer_partition_BCE()) == 1);
+        REQUIRE(assess_partition(ground_truth, candidate, scorer_partition_DHamming()) == 1);
+        REQUIRE(assess_partition(ground_truth, candidate, scorer_partition_DCovering()) == 1);
+
+        array_1d<int> empty = hg::empty<int>({0});
+        REQUIRE_THROWS(assess_partition(empty, empty, scorer_partition_BCE()));
+        REQUIRE_THROWS(assess_partition(empty, empty, scorer_partition_DHamming()));
+        REQUIRE_THROWS(assess_partition(empty, empty, scorer_partition_DCovering()));
+    }
 }

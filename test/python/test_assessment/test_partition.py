@@ -58,5 +58,20 @@ class TestFragmentationCurve(unittest.TestCase):
                 self.assertTrue(np.isclose(hg.assess_partition(sparse_candidate, gt2, measure), ref2, rtol=1e-14))
 
 
+    def test_assess_partition_non_contiguous_labels(self):
+        candidate = np.asarray((0, 0, 2, 2), dtype=np.int32)
+        ground_truth = np.asarray((0, 0, 1, 1), dtype=np.int32)
+        ground_truths = np.asarray(((0, 0, 1, 1), (0, 0, 3, 3)), dtype=np.int32)
+        for measure in (hg.PartitionMeasure.BCE, hg.PartitionMeasure.DHamming, hg.PartitionMeasure.DCovering):
+            self.assertTrue(hg.assess_partition(candidate, ground_truth, measure) == 1)
+            self.assertTrue(hg.assess_partition(ground_truth, candidate, measure) == 1)
+            self.assertTrue(hg.assess_partition(candidate, ground_truths, measure) == 1)
+
+    def test_assess_partition_empty(self):
+        empty = np.zeros((0,), dtype=np.int32)
+        for measure in (hg.PartitionMeasure.BCE, hg.PartitionMeasure.DHamming, hg.PartitionMeasure.DCovering):
+            with self.assertRaises(RuntimeError):
+                hg.assess_partition(empty, empty, measure)
+
 if __name__ == '__main__':
     unittest.main()
