@@ -109,6 +109,13 @@ Unreleased
   (:func:`~higra.watershed_hierarchy_by_area`, :func:`~higra.watershed_hierarchy_by_dynamics`...) accept a tree with a
   single node or a graph with a single vertex, for which they raised an error.
 
+- The tree accumulators (:func:`~higra.accumulate_parallel`, :func:`~higra.accumulate_sequential`,
+  :func:`~higra.accumulate_and_add_sequential`...) do not crash on a tree with a single node, and
+  :func:`~higra.accumulate_and_add_sequential`, :func:`~higra.accumulate_and_multiply_sequential`,
+  :func:`~higra.accumulate_and_min_sequential` and :func:`~higra.accumulate_and_max_sequential` give its
+  leaf value to the root of such a tree. The result previously depended on whether the children of the tree
+  had been computed.
+
 0.6.13
 ------
 
