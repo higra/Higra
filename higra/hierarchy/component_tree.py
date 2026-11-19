@@ -28,7 +28,7 @@ def component_tree_min_tree(graph, vertex_weights):
     Component Tree Computation with Application to Pattern Recognition in Astronomical Imaging," \
     IEEE ICIP 2007.
 
-    :param graph: input graph
+    :param graph: input graph (must have at least one vertex)
     :param vertex_weights: vertex weights of the input graph
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
@@ -49,7 +49,7 @@ def component_tree_max_tree(graph, vertex_weights):
     The algorithm used in this
     implementation was first described in [3]_.
 
-    :param graph: input graph
+    :param graph: input graph (must have at least one vertex)
     :param vertex_weights: vertex weights of the input graph
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """

@@ -18,7 +18,7 @@ def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=T
 
     See :func:`~higra.component_tree_tree_of_shapes_image` for more details.
 
-    :param image: must be a 2d array
+    :param image: must be a non-empty 2d array
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
     :param immersion: performs a plain map continuous immersion fo the original image (default = `True`)
@@ -121,7 +121,7 @@ def component_tree_tree_of_shapes_image3d(image, padding='mean', original_size=T
 
     See :func:`~higra.component_tree_tree_of_shapes_image` for more details.
 
-    :param image: must be a 3d array
+    :param image: must be a non-empty 3d array
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
     :param immersion: performs a plain map continuous immersion fo the original image (default = `True`)
@@ -179,7 +179,7 @@ def component_tree_tree_of_shapes_image(image, padding='mean', original_size=Tru
     .. [2] Th. Géraud, E. Carlinet, S. Crozet, and L. Najman, "A Quasi-linear Algorithm to Compute the Tree \
     of Shapes of nD Images", ISMM 2013.
 
-    :param image: must be a 2d or 3d array
+    :param image: must be a non-empty 2d or 3d array
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
     :param immersion: performs a plain map continuous immersion fo the original image (default = `True`)

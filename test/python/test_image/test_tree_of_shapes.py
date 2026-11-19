@@ -623,3 +623,13 @@ class TestTreeOfShapesImage(unittest.TestCase):
 
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
+
+
+    def test_tree_of_shapes_empty_image(self):
+        for image in (np.zeros((0, 3)), np.zeros((3, 0))):
+            with self.assertRaises(RuntimeError):
+                hg.component_tree_tree_of_shapes_image2d(image)
+            with self.assertRaises(RuntimeError):
+                hg.component_tree_tree_of_shapes_image2d(image, padding="none", immersion=False)
+        with self.assertRaises(RuntimeError):
+            hg.component_tree_tree_of_shapes_image3d(np.zeros((0, 3, 3)))

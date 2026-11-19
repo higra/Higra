@@ -172,6 +172,10 @@ namespace hg {
     auto simplify_tree(const tree &t, const criterion_t &criterion, bool process_leaves = false) {
         HG_TRACE();
 
+        // the root is never removed: a tree reduced to its root is returned unchanged
+        if (num_vertices(t) == 1) {
+            return make_remapped_tree(tree(array_1d<index_t>{0}, t.category()), array_1d<index_t>{0});
+        }
 
         // this case is significantly harder because a reordering of the nodes
         // may append if an internal node becomes a leaf

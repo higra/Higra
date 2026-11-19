@@ -227,4 +227,20 @@ namespace hierarchy_core {
         REQUIRE((res.node_map == exp_node_map));
     }
 
+
+    TEST_CASE("simplify tree with a single node", "[hierarchy_core]") {
+        for (auto cat: {tree_category::partition_tree, tree_category::component_tree}) {
+            tree t(array_1d<index_t>{0}, cat);
+            for (bool remove: {false, true}) {
+                array_1d<bool> criterion{remove};
+                for (bool process_leaves: {false, true}) {
+                    auto res = hg::simplify_tree(t, criterion, process_leaves);
+                    REQUIRE(num_vertices(res.tree) == 1);
+                    REQUIRE((hg::parents(res.tree) == array_1d<index_t>{0}));
+                    REQUIRE(res.tree.category() == cat);
+                    REQUIRE((res.node_map == array_1d<index_t>{0}));
+                }
+            }
+        }
+    }
 }

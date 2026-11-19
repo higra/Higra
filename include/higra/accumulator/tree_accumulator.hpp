@@ -85,7 +85,9 @@ namespace hg {
                     input_view.set_position(i);
                     accs[p - numl].accumulate(input_view.begin());
                 }
-                accs.back().finalize();
+                if (!accs.empty()) {
+                    accs.back().finalize();
+                }
             }
 
             return output;
@@ -155,7 +157,9 @@ namespace hg {
                     input_view.set_position(i);
                     accs[p - numl].accumulate(input_view.begin());
                 }
-                accs.back().finalize();
+                if (!accs.empty()) {
+                    accs.back().finalize();
+                }
             }
 
             return output;
@@ -247,10 +251,12 @@ namespace hg {
                     accs[p - numl].accumulate(inout_view.begin());
                 }
 
-                accs.back().finalize();
-                input_view.set_position(root(tree));
-                output_view.set_position(root(tree));
-                output_view.combine(input_view, combine);
+                if (!accs.empty()) {
+                    accs.back().finalize();
+                    input_view.set_position(root(tree));
+                    output_view.set_position(root(tree));
+                    output_view.combine(input_view, combine);
+                }
             }
 
             return output;

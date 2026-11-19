@@ -159,7 +159,7 @@ namespace hg {
      *
      * @tparam graph_t
      * @tparam T
-     * @param graph input graph
+     * @param graph input graph (must have at least one vertex)
      * @param vertex_weights graph vertex weights
      * @return a node weighted tree
      */
@@ -168,6 +168,7 @@ namespace hg {
         HG_TRACE();
         hg_assert_vertex_weights(graph, vertex_weights);
         hg_assert_1d_array(vertex_weights);
+        hg_assert(num_vertices(graph) > 0, "The graph must have at least one vertex.");
 
         array_1d<index_t> sorted_vertex_indices = stable_arg_sort(vertex_weights);
         return component_tree_internal::tree_from_sorted_vertices(graph, vertex_weights, sorted_vertex_indices);
@@ -191,7 +192,7 @@ namespace hg {
     *
     * @tparam graph_t
     * @tparam T
-    * @param graph input graph
+    * @param graph input graph (must have at least one vertex)
     * @param vertex_weights graph vertex weights
     * @return a node weighted tree
     */
@@ -200,6 +201,7 @@ namespace hg {
         HG_TRACE();
         hg_assert_vertex_weights(graph, vertex_weights);
         hg_assert_1d_array(vertex_weights);
+        hg_assert(num_vertices(graph) > 0, "The graph must have at least one vertex.");
 
         array_1d<index_t> sorted_vertex_indices = stable_arg_sort(vertex_weights,
                                                                   std::greater<T>());

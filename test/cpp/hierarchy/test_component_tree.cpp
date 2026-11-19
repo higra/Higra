@@ -184,4 +184,19 @@ namespace binary_partition_tree {
 
         REQUIRE((expected_filtered_weights == filtered_weights));
     }
+
+    TEMPLATE_TEST_CASE("max tree and min tree on graphs with zero or one vertex", "[component_tree]",
+                       double, int32_t, uint8_t) {
+        ugraph empty_graph(0);
+        array_1d<TestType> no_weights = hg::empty<TestType>({0});
+        REQUIRE_THROWS(component_tree_max_tree(empty_graph, no_weights));
+        REQUIRE_THROWS(component_tree_min_tree(empty_graph, no_weights));
+
+        ugraph graph(1);
+        array_1d<TestType> weights{3};
+        for (const auto &res: {component_tree_max_tree(graph, weights), component_tree_min_tree(graph, weights)}) {
+            REQUIRE((res.tree.parents() == array_1d<index_t>{1, 1}));
+            REQUIRE((res.altitudes == array_1d<TestType>{3, 3}));
+        }
+    }
 }
