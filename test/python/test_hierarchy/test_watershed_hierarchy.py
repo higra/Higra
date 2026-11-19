@@ -153,5 +153,23 @@ class TestWatershedHierarchy(unittest.TestCase):
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 
 
+    def test_watershed_hierarchies_one_vertex_graph(self):
+        for graph in (hg.UndirectedGraph(1), hg.get_4_adjacency_graph((1, 1))):
+            edge_weights = np.zeros((0,))
+            for canonize_tree in (True, False):
+                results = (
+                    hg.watershed_hierarchy_by_area(graph, edge_weights, canonize_tree=canonize_tree),
+                    hg.watershed_hierarchy_by_volume(graph, edge_weights, canonize_tree=canonize_tree),
+                    hg.watershed_hierarchy_by_dynamics(graph, edge_weights, canonize_tree=canonize_tree),
+                    hg.watershed_hierarchy_by_number_of_parents(graph, edge_weights, canonize_tree=canonize_tree),
+                    hg.watershed_hierarchy_by_attribute(graph, edge_weights, lambda t, a: hg.attribute_area(t),
+                                                        canonize_tree=canonize_tree),
+                    hg.watershed_hierarchy_by_minima_ordering(graph, edge_weights, np.asarray((1,)),
+                                                              canonize_tree=canonize_tree),
+                )
+                for tree, altitudes in results:
+                    self.assertTrue(np.all(tree.parents() == (0,)))
+                    self.assertTrue(np.all(altitudes == (0,)))
+
 if __name__ == '__main__':
     unittest.main()

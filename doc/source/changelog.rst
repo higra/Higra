@@ -104,6 +104,11 @@ Unreleased
   as with single-configuration generators, instead of never. Array checks (``HG_ARRAY_CHECKS``, see
   :ref:`arrays`) follow the same rule.
 
+- :func:`~higra.simplify_tree`, :func:`~higra.canonize_hierarchy`, :func:`~higra.quasi_flat_zone_hierarchy`,
+  :func:`~higra.filter_non_relevant_node_from_tree` and the watershed hierarchies
+  (:func:`~higra.watershed_hierarchy_by_area`, :func:`~higra.watershed_hierarchy_by_dynamics`...) accept a tree with a
+  single node or a graph with a single vertex, for which they raised an error.
+
 0.6.13
 ------
 

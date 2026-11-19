@@ -381,5 +381,33 @@ class TestHierarchyCore(unittest.TestCase):
         self.assertTrue(np.all(node_map == exp_node_map))
 
 
+    def test_simplify_tree_single_node(self):
+        for category in (hg.TreeCategory.PartitionTree, hg.TreeCategory.ComponentTree):
+            tree = hg.Tree(np.asarray((0,)), category)
+            for criterion in (False, True):
+                for process_leaves in (False, True):
+                    ntree, node_map = hg.simplify_tree(tree, np.asarray((criterion,)), process_leaves)
+                    self.assertTrue(np.all(ntree.parents() == (0,)))
+                    self.assertTrue(np.all(node_map == (0,)))
+                    self.assertTrue(ntree.category() == category)
+
+    def test_hierarchies_one_vertex_graph(self):
+        graph = hg.UndirectedGraph(1)
+        edge_weights = np.zeros((0,))
+
+        tree, altitudes = hg.bpt_canonical(graph, edge_weights)
+        ctree, caltitudes = hg.canonize_hierarchy(tree, altitudes)
+        self.assertTrue(np.all(ctree.parents() == (0,)))
+        self.assertTrue(np.all(caltitudes == (0,)))
+
+        qtree, qaltitudes = hg.quasi_flat_zone_hierarchy(graph, edge_weights)
+        self.assertTrue(np.all(qtree.parents() == (0,)))
+        self.assertTrue(np.all(qaltitudes == (0,)))
+
+        ftree, faltitudes = hg.filter_non_relevant_node_from_tree(
+            tree, altitudes, lambda t, a: np.zeros((t.num_vertices(),), dtype=bool), graph)
+        self.assertTrue(np.all(ftree.parents() == (0,)))
+        self.assertTrue(np.all(faltitudes == (0,)))
+
 if __name__ == '__main__':
     unittest.main()
