@@ -69,9 +69,13 @@ class TestFragmentationCurve(unittest.TestCase):
 
     def test_assess_partition_empty(self):
         empty = np.zeros((0,), dtype=np.int32)
+        candidate = np.asarray((0, 1), dtype=np.int64)
+        no_ground_truth = np.empty((0, 2), dtype=np.int64)
         for measure in (hg.PartitionMeasure.BCE, hg.PartitionMeasure.DHamming, hg.PartitionMeasure.DCovering):
             with self.assertRaises(RuntimeError):
                 hg.assess_partition(empty, empty, measure)
+            with self.assertRaises(RuntimeError):
+                hg.assess_partition(candidate, no_ground_truth, measure)
 
 if __name__ == '__main__':
     unittest.main()

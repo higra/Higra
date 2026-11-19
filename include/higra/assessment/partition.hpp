@@ -175,6 +175,7 @@ namespace hg {
         auto score(array_view<const T> xcard_intersection) {
             const partition_internal::card_intersection_matrix<T> ci(xcard_intersection);
             using value_type = typename partition_internal::card_intersection_matrix<T>::value_type;
+            const auto total = ci.checked_total_row_sums();
 
             value_type sum_max = 0;
             for (index_t i = 0; i < ci.num_rows; i++) {
@@ -187,7 +188,7 @@ namespace hg {
 
             // result type of T / T (int for uint8_t); an integer quotient is 0 or 1
             using result_type = decltype(std::declval<T>() / std::declval<T>());
-            return static_cast<result_type>(sum_max / ci.checked_total_row_sums());
+            return static_cast<result_type>(sum_max / total);
         }
     };
 
@@ -228,6 +229,7 @@ namespace hg {
 
     template<typename T, typename scorer_t>
     auto assess_partition(const std::vector<T> &card_intersections, const scorer_t &scorer) {
+        hg_assert(!card_intersections.empty(), "At least one ground-truth partition is required.");
         double score = 0;
         for (const auto &card_intersection: card_intersections) {
             score += scorer.score(card_intersection);

@@ -131,10 +131,11 @@ Unreleased
   example the one given by ``assess_fragmentation_horizontal_cut`` with ``max_regions`` equal to 0.
 
 - :func:`~higra.assess_partition` returns the correct score when the labels of a partition are not
-  contiguous (it returned NaN), and raises ``RuntimeError`` for empty partitions. In C++, the partition scorers
+  contiguous (it returned NaN), and raises ``RuntimeError`` for empty partitions or an empty set of ground-truth
+  partitions (it returned NaN). In C++, the partition scorers
   (``scorer_partition_BCE``, ``scorer_partition_DHamming`` and ``scorer_partition_DCovering``) accept
   intersection matrices with an empty row or column (a floating-point exception for integer matrices) and throw
-  ``std::runtime_error`` for a matrix whose sum is 0.
+  ``std::runtime_error`` for a matrix whose sum is 0 and for an empty vector of matrices.
 
 0.6.13
 ------
