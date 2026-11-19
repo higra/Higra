@@ -121,6 +121,9 @@ Unreleased
   :func:`~higra.component_tree_tree_of_shapes_image3d` raise ``RuntimeError`` with an explicit message for an
   empty image.
 
+- :func:`~higra.tree_fusion_depth_map` does not crash when every tree has a single node, and raises
+  ``RuntimeError`` when the trees do not have the same number of leaves, for which it read outside its arrays.
+
 0.6.13
 ------
 

@@ -30,7 +30,7 @@ namespace hg {
             hg_assert(ntrees > 1, "Fusion requires at least two trees");
             auto nleaves = num_leaves(**first);
             for (tree_iterator t = first; t != last; t++) {
-                hg_assert(num_leaves(**t), "All trees must have the same number of leaves.");
+                hg_assert(num_leaves(**t) == nleaves, "All trees must have the same number of leaves.");
             }
 
             // cheap digraph!
@@ -146,8 +146,10 @@ namespace hg {
             /* ***************
             * Depth of the nodes of the GOS
             */
+            // only the nodes reachable from the root are sorted: when every tree is reduced to its root,
+            // the leaf is mapped to the root and is not reachable, and its depth stays 0
             array_1d<index_t> depth = hg::zeros<index_t>({nnodes});
-            for (index_t i = nnodes - 1; i >= 0; i--) {
+            for (index_t i = count - 1; i >= 0; i--) {
                 index_t n = sorted_nodes[i];
                 for (auto o: adj_lists[n]) {
                     depth(o) = (std::max)(depth(o), depth(n) + 1);

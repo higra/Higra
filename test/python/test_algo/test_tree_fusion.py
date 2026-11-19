@@ -70,5 +70,21 @@ class TestWatershed(unittest.TestCase):
         self.assertTrue(np.all(diff == diff[0]))
 
 
+    def test_tree_fusion_depth_map_single_node_trees(self):
+        t = hg.Tree(np.asarray((0,)))
+        self.assertTrue(np.all(hg.tree_fusion_depth_map((t, t)) == (0,)))
+        self.assertTrue(np.all(hg.tree_fusion_depth_map((t, t, t)) == (0,)))
+        chain = hg.Tree(np.asarray((1, 1)))
+        self.assertTrue(np.all(hg.tree_fusion_depth_map((t, chain)) == (1,)))
+        self.assertTrue(np.all(hg.tree_fusion_depth_map((chain, t)) == (1,)))
+
+    def test_tree_fusion_depth_map_different_number_of_leaves(self):
+        t1 = hg.Tree(np.asarray((3, 3, 4, 4, 4)))
+        t2 = hg.Tree(np.asarray((4, 4, 5, 5, 5, 5)))
+        with self.assertRaises(RuntimeError):
+            hg.tree_fusion_depth_map((t1, t2))
+        with self.assertRaises(RuntimeError):
+            hg.tree_fusion_depth_map((t2, t1))
+
 if __name__ == '__main__':
     unittest.main()
