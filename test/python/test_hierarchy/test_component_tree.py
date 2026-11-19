@@ -97,8 +97,8 @@ class TestConstrainedConnectivityHierarchy(unittest.TestCase):
         graph = hg.UndirectedGraph(1)
         for f in (hg.component_tree_max_tree, hg.component_tree_min_tree):
             tree, altitudes = f(graph, np.asarray((3.,)))
-            self.assertTrue(np.all(tree.parents() == (1, 1)))
-            self.assertTrue(np.all(altitudes == (3., 3.)))
+            np.testing.assert_array_equal(tree.parents(), (1, 1))
+            np.testing.assert_array_equal(altitudes, (3., 3.))
 
 if __name__ == '__main__':
     unittest.main()

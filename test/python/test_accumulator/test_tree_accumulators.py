@@ -194,17 +194,17 @@ class TestTreeAccumulators(unittest.TestCase):
             res = hg.accumulate_parallel(tree, np.ones((1, 3)), hg.Accumulators.sum)
             self.assertTrue(res.shape == (1, 3))
             res = hg.accumulate_sequential(tree, np.asarray((2.,)), hg.Accumulators.max)
-            self.assertTrue(np.all(res == (2.,)))
+            np.testing.assert_array_equal(res, (2.,))
             # the root is a leaf: it takes the leaf value
             res = hg.accumulate_and_add_sequential(tree, np.asarray((1.,)), np.asarray((2.,)), hg.Accumulators.sum)
-            self.assertTrue(np.all(res == (2.,)))
+            np.testing.assert_array_equal(res, (2.,))
             res = hg.accumulate_and_multiply_sequential(tree, np.asarray((3.,)), np.asarray((2.,)),
                                                         hg.Accumulators.sum)
-            self.assertTrue(np.all(res == (2.,)))
+            np.testing.assert_array_equal(res, (2.,))
             res = hg.accumulate_and_min_sequential(tree, np.asarray((1.,)), np.asarray((2.,)), hg.Accumulators.sum)
-            self.assertTrue(np.all(res == (2.,)))
+            np.testing.assert_array_equal(res, (2.,))
             res = hg.accumulate_and_max_sequential(tree, np.asarray((3.,)), np.asarray((2.,)), hg.Accumulators.sum)
-            self.assertTrue(np.all(res == (2.,)))
+            np.testing.assert_array_equal(res, (2.,))
 
 if __name__ == '__main__':
     unittest.main()

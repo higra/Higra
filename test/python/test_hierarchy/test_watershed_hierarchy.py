@@ -168,8 +168,8 @@ class TestWatershedHierarchy(unittest.TestCase):
                                                               canonize_tree=canonize_tree),
                 )
                 for tree, altitudes in results:
-                    self.assertTrue(np.all(tree.parents() == (0,)))
-                    self.assertTrue(np.all(altitudes == (0,)))
+                    np.testing.assert_array_equal(tree.parents(), (0,))
+                    np.testing.assert_array_equal(altitudes, (0,))
 
 if __name__ == '__main__':
     unittest.main()

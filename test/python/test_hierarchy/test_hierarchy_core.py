@@ -387,8 +387,8 @@ class TestHierarchyCore(unittest.TestCase):
             for criterion in (False, True):
                 for process_leaves in (False, True):
                     ntree, node_map = hg.simplify_tree(tree, np.asarray((criterion,)), process_leaves)
-                    self.assertTrue(np.all(ntree.parents() == (0,)))
-                    self.assertTrue(np.all(node_map == (0,)))
+                    np.testing.assert_array_equal(ntree.parents(), (0,))
+                    np.testing.assert_array_equal(node_map, (0,))
                     self.assertTrue(ntree.category() == category)
 
     def test_hierarchies_one_vertex_graph(self):
@@ -397,17 +397,17 @@ class TestHierarchyCore(unittest.TestCase):
 
         tree, altitudes = hg.bpt_canonical(graph, edge_weights)
         ctree, caltitudes = hg.canonize_hierarchy(tree, altitudes)
-        self.assertTrue(np.all(ctree.parents() == (0,)))
-        self.assertTrue(np.all(caltitudes == (0,)))
+        np.testing.assert_array_equal(ctree.parents(), (0,))
+        np.testing.assert_array_equal(caltitudes, (0,))
 
         qtree, qaltitudes = hg.quasi_flat_zone_hierarchy(graph, edge_weights)
-        self.assertTrue(np.all(qtree.parents() == (0,)))
-        self.assertTrue(np.all(qaltitudes == (0,)))
+        np.testing.assert_array_equal(qtree.parents(), (0,))
+        np.testing.assert_array_equal(qaltitudes, (0,))
 
         ftree, faltitudes = hg.filter_non_relevant_node_from_tree(
             tree, altitudes, lambda t, a: np.zeros((t.num_vertices(),), dtype=bool), graph)
-        self.assertTrue(np.all(ftree.parents() == (0,)))
-        self.assertTrue(np.all(faltitudes == (0,)))
+        np.testing.assert_array_equal(ftree.parents(), (0,))
+        np.testing.assert_array_equal(faltitudes, (0,))
 
 if __name__ == '__main__':
     unittest.main()
