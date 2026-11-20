@@ -159,6 +159,10 @@ def component_tree_tree_of_shapes_image(image, padding='mean', original_size=Tru
       - 0 if :attr:`padding` is equal to ``"zero"``;
       - the mean value of the boundary pixels of the input image if :attr:`padding` is equal to ``"mean"``.
 
+    For integer images, the mean is truncated toward zero. The sum of the boundary pixels is computed with 64-bit
+    integers for integer images with fewer than 64 bits per pixel, and with the type of the image otherwise: for
+    64-bit integer images and floating point images, this sum may overflow if the boundary values are very large.
+
     The tree is first constructed in a working space obtained from the input image as follows. If the shape of the
     input image is :math:`shape`, the padded shape :math:`p` is :math:`shape` if :attr:`padding` is ``"none"``, and
     :math:`shape + 2` otherwise. The shape of the working space is then :math:`p * 2 - 1` if :attr:`immersion` is

@@ -1082,4 +1082,42 @@ TEST_CASE("test tree of shapes mean padding thin volumes", "[tree_of_shapes]") {
     REQUIRE(tree_of_shapes_internal::get_padding_value<float>(image, tos_padding::mean) == 3.5f);
 }
 
+TEMPLATE_TEST_CASE("test tree of shapes mean padding integer extremes", "[tree_of_shapes]",
+                   std::int8_t, std::uint8_t, std::int16_t, std::uint16_t, std::int32_t, std::uint32_t,
+                   std::int64_t, std::uint64_t) {
+    using tree_of_shapes_internal::get_padding_value;
+    for (TestType value: {std::numeric_limits<TestType>::min(), std::numeric_limits<TestType>::max(), (TestType) 1}) {
+        CAPTURE((long double) value);
+        array_2d<TestType> image2d = array_2d<TestType>::from_shape({3, 4});
+        std::fill(image2d.begin(), image2d.end(), value);
+        array_3d<TestType> image3d = array_3d<TestType>::from_shape({3, 3, 4});
+        std::fill(image3d.begin(), image3d.end(), value);
+        if (sizeof(TestType) < 8) {
+            REQUIRE(get_padding_value<TestType>(image2d, tos_padding::mean) == value);
+            REQUIRE(get_padding_value<TestType>(image3d, tos_padding::mean) == value);
+        } else if (value == (TestType) 1) {
+            // 64-bit integers are summed in their own type: only values that do not overflow are exact
+            REQUIRE(get_padding_value<TestType>(image2d, tos_padding::mean) == value);
+            REQUIRE(get_padding_value<TestType>(image3d, tos_padding::mean) == value);
+        }
+    }
+}
+
+TEMPLATE_TEST_CASE("test tree of shapes mean padding signed rounding", "[tree_of_shapes]",
+                   std::int8_t, std::int16_t, std::int32_t, std::int64_t, float, double) {
+    using tree_of_shapes_internal::get_padding_value;
+    // boundary sum -15 over 4 pixels
+    array_2d<TestType> image{{-4, -4},
+                             {-4, -3}};
+    const TestType expected = (std::is_integral<TestType>::value) ? (TestType) -3 : (TestType) -3.75;
+    REQUIRE(get_padding_value<TestType>(image, tos_padding::mean) == expected);
+    array_2d<TestType> positive{{4, 4},
+                                {4, 3}};
+    REQUIRE(get_padding_value<TestType>(positive, tos_padding::mean) == -expected);
+
+    array_3d<TestType> volume = array_3d<TestType>::from_shape({3, 3, 3});
+    std::fill(volume.begin(), volume.end(), (TestType) -7);
+    REQUIRE(get_padding_value<TestType>(volume, tos_padding::mean) == (TestType) -7);
+}
+
 }

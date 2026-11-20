@@ -857,3 +857,24 @@ class TestTreeOfShapesImage(unittest.TestCase):
         tree, altitudes = hg.component_tree_tree_of_shapes_image(image, padding='mean', immersion=False,
                                                                  original_size=False)
         self.assertEqual(altitudes[tree.root()], np.mean(image))
+
+    def test_tree_of_shapes_mean_padding_integer_images(self):
+        def padding_value(image):
+            tree, altitudes = hg.component_tree_tree_of_shapes_image(image, padding='mean', immersion=False,
+                                                                     original_size=False)
+            return altitudes[0]  # the vertex 0 is a padding pixel
+
+        for dtype in (np.uint8, np.uint16, np.int32, np.int64):
+            info = np.iinfo(dtype)
+            values = (info.min, info.max) if dtype != np.int64 else (-2 ** 40, 2 ** 40)
+            for value in values:
+                for shape in ((3, 4), (3, 3, 4)):
+                    with self.subTest(dtype=dtype, value=value, shape=shape):
+                        self.assertEqual(padding_value(np.full(shape, value, dtype=dtype)), value)
+
+        # the mean of integer images is truncated toward zero
+        for dtype, expected in ((np.int32, -3), (np.int64, -3), (np.float32, -3.75), (np.float64, -3.75)):
+            with self.subTest(dtype=dtype):
+                image = np.asarray(((-4, -4), (-4, -3)), dtype=dtype)
+                self.assertEqual(padding_value(image), expected)
+                self.assertEqual(padding_value(-image), -expected)

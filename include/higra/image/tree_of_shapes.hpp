@@ -17,6 +17,7 @@
 #include "higra/accumulator/tree_accumulator.hpp"
 
 #include <cmath>
+#include <cstdint>
 #include <deque>
 #include <limits>
 #include <map>
@@ -422,9 +423,25 @@ namespace hg {
             return std::make_pair(std::move(sorted_vertex_indices), std::move(enqueued_level));
         }
 
+        /**
+         * Type used to sum the boundary values of an image of type T in get_padding_value: integer types smaller than
+         * 64 bits are promoted to 64-bit integers of the same signedness; other types are summed in their own type and
+         * the sum may overflow.
+         */
+        template<typename T>
+        using padding_accumulator_t = std::conditional_t<std::is_integral<T>::value && (sizeof(T) < 8),
+                std::conditional_t<std::is_signed<T>::value, std::int64_t, std::uint64_t>,
+                T>;
+
+        /**
+         * Value of the padding of the image: 0 for tos_padding::zero, and the mean of the boundary values of the
+         * image for tos_padding::mean (truncated toward zero for integer types). The sum of the boundary values is
+         * computed with the type padding_accumulator_t<T>.
+         */
         template<typename T>
         auto get_padding_value(array_view<const T> image, tos_padding padding) {
             using value_type = T;
+            using accumulator_type = padding_accumulator_t<T>;
             auto dim = image.dimension();
 
 
@@ -433,34 +450,35 @@ namespace hg {
                 case tos_padding::zero:
                     pad_value = 0;
                     break;
-                case tos_padding::mean:
+                case tos_padding::mean: {
                     // compute mean of image boundaries
+                    accumulator_type sum = 0;
                     if (dim == 2){
                         size_t h = image.shape(0);
                         size_t w = image.shape(1);
                         size_t num_elements = w;
                         for(size_t x = 0; x < w; x++){
-                            pad_value += image(0, x);
+                            sum += image(0, x);
                         }
                         if(h > 1){
                             for(size_t x = 0; x < w; x++){
-                                pad_value += image(h - 1, x);
+                                sum += image(h - 1, x);
                             }
                             num_elements += w;
                         }
                         if(h > 2){
                             for(size_t y = 1; y < h - 1; y++){
-                                pad_value += image(y, 0);
+                                sum += image(y, 0);
                             }
                             num_elements += (h - 2);
                             if (w > 1){
                                 for(size_t y = 1; y < h - 1; y++){
-                                    pad_value += image(y, w - 1);
+                                    sum += image(y, w - 1);
                                 }
                                 num_elements += (h - 2);
                             }
                         }
-                        pad_value /= num_elements;
+                        pad_value = (value_type) (sum / (accumulator_type) num_elements);
                     }else if(dim == 3){
                         size_t d = image.shape(0);
                         size_t h = image.shape(1);
@@ -468,13 +486,13 @@ namespace hg {
                         size_t num_elements = w * h;
                         for(size_t y = 0; y < h; y++){
                             for(size_t x = 0; x < w; x++){
-                                pad_value += image(0, y, x);
+                                sum += image(0, y, x);
                             }
                         }
                         if(d > 1){
                             for(size_t y = 0; y < h; y++){
                                 for(size_t x = 0; x < w; x++){
-                                    pad_value += image(d - 1, y, x);
+                                    sum += image(d - 1, y, x);
                                 }
                             }
                             num_elements += w * h;
@@ -482,14 +500,14 @@ namespace hg {
                         if(d > 2){
                             for(size_t z = 1; z < d - 1; z++){
                                 for(size_t y = 0; y < h; y++){
-                                    pad_value += image(z, y, 0);
+                                    sum += image(z, y, 0);
                                 }
                             }
                             num_elements += (d - 2) * h;
                             if (w > 1){
                                 for(size_t z = 1; z < d - 1; z++){
                                     for(size_t y = 0; y < h; y++){
-                                        pad_value += image(z, y, w - 1);
+                                        sum += image(z, y, w - 1);
                                     }
                                 }
                                 num_elements += (d - 2) * h;
@@ -497,26 +515,27 @@ namespace hg {
                             if (w > 2){
                                 for(size_t z = 1; z < d - 1; z++){
                                     for(size_t x = 1; x < w - 1; x++){
-                                        pad_value += image(z, 0, x);
+                                        sum += image(z, 0, x);
                                     }
                                 }
                                 num_elements += (d - 2) * (w - 2);
                                 if (h > 1){
                                     for(size_t z = 1; z < d - 1; z++){
                                         for(size_t x = 1; x < w - 1; x++){
-                                            pad_value += image(z, h - 1, x);
+                                            sum += image(z, h - 1, x);
                                         }
                                     }
                                     num_elements += (d - 2) * (w - 2);
                                 }
                             }
                         }
-                        pad_value /= num_elements;
+                        pad_value = (value_type) (sum / (accumulator_type) num_elements);
                     }else{
                         throw std::runtime_error("Unsupported dimension");
                     }
 
                     break;
+                }
                 case tos_padding::none:
                     throw std::runtime_error("Padding value requested for no padding.");
             }
@@ -638,6 +657,9 @@ namespace hg {
      * The padding value can be:
      *   - 0 is padding == tos_padding::zero
      *   - the mean value of the boundary pixels of the input image if padding == tos_padding::mean
+     * For integer images, the mean is truncated toward zero. The sum of the boundary pixels is computed with 64-bit
+     * integers for integer types smaller than 64 bits, and with the type of the image otherwise: for 64-bit integer
+     * and floating point types, this sum may overflow if the boundary values are very large.
      *
      * If original_size is true, all the nodes corresponding to pixels not belonging to the input image are removed
      * (except for the root node).
