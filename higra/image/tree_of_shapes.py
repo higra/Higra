@@ -45,6 +45,9 @@ def component_tree_multivariate_tree_of_shapes_image2d(image, padding='mean', or
     The input :attr:`image` must be a 3d array of shape :math:`(height, width, channel)`, with no dimension of size 0.
     Otherwise, a ``RuntimeError`` is raised.
 
+    If the image has a single channel, the result is the tree returned by
+    :func:`~higra.component_tree_tree_of_shapes_image2d` for this channel with the same parameters.
+
     Note that the constructed hierarchy doesn't have natural altitudes associated to its node: as a node is generally
     a fusion of several marginal nodes, we can't associate a single canonical value from the original image to this node.
 
@@ -74,6 +77,10 @@ def component_tree_multivariate_tree_of_shapes_image2d(image, padding='mean', or
     ndim = image.shape[2]
     if ndim == 0:
         raise RuntimeError("The input image must have at least one channel.")
+
+    if ndim == 1:
+        tree, _ = component_tree_tree_of_shapes_image2d(image[:, :, 0], padding, original_size, immersion)
+        return tree
 
     trees = tuple(
         hg.component_tree_tree_of_shapes_image(

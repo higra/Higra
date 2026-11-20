@@ -878,3 +878,31 @@ class TestTreeOfShapesImage(unittest.TestCase):
                 image = np.asarray(((-4, -4), (-4, -3)), dtype=dtype)
                 self.assertEqual(padding_value(image), expected)
                 self.assertEqual(padding_value(-image), -expected)
+
+    def test_component_tree_multivariate_tree_of_shapes_image2d_single_channel(self):
+        images = (np.asarray(((0, 3, 1, 4),
+                              (2, 0, 4, 1),
+                              (1, 4, 0, 2)), dtype=np.uint8),
+                  np.asarray(((3, 0),
+                              (1, 4),
+                              (0, 2),
+                              (4, 1),
+                              (2, 3)), dtype=np.float32),
+                  np.asarray(((2, 1, 0, 0, 1, 2),), dtype=np.int32))
+        for image in images:
+            for padding in ('none', 'zero', 'mean'):
+                for immersion in (True, False):
+                    for original_size in (True, False):
+                        with self.subTest(shape=image.shape, padding=padding, immersion=immersion,
+                                          original_size=original_size):
+                            ref_tree, _ = hg.component_tree_tree_of_shapes_image2d(
+                                image, padding, original_size=original_size, immersion=immersion)
+                            tree = hg.component_tree_multivariate_tree_of_shapes_image2d(
+                                image[:, :, None], padding, original_size=original_size, immersion=immersion)
+                            np.testing.assert_array_equal(tree.parents(), ref_tree.parents())
+                            self.assertEqual(tree.category(), ref_tree.category())
+                            graph = hg.CptHierarchy.get_leaf_graph(tree)
+                            ref_graph = hg.CptHierarchy.get_leaf_graph(ref_tree)
+                            self.assertEqual(tuple(hg.CptGridGraph.get_shape(graph)),
+                                             tuple(hg.CptGridGraph.get_shape(ref_graph)))
+                            self.assertEqual(tree.num_leaves(), graph.num_vertices())

@@ -25,6 +25,10 @@ Unreleased
   integers for integer images with fewer than 64 bits per pixel; it may still overflow for 64-bit integer and
   floating point images with very large boundary values. The mean of integer images is truncated toward zero.
 
+- :func:`~higra.component_tree_multivariate_tree_of_shapes_image2d` accepts images with a single channel: the result
+  is the tree returned by :func:`~higra.component_tree_tree_of_shapes_image2d` for this channel. Such images
+  previously raised an error.
+
 - The tree of shapes functions raise ``RuntimeError`` for an image with a dimension of size 0, including an image
   without any channel in :func:`~higra.component_tree_multivariate_tree_of_shapes_image2d`. Such images previously
   crashed (integer images with ``padding="mean"``), raised various errors, or returned a tree containing only padding
