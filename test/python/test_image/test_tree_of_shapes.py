@@ -625,7 +625,7 @@ class TestTreeOfShapesImage(unittest.TestCase):
         s = hg.CptGridGraph.get_shape(g)
         self.assertTrue(s[0] * s[1] == tree.num_leaves())
 
-    def test_tree_of_shapes_default_param(self):
+    def test_tree_of_shapes_default_param_2d(self):
         image = np.asarray((((1, 1),
                             (1, -2),
                             (1, 7))), dtype=np.float64)
@@ -643,7 +643,7 @@ class TestTreeOfShapesImage(unittest.TestCase):
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 
-    def test_tree_of_shapes_default_param(self):
+    def test_tree_of_shapes_default_param_3d(self):
         image = np.asarray((((1, 1, 1),
                              (1, 1, 1),
                              (1, 1, 1)),
