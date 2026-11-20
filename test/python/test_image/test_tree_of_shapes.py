@@ -777,3 +777,24 @@ class TestTreeOfShapesImage(unittest.TestCase):
                             for exterior_vertex in (-1, num_vertices):
                                 with self.assertRaises(RuntimeError):
                                     function(image, padding, original_size, immersion, exterior_vertex)
+
+    def test_tree_of_shapes_empty_image(self):
+        for dtype in (np.uint8, np.int32, np.float32):
+            for shape in ((0, 4), (3, 0), (0, 0), (0, 3, 4), (2, 0, 4), (2, 3, 0)):
+                image = np.zeros(shape, dtype=dtype)
+                function = hg.component_tree_tree_of_shapes_image2d if len(shape) == 2 \
+                    else hg.component_tree_tree_of_shapes_image3d
+                for padding in ('none', 'zero', 'mean'):
+                    for immersion in (True, False):
+                        for original_size in (True, False):
+                            with self.subTest(dtype=dtype, shape=shape, padding=padding, immersion=immersion,
+                                              original_size=original_size):
+                                with self.assertRaises(RuntimeError):
+                                    hg.component_tree_tree_of_shapes_image(image, padding, original_size, immersion)
+                                with self.assertRaises(RuntimeError):
+                                    function(image, padding, original_size, immersion)
+                                if len(shape) == 2:
+                                    with self.assertRaises(RuntimeError):
+                                        hg.component_tree_multivariate_tree_of_shapes_image2d(
+                                            np.zeros(shape + (2,), dtype=dtype), padding,
+                                            original_size=original_size, immersion=immersion)

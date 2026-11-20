@@ -617,7 +617,7 @@ namespace hg {
      *     of Shapes of nD Images", ISMM 2013.
      *
      * @tparam T
-     * @param ximage Must be a 2d or 3d array
+     * @param ximage Must be a non-empty 2d or 3d array
      * @param padding Defines if an extra boundary of pixels is added to the original image (see enum tos_padding).
      * @param original_size remove all nodes corresponding to interpolated/padded pixels
      * @param exterior_vertex linear coordinate of the exterior point
@@ -632,6 +632,7 @@ namespace hg {
         HG_TRACE();
         const int dim = image.dimension();
         hg_assert(dim == 2 || dim == 3, "image must be a 2d or 3d array");
+        hg_assert(image.size() > 0, "image must not be empty (every dimension must have a size greater than 0)");
 
         using value_type = T;
 

@@ -954,4 +954,25 @@ TEST_CASE("test tree of shapes exterior vertex range", "[tree_of_shapes]") {
     REQUIRE_NOTHROW(component_tree_tree_of_shapes_image3d(image3d, tos_padding::mean, true, true, 692));
 }
 
+TEMPLATE_TEST_CASE("test tree of shapes empty image", "[tree_of_shapes]", unsigned char, int, float) {
+    const std::vector<array_shape> shapes{{0, 4}, {3, 0}, {0, 0}, {0, 3, 4}, {2, 0, 4}, {2, 3, 0}};
+    for (const auto &shape: shapes) {
+        hg::array<TestType> image = hg::array<TestType>::from_shape(shape);
+        for (auto padding: {tos_padding::none, tos_padding::zero, tos_padding::mean}) {
+            for (bool immersion: {true, false}) {
+                for (bool original_size: {true, false}) {
+                    CAPTURE(shape.size(), shape[0], shape[1], (int) padding, immersion, original_size);
+                    REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image(image, padding, original_size, immersion),
+                                      std::runtime_error);
+                }
+            }
+        }
+    }
+
+    array_2d<TestType> image2d = array_2d<TestType>::from_shape({0, 4});
+    REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image2d(image2d), std::runtime_error);
+    array_3d<TestType> image3d = array_3d<TestType>::from_shape({2, 0, 4});
+    REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image3d(image3d), std::runtime_error);
+}
+
 }

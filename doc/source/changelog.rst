@@ -14,6 +14,10 @@ Unreleased
 - The tree of shapes functions raise ``RuntimeError`` when ``exterior_vertex`` is negative or not smaller than the
   number of pixels of the padded/interpolated image, instead of reading and writing out of bounds.
 
+- The tree of shapes functions raise ``RuntimeError`` for an image with a dimension of size 0. Such images previously
+  crashed (integer images with ``padding="mean"``), raised various errors, or returned a tree containing only padding
+  pixels.
+
 - Remove automatic result caching: attribute functions recompute on every call,
   including after input or output mutation. ``auto_cache`` and its state/clear
   APIs remain warning-emitting no-ops until the next release. Former implicit
