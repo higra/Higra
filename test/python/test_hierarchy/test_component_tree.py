@@ -85,5 +85,20 @@ class TestConstrainedConnectivityHierarchy(unittest.TestCase):
         self.assertTrue(np.all(filtered_weights == expected_filtered_weights))
 
 
+    def test_max_tree_min_tree_graph_without_vertices(self):
+        graph = hg.UndirectedGraph(0)
+        for dtype in (np.float64, np.int32, np.uint8):
+            with self.assertRaises(RuntimeError):
+                hg.component_tree_max_tree(graph, np.zeros((0,), dtype=dtype))
+            with self.assertRaises(RuntimeError):
+                hg.component_tree_min_tree(graph, np.zeros((0,), dtype=dtype))
+
+    def test_max_tree_min_tree_one_vertex_graph(self):
+        graph = hg.UndirectedGraph(1)
+        for f in (hg.component_tree_max_tree, hg.component_tree_min_tree):
+            tree, altitudes = f(graph, np.asarray((3.,)))
+            np.testing.assert_array_equal(tree.parents(), (1, 1))
+            np.testing.assert_array_equal(altitudes, (3., 3.))
+
 if __name__ == '__main__':
     unittest.main()

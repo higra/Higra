@@ -324,4 +324,29 @@ namespace assessment_fragmentation_curve {
             REQUIRE(std::isnan(nan_curve.optimal_score()));
         }
     }
+
+    TEST_CASE("fragmentation curve optimal number of regions, empty curve", "[fragmentation_curve]") {
+        fragmentation_curve<double> empty_curve(hg::empty<double>({0}), hg::empty<double>({0}), 3);
+        REQUIRE(empty_curve.optimal_number_of_regions() == 0);
+
+        // horizontal cuts with max_regions == 0: empty curve
+        hg::tree t(array_1d<index_t>{11, 11, 11, 12, 12, 16, 13, 13, 13, 14, 14, 17, 16, 15, 15, 18, 17, 18, 18});
+        array_1d<int> altitudes{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 3, 1, 2, 3};
+        array_1d<int> ground_truth{3, 3, 3, 3, 1, 1, 1, 2, 2, 2, 2};
+        auto curve = assess_fragmentation_horizontal_cut(t, altitudes, ground_truth,
+                                                         scorer_partition_BCE(), {}, 0);
+        REQUIRE(curve.scores().size() == 0);
+        REQUIRE(curve.optimal_number_of_regions() == 0);
+    }
+
+    TEST_CASE("fragmentation optimal cut, max_regions", "[fragmentation_curve]") {
+        tree t(array_1d<index_t>{8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14});
+        array_1d<char> ground_truth{0, 0, 1, 1, 1, 2, 2, 2};
+        REQUIRE_THROWS(assesser_fragmentation_optimal_cut(t, ground_truth, optimal_cut_measure::BCE, {}, 0));
+
+        assesser_fragmentation_optimal_cut assesser(t, ground_truth, optimal_cut_measure::BCE, {}, 1);
+        REQUIRE(assesser.optimal_number_of_regions() == 1);
+        REQUIRE(almost_equal(assesser.optimal_score(), 2.75 / num_leaves(t)));
+        REQUIRE(assesser.fragmentation_curve().scores().size() == 1);
+    }
 }

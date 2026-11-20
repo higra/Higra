@@ -40,10 +40,13 @@ namespace hg {
         }
 
         /**
-         * Number of regions in the optimal cut
+         * Number of regions in the optimal cut, or 0 if the curve is empty.
          * @return
          */
         auto optimal_number_of_regions() const {
+            if (m_scores.size() == 0) {
+                return value_t(0);
+            }
             auto pos = std::max_element(m_scores.begin(), m_scores.end());
             return m_num_regions(std::distance(m_scores.begin(), pos));
         }
@@ -142,7 +145,7 @@ namespace hg {
          * @param tree input hierarchy
          * @param xground_truth ground truth labelisation of the tree leaves
          * @param vertex_map super-vertices map (if tree is built on a rag, leave empty otherwise)
-         * @param max_regions maximum number of regions in the considered cuts.
+         * @param max_regions maximum number of regions in the considered cuts (must be positive).
          */
         template<typename tree_t, typename T>
         assesser_fragmentation_optimal_cut(
@@ -155,6 +158,7 @@ namespace hg {
             hg_assert_1d_array(ground_truth);
             hg_assert_integral_value_type(ground_truth);
 
+            hg_assert(max_regions > 0, "The maximum number of regions must be positive.");
             m_tree.compute_children();
 
             max_regions = (std::min)(max_regions, num_leaves(m_tree));

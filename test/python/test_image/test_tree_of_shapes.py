@@ -781,7 +781,7 @@ class TestTreeOfShapesImage(unittest.TestCase):
                                 with self.assertRaises(RuntimeError):
                                     function(image, padding, original_size, immersion, exterior_vertex)
 
-    def test_tree_of_shapes_empty_image(self):
+    def test_tree_of_shapes_empty_image_all_options(self):
         for dtype in (np.uint8, np.int32, np.float32):
             for shape in ((0, 4), (3, 0), (0, 0), (0, 3, 4), (2, 0, 4), (2, 3, 0)):
                 image = np.zeros(shape, dtype=dtype)
@@ -808,7 +808,7 @@ class TestTreeOfShapesImage(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "at least one channel"):
                     hg.component_tree_multivariate_tree_of_shapes_image2d(np.zeros(shape, dtype=np.uint8))
 
-        with self.assertRaisesRegex(RuntimeError, "image must not be empty"):
+        with self.assertRaisesRegex(RuntimeError, "image must have at least one pixel"):
             hg.component_tree_multivariate_tree_of_shapes_image2d(np.zeros((0, 4, 2), dtype=np.uint8))
 
         image = np.arange(24, dtype=np.uint8).reshape((3, 4, 2)) % 5
@@ -906,3 +906,12 @@ class TestTreeOfShapesImage(unittest.TestCase):
                             self.assertEqual(tuple(hg.CptGridGraph.get_shape(graph)),
                                              tuple(hg.CptGridGraph.get_shape(ref_graph)))
                             self.assertEqual(tree.num_leaves(), graph.num_vertices())
+
+    def test_tree_of_shapes_empty_image(self):
+        for image in (np.zeros((0, 3)), np.zeros((3, 0))):
+            with self.assertRaises(RuntimeError):
+                hg.component_tree_tree_of_shapes_image2d(image)
+            with self.assertRaises(RuntimeError):
+                hg.component_tree_tree_of_shapes_image2d(image, padding="none", immersion=False)
+        with self.assertRaises(RuntimeError):
+            hg.component_tree_tree_of_shapes_image3d(np.zeros((0, 3, 3)))

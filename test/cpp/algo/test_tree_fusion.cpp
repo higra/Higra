@@ -99,4 +99,37 @@ namespace test_tree_fusion {
         REQUIRE(hg::sum(hg::map([&diff](index_t d) { return d - diff(0); }, diff)) == 0);
     }
 
+
+    TEST_CASE("tree_fusion_depth_map single-node trees", "[tree_fusion]") {
+        tree t1(array_1d<index_t>{0});
+        tree t2(array_1d<index_t>{0});
+        tree t3(array_1d<index_t>{0});
+        REQUIRE((tree_fusion_depth_map(std::vector<tree *>{&t1, &t2}) == array_1d<index_t>{0}));
+        REQUIRE((tree_fusion_depth_map(std::vector<tree *>{&t1, &t2, &t3}) == array_1d<index_t>{0}));
+
+        // a single-node tree with a one-leaf chain: the depth of the chain
+        tree chain(array_1d<index_t>{1, 1});
+        REQUIRE((tree_fusion_depth_map(std::vector<tree *>{&t1, &chain}) == array_1d<index_t>{1}));
+        REQUIRE((tree_fusion_depth_map(std::vector<tree *>{&chain, &t1}) == array_1d<index_t>{1}));
+        REQUIRE((tree_fusion_depth_map(std::vector<tree *>{&chain, &chain}) == array_1d<index_t>{1}));
+        tree chain2(array_1d<index_t>{1, 2, 2});
+        REQUIRE((tree_fusion_depth_map(std::vector<tree *>{&chain2, &chain}) == array_1d<index_t>{2}));
+    }
+
+    TEST_CASE("tree_fusion_depth_map trees with different numbers of leaves", "[tree_fusion]") {
+        tree t1(array_1d<index_t>{3, 3, 4, 4, 4});
+        tree t2(array_1d<index_t>{4, 4, 5, 5, 5, 5});
+        tree t3(array_1d<index_t>{0});
+        REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&t1, &t2}));
+        REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&t2, &t1}));
+        REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&t1, &t3}));
+
+        // trees without any leaf
+        tree e1(array_1d<index_t>{});
+        tree e2(array_1d<index_t>{});
+        REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&e1, &e2}));
+        REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&e1, &e2, &e1}));
+        REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&e1, &t3}));
+        REQUIRE_THROWS(tree_fusion_depth_map(std::vector<tree *>{&t3, &e1}));
+    }
 }

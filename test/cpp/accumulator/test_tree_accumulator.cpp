@@ -304,4 +304,90 @@ namespace tree_accumulator {
             check_empty_tree_accumulators<double>(tree, {0, 3});
         }
     }
+
+    template<typename T1, typename T2>
+    bool same_values(const T1 &a, const T2 &b) {
+        if (!hg::same_shape(a.shape(), b.shape())) {
+            return false;
+        }
+        for (index_t i = 0; i < (index_t) a.size(); i++) {
+            auto x = a.data()[i];
+            auto y = b.data()[i];
+            if (!(x == y || (x != x && y != y))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // accumulates on a single-node tree, without and with computed children: the results must be equal
+    // (accumulate_parallel is skipped for first and last, which leave the value of leaves unset, and for
+    // vectorial argmin and argmax, which only set the first component of leaves)
+    template<typename T, typename accumulator_t>
+    void check_single_node_accumulate(const array_nd<T> &input, const accumulator_t &acc, bool parallel = true) {
+        hg::tree t1(array_1d<index_t>{0});
+        hg::tree t2(array_1d<index_t>{0});
+        t2.compute_children();
+        REQUIRE(!t1.children_computed());
+
+        if (parallel) {
+            auto p1 = accumulate_parallel(t1, input, acc);
+            auto p2 = accumulate_parallel(t2, input, acc);
+            REQUIRE(same_values(p1, p2));
+        }
+
+        auto s1 = accumulate_sequential(t1, input, acc);
+        auto s2 = accumulate_sequential(t2, input, acc);
+        REQUIRE(same_values(s1, s2));
+        REQUIRE(!t1.children_computed());
+    }
+
+    // accumulate_and_combine_sequential on a single-node tree: the root is a leaf and takes the vertex data
+    template<typename T, typename accumulator_t, typename combine_t>
+    void check_single_node_combine(const array_nd<T> &input, const array_nd<T> &vertex_data,
+                                   const accumulator_t &acc, const combine_t &combine) {
+        hg::tree t1(array_1d<index_t>{0});
+        hg::tree t2(array_1d<index_t>{0});
+        t2.compute_children();
+
+        auto r1 = accumulate_and_combine_sequential(t1, input, vertex_data, acc, combine);
+        auto r2 = accumulate_and_combine_sequential(t2, input, vertex_data, acc, combine);
+        REQUIRE(same_values(r1, r2));
+        REQUIRE(same_values(r1, vertex_data));
+        REQUIRE(!t1.children_computed());
+    }
+
+    template<typename T>
+    void check_single_node_accumulators(const array_nd<T> &input, const array_nd<T> &vertex_data) {
+        check_single_node_accumulate(input, hg::accumulator_sum());
+        check_single_node_accumulate(input, hg::accumulator_mean());
+        check_single_node_accumulate(input, hg::accumulator_min());
+        check_single_node_accumulate(input, hg::accumulator_max());
+        check_single_node_accumulate(input, hg::accumulator_counter());
+        check_single_node_accumulate(input, hg::accumulator_prod());
+        check_single_node_accumulate(input, hg::accumulator_first(), false);
+        check_single_node_accumulate(input, hg::accumulator_last(), false);
+        check_single_node_accumulate(input, hg::accumulator_argmin(), input.dimension() == 1);
+        check_single_node_accumulate(input, hg::accumulator_argmax(), input.dimension() == 1);
+
+        check_single_node_combine(input, vertex_data, hg::accumulator_sum(), std::plus<T>());
+        check_single_node_combine(input, vertex_data, hg::accumulator_sum(), std::multiplies<T>());
+        check_single_node_combine(input, vertex_data, hg::accumulator_max(),
+                                  [](T a, T b) { return (std::min)(a, b); });
+        check_single_node_combine(input, vertex_data, hg::accumulator_min(),
+                                  [](T a, T b) { return (std::max)(a, b); });
+        check_single_node_combine(input, vertex_data, hg::accumulator_mean(), std::plus<T>());
+        check_single_node_combine(input, vertex_data, hg::accumulator_prod(), std::plus<T>());
+    }
+
+    TEST_CASE("accumulators on a single-node tree", "[tree_accumulator]") {
+        SECTION("scalar") {
+            check_single_node_accumulators<double>(array_nd<double>{1.}, array_nd<double>{2.});
+            check_single_node_accumulators<index_t>(array_nd<index_t>{1}, array_nd<index_t>{2});
+        }
+        SECTION("vectorial") {
+            check_single_node_accumulators<double>(array_nd<double>{{1., 3.}}, array_nd<double>{{2., 5.}});
+            check_single_node_accumulators<index_t>(array_nd<index_t>{{1, 3}}, array_nd<index_t>{{2, 5}});
+        }
+    }
 }

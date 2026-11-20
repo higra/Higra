@@ -89,6 +89,15 @@ namespace hg {
                 return res;
             }
 
+            /**
+             * total_row_sums(), checked to be non-zero.
+             */
+            value_type checked_total_row_sums() const {
+                auto total = total_row_sums();
+                hg_assert(total != 0, "The sum of the card intersection matrix must be non-zero.");
+                return total;
+            }
+
             const T *data;
             index_t num_rows;
             index_t num_cols;
@@ -138,6 +147,7 @@ namespace hg {
         auto score(array_view<const T> xcard_intersection) {
             const partition_internal::card_intersection_matrix<T> ci(xcard_intersection);
             using value_type = typename partition_internal::card_intersection_matrix<T>::value_type;
+            const auto total = ci.checked_total_row_sums();
 
             // sum of the row sums
             value_type sum = 0;
@@ -145,13 +155,17 @@ namespace hg {
                 value_type row_sum = 0;
                 for (index_t j = 0; j < ci.num_cols; j++) {
                     const value_type c = ci(i, j);
-                    row_sum += c * partition_internal::select_min<value_type>(c / ci.col_sums[j], c / ci.row_sums[i]);
+                    // a cell with an empty intersection contributes 0 (its row or column sum may be 0)
+                    if (c != 0) {
+                        row_sum += c * partition_internal::select_min<value_type>(c / ci.col_sums[j],
+                                                                                  c / ci.row_sums[i]);
+                    }
                 }
                 sum += row_sum;
             }
             double score = sum;
 
-            return score / ci.total_row_sums();
+            return score / total;
         }
     };
 
@@ -161,6 +175,7 @@ namespace hg {
         auto score(array_view<const T> xcard_intersection) {
             const partition_internal::card_intersection_matrix<T> ci(xcard_intersection);
             using value_type = typename partition_internal::card_intersection_matrix<T>::value_type;
+            const auto total = ci.checked_total_row_sums();
 
             value_type sum_max = 0;
             for (index_t i = 0; i < ci.num_rows; i++) {
@@ -173,7 +188,7 @@ namespace hg {
 
             // result type of T / T (int for uint8_t); an integer quotient is 0 or 1
             using result_type = decltype(std::declval<T>() / std::declval<T>());
-            return static_cast<result_type>(sum_max / ci.total_row_sums());
+            return static_cast<result_type>(sum_max / total);
         }
     };
 
@@ -183,12 +198,18 @@ namespace hg {
         auto score(array_view<const T> xcard_intersection) {
             const partition_internal::card_intersection_matrix<T> ci(xcard_intersection);
             using value_type = typename partition_internal::card_intersection_matrix<T>::value_type;
+            const auto total = ci.checked_total_row_sums();
 
             value_type sum = 0;
             for (index_t i = 0; i < ci.num_rows; i++) {
                 value_type row_max = std::numeric_limits<value_type>::lowest();
                 for (index_t j = 0; j < ci.num_cols; j++) {
                     const value_type c = ci(i, j);
+                    // a cell with an empty intersection has a ratio of 0 (its union may be empty)
+                    if (c == 0) {
+                        row_max = partition_internal::select_max<value_type>(row_max, value_type(0));
+                        continue;
+                    }
                     value_type card_union;
                     if constexpr (std::is_unsigned_v<value_type>) {
                         // c <= col_sums[j], no unsigned negation
@@ -202,12 +223,13 @@ namespace hg {
             }
             double score = sum;
 
-            return score / ci.total_row_sums();
+            return score / total;
         }
     };
 
     template<typename T, typename scorer_t>
     auto assess_partition(const std::vector<T> &card_intersections, const scorer_t &scorer) {
+        hg_assert(!card_intersections.empty(), "At least one ground-truth partition is required.");
         double score = 0;
         for (const auto &card_intersection: card_intersections) {
             score += scorer.score(card_intersection);
@@ -219,6 +241,7 @@ namespace hg {
     auto assess_partition(array_view<const T1> xcandidate,
                           array_view<const T2> xground_truths,
                           const scorer_t &scorer) {
+        hg_assert(xcandidate.size() > 0, "The candidate partition must not be empty.");
         auto card_intersections = hg::card_intersections<double>(xcandidate, xground_truths);
         return assess_partition(card_intersections, scorer);
     }

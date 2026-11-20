@@ -29,10 +29,10 @@ Unreleased
   is the tree returned by :func:`~higra.component_tree_tree_of_shapes_image2d` for this channel. Such images
   previously raised an error.
 
-- The tree of shapes functions raise ``RuntimeError`` for an image with a dimension of size 0, including an image
-  without any channel in :func:`~higra.component_tree_multivariate_tree_of_shapes_image2d`. Such images previously
-  crashed (integer images with ``padding="mean"``), raised various errors, or returned a tree containing only padding
-  pixels.
+- :func:`~higra.component_tree_tree_of_shapes_image` and :func:`~higra.component_tree_multivariate_tree_of_shapes_image2d`
+  also raise ``RuntimeError`` for an empty image, and the multivariate function for an image without any channel.
+  Empty images previously crashed (integer images with ``padding="mean"``), raised various errors, or returned a
+  tree containing only padding pixels.
 
 - Remove automatic result caching: attribute functions recompute on every call,
   including after input or output mutation. ``auto_cache`` and its state/clear
@@ -133,6 +133,39 @@ Unreleased
   Xcode, Ninja Multi-Config), traces (``HG_ENABLE_TRACE``) are enabled in every configuration except Release,
   as with single-configuration generators, instead of never. Array checks (``HG_ARRAY_CHECKS``, see
   :ref:`arrays`) follow the same rule.
+
+- :func:`~higra.simplify_tree`, :func:`~higra.canonize_hierarchy`, :func:`~higra.quasi_flat_zone_hierarchy`,
+  :func:`~higra.filter_non_relevant_node_from_tree` and the watershed hierarchies
+  (:func:`~higra.watershed_hierarchy_by_area`, :func:`~higra.watershed_hierarchy_by_dynamics`...) accept a tree with a
+  single node or a graph with a single vertex, for which they raised an error.
+
+- The tree accumulators (:func:`~higra.accumulate_parallel`, :func:`~higra.accumulate_sequential`,
+  :func:`~higra.accumulate_and_add_sequential`...) do not crash on a tree with a single node, and
+  :func:`~higra.accumulate_and_add_sequential`, :func:`~higra.accumulate_and_multiply_sequential`,
+  :func:`~higra.accumulate_and_min_sequential` and :func:`~higra.accumulate_and_max_sequential` give its
+  leaf value to the root of such a tree. The result previously depended on whether the children of the tree
+  had been computed.
+
+- :func:`~higra.component_tree_max_tree` and :func:`~higra.component_tree_min_tree` raise ``RuntimeError``
+  for a graph without any vertex, instead of crashing. :func:`~higra.component_tree_tree_of_shapes_image2d` and
+  :func:`~higra.component_tree_tree_of_shapes_image3d` raise ``RuntimeError`` with an explicit message for an
+  empty image.
+
+- :func:`~higra.tree_fusion_depth_map` does not crash when every tree has a single node, and raises
+  ``RuntimeError`` when the trees do not have the same number of leaves or have no leaf, for which it read outside
+  its arrays.
+
+- :func:`~higra.make_assesser_fragmentation_optimal_cut` and :func:`~higra.assess_fragmentation_optimal_cut`
+  raise ``RuntimeError`` when ``max_regions`` is 0, for which the optimal number of regions and score were
+  undefined. In C++, ``fragmentation_curve::optimal_number_of_regions()`` returns 0 for an empty curve, for
+  example the one given by ``assess_fragmentation_horizontal_cut`` with ``max_regions`` equal to 0.
+
+- :func:`~higra.assess_partition` returns the correct score when the labels of a partition are not
+  contiguous (it returned NaN), and raises ``RuntimeError`` for empty partitions or an empty set of ground-truth
+  partitions (it returned NaN). In C++, the partition scorers
+  (``scorer_partition_BCE``, ``scorer_partition_DHamming`` and ``scorer_partition_DCovering``) accept
+  intersection matrices with an empty row or column (a floating-point exception for integer matrices) and throw
+  ``std::runtime_error`` for a matrix whose sum is 0 and for an empty vector of matrices.
 
 0.6.13
 ------
