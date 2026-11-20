@@ -607,7 +607,8 @@ namespace hg {
      *
      * Exterior_vertex defines the linear coordinates of the pixel corresponding to the exterior (interior and exterior
      * of a shape is defined with respect to this point). The coordinate of this point must be given in the
-     * padded/interpolated space.
+     * padded/interpolated space: it must be non-negative and smaller than the number of vertices of this space (the
+     * size of the image returned when original_size is false).
      *
      * [1] Pa. Monasse, and F. Guichard, "Fast computation of a contrast-invariant image representation,"
      *     Image Processing, IEEE Transactions on, vol.9, no.5, pp.860-872, May 2000
@@ -662,6 +663,8 @@ namespace hg {
         }
         size_t h_plain_map = (immersion)? (h + padding_size * 2) * 2 - 1 : h + padding_size * 2;
         size_t w_plain_map = (immersion)? (w + padding_size * 2) * 2 - 1 : w + padding_size * 2;
+        hg_assert(exterior_vertex >= 0 && exterior_vertex < (index_t) (d_plain_map * h_plain_map * w_plain_map),
+                  "exterior_vertex must be the index of a vertex of the padded/interpolated image.");
 
 
         // ----------------

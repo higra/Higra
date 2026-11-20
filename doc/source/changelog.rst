@@ -11,6 +11,9 @@ Unreleased
 - Fix :func:`~higra.component_tree_tree_of_shapes_image2d` and :func:`~higra.component_tree_tree_of_shapes_image3d`,
   which ignored the ``exterior_vertex`` argument and always used the vertex 0 as the exterior.
 
+- The tree of shapes functions raise ``RuntimeError`` when ``exterior_vertex`` is negative or not smaller than the
+  number of pixels of the padded/interpolated image, instead of reading and writing out of bounds.
+
 - Remove automatic result caching: attribute functions recompute on every call,
   including after input or output mutation. ``auto_cache`` and its state/clear
   APIs remain warning-emitting no-ops until the next release. Former implicit

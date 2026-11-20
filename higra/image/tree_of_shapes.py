@@ -175,7 +175,9 @@ def component_tree_tree_of_shapes_image(image, padding='mean', original_size=Tru
 
     :attr:`Exterior_vertex` defines the linear coordinates of the pixel corresponding to the exterior
     (interior and exterior of a shape is defined with respect to this point). The coordinate of this point must be
-    given in the padded/interpolated space.
+    given in the padded/interpolated space: it must be non-negative and smaller than the number of pixels of the
+    image whose size is given above for :attr:`original_size` equal to ``False``. Otherwise, a ``RuntimeError`` is
+    raised.
 
     .. [1] Pa. Monasse, and F. Guichard, "Fast computation of a contrast-invariant image representation," \
     Image Processing, IEEE Transactions on, vol.9, no.5, pp.860-872, May 2000

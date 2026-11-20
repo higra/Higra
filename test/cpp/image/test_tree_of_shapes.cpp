@@ -909,4 +909,49 @@ TEST_CASE("test tree of shapes no immersion padding zero no original space", "[t
 }
 
 
+TEST_CASE("test tree of shapes exterior vertex range", "[tree_of_shapes]") {
+    array_2d<float> image2d{{0, 3, 1, 4},
+                            {2, 0, 4, 1},
+                            {1, 4, 0, 2}};
+    array_3d<float> image3d = array_3d<float>::from_shape({2, 3, 4});
+    for (index_t i = 0; i < (index_t) image3d.size(); i++) {
+        image3d.data()[i] = (float) (i % 5);
+    }
+
+    auto check = [](const auto &image) {
+        const auto shape = image.shape();
+        for (auto padding: {tos_padding::none, tos_padding::zero, tos_padding::mean}) {
+            for (bool immersion: {true, false}) {
+                for (bool original_size: {true, false}) {
+                    // number of vertices of the padded/interpolated space
+                    index_t num_vertices = 1;
+                    for (index_t i = 0; i < (index_t) image.dimension(); i++) {
+                        index_t s = (index_t) shape[i] + ((padding == tos_padding::none) ? 0 : 2);
+                        num_vertices *= (immersion) ? s * 2 - 1 : s;
+                    }
+                    CAPTURE(image.dimension(), (int) padding, immersion, original_size, num_vertices);
+                    for (index_t exterior_vertex: {(index_t) 0, num_vertices - 1}) {
+                        REQUIRE_NOTHROW(component_tree_tree_of_shapes_image(image, padding, original_size,
+                                                                           immersion, exterior_vertex));
+                    }
+                    for (index_t exterior_vertex: {(index_t) -1, num_vertices, num_vertices * 10}) {
+                        REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image(image, padding, original_size,
+                                                                             immersion, exterior_vertex),
+                                          std::runtime_error);
+                    }
+                }
+            }
+        }
+    };
+    check(image2d);
+    check(image3d);
+
+    REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image2d(image2d, tos_padding::mean, true, true, 99),
+                      std::runtime_error);
+    REQUIRE_NOTHROW(component_tree_tree_of_shapes_image2d(image2d, tos_padding::mean, true, true, 98));
+    REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image3d(image3d, tos_padding::mean, true, true, 693),
+                      std::runtime_error);
+    REQUIRE_NOTHROW(component_tree_tree_of_shapes_image3d(image3d, tos_padding::mean, true, true, 692));
+}
+
 }

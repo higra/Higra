@@ -753,3 +753,27 @@ class TestTreeOfShapesImage(unittest.TestCase):
                                 self.assertEqual(tuple(hg.CptGridGraph.get_shape(graph)),
                                                  tuple(hg.CptGridGraph.get_shape(ref_graph)))
                                 self.assertEqual(tree.num_leaves(), graph.num_vertices())
+
+    def test_tree_of_shapes_exterior_vertex_range(self):
+        functions = (hg.component_tree_tree_of_shapes_image, hg.component_tree_tree_of_shapes_image2d,
+                     hg.component_tree_tree_of_shapes_image3d)
+        for function, image in ((functions[0], np.arange(12, dtype=np.uint8).reshape((3, 4)) % 5),
+                                (functions[0], np.arange(24, dtype=np.float32).reshape((2, 3, 4)) % 5),
+                                (functions[1], np.arange(12, dtype=np.uint8).reshape((3, 4)) % 5),
+                                (functions[2], np.arange(24, dtype=np.float32).reshape((2, 3, 4)) % 5)):
+            shape = np.asarray(image.shape)
+            for padding in ('none', 'zero', 'mean'):
+                for immersion in (True, False):
+                    if immersion:
+                        work_shape = shape * 2 - 1 if padding == 'none' else shape * 2 + 3
+                    else:
+                        work_shape = shape if padding == 'none' else shape + 2
+                    num_vertices = int(np.prod(work_shape))
+                    for original_size in (True, False):
+                        with self.subTest(function=function.__name__, shape=image.shape, padding=padding,
+                                          immersion=immersion, original_size=original_size):
+                            for exterior_vertex in (0, num_vertices - 1):
+                                function(image, padding, original_size, immersion, exterior_vertex)
+                            for exterior_vertex in (-1, num_vertices):
+                                with self.assertRaises(RuntimeError):
+                                    function(image, padding, original_size, immersion, exterior_vertex)
