@@ -4,6 +4,10 @@ Changelog
 Unreleased
 ----------
 
+- Fix :func:`~higra.component_tree_multivariate_tree_of_shapes_image2d` with ``padding`` set to ``"zero"`` or
+  ``"mean"``, ``immersion=False`` and ``original_size=True``: the leaves of the returned tree did not correspond
+  to the pixels of the input image.
+
 - Remove automatic result caching: attribute functions recompute on every call,
   including after input or output mutation. ``auto_cache`` and its state/clear
   APIs remain warning-emitting no-ops until the next release. Former implicit

@@ -96,7 +96,7 @@ def component_tree_multivariate_tree_of_shapes_image2d(image, padding='mean', or
                 deleted[0::2, 0::2] = False
         else:
             if padding != "none":
-                deleted[1:-1, 1::-1] = False
+                deleted[1:-1, 1:-1] = False
 
         all_deleted = hg.accumulate_sequential(tree, deleted_vertices, hg.Accumulators.min)
         shape = (image.shape[0], image.shape[1])

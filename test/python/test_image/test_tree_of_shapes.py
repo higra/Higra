@@ -387,6 +387,57 @@ class TestTreeOfShapesImage(unittest.TestCase):
 
         self.assertTrue(hg.test_tree_isomorphism(tree, ref_tree))
 
+    @staticmethod
+    def _expected_leaf_shape(shape, padding, original_size, immersion):
+        shape = np.asarray(shape)
+        if original_size:
+            return tuple(shape)
+        if immersion:
+            return tuple(shape * 2 - 1) if padding == 'none' else tuple(shape * 2 + 3)
+        return tuple(shape) if padding == 'none' else tuple(shape + 2)
+
+    def test_component_tree_multivariate_tree_of_shapes_image2d_leaf_graph(self):
+        image = np.arange(24, dtype=np.uint8).reshape((3, 4, 2))
+        for padding in ('none', 'zero', 'mean'):
+            for immersion in (True, False):
+                for original_size in (True, False):
+                    with self.subTest(padding=padding, immersion=immersion, original_size=original_size):
+                        tree = hg.component_tree_multivariate_tree_of_shapes_image2d(
+                            image, padding, original_size=original_size, immersion=immersion)
+                        graph = hg.CptHierarchy.get_leaf_graph(tree)
+                        self.assertEqual(tree.num_leaves(), graph.num_vertices())
+                        self.assertEqual(tuple(hg.CptGridGraph.get_shape(graph)),
+                                         self._expected_leaf_shape((3, 4), padding, original_size, immersion))
+
+    def test_component_tree_multivariate_tree_of_shapes_image2d_padding_no_immersion_original_size(self):
+        image = np.arange(24, dtype=np.uint8).reshape((3, 4, 2))
+        tree = hg.component_tree_multivariate_tree_of_shapes_image2d(image, 'mean', original_size=True,
+                                                                     immersion=False)
+        self.assertEqual(tree.num_leaves(), 12)
+
+    def test_component_tree_multivariate_tree_of_shapes_image2d_identical_channels(self):
+        # with identical channels, the multivariate tree of shapes is the tree of shapes of one channel
+        images = (np.asarray(((0, 3, 1, 4),
+                              (2, 0, 4, 1),
+                              (1, 4, 0, 2)), dtype=np.uint8),
+                  np.asarray(((3, 0),
+                              (1, 4),
+                              (0, 2),
+                              (4, 1),
+                              (2, 3)), dtype=np.uint8),
+                  np.asarray(((2, 1, 0, 0, 1, 2),), dtype=np.float32))
+        for image in images:
+            for padding in ('none', 'zero', 'mean'):
+                for immersion in (True, False):
+                    for original_size in (True, False):
+                        with self.subTest(shape=image.shape, padding=padding, immersion=immersion,
+                                          original_size=original_size):
+                            ref_tree, _ = hg.component_tree_tree_of_shapes_image2d(
+                                image, padding, original_size=original_size, immersion=immersion)
+                            tree = hg.component_tree_multivariate_tree_of_shapes_image2d(
+                                np.dstack((image, image)), padding, original_size=original_size,
+                                immersion=immersion)
+                            self.assertTrue(hg.test_tree_isomorphism(tree, ref_tree))
 
     # 3d ToS
     def test_tree_of_shapes_3d_self_dual(self):
