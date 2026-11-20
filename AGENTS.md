@@ -48,8 +48,8 @@ before changing its behavior.
 
 Run from the repository root with the desired Python environment active. Install
 NumPy, SciPy, and scikit-learn in that environment for the full Python suite;
-also provide CMake, Git, and a C++17 toolchain. Configuration fetches Catch2 even
-when C++ tests are disabled. See the [build guide](docs/agents/build-and-test.md)
+also provide CMake, Git, and a C++17 toolchain. Configuration fetches Catch2
+when C++ tests are enabled (the default). See the [build guide](docs/agents/build-and-test.md)
 for offline configuration, platform details, and dependency versions.
 
 ```bash

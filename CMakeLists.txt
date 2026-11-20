@@ -45,11 +45,11 @@ include(higraTools)
 # new build type coverage
 message("* Adding build types...")
 SET(CMAKE_CXX_FLAGS_COVERAGE
-        "${GCC_DEBUG_FLAGS} -fprofile-arcs -ftest-coverage -fprofile-update=atomic"
+        "-O0 -fprofile-arcs -ftest-coverage -fprofile-update=atomic"
         CACHE STRING "Flags used by the C++ compiler during coverage builds."
         FORCE )
 SET(CMAKE_C_FLAGS_COVERAGE
-        "${GCC_DEBUG_FLAGS} -fprofile-arcs -ftest-coverage -fprofile-update=atomic"
+        "-O0 -fprofile-arcs -ftest-coverage -fprofile-update=atomic"
         CACHE STRING "Flags used by the C compiler during coverage builds."
         FORCE )
 SET(CMAKE_EXE_LINKER_FLAGS_COVERAGE
@@ -142,25 +142,33 @@ endif()
 #  Options
 ##########################
 
-include(FetchContent)
-FetchContent_Declare(
-        Catch2
-        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG v3.16.0
-        GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(Catch2)
-
-foreach(catch2_target IN ITEMS Catch2 Catch2WithMain)
-    if (TARGET ${catch2_target})
-        target_compile_options(${catch2_target} PRIVATE -fno-profile-arcs -fno-test-coverage)
-    endif ()
-endforeach ()
-
 option(DO_CPP_TEST
         "Build c++ test suit." ON)
 
 option(DO_EMBEDDED_PYTHON_CPP_TEST
         "Build c++ test with python interpreter embedded suit." OFF)
+
+# Catch2 is only needed by the C++ test executables. It is downloaded at configure time unless
+# FETCHCONTENT_SOURCE_DIR_CATCH2 points to an existing Catch2 source tree.
+if (DO_CPP_TEST OR DO_EMBEDDED_PYTHON_CPP_TEST)
+    include(FetchContent)
+    FetchContent_Declare(
+            Catch2
+            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+            GIT_TAG v3.16.0
+            GIT_SHALLOW TRUE)
+    FetchContent_MakeAvailable(Catch2)
+
+    # Exclude Catch2 itself from coverage instrumentation (GCC/Clang coverage builds only).
+    if (NOT MSVC)
+        foreach(catch2_target IN ITEMS Catch2 Catch2WithMain)
+            if (TARGET ${catch2_target})
+                target_compile_options(${catch2_target} PRIVATE
+                        "$<$<CONFIG:Coverage>:-fno-profile-arcs;-fno-test-coverage>")
+            endif ()
+        endforeach ()
+    endif ()
+endif ()
 
 enable_testing()
 
