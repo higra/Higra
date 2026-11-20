@@ -773,7 +773,10 @@ class TestTreeOfShapesImage(unittest.TestCase):
                         with self.subTest(function=function.__name__, shape=image.shape, padding=padding,
                                           immersion=immersion, original_size=original_size):
                             for exterior_vertex in (0, num_vertices - 1):
-                                function(image, padding, original_size, immersion, exterior_vertex)
+                                tree, _ = function(image, padding, original_size, immersion, exterior_vertex)
+                                # the working space is the leaf space when original_size is False
+                                expected_leaves = image.size if original_size else num_vertices
+                                self.assertEqual(tree.num_leaves(), expected_leaves)
                             for exterior_vertex in (-1, num_vertices):
                                 with self.assertRaises(RuntimeError):
                                     function(image, padding, original_size, immersion, exterior_vertex)

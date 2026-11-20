@@ -607,8 +607,10 @@ namespace hg {
      *
      * Exterior_vertex defines the linear coordinates of the pixel corresponding to the exterior (interior and exterior
      * of a shape is defined with respect to this point). The coordinate of this point must be given in the
-     * padded/interpolated space: it must be non-negative and smaller than the number of vertices of this space (the
-     * size of the image returned when original_size is false).
+     * padded/interpolated space, whatever the value of original_size: it is the row-major linear index of a vertex of
+     * the image of size (h + 2p, w + 2p, d + 2p) * 2 - 1 if immersion is true, and (h + 2p, w + 2p, d + 2p) otherwise,
+     * with p = 0 if padding is tos_padding::none and p = 1 otherwise. It must be non-negative and smaller than the
+     * number of vertices of this image.
      *
      * [1] Pa. Monasse, and F. Guichard, "Fast computation of a contrast-invariant image representation,"
      *     Image Processing, IEEE Transactions on, vol.9, no.5, pp.860-872, May 2000

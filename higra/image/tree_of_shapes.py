@@ -22,8 +22,8 @@ def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=T
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
     :param immersion: performs a plain map continuous immersion of the original image (default = `True`)
-    :param exterior_vertex: linear coordinate of the exterior point, given in the padded/interpolated space
-        (default = 0)
+    :param exterior_vertex: linear coordinate of the exterior point, given in the working space described in
+        :func:`~higra.component_tree_tree_of_shapes_image` (default = 0)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
@@ -127,8 +127,8 @@ def component_tree_tree_of_shapes_image3d(image, padding='mean', original_size=T
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
     :param immersion: performs a plain map continuous immersion of the original image (default = `True`)
-    :param exterior_vertex: linear coordinate of the exterior point, given in the padded/interpolated space
-        (default = 0)
+    :param exterior_vertex: linear coordinate of the exterior point, given in the working space described in
+        :func:`~higra.component_tree_tree_of_shapes_image` (default = 0)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
@@ -156,15 +156,16 @@ def component_tree_tree_of_shapes_image(image, padding='mean', original_size=Tru
       - 0 if :attr:`padding` is equal to ``"zero"``;
       - the mean value of the boundary pixels of the input image if :attr:`padding` is equal to ``"mean"``.
 
-    If :attr:`original_size` is ``True``, all the nodes corresponding to pixels not belonging to the input image
-    are removed (except for the root node).
-    If :attr:`original_size` is ``False``, the returned tree is the tree constructed in the interpolated/padded space.
-    In practice if the shape of the input image is :math:`shape`, the leaves of the returned tree will correspond to an
-    image of size:
+    The tree is first constructed in a working space obtained from the input image as follows. If the shape of the
+    input image is :math:`shape`, the padded shape :math:`p` is :math:`shape` if :attr:`padding` is ``"none"``, and
+    :math:`shape + 2` otherwise. The shape of the working space is then :math:`p * 2 - 1` if :attr:`immersion` is
+    ``True``, and :math:`p` otherwise.
 
-      - :math:`shape` if :attr:`original_size` is ``True``;
-      - :math:`shape * 2 - 1` if :attr:`original_size` is ``False`` and :attr:`padding` is ``"none"``; and
-      - :math:`shape * 2 + 3` otherwise.
+    If :attr:`original_size` is ``True``, all the nodes corresponding to pixels not belonging to the input image
+    are removed (except for the root node), and the leaves of the returned tree correspond to an image of shape
+    :math:`shape`.
+    If :attr:`original_size` is ``False``, the returned tree is the tree constructed in the working space, and its
+    leaves correspond to an image with the shape of the working space.
 
     :Advanced options:
 
@@ -175,9 +176,9 @@ def component_tree_tree_of_shapes_image(image, padding='mean', original_size=Tru
 
     :attr:`Exterior_vertex` defines the linear coordinates of the pixel corresponding to the exterior
     (interior and exterior of a shape is defined with respect to this point). The coordinate of this point must be
-    given in the padded/interpolated space: it must be non-negative and smaller than the number of pixels of the
-    image whose size is given above for :attr:`original_size` equal to ``False``. Otherwise, a ``RuntimeError`` is
-    raised.
+    given in the working space described above, whatever the value of :attr:`original_size`: it is the row-major
+    linear index of a pixel of the working space, so it must be non-negative and smaller than the number of pixels
+    of the working space. Otherwise, a ``RuntimeError`` is raised.
 
     .. [1] Pa. Monasse, and F. Guichard, "Fast computation of a contrast-invariant image representation," \
     Image Processing, IEEE Transactions on, vol.9, no.5, pp.860-872, May 2000
@@ -189,7 +190,7 @@ def component_tree_tree_of_shapes_image(image, padding='mean', original_size=Tru
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
     :param immersion: performs a plain map continuous immersion of the original image (default = `True`)
-    :param exterior_vertex: linear coordinate of the exterior point
+    :param exterior_vertex: linear coordinate of the exterior point in the working space (default = 0)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
     dim = len(image.shape)
