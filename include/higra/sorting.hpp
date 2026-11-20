@@ -12,24 +12,105 @@
 
 #include "structure/array.hpp"
 
+#include <algorithm>
+#include <iterator>
+
 #ifdef HG_USE_TBB
 
+    #include <memory>
+    #include <new>
+    #include <oneapi/tbb/parallel_invoke.h>
     #include <oneapi/tbb/parallel_sort.h>
-    #include "tbb-ssort/parallel_stable_sort.h"
-
-#else
-
-    #include <algorithm>
 
 #endif
 
 namespace hg {
 
+#ifdef HG_USE_TBB
+    namespace sorting_detail {
+
+        /**
+         * Stable merge of the sorted ranges [xs, xe) and [ys, ye) into the uninitialized storage starting at zs.
+         * Elements are move-constructed into zs; on ties, elements of the first range come first.
+         * Large merges are split in two independent merges executed with oneTBB.
+         */
+        template<typename RandomAccessIterator1, typename RandomAccessIterator2, typename T, typename Compare>
+        void parallel_move_merge(RandomAccessIterator1 xs, RandomAccessIterator1 xe,
+                                 RandomAccessIterator2 ys, RandomAccessIterator2 ye,
+                                 T *zs, Compare comp) {
+            const auto merge_cut_off = typename std::iterator_traits<RandomAccessIterator1>::difference_type(2048);
+            const auto size = (xe - xs) + (ye - ys);
+
+            if (size <= merge_cut_off) {
+                while (xs != xe && ys != ye) {
+                    if (comp(*ys, *xs)) {
+                        new(zs++) T(std::move(*ys++));
+                    } else {
+                        new(zs++) T(std::move(*xs++));
+                    }
+                }
+                while (xs != xe) {
+                    new(zs++) T(std::move(*xs++));
+                }
+                while (ys != ye) {
+                    new(zs++) T(std::move(*ys++));
+                }
+                return;
+            }
+
+            RandomAccessIterator1 xm;
+            RandomAccessIterator2 ym;
+            if (xe - xs >= ye - ys) {
+                xm = xs + (xe - xs) / 2;
+                ym = std::lower_bound(ys, ye, *xm, comp);
+            } else {
+                ym = ys + (ye - ys) / 2;
+                xm = std::upper_bound(xs, xe, *ym, comp);
+            }
+
+            const auto zm = zs + (xm - xs) + (ym - ys);
+            oneapi::tbb::parallel_invoke(
+                    [&] { parallel_move_merge(xs, xm, ys, ym, zs, comp); },
+                    [&] { parallel_move_merge(xm, xe, ym, ye, zm, comp); });
+        }
+
+        /**
+         * Parallel stable merge sort: both halves are sorted in parallel with oneTBB, then merged in parallel
+         * through a temporary buffer. Small ranges are sorted with std::stable_sort.
+         */
+        template<typename RandomAccessIterator, typename Compare>
+        void parallel_stable_sort(RandomAccessIterator xs, RandomAccessIterator xe, Compare comp) {
+            const auto sort_cut_off = typename std::iterator_traits<RandomAccessIterator>::difference_type(4096);
+            const auto size = xe - xs;
+
+            if (size <= sort_cut_off) {
+                std::stable_sort(xs, xe, comp);
+                return;
+            }
+
+            const auto xm = xs + size / 2;
+            oneapi::tbb::parallel_invoke(
+                    [&] { parallel_stable_sort(xs, xm, comp); },
+                    [&] { parallel_stable_sort(xm, xe, comp); });
+
+            using value_type = typename std::iterator_traits<RandomAccessIterator>::value_type;
+            std::allocator<value_type> allocator;
+            value_type *buffer = allocator.allocate(size);
+            parallel_move_merge(xs, xm, xm, xe, buffer, comp);
+            std::move(buffer, buffer + size, xs);
+            for (auto index = size; index != 0; --index) {
+                buffer[index - 1].~value_type();
+            }
+            allocator.deallocate(buffer, size);
+        }
+    }
+#endif
+
 
     template<typename RandomAccessIterator, typename Compare>
     void stable_sort(RandomAccessIterator xs, RandomAccessIterator xe, Compare comp) {
 #ifdef HG_USE_TBB
-        pss::parallel_stable_sort(xs, xe, comp);
+        sorting_detail::parallel_stable_sort(xs, xe, comp);
 #else
         std::stable_sort(xs, xe, comp);
 #endif

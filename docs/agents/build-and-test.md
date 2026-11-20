@@ -27,7 +27,6 @@ substitute for building and importing the checkout.
 | --- | --- |
 | pybind11 3.1.0 | Vendored headers and CMake config under `lib/` |
 | Catch2 3.16.0 | Root `FetchContent`, downloaded at configure time when C++ tests are enabled |
-| Parallel stable sort | Vendored `lib/include/tbb-ssort/` |
 | oneTBB | External CMake package; CI builds version 2023.1.0 |
 | Google Benchmark | External package, only with `DO_BENCHMARK=ON` |
 
@@ -245,9 +244,9 @@ exclusion of vendor/system/`_deps` files. Coverage is not a portable MSVC mode.
 
 `python -m pip wheel . --no-deps --wheel-dir dist` invokes the setuptools/CMake
 backend with build isolation. `pyproject.toml` pins CMake 3.30.5; NumPy is not a
-build requirement, and runtime NumPy minimums are in `setup.py`. The Python 3.9
-runtime entry has no matching current README/CI support or isolated NumPy pin;
-do not promise 3.9 support from that entry alone.
+build requirement. `setup.py` declares `python_requires='>=3.10'` and the
+runtime NumPy minimums as `install_requires` entries with `python_version`
+markers; keep both aligned with the CI wheel matrix.
 
 Validate source packaging in an isolated tracked-source checkout, applying any
 candidate tracked-file patch before building. Generate an sdist with both
@@ -286,11 +285,13 @@ actual compile commands before treating it as a representative measurement.
 
 | Job group | Configured coverage |
 | --- | --- |
-| Linux core | Ubuntu 24.04, GCC 11 regression Debug with TBB off; GCC 14 and Clang 18 Debug with TBB on/off; GCC 14 Coverage with TBB |
+| Linux core | Ubuntu 24.04, GCC 11 regression Debug with TBB off; GCC 14 and Clang 18 Debug with TBB on/off; GCC 14 Debug with TBB off on the oldest supported Python and NumPy (3.10, 2.0.0); GCC 14 Coverage with TBB |
 | macOS core | macOS 15, Clang, Debug with TBB on/off |
 | Wheels | CPython 3.10–3.14; Linux x86_64 manylinux_2_28, macOS x86_64/ARM64, Windows x86_64 |
 
-Linux core jobs also compile the CASF header with ordinary C++17 flags before
+Linux core jobs use the conda base Python, except the oldest-NumPy leg, which
+creates a conda-forge environment pinned to the minimums of `setup.py`; update
+its pins together with `install_requires`. Linux core jobs also compile the CASF header with ordinary C++17 flags before
 building. They clear inherited C/C++ flags and print compiler versions. Core
 jobs use unity batch size four. Coverage runs C++ tests only. Wheel jobs use
 cibuildwheel 3.3.1, enable TBB, and run the Python suite against installed wheels.

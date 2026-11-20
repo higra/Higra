@@ -209,15 +209,12 @@ def prepare_dll_windows(output_dir):
     return os.path.join(output_dir, 'tbb_higra.lib')
 
 
-python_version = sys.version_info[1] # TODO: python 3 assumed...
-requires_list = {
-    9:['numpy>=1.19.5'],
-    10:['numpy>=1.21.4'],
-    11:['numpy>=1.23.5'],
-    12:['numpy>=1.26.0'],
-    13:['numpy>=2.1.3'],
-    14:['numpy>=2.3.2'],
-}
+# Minimum NumPy version for each supported Python version.
+install_requires = [
+    'numpy>=2.0.0; python_version<"3.13"',
+    'numpy>=2.1.3; python_version=="3.13"',
+    'numpy>=2.3.2; python_version>="3.14"',
+]
 # Installed headers are staged by BuildPy rather than discovered as namespaces.
 packages = find_namespace_packages(include=["higra", "higra.*"],
                                    exclude=["higra.include", "higra.include.*",
@@ -235,7 +232,8 @@ setup(
     ext_modules=[CMakeExtension('higram')],
     cmdclass=dict(build_ext=CMakeBuild, build_py=BuildPy),
     include_package_data=False,
-    install_requires=requires_list[python_version],
+    python_requires='>=3.10',
+    install_requires=install_requires,
     zip_safe=False,
     license='CeCILL-B',
 )

@@ -1,6 +1,5 @@
 parameters:
   CIBW_BUILD: ''
-  NUMPY_VERSION: ''
   vmImage: ''
   pythonArchitecture: 'x64'
   force: false
@@ -15,14 +14,13 @@ jobs:
       TWINE_TOKEN: $(PIPY_TOKEN)
       TWINE_TOKEN_TEST: $(PIPY_TEST_TOKEN)
       CIBW_BUILD: ${{ parameters.CIBW_BUILD }}
-      NUMPY_VERSION: ${{ parameters.NUMPY_VERSION }}
       CIBW_SKIP: '*-manylinux_i686 *-musllinux_*'
       CIBW_BUILD_VERBOSITY: '1'
       CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_28"
       CIBW_BEFORE_BUILD_LINUX: source tools/cibuildwheel_manylinux.sh
-      CIBW_ENVIRONMENT_LINUX: 'HG_USE_TBB=1 MFLAG="-m64"  CXXFLAGS="${MFLAG}" TBB_DIR="/tbb/lib/cmake/TBB" NUMPY_VERSION="${{ parameters.NUMPY_VERSION }}"'
+      CIBW_ENVIRONMENT_LINUX: 'HG_USE_TBB=1 MFLAG="-m64"  CXXFLAGS="${MFLAG}" TBB_DIR="/tbb/lib/cmake/TBB"'
       CIBW_BEFORE_BUILD_MACOS: source tools/cibuildwheel_osx.sh
-      CIBW_ENVIRONMENT_MACOS: 'HG_USE_TBB=1 TBB_DIR="$HOME/tbb/lib/cmake/TBB" NUMPY_VERSION="${{ parameters.NUMPY_VERSION }}"'
+      CIBW_ENVIRONMENT_MACOS: 'HG_USE_TBB=1 TBB_DIR="$HOME/tbb/lib/cmake/TBB"'
       CIBW_TEST_COMMAND: python -m pip install scikit-learn && python -c "import unittest;result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)" && python {project}/tools/check_extension_abi.py
 
     timeoutInMinutes: 60

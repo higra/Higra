@@ -5,7 +5,6 @@ jobs:
       name: 'mac_arm_py310'
       vmImage: 'macOS-15-arm64'
       pythonArchitecture: 'arm64'
-      NUMPY_VERSION: '2.0.0'
       CIBW_BUILD: 'cp310-*'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
@@ -13,7 +12,6 @@ jobs:
       name: 'mac_arm_py311'
       vmImage: 'macOS-15-arm64'
       pythonArchitecture: 'arm64'
-      NUMPY_VERSION: '2.0.0'
       CIBW_BUILD: 'cp311-*'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
@@ -21,7 +19,6 @@ jobs:
       name: 'mac_arm_py312'
       vmImage: 'macOS-15-arm64'
       pythonArchitecture: 'arm64'
-      NUMPY_VERSION: '2.0.0'
       CIBW_BUILD: 'cp312-*'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
@@ -29,7 +26,6 @@ jobs:
       name: 'mac_arm_py313'
       vmImage: 'macOS-15-arm64'
       pythonArchitecture: 'arm64'
-      NUMPY_VERSION: '2.1.3'
       CIBW_BUILD: 'cp313-*'
 
   - template: azure-pipelines-unix-buildwheel-template.yml
@@ -37,6 +33,5 @@ jobs:
       name: 'mac_arm_py314'
       vmImage: 'macOS-15-arm64'
       pythonArchitecture: 'arm64'
-      NUMPY_VERSION: '2.3.2'
       CIBW_BUILD: 'cp314-*'
       force: true

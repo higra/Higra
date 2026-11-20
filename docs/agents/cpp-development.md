@@ -150,7 +150,8 @@ tracing is disabled by default. Logging/trace controls are bound in
 ## Performance and parallelism
 
 `utils.hpp::parfor` selects TBB or a serial loop. `sorting.hpp` selects standard
-sorting or oneTBB plus the bundled `tbb-ssort` stable sort. `HG_USE_TBB` is
+sorting or oneTBB (`parallel_sort`, and Higra's own parallel stable merge sort
+built on `parallel_invoke`). `HG_USE_TBB` is
 enabled on the bindings/test targets when requested. There is no explicit SIMD
 code (`USE_SIMD` is a deprecated no-op).
 
