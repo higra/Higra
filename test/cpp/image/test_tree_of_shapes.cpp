@@ -12,6 +12,9 @@
 #include "higra/image/graph_image.hpp"
 #include "higra/algo/tree.hpp"
 #include "../test_utils.hpp"
+#include <algorithm>
+#include <cstdint>
+#include <limits>
 #include <set>
 
 namespace tree_of_shapes {
@@ -908,6 +911,214 @@ TEST_CASE("test tree of shapes no immersion padding zero no original space", "[t
     REQUIRE((altitudes == ref_altitudes));
 }
 
+
+TEST_CASE("test tree of shapes exterior vertex range", "[tree_of_shapes]") {
+    array_2d<float> image2d{{0, 3, 1, 4},
+                            {2, 0, 4, 1},
+                            {1, 4, 0, 2}};
+    array_3d<float> image3d = array_3d<float>::from_shape({2, 3, 4});
+    for (index_t i = 0; i < (index_t) image3d.size(); i++) {
+        image3d.data()[i] = (float) (i % 5);
+    }
+
+    auto check = [](const auto &image) {
+        const auto shape = image.shape();
+        for (auto padding: {tos_padding::none, tos_padding::zero, tos_padding::mean}) {
+            for (bool immersion: {true, false}) {
+                for (bool original_size: {true, false}) {
+                    // number of vertices of the padded/interpolated space
+                    index_t num_vertices = 1;
+                    for (index_t i = 0; i < (index_t) image.dimension(); i++) {
+                        index_t s = (index_t) shape[i] + ((padding == tos_padding::none) ? 0 : 2);
+                        num_vertices *= (immersion) ? s * 2 - 1 : s;
+                    }
+                    CAPTURE(image.dimension(), (int) padding, immersion, original_size, num_vertices);
+                    for (index_t exterior_vertex: {(index_t) 0, num_vertices - 1}) {
+                        REQUIRE_NOTHROW(component_tree_tree_of_shapes_image(image, padding, original_size,
+                                                                           immersion, exterior_vertex));
+                    }
+                    for (index_t exterior_vertex: {(index_t) -1, num_vertices, num_vertices * 10}) {
+                        REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image(image, padding, original_size,
+                                                                             immersion, exterior_vertex),
+                                          std::runtime_error);
+                    }
+                }
+            }
+        }
+    };
+    check(image2d);
+    check(image3d);
+
+    REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image2d(image2d, tos_padding::mean, true, true, 99),
+                      std::runtime_error);
+    REQUIRE_NOTHROW(component_tree_tree_of_shapes_image2d(image2d, tos_padding::mean, true, true, 98));
+    REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image3d(image3d, tos_padding::mean, true, true, 693),
+                      std::runtime_error);
+    REQUIRE_NOTHROW(component_tree_tree_of_shapes_image3d(image3d, tos_padding::mean, true, true, 692));
+}
+
+TEMPLATE_TEST_CASE("test tree of shapes empty image all options", "[tree_of_shapes]", unsigned char, int, float) {
+    const std::vector<array_shape> shapes{{0, 4}, {3, 0}, {0, 0}, {0, 3, 4}, {2, 0, 4}, {2, 3, 0}};
+    for (const auto &shape: shapes) {
+        hg::array<TestType> image = hg::array<TestType>::from_shape(shape);
+        for (auto padding: {tos_padding::none, tos_padding::zero, tos_padding::mean}) {
+            for (bool immersion: {true, false}) {
+                for (bool original_size: {true, false}) {
+                    CAPTURE(shape.size(), shape[0], shape[1], (int) padding, immersion, original_size);
+                    REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image(image, padding, original_size, immersion),
+                                      std::runtime_error);
+                }
+            }
+        }
+    }
+
+    array_2d<TestType> image2d = array_2d<TestType>::from_shape({0, 4});
+    REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image2d(image2d), std::runtime_error);
+    array_3d<TestType> image3d = array_3d<TestType>::from_shape({2, 0, 4});
+    REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image3d(image3d), std::runtime_error);
+}
+
+TEST_CASE("test tree of shapes interval midpoint", "[tree_of_shapes]") {
+    using tree_of_shapes_internal::interval_midpoint;
+    using i64 = std::int64_t;
+    using i32 = std::int32_t;
+    using u64 = std::uint64_t;
+    const i64 i64_max = std::numeric_limits<i64>::max();
+    const i64 i64_min = std::numeric_limits<i64>::min();
+    const i32 i32_max = std::numeric_limits<i32>::max();
+    const i32 i32_min = std::numeric_limits<i32>::min();
+
+    // equal endpoints
+    REQUIRE(interval_midpoint<i64>((i64(1) << 53) + 1, (i64(1) << 53) + 1) == (i64(1) << 53) + 1);
+    REQUIRE(interval_midpoint<i64>(i64_max, i64_max) == i64_max);
+    REQUIRE(interval_midpoint<i64>(i64_min, i64_min) == i64_min);
+    REQUIRE(interval_midpoint<i32>(i32(1) << 30, i32(1) << 30) == (i32(1) << 30));
+
+    // truncation toward zero, in both argument orders
+    REQUIRE(interval_midpoint<i32>(-3, 0) == -1);
+    REQUIRE(interval_midpoint<i32>(0, -3) == -1);
+    REQUIRE(interval_midpoint<i32>(-2, 1) == 0);
+    REQUIRE(interval_midpoint<i32>(-1, 2) == 0);
+    REQUIRE(interval_midpoint<i32>(1, 4) == 2);
+    REQUIRE(interval_midpoint<i32>(-4, -1) == -2);
+    REQUIRE(interval_midpoint<signed char>(-128, 127) == 0);
+    REQUIRE(interval_midpoint<signed char>(-128, -127) == -127);
+    REQUIRE(interval_midpoint<unsigned char>(255, 254) == 254);
+
+    // extreme values
+    REQUIRE(interval_midpoint<i32>(i32_min, i32_max) == 0);
+    REQUIRE(interval_midpoint<i32>(i32_max - 2, i32_max) == i32_max - 1);
+    REQUIRE(interval_midpoint<i32>(i32_min, i32_min + 2) == i32_min + 1);
+    REQUIRE(interval_midpoint<i64>(i64_min, i64_max) == 0);
+    REQUIRE(interval_midpoint<i64>(i64_max - 1, i64_max) == i64_max - 1);
+    REQUIRE(interval_midpoint<i64>(i64_min, i64_min + 1) == i64_min + 1);
+    REQUIRE(interval_midpoint<u64>(std::numeric_limits<u64>::max(), std::numeric_limits<u64>::max() - 2) ==
+            std::numeric_limits<u64>::max() - 1);
+
+    // floating point
+    const float f_max = std::numeric_limits<float>::max();
+    const float f_denorm = std::numeric_limits<float>::denorm_min();
+    REQUIRE(interval_midpoint<float>(2e38f, 2e38f) == 2e38f);
+    REQUIRE(interval_midpoint<float>(f_max, f_max) == f_max);
+    REQUIRE(interval_midpoint<float>(f_max, f_max / 2) == 0.75f * f_max);
+    REQUIRE(interval_midpoint<float>(-f_max, f_max) == 0);
+    REQUIRE(interval_midpoint<float>(1, 2) == 1.5f);
+    REQUIRE(interval_midpoint<float>(-1.5f, 0) == -0.75f);
+    REQUIRE(interval_midpoint<float>(f_denorm, 3 * f_denorm) == 2 * f_denorm);
+    REQUIRE(interval_midpoint<double>(std::numeric_limits<double>::max(), std::numeric_limits<double>::max()) ==
+            std::numeric_limits<double>::max());
+}
+
+TEMPLATE_TEST_CASE("test tree of shapes root altitude at exterior pixel", "[tree_of_shapes]",
+                   std::int32_t, std::int64_t, float) {
+    TestType value;
+    if constexpr (std::is_same<TestType, std::int64_t>::value) {
+        value = ((std::int64_t) 1 << 53) + 1;
+    } else if constexpr (std::is_same<TestType, std::int32_t>::value) {
+        value = (std::int32_t) 1 << 30;
+    } else {
+        value = 2e38f;
+    }
+
+    array_2d<TestType> image2d = array_2d<TestType>::from_shape({3, 3});
+    std::fill(image2d.begin(), image2d.end(), (TestType) 0);
+    image2d(1, 1) = value;
+    array_3d<TestType> image3d = array_3d<TestType>::from_shape({3, 3, 3});
+    std::fill(image3d.begin(), image3d.end(), (TestType) 0);
+    image3d(1, 1, 1) = value;
+
+    for (bool immersion: {false, true}) {
+        CAPTURE(immersion);
+        // centre pixel in the working space without padding
+        index_t exterior2d = (immersion) ? 2 * 5 + 2 : 4;
+        index_t exterior3d = (immersion) ? (2 * 5 + 2) * 5 + 2 : 13;
+        auto res2d = component_tree_tree_of_shapes_image(image2d, tos_padding::none, true, immersion, exterior2d);
+        REQUIRE(res2d.altitudes(root(res2d.tree)) == value);
+        auto res3d = component_tree_tree_of_shapes_image(image3d, tos_padding::none, true, immersion, exterior3d);
+        REQUIRE(res3d.altitudes(root(res3d.tree)) == value);
+        auto res2d_wrapper = component_tree_tree_of_shapes_image2d(image2d, tos_padding::none, true, immersion,
+                                                                   exterior2d);
+        REQUIRE(res2d_wrapper.altitudes(root(res2d_wrapper.tree)) == value);
+        auto res3d_wrapper = component_tree_tree_of_shapes_image3d(image3d, tos_padding::none, true, immersion,
+                                                                   exterior3d);
+        REQUIRE(res3d_wrapper.altitudes(root(res3d_wrapper.tree)) == value);
+    }
+}
+
+TEST_CASE("test tree of shapes mean padding thin volumes", "[tree_of_shapes]") {
+    const std::vector<array_shape> shapes{{4, 1, 1}, {4, 2, 1}, {4, 1, 2}, {4, 2, 2}, {4, 3, 1}, {4, 1, 3}};
+    for (const auto &shape: shapes) {
+        array_3d<float> image = array_3d<float>::from_shape(shape);
+        std::fill(image.begin(), image.end(), 8.f);
+        CAPTURE(shape[0], shape[1], shape[2]);
+        REQUIRE(tree_of_shapes_internal::get_padding_value<float>(image, tos_padding::mean) == 8.f);
+    }
+
+    // every voxel of a volume of width one is on its boundary: the padding value is the mean of the volume
+    array_3d<float> image = array_3d<float>::from_shape({4, 2, 1});
+    for (index_t i = 0; i < (index_t) image.size(); i++) {
+        image.data()[i] = (float) i;
+    }
+    REQUIRE(tree_of_shapes_internal::get_padding_value<float>(image, tos_padding::mean) == 3.5f);
+}
+
+TEMPLATE_TEST_CASE("test tree of shapes mean padding integer extremes", "[tree_of_shapes]",
+                   std::int8_t, std::uint8_t, std::int16_t, std::uint16_t, std::int32_t, std::uint32_t,
+                   std::int64_t, std::uint64_t) {
+    using tree_of_shapes_internal::get_padding_value;
+    for (TestType value: {std::numeric_limits<TestType>::min(), std::numeric_limits<TestType>::max(), (TestType) 1}) {
+        CAPTURE((long double) value);
+        array_2d<TestType> image2d = array_2d<TestType>::from_shape({3, 4});
+        std::fill(image2d.begin(), image2d.end(), value);
+        array_3d<TestType> image3d = array_3d<TestType>::from_shape({3, 3, 4});
+        std::fill(image3d.begin(), image3d.end(), value);
+        if (sizeof(TestType) < 8) {
+            REQUIRE(get_padding_value<TestType>(image2d, tos_padding::mean) == value);
+            REQUIRE(get_padding_value<TestType>(image3d, tos_padding::mean) == value);
+        } else if (value == (TestType) 1) {
+            // 64-bit integers are summed in their own type: only values that do not overflow are exact
+            REQUIRE(get_padding_value<TestType>(image2d, tos_padding::mean) == value);
+            REQUIRE(get_padding_value<TestType>(image3d, tos_padding::mean) == value);
+        }
+    }
+}
+
+TEMPLATE_TEST_CASE("test tree of shapes mean padding signed rounding", "[tree_of_shapes]",
+                   std::int8_t, std::int16_t, std::int32_t, std::int64_t, float, double) {
+    using tree_of_shapes_internal::get_padding_value;
+    // boundary sum -15 over 4 pixels
+    array_2d<TestType> image{{-4, -4},
+                             {-4, -3}};
+    const TestType expected = (std::is_integral<TestType>::value) ? (TestType) -3 : (TestType) -3.75;
+    REQUIRE(get_padding_value<TestType>(image, tos_padding::mean) == expected);
+    array_2d<TestType> positive{{4, 4},
+                                {4, 3}};
+    REQUIRE(get_padding_value<TestType>(positive, tos_padding::mean) == -expected);
+
+    array_3d<TestType> volume = array_3d<TestType>::from_shape({3, 3, 3});
+    std::fill(volume.begin(), volume.end(), (TestType) -7);
+    REQUIRE(get_padding_value<TestType>(volume, tos_padding::mean) == (TestType) -7);
+}
 
 TEST_CASE("test tree of shapes empty image", "[tree_of_shapes]") {
     for (const auto &image: {array_2d<double>::from_shape({0, 3}), array_2d<double>::from_shape({3, 0})}) {

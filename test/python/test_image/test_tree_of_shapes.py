@@ -8,8 +8,11 @@
 # The full license is in the file LICENSE, distributed with this software. #
 ############################################################################
 
+import inspect
 import unittest
+from unittest import mock
 import higra as hg
+import higra.image.tree_of_shapes as tos_module
 import numpy as np
 
 
@@ -387,6 +390,57 @@ class TestTreeOfShapesImage(unittest.TestCase):
 
         self.assertTrue(hg.test_tree_isomorphism(tree, ref_tree))
 
+    @staticmethod
+    def _expected_leaf_shape(shape, padding, original_size, immersion):
+        shape = np.asarray(shape)
+        if original_size:
+            return tuple(shape)
+        if immersion:
+            return tuple(shape * 2 - 1) if padding == 'none' else tuple(shape * 2 + 3)
+        return tuple(shape) if padding == 'none' else tuple(shape + 2)
+
+    def test_component_tree_multivariate_tree_of_shapes_image2d_leaf_graph(self):
+        image = np.arange(24, dtype=np.uint8).reshape((3, 4, 2))
+        for padding in ('none', 'zero', 'mean'):
+            for immersion in (True, False):
+                for original_size in (True, False):
+                    with self.subTest(padding=padding, immersion=immersion, original_size=original_size):
+                        tree = hg.component_tree_multivariate_tree_of_shapes_image2d(
+                            image, padding, original_size=original_size, immersion=immersion)
+                        graph = hg.CptHierarchy.get_leaf_graph(tree)
+                        self.assertEqual(tree.num_leaves(), graph.num_vertices())
+                        self.assertEqual(tuple(hg.CptGridGraph.get_shape(graph)),
+                                         self._expected_leaf_shape((3, 4), padding, original_size, immersion))
+
+    def test_component_tree_multivariate_tree_of_shapes_image2d_padding_no_immersion_original_size(self):
+        image = np.arange(24, dtype=np.uint8).reshape((3, 4, 2))
+        tree = hg.component_tree_multivariate_tree_of_shapes_image2d(image, 'mean', original_size=True,
+                                                                     immersion=False)
+        self.assertEqual(tree.num_leaves(), 12)
+
+    def test_component_tree_multivariate_tree_of_shapes_image2d_identical_channels(self):
+        # with identical channels, the multivariate tree of shapes is the tree of shapes of one channel
+        images = (np.asarray(((0, 3, 1, 4),
+                              (2, 0, 4, 1),
+                              (1, 4, 0, 2)), dtype=np.uint8),
+                  np.asarray(((3, 0),
+                              (1, 4),
+                              (0, 2),
+                              (4, 1),
+                              (2, 3)), dtype=np.uint8),
+                  np.asarray(((2, 1, 0, 0, 1, 2),), dtype=np.float32))
+        for image in images:
+            for padding in ('none', 'zero', 'mean'):
+                for immersion in (True, False):
+                    for original_size in (True, False):
+                        with self.subTest(shape=image.shape, padding=padding, immersion=immersion,
+                                          original_size=original_size):
+                            ref_tree, _ = hg.component_tree_tree_of_shapes_image2d(
+                                image, padding, original_size=original_size, immersion=immersion)
+                            tree = hg.component_tree_multivariate_tree_of_shapes_image2d(
+                                np.dstack((image, image)), padding, original_size=original_size,
+                                immersion=immersion)
+                            self.assertTrue(hg.test_tree_isomorphism(tree, ref_tree))
 
     # 3d ToS
     def test_tree_of_shapes_3d_self_dual(self):
@@ -571,7 +625,7 @@ class TestTreeOfShapesImage(unittest.TestCase):
         s = hg.CptGridGraph.get_shape(g)
         self.assertTrue(s[0] * s[1] == tree.num_leaves())
 
-    def test_tree_of_shapes_default_param(self):
+    def test_tree_of_shapes_default_param_2d(self):
         image = np.asarray((((1, 1),
                             (1, -2),
                             (1, 7))), dtype=np.float64)
@@ -589,7 +643,7 @@ class TestTreeOfShapesImage(unittest.TestCase):
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 
-    def test_tree_of_shapes_default_param(self):
+    def test_tree_of_shapes_default_param_3d(self):
         image = np.asarray((((1, 1, 1),
                              (1, 1, 1),
                              (1, 1, 1)),
@@ -624,6 +678,234 @@ class TestTreeOfShapesImage(unittest.TestCase):
         self.assertTrue(np.all(tree.parents() == ref_parents))
         self.assertTrue(np.allclose(altitudes, ref_altitudes))
 
+    def test_tree_of_shapes_image2d_3d_forward_arguments(self):
+        generic = tos_module.component_tree_tree_of_shapes_image
+        signature = inspect.signature(generic)
+        sentinel = object()
+
+        for dim, wrapper in ((2, hg.component_tree_tree_of_shapes_image2d),
+                             (3, hg.component_tree_tree_of_shapes_image3d)):
+            image = np.zeros((2,) * dim, dtype=np.uint8)
+            calls = (((image,), {},
+                      dict(padding='mean', original_size=True, immersion=True, exterior_vertex=0)),
+                     ((image, 'zero', False, False, 7), {},
+                      dict(padding='zero', original_size=False, immersion=False, exterior_vertex=7)),
+                     ((image,), dict(padding='none', original_size=False, immersion=False, exterior_vertex=3),
+                      dict(padding='none', original_size=False, immersion=False, exterior_vertex=3)))
+            for args, kwargs, expected in calls:
+                with self.subTest(dim=dim, args=args[1:], kwargs=kwargs):
+                    with mock.patch.object(tos_module, 'component_tree_tree_of_shapes_image',
+                                           return_value=sentinel) as patched:
+                        self.assertIs(wrapper(*args, **kwargs), sentinel)
+                    patched.assert_called_once()
+                    bound = signature.bind(*patched.call_args.args, **patched.call_args.kwargs)
+                    bound.apply_defaults()
+                    self.assertIs(bound.arguments.pop('image'), image)
+                    self.assertEqual(bound.arguments, expected)
+
+    def test_tree_of_shapes_image2d_3d_exterior_vertex(self):
+        for dim, wrapper in ((2, hg.component_tree_tree_of_shapes_image2d),
+                             (3, hg.component_tree_tree_of_shapes_image3d)):
+            image = np.zeros((3,) * dim, dtype=np.uint8)
+            image[(1,) * dim] = 10
+            # without padding and with immersion, the exterior is given in an image of shape (5,) * dim
+            exterior_vertex = int(np.ravel_multi_index((2,) * dim, (5,) * dim))
+            options = dict(padding='none', original_size=True, immersion=True)
+
+            tree0, altitudes0 = wrapper(image, exterior_vertex=0, **options)
+            tree, altitudes = wrapper(image, exterior_vertex=exterior_vertex, **options)
+            ref_tree, ref_altitudes = hg.component_tree_tree_of_shapes_image(image, exterior_vertex=exterior_vertex,
+                                                                             **options)
+            self.assertEqual(altitudes0[tree0.root()], 0)
+            self.assertEqual(altitudes[tree.root()], 10)
+            np.testing.assert_array_equal(tree.parents(), ref_tree.parents())
+            np.testing.assert_array_equal(altitudes, ref_altitudes)
+
+    def test_tree_of_shapes_image2d_3d_same_as_generic(self):
+        for wrapper, image in ((hg.component_tree_tree_of_shapes_image2d,
+                                np.asarray(((0, 3, 1, 4),
+                                            (2, 0, 4, 1),
+                                            (1, 4, 0, 2)), dtype=np.uint8)),
+                               (hg.component_tree_tree_of_shapes_image3d,
+                                np.arange(24, dtype=np.float32).reshape((2, 3, 4)) % 5)):
+            shape = np.asarray(image.shape)
+            for padding in ('none', 'zero', 'mean'):
+                for immersion in (True, False):
+                    for original_size in (True, False):
+                        if immersion:
+                            work_shape = shape * 2 - 1 if padding == 'none' else shape * 2 + 3
+                        else:
+                            work_shape = shape if padding == 'none' else shape + 2
+                        # default exterior, a vertex near the center and the last vertex of the working space
+                        for exterior_vertex in (None, int(np.prod(work_shape)) // 2, int(np.prod(work_shape)) - 1):
+                            with self.subTest(wrapper=wrapper.__name__, padding=padding, immersion=immersion,
+                                              original_size=original_size, exterior_vertex=exterior_vertex):
+                                kwargs = dict(padding=padding, original_size=original_size, immersion=immersion)
+                                if exterior_vertex is not None:
+                                    kwargs['exterior_vertex'] = exterior_vertex
+                                tree, altitudes = wrapper(image, **kwargs)
+                                ref_tree, ref_altitudes = hg.component_tree_tree_of_shapes_image(image, **kwargs)
+                                np.testing.assert_array_equal(tree.parents(), ref_tree.parents())
+                                np.testing.assert_array_equal(altitudes, ref_altitudes)
+                                self.assertEqual(tree.category(), ref_tree.category())
+                                graph = hg.CptHierarchy.get_leaf_graph(tree)
+                                ref_graph = hg.CptHierarchy.get_leaf_graph(ref_tree)
+                                self.assertEqual(tuple(hg.CptGridGraph.get_shape(graph)),
+                                                 tuple(hg.CptGridGraph.get_shape(ref_graph)))
+                                self.assertEqual(tree.num_leaves(), graph.num_vertices())
+
+    def test_tree_of_shapes_exterior_vertex_range(self):
+        functions = (hg.component_tree_tree_of_shapes_image, hg.component_tree_tree_of_shapes_image2d,
+                     hg.component_tree_tree_of_shapes_image3d)
+        for function, image in ((functions[0], np.arange(12, dtype=np.uint8).reshape((3, 4)) % 5),
+                                (functions[0], np.arange(24, dtype=np.float32).reshape((2, 3, 4)) % 5),
+                                (functions[1], np.arange(12, dtype=np.uint8).reshape((3, 4)) % 5),
+                                (functions[2], np.arange(24, dtype=np.float32).reshape((2, 3, 4)) % 5)):
+            shape = np.asarray(image.shape)
+            for padding in ('none', 'zero', 'mean'):
+                for immersion in (True, False):
+                    if immersion:
+                        work_shape = shape * 2 - 1 if padding == 'none' else shape * 2 + 3
+                    else:
+                        work_shape = shape if padding == 'none' else shape + 2
+                    num_vertices = int(np.prod(work_shape))
+                    for original_size in (True, False):
+                        with self.subTest(function=function.__name__, shape=image.shape, padding=padding,
+                                          immersion=immersion, original_size=original_size):
+                            for exterior_vertex in (0, num_vertices - 1):
+                                tree, _ = function(image, padding, original_size, immersion, exterior_vertex)
+                                # the working space is the leaf space when original_size is False
+                                expected_leaves = image.size if original_size else num_vertices
+                                self.assertEqual(tree.num_leaves(), expected_leaves)
+                            for exterior_vertex in (-1, num_vertices):
+                                with self.assertRaises(RuntimeError):
+                                    function(image, padding, original_size, immersion, exterior_vertex)
+
+    def test_tree_of_shapes_empty_image_all_options(self):
+        for dtype in (np.uint8, np.int32, np.float32):
+            for shape in ((0, 4), (3, 0), (0, 0), (0, 3, 4), (2, 0, 4), (2, 3, 0)):
+                image = np.zeros(shape, dtype=dtype)
+                function = hg.component_tree_tree_of_shapes_image2d if len(shape) == 2 \
+                    else hg.component_tree_tree_of_shapes_image3d
+                for padding in ('none', 'zero', 'mean'):
+                    for immersion in (True, False):
+                        for original_size in (True, False):
+                            with self.subTest(dtype=dtype, shape=shape, padding=padding, immersion=immersion,
+                                              original_size=original_size):
+                                with self.assertRaises(RuntimeError):
+                                    hg.component_tree_tree_of_shapes_image(image, padding, original_size, immersion)
+                                with self.assertRaises(RuntimeError):
+                                    function(image, padding, original_size, immersion)
+                                if len(shape) == 2:
+                                    with self.assertRaises(RuntimeError):
+                                        hg.component_tree_multivariate_tree_of_shapes_image2d(
+                                            np.zeros(shape + (2,), dtype=dtype), padding,
+                                            original_size=original_size, immersion=immersion)
+
+    def test_component_tree_multivariate_tree_of_shapes_image2d_no_channel(self):
+        for shape in ((3, 4, 0), (0, 4, 0)):
+            with self.subTest(shape=shape):
+                with self.assertRaisesRegex(RuntimeError, "at least one channel"):
+                    hg.component_tree_multivariate_tree_of_shapes_image2d(np.zeros(shape, dtype=np.uint8))
+
+        with self.assertRaisesRegex(RuntimeError, "image must have at least one pixel"):
+            hg.component_tree_multivariate_tree_of_shapes_image2d(np.zeros((0, 4, 2), dtype=np.uint8))
+
+        image = np.arange(24, dtype=np.uint8).reshape((3, 4, 2)) % 5
+        tree = hg.component_tree_multivariate_tree_of_shapes_image2d(image)
+        self.assertEqual(tree.num_leaves(), 12)
+
+    def test_tree_of_shapes_root_altitude_at_exterior_pixel(self):
+        for dtype, value in ((np.int64, 2 ** 53 + 1), (np.int32, 2 ** 30), (np.float32, 2e38)):
+            for dim in (2, 3):
+                image = np.zeros((3,) * dim, dtype=dtype)
+                image[(1,) * dim] = value
+                wrapper = hg.component_tree_tree_of_shapes_image2d if dim == 2 \
+                    else hg.component_tree_tree_of_shapes_image3d
+                for immersion in (False, True):
+                    work_shape = (5,) * dim if immersion else (3,) * dim
+                    exterior_vertex = int(np.ravel_multi_index((len(work_shape) * (work_shape[0] // 2,)), work_shape))
+                    for function in (hg.component_tree_tree_of_shapes_image, wrapper):
+                        with self.subTest(dtype=dtype, dim=dim, immersion=immersion, function=function.__name__):
+                            tree, altitudes = function(image, padding='none', immersion=immersion,
+                                                       exterior_vertex=exterior_vertex)
+                            self.assertEqual(altitudes[tree.root()], image[(1,) * dim])
+
+    def test_tree_of_shapes_root_altitude_interpolated_exterior(self):
+        # the exterior is the interpolated vertex between two pixels: its level is the middle of their values
+        for dtype, left, right, expected in ((np.int32, -3, 0, -1), (np.int32, 1, 4, 2),
+                                             (np.int64, -2 ** 62, 2 ** 62 + 1, 0),
+                                             (np.float32, -1.5, 0, -0.75)):
+            with self.subTest(dtype=dtype, left=left, right=right):
+                image = np.asarray(((left, right),), dtype=dtype)
+                tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, padding='none',
+                                                                           original_size=False, exterior_vertex=1)
+                self.assertEqual(altitudes[tree.root()], dtype(expected))
+
+    def test_tree_of_shapes_mean_padding_thin_volumes(self):
+        for shape in ((4, 1, 1), (4, 2, 1), (4, 1, 2), (4, 2, 2), (4, 3, 1), (4, 1, 3), (1, 1, 1)):
+            for immersion in (False, True):
+                for original_size in (False, True):
+                    with self.subTest(shape=shape, immersion=immersion, original_size=original_size):
+                        image = np.full(shape, 8, dtype=np.float32)
+                        tree, altitudes = hg.component_tree_tree_of_shapes_image(
+                            image, padding='mean', immersion=immersion, original_size=original_size)
+                        self.assertTrue(np.all(altitudes == 8))
+
+        # every voxel of a volume of width one is on its boundary: the padding value is the mean of the volume
+        image = np.arange(8, dtype=np.float32).reshape((4, 2, 1))
+        tree, altitudes = hg.component_tree_tree_of_shapes_image(image, padding='mean', immersion=False,
+                                                                 original_size=False)
+        self.assertEqual(altitudes[tree.root()], np.mean(image))
+
+    def test_tree_of_shapes_mean_padding_integer_images(self):
+        def padding_value(image):
+            tree, altitudes = hg.component_tree_tree_of_shapes_image(image, padding='mean', immersion=False,
+                                                                     original_size=False)
+            return altitudes[0]  # the vertex 0 is a padding pixel
+
+        for dtype in (np.uint8, np.uint16, np.int32, np.int64):
+            info = np.iinfo(dtype)
+            values = (info.min, info.max) if dtype != np.int64 else (-2 ** 40, 2 ** 40)
+            for value in values:
+                for shape in ((3, 4), (3, 3, 4)):
+                    with self.subTest(dtype=dtype, value=value, shape=shape):
+                        self.assertEqual(padding_value(np.full(shape, value, dtype=dtype)), value)
+
+        # the mean of integer images is truncated toward zero
+        for dtype, expected in ((np.int32, -3), (np.int64, -3), (np.float32, -3.75), (np.float64, -3.75)):
+            with self.subTest(dtype=dtype):
+                image = np.asarray(((-4, -4), (-4, -3)), dtype=dtype)
+                self.assertEqual(padding_value(image), expected)
+                self.assertEqual(padding_value(-image), -expected)
+
+    def test_component_tree_multivariate_tree_of_shapes_image2d_single_channel(self):
+        images = (np.asarray(((0, 3, 1, 4),
+                              (2, 0, 4, 1),
+                              (1, 4, 0, 2)), dtype=np.uint8),
+                  np.asarray(((3, 0),
+                              (1, 4),
+                              (0, 2),
+                              (4, 1),
+                              (2, 3)), dtype=np.float32),
+                  np.asarray(((2, 1, 0, 0, 1, 2),), dtype=np.int32))
+        for image in images:
+            for padding in ('none', 'zero', 'mean'):
+                for immersion in (True, False):
+                    for original_size in (True, False):
+                        with self.subTest(shape=image.shape, padding=padding, immersion=immersion,
+                                          original_size=original_size):
+                            ref_tree, _ = hg.component_tree_tree_of_shapes_image2d(
+                                image, padding, original_size=original_size, immersion=immersion)
+                            tree = hg.component_tree_multivariate_tree_of_shapes_image2d(
+                                image[:, :, None], padding, original_size=original_size, immersion=immersion)
+                            np.testing.assert_array_equal(tree.parents(), ref_tree.parents())
+                            self.assertEqual(tree.category(), ref_tree.category())
+                            graph = hg.CptHierarchy.get_leaf_graph(tree)
+                            ref_graph = hg.CptHierarchy.get_leaf_graph(ref_tree)
+                            self.assertEqual(tuple(hg.CptGridGraph.get_shape(graph)),
+                                             tuple(hg.CptGridGraph.get_shape(ref_graph)))
+                            self.assertEqual(tree.num_leaves(), graph.num_vertices())
 
     def test_tree_of_shapes_empty_image(self):
         for image in (np.zeros((0, 3)), np.zeros((3, 0))):

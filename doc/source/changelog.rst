@@ -4,6 +4,36 @@ Changelog
 Unreleased
 ----------
 
+- Fix :func:`~higra.component_tree_multivariate_tree_of_shapes_image2d` with ``padding`` set to ``"zero"`` or
+  ``"mean"``, ``immersion=False`` and ``original_size=True``: the leaves of the returned tree did not correspond
+  to the pixels of the input image.
+
+- Fix :func:`~higra.component_tree_tree_of_shapes_image2d` and :func:`~higra.component_tree_tree_of_shapes_image3d`,
+  which ignored the ``exterior_vertex`` argument and always used the vertex 0 as the exterior.
+
+- The tree of shapes functions raise ``RuntimeError`` when ``exterior_vertex`` is negative or not smaller than the
+  number of pixels of the padded/interpolated image, instead of reading and writing out of bounds.
+
+- Fix the tree of shapes functions when the value of the exterior vertex is large: the altitude of the root could
+  overflow (``int32`` and floating point images) or lose precision (``int64`` images).
+
+- Fix the padding value of the tree of shapes functions with ``padding="mean"`` for 3d images whose first dimension
+  is greater than 2 and whose last dimension is 1: the number of boundary voxels used to compute the mean was wrong.
+
+- Fix the padding value of the tree of shapes functions with ``padding="mean"`` for integer images: the sum of the
+  boundary pixels could overflow, and the mean of negative values was wrong. The sum is now computed with 64-bit
+  integers for integer images with fewer than 64 bits per pixel; it may still overflow for 64-bit integer and
+  floating point images with very large boundary values. The mean of integer images is truncated toward zero.
+
+- :func:`~higra.component_tree_multivariate_tree_of_shapes_image2d` accepts images with a single channel: the result
+  is the tree returned by :func:`~higra.component_tree_tree_of_shapes_image2d` for this channel. Such images
+  previously raised an error.
+
+- :func:`~higra.component_tree_tree_of_shapes_image` and :func:`~higra.component_tree_multivariate_tree_of_shapes_image2d`
+  also raise ``RuntimeError`` for an empty image, and the multivariate function for an image without any channel.
+  Empty images previously crashed (integer images with ``padding="mean"``), raised various errors, or returned a
+  tree containing only padding pixels.
+
 - Remove automatic result caching: attribute functions recompute on every call,
   including after input or output mutation. ``auto_cache`` and its state/clear
   APIs remain warning-emitting no-ops until the next release. Former implicit
