@@ -26,7 +26,7 @@ substitute for building and importing the checkout.
 | Dependency | Source in this repository |
 | --- | --- |
 | pybind11 3.1.0 | Vendored headers and CMake config under `lib/` |
-| Catch2 3.16.0 | Root `FetchContent`, downloaded at configure time |
+| Catch2 3.16.0 | Root `FetchContent`, downloaded at configure time when C++ tests are enabled |
 | Parallel stable sort | Vendored `lib/include/tbb-ssort/` |
 | oneTBB | External CMake package; CI builds version 2023.1.0 |
 | Google Benchmark | External package, only with `DO_BENCHMARK=ON` |
@@ -60,7 +60,7 @@ nondefault compiler ABI modes are outside this interoperability contract. Do
 not forge pybind11 identifiers. See the [public extension guide](../../doc/source/extensions.rst)
 for a CMake example and the mandatory rebuild after the pybind11 3 migration.
 
-The root always configures Python and fetches Catch2, even with `DO_CPP_TEST=OFF`.
+The root always configures Python; it fetches Catch2 only when a C++ test target is enabled.
 There is no root switch for a standalone C++-only configuration. `find_package`
 uses the vendored prefix for pybind11. TBB uses `find_package(TBB CONFIG REQUIRED)`;
 the older `lib/FindTBB.cmake` is not the active lookup path.
@@ -77,6 +77,11 @@ ctest --test-dir build/agents-debug --output-on-failure
 ```
 
 Choose a fresh build directory when changing interpreter, compiler, or generator.
+Configuration removes build-tree copies of `.py` files that are no longer
+registered in their directory, but not directories whose `add_subdirectory` was
+removed: after deleting a Python package or test directory, use a fresh build
+directory or delete its build-tree copy, otherwise unfiltered discovery still
+runs the obsolete tests.
 Existing `cmake-build-*` directories can contain old caches and multiple Python
 ABI extension files. They are local artifacts, not authoritative configuration.
 
@@ -97,7 +102,7 @@ directory resets its dependency list.
 | --- | --- | --- |
 | `CMAKE_BUILD_TYPE` | `Release` | `Debug`, `Release`, `RelWithDebInfo`, `MinSizeRel`, or custom `Coverage`; single-config generators |
 | `Python_EXECUTABLE` | Discovered | Select interpreter (NumPy is needed only to run tests); inspect configure output |
-| `DO_CPP_TEST` | `ON` | Build `test_exe`; does not disable Catch2 fetching or Python tests |
+| `DO_CPP_TEST` | `ON` | Build `test_exe` and fetch Catch2; does not disable Python tests |
 | `DO_AUTO_TEST` | `OFF` | Runs `ctest -V` after building `all_tests` |
 | `DO_EMBEDDED_PYTHON_CPP_TEST` | `OFF` | Builds `test_python_exe`, registers `Test_python_cpp` |
 | `USE_SIMD` | unset | Deprecated, no effect; setting it prints a CMake deprecation message |
@@ -130,8 +135,11 @@ suitable TBB installation already exists.
 
 ## Offline configuration
 
-Catch2 is fetched before the test options are applied. If a Catch2 3.16.0 source
-checkout is already available, supply it explicitly to avoid that download:
+Catch2 is fetched only when `DO_CPP_TEST` (default `ON`) or
+`DO_EMBEDDED_PYTHON_CPP_TEST` is enabled; with both `OFF` (as in `setup.py`),
+configuration does not download anything. If C++ tests are enabled and a
+Catch2 3.16.0 source checkout is already available, supply it explicitly to
+avoid that download:
 
 ```bash
 cmake -S . -B build/agents-debug \
@@ -143,7 +151,8 @@ cmake -S . -B build/agents-debug \
 
 The final path is a placeholder for source containing Catch2's `CMakeLists.txt`,
 not an installed library. A prior build's `_deps/catch2-src` can supply it after
-checking its version. Do not assume `DO_CPP_TEST=OFF` makes configuration offline.
+checking its version. Add `-DFETCHCONTENT_FULLY_DISCONNECTED=ON` to make a
+missing source an error instead of a download attempt.
 
 ## Focused tests
 
