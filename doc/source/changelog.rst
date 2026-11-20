@@ -34,6 +34,9 @@ Unreleased
   Empty images previously crashed (integer images with ``padding="mean"``), raised various errors, or returned a
   tree containing only padding pixels.
 
+- Higra requires Python 3.10 or newer. The package metadata now declares it, so pip refuses to install Higra on
+  older Python versions.
+
 - The parallel stable sort used when Higra is built with TBB is now part of ``higra/sorting.hpp``. The bundled
   ``tbb-ssort`` headers are no longer installed: C++ extensions that included ``tbb-ssort/parallel_stable_sort.h``
   should call ``hg::stable_sort`` instead.

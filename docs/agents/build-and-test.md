@@ -244,9 +244,9 @@ exclusion of vendor/system/`_deps` files. Coverage is not a portable MSVC mode.
 
 `python -m pip wheel . --no-deps --wheel-dir dist` invokes the setuptools/CMake
 backend with build isolation. `pyproject.toml` pins CMake 3.30.5; NumPy is not a
-build requirement, and runtime NumPy minimums are in `setup.py`. The Python 3.9
-runtime entry has no matching current README/CI support or isolated NumPy pin;
-do not promise 3.9 support from that entry alone.
+build requirement. `setup.py` declares `python_requires='>=3.10'` and the
+runtime NumPy minimums as `install_requires` entries with `python_version`
+markers; keep both aligned with the CI wheel matrix.
 
 Validate source packaging in an isolated tracked-source checkout, applying any
 candidate tracked-file patch before building. Generate an sdist with both
