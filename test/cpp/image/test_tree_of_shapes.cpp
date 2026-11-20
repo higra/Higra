@@ -1065,4 +1065,21 @@ TEMPLATE_TEST_CASE("test tree of shapes root altitude at exterior pixel", "[tree
     }
 }
 
+TEST_CASE("test tree of shapes mean padding thin volumes", "[tree_of_shapes]") {
+    const std::vector<array_shape> shapes{{4, 1, 1}, {4, 2, 1}, {4, 1, 2}, {4, 2, 2}, {4, 3, 1}, {4, 1, 3}};
+    for (const auto &shape: shapes) {
+        array_3d<float> image = array_3d<float>::from_shape(shape);
+        std::fill(image.begin(), image.end(), 8.f);
+        CAPTURE(shape[0], shape[1], shape[2]);
+        REQUIRE(tree_of_shapes_internal::get_padding_value<float>(image, tos_padding::mean) == 8.f);
+    }
+
+    // every voxel of a volume of width one is on its boundary: the padding value is the mean of the volume
+    array_3d<float> image = array_3d<float>::from_shape({4, 2, 1});
+    for (index_t i = 0; i < (index_t) image.size(); i++) {
+        image.data()[i] = (float) i;
+    }
+    REQUIRE(tree_of_shapes_internal::get_padding_value<float>(image, tos_padding::mean) == 3.5f);
+}
+
 }

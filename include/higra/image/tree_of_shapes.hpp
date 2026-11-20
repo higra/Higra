@@ -494,19 +494,21 @@ namespace hg {
                                 }
                                 num_elements += (d - 2) * h;
                             }
-                            for(size_t z = 1; z < d - 1; z++){
-                                for(size_t x = 1; x < w - 1; x++){
-                                    pad_value += image(z, 0, x);
-                                }
-                            }
-                            num_elements += (d - 2) * (w - 2);
-                            if (h > 1){
+                            if (w > 2){
                                 for(size_t z = 1; z < d - 1; z++){
                                     for(size_t x = 1; x < w - 1; x++){
-                                        pad_value += image(z, h - 1, x);
+                                        pad_value += image(z, 0, x);
                                     }
                                 }
                                 num_elements += (d - 2) * (w - 2);
+                                if (h > 1){
+                                    for(size_t z = 1; z < d - 1; z++){
+                                        for(size_t x = 1; x < w - 1; x++){
+                                            pad_value += image(z, h - 1, x);
+                                        }
+                                    }
+                                    num_elements += (d - 2) * (w - 2);
+                                }
                             }
                         }
                         pad_value /= num_elements;

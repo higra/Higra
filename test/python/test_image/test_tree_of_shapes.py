@@ -841,3 +841,19 @@ class TestTreeOfShapesImage(unittest.TestCase):
                 tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, padding='none',
                                                                            original_size=False, exterior_vertex=1)
                 self.assertEqual(altitudes[tree.root()], dtype(expected))
+
+    def test_tree_of_shapes_mean_padding_thin_volumes(self):
+        for shape in ((4, 1, 1), (4, 2, 1), (4, 1, 2), (4, 2, 2), (4, 3, 1), (4, 1, 3), (1, 1, 1)):
+            for immersion in (False, True):
+                for original_size in (False, True):
+                    with self.subTest(shape=shape, immersion=immersion, original_size=original_size):
+                        image = np.full(shape, 8, dtype=np.float32)
+                        tree, altitudes = hg.component_tree_tree_of_shapes_image(
+                            image, padding='mean', immersion=immersion, original_size=original_size)
+                        self.assertTrue(np.all(altitudes == 8))
+
+        # every voxel of a volume of width one is on its boundary: the padding value is the mean of the volume
+        image = np.arange(8, dtype=np.float32).reshape((4, 2, 1))
+        tree, altitudes = hg.component_tree_tree_of_shapes_image(image, padding='mean', immersion=False,
+                                                                 original_size=False)
+        self.assertEqual(altitudes[tree.root()], np.mean(image))
