@@ -42,7 +42,8 @@ def component_tree_multivariate_tree_of_shapes_image2d(image, padding='mean', or
         `A Tree of shapes for multivariate images <https://pastel.archives-ouvertes.fr/tel-01280131/file/TH2015PESC1118.pdf>`_.
         PhD Thesis, Université Paris-Est, 2015.
 
-    The input :attr:`image` must be a 3d array of shape :math:`(height, width, channel)`.
+    The input :attr:`image` must be a 3d array of shape :math:`(height, width, channel)`, with no dimension of size 0.
+    Otherwise, a ``RuntimeError`` is raised.
 
     Note that the constructed hierarchy doesn't have natural altitudes associated to its node: as a node is generally
     a fusion of several marginal nodes, we can't associate a single canonical value from the original image to this node.
@@ -71,6 +72,8 @@ def component_tree_multivariate_tree_of_shapes_image2d(image, padding='mean', or
         image.shape) == 3, "This multivariate tree of shapes implementation only supports multichannel 2d images."
 
     ndim = image.shape[2]
+    if ndim == 0:
+        raise RuntimeError("The input image must have at least one channel.")
 
     trees = tuple(
         hg.component_tree_tree_of_shapes_image(

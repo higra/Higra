@@ -801,3 +801,16 @@ class TestTreeOfShapesImage(unittest.TestCase):
                                         hg.component_tree_multivariate_tree_of_shapes_image2d(
                                             np.zeros(shape + (2,), dtype=dtype), padding,
                                             original_size=original_size, immersion=immersion)
+
+    def test_component_tree_multivariate_tree_of_shapes_image2d_no_channel(self):
+        for shape in ((3, 4, 0), (0, 4, 0)):
+            with self.subTest(shape=shape):
+                with self.assertRaisesRegex(RuntimeError, "at least one channel"):
+                    hg.component_tree_multivariate_tree_of_shapes_image2d(np.zeros(shape, dtype=np.uint8))
+
+        with self.assertRaisesRegex(RuntimeError, "image must not be empty"):
+            hg.component_tree_multivariate_tree_of_shapes_image2d(np.zeros((0, 4, 2), dtype=np.uint8))
+
+        image = np.arange(24, dtype=np.uint8).reshape((3, 4, 2)) % 5
+        tree = hg.component_tree_multivariate_tree_of_shapes_image2d(image)
+        self.assertEqual(tree.num_leaves(), 12)
