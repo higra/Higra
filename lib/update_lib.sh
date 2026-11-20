@@ -12,7 +12,7 @@
 # To update pybind11: bump its version number below and run the script (from any directory).
 # The script works in its own directory, lib/. It downloads and extracts pybind11 into lib/tmp/
 # first, then deletes and recreates lib/lib/, lib/include/pybind11, lib/share/ and lib/license/.
-# include/tbb-ssort and FindTBB.cmake are maintained by hand and not touched here;
+# FindTBB.cmake and patches/ are maintained by hand and not touched here;
 # the pybind11 source archive hash is recorded in patches/README.md.
 
 pybind11_target_version="3.1.0"
@@ -21,7 +21,7 @@ pybind11_target_version="3.1.0"
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
-if [ ! -d include/tbb-ssort ] || [ ! -f FindTBB.cmake ]; then
+if [ ! -f FindTBB.cmake ] || [ ! -f patches/README.md ]; then
     echo "update_lib.sh: $(pwd) is not Higra's lib/ directory, nothing was changed." >&2
     exit 1
 fi

@@ -34,6 +34,10 @@ Unreleased
   Empty images previously crashed (integer images with ``padding="mean"``), raised various errors, or returned a
   tree containing only padding pixels.
 
+- The parallel stable sort used when Higra is built with TBB is now part of ``higra/sorting.hpp``. The bundled
+  ``tbb-ssort`` headers are no longer installed: C++ extensions that included ``tbb-ssort/parallel_stable_sort.h``
+  should call ``hg::stable_sort`` instead.
+
 - Remove automatic result caching: attribute functions recompute on every call,
   including after input or output mutation. ``auto_cache`` and its state/clear
   APIs remain warning-emitting no-ops until the next release. Former implicit

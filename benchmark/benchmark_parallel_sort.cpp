@@ -14,7 +14,7 @@
 #include <algorithm>
 #include "utils.h"
 #include <oneapi/tbb/parallel_sort.h>
-#include "tbb-ssort/parallel_stable_sort.h"
+#include "higra/sorting.hpp"
 
 using namespace hg;
 
@@ -76,7 +76,7 @@ static void BM_tbb_parallel_stable_sort(benchmark::State &state) {
         size_t size = state.range(0);
         array_1d<float> a = bench_utils::random_uniform<float>({size});
         state.ResumeTiming();
-        pss::parallel_stable_sort(a.begin(), a.end());
+        hg::sorting_detail::parallel_stable_sort(a.begin(), a.end(), std::less<>());
         bool flag;
         benchmark::DoNotOptimize(flag = ((size_t) a.size() == size));
     }

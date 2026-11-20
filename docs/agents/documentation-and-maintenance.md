@@ -97,14 +97,13 @@ copies, so those helpers can warn or return missing paths there. Use checkout
 
 [lib/update_lib.sh](../../lib/update_lib.sh) pins the pybind11 version (the only
 downloaded vendor library). It changes to its own directory, `lib/`, whatever the
-current directory, and stops if `lib/include/tbb-ssort` or `lib/FindTBB.cmake` is
+current directory, and stops if `lib/FindTBB.cmake` or `lib/patches/README.md` is
 missing. It downloads and extracts pybind11 into `lib/tmp/`, then deletes the
 existing pybind11 include tree and the `lib/lib`, `lib/share` and `lib/license`
 trees and reinstalls them. A failed download leaves the vendored copy intact; a
 failed CMake build or install after the deletion does not.
 Do not run it as a setup step. For an explicitly requested update, inspect its
 paths, intended versions, header-layout changes, licenses, and resulting diff.
-The bundled `tbb-ssort` implementation is separate from its main download list.
 
 The principal version source is `include/higra/config.hpp`. Root CMake and
 setup.py derive versions from those macros; `hg.version()` returns them too.

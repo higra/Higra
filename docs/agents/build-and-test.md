@@ -27,7 +27,6 @@ substitute for building and importing the checkout.
 | --- | --- |
 | pybind11 3.1.0 | Vendored headers and CMake config under `lib/` |
 | Catch2 3.16.0 | Root `FetchContent`, downloaded at configure time when C++ tests are enabled |
-| Parallel stable sort | Vendored `lib/include/tbb-ssort/` |
 | oneTBB | External CMake package; CI builds version 2023.1.0 |
 | Google Benchmark | External package, only with `DO_BENCHMARK=ON` |
 
