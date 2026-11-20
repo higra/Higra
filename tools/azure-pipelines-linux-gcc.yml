@@ -27,6 +27,12 @@ jobs:
           cxx_compiler: 'clang++-18'
           compiler_packages: 'clang-18'
           HG_USE_TBB: 'On'
+        gcc_14_oldest_numpy:
+          c_compiler: 'gcc-14'
+          cxx_compiler: 'g++-14'
+          compiler_packages: 'gcc-14 g++-14'
+          HG_USE_TBB: 'Off'
+          OLDEST_NUMPY: 1
         gcc_14_coverage:
           c_compiler: 'gcc-14'
           cxx_compiler: 'g++-14'
@@ -57,9 +63,17 @@ jobs:
         displayName: Add conda to PATH
 
       - script: |
+          set -e
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
-          conda install scikit-learn -c conda-forge
+          if [[ -n "$OLDEST_NUMPY" ]]; then
+            # oldest supported Python and NumPy versions (see install_requires in setup.py)
+            conda create -q -n oldest --override-channels -c conda-forge python=3.10 numpy=2.0.0 scipy=1.14.0 scikit-learn=1.5.1
+            echo "##vso[task.setvariable variable=HG_PYTHON]$CONDA/envs/oldest/bin/python"
+          else
+            conda install scikit-learn -c conda-forge
+            echo "##vso[task.setvariable variable=HG_PYTHON]$CONDA/bin/python"
+          fi
         displayName: Install python packages
 
       - script: |
@@ -70,9 +84,10 @@ jobs:
           set -e
           unset CFLAGS CXXFLAGS CPPFLAGS
           printf '#include "higra/hierarchy/component_tree_casf.hpp"\n' | "$CXX" -std=c++17 -I"$(Build.SourcesDirectory)/include" -I"$(Build.SourcesDirectory)/lib/include" -x c++ -fsyntax-only -
+          "$HG_PYTHON" -c "import sys, numpy; print('Python', sys.version, 'NumPy', numpy.__version__)"
           mkdir build
           cd build
-          CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DPython_EXECUTABLE=$CONDA/bin/python -DTBB_DIR=$HOME/tbb/lib/cmake/TBB -DHG_USE_TBB=$HG_USE_TBB -DHG_UNITY_BUILD=ON -DHG_UNITY_BUILD_BATCH_SIZE=4";          MAKE_TARGETS="test_exe"
+          CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DPython_EXECUTABLE=$HG_PYTHON -DTBB_DIR=$HOME/tbb/lib/cmake/TBB -DHG_USE_TBB=$HG_USE_TBB -DHG_UNITY_BUILD=ON -DHG_UNITY_BUILD_BATCH_SIZE=4";          MAKE_TARGETS="test_exe"
           if [[ -n "$COVERAGE" ]]; then
             CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_BUILD_TYPE=Coverage"
           else

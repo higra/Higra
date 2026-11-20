@@ -211,9 +211,7 @@ def prepare_dll_windows(output_dir):
 
 # Minimum NumPy version for each supported Python version.
 install_requires = [
-    'numpy>=1.21.4; python_version<"3.11"',
-    'numpy>=1.23.5; python_version=="3.11"',
-    'numpy>=1.26.0; python_version=="3.12"',
+    'numpy>=2.0.0; python_version<"3.13"',
     'numpy>=2.1.3; python_version=="3.13"',
     'numpy>=2.3.2; python_version>="3.14"',
 ]

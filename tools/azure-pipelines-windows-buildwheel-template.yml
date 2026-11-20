@@ -1,7 +1,6 @@
 parameters:
   name: ''
   CIBW_BUILD: ''
-  NUMPY_VERSION: ''
   vmImage: ''
   force: false
   pypitest: false
@@ -15,7 +14,6 @@ jobs:
       TWINE_TOKEN: $(PIPY_TOKEN)
       TWINE_TOKEN_TEST: $(PIPY_TEST_TOKEN)
       CIBW_BUILD: ${{ parameters.CIBW_BUILD }}
-      NUMPY_VERSION: ${{ parameters.NUMPY_VERSION }}
       CIBW_SKIP: '*win32'
       CIBW_BUILD_VERBOSITY: '1'
       CIBW_TEST_COMMAND: python -m pip install scipy scikit-learn && python -c "import unittest;result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover(r'{project}/test/python/'));exit(0 if result.wasSuccessful() else 1)"
@@ -36,7 +34,7 @@ jobs:
 
           $tbbInstallUnixPath = $TBB_INSTALL_PREFIX.Replace('\', '/')
           $tbbDllUnixPath = $tbbDll.FullName.Replace('\', '/')
-          $cibwEnvironment = "HG_USE_TBB=1 TBB_DLL=$tbbDllUnixPath TBB_DIR=$tbbInstallUnixPath/lib/cmake/TBB NUMPY_VERSION=${{ parameters.NUMPY_VERSION }}"
+          $cibwEnvironment = "HG_USE_TBB=1 TBB_DLL=$tbbDllUnixPath TBB_DIR=$tbbInstallUnixPath/lib/cmake/TBB"
           Write-Host "##vso[task.setvariable variable=CIBW_ENVIRONMENT_WINDOWS]$cibwEnvironment"
           Write-Host "##vso[task.setvariable variable=TBB_LIB_DIR]$TBB_INSTALL_PREFIX\lib"
         displayName: Build oneTBB from source

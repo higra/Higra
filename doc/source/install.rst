@@ -32,7 +32,7 @@ Building Higra from source requires:
     * cmake 3.18+
     * Python 3.10 or newer
 
-NumPy is not needed to build Higra, only to run it.
+NumPy is not needed to build Higra, only to run it (NumPy 2.0 or newer).
 
 No compiler-version minimum is specified. GCC 11 is covered by a regression
 CI job for CASF header compatibility, alongside the current GCC and Clang jobs;
