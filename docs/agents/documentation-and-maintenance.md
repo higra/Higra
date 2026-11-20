@@ -71,7 +71,7 @@ a corresponding release before hosted autodoc can find it.
 
 | Artifact | Source / generator | Editing rule |
 | --- | --- | --- |
-| Build-tree `higra/**/*.py` and `test/python/**/*.py` | Module CMake lists and `REGISTER_PYTHON_MODULE_FILES` | Edit the source and reconfigure/build |
+| Build-tree `higra/**/*.py` and `test/python/**/*.py` | Module CMake lists and `REGISTER_PYTHON_MODULE_FILES` (which also deletes unregistered `.py` copies in the directory) | Edit the source and reconfigure/build |
 | Extension `.so`/`.pyd`, executables, CMake caches, unity sources, `_deps` | CMake/compiler | Rebuild; do not patch generated output |
 | Build-tree `setup.py`, `README.md`, test resources | Root/resource `configure_file` calls | Edit original files |
 | Build-output `higra/include/`, `higra/lib/` | setup.py `BuildPy` stages root headers/vendor resources into `build_lib` | Do not edit generated copies or create them as permanent source directories |

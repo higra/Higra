@@ -77,6 +77,11 @@ ctest --test-dir build/agents-debug --output-on-failure
 ```
 
 Choose a fresh build directory when changing interpreter, compiler, or generator.
+Configuration removes build-tree copies of `.py` files that are no longer
+registered in their directory, but not directories whose `add_subdirectory` was
+removed: after deleting a Python package or test directory, use a fresh build
+directory or delete its build-tree copy, otherwise unfiltered discovery still
+runs the obsolete tests.
 Existing `cmake-build-*` directories can contain old caches and multiple Python
 ABI extension files. They are local artifacts, not authoritative configuration.
 

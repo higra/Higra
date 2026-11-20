@@ -71,8 +71,9 @@ Targeted tests, using the same Python selected above:
 
 CTest registers `Test_cpp` and `Test_python` as whole-suite entries; use Catch2
 filters or unittest discovery to select individual cases. Python sources and
-tests are copied at CMake configuration time. Reconfigure/build after edits and
-run Python from the build directory. Merely setting `PYTHONPATH` while staying
+tests are copied at CMake configuration time; reconfiguring also removes copies
+of `.py` files no longer registered in their directory. Reconfigure/build after
+edits and run Python from the build directory. Merely setting `PYTHONPATH` while staying
 at the repository root can still import the source package first.
 
 There is no repository-configured formatter, linter, or corresponding command.
