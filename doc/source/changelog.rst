@@ -8,6 +8,9 @@ Unreleased
   ``"mean"``, ``immersion=False`` and ``original_size=True``: the leaves of the returned tree did not correspond
   to the pixels of the input image.
 
+- Fix :func:`~higra.component_tree_tree_of_shapes_image2d` and :func:`~higra.component_tree_tree_of_shapes_image3d`,
+  which ignored the ``exterior_vertex`` argument and always used the vertex 0 as the exterior.
+
 - Remove automatic result caching: attribute functions recompute on every call,
   including after input or output mutation. ``auto_cache`` and its state/clear
   APIs remain warning-emitting no-ops until the next release. Former implicit

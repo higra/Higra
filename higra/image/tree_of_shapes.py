@@ -21,13 +21,15 @@ def component_tree_tree_of_shapes_image2d(image, padding='mean', original_size=T
     :param image: must be a 2d array
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
-    :param immersion: performs a plain map continuous immersion fo the original image (default = `True`)
-    :param exterior_vertex: linear coordinate of the exterior point
+    :param immersion: performs a plain map continuous immersion of the original image (default = `True`)
+    :param exterior_vertex: linear coordinate of the exterior point, given in the padded/interpolated space
+        (default = 0)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
     assert len(image.shape) == 2, "This tree of shapes implementation only supports 2d images."
-    return component_tree_tree_of_shapes_image(image, padding, original_size, immersion)
+    return component_tree_tree_of_shapes_image(image, padding, original_size, immersion,
+                                               exterior_vertex=exterior_vertex)
 
 
 
@@ -62,7 +64,7 @@ def component_tree_multivariate_tree_of_shapes_image2d(image, padding='mean', or
     :param image: input *color* 2d image
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
-    :param immersion: performs a plain map continuous immersion fo the original image (default = `True`)
+    :param immersion: performs a plain map continuous immersion of the original image (default = `True`)
     :return: a tree (Concept :class:`~higra.CptHierarchy`)
     """
     assert len(
@@ -124,14 +126,16 @@ def component_tree_tree_of_shapes_image3d(image, padding='mean', original_size=T
     :param image: must be a 3d array
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
-    :param immersion: performs a plain map continuous immersion fo the original image (default = `True`)
-    :param exterior_vertex: linear coordinate of the exterior point
+    :param immersion: performs a plain map continuous immersion of the original image (default = `True`)
+    :param exterior_vertex: linear coordinate of the exterior point, given in the padded/interpolated space
+        (default = 0)
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
 
     assert len(image.shape) == 3, "This tree of shapes implementation only supports 3d images."
 
-    return component_tree_tree_of_shapes_image(image, padding, original_size, immersion)
+    return component_tree_tree_of_shapes_image(image, padding, original_size, immersion,
+                                               exterior_vertex=exterior_vertex)
 
 def component_tree_tree_of_shapes_image(image, padding='mean', original_size=True, immersion=True, exterior_vertex=0):
     """
@@ -182,7 +186,7 @@ def component_tree_tree_of_shapes_image(image, padding='mean', original_size=Tru
     :param image: must be a 2d or 3d array
     :param padding: possible values are `'none'`, `'zero'`, and `'mean'` (default = `'mean'`)
     :param original_size: remove all nodes corresponding to interpolated/padded pixels (default = `True`)
-    :param immersion: performs a plain map continuous immersion fo the original image (default = `True`)
+    :param immersion: performs a plain map continuous immersion of the original image (default = `True`)
     :param exterior_vertex: linear coordinate of the exterior point
     :return: a tree (Concept :class:`~higra.CptHierarchy`) and its node altitudes
     """
