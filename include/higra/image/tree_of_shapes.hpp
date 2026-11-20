@@ -16,8 +16,12 @@
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 
-#include <map>
+#include <cmath>
 #include <deque>
+#include <limits>
+#include <map>
+#include <type_traits>
+#include <utility>
 
 namespace hg {
 
@@ -32,6 +36,51 @@ namespace hg {
 
 
     namespace tree_of_shapes_internal {
+
+        /**
+         * Middle of the interval [a, b] (or [b, a]) without overflow.
+         *
+         * Returns a if a == b. For integer types, the result is (a + b) / 2 computed exactly and truncated toward zero.
+         * For floating point types, the result is (a + b) / 2 computed without intermediate overflow.
+         */
+        template<typename T>
+        T interval_midpoint(T a, T b) {
+            if (a == b) {
+                return a;
+            }
+            if (b < a) {
+                std::swap(a, b);
+            }
+            if constexpr (std::is_integral<T>::value) {
+                using unsigned_t = std::make_unsigned_t<T>;
+                // exact width of the interval, b - a >= 0, computed modulo 2^n
+                const unsigned_t width = (unsigned_t) ((unsigned_t) b - (unsigned_t) a);
+                // floor((a + b) / 2), cannot overflow as it lies in [a, b]
+                T result = (T) (a + (T) (width / 2));
+                if constexpr (std::is_signed<T>::value) {
+                    // a + b is odd and negative: truncate toward zero instead of rounding down
+                    if (width % 2 == 1 && result < 0) {
+                        result = (T) (result + 1);
+                    }
+                }
+                return result;
+            } else {
+                const T low = std::numeric_limits<T>::min() * 2;
+                const T high = std::numeric_limits<T>::max() / 2;
+                const T abs_a = std::abs(a);
+                const T abs_b = std::abs(b);
+                if (abs_a <= high && abs_b <= high) {
+                    return (a + b) / 2;
+                }
+                if (abs_a < low) {
+                    return a + b / 2;
+                }
+                if (abs_b < low) {
+                    return a / 2 + b;
+                }
+                return a / 2 + b / 2;
+            }
+        }
 
         /**
          * A simple multi-level priority queue with fixed number of integer levels in [min_level, nax_level].
@@ -290,8 +339,8 @@ namespace hg {
             array_1d<value_type> enqueued_level = array_1d<value_type>::from_shape({num_v});
             integer_level_multi_queue<value_type, index_t> queue(hg::min(plain_map), hg::max(plain_map));
 
-            value_type current_level = (value_type) ((plain_map(exterior_vertex, 0) + plain_map(exterior_vertex, 1)) /
-                                                     2.0);
+            value_type current_level = interval_midpoint<value_type>(plain_map(exterior_vertex, 0),
+                                                                     plain_map(exterior_vertex, 1));
             queue.push(current_level, exterior_vertex);
             dejavu(exterior_vertex) = true;
 
@@ -345,8 +394,8 @@ namespace hg {
                 }
             };
 
-            value_type current_level = (value_type) ((plain_map(exterior_vertex, 0) + plain_map(exterior_vertex, 1)) /
-                                                     2.0);
+            value_type current_level = interval_midpoint<value_type>(plain_map(exterior_vertex, 0),
+                                                                     plain_map(exterior_vertex, 1));
 
             auto position = queue.insert({current_level, exterior_vertex});
             dejavu(exterior_vertex) = true;

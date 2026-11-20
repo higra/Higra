@@ -814,3 +814,30 @@ class TestTreeOfShapesImage(unittest.TestCase):
         image = np.arange(24, dtype=np.uint8).reshape((3, 4, 2)) % 5
         tree = hg.component_tree_multivariate_tree_of_shapes_image2d(image)
         self.assertEqual(tree.num_leaves(), 12)
+
+    def test_tree_of_shapes_root_altitude_at_exterior_pixel(self):
+        for dtype, value in ((np.int64, 2 ** 53 + 1), (np.int32, 2 ** 30), (np.float32, 2e38)):
+            for dim in (2, 3):
+                image = np.zeros((3,) * dim, dtype=dtype)
+                image[(1,) * dim] = value
+                wrapper = hg.component_tree_tree_of_shapes_image2d if dim == 2 \
+                    else hg.component_tree_tree_of_shapes_image3d
+                for immersion in (False, True):
+                    work_shape = (5,) * dim if immersion else (3,) * dim
+                    exterior_vertex = int(np.ravel_multi_index((len(work_shape) * (work_shape[0] // 2,)), work_shape))
+                    for function in (hg.component_tree_tree_of_shapes_image, wrapper):
+                        with self.subTest(dtype=dtype, dim=dim, immersion=immersion, function=function.__name__):
+                            tree, altitudes = function(image, padding='none', immersion=immersion,
+                                                       exterior_vertex=exterior_vertex)
+                            self.assertEqual(altitudes[tree.root()], image[(1,) * dim])
+
+    def test_tree_of_shapes_root_altitude_interpolated_exterior(self):
+        # the exterior is the interpolated vertex between two pixels: its level is the middle of their values
+        for dtype, left, right, expected in ((np.int32, -3, 0, -1), (np.int32, 1, 4, 2),
+                                             (np.int64, -2 ** 62, 2 ** 62 + 1, 0),
+                                             (np.float32, -1.5, 0, -0.75)):
+            with self.subTest(dtype=dtype, left=left, right=right):
+                image = np.asarray(((left, right),), dtype=dtype)
+                tree, altitudes = hg.component_tree_tree_of_shapes_image2d(image, padding='none',
+                                                                           original_size=False, exterior_vertex=1)
+                self.assertEqual(altitudes[tree.root()], dtype(expected))

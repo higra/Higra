@@ -14,6 +14,9 @@ Unreleased
 - The tree of shapes functions raise ``RuntimeError`` when ``exterior_vertex`` is negative or not smaller than the
   number of pixels of the padded/interpolated image, instead of reading and writing out of bounds.
 
+- Fix the tree of shapes functions when the value of the exterior vertex is large: the altitude of the root could
+  overflow (``int32`` and floating point images) or lose precision (``int64`` images).
+
 - The tree of shapes functions raise ``RuntimeError`` for an image with a dimension of size 0, including an image
   without any channel in :func:`~higra.component_tree_multivariate_tree_of_shapes_image2d`. Such images previously
   crashed (integer images with ``padding="mean"``), raised various errors, or returned a tree containing only padding

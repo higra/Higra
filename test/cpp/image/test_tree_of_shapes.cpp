@@ -12,6 +12,9 @@
 #include "higra/image/graph_image.hpp"
 #include "higra/algo/tree.hpp"
 #include "../test_utils.hpp"
+#include <algorithm>
+#include <cstdint>
+#include <limits>
 #include <set>
 
 namespace tree_of_shapes {
@@ -973,6 +976,93 @@ TEMPLATE_TEST_CASE("test tree of shapes empty image", "[tree_of_shapes]", unsign
     REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image2d(image2d), std::runtime_error);
     array_3d<TestType> image3d = array_3d<TestType>::from_shape({2, 0, 4});
     REQUIRE_THROWS_AS(component_tree_tree_of_shapes_image3d(image3d), std::runtime_error);
+}
+
+TEST_CASE("test tree of shapes interval midpoint", "[tree_of_shapes]") {
+    using tree_of_shapes_internal::interval_midpoint;
+    using i64 = std::int64_t;
+    using i32 = std::int32_t;
+    using u64 = std::uint64_t;
+    const i64 i64_max = std::numeric_limits<i64>::max();
+    const i64 i64_min = std::numeric_limits<i64>::min();
+    const i32 i32_max = std::numeric_limits<i32>::max();
+    const i32 i32_min = std::numeric_limits<i32>::min();
+
+    // equal endpoints
+    REQUIRE(interval_midpoint<i64>((i64(1) << 53) + 1, (i64(1) << 53) + 1) == (i64(1) << 53) + 1);
+    REQUIRE(interval_midpoint<i64>(i64_max, i64_max) == i64_max);
+    REQUIRE(interval_midpoint<i64>(i64_min, i64_min) == i64_min);
+    REQUIRE(interval_midpoint<i32>(i32(1) << 30, i32(1) << 30) == (i32(1) << 30));
+
+    // truncation toward zero, in both argument orders
+    REQUIRE(interval_midpoint<i32>(-3, 0) == -1);
+    REQUIRE(interval_midpoint<i32>(0, -3) == -1);
+    REQUIRE(interval_midpoint<i32>(-2, 1) == 0);
+    REQUIRE(interval_midpoint<i32>(-1, 2) == 0);
+    REQUIRE(interval_midpoint<i32>(1, 4) == 2);
+    REQUIRE(interval_midpoint<i32>(-4, -1) == -2);
+    REQUIRE(interval_midpoint<signed char>(-128, 127) == 0);
+    REQUIRE(interval_midpoint<signed char>(-128, -127) == -127);
+    REQUIRE(interval_midpoint<unsigned char>(255, 254) == 254);
+
+    // extreme values
+    REQUIRE(interval_midpoint<i32>(i32_min, i32_max) == 0);
+    REQUIRE(interval_midpoint<i32>(i32_max - 2, i32_max) == i32_max - 1);
+    REQUIRE(interval_midpoint<i32>(i32_min, i32_min + 2) == i32_min + 1);
+    REQUIRE(interval_midpoint<i64>(i64_min, i64_max) == 0);
+    REQUIRE(interval_midpoint<i64>(i64_max - 1, i64_max) == i64_max - 1);
+    REQUIRE(interval_midpoint<i64>(i64_min, i64_min + 1) == i64_min + 1);
+    REQUIRE(interval_midpoint<u64>(std::numeric_limits<u64>::max(), std::numeric_limits<u64>::max() - 2) ==
+            std::numeric_limits<u64>::max() - 1);
+
+    // floating point
+    const float f_max = std::numeric_limits<float>::max();
+    const float f_denorm = std::numeric_limits<float>::denorm_min();
+    REQUIRE(interval_midpoint<float>(2e38f, 2e38f) == 2e38f);
+    REQUIRE(interval_midpoint<float>(f_max, f_max) == f_max);
+    REQUIRE(interval_midpoint<float>(f_max, f_max / 2) == 0.75f * f_max);
+    REQUIRE(interval_midpoint<float>(-f_max, f_max) == 0);
+    REQUIRE(interval_midpoint<float>(1, 2) == 1.5f);
+    REQUIRE(interval_midpoint<float>(-1.5f, 0) == -0.75f);
+    REQUIRE(interval_midpoint<float>(f_denorm, 3 * f_denorm) == 2 * f_denorm);
+    REQUIRE(interval_midpoint<double>(std::numeric_limits<double>::max(), std::numeric_limits<double>::max()) ==
+            std::numeric_limits<double>::max());
+}
+
+TEMPLATE_TEST_CASE("test tree of shapes root altitude at exterior pixel", "[tree_of_shapes]",
+                   std::int32_t, std::int64_t, float) {
+    TestType value;
+    if constexpr (std::is_same<TestType, std::int64_t>::value) {
+        value = ((std::int64_t) 1 << 53) + 1;
+    } else if constexpr (std::is_same<TestType, std::int32_t>::value) {
+        value = (std::int32_t) 1 << 30;
+    } else {
+        value = 2e38f;
+    }
+
+    array_2d<TestType> image2d = array_2d<TestType>::from_shape({3, 3});
+    std::fill(image2d.begin(), image2d.end(), (TestType) 0);
+    image2d(1, 1) = value;
+    array_3d<TestType> image3d = array_3d<TestType>::from_shape({3, 3, 3});
+    std::fill(image3d.begin(), image3d.end(), (TestType) 0);
+    image3d(1, 1, 1) = value;
+
+    for (bool immersion: {false, true}) {
+        CAPTURE(immersion);
+        // centre pixel in the working space without padding
+        index_t exterior2d = (immersion) ? 2 * 5 + 2 : 4;
+        index_t exterior3d = (immersion) ? (2 * 5 + 2) * 5 + 2 : 13;
+        auto res2d = component_tree_tree_of_shapes_image(image2d, tos_padding::none, true, immersion, exterior2d);
+        REQUIRE(res2d.altitudes(root(res2d.tree)) == value);
+        auto res3d = component_tree_tree_of_shapes_image(image3d, tos_padding::none, true, immersion, exterior3d);
+        REQUIRE(res3d.altitudes(root(res3d.tree)) == value);
+        auto res2d_wrapper = component_tree_tree_of_shapes_image2d(image2d, tos_padding::none, true, immersion,
+                                                                   exterior2d);
+        REQUIRE(res2d_wrapper.altitudes(root(res2d_wrapper.tree)) == value);
+        auto res3d_wrapper = component_tree_tree_of_shapes_image3d(image3d, tos_padding::none, true, immersion,
+                                                                   exterior3d);
+        REQUIRE(res3d_wrapper.altitudes(root(res3d_wrapper.tree)) == value);
+    }
 }
 
 }
