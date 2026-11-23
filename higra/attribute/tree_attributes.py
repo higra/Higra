@@ -102,16 +102,17 @@ def attribute_area(tree, vertex_area=None, leaf_graph=None):
 @_legacy_cache_keywords
 def attribute_volume(tree, altitudes, area=None, leaf_volume=None):
     """
-    Compute the volume under the curve of each node the given tree.
+    Compute the volume under the curve of each node of the given tree.
+
     The volume :math:`V(n)` of a node :math:`n` is defined recursively as:
 
     .. math::
 
-        V(n) = area(n) * | altitude(n) - altitude(parent(n)) | +  \\sum_{c \\in children(n)} V(c)
+        V(n) = A(n) \\times |alt(n) - alt(parent(n))| + \\sum_{c \\in children(n)} V(c)
 
-    The recursive formula applies to the non-leaf nodes. The volume of a leaf is not computed with this formula:
-    it is simply equal to the corresponding value of ``leaf_volume``. If ``leaf_volume`` is ``None``,
-    leaf volumes are set to 0.
+    where :math:`A(n)` is the area of :math:`n` and :math:`alt(n)` is its altitude. The recursive formula applies to
+    the non-leaf nodes. The volume of a leaf is not computed with this formula: it is simply equal to the
+    corresponding value of ``leaf_volume``. If ``leaf_volume`` is ``None``, leaf volumes are set to 0.
 
     The root of the tree is its own parent: its altitude difference with its parent is null, hence the root does not
     add any volume of its own and its volume is the sum of the volumes of its children.
