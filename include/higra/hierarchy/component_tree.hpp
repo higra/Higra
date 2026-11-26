@@ -142,10 +142,43 @@ namespace hg {
     }
 
     /**
-     * Construct the Max Tree of the vertex weighted graph.
+     * Compute the max tree of the given vertex weighted graph.
      *
-     * The Min/Max Tree structure were proposed in [1], [2].
-     * The algorithm used in this implementation was first described in [3].
+     * For a threshold \f$k\f$, the upper level set \f$U_k\f$ of the vertex weights \f$w\f$ is the set of the vertices
+     * whose weight is greater than or equal to \f$k\f$:
+     *
+     * \f[
+     *     U_k = \{v \in V \mid w(v) \geq k\}
+     * \f]
+     *
+     * where \f$V\f$ is the vertex set of the graph. The max tree is the tree of the connected components of the upper
+     * level sets of \f$w\f$, for all thresholds \f$k\f$, ordered by inclusion. Each component appears only once, even
+     * if it is a connected component of several upper level sets: its altitude is the largest threshold for which it is
+     * a connected component, that is the smallest weight of its vertices:
+     *
+     * \f[
+     *     \mathrm{alt}(C) = \min_{v \in C} w(v)
+     * \f]
+     *
+     * The max tree was proposed in [1] and [2], and the algorithm used in this implementation was first described
+     * in [3].
+     *
+     * The resulting tree is made of:
+     *
+     * - the leaves, which are the vertices of the graph: the leaf \f$v\f$ has the altitude \f$w(v)\f$, and its parent
+     *   is the connected component of \f$U_{w(v)}\f$ containing \f$v\f$, which has the same altitude as \f$v\f$;
+     * - the non-leaf nodes, which are the connected components of the upper level sets. The altitudes are decreasing
+     *   from the leaves to the root (for any node \f$n\f$, \f$\mathrm{alt}(n) \geq \mathrm{alt}(parent(n))\f$), and a
+     *   non-leaf node never has the same altitude as its parent, except the root, which is its own parent. The root is
+     *   the whole vertex set, with the smallest vertex weight as altitude.
+     *
+     * The graph must have at least one vertex (an exception is raised otherwise) and must be connected (the result is
+     * undefined otherwise). The vertex weights must be scalars: vertex_weights is a 1d array with one element per
+     * vertex.
+     *
+     * Complexity: The computation takes \f$\mathcal{O}(n\log(n) + m\,\alpha(n))\f$ time, where \f$n\f$ is the number
+     * of vertices and \f$m\f$ the number of edges of the graph, and \f$\alpha\f$ is the inverse Ackermann function
+     * (sorting of the vertices by weight followed by a union-find over the edges).
      *
      * [1] Ph. Salembier, A. Oliveras, and L. Garrido, "Anti-extensive connected operators for image
      * and sequence processing," IEEE Trans. Image Process., vol. 7, no. 4, pp. 555-570, Apr. 1998.
@@ -157,11 +190,12 @@ namespace hg {
      * Component Tree Computation with Application to Pattern Recognition in Astronomical Imaging,"
      * IEEE ICIP 2007.
      *
-     * @tparam graph_t
-     * @tparam T
-     * @param graph input graph (must have at least one vertex)
-     * @param vertex_weights graph vertex weights
-     * @return a node weighted tree
+     * @tparam graph_t graph type
+     * @tparam T element type of vertex_weights
+     * @param graph input graph, connected and with at least one vertex
+     * @param vertex_weights weight of the vertices of the input graph (1d array with one element per vertex)
+     * @return a node weighted tree: the tree and its node altitudes (1d array with one element per node of the tree,
+     * with the same element type as vertex_weights)
      */
     template<typename graph_t, typename T>
     auto component_tree_max_tree(const graph_t &graph, array_view<const T> vertex_weights) {
@@ -175,27 +209,61 @@ namespace hg {
     }
 
     /**
-    * Construct the Min Tree of the vertex weighted graph.
-    *
-    * The Min/Max Tree structure were proposed in [1], [2].
-    * The algorithm used in this implementation was first described in [3].
-    *
-    * [1] Ph. Salembier, A. Oliveras, and L. Garrido, "Anti-extensive connected operators for image
-    * and sequence processing," IEEE Trans. Image Process., vol. 7, no. 4, pp. 555-570, Apr. 1998.
-    *
-    * [2] Ro. Jones, "Connected filtering and segmentation using component trees," Comput. Vis.
-    * Image Understand., vol. 75, no. 3, pp. 215-228, Sep. 1999.
-    *
-    * [3] Ch. Berger, T. Geraud, R. Levillain, N. Widynski, A. Baillard, and E. Bertin, "Effective
-    * Component Tree Computation with Application to Pattern Recognition in Astronomical Imaging,"
-    * IEEE ICIP 2007.
-    *
-    * @tparam graph_t
-    * @tparam T
-    * @param graph input graph (must have at least one vertex)
-    * @param vertex_weights graph vertex weights
-    * @return a node weighted tree
-    */
+     * Compute the min tree of the given vertex weighted graph.
+     *
+     * For a threshold \f$k\f$, the lower level set \f$L_k\f$ of the vertex weights \f$w\f$ is the set of the vertices
+     * whose weight is smaller than or equal to \f$k\f$:
+     *
+     * \f[
+     *     L_k = \{v \in V \mid w(v) \leq k\}
+     * \f]
+     *
+     * where \f$V\f$ is the vertex set of the graph. The min tree is the tree of the connected components of the lower
+     * level sets of \f$w\f$, for all thresholds \f$k\f$, ordered by inclusion. Each component appears only once, even
+     * if it is a connected component of several lower level sets: its altitude is the smallest threshold for which it
+     * is a connected component, that is the largest weight of its vertices:
+     *
+     * \f[
+     *     \mathrm{alt}(C) = \max_{v \in C} w(v)
+     * \f]
+     *
+     * The min tree was proposed in [1] and [2], and the algorithm used in this implementation was first described
+     * in [3].
+     *
+     * The resulting tree is made of:
+     *
+     * - the leaves, which are the vertices of the graph: the leaf \f$v\f$ has the altitude \f$w(v)\f$, and its parent
+     *   is the connected component of \f$L_{w(v)}\f$ containing \f$v\f$, which has the same altitude as \f$v\f$;
+     * - the non-leaf nodes, which are the connected components of the lower level sets. The altitudes are increasing
+     *   from the leaves to the root (for any node \f$n\f$, \f$\mathrm{alt}(n) \leq \mathrm{alt}(parent(n))\f$), and a
+     *   non-leaf node never has the same altitude as its parent, except the root, which is its own parent. The root is
+     *   the whole vertex set, with the largest vertex weight as altitude.
+     *
+     * The graph must have at least one vertex (an exception is raised otherwise) and must be connected (the result is
+     * undefined otherwise). The vertex weights must be scalars: vertex_weights is a 1d array with one element per
+     * vertex.
+     *
+     * Complexity: The computation takes \f$\mathcal{O}(n\log(n) + m\,\alpha(n))\f$ time, where \f$n\f$ is the number
+     * of vertices and \f$m\f$ the number of edges of the graph, and \f$\alpha\f$ is the inverse Ackermann function
+     * (sorting of the vertices by weight followed by a union-find over the edges).
+     *
+     * [1] Ph. Salembier, A. Oliveras, and L. Garrido, "Anti-extensive connected operators for image
+     * and sequence processing," IEEE Trans. Image Process., vol. 7, no. 4, pp. 555-570, Apr. 1998.
+     *
+     * [2] Ro. Jones, "Connected filtering and segmentation using component trees," Comput. Vis.
+     * Image Understand., vol. 75, no. 3, pp. 215-228, Sep. 1999.
+     *
+     * [3] Ch. Berger, T. Geraud, R. Levillain, N. Widynski, A. Baillard, and E. Bertin, "Effective
+     * Component Tree Computation with Application to Pattern Recognition in Astronomical Imaging,"
+     * IEEE ICIP 2007.
+     *
+     * @tparam graph_t graph type
+     * @tparam T element type of vertex_weights
+     * @param graph input graph, connected and with at least one vertex
+     * @param vertex_weights weight of the vertices of the input graph (1d array with one element per vertex)
+     * @return a node weighted tree: the tree and its node altitudes (1d array with one element per node of the tree,
+     * with the same element type as vertex_weights)
+     */
     template<typename graph_t, typename T>
     auto component_tree_min_tree(const graph_t &graph, array_view<const T> vertex_weights) {
         HG_TRACE();
