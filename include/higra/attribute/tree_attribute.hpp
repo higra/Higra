@@ -722,6 +722,31 @@ namespace hg {
         return attr;
     }
 
+    namespace tree_attribute_internal {
+        /**
+         * Unsigned integer type, at least as wide as unsigned int, in which the arithmetic of the integer type V
+         * wraps around instead of overflowing (V itself for non integral types and for bool, whose arithmetic on
+         * 0 and 1 values cannot overflow).
+         */
+        template<typename V, bool = std::is_integral<V>::value>
+        struct wrapping_type {
+            using type = V;
+        };
+
+        template<typename V>
+        struct wrapping_type<V, true> {
+            using type = std::common_type_t<unsigned int, std::make_unsigned_t<V>>;
+        };
+
+        template<>
+        struct wrapping_type<bool, true> {
+            using type = bool;
+        };
+
+        template<typename V>
+        using wrapping_type_t = typename wrapping_type<V>::type;
+    }
+
     /**
      * Compute, for each node, the sum of the products of the weights of every pair of its children.
      *
@@ -744,6 +769,12 @@ namespace hg {
      * all the nodes \f$n\f$ of the tree, where \f$d\f$ is the dimension of the node weights (\f$d = 1\f$ for scalar
      * weights). This is \f$\mathcal{O}(N \times C \times d)\f$, where \f$N\f$ is the number of nodes in the tree and
      * \f$C\f$ is the maximal number of children of a node.
+     *
+     * With floating point node weights, each product is computed in \f$T\f$, then converted to value_type. With
+     * integer node weights, each product is computed in value_type; if value_type is also an integer type, products
+     * and sums that do not fit in value_type wrap around modulo \f$2^n\f$, where \f$n\f$ is the number of bits of
+     * value_type. If value_type is bool and the node weights are integers or bool, the result of a node is true if
+     * at least one pair of its children has two non-zero weights.
      *
      * @tparam tree_t tree type
      * @tparam T element type of node_weights
@@ -768,6 +799,14 @@ namespace hg {
         value_type *r = res.data();
         const index_t num_d = (num_v == 0) ? 0 : (index_t) res.size() / num_v;
 
+        using namespace tree_attribute_internal;
+        // Floating point weights: product in T. Integer weights: product in value_type, where integer products and
+        // sums wrap around modulo 2^n (n bits of value_type) instead of overflowing.
+        using product_type = std::conditional_t<!std::is_integral<T>::value, T,
+                std::conditional_t<std::is_integral<value_type>::value, wrapping_type_t<value_type>, value_type>>;
+        using sum_type = std::conditional_t<std::is_integral<value_type>::value,
+                wrapping_type_t<value_type>, value_type>;
+
         for (index_t i = num_l; i < num_v; i++) {
             const index_t num_c = (index_t) num_children(i, tree);
             value_type *ri = r + i * num_d;
@@ -776,8 +815,9 @@ namespace hg {
                 for (index_t c2 = c1 + 1; c2 < num_c; c2++) {
                     const T *w2 = w + child(c2, i, tree) * num_d;
                     for (index_t k = 0; k < num_d; k++) {
-                        // product computed in T, then converted to value_type
-                        ri[k] += static_cast<value_type>(w1[k] * w2[k]);
+                        const auto p = static_cast<value_type>(
+                                static_cast<product_type>(w1[k]) * static_cast<product_type>(w2[k]));
+                        ri[k] = static_cast<value_type>(static_cast<sum_type>(ri[k]) + static_cast<sum_type>(p));
                     }
                 }
             }

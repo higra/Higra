@@ -123,6 +123,25 @@ class TestAlignement(unittest.TestCase):
                                                          labelisation_coarse.astype(dtype))
             self.assertTrue(np.array_equal(res, (0, 0, 1, 2)))
 
+    def test_project_fine_to_coarse_labelisation_invalid_labels(self):
+        for dtype in (np.int8, np.int32, np.int64):
+            for fine, coarse in (((-1, -1), (0, 0)),
+                                 ((0, -1), (0, 0)),
+                                 ((0, 0), (-1, -1)),
+                                 ((0, 0), (0, -1))):
+                with self.assertRaises(RuntimeError):
+                    hg.project_fine_to_coarse_labelisation(np.asarray(fine, dtype), np.asarray(coarse, dtype))
+
+        for dtype in (np.uint8, np.int64):
+            fine = np.asarray((0, 1), dtype)
+            coarse = np.asarray((0, 0), dtype)
+            with self.assertRaises(RuntimeError):
+                hg.project_fine_to_coarse_labelisation(fine, coarse, 1)
+            with self.assertRaises(RuntimeError):
+                hg.project_fine_to_coarse_labelisation(coarse, fine, 0, 1)
+            res = hg.project_fine_to_coarse_labelisation(fine, coarse, 3, 1)
+            self.assertTrue(np.array_equal(res, (0, 0, 0)))
+
 
 if __name__ == '__main__':
     unittest.main()

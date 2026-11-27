@@ -35,4 +35,19 @@ namespace accumulator {
                 {4, 9}};
         REQUIRE((res_vec == expected_res_vec));
     }
+
+    TEST_CASE("test at_accumulator indices below -1", "at_accumulator") {
+        array_1d<int> weights{1, 2, 3};
+        array_2d<int> weights_vec{{1, 6},
+                                  {2, 7},
+                                  {3, 8}};
+        for (index_t bad: {(index_t) -2, (index_t) -1000000, std::numeric_limits<index_t>::lowest()}) {
+            array_1d<index_t> indices{0, bad, 1};
+            REQUIRE_THROWS(accumulate_at(indices, weights, accumulator_sum()));
+            REQUIRE_THROWS(accumulate_at(indices, weights_vec, accumulator_sum()));
+        }
+        // other index types are converted to index_t first
+        array_1d<int> indices_int{0, -2, 1};
+        REQUIRE_THROWS(accumulate_at(indices_int, weights, accumulator_sum()));
+    }
 }

@@ -61,7 +61,7 @@ namespace hg {
         struct rmq_sparse_table {
             using self_type = rmq_sparse_table<data_t>;
 
-            rmq_sparse_table() {
+            rmq_sparse_table() : m_data(nullptr) {
 
             }
 
@@ -98,6 +98,16 @@ namespace hg {
                 auto p1 = m_sparse_table[level](l);
                 auto p2 = m_sparse_table[level](r - ((size_t)1 << level));
                 return m_data[p1] < m_data[p2] ? p1 : p2;
+            }
+
+            /**
+             * Points the solver to another copy of the values it was built on. The solver does not
+             * own the values: an object that owns both the values and the solver calls it after a
+             * copy, so that the copied solver reads the copied values.
+             * @param data address of the first value
+             */
+            void rebind(const data_t *data) noexcept {
+                m_data = data;
             }
 
             /**
@@ -177,7 +187,8 @@ namespace hg {
 
 
             void reserve_sparse_table(size_t size) {
-                m_sparse_table.reserve((size_t) ceil(log((double) (size)) / log(2.0)));
+                // one level per power of 2 not greater than size, plus level 0
+                m_sparse_table.reserve(size == 0 ? 1 : fast_log2(size) + 1);
             }
 
             void init_sparse_table() {
@@ -209,7 +220,7 @@ namespace hg {
 
             using self_type = rmq_sparse_table_block<data_t>;
 
-            rmq_sparse_table_block() {
+            rmq_sparse_table_block() : m_data(nullptr), m_data_size(0), m_block_size(0), m_num_blocks(0) {
 
             }
 
@@ -255,6 +266,16 @@ namespace hg {
                 if (lb + 1 == rb) return v;
                 index_t vv = m_sparse_table.query(lb + 1, rb);
                 return m_data[vv] < m_data[v] ? vv : v;
+            }
+
+            /**
+             * Points the solver to another copy of the values it was built on (see
+             * ``rmq_sparse_table::rebind``).
+             * @param data address of the first value
+             */
+            void rebind(const data_t *data) noexcept {
+                m_data = data;
+                m_sparse_table.rebind(data);
             }
 
             /**

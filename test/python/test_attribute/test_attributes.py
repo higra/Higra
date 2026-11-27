@@ -678,13 +678,21 @@ class TestAttributes(unittest.TestCase):
         ref = np.asarray((0, 0, 0, 0, 0, 6, 74, 56))
         self.assertTrue(np.allclose(ref, res))
 
-    def test_attribute_children_pair_sum_product_scalar(self):
+    def test_attribute_children_pair_sum_product_vectorial(self):
         tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
 
         node_weights = np.asarray((2, 9, 3, 8, 4, 7, 5, 6, 6, 5, 7, 4, 8, 3, 9, 2)).reshape((8, 2))
         res = hg.attribute_children_pair_sum_product(tree, node_weights)
         ref = np.asarray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 72, 74, 107, 56, 12)).reshape((8, 2))
         self.assertTrue(np.allclose(ref, res))
+
+    def test_attribute_children_pair_sum_product_integer_overflow(self):
+        tree = hg.Tree((3, 3, 3, 3))
+        res = hg.attribute_children_pair_sum_product(tree, np.asarray((2 ** 16, 2 ** 16, 0, 0), dtype=np.int32))
+        self.assertEqual(res.dtype, np.int32)
+        self.assertEqual(res[3], 0)
+        res = hg.attribute_children_pair_sum_product(tree, np.asarray((2 ** 16, 2 ** 16, -3, 0), dtype=np.int64))
+        self.assertEqual(res[3], 2 ** 32 - 6 * 2 ** 16)
 
     def test_attribute_tree_sampling_probability_edge_model(self):
         g = hg.get_4_adjacency_graph((3, 3))

@@ -191,4 +191,63 @@ namespace lca {
                      array_1d<index_t>{0, 0, 2, 3, 4, 5, 6, 6, 8, 8}));
         }
     }
+
+    template<typename lca_t>
+    void check_lca_of_tree(const lca_t &lca, const tree &t) {
+        for (index_t i = 0; i < (index_t) num_vertices(t); ++i) {
+            for (index_t j = i; j < (index_t) num_vertices(t); j++) {
+                REQUIRE(lca.lca(i, j) == lowest_common_ancestor(i, j, t));
+            }
+        }
+    }
+
+    TEMPLATE_TEST_CASE("lca copy and move", "[lca]", hg::lca_sparse_table, hg::lca_sparse_table_block) {
+        static_assert(std::is_nothrow_move_constructible<TestType>::value, "");
+        static_assert(std::is_nothrow_move_assignable<TestType>::value, "");
+        hg_test::random_seed(42);
+        auto g = hg::get_4_adjacency_graph({10, 10});
+        auto t1 = hg::bpt_canonical(g, hg_test::random_uniform<double>({num_edges(g)})).tree;
+        auto t2 = hg::bpt_canonical(g, hg_test::random_uniform<double>({num_edges(g)})).tree;
+
+        SECTION("copy constructor") {
+            TestType source(t1);
+            TestType copy(source);
+            // replacing the source frees its Euler tour, which the copy must not read
+            source = TestType(t2);
+            check_lca_of_tree(copy, t1);
+            check_lca_of_tree(source, t2);
+        }
+
+        SECTION("copy assignment") {
+            TestType source(t1);
+            TestType copy(t2);
+            copy = source;
+            source = TestType(t2);
+            check_lca_of_tree(copy, t1);
+            check_lca_of_tree(source, t2);
+            const TestType &same = copy;
+            copy = same;
+            check_lca_of_tree(copy, t1);
+        }
+
+        SECTION("move") {
+            TestType source(t1);
+            TestType moved(std::move(source));
+            check_lca_of_tree(moved, t1);
+            TestType assigned(t2);
+            assigned = std::move(moved);
+            check_lca_of_tree(assigned, t1);
+        }
+    }
+
+    TEST_CASE("range minimum query on empty input", "[lca]") {
+        using namespace hg::range_minimum_query_internal;
+        auto empty = array_1d<index_t>::from_shape({0});
+        REQUIRE_NOTHROW(rmq_sparse_table<index_t>(empty));
+        REQUIRE_NOTHROW(rmq_sparse_table_block<index_t>(empty, 4));
+
+        array_1d<index_t> one{3};
+        REQUIRE_NOTHROW(rmq_sparse_table<index_t>(one));
+        REQUIRE_NOTHROW(rmq_sparse_table_block<index_t>(one, 4));
+    }
 }

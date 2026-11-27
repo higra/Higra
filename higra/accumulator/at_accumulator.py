@@ -22,10 +22,11 @@ def accumulate_at(indices, weights, accumulator):
 
         result[i] = accumulator(\{weights[j, :] \mid indices[j] = i  \})
 
-    :param indices: a 1d array of indices (entry equals to :math:`-1` are ignored)
+    :param indices: a 1d array of indices (entries equal to :math:`-1` are ignored; any other negative entry
+        raises an exception)
     :param weights: a nd-array of shape :math:`(s_1, \ldots, s_n)` such that :math:`s_1=indices.size`
     :param accumulator: see :class:`~higra.Accumulators`
-    :return: a nd-array of size :math:`(M, s_2, \ldots, s_n)`
+    :return: a nd-array of size :math:`(M + 1, s_2, \ldots, s_n)`
     """
     indices = hg.cast_to_dtype(indices, np.int64)
     return hg.cpp._accumulate_at(indices, weights, accumulator)

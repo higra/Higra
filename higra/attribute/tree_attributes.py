@@ -1821,6 +1821,9 @@ def attribute_children_pair_sum_product(tree, node_weights):
     If the node weights are vectors, the computation is done independently for each component. The result is thus an
     array with the same shape as :attr:`node_weights`.
 
+    With integer node weights, the computation is done in the integer type of :attr:`node_weights`: a result that
+    does not fit in this type wraps around, as in NumPy integer arithmetic.
+
     :Complexity:
 
     The computation takes :math:`\\mathcal{O}(\\sum_{n} numc(n)^2 \\times d)` time, the sum being taken over all the

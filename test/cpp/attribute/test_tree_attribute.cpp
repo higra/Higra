@@ -243,6 +243,54 @@ namespace tree_attributes {
         REQUIRE(hg::allclose(ref, res));
     }
 
+    TEST_CASE("tree attribute children pair sum product integer overflow", "[tree_attributes]") {
+        tree t(array_1d<index_t>{3, 3, 3, 3}); // three leaves, one root: pairs (0, 1), (0, 2), (1, 2)
+
+        // product computed in the result type
+        array_1d<int> w_int{1 << 16, 1 << 16, 0, 0};
+        auto r_double = attribute_children_pair_sum_product<tree, int, double>(t, w_int);
+        REQUIRE(r_double(3) == 4294967296.0);
+        auto r_int64 = attribute_children_pair_sum_product<tree, int, int64_t>(t, w_int);
+        REQUIRE(r_int64(3) == (int64_t) 1 << 32);
+
+        // integer results wrap around modulo 2^n
+        auto r_int = attribute_children_pair_sum_product(t, w_int);
+        REQUIRE(r_int(3) == 0);
+        array_1d<int16_t> w_int16{300, 300, -3, 0};
+        auto r_int16 = attribute_children_pair_sum_product(t, w_int16);
+        REQUIRE(r_int16(3) == (int16_t) (90000 - 900 - 900 - 65536));
+        array_1d<uint16_t> w_uint16{65535, 65535, 0, 0};
+        REQUIRE(attribute_children_pair_sum_product(t, w_uint16)(3) == 1);
+        array_1d<int64_t> w_int64{(int64_t) 1 << 62, 4, 0, 0};
+        REQUIRE(attribute_children_pair_sum_product(t, w_int64)(3) == 0);
+
+        // non-integer weights with an integer result: product computed before the conversion
+        array_1d<double> w_double{1.5, 1.5, 0, 0};
+        REQUIRE(attribute_children_pair_sum_product<tree, double, int>(t, w_double)(3) == 2);
+    }
+
+    TEST_CASE("tree attribute children pair sum product boolean result", "[tree_attributes]") {
+        tree t(array_1d<index_t>{6, 6, 6, 6, 7, 7, 7, 7}); // node 6: children 0..3, root 7: children 4, 5, 6
+
+        // several pairs of true children: the result stays true (it is not a sum modulo 2)
+        array_1d<bool> flags{true, true, true, true, false, false, true, false};
+        auto r = attribute_children_pair_sum_product(t, flags);
+        REQUIRE((r == array_1d<bool>{false, false, false, false, false, false, true, false}));
+        array_1d<bool> one_true{true, false, false, false, true, true, false, false};
+        REQUIRE((attribute_children_pair_sum_product(t, one_true) ==
+                 array_1d<bool>{false, false, false, false, false, false, false, true}));
+
+        // explicit boolean result from integer weights: a product that overflows int is still non-zero
+        array_1d<int> integers{1 << 16, 1 << 16, 0, 0, 2, 0, 1, 0};
+        REQUIRE((attribute_children_pair_sum_product<tree, int, bool>(t, integers) ==
+                 array_1d<bool>{false, false, false, false, false, false, true, true}));
+
+        // floating point weights: product computed in the weight type, then converted
+        array_1d<float> floats{1.5f, 1.5f, 0, 0, 0, 0, 0, 0};
+        REQUIRE((attribute_children_pair_sum_product<tree, float, bool>(t, floats) ==
+                 array_1d<bool>{false, false, false, false, false, false, true, false}));
+    }
+
     TEST_CASE("tree attribute children pair sum product vectorial", "[tree_attributes]") {
         auto t = data.t; //{5, 5, 6, 6, 6, 7, 7, 7}
 

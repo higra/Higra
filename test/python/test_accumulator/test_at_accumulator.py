@@ -34,3 +34,18 @@ class TestAtAccumulator(unittest.TestCase):
             (3, 13),
             (4, 9)))
         self.assertTrue(np.all(res_vec == expected_res_vec))
+
+    def test_accumulate_at_indices_below_minus_one(self):
+        weights = np.asarray((1, 2, 3))
+        weights_vec = np.asarray(((1, 6), (2, 7), (3, 8)))
+        for indices in (np.asarray((0, -2, 1), dtype=np.int64),
+                        np.asarray((0, -1000000, 1), dtype=np.int32),
+                        np.asarray((0, 2 ** 63, 1), dtype=np.uint64)):
+            with self.assertRaises(RuntimeError):
+                hg.accumulate_at(indices, weights, hg.Accumulators.sum)
+            with self.assertRaises(RuntimeError):
+                hg.accumulate_at(indices, weights_vec, hg.Accumulators.mean)
+
+
+if __name__ == '__main__':
+    unittest.main()

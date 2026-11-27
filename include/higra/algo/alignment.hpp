@@ -20,16 +20,33 @@ namespace hg {
 
         /**
          * max(labelisation) + 1; for an empty labelisation, the lowest value of the type plus 1:
-         * 1 for unsigned types. Throws if the result is negative (empty signed labelisation).
+         * 1 for unsigned types. Throws if the maximum is negative (empty or negative signed labelisation).
          */
         template<typename T>
         size_t num_regions_from_labelisation(array_view<const T> labelisation) {
             const auto max_label = array_internal::max_or_lowest(labelisation);
             if constexpr (std::is_signed_v<T>) {
-                hg_assert(max_label >= -1,
+                hg_assert(max_label >= 0,
                           "The number of regions cannot be deduced from an empty or negative labelisation.");
             }
             return (size_t) max_label + 1;
+        }
+
+        /**
+         * Throws if label is not in [0, num_regions[.
+         */
+        template<typename T>
+        void check_label(T label, size_t num_regions, const char *labelisation_name, index_t position) {
+            bool valid;
+            if constexpr (std::is_signed_v<T>) {
+                valid = label >= 0 && (std::make_unsigned_t<T>) label < num_regions;
+            } else {
+                valid = label < num_regions;
+            }
+            hg_assert(valid,
+                      std::string("Label ") + std::to_string(label) + " at position " + std::to_string(position) +
+                      " of " + labelisation_name + " is not in [0, " + std::to_string(num_regions) + "[.");
+            (void) valid; (void) labelisation_name; (void) position;
         }
     }
 
@@ -38,17 +55,17 @@ namespace hg {
    * Find for each label (ie. region) of the fine labelisation, the label of the region in the
    * coarse labelisation that maximises the intersection with the "fine" region.
    *
-   * Pre-condition:
-   *  range(xlabelisation_fine) = [0..num_regions_fine[
-   *  range(xlabelisation_coarse) = [0..num_regions_coarse[
+   * The labels of labelisation_fine must be in [0..num_regions_fine[ and the labels of
+   * labelisation_coarse in [0..num_regions_coarse[; otherwise an exception is thrown (in particular
+   * for any negative label).
    *
-   * If num_regions_fine or num_regions_coarse are not provided, they will
-   * be determined as max(xlabelisation_fine) + 1 and max(xlabelisation_coarse) + 1
+   * If num_regions_fine or num_regions_coarse are not provided (or equal to 0), they will
+   * be determined as max(labelisation_fine) + 1 and max(labelisation_coarse) + 1
    * @tparam T1
    * @tparam T2
-   * @param xlabelisation_fine
+   * @param labelisation_fine
    * @param num_regions_fine
-   * @param xlabelisation_coarse
+   * @param labelisation_coarse
    * @param num_regions_coarse
    * @return a 1d array of size num_regions_fine
    */
@@ -78,7 +95,11 @@ namespace hg {
         array_2d<size_t> intersections = hg::zeros<size_t>({num_regions_fine, num_regions_coarse});
 
         for (index_t i = 0; i < (index_t)labelisation_fine.size(); i++) {
-            intersections(labelisation_fine(i), labelisation_coarse(i))++;
+            const auto label_fine = labelisation_fine(i);
+            const auto label_coarse = labelisation_coarse(i);
+            alignment_internal::check_label(label_fine, num_regions_fine, "labelisation_fine", i);
+            alignment_internal::check_label(label_coarse, num_regions_coarse, "labelisation_coarse", i);
+            intersections((index_t) label_fine, (index_t) label_coarse)++;
         }
 
         // index of the first largest intersection of each fine region
