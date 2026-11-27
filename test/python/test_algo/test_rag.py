@@ -113,6 +113,17 @@ class TestRag(unittest.TestCase):
                                             iv, 2, iv))
         self.assertTrue(np.allclose(edge_weights, expected_edge_weights))
 
+    def test_back_project_weights_invalid_inputs(self):
+        rag_map = np.asarray((0, -1, 1), dtype=np.int64)
+        with self.assertRaises(RuntimeError):
+            hg.cpp._rag_back_project_weights(rag_map, np.asarray(1.0))
+        for bad in (2, 1000000, -2):
+            bad_map = np.asarray((0, bad, 1), dtype=np.int64)
+            with self.assertRaises(RuntimeError):
+                hg.cpp._rag_back_project_weights(bad_map, np.asarray((5., 7.)))
+            with self.assertRaises(RuntimeError):
+                hg.cpp._rag_back_project_weights(bad_map, np.asarray(((5., 1.), (7., 2.))))
+
     def test_accumulate_vertex(self):
         rag = TestRag.get_rag()
         vertex_weights = np.ones((16,))

@@ -200,6 +200,8 @@ namespace hg {
         auto
         rag_back_project_weights(array_view<const index_t> rag_map, array_view<const V> rag_weights) {
             HG_TRACE();
+            hg_assert(rag_weights.dimension() >= 1, "Rag weights must be an array of dimension at least 1.");
+            const index_t num_rag_elements = rag_weights.shape(0);
 
             index_t numv = rag_map.size();
             std::vector<size_t> shape;
@@ -212,9 +214,14 @@ namespace hg {
             auto output_view = make_light_axis_view<vectorial>(weights);
 
             for (index_t i = 0; i < numv; ++i) {
-                if (rag_map.data()[i] != invalid_index) {
+                const index_t rag_element = rag_map.data()[i];
+                if (rag_element != invalid_index) {
+                    hg_assert(rag_element >= 0 && rag_element < num_rag_elements,
+                              "Rag map value " + std::to_string(rag_element) + " at position " + std::to_string(i) +
+                              " is not -1 and is not a valid index in the rag weights (size " +
+                              std::to_string(num_rag_elements) + ").");
                     output_view.set_position(i);
-                    input_view.set_position(rag_map.data()[i]);
+                    input_view.set_position(rag_element);
                     output_view = input_view;
                 }
             }
@@ -226,9 +233,14 @@ namespace hg {
 
     /**
      * Projects weights on the rag (vertices or edges) onto the original graph.
+     *
+     * Elements of the original graph whose map value is -1 get the weight 0. An exception is thrown if
+     * ``rag_weights`` has dimension 0, or if a map value is neither -1 nor a valid index of the first axis of
+     * ``rag_weights``.
+     *
      * @tparam T
      * @param rag_map rag vertex_map or rag edge_map (see struct region_adjacency_graph)
-     * @param xrag_weights node or edge weights of the rag (depending of the provided rag_map)
+     * @param rag_weights node or edge weights of the rag (depending of the provided rag_map)
      * @return original graph (vertices or edges) weights
      */
     template<typename T>

@@ -284,4 +284,22 @@ namespace test_rag {
         REQUIRE((rag_edge_weights_vec == expected_rag_edge_weights_vec));
     }
 
+
+    TEST_CASE("rag back project weights invalid inputs", "[rag]") {
+        array_1d<index_t> rag_map{0, -1, 1};
+
+        auto scalar = array_nd<double>::from_shape(array_shape{});
+        scalar.fill(1);
+        REQUIRE_THROWS(rag_back_project_weights(rag_map, array_view<const double>(scalar)));
+
+        array_1d<double> weights{5, 7};
+        REQUIRE_NOTHROW(rag_back_project_weights(rag_map, weights));
+        array_2d<double> weights_vec{{5, 1},
+                                     {7, 2}};
+        for (index_t bad: {(index_t) 2, (index_t) 1000000, (index_t) -2}) {
+            array_1d<index_t> bad_map{0, bad, 1};
+            REQUIRE_THROWS(rag_back_project_weights(bad_map, weights));
+            REQUIRE_THROWS(rag_back_project_weights(bad_map, weights_vec));
+        }
+    }
 }
