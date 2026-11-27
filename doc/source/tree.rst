@@ -420,16 +420,24 @@ They are especially important for writing efficient algorithms in Python by avoi
 Using them in C++ can also be beneficial as they are written to natively and efficiently handle n-dimensional data.
 
 Each tree accumulator function has an ``accumulator`` parameter.
-Currently, the following accumulators are defined:
+Currently, the following accumulators are defined (the default value is the result for an empty list of values,
+for example for the children of a leaf):
 
-- ``mean`` : computes the average of the provided value (default value: 0)
-- ``minimum`` : computes the minimum of the provided value (default value: maximal representable value for the specific data type)
-- ``maximum`` : computes the maximum of the provided value (default value: minimal representable value for the specific data type)
-- ``counter`` : computes the number of provided value (default value: 0)
-- ``sum`` : computes the sum of the provided value (default value: 0)
-- ``prod`` : computes the product of the provided value (default value: 1)
+- ``mean`` : computes the average of the provided values (default value: 0)
+- ``min`` : computes the minimum of the provided values (default value: maximal representable value for the specific data type)
+- ``max`` : computes the maximum of the provided values (default value: minimal representable value for the specific data type)
+- ``counter`` : computes the number of provided values (default value: 0)
+- ``sum`` : computes the sum of the provided values (default value: 0)
+- ``prod`` : computes the product of the provided values (default value: 1)
+- ``first`` : the first provided value (default value: 0)
+- ``last`` : the last provided value (default value: 0)
+- ``argmin`` : the position of the smallest provided value (default value: -1)
+- ``argmax`` : the position of the largest provided value (default value: -1)
 
-Default values and results of the accumulators have the same shape/dimension of the input values, except for the counter accumulator which is always a scalar integer.
+Default values and results of the accumulators have the same shape/dimension of the input values, except for the
+``counter``, ``argmin`` and ``argmax`` accumulators whose result is always a scalar integer (``int64``).
+The functions that accumulate their own results (sequential accumulators and propagate and accumulate) do not accept
+``argmin`` and ``argmax``. See :class:`~higra.Accumulators` for details.
 
 Accumulators are wrapped into *factories* in C++ while the Python interface only exposes an enumeration (real accumulator types are currently not exported in Python).
 

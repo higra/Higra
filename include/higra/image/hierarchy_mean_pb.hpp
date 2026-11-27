@@ -148,7 +148,8 @@ namespace hg {
         auto &rag = ows.first;
         auto &rag_edge_weights = ows.second;
 
-        auto rag_edge_length = rag_accumulate(rag.edge_map, edge_weights, accumulator_counter());
+        // counts are index_t: average linkage needs edge weights and weight weights of the same type
+        auto rag_edge_length = hg::cast<value_t>(rag_accumulate(rag.edge_map, edge_weights, accumulator_counter()));
 
         auto tree = binary_partition_tree_average_linkage(rag.rag,
                                                           rag_edge_weights,

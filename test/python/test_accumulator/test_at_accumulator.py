@@ -46,6 +46,44 @@ class TestAtAccumulator(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 hg.accumulate_at(indices, weights_vec, hg.Accumulators.mean)
 
+    def test_accumulate_at_unreached_rows(self):
+        indices = np.asarray((0, 3, 3), dtype=np.int64)
+        for weights in (np.asarray((1., 2., 3.)), np.asarray(((1, 6), (2, 7), (3, 8)), dtype=np.int32)):
+            info = np.iinfo(weights.dtype) if weights.dtype.kind == 'i' else np.finfo(weights.dtype)
+            expected = {
+                hg.Accumulators.sum: 0,
+                hg.Accumulators.mean: 0,
+                hg.Accumulators.prod: 1,
+                hg.Accumulators.min: info.max,
+                hg.Accumulators.max: info.min,
+                hg.Accumulators.first: 0,
+                hg.Accumulators.last: 0,
+            }
+            for acc, value in expected.items():
+                with self.subTest(accumulator=acc, shape=weights.shape):
+                    res = hg.accumulate_at(indices, weights, acc)
+                    self.assertEqual(res.dtype, weights.dtype)
+                    np.testing.assert_array_equal(res[1:3], np.full_like(res[1:3], value))
+
+            res = hg.accumulate_at(indices, weights, hg.Accumulators.counter)
+            self.assertEqual(res.dtype, np.int64)
+            np.testing.assert_array_equal(res, (1, 0, 0, 2))
+            res = hg.accumulate_at(indices, weights, hg.Accumulators.argmin)
+            self.assertEqual(res.dtype, np.int64)
+            np.testing.assert_array_equal(res, (0, -1, -1, 0))
+            res = hg.accumulate_at(indices, weights, hg.Accumulators.argmax)
+            self.assertEqual(res.dtype, np.int64)
+            np.testing.assert_array_equal(res, (0, -1, -1, 1))
+
+    def test_accumulate_at_index_results_small_integer_types(self):
+        indices = np.zeros(300, dtype=np.int64)
+        weights = np.ones(300, dtype=np.uint8)
+        weights[299] = 0
+        weights[298] = 2
+        np.testing.assert_array_equal(hg.accumulate_at(indices, weights, hg.Accumulators.argmin), (299,))
+        np.testing.assert_array_equal(hg.accumulate_at(indices, weights, hg.Accumulators.argmax), (298,))
+        np.testing.assert_array_equal(hg.accumulate_at(indices, weights, hg.Accumulators.counter), (300,))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -206,5 +206,78 @@ class TestTreeAccumulators(unittest.TestCase):
             res = hg.accumulate_and_max_sequential(tree, np.asarray((3.,)), np.asarray((2.,)), hg.Accumulators.sum)
             np.testing.assert_array_equal(res, (2.,))
 
+    def test_accumulate_parallel_leaves(self):
+        tree = TestTreeAccumulators.get_tree()
+        for compute_children in (False, True):
+            if compute_children:
+                tree.children(0)
+            for data in (np.asarray((3, 1, 2, 0, 5, 1, 1, 1), dtype=np.float64),
+                         np.arange(16, dtype=np.int32).reshape(8, 2)):
+                for acc in (hg.Accumulators.first, hg.Accumulators.last, hg.Accumulators.sum, hg.Accumulators.mean):
+                    res = hg.accumulate_parallel(tree, data, acc)
+                    self.assertEqual(res.dtype, data.dtype)
+                    np.testing.assert_array_equal(res[:5], np.zeros_like(data[:5]))
+
+    def test_accumulate_parallel_mean(self):
+        tree = TestTreeAccumulators.get_tree()
+        data = np.arange(8, dtype=np.float64)
+        ref = (0, 0, 0, 0, 0, 0.5, 3, 5.5)
+        np.testing.assert_allclose(hg.accumulate_parallel(tree, data, hg.Accumulators.mean), ref)
+        tree.children(0)
+        np.testing.assert_allclose(hg.accumulate_parallel(tree, data, hg.Accumulators.mean), ref)
+        np.testing.assert_allclose(hg.accumulate_sequential(tree, data[:5], hg.Accumulators.mean),
+                                   (0, 1, 2, 3, 4, 0.5, 3, 1.75))
+
+    def test_index_accumulators(self):
+        tree = TestTreeAccumulators.get_tree()
+        scalar = np.asarray((3, 1, 2, 0, 5, 1, 1, 1), dtype=np.uint8)
+        vectorial = np.asarray(((1, 1), (0, 0), (2, 2), (0, 1), (5, 5), (1, 1), (1, 1), (0, 0)), dtype=np.float32)
+        for compute_children in (False, True):
+            if compute_children:
+                tree.children(0)
+            for data, ref_min, ref_max in ((scalar, (1, 1, 0), (0, 2, 0)), (vectorial, (1, 1, 1), (0, 2, 1))):
+                res = hg.accumulate_parallel(tree, data, hg.Accumulators.argmin)
+                self.assertEqual(res.dtype, np.int64)
+                np.testing.assert_array_equal(res, (-1,) * 5 + ref_min)
+                res = hg.accumulate_parallel(tree, data, hg.Accumulators.argmax)
+                self.assertEqual(res.dtype, np.int64)
+                np.testing.assert_array_equal(res, (-1,) * 5 + ref_max)
+                res = hg.accumulate_parallel(tree, data, hg.Accumulators.counter)
+                self.assertEqual(res.dtype, np.int64)
+                np.testing.assert_array_equal(res, (0, 0, 0, 0, 0, 2, 3, 2))
+
+        # indices and counts do not depend on the range of the input type
+        tree = hg.Tree(np.full(301, 300))
+        data = np.ones(301, dtype=np.uint8)
+        data[299] = 0
+        self.assertEqual(hg.accumulate_parallel(tree, data, hg.Accumulators.argmin)[300], 299)
+        self.assertEqual(hg.accumulate_parallel(tree, data, hg.Accumulators.counter)[300], 300)
+
+    def test_sequential_functions_reject_index_accumulators(self):
+        tree = TestTreeAccumulators.get_tree()
+        data = np.arange(8, dtype=np.float64)
+        leaf_data = np.arange(5, dtype=np.float64)
+        condition = np.asarray((True, False, True, False, True, True, False, False))
+        for acc in (hg.Accumulators.argmin, hg.Accumulators.argmax):
+            with self.assertRaises(RuntimeError):
+                hg.accumulate_sequential(tree, leaf_data, acc)
+            with self.assertRaises(RuntimeError):
+                hg.accumulate_and_add_sequential(tree, data, leaf_data, acc)
+            with self.assertRaises(RuntimeError):
+                hg.accumulate_and_max_sequential(tree, data, leaf_data, acc)
+            with self.assertRaises(RuntimeError):
+                hg.propagate_sequential_and_accumulate(tree, data, acc)
+            with self.assertRaises(RuntimeError):
+                hg.propagate_sequential_and_accumulate(tree, data, acc, condition)
+
+    def test_counter_in_sequential_functions(self):
+        tree = TestTreeAccumulators.get_tree()
+        data = np.asarray((1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5))
+        condition = np.asarray((True, False, True, False, True, True, False, False))
+        res = hg.propagate_sequential_and_accumulate(tree, data, hg.Accumulators.counter, condition)
+        self.assertEqual(res.dtype, np.float64)
+        np.testing.assert_array_equal(res, (2, 2.5, 2, 4.5, 2, 2, 7.5, 8.5))
+
+
 if __name__ == '__main__':
     unittest.main()

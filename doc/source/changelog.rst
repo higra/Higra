@@ -41,6 +41,38 @@ Unreleased
   smaller than the number of regions given in ``num_regions_fine`` or ``num_regions_coarse``, instead of reading and
   writing out of bounds.
 
+- Fix :attr:`Accumulators.mean <higra.Accumulators.mean>` in :func:`~higra.accumulate_parallel`,
+  :func:`~higra.accumulate_sequential` and :func:`~higra.accumulate_and_add_sequential` (and the similar functions)
+  on trees whose children were already computed, which is the case after many attribute functions, and in
+  :func:`~higra.propagate_sequential_and_accumulate` and :func:`~higra.accumulate_on_contours`: the sum of the values
+  of a node was divided by the number of values accumulated for this node and all the nodes processed before it.
+
+- Fix :func:`~higra.accumulate_graph_edges` and :func:`~higra.accumulate_graph_vertices` with
+  :attr:`Accumulators.mean <higra.Accumulators.mean>`, which returned the sum instead of the mean.
+
+- :attr:`Accumulators.first <higra.Accumulators.first>` and :attr:`Accumulators.last <higra.Accumulators.last>` give
+  0 for an empty list of values: leaves in :func:`~higra.accumulate_parallel`, rows of :func:`~higra.accumulate_at`
+  that no index reaches, vertices without edges in the graph accumulators. These values were previously undefined.
+
+- :attr:`Accumulators.argmin <higra.Accumulators.argmin>` and :attr:`Accumulators.argmax <higra.Accumulators.argmax>`
+  give one ``int64`` position per result row, whatever the shape of the values. They previously returned positions
+  in the dtype of the values, which could overflow (with ``uint8`` values, -1 became 255 and position 299 became
+  43), and, for vectors, an array of the shape of a value in which only the first component was defined. They also
+  returned -1 instead of 0 when every value was equal to the largest (``argmin``) or lowest (``argmax``) value of
+  the dtype. The order used for vectors is now documented in :class:`~higra.Accumulators`.
+
+- :attr:`Accumulators.counter <higra.Accumulators.counter>` gives ``int64`` counts in
+  :func:`~higra.accumulate_parallel`, :func:`~higra.accumulate_at`, :func:`~higra.accumulate_graph_edges`,
+  :func:`~higra.accumulate_graph_vertices` and :func:`~higra.accumulate_on_contours`. Counts were previously in the
+  dtype of the values and could overflow. In the functions that accumulate their own results, the result keeps the
+  dtype of the input values.
+
+- :func:`~higra.accumulate_sequential`, :func:`~higra.accumulate_and_add_sequential`,
+  :func:`~higra.accumulate_and_multiply_sequential`, :func:`~higra.accumulate_and_min_sequential`,
+  :func:`~higra.accumulate_and_max_sequential` and :func:`~higra.propagate_sequential_and_accumulate` raise
+  ``RuntimeError`` with ``argmin`` and ``argmax``: these functions accumulate their own results, which mixed
+  positions with values.
+
 - C++ API:
 
   - Copies of the lowest common ancestor solvers ``hg::lca_sparse_table`` and ``hg::lca_sparse_table_block`` no
@@ -49,6 +81,11 @@ Unreleased
     -1 nor a valid index of the weights, instead of reading out of bounds.
   - ``hg::attribute_children_pair_sum_product`` with integer node weights and a floating point result type computes
     the products in the result type, so that they no longer overflow.
+  - The accumulating functions allocate their results with ``hg::accumulator_output_value_t<accumulator_t, T>``,
+    which is ``hg::index_t`` for ``hg::accumulator_counter``, ``hg::accumulator_argmin`` and
+    ``hg::accumulator_argmax`` and ``T`` otherwise. ``make_accumulator`` of ``hg::accumulator_argmin`` and
+    ``hg::accumulator_argmax`` takes the value type and the number of components of the accumulated values
+    (``make_accumulator<vectorial, value_t>(storage, row_size)``).
 
 - Higra requires Python 3.10 or newer and NumPy 2.0 or newer. The package metadata now declares the Python
   requirement, so pip refuses to install Higra on older Python versions.
