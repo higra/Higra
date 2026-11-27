@@ -725,7 +725,8 @@ namespace hg {
     namespace tree_attribute_internal {
         /**
          * Unsigned integer type, at least as wide as unsigned int, in which the arithmetic of the integer type V
-         * wraps around instead of overflowing (V itself for non integral types).
+         * wraps around instead of overflowing (V itself for non integral types and for bool, whose arithmetic on
+         * 0 and 1 values cannot overflow).
          */
         template<typename V, bool = std::is_integral<V>::value>
         struct wrapping_type {
@@ -735,6 +736,11 @@ namespace hg {
         template<typename V>
         struct wrapping_type<V, true> {
             using type = std::common_type_t<unsigned int, std::make_unsigned_t<V>>;
+        };
+
+        template<>
+        struct wrapping_type<bool, true> {
+            using type = bool;
         };
 
         template<typename V>
@@ -767,7 +773,8 @@ namespace hg {
      * With floating point node weights, each product is computed in \f$T\f$, then converted to value_type. With
      * integer node weights, each product is computed in value_type; if value_type is also an integer type, products
      * and sums that do not fit in value_type wrap around modulo \f$2^n\f$, where \f$n\f$ is the number of bits of
-     * value_type.
+     * value_type. If value_type is bool and the node weights are integers or bool, the result of a node is true if
+     * at least one pair of its children has two non-zero weights.
      *
      * @tparam tree_t tree type
      * @tparam T element type of node_weights
