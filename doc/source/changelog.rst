@@ -34,6 +34,22 @@ Unreleased
   Empty images previously crashed (integer images with ``padding="mean"``), raised various errors, or returned a
   tree containing only padding pixels.
 
+- :func:`~higra.accumulate_at` raises ``RuntimeError`` when an index is smaller than -1, instead of reading and
+  writing out of bounds. Indices equal to -1 are still ignored.
+
+- :func:`~higra.project_fine_to_coarse_labelisation` raises ``RuntimeError`` when a label is negative, or is not
+  smaller than the number of regions given in ``num_regions_fine`` or ``num_regions_coarse``, instead of reading and
+  writing out of bounds.
+
+- C++ API:
+
+  - Copies of the lowest common ancestor solvers ``hg::lca_sparse_table`` and ``hg::lca_sparse_table_block`` no
+    longer depend on the original object, which they previously read after it was destroyed.
+  - ``hg::rag_back_project_weights`` throws an exception for weights of dimension 0, or when a map value is neither
+    -1 nor a valid index of the weights, instead of reading out of bounds.
+  - ``hg::attribute_children_pair_sum_product`` with integer node weights and a floating point result type computes
+    the products in the result type, so that they no longer overflow.
+
 - Higra requires Python 3.10 or newer and NumPy 2.0 or newer. The package metadata now declares the Python
   requirement, so pip refuses to install Higra on older Python versions.
 
