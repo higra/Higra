@@ -32,6 +32,9 @@ namespace hg {
             // M = max(indices); indices equal to -1 are ignored, so M + 1 = 0 if every index is ignored
             index_t size = 0;
             for (index_t i = 0; i < indices.size(); ++i) {
+                hg_assert(indices[i] >= invalid_index,
+                          "Indices must be greater than or equal to -1, found " + std::to_string(indices[i]) +
+                          " at position " + std::to_string(i) + ".");
                 size = (std::max)(size, indices[i] + 1);
             }
             auto data_shape = std::vector<size_t>(weights.shape().begin() + 1, weights.shape().end());
@@ -81,7 +84,8 @@ namespace hg {
      * @tparam T
      * @tparam accumulator_t
      * @tparam output_t
-     * @param indices a 1d array of indices (entry equals to :math:`-1` are ignored)
+     * @param indices a 1d array of indices (entries equal to :math:`-1` are ignored; any other negative entry
+     *     throws an exception)
      * @param weights a nd-array of shape :math:`(s_1, \ldots, s_n)` such that :math:`s_1=indices.size()`
      * @param accumulator
      * @return a nd-array of size :math:`(M + 1, s_2, \ldots, s_n)`
