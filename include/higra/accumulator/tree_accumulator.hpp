@@ -23,7 +23,7 @@ namespace hg {
                 typename tree_t,
                 typename V,
                 typename accumulator_t,
-                typename output_t = V>
+                typename output_t = accumulator_output_value_t<accumulator_t, V>>
         auto accumulate_parallel_impl(const tree_t &tree,
                                       array_view<const V> input,
                                       const accumulator_t accumulator) {
@@ -31,6 +31,7 @@ namespace hg {
             hg_assert_node_weights(tree, input);
 
             auto data_shape = std::vector<size_t>(input.shape().begin() + 1, input.shape().end());
+            const index_t input_row_size = details::light_axis_view_row_size(input);
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(tree));
 
@@ -43,7 +44,7 @@ namespace hg {
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
 
-            auto acc = accumulator.template make_accumulator<vectorial>(output_view);
+            auto acc = accumulator_detail::make_accumulator<vectorial, V>(accumulator, output_view, input_row_size);
 
             for (auto i: leaves_iterator(tree)) {
                 output_view.set_position(i);
@@ -67,12 +68,15 @@ namespace hg {
 
             } else {
                 index_t numl = num_leaves(tree);
-                std::vector<decltype(accumulator.template make_accumulator<vectorial>(output_view))> accs;
+                using acc_type = decltype(accumulator_detail::make_accumulator<vectorial, V>(
+                        accumulator, output_view, input_row_size));
+                std::vector<acc_type> accs;
                 accs.reserve(num_vertices(tree) - numl);
 
                 for (auto i : leaves_to_root_iterator(tree, leaves_it::exclude)) {
                     output_view.set_position(i);
-                    accs.push_back(accumulator.template make_accumulator<vectorial>(output_view));
+                    accs.push_back(accumulator_detail::make_accumulator<vectorial, V>(accumulator, output_view,
+                                                                                   input_row_size));
                     accs.back().initialize();
                 }
 
@@ -102,6 +106,8 @@ namespace hg {
                                         array_view<const V> vertex_data,
                                         const accumulator_t &accumulator) {
             HG_TRACE();
+            hg_assert(!is_index_accumulator<std::decay_t<accumulator_t>>::value,
+                      "The argmin and argmax accumulators cannot be used with accumulate_sequential.");
             hg_assert_leaf_weights(tree, vertex_data);
 
             auto data_shape = std::vector<size_t>(vertex_data.shape().begin() + 1, vertex_data.shape().end());
@@ -178,6 +184,8 @@ namespace hg {
                                                     accumulator_t &accumulator,
                                                     combination_fun_t combine) {
             HG_TRACE();
+            hg_assert(!is_index_accumulator<std::decay_t<accumulator_t>>::value,
+                      "The argmin and argmax accumulators cannot be used with accumulate_and_combine_sequential.");
             hg_assert_node_weights(tree, input);
 
             hg_assert_leaf_weights(tree, vertex_data);
@@ -370,6 +378,8 @@ namespace hg {
                                                       array_view<const V> input,
                                                       accumulator_t &accumulator) {
             HG_TRACE();
+            hg_assert(!is_index_accumulator<std::decay_t<accumulator_t>>::value,
+                      "The argmin and argmax accumulators cannot be used with propagate_sequential_and_accumulate.");
             hg_assert_node_weights(tree, input);
 
             auto data_shape = std::vector<size_t>(input.shape().begin() + 1, input.shape().end());
@@ -428,6 +438,8 @@ namespace hg {
                                                       array_view<const T2> condition,
                                                       accumulator_t &accumulator) {
             HG_TRACE();
+            hg_assert(!is_index_accumulator<std::decay_t<accumulator_t>>::value,
+                      "The argmin and argmax accumulators cannot be used with propagate_sequential_and_accumulate.");
             hg_assert_node_weights(tree, input);
             hg_assert_node_weights(tree, condition);
             hg_assert_1d_array(condition);

@@ -20,7 +20,7 @@ namespace hg {
         template<bool vectorial,
                 typename V,
                 typename accumulator_t,
-                typename output_t = V>
+                typename output_t = accumulator_output_value_t<accumulator_t, V>>
         auto
         at_accumulate(array_view<const index_t> indices,
                       array_view<const V> weights,
@@ -38,20 +38,24 @@ namespace hg {
                 size = (std::max)(size, indices[i] + 1);
             }
             auto data_shape = std::vector<size_t>(weights.shape().begin() + 1, weights.shape().end());
+            const index_t input_row_size = details::light_axis_view_row_size(weights);
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), size);
-            array_nd<V> res = array_nd<V>::from_shape(array_shape::from(output_shape));
+            array_nd<output_t> res = array_nd<output_t>::from_shape(array_shape::from(output_shape));
 
             auto input_view = make_light_axis_view<vectorial>(weights);
             auto output_view = make_light_axis_view<vectorial>(res);
 
-            std::vector<decltype(accumulator.template make_accumulator<vectorial>(output_view))> accs;
+            using acc_type = decltype(accumulator_detail::make_accumulator<vectorial, V>(
+                    accumulator, output_view, input_row_size));
+            std::vector<acc_type> accs;
             accs.reserve(size);
 
 
             for (index_t i = 0; i < size; ++i) {
                 output_view.set_position(i);
-                accs.push_back(accumulator.template make_accumulator<vectorial>(output_view));
+                accs.push_back(accumulator_detail::make_accumulator<vectorial, V>(accumulator, output_view,
+                                                                               input_row_size));
                 accs[i].initialize();
             }
 
@@ -79,6 +83,10 @@ namespace hg {
      * .. math::
      *
      *      result[i] = accumulator(\{weights[j, :] \mid indices[j] = i  \})
+     *
+     * If a value :math:`i` of :math:`\{0, \ldots, M\}` does not appear in indices, :math:`result[i]` is the result of
+     * the accumulator on an empty sequence. The counter, argmin and argmax accumulators give one index_t per row;
+     * argmin and argmax give the position of the selected weight among the weights mapped to the row.
      *
      * @tparam TI
      * @tparam T

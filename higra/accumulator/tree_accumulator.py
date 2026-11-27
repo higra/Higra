@@ -17,6 +17,10 @@ def accumulate_parallel(tree, node_weights, accumulator):
     Accumulates values of the children of every node :math:`i` in the :math:`node\_weights` array and puts the result
     in output: :math:`output(i) = accumulator(node\_weights(children(i)))`
 
+    The leaves have no children: their output is the empty value of the accumulator (see
+    :class:`~higra.Accumulators`). With ``argmin`` and ``argmax``, the output of a node is the position of the selected
+    child in the list of its children (in increasing order of node index).
+
     :param tree: input tree
     :param node_weights: Weights on the nodes of the tree
     :param accumulator: see :class:`~higra.Accumulators`
@@ -35,7 +39,7 @@ def accumulate_sequential(tree, leaf_data, accumulator, leaf_graph=None):
 
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param leaf_data: array of weights on the leaves of the tree
-    :param accumulator: see :class:`~higra.Accumulators`
+    :param accumulator: see :class:`~higra.Accumulators` (``argmin`` and ``argmax`` are not supported)
     :param leaf_graph: graph of the tree leaves (optional, deduced from :class:`~higra.CptHierarchy`)
     :return: returns new tree node weights
     """
@@ -78,7 +82,7 @@ def propagate_sequential_and_accumulate(tree, node_weights, accumulator, conditi
 
     :param tree: input tree
     :param node_weights: Weights on the nodes of the tree
-    :param accumulator: see :class:`~higra.Accumulators`
+    :param accumulator: see :class:`~higra.Accumulators` (``argmin`` and ``argmax`` are not supported)
     :param condition: Boolean array on the nodes of the tree (optional)
     :return: returns new tree node weights
     """
@@ -134,7 +138,7 @@ def accumulate_and_add_sequential(tree, node_weights, leaf_data, accumulator, le
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param node_weights: Weights on the nodes of the tree
     :param leaf_data: Weights on the leaves of the tree
-    :param accumulator: see :class:`~higra.Accumulators`
+    :param accumulator: see :class:`~higra.Accumulators` (``argmin`` and ``argmax`` are not supported)
     :param leaf_graph: graph of the tree leaves (optional, deduced from :class:`~higra.CptHierarchy`)
     :return: returns new tree node weights
     """
@@ -158,7 +162,7 @@ def accumulate_and_multiply_sequential(tree, node_weights, leaf_data, accumulato
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param node_weights: Weights on the nodes of the tree
     :param leaf_data: Weights on the leaves of the tree
-    :param accumulator: see :class:`~higra.Accumulators`
+    :param accumulator: see :class:`~higra.Accumulators` (``argmin`` and ``argmax`` are not supported)
     :param leaf_graph: graph of the tree leaves (optional (optional, deduced from :class:`~higra.CptHierarchy`))
     :return: returns new tree node weights
     """
@@ -183,7 +187,7 @@ def accumulate_and_min_sequential(tree, node_weights, leaf_data, accumulator, le
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param node_weights: Weights on the nodes of the tree
     :param leaf_data: Weights on the leaves of the tree
-    :param accumulator: see :class:`~higra.Accumulators`
+    :param accumulator: see :class:`~higra.Accumulators` (``argmin`` and ``argmax`` are not supported)
     :param leaf_graph: graph of the tree leaves (optional, deduced from :class:`~higra.CptHierarchy`)
     :return: returns new tree node weights
     """
@@ -208,7 +212,7 @@ def accumulate_and_max_sequential(tree, node_weights, leaf_data, accumulator, le
     :param tree: input tree (Concept :class:`~higra.CptHierarchy`)
     :param node_weights: Weights on the nodes of the tree
     :param leaf_data: Weights on the leaves of the tree
-    :param accumulator: see :class:`~higra.Accumulators`
+    :param accumulator: see :class:`~higra.Accumulators` (``argmin`` and ``argmax`` are not supported)
     :param leaf_graph: graph of the tree leaves (optional, deduced from :class:`~higra.CptHierarchy`)
     :return: returns new tree node weights
     """

@@ -22,6 +22,11 @@ def accumulate_at(indices, weights, accumulator):
 
         result[i] = accumulator(\{weights[j, :] \mid indices[j] = i  \})
 
+    If a value :math:`i` of :math:`\{0, \ldots, M\}` does not appear in :attr:`indices`, :math:`result[i]` is the empty
+    value of the accumulator (see :class:`~higra.Accumulators`). With ``argmin`` and ``argmax``, :math:`result[i]` is
+    the position of the selected weight among the weights :math:`weights[j]` such that :math:`indices[j] = i`, in
+    increasing order of :math:`j`.
+
     :param indices: a 1d array of indices (entries equal to :math:`-1` are ignored; any other negative entry
         raises an exception)
     :param weights: a nd-array of shape :math:`(s_1, \ldots, s_n)` such that :math:`s_1=indices.size`

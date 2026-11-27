@@ -16,6 +16,10 @@ def accumulate_graph_edges(graph, edge_weights, accumulator):
     Accumulates edge weights of the out edges of each vertex :math:`i`:
     ie :math:`output(i) = accumulator(edge\_weights(out\_edges(i)))`.
 
+    The output of a vertex without edges is the empty value of the accumulator (see :class:`~higra.Accumulators`).
+    With ``argmin`` and ``argmax``, the output of a vertex is the position of the selected edge in the list of its out
+    edges.
+
     :param graph: input graph
     :param edge_weights: Weights on the edges of the graph
     :param accumulator: see :class:`~higra.Accumulators`
@@ -29,6 +33,10 @@ def accumulate_graph_vertices(graph, vertex_weights, accumulator):
     """
     Accumulates vertex weights of the adjacent vertices of each vertex :math:`i`:
     ie :math:`output(i) = accumulator(vertex\_weights(adjacent\_vertices(i)))`.
+
+    The output of a vertex without neighbours is the empty value of the accumulator (see :class:`~higra.Accumulators`).
+    With ``argmin`` and ``argmax``, the output of a vertex is the position of the selected neighbour in the list of its
+    adjacent vertices.
 
     :param graph: input graph
     :param vertex_weights: Weights on the vertices of the graph

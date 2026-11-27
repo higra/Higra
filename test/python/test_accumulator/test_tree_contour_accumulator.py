@@ -71,6 +71,22 @@ class TestTreeContourAccumulator(unittest.TestCase):
         expected = np.asarray((5, 8, 0, 3, 2, 8, 9, 3, 8, 8, 9, 2))
         self.assertTrue(np.allclose(result, expected))
 
+    def test_contour_accumulator_index_results(self):
+        graph = hg.get_4_adjacency_graph((3, 3))
+        tree = hg.Tree((9, 9, 10, 11, 11, 13, 12, 12, 13, 10, 14, 14, 15, 14, 15, 15))
+        hg.CptHierarchy.link(tree, graph)
+        node_weights = -np.stack((np.arange(16), np.arange(16)), axis=1).astype(np.float32)
+
+        counter = hg.accumulate_on_contours(tree, node_weights, hg.Accumulators.counter)
+        argmin = hg.accumulate_on_contours(tree, node_weights, hg.Accumulators.argmin)
+        self.assertEqual(counter.dtype, np.int64)
+        self.assertEqual(argmin.dtype, np.int64)
+        self.assertEqual(counter.shape, (12,))
+        self.assertEqual(argmin.shape, (12,))
+        self.assertEqual(counter[0], 2)
+        self.assertEqual(argmin[0], 1)
+        self.assertTrue(np.all(argmin >= 0) and np.all(argmin < counter))
+
 
 if __name__ == '__main__':
     unittest.main()

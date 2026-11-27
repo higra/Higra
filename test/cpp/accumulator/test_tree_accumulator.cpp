@@ -11,6 +11,8 @@
 #include "../test_utils.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 #include <functional>
+#include <limits>
+#include <type_traits>
 
 
 using namespace hg;
@@ -321,24 +323,25 @@ namespace tree_accumulator {
     }
 
     // accumulates on a single-node tree, without and with computed children: the results must be equal
-    // (accumulate_parallel is skipped for first and last, which leave the value of leaves unset, and for
-    // vectorial argmin and argmax, which only set the first component of leaves)
+    // (argmin and argmax are rejected by accumulate_sequential)
     template<typename T, typename accumulator_t>
-    void check_single_node_accumulate(const array_nd<T> &input, const accumulator_t &acc, bool parallel = true) {
+    void check_single_node_accumulate(const array_nd<T> &input, const accumulator_t &acc) {
         hg::tree t1(array_1d<index_t>{0});
         hg::tree t2(array_1d<index_t>{0});
         t2.compute_children();
         REQUIRE(!t1.children_computed());
 
-        if (parallel) {
-            auto p1 = accumulate_parallel(t1, input, acc);
-            auto p2 = accumulate_parallel(t2, input, acc);
-            REQUIRE(same_values(p1, p2));
-        }
+        auto p1 = accumulate_parallel(t1, input, acc);
+        auto p2 = accumulate_parallel(t2, input, acc);
+        REQUIRE(same_values(p1, p2));
 
-        auto s1 = accumulate_sequential(t1, input, acc);
-        auto s2 = accumulate_sequential(t2, input, acc);
-        REQUIRE(same_values(s1, s2));
+        if constexpr (!is_index_accumulator<accumulator_t>::value) {
+            auto s1 = accumulate_sequential(t1, input, acc);
+            auto s2 = accumulate_sequential(t2, input, acc);
+            REQUIRE(same_values(s1, s2));
+        } else {
+            REQUIRE_THROWS(accumulate_sequential(t1, input, acc));
+        }
         REQUIRE(!t1.children_computed());
     }
 
@@ -365,10 +368,10 @@ namespace tree_accumulator {
         check_single_node_accumulate(input, hg::accumulator_max());
         check_single_node_accumulate(input, hg::accumulator_counter());
         check_single_node_accumulate(input, hg::accumulator_prod());
-        check_single_node_accumulate(input, hg::accumulator_first(), false);
-        check_single_node_accumulate(input, hg::accumulator_last(), false);
-        check_single_node_accumulate(input, hg::accumulator_argmin(), input.dimension() == 1);
-        check_single_node_accumulate(input, hg::accumulator_argmax(), input.dimension() == 1);
+        check_single_node_accumulate(input, hg::accumulator_first());
+        check_single_node_accumulate(input, hg::accumulator_last());
+        check_single_node_accumulate(input, hg::accumulator_argmin());
+        check_single_node_accumulate(input, hg::accumulator_argmax());
 
         check_single_node_combine(input, vertex_data, hg::accumulator_sum(), std::plus<T>());
         check_single_node_combine(input, vertex_data, hg::accumulator_sum(), std::multiplies<T>());
@@ -389,5 +392,160 @@ namespace tree_accumulator {
             check_single_node_accumulators<double>(array_nd<double>{{1., 3.}}, array_nd<double>{{2., 5.}});
             check_single_node_accumulators<index_t>(array_nd<index_t>{{1, 3}}, array_nd<index_t>{{2, 5}});
         }
+    }
+
+    // checks that every element of the rows [begin, end) of a equals v
+    template<typename array_t, typename V>
+    static void check_rows(const array_t &a, index_t begin, index_t end, V v) {
+        index_t row = (a.dimension() == 0 || a.shape()[0] == 0) ? 0 : (index_t) (a.size() / a.shape()[0]);
+        for (index_t i = begin * row; i < end * row; i++) {
+            REQUIRE(a.data()[i] == v);
+        }
+    }
+
+    template<typename T>
+    static void check_parallel_leaves(hg::tree tree, const array_nd<T> &input) {
+        const index_t nl = num_leaves(tree);
+        const index_t n = num_vertices(tree);
+        check_rows(accumulate_parallel(tree, input, hg::accumulator_sum()), 0, nl, 0);
+        check_rows(accumulate_parallel(tree, input, hg::accumulator_mean()), 0, nl, 0);
+        check_rows(accumulate_parallel(tree, input, hg::accumulator_prod()), 0, nl, 1);
+        check_rows(accumulate_parallel(tree, input, hg::accumulator_min()), 0, nl, (std::numeric_limits<T>::max)());
+        check_rows(accumulate_parallel(tree, input, hg::accumulator_max()), 0, nl, std::numeric_limits<T>::lowest());
+        check_rows(accumulate_parallel(tree, input, hg::accumulator_first()), 0, nl, 0);
+        check_rows(accumulate_parallel(tree, input, hg::accumulator_last()), 0, nl, 0);
+
+        auto counter = accumulate_parallel(tree, input, hg::accumulator_counter());
+        static_assert(std::is_same<typename decltype(counter)::value_type, index_t>::value);
+        REQUIRE(has_shape(counter, {(size_t) n}));
+        REQUIRE((counter == array_1d<index_t>{0, 0, 0, 0, 0, 2, 3, 2}));
+
+        auto argmin = accumulate_parallel(tree, input, hg::accumulator_argmin());
+        auto argmax = accumulate_parallel(tree, input, hg::accumulator_argmax());
+        static_assert(std::is_same<typename decltype(argmin)::value_type, index_t>::value);
+        static_assert(std::is_same<typename decltype(argmax)::value_type, index_t>::value);
+        REQUIRE(has_shape(argmin, {(size_t) n}));
+        REQUIRE(has_shape(argmax, {(size_t) n}));
+        check_rows(argmin, 0, nl, -1);
+        check_rows(argmax, 0, nl, -1);
+    }
+
+    TEST_CASE("accumulate_parallel on leaves and result types", "[tree_accumulator]") {
+        hg::tree tree(hg::array<index_t>{5, 5, 6, 6, 6, 7, 7, 7});
+        // node 5: children 0, 1; node 6: children 2, 3, 4; node 7: children 5, 6
+        array_nd<double> scalar{3, 1, 2, 0, 5, 1, 1, 1};
+        array_nd<int> vectorial{{1, 1}, {0, 0}, {2, 2}, {0, 1}, {5, 5}, {1, 1}, {1, 1}, {0, 0}};
+
+        for (bool computed: {false, true}) {
+            if (computed) {
+                tree.compute_children();
+            }
+            check_parallel_leaves(tree, scalar);
+            check_parallel_leaves(tree, vectorial);
+
+            REQUIRE((accumulate_parallel(tree, scalar, hg::accumulator_argmin()) ==
+                     array_1d<index_t>{-1, -1, -1, -1, -1, 1, 1, 0}));
+            REQUIRE((accumulate_parallel(tree, scalar, hg::accumulator_argmax()) ==
+                     array_1d<index_t>{-1, -1, -1, -1, -1, 0, 2, 0}));
+            REQUIRE((accumulate_parallel(tree, vectorial, hg::accumulator_argmin()) ==
+                     array_1d<index_t>{-1, -1, -1, -1, -1, 1, 1, 1}));
+            REQUIRE((accumulate_parallel(tree, vectorial, hg::accumulator_argmax()) ==
+                     array_1d<index_t>{-1, -1, -1, -1, -1, 0, 2, 1}));
+        }
+    }
+
+    TEST_CASE("argmin and argmax with small integer types", "[tree_accumulator]") {
+        // a root with 300 children: the selected index does not fit in the input type
+        array_1d<index_t> parents = hg::zeros<index_t>({301});
+        for (auto &p: parents) {
+            p = 300;
+        }
+        hg::tree tree(parents);
+        array_1d<unsigned char> input = hg::ones<unsigned char>({301});
+        input(299) = 0;
+        input(298) = 2;
+        auto argmin = accumulate_parallel(tree, input, hg::accumulator_argmin());
+        auto argmax = accumulate_parallel(tree, input, hg::accumulator_argmax());
+        auto counter = accumulate_parallel(tree, input, hg::accumulator_counter());
+        REQUIRE(argmin(300) == 299);
+        REQUIRE(argmax(300) == 298);
+        REQUIRE(counter(300) == 300);
+        REQUIRE(argmin(0) == -1);
+        REQUIRE(counter(0) == 0);
+    }
+
+    TEST_CASE("sequential functions reject argmin and argmax", "[tree_accumulator]") {
+        auto tree = data.t;
+        array_1d<double> input{1, 2, 3, 4, 5, 6, 7, 8};
+        array_1d<double> leaf_data{1, 2, 3, 4, 5};
+        array_1d<bool> condition{true, false, true, false, true, true, false, false};
+        for (int i = 0; i < 2; i++) {
+            if (i == 1) {
+                tree.compute_children();
+            }
+            REQUIRE_THROWS(accumulate_sequential(tree, leaf_data, hg::accumulator_argmin()));
+            REQUIRE_THROWS(accumulate_sequential(tree, leaf_data, hg::accumulator_argmax()));
+            REQUIRE_THROWS(accumulate_and_combine_sequential(tree, input, leaf_data, hg::accumulator_argmin(),
+                                                             std::plus<double>()));
+            REQUIRE_THROWS(propagate_sequential_and_accumulate(tree, input, hg::accumulator_argmax()));
+            REQUIRE_THROWS(propagate_sequential_and_accumulate(tree, input, hg::accumulator_argmin(), condition));
+        }
+    }
+
+    TEST_CASE("counter keeps the input type in sequential functions", "[tree_accumulator]") {
+        auto tree = data.t;
+        array_1d<double> input{1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5};
+        array_1d<double> leaf_data{0.5, 0.5, 0.5, 0.5, 0.5};
+        array_1d<bool> condition{true, false, true, false, true, true, false, false};
+
+        auto r1 = propagate_sequential_and_accumulate(tree, input, hg::accumulator_counter(), condition);
+        static_assert(std::is_same<typename decltype(r1)::value_type, double>::value);
+        REQUIRE((r1 == array_1d<double>{2, 2.5, 2, 4.5, 2, 2, 7.5, 8.5}));
+
+        auto r2 = accumulate_and_combine_sequential(tree, input, leaf_data, hg::accumulator_counter(),
+                                                    std::plus<double>());
+        static_assert(std::is_same<typename decltype(r2)::value_type, double>::value);
+        REQUIRE((r2 == array_1d<double>{0.5, 0.5, 0.5, 0.5, 0.5, 8.5, 10.5, 10.5}));
+    }
+
+    TEST_CASE("mean accumulator on several nodes", "[tree_accumulator]") {
+        array_1d<double> input{0, 1, 2, 3, 4, 5, 6, 7};
+        array_1d<double> leaf_data{0, 1, 2, 3, 4};
+        array_1d<double> ref_parallel{0, 0, 0, 0, 0, 0.5, 3, 5.5};
+        array_1d<double> ref_sequential{0, 1, 2, 3, 4, 0.5, 3, 1.75};
+        for (bool computed: {false, true}) {
+            hg::tree tree(hg::array<index_t>{5, 5, 6, 6, 6, 7, 7, 7});
+            if (computed) {
+                tree.compute_children();
+            }
+            REQUIRE(hg::allclose(accumulate_parallel(tree, input, hg::accumulator_mean()), ref_parallel));
+            REQUIRE(hg::allclose(accumulate_sequential(tree, leaf_data, hg::accumulator_mean()), ref_sequential));
+        }
+        hg::tree tree(hg::array<index_t>{5, 5, 6, 6, 6, 7, 7, 7});
+        auto propagated = propagate_sequential_and_accumulate(tree, input, hg::accumulator_mean());
+        // output(root) = input(root), output(i) = (output(parent(i)) + input(i)) / 2
+        array_1d<double> ref{(6 + 0) / 2., (6 + 1) / 2., (6.5 + 2) / 2, (6.5 + 3) / 2, (6.5 + 4) / 2,
+                             (7 + 5) / 2., (7 + 6) / 2., 7};
+        REQUIRE(hg::allclose(propagated, ref));
+    }
+
+    TEST_CASE("integer mean with many children", "[tree_accumulator]") {
+        array_1d<index_t> parents = hg::zeros<index_t>({257});
+        for (auto &p: parents) {
+            p = 256;
+        }
+        hg::tree tree(parents);
+        array_1d<unsigned char> input = hg::zeros<unsigned char>({257});
+        auto res = accumulate_parallel(tree, input, hg::accumulator_mean());
+        static_assert(std::is_same<typename decltype(res)::value_type, unsigned char>::value);
+        REQUIRE(res(256) == 0);
+        array_2d<signed char> input2 = hg::zeros<signed char>({257, 2});
+        input2(0, 0) = -3;   // 256 children: -3 / 256 truncated to 0
+        input2(0, 1) = 100;  // 100 / 256 truncated to 0
+        auto res2 = accumulate_parallel(tree, input2, hg::accumulator_mean());
+        REQUIRE((res2(256, 0) == 0 && res2(256, 1) == 0));
+        array_1d<short> input3 = hg::zeros<short>({257});
+        input3(0) = -300;    // -300 / 256 truncated to -1
+        REQUIRE(accumulate_parallel(tree, input3, hg::accumulator_mean())(256) == -1);
     }
 }

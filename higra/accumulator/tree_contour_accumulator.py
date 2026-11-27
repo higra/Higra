@@ -25,7 +25,8 @@ def accumulate_on_contours(tree, node_weights, accumulator, leaf_graph):
         R_{\{x,y\}} = \{n \in T \, |\, |\{x,y\} \cap n| = 1  \}
 
     The output value for the edge :math:`\{x,y\}` is then the accumulated weights of the nodes
-    in :math:`R_{\{x,y\}}`.
+    in :math:`R_{\{x,y\}}`. With ``argmin`` and ``argmax``, the output is a position in the list of these nodes, whose
+    order is not specified.
 
     :Runtime complexity:
 

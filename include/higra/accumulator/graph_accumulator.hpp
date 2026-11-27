@@ -23,7 +23,7 @@ namespace hg {
                 typename graph_t,
                 typename V,
                 typename accumulator_t,
-                typename output_t = V>
+                typename output_t = accumulator_output_value_t<accumulator_t, V>>
         auto accumulate_graph_edges_impl(const graph_t &graph,
                                          array_view<const V> input,
                                          const accumulator_t accumulator) {
@@ -31,6 +31,7 @@ namespace hg {
             hg_assert_edge_weights(graph, input);
 
             auto data_shape = std::vector<size_t>(input.shape().begin() + 1, input.shape().end());
+            const index_t input_row_size = details::light_axis_view_row_size(input);
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(graph));
 
@@ -38,7 +39,7 @@ namespace hg {
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
-            auto acc = accumulator.template make_accumulator<vectorial>(output_view);
+            auto acc = accumulator_detail::make_accumulator<vectorial, V>(accumulator, output_view, input_row_size);
 
             for (auto i: vertex_iterator(graph)) {
                 output_view.set_position(i);
@@ -48,6 +49,7 @@ namespace hg {
                     input_view.set_position(e);
                     acc.accumulate(input_view.begin());
                 }
+                acc.finalize();
             }
 
             return output;
@@ -57,7 +59,7 @@ namespace hg {
                 typename graph_t,
                 typename V,
                 typename accumulator_t,
-                typename output_t = V>
+                typename output_t = accumulator_output_value_t<accumulator_t, V>>
         auto accumulate_graph_vertices_impl(const graph_t &graph,
                                             array_view<const V> input,
                                             const accumulator_t accumulator) {
@@ -65,6 +67,7 @@ namespace hg {
             hg_assert_vertex_weights(graph, input);
 
             auto data_shape = std::vector<size_t>(input.shape().begin() + 1, input.shape().end());
+            const index_t input_row_size = details::light_axis_view_row_size(input);
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(graph));
 
@@ -72,7 +75,7 @@ namespace hg {
 
             auto input_view = make_light_axis_view<vectorial>(input);
             auto output_view = make_light_axis_view<vectorial>(output);
-            auto acc = accumulator.template make_accumulator<vectorial>(output_view);
+            auto acc = accumulator_detail::make_accumulator<vectorial, V>(accumulator, output_view, input_row_size);
 
             for (auto i: vertex_iterator(graph)) {
                 output_view.set_position(i);
@@ -82,6 +85,7 @@ namespace hg {
                     input_view.set_position(v);
                     acc.accumulate(input_view.begin());
                 }
+                acc.finalize();
             }
 
             return output;

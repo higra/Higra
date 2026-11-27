@@ -13,6 +13,7 @@
 #include "../utils.hpp"
 #include <functional>
 #include <limits>
+#include <type_traits>
 #include <vector>
 
 namespace hg {
@@ -156,12 +157,14 @@ namespace hg {
             template<typename T = self_type, typename ...Args>
             typename std::enable_if_t<T::is_vectorial>
             initialize(Args &&...) {
+                m_counter = 0;
                 std::fill(m_storage_begin, m_storage_end, 0);
             }
 
             template<typename T = self_type, typename ...Args>
             typename std::enable_if_t<!T::is_vectorial>
             initialize(Args &&...) {
+                m_counter = 0;
                 *m_storage_begin = 0;
             }
 
@@ -187,7 +190,7 @@ namespace hg {
             finalize(Args &&...) const {
                 if (m_counter != 0) {
                     for (auto s = m_storage_begin; s != m_storage_end; s++) {
-                        *s /= (value_type) m_counter;
+                        *s = divide(*s, m_counter);
                     }
                 }
             }
@@ -196,7 +199,7 @@ namespace hg {
             typename std::enable_if_t<!T::is_vectorial>
             finalize(Args &&...) const {
                 if (m_counter != 0) {
-                    *m_storage_begin /= (value_type) m_counter;
+                    *m_storage_begin = divide(*m_storage_begin, m_counter);
                 }
             }
 
@@ -212,6 +215,20 @@ namespace hg {
             }
 
         private:
+            /**
+             * Divides a sum by a nonzero count without converting the count to the value type, where it could
+             * become zero or change sign (e.g. 256 values of type uint8). Integer division truncates toward zero.
+             */
+            static value_type divide(value_type sum, std::size_t count) {
+                if constexpr (std::is_floating_point<value_type>::value) {
+                    return sum / (value_type) count;
+                } else if constexpr (std::is_signed<value_type>::value) {
+                    return (value_type) ((long long) sum / (long long) count);
+                } else {
+                    return (value_type) ((unsigned long long) sum / (unsigned long long) count);
+                }
+            }
+
             std::size_t m_counter;
             S m_storage_begin;
             S m_storage_end;
@@ -264,29 +281,35 @@ namespace hg {
         };
 
         /**
-         * Argmin accumulator
-         * @tparam S the storage type
-         * @tparam vectorial bool: is dimension of storage > 0 (different from scalar)
+         * Argmin accumulator: position of the smallest value in the accumulated sequence (-1 if the sequence is empty)
+         * @tparam S the storage type (a single index)
+         * @tparam V the value type of the accumulated values
+         * @tparam vectorial bool: do the accumulated values have several components (compared component-wise)
          */
-        template<typename S, bool vectorial = true>
+        template<typename S, typename V, bool vectorial = true>
         struct acc_argmin_impl {
             using value_type = hg::index_t;
-            using self_type = acc_argmin_impl<S, vectorial>;
+            using self_type = acc_argmin_impl<S, V, vectorial>;
             static const bool is_vectorial = vectorial;
             using storage_value_type = typename std::iterator_traits<S>::value_type;
+            using input_value_type = V;
 
-
-            acc_argmin_impl(S storage_begin, S storage_end) :
+            /**
+             * @param storage_begin start of the output (a single index)
+             * @param storage_end end of the output
+             * @param input_row_size number of components of each accumulated value
+             */
+            acc_argmin_impl(S storage_begin, S storage_end, index_t input_row_size) :
+                    m_temp(vectorial ? input_row_size : 1),
                     m_storage_begin(storage_begin),
                     m_storage_end(storage_end) {
-                m_temp.resize(storage_end - storage_begin);
             }
 
             template<typename ...Args>
             void initialize(Args &&...) {
                 *m_storage_begin = -1;
                 cur_index = 0;
-                std::fill(m_temp.begin(), m_temp.end(), (std::numeric_limits<storage_value_type>::max)());
+                std::fill(m_temp.begin(), m_temp.end(), (std::numeric_limits<input_value_type>::max)());
             }
 
             template<typename T1 = self_type, typename T, typename ...Args>
@@ -296,9 +319,11 @@ namespace hg {
                 auto t = m_temp.begin();
                 auto v = value_begin;
                 bool flag = true;
-                for (; flag && t != m_temp.end(); t++, v++) {
-                    if (*t < *v)
-                        flag = false;
+                if (cur_index != 0) {
+                    for (; flag && t != m_temp.end(); t++, v++) {
+                        if (*t < *v)
+                            flag = false;
+                    }
                 }
                 if (flag) {
                     t = m_temp.begin();
@@ -316,7 +341,7 @@ namespace hg {
             std::enable_if_t<!T1::is_vectorial>
             accumulate(T value_begin, Args &&...) {
 
-                if (*value_begin < *m_temp.begin()) {
+                if (cur_index == 0 || *value_begin < *m_temp.begin()) {
                     *m_temp.begin() = *value_begin;
                     *m_storage_begin = (storage_value_type)cur_index;
                 }
@@ -340,7 +365,7 @@ namespace hg {
             }
 
         private:
-            std::vector<storage_value_type> m_temp;
+            std::vector<input_value_type> m_temp;
             index_t cur_index;
             S m_storage_begin;
             S m_storage_end;
@@ -348,29 +373,35 @@ namespace hg {
 
 
         /**
-         * Argmax accumulator
-         * @tparam S the storage type
-         * @tparam vectorial bool: is dimension of storage > 0 (different from scalar)
+         * Argmax accumulator: position of the largest value in the accumulated sequence (-1 if the sequence is empty)
+         * @tparam S the storage type (a single index)
+         * @tparam V the value type of the accumulated values
+         * @tparam vectorial bool: do the accumulated values have several components (compared component-wise)
          */
-        template<typename S, bool vectorial = true>
+        template<typename S, typename V, bool vectorial = true>
         struct acc_argmax_impl {
             using value_type = hg::index_t;
-            using self_type = acc_argmin_impl<S, vectorial>;
+            using self_type = acc_argmax_impl<S, V, vectorial>;
             static const bool is_vectorial = vectorial;
             using storage_value_type = typename std::iterator_traits<S>::value_type;
+            using input_value_type = V;
 
-
-            acc_argmax_impl(S storage_begin, S storage_end) :
+            /**
+             * @param storage_begin start of the output (a single index)
+             * @param storage_end end of the output
+             * @param input_row_size number of components of each accumulated value
+             */
+            acc_argmax_impl(S storage_begin, S storage_end, index_t input_row_size) :
+                    m_temp(vectorial ? input_row_size : 1),
                     m_storage_begin(storage_begin),
                     m_storage_end(storage_end) {
-                m_temp.resize(storage_end - storage_begin);
             }
 
             template<typename ...Args>
             void initialize(Args &&...) {
                 *m_storage_begin = -1;
                 cur_index = 0;
-                std::fill(m_temp.begin(), m_temp.end(), std::numeric_limits<storage_value_type>::lowest());
+                std::fill(m_temp.begin(), m_temp.end(), std::numeric_limits<input_value_type>::lowest());
             }
 
             template<typename T1 = self_type, typename T, typename ...Args>
@@ -380,9 +411,11 @@ namespace hg {
                 auto t = m_temp.begin();
                 auto v = value_begin;
                 bool flag = true;
-                for (; flag && t != m_temp.end(); t++, v++) {
-                    if (*t > *v)
-                        flag = false;
+                if (cur_index != 0) {
+                    for (; flag && t != m_temp.end(); t++, v++) {
+                        if (*t > *v)
+                            flag = false;
+                    }
                 }
                 if (flag) {
                     t = m_temp.begin();
@@ -400,7 +433,7 @@ namespace hg {
             std::enable_if_t<!T1::is_vectorial>
             accumulate(T value_begin, Args &&...) {
 
-                if (*value_begin > *m_temp.begin()) {
+                if (cur_index == 0 || *value_begin > *m_temp.begin()) {
                     *m_temp.begin() = *value_begin;
                     *m_storage_begin = (storage_value_type)cur_index;
                 }
@@ -424,7 +457,7 @@ namespace hg {
             }
 
         private:
-            std::vector<storage_value_type> m_temp;
+            std::vector<input_value_type> m_temp;
             index_t cur_index;
             S m_storage_begin;
             S m_storage_end;
@@ -450,6 +483,7 @@ namespace hg {
             template<typename ...Args>
             void initialize(Args &&...) {
                 m_first = true;
+                std::fill(m_storage_begin, m_storage_end, value_type(0));
             }
 
             template<typename T, typename ...Args>
@@ -502,7 +536,7 @@ namespace hg {
 
             template<typename ...Args>
             void initialize(Args &&...) {
-
+                std::fill(m_storage_begin, m_storage_end, value_type(0));
             }
 
             template<typename T1 = self_type, typename T, typename ...Args>
@@ -724,37 +758,114 @@ namespace hg {
 
     struct accumulator_argmin {
 
-        template<bool vectorial = true, typename S>
-        auto make_accumulator(S &storage) const {
-            using value_type = index_t;
+        /**
+         * @tparam vectorial true if the accumulated values have several components
+         * @tparam input_value_t value type of the accumulated values (defaults to the value type of the storage)
+         * @param storage output storage: a single index
+         * @param input_row_size number of components of each accumulated value
+         */
+        template<bool vectorial = true, typename input_value_t = void, typename S>
+        auto make_accumulator(S &storage, index_t input_row_size = 1) const {
             using iterator_type = decltype(storage.begin());
-            return accumulator_detail::acc_argmin_impl<iterator_type, vectorial>(
+            using storage_value_type = typename std::iterator_traits<iterator_type>::value_type;
+            using value_type = std::conditional_t<std::is_void<input_value_t>::value,
+                                                  storage_value_type, input_value_t>;
+            return accumulator_detail::acc_argmin_impl<iterator_type, value_type, vectorial>(
                     storage.begin(),
-                    storage.end());
+                    storage.end(),
+                    input_row_size);
         }
 
         template<typename shape_t>
         static
-        auto get_output_shape(const shape_t &input_shape) {
-            return input_shape;
+        auto get_output_shape(const shape_t &) {
+            return std::vector<std::size_t>();
         }
     };
 
     struct accumulator_argmax {
 
-        template<bool vectorial = true, typename S>
-        auto make_accumulator(S &storage) const {
-            using value_type = index_t;
+        /**
+         * @tparam vectorial true if the accumulated values have several components
+         * @tparam input_value_t value type of the accumulated values (defaults to the value type of the storage)
+         * @param storage output storage: a single index
+         * @param input_row_size number of components of each accumulated value
+         */
+        template<bool vectorial = true, typename input_value_t = void, typename S>
+        auto make_accumulator(S &storage, index_t input_row_size = 1) const {
             using iterator_type = decltype(storage.begin());
-            return accumulator_detail::acc_argmax_impl<iterator_type, vectorial>(
+            using storage_value_type = typename std::iterator_traits<iterator_type>::value_type;
+            using value_type = std::conditional_t<std::is_void<input_value_t>::value,
+                                                  storage_value_type, input_value_t>;
+            return accumulator_detail::acc_argmax_impl<iterator_type, value_type, vectorial>(
                     storage.begin(),
-                    storage.end());
+                    storage.end(),
+                    input_row_size);
         }
 
         template<typename shape_t>
         static
-        auto get_output_shape(const shape_t &input_shape) {
-            return input_shape;
+        auto get_output_shape(const shape_t &) {
+            return std::vector<std::size_t>();
         }
     };
+
+    /**
+     * Value type of the result of an accumulator applied to values of type T: T by default, index_t for the
+     * counter, argmin and argmax accumulators.
+     */
+    template<typename accumulator_t, typename T>
+    struct accumulator_output_value {
+        using type = T;
+    };
+
+    template<typename T>
+    struct accumulator_output_value<accumulator_counter, T> {
+        using type = index_t;
+    };
+
+    template<typename T>
+    struct accumulator_output_value<accumulator_argmin, T> {
+        using type = index_t;
+    };
+
+    template<typename T>
+    struct accumulator_output_value<accumulator_argmax, T> {
+        using type = index_t;
+    };
+
+    template<typename accumulator_t, typename T>
+    using accumulator_output_value_t = typename accumulator_output_value<std::decay_t<accumulator_t>, T>::type;
+
+    /**
+     * True for the accumulators whose result is the position of a value in the accumulated sequence
+     * (argmin and argmax): their result cannot be accumulated again with the accumulated values.
+     */
+    template<typename accumulator_t>
+    struct is_index_accumulator : std::false_type {
+    };
+
+    template<>
+    struct is_index_accumulator<accumulator_argmin> : std::true_type {
+    };
+
+    template<>
+    struct is_index_accumulator<accumulator_argmax> : std::true_type {
+    };
+
+    namespace accumulator_detail {
+
+        /**
+         * Creates an accumulator writing in the given storage and accumulating values of type input_value_t
+         * with input_row_size components each.
+         */
+        template<bool vectorial, typename input_value_t, typename accumulator_t, typename S>
+        auto make_accumulator(const accumulator_t &accumulator, S &storage, index_t input_row_size) {
+            if constexpr (is_index_accumulator<std::decay_t<accumulator_t>>::value) {
+                return accumulator.template make_accumulator<vectorial, input_value_t>(storage, input_row_size);
+            } else {
+                return accumulator.template make_accumulator<vectorial>(storage);
+            }
+        }
+    }
 }
