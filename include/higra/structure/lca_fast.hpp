@@ -51,6 +51,29 @@ namespace hg {
             }
 
             /**
+             * Copy: the range minimum query solver of the copy reads the Euler tour of the copy.
+             */
+            lca_rmq(const lca_rmq &other) :
+                    m_tree_Euler_tour_map(other.m_tree_Euler_tour_map),
+                    m_tree_Euler_tour_depth(other.m_tree_Euler_tour_depth),
+                    m_first_visit_in_Euler_tour(other.m_first_visit_in_Euler_tour),
+                    m_rmq_solver(other.m_rmq_solver) {
+                m_rmq_solver.rebind(m_tree_Euler_tour_depth.data());
+            }
+
+            lca_rmq &operator=(const lca_rmq &other) {
+                if (this != &other) {
+                    *this = lca_rmq(other);
+                }
+                return *this;
+            }
+
+            // A move keeps the storage of the Euler tour, which the solver keeps reading.
+            lca_rmq(lca_rmq &&other) = default;
+
+            lca_rmq &operator=(lca_rmq &&other) = default;
+
+            /**
              * Return the lowest common ancestor of two nodes
              * @param n1
              * @param n2
