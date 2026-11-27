@@ -93,6 +93,28 @@ class TestGraphAccumulator(unittest.TestCase):
         self.assertEqual(res.dtype, np.int64)
         np.testing.assert_array_equal(res, (1, 1, 0))
 
+    def test_accumulate_graph_integer_mean_large_degree(self):
+        for n in (256, 257):
+            g = hg.UndirectedGraph(n + 1)
+            g.add_edges(np.zeros(n, dtype=np.int64), np.arange(1, n + 1, dtype=np.int64))
+            for shape in ((), (2,)):
+                edge_weights = np.zeros((n,) + shape, dtype=np.uint8)
+                edge_weights[0] = n - 256  # sum 0 or 1: integer mean 0
+                res = hg.accumulate_graph_edges(g, edge_weights, hg.Accumulators.mean)
+                self.assertEqual(res.dtype, np.uint8)
+                np.testing.assert_array_equal(res[0], np.zeros(shape))
+                vertex_weights = np.zeros((n + 1,) + shape, dtype=np.uint8)
+                vertex_weights[1] = n - 256
+                res = hg.accumulate_graph_vertices(g, vertex_weights, hg.Accumulators.mean)
+                self.assertEqual(res.dtype, np.uint8)
+                np.testing.assert_array_equal(res[0], np.zeros(shape))
+
+        g = hg.UndirectedGraph(129)
+        g.add_edges(np.zeros(128, dtype=np.int64), np.arange(1, 129, dtype=np.int64))
+        w = np.zeros(128, dtype=np.int16)
+        w[0] = -257  # integer mean truncated toward zero
+        self.assertEqual(hg.accumulate_graph_edges(g, w, hg.Accumulators.mean)[0], -2)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -31,7 +31,7 @@ namespace accumulator {
         using output_t = hg::accumulator_output_value_t<acc_t, double>;
         auto storage = hg::array_nd<output_t>::from_shape(hg::array_shape::from(out_shape));
         auto acc = hg::accumulator_detail::make_accumulator<vec, double>(
-                accFactory, storage, hg::accumulator_detail::row_size(data_shape));
+                accFactory, storage, hg::details::light_axis_view_row_size(values));
         acc.initialize();
 
         for (hg::index_t i = 0; i < num_values; i++) {

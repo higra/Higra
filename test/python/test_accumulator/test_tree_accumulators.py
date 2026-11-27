@@ -278,6 +278,14 @@ class TestTreeAccumulators(unittest.TestCase):
         self.assertEqual(res.dtype, np.float64)
         np.testing.assert_array_equal(res, (2, 2.5, 2, 4.5, 2, 2, 7.5, 8.5))
 
+    def test_integer_mean_many_children(self):
+        tree = hg.Tree(np.full(257, 256))
+        res = hg.accumulate_parallel(tree, np.zeros(257, dtype=np.uint8), hg.Accumulators.mean)
+        self.assertEqual(res.dtype, np.uint8)
+        self.assertEqual(res[256], 0)
+        res = hg.accumulate_at(np.zeros(256, dtype=np.int64), np.zeros(256, dtype=np.uint8), hg.Accumulators.mean)
+        np.testing.assert_array_equal(res, (0,))
+
 
 if __name__ == '__main__':
     unittest.main()

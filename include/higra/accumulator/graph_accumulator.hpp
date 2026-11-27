@@ -31,7 +31,7 @@ namespace hg {
             hg_assert_edge_weights(graph, input);
 
             auto data_shape = std::vector<size_t>(input.shape().begin() + 1, input.shape().end());
-            const index_t input_row_size = accumulator_detail::row_size(data_shape);
+            const index_t input_row_size = details::light_axis_view_row_size(input);
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(graph));
 
@@ -67,7 +67,7 @@ namespace hg {
             hg_assert_vertex_weights(graph, input);
 
             auto data_shape = std::vector<size_t>(input.shape().begin() + 1, input.shape().end());
-            const index_t input_row_size = accumulator_detail::row_size(data_shape);
+            const index_t input_row_size = details::light_axis_view_row_size(input);
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), num_vertices(graph));
 

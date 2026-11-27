@@ -9,6 +9,8 @@
 ****************************************************************************/
 #include "../test_utils.hpp"
 #include <limits>
+#include <utility>
+#include <vector>
 #include <type_traits>
 #include "higra/accumulator/at_accumulator.hpp"
 
@@ -98,5 +100,41 @@ namespace accumulator {
         REQUIRE((argmin == array_1d<index_t>{299}));
         REQUIRE((argmax == array_1d<index_t>{298}));
         REQUIRE((counter == array_1d<index_t>{300}));
+    }
+
+    TEST_CASE("test at_accumulator integer mean with many values", "at_accumulator") {
+        array_1d<index_t> indices = hg::zeros<index_t>({256});
+        array_1d<unsigned char> weights = hg::zeros<unsigned char>({256});
+        REQUIRE((accumulate_at(indices, weights, accumulator_mean()) == array_1d<unsigned char>{0}));
+        array_1d<short> weights2 = hg::zeros<short>({256});
+        weights2(0) = 511;
+        REQUIRE((accumulate_at(indices, weights2, accumulator_mean()) == array_1d<short>{1}));
+    }
+
+    TEST_CASE("test at_accumulator zero-element weights with large dimensions", "at_accumulator") {
+        const index_t big = (index_t) 1 << 32;
+        array_1d<index_t> one_index{0};
+        array_1d<index_t> no_index = hg::zeros<index_t>({0});
+        std::vector<std::pair<array_1d<index_t>, std::vector<index_t>>> cases{
+                {one_index, {1, big, big, 0}},
+                {one_index, {1, 0, big, big}},
+                {no_index,  {0, big, big}},
+        };
+        for (auto &c: cases) {
+            auto weights = array<double>(array_shape::from(c.second), 0);
+            for (auto acc_res: {accumulate_at(c.first, weights, accumulator_sum()),
+                                accumulate_at(c.first, weights, accumulator_first())}) {
+                auto expected = c.second;
+                expected[0] = (index_t) c.first.size();
+                REQUIRE(acc_res.size() == 0);
+                REQUIRE(std::equal(acc_res.shape().begin(), acc_res.shape().end(), expected.begin(), expected.end()));
+            }
+            auto argmin = accumulate_at(c.first, weights, accumulator_argmin());
+            REQUIRE((index_t) argmin.size() == (index_t) c.first.size());
+            if (argmin.size() > 0) {
+                // one value (with zero components) is accumulated in row 0
+                REQUIRE(argmin(0) == 0);
+            }
+        }
     }
 }

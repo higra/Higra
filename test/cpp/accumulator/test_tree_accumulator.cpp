@@ -528,4 +528,24 @@ namespace tree_accumulator {
                              (7 + 5) / 2., (7 + 6) / 2., 7};
         REQUIRE(hg::allclose(propagated, ref));
     }
+
+    TEST_CASE("integer mean with many children", "[tree_accumulator]") {
+        array_1d<index_t> parents = hg::zeros<index_t>({257});
+        for (auto &p: parents) {
+            p = 256;
+        }
+        hg::tree tree(parents);
+        array_1d<unsigned char> input = hg::zeros<unsigned char>({257});
+        auto res = accumulate_parallel(tree, input, hg::accumulator_mean());
+        static_assert(std::is_same<typename decltype(res)::value_type, unsigned char>::value);
+        REQUIRE(res(256) == 0);
+        array_2d<signed char> input2 = hg::zeros<signed char>({257, 2});
+        input2(0, 0) = -3;   // 256 children: -3 / 256 truncated to 0
+        input2(0, 1) = 100;  // 100 / 256 truncated to 0
+        auto res2 = accumulate_parallel(tree, input2, hg::accumulator_mean());
+        REQUIRE((res2(256, 0) == 0 && res2(256, 1) == 0));
+        array_1d<short> input3 = hg::zeros<short>({257});
+        input3(0) = -300;    // -300 / 256 truncated to -1
+        REQUIRE(accumulate_parallel(tree, input3, hg::accumulator_mean())(256) == -1);
+    }
 }

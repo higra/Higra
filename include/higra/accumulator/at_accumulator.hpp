@@ -38,7 +38,7 @@ namespace hg {
                 size = (std::max)(size, indices[i] + 1);
             }
             auto data_shape = std::vector<size_t>(weights.shape().begin() + 1, weights.shape().end());
-            const index_t input_row_size = accumulator_detail::row_size(data_shape);
+            const index_t input_row_size = details::light_axis_view_row_size(weights);
             auto output_shape = accumulator_t::get_output_shape(data_shape);
             output_shape.insert(output_shape.begin(), size);
             array_nd<output_t> res = array_nd<output_t>::from_shape(array_shape::from(output_shape));

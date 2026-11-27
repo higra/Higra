@@ -190,7 +190,7 @@ namespace hg {
             finalize(Args &&...) const {
                 if (m_counter != 0) {
                     for (auto s = m_storage_begin; s != m_storage_end; s++) {
-                        *s /= (value_type) m_counter;
+                        *s = divide(*s, m_counter);
                     }
                 }
             }
@@ -199,7 +199,7 @@ namespace hg {
             typename std::enable_if_t<!T::is_vectorial>
             finalize(Args &&...) const {
                 if (m_counter != 0) {
-                    *m_storage_begin /= (value_type) m_counter;
+                    *m_storage_begin = divide(*m_storage_begin, m_counter);
                 }
             }
 
@@ -215,6 +215,20 @@ namespace hg {
             }
 
         private:
+            /**
+             * Divides a sum by a nonzero count without converting the count to the value type, where it could
+             * become zero or change sign (e.g. 256 values of type uint8). Integer division truncates toward zero.
+             */
+            static value_type divide(value_type sum, std::size_t count) {
+                if constexpr (std::is_floating_point<value_type>::value) {
+                    return sum / (value_type) count;
+                } else if constexpr (std::is_signed<value_type>::value) {
+                    return (value_type) ((long long) sum / (long long) count);
+                } else {
+                    return (value_type) ((unsigned long long) sum / (unsigned long long) count);
+                }
+            }
+
             std::size_t m_counter;
             S m_storage_begin;
             S m_storage_end;
@@ -840,18 +854,6 @@ namespace hg {
     };
 
     namespace accumulator_detail {
-
-        /**
-         * Number of components of a value of the given shape (1 for a scalar).
-         */
-        template<typename shape_t>
-        index_t row_size(const shape_t &value_shape) {
-            index_t size = 1;
-            for (auto s: value_shape) {
-                size *= (index_t) s;
-            }
-            return size;
-        }
 
         /**
          * Creates an accumulator writing in the given storage and accumulating values of type input_value_t

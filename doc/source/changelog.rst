@@ -50,6 +50,10 @@ Unreleased
 - Fix :func:`~higra.accumulate_graph_edges` and :func:`~higra.accumulate_graph_vertices` with
   :attr:`Accumulators.mean <higra.Accumulators.mean>`, which returned the sum instead of the mean.
 
+- Fix :attr:`Accumulators.mean <higra.Accumulators.mean>` with integer values when the number of values does not fit
+  in their dtype (for example 256 values of dtype ``uint8``): the process crashed with a division by zero, or the mean
+  was wrong. The mean of integer values is still computed in their dtype and truncated toward zero.
+
 - :attr:`Accumulators.first <higra.Accumulators.first>` and :attr:`Accumulators.last <higra.Accumulators.last>` give
   0 for an empty list of values: leaves in :func:`~higra.accumulate_parallel`, rows of :func:`~higra.accumulate_at`
   that no index reaches, vertices without edges in the graph accumulators. These values were previously undefined.
