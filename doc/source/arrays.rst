@@ -128,6 +128,10 @@ it must not outlive its array, and it must not be used after the array is resize
     s.fill(1.0);                      // sets rows 1 and 2 of a to 1
     array<double> copy(s);            // owning copy of the elements of a view
 
+A view of elements stored elsewhere, for example in a buffer owned by another library, is created from a pointer and
+a shape: ``array_view<const double> v(ptr, {4, 3});``. The pointer must refer to at least as many elements as the
+product of the dimensions, and this product must fit in an ``index_t``. Neither condition is checked.
+
 A view obtained from a mutable array is mutable (``array_view<double>`` above); a view obtained from a const array is
 read-only. Creating a mutable view of a const array or of a temporary array is a compile-time error. A read-only view
 of a temporary array is allowed, so that temporaries can be passed to functions, but it becomes invalid at the end of

@@ -81,6 +81,11 @@ namespace hg {
 
         /**
          * View of the elements ``data[0 .. shape.numel())`` with the given shape.
+         *
+         * Precondition: ``data`` points to at least ``shape.numel()`` elements, and the product of the
+         * dimensions of ``shape`` is representable as ``index_t``. Neither is checked: an overflowing
+         * product gives a wrong ``size()``. Use ``array_internal::checked_numel`` first if the shape comes from
+         * an untrusted source.
          */
         HG_HOST_DEVICE array_view(const T *data, const array_shape &shape, hg::device dev = cpu_device) noexcept:
                 m_data(data), m_shape(shape), m_size(shape.numel()), m_device(dev) {
@@ -305,6 +310,10 @@ namespace hg {
 
         HG_HOST_DEVICE array_view() noexcept = default;
 
+        /**
+         * Mutable view of the elements ``data[0 .. shape.numel())``; same precondition as the constructor of
+         * ``array_view<const T>`` (not checked).
+         */
         HG_HOST_DEVICE array_view(T *data, const array_shape &shape, hg::device dev = cpu_device) noexcept:
                 base_type(data, shape, dev) {
         }
