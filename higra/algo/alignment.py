@@ -109,10 +109,9 @@ def project_fine_to_coarse_labelisation(labelisation_fine, labelisation_coarse, 
     Find for each label (ie region) of the fine labelisation, the label of the region in the
     coarse labelisation that maximises the intersection with the fine region.
 
-    Pre-condition:
-
-        - :math:`range(labelisation\_fine) = [0, \ldots, num\_regions\_fine[`
-        - :math:`range(labelisation\_coarse) = [0, \ldots, num\_regions\_coarse[`
+    The labels of :attr:`labelisation_fine` must be in :math:`[0, \ldots, num\_regions\_fine[` and the labels of
+    :attr:`labelisation_coarse` in :math:`[0, \ldots, num\_regions\_coarse[`: a :class:`RuntimeError` is raised
+    otherwise, in particular for any negative label.
 
     Then, for all label :math:`i \in [0, \ldots, num\_regions\_fine[`,
 
@@ -121,11 +120,11 @@ def project_fine_to_coarse_labelisation(labelisation_fine, labelisation_coarse, 
         result(i) = \\arg \max_{j \in [0, \ldots, num\_regions\_coarse[} | (fine\_labelisation == i) \cap (coarse\_labelisation == j) |
 
 
-    If :attr:`num_regions_fine` or :attr:`num_regions_coarse` are not provided, they will be determined as
+    If :attr:`num_regions_fine` or :attr:`num_regions_coarse` are not provided (or equal to 0), they will be determined as
     :math:`max(labelisation\_fine) + 1` and  :math:`max(labelisation\_coarse) + 1`
 
-    :param labelisation_fine: 1d array of positive integers
-    :param labelisation_coarse: 1d array of positive integers (same length as :attr:`labelisation_fine`)
+    :param labelisation_fine: 1d array of non-negative integers
+    :param labelisation_coarse: 1d array of non-negative integers (same length as :attr:`labelisation_fine`)
     :param num_regions_fine: optional, number of different labels in :attr:`labelisation_fine`
     :param num_regions_coarse: optional, number of different labels in :attr:`labelisation_coarse`
     :return: a 1d array mapping fine labels to coarse labels

@@ -137,4 +137,35 @@ namespace test_alignment {
         REQUIRE((project_fine_to_coarse_labelisation(empty, empty, 2, 3) == array_1d<index_t>{0, 0}));
         REQUIRE((project_fine_to_coarse_labelisation(labels, labels) == array_1d<index_t>{0}));
     }
+
+    TEMPLATE_TEST_CASE("project fine to coarse labelisation invalid labels", "[alignment]",
+                       int8_t, int32_t, int64_t) {
+        using T = TestType;
+        auto check_throws = [](const array_1d<T> &fine, const array_1d<T> &coarse,
+                               size_t num_fine = 0, size_t num_coarse = 0) {
+            REQUIRE_THROWS_AS(project_fine_to_coarse_labelisation(fine, coarse, num_fine, num_coarse),
+                              std::runtime_error);
+        };
+        // negative labels, whatever the maximum
+        check_throws({-1, -1}, {0, 0});
+        check_throws({0, -1}, {0, 0});
+        check_throws({0, 0}, {-1, -1});
+        check_throws({0, 0}, {0, -1});
+        check_throws({1, -5}, {0, 1});
+        // labels not smaller than an explicit number of regions
+        check_throws({0, 1}, {0, 0}, 1, 0);
+        check_throws({0, 0}, {0, 1}, 0, 1);
+        check_throws({0, 3}, {0, 1}, 2, 2);
+        REQUIRE((project_fine_to_coarse_labelisation(array_1d<T>{0, 1}, array_1d<T>{1, 0}, 3, 2) ==
+                 array_1d<index_t>{1, 0, 0}));
+    }
+
+    TEMPLATE_TEST_CASE("project fine to coarse labelisation labels above number of regions", "[alignment]",
+                       uint8_t, uint64_t) {
+        array_1d<TestType> fine{0, 1};
+        array_1d<TestType> coarse{0, 0};
+        REQUIRE_THROWS_AS(project_fine_to_coarse_labelisation(fine, coarse, 1), std::runtime_error);
+        REQUIRE_THROWS_AS(project_fine_to_coarse_labelisation(coarse, fine, 0, 1), std::runtime_error);
+        REQUIRE((project_fine_to_coarse_labelisation(fine, coarse, 2, 1) == array_1d<index_t>{0, 0}));
+    }
 }
