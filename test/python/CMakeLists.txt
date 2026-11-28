@@ -16,6 +16,7 @@ set(PY_FILES
         test_concept.py
         test_data_cache.py
         test_hg_utils.py
+        test_parallel.py
         test_sorting.py)
 
 REGISTER_PYTHON_MODULE_FILES("${PY_FILES}")

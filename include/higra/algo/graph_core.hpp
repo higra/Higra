@@ -144,7 +144,7 @@ namespace hg {
 
         union_find uf(num_points);
 
-        size_t num_edge_found = 0;
+        index_t num_edge_found = 0;
         index_t i = 0;
 
         while (num_edge_found < num_edge_mst_max && i < (index_t) sorted_edges_indices.size()) {

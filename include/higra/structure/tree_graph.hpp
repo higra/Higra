@@ -78,7 +78,7 @@ namespace hg {
 
             // VertexListGraph associated types
             using vertex_iterator = counting_iterator<vertex_descriptor>;
-            using vertices_size_type = size_t;
+            using vertices_size_type = index_t;
 
             //AdjacencyGraph associated types
             using adjacency_iterator = tree_graph_adjacent_vertex_iterator<false>;
@@ -90,7 +90,7 @@ namespace hg {
             //using in_edge_index_iterator = out_edge_index_iterator;
 
             // EdgeListGraph associated types
-            using edges_size_type = size_t;
+            using edges_size_type = index_t;
             using _edge_iterator_transform_function = std::function<edge_descriptor(edge_index_t)>;
             using edge_iterator = transform_forward_iterator <_edge_iterator_transform_function,
             counting_iterator<vertex_descriptor>, edge_descriptor>;
@@ -101,7 +101,7 @@ namespace hg {
             using out_edge_iterator = transform_forward_iterator<out_iterator_transform_function,
                     tree_graph_adjacent_vertex_iterator<false>,
                     edge_descriptor>;
-            using degree_size_type = size_t;
+            using degree_size_type = index_t;
 
             //BidirectionalGraph associated types
             using in_edge_iterator = out_edge_iterator;
@@ -164,11 +164,11 @@ namespace hg {
                 return _children[v - _num_leaves];
             }
 
-            size_t num_children(const vertex_descriptor v) const {
+            index_t num_children(const vertex_descriptor v) const {
                 if (v < _num_leaves) {
                     return 0;
                 }
-                return _children[v - _num_leaves].size();
+                return static_cast<index_t>(_children[v - _num_leaves].size());
             }
 
             vertex_descriptor root() const {
@@ -206,7 +206,7 @@ namespace hg {
 
             auto leaves_to_root_iterator(leaves_it leaves_opt = leaves_it::include,
                                          root_it root_opt = root_it::include) const {
-                const index_t num_vertices = (index_t) _num_vertices;
+                const index_t num_vertices = _num_vertices;
                 vertex_descriptor start = (leaves_opt == leaves_it::include) ? 0 : num_leaves();
                 vertex_descriptor end = (root_opt == root_it::include) ? num_vertices : num_vertices - 1;
                 // irange does not yield an empty range when stop is before start (empty or single node tree)
@@ -215,7 +215,7 @@ namespace hg {
 
             auto root_to_leaves_iterator(leaves_it leaves_opt = leaves_it::include,
                                          root_it root_opt = root_it::include) const {
-                const index_t num_vertices = (index_t) _num_vertices;
+                const index_t num_vertices = _num_vertices;
                 vertex_descriptor end = (leaves_opt == leaves_it::include) ? -1 : num_leaves() - 1;
                 vertex_descriptor start = (root_opt == root_it::include) ? num_vertices - 1 : num_vertices - 2;
                 // irange does not yield an empty range when stop is after start (empty or single node tree)
@@ -240,7 +240,7 @@ namespace hg {
 
             void compute_children() const {
                 if (!_children_computed) {
-                    _children.resize(_num_vertices - _num_leaves);
+                    _children.resize(static_cast<std::size_t>(_num_vertices - _num_leaves));
                     for (vertex_descriptor v = 0; v < _root; ++v) {
                         vertex_descriptor parent_v = _parents(v);
                         _children[parent_v - _num_leaves].push_back(v);
@@ -263,7 +263,7 @@ namespace hg {
              * ``i`` except the root. Returns a new array ``[0, 1, ..., num_vertices - 2]``.
              */
             array_1d<index_t> sources() const {
-                return hg::arange<index_t>(0, (index_t) num_edges());
+                return hg::arange<index_t>(0, num_edges());
             }
 
             /**
@@ -272,7 +272,7 @@ namespace hg {
              * and is not modified or moved.
              */
             auto targets() const {
-                return _parents.slice(0, (index_t) num_edges());
+                return _parents.slice(0, num_edges());
             }
 
 
@@ -329,12 +329,12 @@ namespace hg {
                         num_leaves++;
                     }
                 }
-                _num_leaves = (size_t) num_leaves;
+                _num_leaves = num_leaves;
             }
 
 
             vertex_descriptor _root;
-            size_t _num_vertices;
+            index_t _num_vertices;
             index_t _num_leaves;
             array_1d <vertex_descriptor> _parents;
             mutable bool _children_computed;
@@ -497,8 +497,8 @@ namespace hg {
         hg_assert_1d_array(vertices);
         hg_assert_integral_value_type(vertices);
 
-        array_1d <size_t> result = hg::empty<size_t>({vertices.size()});
-        for (index_t j = 0; j < (index_t) vertices.size(); j++) {
+        array_1d <index_t> result = hg::empty<index_t>({vertices.size()});
+        for (index_t j = 0; j < vertices.size(); j++) {
             result(j) = num_children(vertices(j), t);
         }
         return result;

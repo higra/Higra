@@ -630,7 +630,7 @@ namespace hg {
 
         for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
             optimal_energies.push_back(optimal_energies[child(0, i, tree)]);
-            for (index_t c = 1; c < (index_t) num_children(i, tree); c++) {
+            for (index_t c = 1; c < num_children(i, tree); c++) {
                 optimal_energies[i] = optimal_energies[i].sum(optimal_energies[child(c, i, tree)],
                                                               approximation_piecewise_linear_function);
             }

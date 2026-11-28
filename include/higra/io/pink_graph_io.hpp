@@ -131,12 +131,12 @@ namespace hg {
         out << "val sommets\n";
 
         if (vertex_values.size() == 0) {
-            for (std::size_t i = 0; i < num_vertices(graph); ++i) {
+            for (index_t i = 0; i < num_vertices(graph); ++i) {
                 out << i << " 1\n";
             }
         } else {
             hg_assert_vertex_weights(graph, vertex_values);
-            for (std::size_t i = 0; i < num_vertices(graph); ++i) {
+            for (index_t i = 0; i < num_vertices(graph); ++i) {
                 out << i << " " << vertex_values(i) << "\n";
             }
         }

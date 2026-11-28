@@ -26,9 +26,9 @@ namespace test_alignment {
 
         std::set<index_t> edge_set{4, 2, 1};
 
-        size_t n = num_vertices(g) / 2;
-        REQUIRE(edges.size() == (index_t) n);
-        for (index_t i = 0; i < (index_t) n; ++i) {
+        index_t n = num_vertices(g) / 2;
+        REQUIRE(edges.size() == n);
+        for (index_t i = 0; i < n; ++i) {
             REQUIRE(edge_set.count(edges[i]) == 1);
             edge_set.erase(edges[i]);
         }
@@ -44,9 +44,9 @@ namespace test_alignment {
 
         std::set<index_t> edge_set{4, 0, 5};
 
-        size_t n = num_vertices(g) / 2;
-        REQUIRE(edges.size() == (index_t) n);
-        for (index_t i = 0; i < (index_t) n; ++i) {
+        index_t n = num_vertices(g) / 2;
+        REQUIRE(edges.size() == n);
+        for (index_t i = 0; i < n; ++i) {
             REQUIRE(edge_set.count(edges[i]) == 1);
             edge_set.erase(edges[i]);
         }

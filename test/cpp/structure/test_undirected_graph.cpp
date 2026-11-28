@@ -37,6 +37,70 @@ namespace test_undirected_graph {
 
     };
 
+    TEST_CASE("graph and tree sizes are signed indices", "[undirected_graph][tree][regular_graph]") {
+        using rgraph = hg::regular_grid_graph_2d;
+        static_assert(std::is_same_v<graph_traits<hg::ugraph>::vertices_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<hg::ugraph>::edges_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<hg::ugraph>::degree_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<hg::tree>::vertices_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<hg::tree>::edges_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<hg::tree>::degree_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<rgraph>::vertices_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<rgraph>::degree_size_type, index_t>);
+
+        static_assert(std::is_same_v<decltype(num_vertices(std::declval<const hg::ugraph &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_edges(std::declval<const hg::ugraph &>())), index_t>);
+        static_assert(std::is_same_v<decltype(degree(index_t(0), std::declval<const hg::ugraph &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_vertices(std::declval<const hg::tree &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_edges(std::declval<const hg::tree &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_leaves(std::declval<const hg::tree &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_children(index_t(0), std::declval<const hg::tree &>())), index_t>);
+        static_assert(std::is_same_v<decltype(degree(index_t(0), std::declval<const hg::tree &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_vertices(std::declval<const rgraph &>())), index_t>);
+        static_assert(std::is_same_v<decltype(out_degree(index_t(0), std::declval<const rgraph &>())), index_t>);
+
+        // vectorized versions
+        hg::ugraph g(3);
+        g.add_edge(0, 1);
+        const array_1d<index_t> vertices{0, 2};
+        static_assert(std::is_same_v<decltype(degree(vertices, g))::value_type, index_t>);
+        hg::tree t(array_1d<index_t>{2, 2, 2});
+        static_assert(std::is_same_v<decltype(num_children(vertices, t))::value_type, index_t>);
+
+        // empty and single-node trees have no edge
+        REQUIRE(num_edges(hg::tree()) == 0);
+        REQUIRE(num_edges(hg::tree(array_1d<index_t>{0})) == 0);
+    }
+
+    TEST_CASE("undirected graph rejects negative sizes", "[undirected_graph]") {
+        REQUIRE_THROWS(ugraph(-1));
+        ugraph g(2);
+        REQUIRE_THROWS(g.add_vertices(-1));
+        REQUIRE_THROWS(add_vertices(-3, g));
+        REQUIRE(num_vertices(g) == 2);
+        add_vertices(0, g);
+        REQUIRE(num_vertices(g) == 2);
+        add_vertices(3, g);
+        REQUIRE(num_vertices(g) == 5);
+        REQUIRE(degree(4, g) == 0);
+    }
+
+    TEMPLATE_TEST_CASE("undirected graph rejects vertex counts that overflow", "[undirected_graph]",
+                       hg::ugraph, hg::undirected_graph<hg::hash_setS>) {
+        TestType g(1);
+        g.add_edge(0, 0);
+        const index_t max = std::numeric_limits<index_t>::max();
+        REQUIRE_THROWS(g.add_vertices(max));
+        REQUIRE_THROWS(add_vertices(max, g));
+        // representable but impossible to allocate: the graph is unchanged
+        REQUIRE_THROWS(g.add_vertices(max - 1));
+        REQUIRE(num_vertices(g) == 1);
+        REQUIRE(num_edges(g) == 1);
+        REQUIRE(degree(0, g) == 1);
+        REQUIRE(g.add_vertex() == 1);
+        REQUIRE(num_vertices(g) == 2);
+    }
+
     TEMPLATE_TEST_CASE("undirected graph size", "[undirected_graph]", hg::ugraph, hg::undirected_graph<hg::hash_setS>) {
 
         SECTION("check size") {
@@ -53,8 +117,8 @@ namespace test_undirected_graph {
 
             array_2d<index_t> indices{{0, 3},
                                       {1, 2}};
-            array_2d<size_t> ref{{2, 0},
-                                 {2, 2}};
+            array_2d<index_t> ref{{2, 0},
+                                  {2, 2}};
 
             REQUIRE(hg::allclose(degree(indices, g), ref));
             REQUIRE(hg::allclose(in_degree(indices, g), ref));
@@ -96,7 +160,7 @@ namespace test_undirected_graph {
                 for (auto e: hg::out_edge_iterator(v, g))
                     outListsTest[v].push_back({source(e, g), target(e, g)});
                 REQUIRE(vectorSame(outListsRef[v], outListsTest[v]));
-                REQUIRE(out_degree(v, g) == outListsRef[v].size());
+                REQUIRE(out_degree(v, g) == (index_t) outListsRef[v].size());
 
             }
         }
@@ -184,7 +248,7 @@ namespace test_undirected_graph {
 
             REQUIRE(num_edges(g2) == 3);
 
-            for (index_t i = 0; i < (index_t) num_edges(g2); i++) {
+            for (index_t i = 0; i < num_edges(g2); i++) {
                 auto e1 = edge_from_index(i, g);
                 auto e2 = edge_from_index(i, g2);
                 REQUIRE(e1 == e2);
@@ -411,7 +475,7 @@ namespace test_undirected_graph {
         const array_2d<int> weights{{10, 11}, {20, 21}, {30, 31}};
         auto retained = g.endpoint_storage();
         auto check = [&]() {
-            REQUIRE(g.num_edges() == expected.size());
+            REQUIRE(g.num_edges() == (index_t) expected.size());
             REQUIRE(g.endpoint_storage() == retained);
             index_t ei = 0;
             for (auto e: hg::edge_iterator(g)) {
@@ -447,7 +511,7 @@ namespace test_undirected_graph {
                 REQUIRE(vectorSame(incident, outgoing));
                 REQUIRE(vectorSame(incident, incoming));
                 REQUIRE(vectorSame(adjacent, actual_adjacent));
-                REQUIRE(g.degree(v) == incident.size());
+                REQUIRE(g.degree(v) == (index_t) incident.size());
             }
         };
         check();
@@ -487,7 +551,7 @@ namespace test_undirected_graph {
         REQUIRE(g.add_edge(3, 0).index == 3); // insertion never reuses a tombstone
         REQUIRE(g.num_edges() == 4);
         REQUIRE(g.edge_from_index(0).source == invalid_index);
-        while (g.num_edges() <= retained->edges.capacity()) g.add_edge(0, 1);
+        while (static_cast<std::size_t>(g.num_edges()) <= retained->edges.capacity()) g.add_edge(0, 1);
         REQUIRE(g.endpoint_storage() != retained);
         g.set_edge(0, 3, 2);
         g.remove_edge(0);
@@ -531,7 +595,7 @@ namespace test_undirected_graph {
         REQUIRE(g.endpoint_storage() == first);
         REQUIRE(first->edges[0].source == 2);
         REQUIRE(first->edges[0].target == 3);
-        while (g.num_edges() < capacity) {
+        while (static_cast<std::size_t>(g.num_edges()) < capacity) {
             g.add_edge(0, 0); // no relocation despite the exported generation
         }
         REQUIRE(g.endpoint_storage() == first);
@@ -550,7 +614,7 @@ namespace test_undirected_graph {
             auto retained = g.endpoint_storage();
             const auto size = retained->edges.size();
             const auto cap = retained->edges.capacity();
-            while (g.num_edges() <= cap) {
+            while (static_cast<std::size_t>(g.num_edges()) <= cap) {
                 g.add_edge(1, 2);
             }
             REQUIRE(retained->edges.size() == cap);
@@ -566,7 +630,7 @@ namespace test_undirected_graph {
         // Reacquire borrowed adapters after mutation; never read invalidated ones.
         REQUIRE(g.sources()(0) == invalid_index);
         REQUIRE(g.targets()(0) == invalid_index);
-        REQUIRE(g.degree(0) == capacity); // remaining self-loops plus edge at capacity
+        REQUIRE(static_cast<std::size_t>(g.degree(0)) == capacity); // remaining self-loops plus edge at capacity
 
         std::weak_ptr<const typename TestType::edge_storage> retired = first;
         first.reset();
@@ -579,7 +643,7 @@ namespace test_undirected_graph {
         std::weak_ptr<const typename TestType::edge_storage> unexported = g.endpoint_storage();
         auto before = unexported.lock().get();
         const auto cap = g.endpoint_storage()->edges.capacity();
-        while (g.num_edges() <= cap) {
+        while (static_cast<std::size_t>(g.num_edges()) <= cap) {
             g.add_edge(2, 3);
         }
         REQUIRE(g.endpoint_storage().get() == before);

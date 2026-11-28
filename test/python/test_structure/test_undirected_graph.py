@@ -44,6 +44,29 @@ class TestUndirectedGraph(unittest.TestCase):
         g.add_vertices(2)
         self.assertTrue(g.num_vertices() == 5)
 
+    def test_negative_sizes(self):
+        with self.assertRaises(TypeError):
+            hg.UndirectedGraph(-1)
+        g = hg.UndirectedGraph(2)
+        with self.assertRaises(TypeError):
+            g.add_vertices(-1)
+        self.assertEqual(g.num_vertices(), 2)
+        g.add_vertices(0)
+        self.assertEqual(g.num_vertices(), 2)
+        with self.assertRaises(RuntimeError):
+            g.add_vertices(2 ** 63)
+
+    def test_add_vertices_overflow(self):
+        for graph_type in (hg.UndirectedGraph, hg.UndirectedGraphOptimizedDelete):
+            g = graph_type(1)
+            g.add_edge(0, 0)
+            for num in (2 ** 63 - 1, 2 ** 63 - 2):
+                with self.assertRaises((RuntimeError, ValueError, MemoryError)):
+                    g.add_vertices(num)
+                self.assertEqual(g.num_vertices(), 1)
+                self.assertEqual(g.num_edges(), 1)
+                self.assertEqual(g.degree(0), 1)
+
     def test_add_edge(self):
         g = hg.UndirectedGraph(3)
         self.assertTrue(g.num_edges() == 0)
@@ -179,6 +202,11 @@ class TestUndirectedGraph(unittest.TestCase):
         self.assertTrue(np.allclose(g.degree(indices), ref))
         self.assertTrue(np.allclose(g.in_degree(indices), ref))
         self.assertTrue(np.allclose(g.out_degree(indices), ref))
+        for res in (g.degree(indices), g.in_degree(indices), g.out_degree(indices)):
+            self.assertEqual(res.dtype, np.int64)
+        self.assertIsInstance(g.degree(0), int)
+        self.assertIsInstance(g.num_vertices(), int)
+        self.assertIsInstance(g.num_edges(), int)
 
     def test_edge_index_iterator(self):
         g = TestUndirectedGraph.test_graph()

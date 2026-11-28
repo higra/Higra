@@ -204,7 +204,7 @@ namespace hg {
             HG_TRACE();
             hg_assert_node_weights(tree, altitudes);
             hg_assert_1d_array(altitudes);
-            hg_assert((index_t) num_leaves(tree) == m_fine_rag.vertex_map.size(),
+            hg_assert(num_leaves(tree) == m_fine_rag.vertex_map.size(),
                       "Cannot align given hierarchy: incompatible sizes!");
             auto sv_hierarchy = supervertices_hierarchy(tree, altitudes);
             using value_type = T;
@@ -226,7 +226,7 @@ namespace hg {
             HG_TRACE();
             hg_assert_edge_weights(graph, saliency_map);
             hg_assert_1d_array(saliency_map);
-            hg_assert((index_t) num_vertices(graph) == m_fine_rag.vertex_map.size(),
+            hg_assert(num_vertices(graph) == m_fine_rag.vertex_map.size(),
                       "Cannot align given hierarchy: incompatible sizes!");
             auto coarse_rag = make_region_adjacency_graph_from_graph_cut(graph, saliency_map);
             auto coarse_rag_edge_weights = rag_accumulate(coarse_rag.edge_map, saliency_map, accumulator_first());

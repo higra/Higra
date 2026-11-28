@@ -34,7 +34,7 @@ namespace graph_image {
             for (auto e: hg::out_edge_iterator(v, g))
                 outListsTest[v].push_back({source(e, g), target(e, g)});
             REQUIRE(vectorEqual(outListsRef[v], outListsTest[v]));
-            REQUIRE(out_degree(v, g) == outListsRef[v].size());
+            REQUIRE(out_degree(v, g) == (index_t) outListsRef[v].size());
         }
     }
 
@@ -56,7 +56,7 @@ namespace graph_image {
             for (auto e: hg::out_edge_iterator(v, g))
                 outListsTest[v].push_back({source(e, g), target(e, g)});
             REQUIRE(vectorEqual(outListsRef[v], outListsTest[v]));
-            REQUIRE(out_degree(v, g) == outListsRef[v].size());
+            REQUIRE(out_degree(v, g) == (index_t) outListsRef[v].size());
         }
     }
 
@@ -78,7 +78,7 @@ namespace graph_image {
             for (auto e: hg::out_edge_iterator(v, g))
                 outListsTest[v].push_back({source(e, g), target(e, g)});
             REQUIRE(vectorEqual(outListsRef[v], outListsTest[v]));
-            REQUIRE(out_degree(v, g) == outListsRef[v].size());
+            REQUIRE(out_degree(v, g) == (index_t) outListsRef[v].size());
         }
     }
 
@@ -100,7 +100,7 @@ namespace graph_image {
             for (auto e: hg::out_edge_iterator(v, g))
                 outListsTest[v].push_back({source(e, g), target(e, g)});
             REQUIRE(vectorEqual(outListsRef[v], outListsTest[v]));
-            REQUIRE(out_degree(v, g) == outListsRef[v].size());
+            REQUIRE(out_degree(v, g) == (index_t) outListsRef[v].size());
         }
     }
 

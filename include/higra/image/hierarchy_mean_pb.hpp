@@ -55,7 +55,7 @@ namespace hg {
         using value_t = T1;
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
-        hg_assert(num_vertices(graph) == embedding.size(),
+        hg_assert(num_vertices(graph) == static_cast<index_t>(embedding.size()),
                   "Graph number of vertices does not match the size of the embedding.");
         auto watershed_labels = labelisation_watershed(graph, edge_weights);
         auto rag = make_region_adjacency_graph_from_labelisation(graph, watershed_labels);
@@ -141,7 +141,7 @@ namespace hg {
         using value_t = T1;
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
-        hg_assert(num_vertices(graph) == embedding.size(),
+        hg_assert(num_vertices(graph) == static_cast<index_t>(embedding.size()),
                   "Graph number of vertices does not match the size of the embedding.");
 
         auto ows = oriented_watershed(graph, embedding, edge_weights, edge_orientations);

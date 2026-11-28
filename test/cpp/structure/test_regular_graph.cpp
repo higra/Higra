@@ -69,7 +69,7 @@ namespace regular_graph {
             for (auto e: hg::out_edge_iterator(v, g))
                 outListsTest[v].push_back({source(e, g), target(e, g)});
             REQUIRE(vectorEqual(outListsRef[v], outListsTest[v]));
-            REQUIRE(out_degree(v, g) == outListsRef[v].size());
+            REQUIRE(out_degree(v, g) == (index_t) outListsRef[v].size());
         }
     }
 
@@ -91,8 +91,8 @@ namespace regular_graph {
             for (auto e: hg::in_edge_iterator(v, g))
                 inListsTest[v].push_back({source(e, g), target(e, g)});
             REQUIRE(vectorEqual(inListsRef[v], inListsTest[v]));
-            REQUIRE(in_degree(v, g) == inListsRef[v].size());
-            REQUIRE(degree(v, g) == inListsRef[v].size());
+            REQUIRE(in_degree(v, g) == (index_t) inListsRef[v].size());
+            REQUIRE(degree(v, g) == (index_t) inListsRef[v].size());
         }
     }
 

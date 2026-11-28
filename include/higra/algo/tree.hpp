@@ -75,7 +75,7 @@ namespace hg {
         HG_TRACE();
         const auto &parents = tree.parents();
         const auto typed_threshold = static_cast<T>(threshold);
-        const index_t num_v = (index_t) num_vertices(tree);
+        const index_t num_v = num_vertices(tree);
         array_1d<bool> deleted = array_1d<bool>::from_shape({(size_t) num_v});
         for (index_t i = 0; i < num_v; i++) {
             deleted(i) = altitudes(parents(i)) <= typed_threshold;
@@ -262,8 +262,8 @@ namespace hg {
         if (num_vertices(t1) != num_vertices(t2) || num_leaves(t1) != num_leaves(t2))
             return false;
 
-        size_t num_v = num_vertices(t1);
-        index_t num_l = (index_t) num_leaves(t1);
+        index_t num_v = num_vertices(t1);
+        index_t num_l = num_leaves(t1);
 
         array_1d<index_t> f({num_v}, invalid_index);
 
@@ -338,7 +338,7 @@ namespace hg {
             }
         }
 
-        const index_t num_l = (index_t) num_leaves(tree);
+        const index_t num_l = num_leaves(tree);
         array_1d<int> result = array_1d<int>::from_shape({(size_t) num_l});
         for (index_t i = 0; i < num_l; i++) {
             result(i) = attr(i) - 1;

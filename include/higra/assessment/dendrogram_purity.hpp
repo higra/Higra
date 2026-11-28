@@ -76,7 +76,7 @@ namespace hg {
         // label_histo and weights are row-major arrays of shape (num_vertices, num_labels)
         const double *histo = label_histo.data();
         const double *w = weights.data();
-        const index_t num_v = (index_t) num_vertices(tree);
+        const index_t num_v = num_vertices(tree);
         const index_t nl = (index_t) num_labels;
 
         // sums of the row sums

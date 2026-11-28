@@ -102,7 +102,7 @@ namespace hg {
         HG_TRACE();
         hg_assert_edge_weights(graph, weight);
         hg_assert_1d_array(weight);
-        hg_assert(num_vertices(graph) == embedding.size(),
+        hg_assert(num_vertices(graph) == static_cast<index_t>(embedding.size()),
                   "Graph number of vertices does not match the size of the embedding.");
         auto &shape = embedding.shape();
 
@@ -182,7 +182,7 @@ namespace hg {
 
         index_t border = (extra_border) ? 0 : 1;
 
-        hg_assert(num_vertices(g) == embedding.size(), "Graph size does not match.");
+        hg_assert(num_vertices(g) == static_cast<index_t>(embedding.size()), "Graph size does not match.");
         hg_assert(embedding.shape()[0] == (index_t) shape[0] / 2 + border, "Embedding shape[0] does not match.");
         hg_assert(embedding.shape()[1] == (index_t) shape[1] / 2 + border, "Embedding shape[1] does not match.");
 

@@ -235,15 +235,15 @@ namespace hg {
                             ) :
             m_bpt(std::move(bpt)),
             m_mst(std::move(mst)),
-            m_num_leaves((index_t)num_leaves(m_bpt)),
-            m_root((index_t)hg::num_vertices(m_bpt) - 1),
+            m_num_leaves(num_leaves(m_bpt)),
+            m_root(hg::num_vertices(m_bpt) - 1),
             m_seed_count(hg::num_vertices(m_bpt), 0),
             m_is_cut(m_num_leaves - 1, false),
             m_visited(m_num_leaves, 0) {
                 HG_TRACE();
-                hg_assert((index_t)num_vertices(m_mst) == m_num_leaves,
+                hg_assert(num_vertices(m_mst) == m_num_leaves,
                         "MST must have the same number of vertices as leaves in the BPT.");
-                hg_assert((index_t)num_edges(m_mst) == m_num_leaves - 1,
+                hg_assert(num_edges(m_mst) == m_num_leaves - 1,
                         "MST must have exactly num_leaves - 1 edges.");
                 m_labels = hg::zeros<index_t>({(size_t)m_num_leaves});
                 m_seed_map = array_1d<index_t>::from_shape({(size_t)m_num_leaves});

@@ -43,8 +43,12 @@ def tree_fusion_depth_map(*trees):
     and :math:`D` the number of trees. If we denote by :math:`K` the depth of the deepest tree to merge, one can rewrite
     the runtime complexity as :math:`\mathcal{O}(NKD^2)`.
 
-    :param trees: at least two trees defined over the same domain
+    :param trees: at least two trees defined over the same domain, given as separate arguments or as a single
+        sequence of trees
     :return: a depth map representing the fusion of the input trees
     """
 
-    return hg.cpp._tree_fusion_depth_map(*trees)
+    if len(trees) == 1 and not isinstance(trees[0], hg.Tree):
+        trees = tuple(trees[0])
+
+    return hg.cpp._tree_fusion_depth_map(list(trees))

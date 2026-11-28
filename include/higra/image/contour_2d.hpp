@@ -396,7 +396,7 @@ namespace hg {
         using point_type = point_2d_f;
         hg_assert_edge_weights(graph, edge_weights);
         hg_assert_1d_array(edge_weights);
-        hg_assert(num_vertices(graph) == embedding.size(),
+        hg_assert(num_vertices(graph) == static_cast<index_t>(embedding.size()),
                   "Graph number of vertices does not match the size of the embedding.");
 
         contour_2d result;

@@ -330,7 +330,7 @@ namespace py_tree_graph {
                   t.compute_children();
                   hg_assert_vertex_index(t, vertex);
                   hg_assert(i >= 0, "Child index cannot be negative.");
-                  hg_assert(i < (index_t) t.num_children(vertex),
+                  hg_assert(i < t.num_children(vertex),
                             "Child index is larger than the number of children.");
                   return t.child(i, vertex);
               }, "Get the i-th (starting at 0) child of the given node of the tree.",

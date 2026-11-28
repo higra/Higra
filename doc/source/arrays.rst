@@ -214,7 +214,9 @@ concurrently, request parallel execution explicitly:
 
 Results do not depend on parallel execution: all functions give identical results, with or without TBB and with any
 number of threads. This includes floating point sums, which always add the elements in the same order.
-In Python, the number of threads is set with :func:`~higra.set_num_threads`.
+The maximum number of threads is set with ``hg::set_num_threads`` (``higra/parallel.hpp``) in C++ and with
+:func:`~higra.set_num_threads` in Python. In Python, it can also be set with the environment variable
+``HG_NUM_THREADS`` (a positive integer), which is read when Higra is imported.
 
 Writing algorithms
 ------------------

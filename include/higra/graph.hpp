@@ -199,8 +199,8 @@ namespace hg {
         static_assert(std::is_integral<T>::value,
                       "Vertex indices must have integral value type.");
         auto f = index.flat();
-        array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
-        for (index_t i = 0; i < (index_t) res.size(); ++i) {
+        array_nd<index_t> res = array_nd<index_t>::from_shape({index.size()});
+        for (index_t i = 0; i < res.size(); ++i) {
             res(i) = degree(f(i), g);
         }
         res.reshape(index.shape());
@@ -220,8 +220,8 @@ namespace hg {
         static_assert(std::is_integral<T>::value,
                       "Vertex indices must have integral value type.");
         auto f = index.flat();
-        array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
-        for (index_t i = 0; i < (index_t) res.size(); ++i) {
+        array_nd<index_t> res = array_nd<index_t>::from_shape({index.size()});
+        for (index_t i = 0; i < res.size(); ++i) {
             res(i) = in_degree(f(i), g);
         }
         res.reshape(index.shape());
@@ -241,8 +241,8 @@ namespace hg {
         static_assert(std::is_integral<T>::value,
                       "Vertex indices must have integral value type.");
         auto f = index.flat();
-        array_nd<size_t> res = array_nd<size_t>::from_shape({index.size()});
-        for (index_t i = 0; i < (index_t) res.size(); ++i) {
+        array_nd<index_t> res = array_nd<index_t>::from_shape({index.size()});
+        for (index_t i = 0; i < res.size(); ++i) {
             res(i) = out_degree(f(i), g);
         }
         res.reshape(index.shape());

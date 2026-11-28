@@ -54,7 +54,7 @@ namespace hg {
 
             // VertexListGraph associated types
             using vertex_iterator = counting_iterator<vertex_descriptor>;
-            using vertices_size_type = size_t;
+            using vertices_size_type = index_t;
 
             //AdjacencyGraph associated types
             using adjacency_iterator = regular_graph_adjacent_vertex_iterator<embedding_t>;
@@ -66,7 +66,7 @@ namespace hg {
             using out_edge_iterator = transform_forward_iterator<iterator_transform_function,
                     adjacency_iterator,
                     edge_descriptor>;
-            using degree_size_type = size_t;
+            using degree_size_type = index_t;
 
             //BidirectionalGraph associated types
             using in_edge_iterator = out_edge_iterator;
@@ -347,7 +347,7 @@ namespace hg {
     typename hg::regular_graph_internal::regular_graph<embedding_t>::degree_size_type
     hg::regular_graph_internal::regular_graph<embedding_t>::out_degree(const vertex_descriptor v) const {
         if (is_in_safe_area(m_embedding.lin2grid(v))) {
-            return m_neighbours.size();
+            return static_cast<degree_size_type>(m_neighbours.size());
         } else {
             degree_size_type count = 0;
             auto its = adjacent_vertices(v, *this);
