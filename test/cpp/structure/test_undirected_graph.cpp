@@ -39,37 +39,37 @@ namespace test_undirected_graph {
 
     TEST_CASE("graph and tree sizes are signed indices", "[undirected_graph][tree][regular_graph]") {
         using rgraph = hg::regular_grid_graph_2d;
-        static_assert(std::is_same_v<graph_traits<ugraph>::vertices_size_type, index_t>);
-        static_assert(std::is_same_v<graph_traits<ugraph>::edges_size_type, index_t>);
-        static_assert(std::is_same_v<graph_traits<ugraph>::degree_size_type, index_t>);
-        static_assert(std::is_same_v<graph_traits<tree>::vertices_size_type, index_t>);
-        static_assert(std::is_same_v<graph_traits<tree>::edges_size_type, index_t>);
-        static_assert(std::is_same_v<graph_traits<tree>::degree_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<hg::ugraph>::vertices_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<hg::ugraph>::edges_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<hg::ugraph>::degree_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<hg::tree>::vertices_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<hg::tree>::edges_size_type, index_t>);
+        static_assert(std::is_same_v<graph_traits<hg::tree>::degree_size_type, index_t>);
         static_assert(std::is_same_v<graph_traits<rgraph>::vertices_size_type, index_t>);
         static_assert(std::is_same_v<graph_traits<rgraph>::degree_size_type, index_t>);
 
-        static_assert(std::is_same_v<decltype(num_vertices(std::declval<const ugraph &>())), index_t>);
-        static_assert(std::is_same_v<decltype(num_edges(std::declval<const ugraph &>())), index_t>);
-        static_assert(std::is_same_v<decltype(degree(index_t(0), std::declval<const ugraph &>())), index_t>);
-        static_assert(std::is_same_v<decltype(num_vertices(std::declval<const tree &>())), index_t>);
-        static_assert(std::is_same_v<decltype(num_edges(std::declval<const tree &>())), index_t>);
-        static_assert(std::is_same_v<decltype(num_leaves(std::declval<const tree &>())), index_t>);
-        static_assert(std::is_same_v<decltype(num_children(index_t(0), std::declval<const tree &>())), index_t>);
-        static_assert(std::is_same_v<decltype(degree(index_t(0), std::declval<const tree &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_vertices(std::declval<const hg::ugraph &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_edges(std::declval<const hg::ugraph &>())), index_t>);
+        static_assert(std::is_same_v<decltype(degree(index_t(0), std::declval<const hg::ugraph &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_vertices(std::declval<const hg::tree &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_edges(std::declval<const hg::tree &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_leaves(std::declval<const hg::tree &>())), index_t>);
+        static_assert(std::is_same_v<decltype(num_children(index_t(0), std::declval<const hg::tree &>())), index_t>);
+        static_assert(std::is_same_v<decltype(degree(index_t(0), std::declval<const hg::tree &>())), index_t>);
         static_assert(std::is_same_v<decltype(num_vertices(std::declval<const rgraph &>())), index_t>);
         static_assert(std::is_same_v<decltype(out_degree(index_t(0), std::declval<const rgraph &>())), index_t>);
 
         // vectorized versions
-        ugraph g(3);
+        hg::ugraph g(3);
         g.add_edge(0, 1);
         const array_1d<index_t> vertices{0, 2};
         static_assert(std::is_same_v<decltype(degree(vertices, g))::value_type, index_t>);
-        tree t(array_1d<index_t>{2, 2, 2});
+        hg::tree t(array_1d<index_t>{2, 2, 2});
         static_assert(std::is_same_v<decltype(num_children(vertices, t))::value_type, index_t>);
 
         // empty and single-node trees have no edge
-        REQUIRE(num_edges(tree()) == 0);
-        REQUIRE(num_edges(tree(array_1d<index_t>{0})) == 0);
+        REQUIRE(num_edges(hg::tree()) == 0);
+        REQUIRE(num_edges(hg::tree(array_1d<index_t>{0})) == 0);
     }
 
     TEST_CASE("undirected graph rejects negative sizes", "[undirected_graph]") {
