@@ -161,7 +161,7 @@ namespace hg {
             hg_assert(max_regions > 0, "The maximum number of regions must be positive.");
             m_tree.compute_children();
 
-            max_regions = (std::min)(max_regions, num_leaves(m_tree));
+            max_regions = (std::min)(max_regions, static_cast<size_t>(num_leaves(m_tree)));
 
             size_t num_regions_ground_truth = hg::max(ground_truth) + 1;
 
@@ -434,7 +434,7 @@ namespace hg {
         hg_assert_node_weights(tree, altitudes);
         hg_assert_integral_value_type(ground_truth);
         hg_assert_1d_array(ground_truth);
-        max_regions = (std::min)(max_regions, num_leaves(tree));
+        max_regions = (std::min)(max_regions, static_cast<size_t>(num_leaves(tree)));
 
         auto card_intersection = fragmentation_curve_internal::compute_card_intersection_tree_ground_truth<double>(
                 tree, ground_truth, vertex_map);

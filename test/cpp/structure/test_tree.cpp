@@ -76,7 +76,7 @@ namespace tree {
                 REQUIRE(parents == original);
                 REQUIRE(t.category() == category);
                 REQUIRE(t.root() == (parents.size() == 0 ? invalid_index : index_t(parents.size() - 1)));
-                REQUIRE((index_t) t.num_vertices() == parents.size());
+                REQUIRE(t.num_vertices() == parents.size());
                 REQUIRE(t.num_leaves() == (parents.size() == 0 ? 0 : parents.size() == 1 ? 1 : 2));
                 REQUIRE(t.parents() == parents);
                 t.compute_children();
@@ -173,7 +173,7 @@ namespace tree {
 
     TEST_CASE("tree degree", "[tree]") {
         auto t = data.t;
-        vector<size_t> ref = {1, 1, 1, 1, 1, 3, 4, 2};
+        vector<index_t> ref = {1, 1, 1, 1, 1, 3, 4, 2};
         for (auto v: vertex_iterator(t)) {
             REQUIRE(degree(v, t) == ref[v]);
             REQUIRE(in_degree(v, t) == ref[v]);

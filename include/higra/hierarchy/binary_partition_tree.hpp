@@ -528,7 +528,7 @@ namespace hg {
         }
 
         // main loop
-        size_t current_num_nodes_tree = num_points;
+        index_t current_num_nodes_tree = num_points;
         while (!heap.empty() && current_num_nodes_tree < num_nodes_tree) {
 
             auto heap_handle = heap.top();

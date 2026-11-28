@@ -227,8 +227,8 @@ namespace hg {
 
         tree.compute_children();
         const auto &parents = tree.parents();
-        const index_t num_l = (index_t) num_leaves(tree);
-        const index_t num_v = (index_t) num_vertices(tree);
+        const index_t num_l = num_leaves(tree);
+        const index_t num_v = num_vertices(tree);
         if (increasing_altitudes) {
             auto min_depth = hg::empty_like(altitudes);
             for (index_t i = 0; i < num_l; i++) {
@@ -322,7 +322,7 @@ namespace hg {
 
         array_1d<bool> extrema = hg::ones<bool>({num_vertices(tree)});
 
-        const auto num_leaves = (hg::index_t) hg::num_leaves(tree);
+        const auto num_leaves = hg::num_leaves(tree);
         extrema.slice(0, num_leaves).fill(0);
 
         for (auto n: leaves_to_root_iterator(tree, leaves_it::exclude, root_it::exclude)) {
@@ -463,7 +463,7 @@ namespace hg {
             indices(root(tree)) = -1;
         }
         array_1d<bool> not_extrema = array_1d<bool>::from_shape({num_vertices(tree)});
-        for (index_t i = 0; i < (index_t) num_vertices(tree); i++) {
+        for (index_t i = 0; i < num_vertices(tree); i++) {
             not_extrema(i) = !extrema(i);
         }
         auto extrema_leaves = propagate_sequential(tree, indices, not_extrema);
@@ -674,7 +674,7 @@ namespace hg {
         tree.compute_children();
         array_1d<index_t> res = hg::empty<index_t>({num_vertices(tree)});
         for (auto i: leaves_to_root_iterator(tree, leaves_it::exclude)) {
-            for (index_t c = 0; c < (index_t) num_children(i, tree); c++) {
+            for (index_t c = 0; c < num_children(i, tree); c++) {
                 auto cc = child(c, i, tree);
                 res(cc) = c;
             }
@@ -791,8 +791,8 @@ namespace hg {
 
         tree.compute_children();
         array_nd<value_type> res = hg::zeros<value_type>(node_weights.shape());
-        const index_t num_v = (index_t) num_vertices(tree);
-        const index_t num_l = (index_t) num_leaves(tree);
+        const index_t num_v = num_vertices(tree);
+        const index_t num_l = num_leaves(tree);
 
         // row-major elements: node i owns the num_d values starting at i * num_d
         const T *w = node_weights.data();
@@ -808,7 +808,7 @@ namespace hg {
                 wrapping_type_t<value_type>, value_type>;
 
         for (index_t i = num_l; i < num_v; i++) {
-            const index_t num_c = (index_t) num_children(i, tree);
+            const index_t num_c = num_children(i, tree);
             value_type *ri = r + i * num_d;
             for (index_t c1 = 0; c1 < num_c; c1++) {
                 const T *w1 = w + child(c1, i, tree) * num_d;

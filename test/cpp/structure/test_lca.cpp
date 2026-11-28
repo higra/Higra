@@ -74,8 +74,8 @@ namespace lca {
         auto &tree = h.tree;
 
         TestType lca(tree);
-        for (index_t i = 0; i < (index_t)num_vertices(g); ++i) {
-            for (index_t j = i; j < (index_t)num_vertices(g); j++) {
+        for (index_t i = 0; i < num_vertices(g); ++i) {
+            for (index_t j = i; j < num_vertices(g); j++) {
                 auto ref = lowest_common_ancestor(i, j, tree);
                 auto r1 = lca.lca(i, j);
                 auto r2 = lca.lca(j, i);
@@ -93,8 +93,8 @@ namespace lca {
         auto &tree = h.tree;
 
         hg::lca_sparse_table_block lca(tree, 4);
-        for (index_t i = 0; i < (index_t)num_vertices(g); ++i) {
-            for (index_t j = i; j < (index_t)num_vertices(g); j++) {
+        for (index_t i = 0; i < num_vertices(g); ++i) {
+            for (index_t j = i; j < num_vertices(g); j++) {
                 auto ref = lowest_common_ancestor(i, j, tree);
                 auto r1 = lca.lca(i, j);
                 auto r2 = lca.lca(j, i);
@@ -194,8 +194,8 @@ namespace lca {
 
     template<typename lca_t>
     void check_lca_of_tree(const lca_t &lca, const tree &t) {
-        for (index_t i = 0; i < (index_t) num_vertices(t); ++i) {
-            for (index_t j = i; j < (index_t) num_vertices(t); j++) {
+        for (index_t i = 0; i < num_vertices(t); ++i) {
+            for (index_t j = i; j < num_vertices(t); j++) {
                 REQUIRE(lca.lca(i, j) == lowest_common_ancestor(i, j, t));
             }
         }

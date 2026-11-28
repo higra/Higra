@@ -319,6 +319,15 @@ class TestTree(unittest.TestCase):
             res.append(t.num_children(v))
         self.assertTrue(res == ref)
 
+        vertices = np.asarray((0, 5, 6, 7))
+        res = t.num_children(vertices)
+        self.assertEqual(res.dtype, np.int64)
+        np.testing.assert_array_equal(res, (0, 2, 3, 2))
+        for f in (t.degree, t.in_degree, t.out_degree):
+            self.assertEqual(f(vertices).dtype, np.int64)
+        self.assertIsInstance(t.num_children(5), int)
+        self.assertIsInstance(t.num_leaves(), int)
+
     def test_children_iterator(self):
         t = TestTree.get_tree()
 

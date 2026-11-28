@@ -240,6 +240,19 @@ Unreleased
 
 - The benchmark executables read the maximum number of threads from ``HG_NUM_THREADS`` instead of ``TBB_NUM_THREADS``.
 
+- C++ API: the numbers of vertices, edges, leaves and children, and the degrees of graphs and trees are signed
+  ``index_t`` values instead of ``size_t`` (``num_vertices``, ``num_edges``, ``num_leaves``, ``num_children``,
+  ``degree``, ``in_degree``, ``out_degree``, and the ``vertices_size_type``, ``edges_size_type`` and
+  ``degree_size_type`` types of the graph and tree classes). The array versions of ``degree``, ``in_degree``,
+  ``out_degree`` and ``num_children`` return arrays of ``index_t``. ``undirected_graph`` and ``add_vertices`` take
+  the number of vertices as an ``index_t`` and throw ``std::runtime_error`` for a negative value. Code that stores
+  these values in ``size_t`` variables may get new compiler warnings.
+
+- The array versions of :meth:`~higra.UndirectedGraph.degree`, :meth:`~higra.UndirectedGraph.in_degree`,
+  :meth:`~higra.UndirectedGraph.out_degree` (and the same methods of the other graph classes) and
+  :meth:`~higra.Tree.num_children` return ``int64`` arrays instead of ``uint64`` arrays, like vertex indices.
+  Arithmetic between these results and other integer arrays no longer gives floating point arrays.
+
 0.6.13
 ------
 

@@ -16,6 +16,7 @@
 #include "higra/structure/details/iterators.hpp"
 #include "strided_span.hpp"
 #include <algorithm>
+#include <limits>
 #include <vector>
 #include <memory>
 #include <stdexcept>
@@ -101,7 +102,7 @@ namespace hg {
 
             // VertexListGraph associated types
             using vertex_iterator = counting_iterator<vertex_descriptor>;
-            using vertices_size_type = size_t;
+            using vertices_size_type = index_t;
 
             // custom edge index iterators
             using out_edge_container_type = typename container_gen<edgeS, edge_index_t>::type;
@@ -109,7 +110,7 @@ namespace hg {
             using in_edge_index_iterator = out_edge_index_iterator;
 
             // EdgeListGraph associated types
-            using edges_size_type = size_t;
+            using edges_size_type = index_t;
             using edge_iterator = std::vector<edge_descriptor>::const_iterator;
 
             // IncidenceGraph associated types
@@ -117,7 +118,7 @@ namespace hg {
             using out_edge_iterator = transform_forward_iterator<out_iterator_transform_function,
                     out_edge_index_iterator,
                     edge_descriptor>;
-            using degree_size_type = size_t;
+            using degree_size_type = index_t;
 
             //BidirectionalGraph associated types
             using in_edge_iterator = out_edge_iterator;
@@ -129,16 +130,24 @@ namespace hg {
                     vertex_descriptor>;
 
 
-            undirected_graph(const size_t num_vertices = 0,
+            /**
+             * Create a graph with the given number of vertices and no edge.
+             *
+             * @param num_vertices number of vertices (must be non-negative)
+             * @param reserved_edges number of edges for which memory is reserved
+             * @param reserved_edge_per_vertex number of edges per vertex for which memory is reserved
+             */
+            undirected_graph(const index_t num_vertices = 0,
                              const size_t reserved_edges = 0,
                              const size_t reserved_edge_per_vertex = 0) :
-                    _num_vertices(num_vertices), _edge_storage(std::make_shared<edge_storage>()),
-                    out_edges(num_vertices) {
+                    _num_vertices(checked_num_vertices(num_vertices)),
+                    _edge_storage(std::make_shared<edge_storage>()),
+                    out_edges(static_cast<std::size_t>(_num_vertices)) {
                 if (reserved_edges > 0) {
                     _edge_storage->edges.reserve(reserved_edges);
                 }
                 if (reserved_edge_per_vertex > 0) {
-                    for (index_t i = 0; i < (index_t) num_vertices; ++i) {
+                    for (index_t i = 0; i < _num_vertices; ++i) {
                         out_edges[i].reserve(reserved_edge_per_vertex);
                     }
                 }
@@ -176,24 +185,32 @@ namespace hg {
             }
 
             edges_size_type num_edges() const {
-                return _edge_storage->edges.size();
+                return static_cast<index_t>(_edge_storage->edges.size());
             }
 
             degree_size_type degree(vertex_descriptor v) const {
-                return out_edges[v].size();
+                return static_cast<index_t>(out_edges[v].size());
             }
 
             vertex_descriptor add_vertex() {
-                auto tmp = _num_vertices;
-                _num_vertices++;
+                hg_assert(_num_vertices < std::numeric_limits<index_t>::max(), "Too many vertices.");
                 out_edges.emplace_back();
-                return tmp;
+                return _num_vertices++;
             }
 
-            void add_vertices(size_t num) {
+            /**
+             * Add the given number of vertices to the graph.
+             * If an exception is thrown, the graph is not modified.
+             *
+             * @param num number of vertices to add (must be non-negative)
+             */
+            void add_vertices(index_t num) {
+                hg_assert(num >= 0, "The number of vertices to add must be non-negative.");
+                hg_assert(num <= std::numeric_limits<index_t>::max() - _num_vertices, "Too many vertices.");
                 if (num > 0) {
-                    _num_vertices += num;
-                    out_edges.resize(_num_vertices);
+                    const index_t new_num_vertices = _num_vertices + num;
+                    out_edges.resize(static_cast<std::size_t>(new_num_vertices));
+                    _num_vertices = new_num_vertices;
                 }
             }
 
@@ -203,7 +220,7 @@ namespace hg {
              * Repeated deletion is harmless. Global edge iteration retains the slot.
              */
             void remove_edge(edge_index_t ei) {
-                hg_assert(ei >= 0 && ei < static_cast<index_t>(num_edges()),
+                hg_assert(ei >= 0 && ei < num_edges(),
                           "Edge index must identify an existing slot.");
                 auto &source = _edge_storage->edges[ei].source;
                 auto &target = _edge_storage->edges[ei].target;
@@ -211,8 +228,8 @@ namespace hg {
                     return;
                 }
                 // Reject inconsistent internal endpoints before any adjacency access.
-                hg_assert(source >= 0 && source < static_cast<index_t>(num_vertices()) &&
-                          target >= 0 && target < static_cast<index_t>(num_vertices()),
+                hg_assert(source >= 0 && source < num_vertices() &&
+                          target >= 0 && target < num_vertices(),
                           "Edge endpoints must both be valid or both mark a deleted slot.");
                 remove_from_container(out_edges[source], ei);
                 if (source != target)
@@ -227,10 +244,10 @@ namespace hg {
              * A self-loop has one adjacency entry and contributes one to degree.
              */
             void set_edge(edge_index_t ei, vertex_descriptor v1, vertex_descriptor v2) {
-                hg_assert(ei >= 0 && ei < static_cast<index_t>(num_edges()),
+                hg_assert(ei >= 0 && ei < num_edges(),
                           "Edge index must identify an existing slot.");
-                hg_assert(v1 >= 0 && v1 < static_cast<index_t>(num_vertices()) &&
-                          v2 >= 0 && v2 < static_cast<index_t>(num_vertices()),
+                hg_assert(v1 >= 0 && v1 < num_vertices() &&
+                          v2 >= 0 && v2 < num_vertices(),
                           "Vertex indices must identify existing vertices.");
                 if (v1 > v2) {
                     std::swap(v1, v2);
@@ -292,7 +309,7 @@ namespace hg {
              * Reacquire after edits.
              */
             strided_span<const vertex_descriptor> sources() const {
-                return member_span(edge_data(), &edge_descriptor::source, (index_t) num_edges());
+                return member_span(edge_data(), &edge_descriptor::source, num_edges());
             }
 
             /**
@@ -302,7 +319,7 @@ namespace hg {
              * Reacquire after edits.
              */
             strided_span<const vertex_descriptor> targets() const {
-                return member_span(edge_data(), &edge_descriptor::target, (index_t) num_edges());
+                return member_span(edge_data(), &edge_descriptor::target, num_edges());
             }
 
             /** Retain the current generation without copying endpoints. */
@@ -311,6 +328,11 @@ namespace hg {
             }
 
         private:
+
+            static index_t checked_num_vertices(index_t num_vertices) {
+                hg_assert(num_vertices >= 0, "The number of vertices must be non-negative.");
+                return num_vertices;
+            }
 
             const edge_descriptor *edge_data() const {
                 // Avoid field-offset arithmetic on a null pointer for empty adapters.
@@ -342,7 +364,7 @@ namespace hg {
                 _edge_storage = std::move(replacement);
             }
 
-            size_t _num_vertices;
+            index_t _num_vertices;
             std::shared_ptr<edge_storage> _edge_storage;
             std::vector<out_edge_container_type> out_edges; // same as in_edges...
 
@@ -424,7 +446,7 @@ namespace hg {
     }
 
     template<typename T>
-    void add_vertices(size_t num, hg::undirected_graph<T> &g) {
+    void add_vertices(index_t num, hg::undirected_graph<T> &g) {
         g.add_vertices(num);
     }
 

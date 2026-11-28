@@ -77,7 +77,7 @@ namespace hg {
                       "The altitude of the leaf nodes must be equal to 0.");
 
             bool non_negative = true;
-            for (index_t i = (index_t) num_leaves(tree); i < (index_t) num_vertices(tree) && non_negative; i++) {
+            for (index_t i = num_leaves(tree); i < num_vertices(tree) && non_negative; i++) {
                 non_negative = altitudes(i) >= static_cast<T>(0);
             }
             hg_assert(non_negative, "The altitude of the nodes must be greater than or equal to 0.");
@@ -191,7 +191,7 @@ namespace hg {
             index_t num_regions = num_children(root(t), t);
             auto current_threshold = a(range_start);
 
-            while (current_threshold != 0 && range_start >= (index_t) num_leaves(t)) {
+            while (current_threshold != 0 && range_start >= num_leaves(t)) {
 
                 while (min_alt_children(range_end) >= current_threshold) {
                     range_end--;

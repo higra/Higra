@@ -329,7 +329,7 @@ namespace hg::detail::hierarchy {
         template<typename T>
         index_t inferNumProperParts(array_view<const T> xparent) const {
             const tree inferredTree(xparent);
-            return (index_t) inferredTree.num_leaves();
+            return inferredTree.num_leaves();
         }
 
         /**
@@ -386,7 +386,7 @@ namespace hg::detail::hierarchy {
          * :Complexity: Time O(N), Space O(N).
          */
         explicit DynamicComponentTree(const tree &inputTree) {
-            buildFromParent(inputTree.parents(), (index_t) inputTree.num_leaves());
+            buildFromParent(inputTree.parents(), inputTree.num_leaves());
         }
 
         /**
@@ -405,7 +405,7 @@ namespace hg::detail::hierarchy {
          * :Complexity: Time O(N), Space O(N).
          */
         void reset(const tree &inputTree) {
-            buildFromParent(inputTree.parents(), (index_t) inputTree.num_leaves());
+            buildFromParent(inputTree.parents(), inputTree.num_leaves());
         }
 
         /**

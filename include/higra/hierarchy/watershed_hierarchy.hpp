@@ -88,7 +88,7 @@ namespace hg {
         hg_assert(bpt_attribute.dimension() == 1,
                   "The result of the attribute function must be a 1d array, got an array of dimension " +
                   std::to_string(bpt_attribute.dimension()) + ".");
-        hg_assert((index_t) bpt_attribute.shape()[0] == (index_t) num_vertices(bpt),
+        hg_assert((index_t) bpt_attribute.shape()[0] == num_vertices(bpt),
                   "The result of the attribute function must contain one value per node of the binary partition "
                   "tree: expected " + std::to_string(num_vertices(bpt)) + " values, got " +
                   std::to_string(bpt_attribute.shape()[0]) + ".");

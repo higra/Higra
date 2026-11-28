@@ -11,6 +11,7 @@
 #include "py_undirected_graph.hpp"
 #include "py_common_graph.hpp"
 #include <pybind11/numpy.h>
+#include <limits>
 #include <memory>
 
 namespace py_undirected_graph {
@@ -68,6 +69,12 @@ namespace py_undirected_graph {
         }
     };
 
+    // Sizes are unsigned in Python (negative values raise TypeError) and signed in C++
+    inline hg::index_t checked_size(const hg::size_t size) {
+        hg_assert(size <= static_cast<hg::size_t>(std::numeric_limits<hg::index_t>::max()), "Size is too large.");
+        return static_cast<hg::index_t>(size);
+    }
+
     template<typename graph_t, typename class_t>
     void init_graph(class_t &c) {
 
@@ -75,7 +82,11 @@ namespace py_undirected_graph {
         using vertex_t = typename hg::graph_traits<graph_t>::vertex_descriptor;
         using edge_index_t = typename hg::graph_traits<graph_t>::edge_index;
 
-        c.def(py::init<const hg::size_t, const hg::size_t, const hg::size_t>(), R"doc(
+        c.def(py::init([](const hg::size_t number_of_vertices,
+                          const hg::size_t reserved_edges,
+                          const hg::size_t reserved_edge_per_vertex) {
+                  return graph_t(checked_size(number_of_vertices), reserved_edges, reserved_edge_per_vertex);
+              }), R"doc(
     Create a new graph with no edge.
 
     :param number_of_vertices: initial number of vertices in the graph
@@ -122,7 +133,7 @@ namespace py_undirected_graph {
               },
               "Add a vertex to the graph, the index of the new vertex is returned");
         c.def("add_vertices", [](graph_t &g, size_t num) {
-                  hg::add_vertices(num, g);
+                  hg::add_vertices(checked_size(num), g);
               },
               py::arg("num"),
               "Add the given number of vertices to the graph.");

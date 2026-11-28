@@ -120,8 +120,8 @@ namespace component_tree_casf {
         template<typename altitude_t>
         // Exported trees must respect Higra's static topological ordering convention.
         void require_higra_topological_order(const tree &staticTree, array_view<const altitude_t> alt) {
-            const index_t n = (index_t) staticTree.num_vertices();
-            const index_t numLeaves = (index_t) staticTree.num_leaves();
+            const index_t n = staticTree.num_vertices();
+            const index_t numLeaves = staticTree.num_leaves();
 
             REQUIRE((index_t) alt.size() == n);
             REQUIRE((index_t) staticTree.root() == n - 1);
@@ -194,7 +194,7 @@ namespace component_tree_casf {
             std::vector<bool> empty((size_t) treeWithChildren.num_vertices(), true);
             array_1d<double> attribute = hg::zeros<double>({treeWithChildren.num_vertices()});
 
-            for (index_t leaf = 0; leaf < (index_t) treeWithChildren.num_leaves(); ++leaf) {
+            for (index_t leaf = 0; leaf < treeWithChildren.num_leaves(); ++leaf) {
                 const auto point = graph.embedding().lin2grid(leaf);
                 const auto y = (index_t) point[0];
                 const auto x = (index_t) point[1];
@@ -225,7 +225,7 @@ namespace component_tree_casf {
                 }
             }
 
-            for (index_t node = 0; node < (index_t) treeWithChildren.num_vertices(); ++node) {
+            for (index_t node = 0; node < treeWithChildren.num_vertices(); ++node) {
                 if (empty[(size_t) node]) {
                     attribute(node) = 0.0;
                     continue;

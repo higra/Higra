@@ -98,7 +98,7 @@ namespace test_graph_core {
 
         auto subgraph = subgraph_spanning(graph, edge_indices);
         REQUIRE(num_vertices(subgraph) == num_vertices(graph));
-        REQUIRE((index_t) num_edges(subgraph) == edge_indices.size());
+        REQUIRE(num_edges(subgraph) == edge_indices.size());
         std::vector<ugraph::edge_descriptor> ref = {{2, 3, 0},
                                                     {0, 1, 1}};
         for (index_t i = 0; i < (index_t) ref.size(); i++) {
@@ -268,7 +268,7 @@ namespace test_graph_core {
         auto g2 = random_undirected_graph_erdos_renyi(20, 3, true, 42);
 
         REQUIRE(num_edges(g1) == num_edges(g2));
-        for (index_t i = 0; i < (index_t) num_edges(g1); ++i) {
+        for (index_t i = 0; i < num_edges(g1); ++i) {
             REQUIRE(edge_from_index(i, g1) == edge_from_index(i, g2));
         }
 

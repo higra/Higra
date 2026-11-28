@@ -117,7 +117,7 @@ namespace hg {
             tree_saver_helper &add_attribute(const std::string &name, array_view<const T> array) {
                 hg_assert(!finalized, "Cannot add an attribute after tree finalization.");
                 hg_assert(array.dimension() == 1, "Only scalar attributes are supported.");
-                hg_assert((size_t) array.size() == m_tree.num_vertices(), "Attribute size does not match the size of the tree.");
+                hg_assert(array.size() == m_tree.num_vertices(), "Attribute size does not match the size of the tree.");
                 hg_assert(m_num_attr < std::numeric_limits<int>::max(), "Too many tree attributes.");
                 auto bytes = byte_count(array.size(), sizeof(double));
                 std::vector<double> a(array.size());

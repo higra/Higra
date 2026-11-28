@@ -84,7 +84,7 @@ namespace graph_accumulator {
         auto sum_e = accumulate_graph_edges(g, edge_weights, accumulator_sum());
         auto count_e = accumulate_graph_edges(g, edge_weights, accumulator_counter());
         auto mean_e = accumulate_graph_edges(g, edge_weights, accumulator_mean());
-        for (index_t i = 0; i < (index_t) num_vertices(g); i++) {
+        for (index_t i = 0; i < num_vertices(g); i++) {
             REQUIRE(mean_e(i) == sum_e(i) / (double) count_e(i));
         }
         REQUIRE(mean_e(0) == 1.5);
