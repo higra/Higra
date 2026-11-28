@@ -14,11 +14,10 @@
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "higra/algo/tree.hpp"
 
+namespace test_binary_partition_tree {
 
-using namespace hg;
-using namespace std;
-
-namespace binary_partition_tree {
+    using namespace hg;
+    using namespace std;
 
     TEST_CASE("single linkage clustering simple", "[binary_partition_tree]") {
         auto graph = get_4_adjacency_graph({3, 3});

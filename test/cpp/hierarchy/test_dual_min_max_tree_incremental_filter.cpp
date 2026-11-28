@@ -16,9 +16,9 @@
 #include "higra/image/graph_image.hpp"
 #include <map>
 
-using namespace hg;
+namespace test_dual_min_max_tree_incremental_filter {
 
-namespace dual_min_max_tree_incremental_filter {
+using namespace hg;
 
 using detail::hierarchy::testing::DualMinMaxTreeIncrementalFilterTestAccess;
 
@@ -535,4 +535,4 @@ namespace {
             REQUIRE(threw);
     }
 
-} // namespace dual_min_max_tree_incremental_filter
+} // namespace test_dual_min_max_tree_incremental_filter

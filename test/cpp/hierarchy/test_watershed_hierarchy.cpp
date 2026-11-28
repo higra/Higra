@@ -13,7 +13,7 @@
 #include "higra/image/graph_image.hpp"
 #include "higra/algo/tree.hpp"
 
-namespace watershed_hierarchy {
+namespace test_watershed_hierarchy {
 
     using namespace hg;
     using namespace std;

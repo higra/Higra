@@ -11,7 +11,7 @@
 #include "../test_utils.hpp"
 #include "higra/io/tree_io.hpp"
 
-namespace tree_io {
+namespace test_tree_io {
 
     using namespace hg;
     using namespace std;
@@ -95,23 +95,59 @@ namespace tree_io {
         REQUIRE_THROWS(tree_io_internal::byte_count(static_cast<std::size_t>(std::numeric_limits<streamsize>::max()), 2));
     }
 
-    struct failing_buffer : stringbuf {
+    // Unbuffered output buffer: without a put area, every write reaches xsputn or overflow whatever
+    // the standard library implementation, so that write failures are always observed.
+    struct failing_buffer : streambuf {
         bool fail_write = false;
         streamsize fail_bytes = -1;
         bool fail_seek = false;
         bool fail_flush = false;
         bool fail_tell = false;
+        string data;
+        size_t position = 0;
+
+        void put(const char *s, size_t n) {
+            if (position + n > data.size()) {
+                data.resize(position + n);
+            }
+            data.replace(position, n, s, n);
+            position += n;
+        }
         streamsize xsputn(const char *s, streamsize n) override {
-            return fail_write || n == fail_bytes ? 0 : stringbuf::xsputn(s, n);
+            if (fail_write || n == fail_bytes) {
+                return 0;
+            }
+            put(s, static_cast<size_t>(n));
+            return n;
         }
         int_type overflow(int_type c) override {
-            return fail_write ? traits_type::eof() : stringbuf::overflow(c);
+            if (fail_write) {
+                return traits_type::eof();
+            }
+            if (!traits_type::eq_int_type(c, traits_type::eof())) {
+                const char ch = traits_type::to_char_type(c);
+                put(&ch, 1);
+            }
+            return traits_type::not_eof(c);
         }
-        pos_type seekpos(pos_type p, ios_base::openmode mode) override {
-            return fail_seek ? pos_type(off_type(-1)) : stringbuf::seekpos(p, mode);
+        pos_type move_to(off_type p) {
+            if (p < 0 || p > static_cast<off_type>(data.size())) {
+                return pos_type(off_type(-1));
+            }
+            position = static_cast<size_t>(p);
+            return pos_type(p);
         }
-        pos_type seekoff(off_type off, ios_base::seekdir dir, ios_base::openmode mode) override {
-            return fail_tell ? pos_type(off_type(-1)) : stringbuf::seekoff(off, dir, mode);
+        pos_type seekpos(pos_type p, ios_base::openmode) override {
+            return fail_seek ? pos_type(off_type(-1)) : move_to(off_type(p));
+        }
+        pos_type seekoff(off_type off, ios_base::seekdir dir, ios_base::openmode) override {
+            if (fail_tell) {
+                return pos_type(off_type(-1));
+            }
+            const off_type base = dir == ios_base::beg ? 0 :
+                                  dir == ios_base::cur ? static_cast<off_type>(position) :
+                                  static_cast<off_type>(data.size());
+            return move_to(base + off);
         }
         int sync() override { return fail_flush ? -1 : 0; }
     };
@@ -131,6 +167,7 @@ namespace tree_io {
                 buffer.fail_seek = true;
                 out.exceptions(ios::badbit | ios::failbit);
             }
+            INFO("failure case " << failure);
             REQUIRE_THROWS(saver.finalize());
             // Destructor must not throw, including streams with exception masks.
         }

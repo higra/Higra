@@ -17,7 +17,7 @@
 #include <limits>
 #include <set>
 
-namespace tree_of_shapes {
+namespace test_tree_of_shapes {
 
     using namespace hg;
     using namespace std;

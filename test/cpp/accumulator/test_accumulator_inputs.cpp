@@ -24,7 +24,7 @@
 #include "higra/structure/details/light_axis_view.hpp"
 #include <functional>
 
-namespace accumulator_inputs {
+namespace test_accumulator_inputs {
 
     using namespace hg;
 

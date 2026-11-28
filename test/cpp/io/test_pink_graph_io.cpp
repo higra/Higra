@@ -13,7 +13,7 @@
 #include <string>
 #include "../test_utils.hpp"
 
-namespace pink_graph_io {
+namespace test_pink_graph_io {
     
     using namespace hg;
     using namespace std;

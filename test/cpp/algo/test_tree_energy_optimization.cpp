@@ -15,19 +15,15 @@
 #include "higra/graph.hpp"
 #include "higra/image/graph_image.hpp"
 
-using namespace hg;
-using namespace std;
-using namespace hg::tree_energy_optimization_internal;
-
-using lep_t = piecewise_linear_energy_function_piece<double>;
-using lef_t = piecewise_linear_energy_function<double>;
-
-std::ostream &operator<<(std::ostream &os, const lep_t &rhs) {
+// Printing helpers for test messages; they are outside the test namespace, so they use qualified names.
+std::ostream &operator<<(std::ostream &os,
+                         const hg::tree_energy_optimization_internal::piecewise_linear_energy_function_piece<double> &rhs) {
     os << "((" << rhs.origin_x() << ", " << rhs.origin_y() << "), " << rhs.slope() << ")";
     return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const lef_t &rhs) {
+std::ostream &operator<<(std::ostream &os,
+                         const hg::tree_energy_optimization_internal::piecewise_linear_energy_function<double> &rhs) {
     os << "{";
     for (const auto &lp: rhs) {
         os << lp << ", ";
@@ -39,8 +35,9 @@ std::ostream &operator<<(std::ostream &os, const lef_t &rhs) {
 namespace Catch {
 
     template<>
-    struct StringMaker<lep_t> {
-        static std::string convert(lep_t const &rhs) {
+    struct StringMaker<hg::tree_energy_optimization_internal::piecewise_linear_energy_function_piece<double>> {
+        static std::string convert(
+                hg::tree_energy_optimization_internal::piecewise_linear_energy_function_piece<double> const &rhs) {
             std::ostringstream strs;
             strs << "((" << rhs.origin_x() << ", " << rhs.origin_y() << "), " << rhs.slope() << ")";
             return strs.str();
@@ -50,6 +47,13 @@ namespace Catch {
 }
 
 namespace test_linear_energy_function_optimization {
+
+    using namespace hg;
+    using namespace std;
+    using namespace hg::tree_energy_optimization_internal;
+
+    using lep_t = piecewise_linear_energy_function_piece<double>;
+    using lef_t = piecewise_linear_energy_function<double>;
 
     TEST_CASE("test piecewise_linear_energy_function_piece", "[linear_energy_function_optimization]") {
 

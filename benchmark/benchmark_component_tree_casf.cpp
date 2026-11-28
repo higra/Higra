@@ -24,9 +24,9 @@
 #include "higra/hierarchy/component_tree_casf.hpp"
 #include "higra/image/graph_image.hpp"
 
-using namespace hg;
-
 namespace {
+
+    using namespace hg;
 
 /*
  * CASF benchmark overview

@@ -158,7 +158,7 @@ sys.exit(1)
             with self.assertRaises(RuntimeError):
                 hg.save_tree("/dev/full", hg.Tree((2, 2, 2)))
 
-    def test_print_partition_tree(self):
+    def test_print_partition_tree_log_scale(self):
         tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
         s = hg.print_partition_tree(tree, altitudes=np.asarray([0, 0, 0, 0, 0, 100, 1100, 20000]),
                                     scale="log",
@@ -182,7 +182,7 @@ sys.exit(1)
         self.assertTrue(ref == s)
 
     # this is really just a non throw test...
-    def test_print_partition_tree(self):
+    def test_print_partition_tree_options(self):
         tree = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
 
         for o in ['altitudes', 'area', 'none', 'leaves']:

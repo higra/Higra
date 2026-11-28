@@ -13,7 +13,7 @@
 #include "higra/algo/tree.hpp"
 #include "../test_utils.hpp"
 
-namespace hierarchy_core {
+namespace test_hierarchy_core {
 
     using namespace hg;
     using namespace std;

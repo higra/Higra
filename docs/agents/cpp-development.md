@@ -187,6 +187,21 @@ them in its `CMakeLists.txt`, propagating `TEST_CPP_COMPONENTS` to the parent.
 The single `test_exe` links `Catch2::Catch2WithMain`; do not add another main or
 follow the stale Boost initialization instruction in the contributor page.
 
+`test_exe` is often built as a unity build, which concatenates several test
+files into one translation unit; which files share a unit depends on
+`HG_UNITY_BUILD_BATCH_SIZE`. Each test file must therefore compile the same way
+whatever precedes it:
+
+- put the whole file, after its includes, in one namespace named after the file,
+  usually `test_<file stem>` (e.g. `test_tree_accumulator`; `test_tree_algorithm`
+  for `algo/test_tree.cpp`, since `structure/test_tree.cpp` has the same stem).
+  Never reuse the namespace of another test file or the name of an `hg` entity
+  (`tree`, `lca`, `accumulator`, …);
+- put `using namespace hg;` (and any other using-directive) inside that
+  namespace, never at global scope;
+- do not `#define` macros in a test file. Code that must stay at global scope,
+  such as a `Catch::StringMaker` specialization, uses qualified names.
+
 Use `test/cpp/test_utils.hpp` for Catch2 macros and existing comparison helpers.
 Choose an existing tag or a descriptive module tag so focused runs are possible.
 Tests use exact structural comparisons where IDs are contractual, numeric

@@ -14,9 +14,9 @@
 #include <type_traits>
 #include "higra/accumulator/at_accumulator.hpp"
 
-using namespace hg;
+namespace test_at_accumulator {
 
-namespace accumulator {
+    using namespace hg;
 
     TEST_CASE("test at_accumulator", "at_accumulator") {
 

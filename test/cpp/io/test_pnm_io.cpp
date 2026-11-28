@@ -11,7 +11,7 @@
 #include "../test_utils.hpp"
 #include "higra/io/pnm_io.hpp"
 
-namespace pnm_io {
+namespace test_pnm_io {
 
     using namespace hg;
     using namespace std;

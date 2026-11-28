@@ -13,7 +13,7 @@
 #include "higra/accumulator/graph_accumulator.hpp"
 #include "higra/image/graph_image.hpp"
 
-namespace graph_accumulator {
+namespace test_graph_accumulator {
 
     using namespace hg;
     using namespace std;

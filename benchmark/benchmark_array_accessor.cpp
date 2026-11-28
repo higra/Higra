@@ -12,167 +12,170 @@
 
 #include "higra/graph.hpp"
 
-using namespace hg;
+namespace benchmark_array_accessor {
 
-std::size_t min_array_size = 10;
-std::size_t max_array_size = 16;
-std::size_t max_array2d_size = 12;
+    using namespace hg;
 
-template<typename T>
-int sum1d_fori(array_view<const T> a) {
-    auto s = a.shape();
-    int sum = 0;
-    for (index_t i = 0; i < (index_t)s[0]; ++i) {
-        sum += a(i);
-    }
-    return sum;
-}
+    std::size_t min_array_size = 10;
+    std::size_t max_array_size = 16;
+    std::size_t max_array2d_size = 12;
 
-template<typename T>
-int sum2d_fori(array_view<const T> a) {
-    auto s = a.shape();
-    int sum = 0;
-    for (index_t i = 0; i < (index_t)s[0]; ++i) {
-        for (index_t j = 0; j < (index_t)s[1]; ++j)
-            sum += a(i, j);
-    }
-    return sum;
-}
-
-template<typename T>
-int sum_it(const T &a) {
-    int sum = 0;
-    for (auto v = a.begin(); v != a.end(); v++)
-        sum += *v;
-    return sum;
-}
-
-static void BM_1Darray_access_cstyle_fori(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        std::vector<int> array;
-        array.resize(size, 1);
-        state.ResumeTiming();
+    template<typename T>
+    int sum1d_fori(array_view<const T> a) {
+        auto s = a.shape();
         int sum = 0;
-        for (long i = 0; i < size; ++i)
-            sum += array[i];
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
-    }
-}
-
-BENCHMARK(BM_1Darray_access_cstyle_fori)->Range(1 << min_array_size, 1 << max_array_size);
-
-static void BM_1Darray_access_cstyle_iter(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        std::vector<int> array;
-        array.resize(size, 1);
-        state.ResumeTiming();
-        int sum = sum_it(array);
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
-    }
-}
-
-BENCHMARK(BM_1Darray_access_cstyle_iter)->Range(1 << min_array_size, 1 << max_array_size);
-
-static void BM_1Darray_access_hg_fori(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        hg::array<int> array({(ulong) size}, 1);
-        state.ResumeTiming();
-        int sum = sum1d_fori(array);
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
-    }
-}
-
-BENCHMARK(BM_1Darray_access_hg_fori)->Range(1 << min_array_size, 1 << max_array_size);
-
-static void BM_1Darray_access_hg_iter(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        hg::array<int> array({(ulong) size}, 1);
-        state.ResumeTiming();
-        int sum = sum_it(array);
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
-    }
-}
-
-BENCHMARK(BM_1Darray_access_hg_iter)->Range(1 << min_array_size, 1 << max_array_size);
-
-static void BM_2Darray_access_cstyle_fori(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        std::vector<int> array;
-        array.resize(size * size, 1);
-        state.ResumeTiming();
-        int sum = 0;
-        for (long i = 0; i < size; ++i) {
-            for (long j = 0; j < size; ++j)
-                sum += array[i * size + j];
+        for (index_t i = 0; i < (index_t)s[0]; ++i) {
+            sum += a(i);
         }
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
+        return sum;
     }
-}
 
-BENCHMARK(BM_2Darray_access_cstyle_fori)->Range(1 << min_array_size, 1 << max_array2d_size);
-
-static void BM_2Darray_access_cstyle_iter(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        std::vector<int> array;
-        array.resize(size * size, 1);
-        state.ResumeTiming();
-        int sum = sum_it(array);
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
+    template<typename T>
+    int sum2d_fori(array_view<const T> a) {
+        auto s = a.shape();
+        int sum = 0;
+        for (index_t i = 0; i < (index_t)s[0]; ++i) {
+            for (index_t j = 0; j < (index_t)s[1]; ++j)
+                sum += a(i, j);
+        }
+        return sum;
     }
-}
 
-BENCHMARK(BM_2Darray_access_cstyle_iter)->Range(1 << min_array_size, 1 << max_array2d_size);
-
-static void BM_2Darray_access_hg_fori(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        hg::array<int> array({(ulong) size, (ulong) size}, 1);
-        state.ResumeTiming();
-        int sum = sum2d_fori(array);
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
+    template<typename T>
+    int sum_it(const T &a) {
+        int sum = 0;
+        for (auto v = a.begin(); v != a.end(); v++)
+            sum += *v;
+        return sum;
     }
-}
 
-BENCHMARK(BM_2Darray_access_hg_fori)->Range(1 << min_array_size, 1 << max_array2d_size);
+    static void BM_1Darray_access_cstyle_fori(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
 
-static void BM_2Darray_access_hg_iter(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        int size = state.range(0);
-        hg::array<int> array({(ulong) size, (ulong) size}, 1);
-        state.ResumeTiming();
-        int sum = sum_it(array);
-        bool flag;
-        benchmark::DoNotOptimize(flag = (sum == size));
+            int size = state.range(0);
+            std::vector<int> array;
+            array.resize(size, 1);
+            state.ResumeTiming();
+            int sum = 0;
+            for (long i = 0; i < size; ++i)
+                sum += array[i];
+            bool flag;
+            benchmark::DoNotOptimize(flag = (sum == size));
+        }
     }
-}
 
-BENCHMARK(BM_2Darray_access_hg_iter)->Range(1 << min_array_size, 1 << max_array2d_size);
+    BENCHMARK(BM_1Darray_access_cstyle_fori)->Range(1 << min_array_size, 1 << max_array_size);
+
+    static void BM_1Darray_access_cstyle_iter(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
+
+            int size = state.range(0);
+            std::vector<int> array;
+            array.resize(size, 1);
+            state.ResumeTiming();
+            int sum = sum_it(array);
+            bool flag;
+            benchmark::DoNotOptimize(flag = (sum == size));
+        }
+    }
+
+    BENCHMARK(BM_1Darray_access_cstyle_iter)->Range(1 << min_array_size, 1 << max_array_size);
+
+    static void BM_1Darray_access_hg_fori(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
+
+            int size = state.range(0);
+            hg::array<int> array({(ulong) size}, 1);
+            state.ResumeTiming();
+            int sum = sum1d_fori(array);
+            bool flag;
+            benchmark::DoNotOptimize(flag = (sum == size));
+        }
+    }
+
+    BENCHMARK(BM_1Darray_access_hg_fori)->Range(1 << min_array_size, 1 << max_array_size);
+
+    static void BM_1Darray_access_hg_iter(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
+
+            int size = state.range(0);
+            hg::array<int> array({(ulong) size}, 1);
+            state.ResumeTiming();
+            int sum = sum_it(array);
+            bool flag;
+            benchmark::DoNotOptimize(flag = (sum == size));
+        }
+    }
+
+    BENCHMARK(BM_1Darray_access_hg_iter)->Range(1 << min_array_size, 1 << max_array_size);
+
+    static void BM_2Darray_access_cstyle_fori(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
+
+            int size = state.range(0);
+            std::vector<int> array;
+            array.resize(size * size, 1);
+            state.ResumeTiming();
+            int sum = 0;
+            for (long i = 0; i < size; ++i) {
+                for (long j = 0; j < size; ++j)
+                    sum += array[i * size + j];
+            }
+            bool flag;
+            benchmark::DoNotOptimize(flag = (sum == size));
+        }
+    }
+
+    BENCHMARK(BM_2Darray_access_cstyle_fori)->Range(1 << min_array_size, 1 << max_array2d_size);
+
+    static void BM_2Darray_access_cstyle_iter(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
+
+            int size = state.range(0);
+            std::vector<int> array;
+            array.resize(size * size, 1);
+            state.ResumeTiming();
+            int sum = sum_it(array);
+            bool flag;
+            benchmark::DoNotOptimize(flag = (sum == size));
+        }
+    }
+
+    BENCHMARK(BM_2Darray_access_cstyle_iter)->Range(1 << min_array_size, 1 << max_array2d_size);
+
+    static void BM_2Darray_access_hg_fori(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
+
+            int size = state.range(0);
+            hg::array<int> array({(ulong) size, (ulong) size}, 1);
+            state.ResumeTiming();
+            int sum = sum2d_fori(array);
+            bool flag;
+            benchmark::DoNotOptimize(flag = (sum == size));
+        }
+    }
+
+    BENCHMARK(BM_2Darray_access_hg_fori)->Range(1 << min_array_size, 1 << max_array2d_size);
+
+    static void BM_2Darray_access_hg_iter(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
+
+            int size = state.range(0);
+            hg::array<int> array({(ulong) size, (ulong) size}, 1);
+            state.ResumeTiming();
+            int sum = sum_it(array);
+            bool flag;
+            benchmark::DoNotOptimize(flag = (sum == size));
+        }
+    }
+
+    BENCHMARK(BM_2Darray_access_hg_iter)->Range(1 << min_array_size, 1 << max_array2d_size);
+}

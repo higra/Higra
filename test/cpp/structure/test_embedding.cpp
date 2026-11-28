@@ -12,7 +12,7 @@
 #include "higra/structure/embedding.hpp"
 #include "catch2/matchers/catch_matchers_string.hpp"
 
-namespace embedding {
+namespace test_embedding {
 
 
     TEST_CASE("create embedding grid 1d", "[embedding]") {

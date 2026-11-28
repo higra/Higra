@@ -13,9 +13,9 @@
 #include "higra/algo/tree.hpp"
 #include "higra/structure/array.hpp"
 
-using namespace hg;
-
 namespace test_tree_algorithm {
+
+    using namespace hg;
 
     struct _data {
 

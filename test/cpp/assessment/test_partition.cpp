@@ -11,9 +11,9 @@
 #include "higra/assessment/partition.hpp"
 #include "../test_utils.hpp"
 
-using namespace hg;
+namespace test_partition {
 
-namespace assessment_partition {
+    using namespace hg;
  
     TEST_CASE("cardinal of intersections", "[assessment_partition]") {
             array_1d<int> candidate{ 0, 0, 0, 1, 1, 1, 2, 2, 2 };

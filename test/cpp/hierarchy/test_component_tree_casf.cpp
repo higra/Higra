@@ -17,9 +17,9 @@
 #include "higra/hierarchy/component_tree_casf.hpp"
 #include "higra/image/graph_image.hpp"
 
-using namespace hg;
+namespace test_component_tree_casf {
 
-namespace component_tree_casf {
+    using namespace hg;
 
     namespace {
 
@@ -632,4 +632,4 @@ namespace component_tree_casf {
         }
     }
 
-} // namespace component_tree_casf
+} // namespace test_component_tree_casf

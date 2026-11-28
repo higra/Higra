@@ -11,9 +11,9 @@
 #include "higra/assessment/dendrogram_purity.hpp"
 #include "../test_utils.hpp"
 
-using namespace hg;
+namespace test_dendrogram_purity {
 
-namespace assessment_dendrogram_purity {
+    using namespace hg;
 
     TEST_CASE("dendrogram purity", "[dendrogram purity]") {
         SECTION("binary"){

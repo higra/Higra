@@ -13,7 +13,6 @@ if (DO_CPP_TEST)
     include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/lib/include)
 
     set(TEST_CPP_COMPONENTS ${TEST_CPP_COMPONENTS}
-            test.cpp
             test_parallel.cpp
             test_sorting.cpp
             test_utils.cpp)

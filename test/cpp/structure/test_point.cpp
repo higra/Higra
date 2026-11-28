@@ -14,7 +14,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace point {
+namespace test_point {
 
     using namespace hg;
     using namespace std;

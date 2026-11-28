@@ -14,7 +14,7 @@
 #include "higra/hierarchy/hierarchy_core.hpp"
 #include "../test_utils.hpp"
 
-namespace lca {
+namespace test_lca {
 
     using namespace hg;
     using namespace std;

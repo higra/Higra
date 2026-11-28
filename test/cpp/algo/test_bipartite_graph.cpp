@@ -12,9 +12,9 @@
 #include "../test_utils.hpp"
 #include <set>
 
-using namespace hg;
+namespace test_bipartite_graph {
 
-namespace test_alignment {
+    using namespace hg;
 
     TEST_CASE("bipartite graph matching", "[bipartite_graph]") {
 

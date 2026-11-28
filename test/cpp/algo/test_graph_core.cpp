@@ -14,9 +14,10 @@
 #include "higra/image/graph_image.hpp"
 #include <set>
 
-using namespace hg;
-
 namespace test_graph_core {
+
+    using namespace hg;
+
     TEST_CASE("graph cut 2 labelisation", "[graph_algorithm]") {
 
         auto graph = get_4_adjacency_graph({3, 3});

@@ -11,7 +11,7 @@
 #include "higra/graph.hpp"
 #include "../test_utils.hpp"
 
-namespace regular_graph {
+namespace test_regular_graph {
 
     using namespace hg;
     using namespace std;

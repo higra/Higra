@@ -14,7 +14,7 @@
 #include "higra/hierarchy/component_tree.hpp"
 #include "higra/io/tree_io.hpp"
 
-namespace tree_attributes {
+namespace test_tree_attribute {
 
     using namespace hg;
     using namespace std;

@@ -14,11 +14,10 @@
 #include "higra/image/graph_image.hpp"
 #include "higra/attribute/tree_attribute.hpp"
 
+namespace test_tree_contour_accumulator {
 
-using namespace hg;
-using namespace std;
-
-namespace tree_contour_accumulator {
+    using namespace hg;
+    using namespace std;
 
 
     TEST_CASE("contour accumulator partition tree", "[tree_contour_accumulator]") {
