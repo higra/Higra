@@ -1,0 +1,59 @@
+jobs:
+  - job: 'Windows_msvc'
+    strategy:
+      matrix:
+        msvc_debug:
+          HG_USE_TBB: 'Off'
+        msvc_debug_tbb:
+          HG_USE_TBB: 'On'
+    pool:
+      vmImage: windows-2022
+    timeoutInMinutes: 360
+    steps:
+
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.13'
+          addToPath: true
+
+      - script: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy scikit-learn pybind11==3.1.0 ninja
+        displayName: Install python packages
+
+      # A Debug MSVC build links the Debug oneTBB libraries (tbb12_debug).
+      - powershell: |
+          & "$(Build.SourcesDirectory)\tools\build_tbb_windows.ps1" -Configurations Debug
+          Write-Host "##vso[task.prependpath]C:\tbb\bin"
+        displayName: Build oneTBB from source
+        condition: and(succeeded(), eq(variables['HG_USE_TBB'], 'On'))
+
+      - script: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSINSTALLPATH=%%i"
+          if not defined VSINSTALLPATH exit /b 1
+          call "%VSINSTALLPATH%\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64 || exit /b 1
+          for /f "usebackq tokens=*" %%i in (`python -c "import sys; print(sys.executable)"`) do set "HG_PYTHON=%%i"
+          for /f "usebackq tokens=*" %%i in (`python -m pybind11 --cmakedir`) do set "PYBIND11_CMAKE_DIR=%%i"
+          "%HG_PYTHON%" -c "import sys, numpy; print('Python', sys.version, 'NumPy', numpy.__version__)" || exit /b 1
+          cl 2>&1 | findstr /C:"Version"
+          cmake -S "$(Build.SourcesDirectory)" -B build -G Ninja ^
+            -DCMAKE_BUILD_TYPE=Debug ^
+            -DPython_EXECUTABLE="%HG_PYTHON%" ^
+            -Dpybind11_DIR="%PYBIND11_CMAKE_DIR%" ^
+            -DHG_USE_TBB=$(HG_USE_TBB) ^
+            -DTBB_DIR=C:/tbb/lib/cmake/TBB ^
+            -DHG_UNITY_BUILD=ON ^
+            -DHG_UNITY_BUILD_BATCH_SIZE=4 || exit /b 1
+          cmake --build build --target test_exe higram --parallel 2 || exit /b 1
+          rem Python extension modules do not search PATH for their DLLs: copy oneTBB next to them.
+          if /I "$(HG_USE_TBB)"=="On" (
+            copy /Y C:\tbb\bin\tbb*.dll build\higra\ || exit /b 1
+            copy /Y C:\tbb\bin\tbb*.dll build\test\python\test_structure\ || exit /b 1
+          )
+        displayName: Build
+        workingDirectory: $(Build.BinariesDirectory)
+
+      - script: |
+          ctest --test-dir build -V || exit /b 1
+        displayName: Test
+        workingDirectory: $(Build.BinariesDirectory)

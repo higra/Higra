@@ -287,13 +287,19 @@ actual compile commands before treating it as a representative measurement.
 | --- | --- |
 | Linux core | Ubuntu 24.04, GCC 11 regression Debug with TBB off; GCC 14 and Clang 18 Debug with TBB on/off; GCC 14 Debug with TBB off on the oldest supported Python and NumPy (3.10, 2.0.0); GCC 14 Coverage with TBB |
 | macOS core | macOS 15, Clang, Debug with TBB on/off |
+| Windows core | Windows Server 2022, MSVC, Ninja, Debug with TBB on/off, Python 3.13 |
 | Wheels | CPython 3.10–3.14; Linux x86_64 manylinux_2_28, macOS x86_64/ARM64, Windows x86_64 |
 
 Linux core jobs use the conda base Python, except the oldest-NumPy leg, which
 creates a conda-forge environment pinned to the minimums of `setup.py`; update
 its pins together with `install_requires`. Linux core jobs also compile the CASF header with ordinary C++17 flags before
 building. They clear inherited C/C++ flags and print compiler versions. Core
-jobs use unity batch size four. Coverage runs C++ tests only. Wheel jobs use
+jobs use unity batch size four. Coverage runs C++ tests only. The Windows core
+jobs build `test_exe` and `higram` and run `ctest` like the other core jobs; the TBB
+leg builds Debug oneTBB (`tools/build_tbb_windows.ps1 -Configurations Debug`,
+needed because a Debug MSVC build links `tbb12_debug`), puts it on `PATH` for
+`test_exe`, and copies its DLLs next to the Python extension modules, which do not
+search `PATH`. Wheel jobs use
 cibuildwheel 3.3.1, enable TBB, and run the Python suite against installed wheels.
 Unix excludes 32-bit manylinux and musllinux; Windows excludes win32. All Linux
 Python 3.10–3.14 wheel jobs run on ordinary builds. Other wheel jobs are mostly
