@@ -13,7 +13,7 @@ import numpy as np
 import higra as hg
 
 
-class TestWatershed(unittest.TestCase):
+class TestTreeFusion(unittest.TestCase):
 
     def test_tree_fusion1(self):
         t1 = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
@@ -92,6 +92,36 @@ class TestWatershed(unittest.TestCase):
         for trees in ((empty, empty), (empty, single), (single, empty)):
             with self.assertRaises(RuntimeError):
                 hg.tree_fusion_depth_map(trees)
+
+    def test_tree_fusion_depth_map_argument_forms(self):
+        t1 = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        t2 = hg.Tree((7, 7, 6, 5, 5, 6, 7, 7))
+        t3 = hg.Tree((5, 5, 5, 6, 6, 7, 7, 7))
+
+        expected2 = hg.tree_fusion_depth_map((t1, t2))
+        np.testing.assert_array_equal(hg.tree_fusion_depth_map(t1, t2), expected2)
+        np.testing.assert_array_equal(hg.tree_fusion_depth_map([t1, t2]), expected2)
+        np.testing.assert_array_equal(hg.tree_fusion_depth_map(t for t in (t1, t2)), expected2)
+
+        expected3 = hg.tree_fusion_depth_map((t1, t2, t3))
+        np.testing.assert_array_equal(hg.tree_fusion_depth_map(t1, t2, t3), expected3)
+        np.testing.assert_array_equal(hg.tree_fusion_depth_map([t1, t2, t3]), expected3)
+
+    def test_tree_fusion_depth_map_invalid_arguments(self):
+        t = hg.Tree((5, 5, 6, 6, 6, 7, 7, 7))
+        with self.assertRaises(RuntimeError):
+            hg.tree_fusion_depth_map()
+        with self.assertRaises(RuntimeError):
+            hg.tree_fusion_depth_map(t)
+        with self.assertRaises(RuntimeError):
+            hg.tree_fusion_depth_map((t,))
+        with self.assertRaises(RuntimeError):
+            hg.tree_fusion_depth_map([])
+        with self.assertRaises(TypeError):
+            hg.tree_fusion_depth_map(t, 1)
+        with self.assertRaises(TypeError):
+            hg.tree_fusion_depth_map((t, 1))
+
 
 if __name__ == '__main__':
     unittest.main()

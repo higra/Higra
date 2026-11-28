@@ -231,6 +231,9 @@ Unreleased
   intersection matrices with an empty row or column (a floating-point exception for integer matrices) and throw
   ``std::runtime_error`` for a matrix whose sum is 0 and for an empty vector of matrices.
 
+- :func:`~higra.tree_fusion_depth_map` accepts the trees as separate arguments, as documented, in addition to a
+  single sequence of trees. Separate arguments previously raised ``TypeError``.
+
 0.6.13
 ------
 
