@@ -14,10 +14,10 @@
 #include "higra/image/graph_image.hpp"
 #include "higra/algo/tree.hpp"
 
-using namespace hg;
-using namespace std;
+namespace test_component_tree {
 
-namespace binary_partition_tree {
+    using namespace hg;
+    using namespace std;
 
     TEST_CASE("test pre_tree_construction", "[component_tree]") {
         auto graph = get_4_adjacency_implicit_graph({4, 4});

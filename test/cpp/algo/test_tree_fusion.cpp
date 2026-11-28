@@ -13,9 +13,9 @@
 #include "higra/hierarchy/component_tree.hpp"
 #include "higra/image/graph_image.hpp"
 
-using namespace hg;
-
 namespace test_tree_fusion {
+
+    using namespace hg;
 
     TEST_CASE("tree_fusion_depth_map 1", "[tree_fusion]") {
         array_1d<int> p1{5, 5, 6, 6, 6, 7, 7, 7};

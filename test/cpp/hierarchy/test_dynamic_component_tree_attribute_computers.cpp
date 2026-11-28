@@ -54,9 +54,9 @@
 *             └──ID: 146, Parent: 153, Altitude: 8, NumChildren: 0, ProperParts: [115], ProperPartCount: 1
 */
 
-using namespace hg;
+namespace test_dynamic_component_tree_attribute_computers {
 
-namespace dynamic_component_tree_attribute_computers {
+    using namespace hg;
 
     namespace {
 
@@ -199,4 +199,4 @@ namespace dynamic_component_tree_attribute_computers {
         REQUIRE(heightIncremental[(size_t) 157] == 12.0);
     }
 
-} // namespace dynamic_component_tree_attribute_computers
+} // namespace test_dynamic_component_tree_attribute_computers

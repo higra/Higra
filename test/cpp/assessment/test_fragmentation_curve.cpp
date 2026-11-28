@@ -13,9 +13,9 @@
 #include "higra/image/graph_image.hpp"
 #include "../test_utils.hpp"
 
-using namespace hg;
+namespace test_fragmentation_curve {
 
-namespace assessment_fragmentation_curve {
+    using namespace hg;
 
     TEST_CASE("fragmentation curve BCE optimal cut", "[fragmentation_curve]") {
             tree t(array_1d<index_t>{ 8, 8, 9, 9, 10, 10, 11, 13, 12, 12, 11, 13, 14, 14, 14 });

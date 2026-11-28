@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace accumulator {
+namespace test_accumulator {
 
     // accumulates the first num_values rows of values (all rows if num_values < 0)
     template<bool vec, typename acc_t>

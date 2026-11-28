@@ -14,7 +14,7 @@
 #include <limits>
 #include "catch2/matchers/catch_matchers_string.hpp"
 
-namespace tree {
+namespace test_tree {
 
     using namespace hg;
     using namespace std;

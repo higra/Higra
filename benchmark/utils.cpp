@@ -11,23 +11,23 @@
 #include "utils.h"
 #include <cassert>
 
-using namespace hg;
-
 bool is_power_of_two(std::size_t x) {
     return (x != 0) && ((x & (x - 1)) == 0);
 }
 
 hg::tree get_complete_binary_tree(std::size_t num_leaves) {
     assert(is_power_of_two(num_leaves));
-    array_1d<std::size_t> parent = array_1d<std::size_t>::from_shape({num_leaves * 2 - 1});
+    hg::array_1d<std::size_t> parent = hg::array_1d<std::size_t>::from_shape({num_leaves * 2 - 1});
     for (std::size_t i = 0, j = num_leaves; i < (std::size_t) parent.size() - 1; j++) {
         parent(i++) = j;
         parent(i++) = j;
     }
     parent(parent.size() - 1) = parent.size() - 1;
-    return tree(std::move(parent));
+    return hg::tree(std::move(parent));
 }
 namespace bench_utils {
+
+    using namespace hg;
 
     std::mt19937_64 &random_engine() {
         static std::mt19937_64 engine(42);

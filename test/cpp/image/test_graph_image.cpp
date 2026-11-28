@@ -11,7 +11,7 @@
 #include "higra/image/graph_image.hpp"
 #include "../test_utils.hpp"
 
-namespace graph_image {
+namespace test_graph_image {
 
     using namespace hg;
     using namespace std;

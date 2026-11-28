@@ -13,8 +13,10 @@
 #include "higra/image/graph_image.hpp"
 #include "higra/algo/horizontal_cuts.hpp"
 
-using namespace hg;
 namespace test_horizontal_cuts {
+
+    using namespace hg;
+
     TEST_CASE("horizontal cut explorer constructor asserts", "[horizontal_cuts]") {
 
         hg::tree tree{

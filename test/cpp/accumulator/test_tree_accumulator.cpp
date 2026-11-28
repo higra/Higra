@@ -14,11 +14,10 @@
 #include <limits>
 #include <type_traits>
 
+namespace test_tree_accumulator {
 
-using namespace hg;
-using namespace std;
-
-namespace tree_accumulator {
+    using namespace hg;
+    using namespace std;
 
     struct _data {
 

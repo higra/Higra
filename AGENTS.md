@@ -115,6 +115,10 @@ requirements, which include a released Higra package.
 - Edit sources, not build-tree copies, generated XML/HTML, or packaging copies
   under `higra/include` and `higra/lib`. Treat vendored `lib/` changes as explicit
   dependency work; its update script deletes and recreates directories.
+- Never put `using namespace` at global scope, in any source, test or benchmark
+  file. Unity builds concatenate translation units, so a global import changes
+  name lookup in the files that follow it. Put the directive inside the file's own
+  namespace or function.
 - Keep existing license notices and follow the neighboring file structure.
   Leave unrelated worktree changes intact. The existing contributor page has
   stale instructions; current code and CMake registration are authoritative.

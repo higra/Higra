@@ -11,10 +11,9 @@
 #include "../test_utils.hpp"
 #include "higra/algo/tree_monotonic_regression.hpp"
 
-
-using namespace hg;
-
 namespace test_tree_monotonic_regression {
+
+    using namespace hg;
 
     TEST_CASE("tree_monotonic_regression trivial", "[tree_monotonic_regression]") {
         hg::tree tree(hg::array<index_t>{7, 7, 8, 8, 8, 9, 9, 10, 10, 11, 11, 11});

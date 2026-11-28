@@ -209,8 +209,7 @@ option(HG_UNITY_BUILD
         "Enable unity build." OFF)
 
 set(HG_UNITY_BUILD_BATCH_SIZE 8 CACHE STRING "Set the batch size for unity build.")
-string(REGEX MATCH "^[0-9]+$" IS_VALID_HG_UNITY_BUILD_BATCH_SIZE "${HG_UNITY_BUILD_BATCH_SIZE}")
-if(NOT IS_VALID_HG_UNITY_BUILD_BATCH_SIZE)
+if(NOT HG_UNITY_BUILD_BATCH_SIZE MATCHES "^[0-9]+$")
     message(FATAL_ERROR "HG_UNITY_BUILD_BATCH_SIZE must be an integer. Provided: ${HG_UNITY_BUILD_BATCH_SIZE}")
 else()
     message(STATUS "Unity build batch size: ${HG_UNITY_BUILD_BATCH_SIZE}")

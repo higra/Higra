@@ -19,9 +19,9 @@
 #include <oneapi/tbb/task_arena.h>
 #endif
 
-using namespace hg;
-
 namespace test_watershed {
+
+    using namespace hg;
 
     TEST_CASE("watershed cut simple", "[watershed_cut]") {
 

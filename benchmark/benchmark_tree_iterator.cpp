@@ -14,106 +14,109 @@
 #include "higra/graph.hpp"
 #include "higra/accumulator/tree_accumulator.hpp"
 
-using namespace hg;
+namespace benchmark_tree_iterator {
 
-std::size_t min_tree_size = 10;
-std::size_t max_tree_size = 16;
+    using namespace hg;
+
+    std::size_t min_tree_size = 10;
+    std::size_t max_tree_size = 16;
 
 
 
-static void BM_tree_accumulate_parallel_scalar_cstyle(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
+    static void BM_tree_accumulate_parallel_scalar_cstyle(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
 
-        std::size_t size = state.range(0);
-        bench_utils::random_seed(42);
-        auto t = get_complete_binary_tree(size);
-        auto input = bench_utils::random_normal<double>({t.num_vertices()});
-        state.ResumeTiming();
-        array_nd<double> output = array_nd<double>::from_shape({t.num_vertices()});
-        auto sout = output.data();
-        auto sin = input.data();
-        std::fill(sout, sout + t.num_vertices(), 0);
-        for (auto i: t.iterate_from_leaves_to_root(leaves_it::exclude)) {
-            for (auto c: t.children(i)) {
-                sout[i] += sin[c];
+            std::size_t size = state.range(0);
+            bench_utils::random_seed(42);
+            auto t = get_complete_binary_tree(size);
+            auto input = bench_utils::random_normal<double>({t.num_vertices()});
+            state.ResumeTiming();
+            array_nd<double> output = array_nd<double>::from_shape({t.num_vertices()});
+            auto sout = output.data();
+            auto sin = input.data();
+            std::fill(sout, sout + t.num_vertices(), 0);
+            for (auto i: t.iterate_from_leaves_to_root(leaves_it::exclude)) {
+                for (auto c: t.children(i)) {
+                    sout[i] += sin[c];
+                }
             }
+
+            benchmark::DoNotOptimize(sout[t.root()]);
         }
-
-        benchmark::DoNotOptimize(sout[t.root()]);
     }
-}
 
-BENCHMARK(BM_tree_accumulate_parallel_scalar_cstyle)->Range(1 << min_tree_size, 1 << max_tree_size);
+    BENCHMARK(BM_tree_accumulate_parallel_scalar_cstyle)->Range(1 << min_tree_size, 1 << max_tree_size);
 
-/*
-static void BM_tree_accumulate_parallel_scalar_view(benchmark::State& state) {
-    for (auto _ : state)
-    {
-        state.PauseTiming();
+    /*
+    static void BM_tree_accumulate_parallel_scalar_view(benchmark::State& state) {
+        for (auto _ : state)
+        {
+            state.PauseTiming();
 
-        std::size_t size = state.range(0);
-        bench_utils::random_seed(42);
-        auto t = get_complete_binary_tree(size);
-        auto input = bench_utils::random_normal<double>({t.num_vertices()});
-        state.ResumeTiming();
-        array_nd <double> output;
-        benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum<double>()));
+            std::size_t size = state.range(0);
+            bench_utils::random_seed(42);
+            auto t = get_complete_binary_tree(size);
+            auto input = bench_utils::random_normal<double>({t.num_vertices()});
+            state.ResumeTiming();
+            array_nd <double> output;
+            benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum<double>()));
 
+        }
     }
-}
 
-BENCHMARK(BM_tree_accumulate_parallel_scalar)->Range(1<<min_tree_size, 1<<max_tree_size);
-*/
-static void BM_tree_accumulate_parallel_light_view_scalar(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
+    BENCHMARK(BM_tree_accumulate_parallel_scalar)->Range(1<<min_tree_size, 1<<max_tree_size);
+    */
+    static void BM_tree_accumulate_parallel_light_view_scalar(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
 
-        std::size_t size = state.range(0);
-        bench_utils::random_seed(42);
-        auto t = get_complete_binary_tree(size);
-        auto input = bench_utils::random_normal<double>({t.num_vertices()});
-        state.ResumeTiming();
-        array_nd<double> output;
-        benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum()));
+            std::size_t size = state.range(0);
+            bench_utils::random_seed(42);
+            auto t = get_complete_binary_tree(size);
+            auto input = bench_utils::random_normal<double>({t.num_vertices()});
+            state.ResumeTiming();
+            array_nd<double> output;
+            benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum()));
 
+        }
     }
-}
 
-BENCHMARK(BM_tree_accumulate_parallel_light_view_scalar)->Range(1 << min_tree_size, 1 << max_tree_size);
+    BENCHMARK(BM_tree_accumulate_parallel_light_view_scalar)->Range(1 << min_tree_size, 1 << max_tree_size);
 
-static void BM_tree_accumulate_parallel_light_view_vectorial(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
+    static void BM_tree_accumulate_parallel_light_view_vectorial(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
 
-        std::size_t size = state.range(0);
-        bench_utils::random_seed(42);
-        auto t = get_complete_binary_tree(size);
-        auto input = bench_utils::random_normal<double>({t.num_vertices(), 3ul, 3ul});
-        state.ResumeTiming();
-        array_nd<double> output;
-        benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum()));
+            std::size_t size = state.range(0);
+            bench_utils::random_seed(42);
+            auto t = get_complete_binary_tree(size);
+            auto input = bench_utils::random_normal<double>({t.num_vertices(), 3ul, 3ul});
+            state.ResumeTiming();
+            array_nd<double> output;
+            benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum()));
 
+        }
     }
-}
 
-BENCHMARK(BM_tree_accumulate_parallel_light_view_vectorial)->Range(1 << min_tree_size, 1 << max_tree_size);
-/*
-static void BM_tree_accumulate_parallel_vectorial(benchmark::State& state) {
-    for (auto _ : state)
-    {
-        state.PauseTiming();
+    BENCHMARK(BM_tree_accumulate_parallel_light_view_vectorial)->Range(1 << min_tree_size, 1 << max_tree_size);
+    /*
+    static void BM_tree_accumulate_parallel_vectorial(benchmark::State& state) {
+        for (auto _ : state)
+        {
+            state.PauseTiming();
 
-        std::size_t size = state.range(0);
-        bench_utils::random_seed(42);
-        auto t = get_complete_binary_tree(size);
-        auto input = bench_utils::random_normal<double>({t.num_vertices(), 3ul, 3ul});
-        state.ResumeTiming();
-        array_nd <double> output;
-        benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum<double>()));
+            std::size_t size = state.range(0);
+            bench_utils::random_seed(42);
+            auto t = get_complete_binary_tree(size);
+            auto input = bench_utils::random_normal<double>({t.num_vertices(), 3ul, 3ul});
+            state.ResumeTiming();
+            array_nd <double> output;
+            benchmark::DoNotOptimize(output = accumulate_parallel(t, input, accumulator_sum<double>()));
 
+        }
     }
-}
 
-BENCHMARK(BM_tree_accumulate_parallel_vectorial)->Range(1<<min_tree_size, 1<<max_tree_size);
- */
+    BENCHMARK(BM_tree_accumulate_parallel_vectorial)->Range(1<<min_tree_size, 1<<max_tree_size);
+     */
+}

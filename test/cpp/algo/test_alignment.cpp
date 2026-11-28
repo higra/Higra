@@ -14,9 +14,9 @@
 #include "higra/algo/tree.hpp"
 #include "catch2/matchers/catch_matchers_string.hpp"
 
-using namespace hg;
-
 namespace test_alignment {
+
+    using namespace hg;
 
     TEST_CASE("project fine to coarse labelisation", "[alignment]") {
 

@@ -12,9 +12,10 @@
 #include "higra/algo/rag.hpp"
 #include "higra/image/graph_image.hpp"
 
-using namespace hg;
-
 namespace test_rag {
+
+    using namespace hg;
+
     struct fixture {
 
         region_adjacency_graph data;

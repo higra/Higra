@@ -11,7 +11,7 @@
 #include "../test_utils.hpp"
 #include "higra/io/tree_io.hpp"
 
-namespace tree_io {
+namespace test_tree_io {
 
     using namespace hg;
     using namespace std;

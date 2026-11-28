@@ -12,11 +12,11 @@
 #include "higra/algo/graph_weights.hpp"
 #include "../test_utils.hpp"
 
-
-using namespace hg;
-using namespace std;
-
 namespace test_graph_weights {
+
+    using namespace hg;
+    using namespace std;
+
     TEST_CASE("graph edge weighting scalar", "[graph_weights]") {
 
         auto g = get_4_adjacency_graph({2, 2});

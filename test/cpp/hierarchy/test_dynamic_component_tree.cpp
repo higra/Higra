@@ -15,7 +15,6 @@
 #include "higra/hierarchy/component_tree.hpp"
 #include "higra/image/graph_image.hpp"
 
-
 /*
 * Reference dynamic max-tree:
 *      
@@ -56,10 +55,9 @@
 *             └──ID: 146, Parent: 153, Altitude: 8, NumChildren: 0, ProperParts: [115], ProperPartCount: 1
 */
 
+namespace test_dynamic_component_tree {
 
-using namespace hg;
-
-namespace dynamic_component_tree {
+    using namespace hg;
 
     namespace {
 
@@ -622,4 +620,4 @@ namespace dynamic_component_tree {
             }
         }
     }
-} // namespace dynamic_component_tree
+} // namespace test_dynamic_component_tree

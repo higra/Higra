@@ -14,33 +14,33 @@
 #include "higra/graph.hpp"
 #include "higra/image/graph_image.hpp"
 
-using namespace hg;
+namespace benchmark_regular_graph {
+
+    using namespace hg;
+
+    std::size_t min_size = 6;
+    std::size_t max_size = 12;
 
 
-std::size_t min_size = 6;
-std::size_t max_size = 12;
+    static void BM_graph_implicit_adjacency_iterator(benchmark::State &state) {
+        for (auto _ : state) {
+            state.PauseTiming();
 
+            hg::index_t size = state.range(0);
+            bench_utils::random_seed(42);
+            auto g = hg::get_4_adjacency_implicit_graph(hg::embedding_grid_2d({size, size}));
 
-static void BM_graph_implicit_adjacency_iterator(benchmark::State &state) {
-    for (auto _ : state) {
-        state.PauseTiming();
-
-        hg::index_t size = state.range(0);
-        bench_utils::random_seed(42);
-        auto g = hg::get_4_adjacency_implicit_graph(hg::embedding_grid_2d({size, size}));
-
-        state.ResumeTiming();
-        index_t sum = 0;
-        for(auto v: hg::vertex_iterator(g)){
-            for(auto n: hg::adjacent_vertex_iterator(v, g)){
-                sum += n;
+            state.ResumeTiming();
+            index_t sum = 0;
+            for(auto v: hg::vertex_iterator(g)){
+                for(auto n: hg::adjacent_vertex_iterator(v, g)){
+                    sum += n;
+                }
             }
+
+            benchmark::DoNotOptimize(++sum);
         }
-
-        benchmark::DoNotOptimize(++sum);
     }
+
+    BENCHMARK(BM_graph_implicit_adjacency_iterator)->Range(1 << min_size, 1 << max_size);
 }
-
-BENCHMARK(BM_graph_implicit_adjacency_iterator)->Range(1 << min_size, 1 << max_size);
-
-

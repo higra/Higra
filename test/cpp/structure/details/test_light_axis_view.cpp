@@ -12,7 +12,7 @@
 #include "higra/structure/array.hpp"
 #include "../../test_utils.hpp"
 
-namespace light_axis_view {
+namespace test_light_axis_view {
 
     using namespace hg;
     using namespace std;

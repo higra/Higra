@@ -108,7 +108,7 @@ directory resets its dependency list.
 | `HG_USE_TBB` | `OFF` | Enables TBB on extension/C++ test targets |
 | `TBB_DIR` | Discovered | Directory containing `TBBConfig.cmake`, not headers or a runtime-library directory |
 | `HG_UNITY_BUILD` | `OFF` | Unity builds for extension and C++ tests; module initializer is excluded |
-| `HG_UNITY_BUILD_BATCH_SIZE` | `8` | Integer; CI and TBB packaging use `4` |
+| `HG_UNITY_BUILD_BATCH_SIZE` | `8` | Non-negative integer; `0` puts each target in a single unity file; CI and TBB packaging use `4` |
 | `HG_BUILD_WHEEL` | `OFF` | Packaging-specific behavior, including Windows TBB linkage |
 | `DO_BENCHMARK` | `OFF` | Google Benchmark; rejects Debug and additionally requires TBB |
 
