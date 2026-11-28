@@ -218,7 +218,7 @@ class TestUndirectedGraph(unittest.TestCase):
 
         self.assertTrue(test == ref)
 
-    def test_out_edge_iterator(self):
+    def test_out_edge_index_iterator(self):
         g = TestUndirectedGraph.test_graph()
         ref = [[0, 2],
                [0, 1],

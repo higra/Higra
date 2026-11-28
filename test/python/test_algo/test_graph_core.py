@@ -293,7 +293,7 @@ class TestAlgorithmGraphCore(unittest.TestCase):
         self.assertTrue(np.all(sources == (2, 0)))
         self.assertTrue(np.all(targets == (3, 1)))
 
-    def test_subgraph_spanning(self):
+    def test_subgraph_non_spanning(self):
         graph = hg.UndirectedGraph(6)
         graph.add_edges(np.arange(5), np.arange(1, 6))
         edge_indices = np.asarray((4, 0, 3))
