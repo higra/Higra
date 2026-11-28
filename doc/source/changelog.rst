@@ -234,6 +234,12 @@ Unreleased
 - :func:`~higra.tree_fusion_depth_map` accepts the trees as separate arguments, as documented, in addition to a
   single sequence of trees. Separate arguments previously raised ``TypeError``.
 
+- Add :func:`~higra.get_num_threads`. In Python, the environment variable ``HG_NUM_THREADS`` sets the maximum number
+  of threads when Higra is imported. In C++, ``hg::set_num_threads`` and ``hg::get_num_threads`` are available in
+  ``higra/parallel.hpp``; ``set_num_threads`` throws for a negative value.
+
+- The benchmark executables read the maximum number of threads from ``HG_NUM_THREADS`` instead of ``TBB_NUM_THREADS``.
+
 0.6.13
 ------
 

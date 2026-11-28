@@ -11,11 +11,9 @@
 #include "py_common.hpp"
 #include "py_sorting.hpp"
 #include "higra/sorting.hpp"
-#ifdef HG_USE_TBB
-    #include <memory>
-    #include <oneapi/tbb/global_control.h>
-    #include <oneapi/tbb/info.h>
-#endif
+#include "higra/parallel.hpp"
+#include <algorithm>
+#include <limits>
 namespace py_sorting {
 
     namespace py = pybind11;
@@ -71,26 +69,25 @@ namespace py_sorting {
         }
     };
 
-#ifdef HG_USE_TBB
-    static size_t max_threads = oneapi::tbb::info::default_concurrency();
-    static std::unique_ptr<oneapi::tbb::global_control> tbb_thread_limit;
-#endif
-
     void py_init_sorting(pybind11::module &m) {
 
         m.def("set_num_threads", [](size_t num_threads) {
-#ifdef HG_USE_TBB
-                  if (num_threads == 0) {
-                      num_threads = max_threads;
-                  }
-                  tbb_thread_limit = std::make_unique<oneapi::tbb::global_control>(oneapi::tbb::global_control::max_allowed_parallelism, static_cast<int>(num_threads));
-#else
-                  HG_LOG_WARNING("Warning: trying to set maximum number of threads but Higra was compiled without multi-threading!");
-#endif
+                  hg::set_num_threads(static_cast<hg::index_t>(
+                          (std::min)(num_threads, static_cast<size_t>(std::numeric_limits<hg::index_t>::max()))));
               },
               "Set the maximum number of threads usable in parallel computing. If :attr:`num_threads` is equal to 0, "
-              "the maximum number of threads resets to its default value (number of logical cores available on the machine).",
+              "the maximum number of threads resets to its default value (number of logical cores available on the machine).\n\n"
+              "The limit applies to the whole process. It can also be set with the environment variable "
+              "``HG_NUM_THREADS`` when Higra is imported.\n\n"
+              ":param num_threads: maximum number of threads (positive integer), or 0 to restore the default\n"
+              ":raises TypeError: if :attr:`num_threads` is negative",
               py::arg("num_threads"));
+
+        m.def("get_num_threads", &hg::get_num_threads,
+              "Get the maximum number of threads usable in parallel computing: the value given to "
+              ":func:`~higra.set_num_threads`, or the default value (number of logical cores available on the machine). "
+              "Always 1 if Higra was compiled without multi-threading.\n\n"
+              ":return: maximum number of threads");
 
         add_type_overloads<def_sort, HG_TEMPLATE_NUMERIC_TYPES>(m, "");
         add_type_overloads<def_stable_sort, HG_TEMPLATE_NUMERIC_TYPES>(m, "");

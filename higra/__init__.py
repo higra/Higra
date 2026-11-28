@@ -36,3 +36,24 @@ from .structure import *
 
 def __logger_printer(m):
     print(m)
+
+
+def __set_num_threads_from_environment():
+    # HG_NUM_THREADS: decimal digits, surrounding whitespace allowed, value between 1 and 2**63 - 1
+    import os
+    import warnings
+    value = os.environ.get("HG_NUM_THREADS")
+    whitespace = " \t\n\r\f\v"
+    if value is None or value.strip(whitespace) == "":
+        return
+    digits = value.strip(whitespace)
+    if digits.isascii() and digits.isdigit() and 0 < int(digits) < 2 ** 63:
+        try:
+            set_num_threads(int(digits))
+            return
+        except Exception:
+            pass
+    warnings.warn("Ignoring the environment variable HG_NUM_THREADS='" + value +
+                  "': it must be a positive integer smaller than 2**63.", RuntimeWarning)
+
+__set_num_threads_from_environment()
